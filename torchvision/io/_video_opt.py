@@ -111,9 +111,7 @@ def _fill_info(
 
 
 def _align_audio_frames(
-    aframes: torch.Tensor,
-    aframe_pts: torch.Tensor,
-    audio_pts_range: Tuple[int, int]
+    aframes: torch.Tensor, aframe_pts: torch.Tensor, audio_pts_range: Tuple[int, int]
 ) -> torch.Tensor:
     start, end = aframe_pts[0], aframe_pts[-1]
     num_samples = aframes.size(0)
@@ -431,12 +429,9 @@ def _probe_video_from_memory(
 
 
 def _convert_to_sec(
-    start_pts: Union[float, Fraction],
-    end_pts: Union[float, Fraction],
-    pts_unit: str,
-    time_base: Fraction
+    start_pts: Union[float, Fraction], end_pts: Union[float, Fraction], pts_unit: str, time_base: Fraction
 ) -> Tuple[Union[float, Fraction], Union[float, Fraction], str]:
-    if pts_unit == 'pts':
+    if pts_unit == "pts":
         start_pts = float(start_pts * time_base)
         end_pts = float(end_pts * time_base)
         pts_unit = "sec"
@@ -447,7 +442,7 @@ def _read_video(
     filename: str,
     start_pts: Union[float, Fraction] = 0,
     end_pts: Optional[Union[float, Fraction]] = None,
-    pts_unit: str = "pts"
+    pts_unit: str = "pts",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, float]]:
     if end_pts is None:
         end_pts = float("inf")
@@ -515,8 +510,7 @@ def _read_video(
 
 
 def _read_video_timestamps(
-    filename: str,
-    pts_unit: str = "pts"
+    filename: str, pts_unit: str = "pts"
 ) -> Tuple[Union[List[int], List[Fraction]], Optional[float]]:
     if pts_unit == "pts":
         warnings.warn(
