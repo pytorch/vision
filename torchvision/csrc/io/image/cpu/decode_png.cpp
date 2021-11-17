@@ -224,7 +224,7 @@ torch::Tensor decode_png(
     }
   }
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
-  return tensor.permute({2, 0, 1});
+  return tensor.permute({2, 0, 1}).contiguous();
 }
 #endif
 

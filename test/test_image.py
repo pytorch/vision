@@ -94,6 +94,8 @@ def test_decode_jpeg(img_path, pil_mode, mode):
     data = read_file(img_path)
     img_ljpeg = decode_image(data, mode=mode)
 
+    assert img_ljpeg.is_contiguous()
+
     # Permit a small variation on pixel values to account for implementation
     # differences between Pillow and LibJPEG.
     abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
@@ -172,6 +174,8 @@ def test_decode_png(img_path, pil_mode, mode):
     else:
         data = read_file(img_path)
         img_lpng = decode_image(data, mode=mode)
+
+    assert img_lpng.is_contiguous()
 
     tol = 0 if pil_mode is None else 1
 
