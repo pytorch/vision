@@ -288,6 +288,7 @@ def fromfile(
 
     # PyTorch does not support tensors with underlying read-only memory. If the file was opened for updating, i.e.
     # 'r+b' or 'w+b', the memory is already writable. Otherwise we need to copy it to a mutable location after reading.
+    buffer: Union[memoryview, bytearray]
     try:
         buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
         # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
