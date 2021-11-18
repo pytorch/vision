@@ -10,6 +10,11 @@ if(WITH_CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
   add_definitions(-DWITH_CUDA)
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+  # CUDA-11.x can not be compiled using C++14 standard on Windows
+  string(REGEX MATCH "^[0-9]+" CUDA_MAJOR ${CMAKE_CUDA_COMPILER_VERSION})
+  if(${CUDA_MAJOR} GREATER 10 AND MSVC)
+    set(CMAKE_CXX_STANDARD 17)
+  endif()
 endif()
 
 find_package(Python3 COMPONENTS Development)

@@ -35,12 +35,12 @@ def _shufflenetv2(
     model = ShuffleNetV2(*args, **kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -53,7 +53,7 @@ class ShuffleNetV2_x0_5Weights(Weights):
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 69.362,
             "acc@5": 88.316,
         },
@@ -65,7 +65,7 @@ class ShuffleNetV2_x1_0Weights(Weights):
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "acc@1": 60.552,
             "acc@5": 81.746,
         },
@@ -84,7 +84,7 @@ def shufflenet_v2_x0_5(
     weights: Optional[ShuffleNetV2_x0_5Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ShuffleNetV2_x0_5Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = ShuffleNetV2_x0_5Weights.verify(weights)
 
@@ -95,7 +95,7 @@ def shufflenet_v2_x1_0(
     weights: Optional[ShuffleNetV2_x1_0Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = ShuffleNetV2_x1_0Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
     weights = ShuffleNetV2_x1_0Weights.verify(weights)
 
@@ -106,7 +106,7 @@ def shufflenet_v2_x1_5(
     weights: Optional[ShuffleNetV2_x1_5Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             raise ValueError("No checkpoint is available for model type shufflenet_v2_x1_5")
     weights = ShuffleNetV2_x1_5Weights.verify(weights)
@@ -118,7 +118,7 @@ def shufflenet_v2_x2_0(
     weights: Optional[ShuffleNetV2_x2_0Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             raise ValueError("No checkpoint is available for model type shufflenet_v2_x2_0")
     weights = ShuffleNetV2_x2_0Weights.verify(weights)
