@@ -286,8 +286,12 @@ def fromfile(
     item_size = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
     np_dtype = byte_order + char + str(item_size)
 
-    # PyTorch does not support tensors with underlying read-only memory. If the file was opened for updating, i.e.
-    # 'r+b' or 'w+b', the memory is already writable. Otherwise we need to copy it to a mutable location after reading.
+    # PyTorch does not support tensors with underlying read-only memory. In case
+    # - the file has a .fileno(),
+    # - the file was opened for updating, i.e. 'r+b' or 'w+b',
+    # - the file is seekable
+    # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it to
+    # a mutable location afterwards.
     buffer: Union[memoryview, bytearray]
     try:
         buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
