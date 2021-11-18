@@ -30,7 +30,7 @@ class InceptionV3Weights(Weights):
 
 def inception_v3(weights: Optional[InceptionV3Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = InceptionV3Weights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = InceptionV3Weights.verify(weights)
 
@@ -45,7 +45,7 @@ def inception_v3(weights: Optional[InceptionV3Weights] = None, progress: bool = 
     model = Inception3(**kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None

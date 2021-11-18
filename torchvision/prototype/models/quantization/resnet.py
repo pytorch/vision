@@ -48,12 +48,12 @@ def _resnet(
         quantize_model(model, backend)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
 
-_common_meta = {
+_COMMON_META = {
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -68,7 +68,7 @@ class QuantizedResNet18Weights(Weights):
         url="https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "unquantized": ResNet18Weights.ImageNet1K_RefV1,
             "acc@1": 69.494,
             "acc@5": 88.882,
@@ -81,7 +81,7 @@ class QuantizedResNet50Weights(Weights):
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "unquantized": ResNet50Weights.ImageNet1K_RefV1,
             "acc@1": 75.920,
             "acc@5": 92.814,
@@ -94,7 +94,7 @@ class QuantizedResNeXt101_32x8dWeights(Weights):
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
-            **_common_meta,
+            **_COMMON_META,
             "unquantized": ResNeXt101_32x8dWeights.ImageNet1K_RefV1,
             "acc@1": 78.986,
             "acc@5": 94.480,
@@ -109,7 +109,7 @@ def resnet18(
     **kwargs: Any,
 ) -> QuantizableResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = QuantizedResNet18Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet18Weights.ImageNet1K_RefV1
         else:
@@ -130,7 +130,7 @@ def resnet50(
     **kwargs: Any,
 ) -> QuantizableResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet50Weights.ImageNet1K_RefV1
         else:
@@ -151,7 +151,7 @@ def resnext101_32x8d(
     **kwargs: Any,
 ) -> QuantizableResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = (
                 QuantizedResNeXt101_32x8dWeights.ImageNet1K_FBGEMM_RefV1
