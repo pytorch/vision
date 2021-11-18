@@ -35,8 +35,6 @@ def dataset_parametrization(*names, decoder=to_bytes):
     params = []
     for name in names:
         for config in datasets.info(name)._configs:
-            if name == "imagenet" and config.split == "test":
-                print()
             id = f"{name}-{'-'.join([str(value) for value in config.values()])}"
             dataset, mock_info = builtin_dataset_mocks.load(name, decoder=decoder, **config)
             params.append(pytest.param(dataset, mock_info, id=id))
