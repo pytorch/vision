@@ -115,7 +115,10 @@ class BoundingBox(Feature):
                 data = cls._TO_XYXY_MAP[format](data)
             data = cls._FROM_XYXY_MAP[BoundingBoxFormat.XYWH](data)
         *_, w, h = to_parts(data)
-        return int(h.ceil()), int(w.ceil())
+        if data.dtype.is_floating_point:
+            w = w.ceil()
+            h = h.ceil()
+        return int(h), int(w)
 
     @classmethod
     def from_parts(
