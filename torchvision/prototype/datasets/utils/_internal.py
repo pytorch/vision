@@ -292,7 +292,7 @@ def fromfile(
         buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
         # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
         file.seek(*(0, io.SEEK_END) if count == -1 else (count * itemsize, io.SEEK_CUR))
-    except PermissionError:
+    except (PermissionError, io.UnsupportedOperation):
         # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
         buffer = bytearray(file.read(-1 if count == -1 else count * itemsize))
 
