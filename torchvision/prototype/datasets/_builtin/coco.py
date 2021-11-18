@@ -67,7 +67,13 @@ class CocoAnnotationsCollater(IterDataPipe[Tuple[Dict[str, Any], Dict[str, Dict[
                 yield image_meta, anns
             return
 
-        dps = [(ann_type, iter(dp), dict()) for ann_type, dp in self.partial_ann_dps.items()]
+        dps: List[
+            Tuple[
+                str,
+                Iterator[Tuple[Dict[str, Any], Dict[str, Dict[str, Any]]]],
+                Dict[int, Tuple[Dict[str, Any], Dict[str, Any]]],
+            ]
+        ] = [(ann_type, iter(dp), dict()) for ann_type, dp in self.partial_ann_dps.items()]
         while dps:
             ref_ann_type, ref_dp, ref_buffer = dps[0]
             try:
@@ -81,7 +87,7 @@ class CocoAnnotationsCollater(IterDataPipe[Tuple[Dict[str, Any], Dict[str, Dict[
                 ref_anns, ref_image_meta = ref_buffer.pop(next(iter(ref_buffer.keys())))
 
             anns = {ref_ann_type: ref_anns}
-            ref_key = ref_image_meta["id"]
+            ref_key = cast(int, ref_image_meta["id"])
 
             for idx, (other_ann_type, other_dp, buffer) in enumerate(dps[1:], 1):
                 if ref_key in buffer:
@@ -90,7 +96,7 @@ class CocoAnnotationsCollater(IterDataPipe[Tuple[Dict[str, Any], Dict[str, Dict[
                     continue
 
                 for other_anns, other_image_meta in other_dp:
-                    other_key = other_image_meta["id"]
+                    other_key = cast(int, other_image_meta["id"])
                     if other_key == ref_key:
                         anns[other_ann_type] = other_anns
                         break
