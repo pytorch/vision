@@ -96,7 +96,7 @@ def run_query(query):
     if request.status_code == 200:
         return request.json()
     else:
-        raise Exception("Query failed to run by returning code of {}. {}".format(request.status_code, query))
+        raise Exception(f"Query failed to run by returning code of {request.status_code}. {query}")
 
 
 def gh_labels(pr_number):
@@ -151,7 +151,7 @@ class CommitDataCache:
         return self.data[commit]
 
     def read_from_disk(self):
-        with open(self.path, "r") as f:
+        with open(self.path) as f:
             data = json.load(f)
             data = {commit: dict_to_features(dct) for commit, dct in data.items()}
         return data

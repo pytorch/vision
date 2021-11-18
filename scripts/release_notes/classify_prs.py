@@ -14,7 +14,7 @@ df.tail()
 # In[3]:
 
 
-all_labels = set(lbl for labels in df["labels"] for lbl in labels)
+all_labels = {lbl for labels in df["labels"] for lbl in labels}
 all_labels
 
 

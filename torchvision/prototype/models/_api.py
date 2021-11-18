@@ -50,9 +50,9 @@ class Weights(Enum):
         if obj is not None:
             if type(obj) is str:
                 obj = cls.from_str(obj)
-            elif not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
+            elif not isinstance(obj, cls):
                 raise TypeError(
-                    f"Invalid Weight class provided; expected {cls.__name__} " f"but received {obj.__class__.__name__}."
+                    f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
                 )
         return obj
 
@@ -63,7 +63,7 @@ class Weights(Enum):
                 return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
-    def state_dict(self, progress: bool) -> OrderedDict:
+    def get_state_dict(self, progress: bool) -> OrderedDict:
         return load_state_dict_from_url(self.url, progress=progress)
 
     def __repr__(self):
@@ -90,7 +90,7 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
     """
     sig = signature(fn)
     if "weights" not in sig.parameters:
-        raise ValueError("The method is missing the 'weights' argument.")
+        raise ValueError("The method is missing the 'weights' parameter.")
 
     ann = signature(fn).parameters["weights"].annotation
     weights_class = None
@@ -106,7 +106,7 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
 
     if weights_class is None:
         raise ValueError(
-            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is " "correct."
+            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
     return weights_class.from_str(weight_name)

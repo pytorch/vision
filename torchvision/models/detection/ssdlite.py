@@ -208,7 +208,8 @@ def ssdlite320_mobilenet_v3_large(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 6.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
     """
     if "size" in kwargs:
@@ -268,7 +269,7 @@ def ssdlite320_mobilenet_v3_large(
     if pretrained:
         weights_name = "ssdlite320_mobilenet_v3_large_coco"
         if model_urls.get(weights_name, None) is None:
-            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+            raise ValueError(f"No checkpoint is available for model {weights_name}")
         state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
         model.load_state_dict(state_dict)
     return model

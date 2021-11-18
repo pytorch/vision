@@ -161,7 +161,7 @@ def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
             JPEG file.
     """
     if quality < 1 or quality > 100:
-        raise ValueError("Image quality should be a positive number " "between 1 and 100")
+        raise ValueError("Image quality should be a positive number between 1 and 100")
 
     output = torch.ops.image.encode_jpeg(input, quality)
     return output

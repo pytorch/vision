@@ -44,7 +44,7 @@ class RandomCropVideo(RandomCrop):
         return F.crop(clip, i, j, h, w)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(size={0})".format(self.size)
+        return self.__class__.__name__ + f"(size={self.size})"
 
 
 class RandomResizedCropVideo(RandomResizedCrop):
@@ -77,12 +77,13 @@ class RandomResizedCropVideo(RandomResizedCrop):
         return F.resized_crop(clip, i, j, h, w, self.size, self.interpolation_mode)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(size={0}, interpolation_mode={1}, scale={2}, ratio={3})".format(
-            self.size, self.interpolation_mode, self.scale, self.ratio
+        return (
+            self.__class__.__name__
+            + f"(size={self.size}, interpolation_mode={self.interpolation_mode}, scale={self.scale}, ratio={self.ratio})"
         )
 
 
-class CenterCropVideo(object):
+class CenterCropVideo:
     def __init__(self, crop_size):
         if isinstance(crop_size, numbers.Number):
             self.crop_size = (int(crop_size), int(crop_size))
@@ -100,10 +101,10 @@ class CenterCropVideo(object):
         return F.center_crop(clip, self.crop_size)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(crop_size={0})".format(self.crop_size)
+        return self.__class__.__name__ + f"(crop_size={self.crop_size})"
 
 
-class NormalizeVideo(object):
+class NormalizeVideo:
     """
     Normalize the video clip by mean subtraction and division by standard deviation
     Args:
@@ -125,10 +126,10 @@ class NormalizeVideo(object):
         return F.normalize(clip, self.mean, self.std, self.inplace)
 
     def __repr__(self):
-        return self.__class__.__name__ + "(mean={0}, std={1}, inplace={2})".format(self.mean, self.std, self.inplace)
+        return self.__class__.__name__ + f"(mean={self.mean}, std={self.std}, inplace={self.inplace})"
 
 
-class ToTensorVideo(object):
+class ToTensorVideo:
     """
     Convert tensor data type from uint8 to float, divide value by 255.0 and
     permute the dimensions of clip tensor
@@ -150,7 +151,7 @@ class ToTensorVideo(object):
         return self.__class__.__name__
 
 
-class RandomHorizontalFlipVideo(object):
+class RandomHorizontalFlipVideo:
     """
     Flip the video clip along the horizonal direction with a given probability
     Args:
@@ -172,4 +173,4 @@ class RandomHorizontalFlipVideo(object):
         return clip
 
     def __repr__(self):
-        return self.__class__.__name__ + "(p={0})".format(self.p)
+        return self.__class__.__name__ + f"(p={self.p})"

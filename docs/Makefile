@@ -32,6 +32,7 @@ clean:
 	rm -rf $(BUILDDIR)/*
 	rm -rf $(SOURCEDIR)/auto_examples/  # sphinx-gallery
 	rm -rf $(SOURCEDIR)/gen_modules/  # sphinx-gallery
+	rm -rf $(SOURCEDIR)/generated/  # autosummary
 
 .PHONY: help Makefile docset
 

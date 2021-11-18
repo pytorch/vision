@@ -212,7 +212,7 @@ class KeypointRCNN(FasterRCNN):
             keypoint_dim_reduced = 512  # == keypoint_layers[-1]
             keypoint_predictor = KeypointRCNNPredictor(keypoint_dim_reduced, num_keypoints)
 
-        super(KeypointRCNN, self).__init__(
+        super().__init__(
             backbone,
             num_classes,
             # transform parameters
@@ -260,7 +260,7 @@ class KeypointRCNNHeads(nn.Sequential):
             d.append(nn.Conv2d(next_feature, out_channels, 3, stride=1, padding=1))
             d.append(nn.ReLU(inplace=True))
             next_feature = out_channels
-        super(KeypointRCNNHeads, self).__init__(*d)
+        super().__init__(*d)
         for m in self.children():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -269,7 +269,7 @@ class KeypointRCNNHeads(nn.Sequential):
 
 class KeypointRCNNPredictor(nn.Module):
     def __init__(self, in_channels, num_keypoints):
-        super(KeypointRCNNPredictor, self).__init__()
+        super().__init__()
         input_features = in_channels
         deconv_kernel = 4
         self.kps_score_lowres = nn.ConvTranspose2d(
@@ -360,7 +360,8 @@ def keypointrcnn_resnet50_fpn(
         num_keypoints (int): number of keypoints, default 17
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 3.
     """
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
