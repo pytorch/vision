@@ -275,6 +275,11 @@ def fromfile(
         2. This function has an additional ``byte_order`` parameter, since PyTorch's ``dtype``'s do not support that
             concept.
 
+    .. note::
+
+        If the ``file`` was opened in update mode, i.e. "r+b" or "w+b", reading data is much faster. Be aware that as
+        long as the file is still open, inplace operations on the returned tensor will reflect back to the file.
+
     Args:
         file (IO): Open binary file.
         dtype (torch.dtype): Data type of the underlying data as well as of the returned tensor.
