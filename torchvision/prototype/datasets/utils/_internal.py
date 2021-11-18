@@ -281,10 +281,10 @@ def fromfile(
         byte_order (str): Byte order of the data. Can be "little" or "big" endian.
         count (int): Number of values of the returned tensor. If ``-1`` (default), will read the complete file.
     """
-    byteorder = "<" if byte_order == "little" else ">"
+    byte_order = "<" if byte_order == "little" else ">"
     char = "f" if dtype.is_floating_point else ("i" if dtype.is_signed else "u")
-    itemsize = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
-    np_dtype = byteorder + char + str(itemsize)
+    item_size = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
+    np_dtype = byte_order + char + str(item_size)
 
     # PyTorch does not support tensors with underlying read-only memory. If the file was opened for updating, i.e.
     # 'r+b' or 'w+b', the memory is already writable. Otherwise we need to copy it to a mutable location after reading.
@@ -292,10 +292,10 @@ def fromfile(
     try:
         buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
         # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
-        file.seek(*(0, io.SEEK_END) if count == -1 else (count * itemsize, io.SEEK_CUR))
+        file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
     except (PermissionError, io.UnsupportedOperation):
         # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
-        buffer = bytearray(file.read(-1 if count == -1 else count * itemsize))
+        buffer = bytearray(file.read(-1 if count == -1 else count * item_size))
 
     # We cannot use torch.frombuffer() directly, since it only supports the native byte order of the system. Thus, we
     # read the data with np.frombuffer() with the correct byte order and convert it to the native one with the
