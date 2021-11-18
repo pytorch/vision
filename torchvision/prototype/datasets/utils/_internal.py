@@ -1,4 +1,5 @@
 import enum
+import functools
 import gzip
 import io
 import lzma
@@ -107,35 +108,37 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
         yield from enumerate(self.datapipe, self.start)
 
 
-def getitem(*items: Any) -> Callable[[Any], Any]:
-    def wrapper(obj: Any) -> Any:
-        for item in items:
-            obj = obj[item]
-        return obj
+def _getitem_closure(obj: Any, *, items: Tuple[Any, ...]) -> Any:
+    for item in items:
+        obj = obj[item]
+    return obj
 
-    return wrapper
+
+def getitem(*items: Any) -> Callable[[Any], Any]:
+    return functools.partial(_getitem_closure, items=items)
+
+
+def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
+    return cast(D, getattr(path, name))
+
+
+def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
+    return getter(pathlib.Path(data[0]))
 
 
 def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[Tuple[str, Any]], D]:
     if isinstance(getter, str):
-        name = getter
+        getter = functools.partial(_path_attribute_accessor, name=getter)
 
-        def getter(path: pathlib.Path) -> D:
-            return cast(D, getattr(path, name))
+    return functools.partial(_path_accessor_closure, getter=getter)
 
-    def wrapper(data: Tuple[str, Any]) -> D:
-        return getter(pathlib.Path(data[0]))  # type: ignore[operator]
 
-    return wrapper
+def _path_comparator_closure(data: Tuple[str, Any], *, accessor: Callable[[Tuple[str, Any]], D], value: D) -> bool:
+    return accessor(data) == value
 
 
 def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
-    accessor = path_accessor(getter)
-
-    def wrapper(data: Tuple[str, Any]) -> bool:
-        return accessor(data) == value
-
-    return wrapper
+    return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
 
 
 class CompressionType(enum.Enum):
