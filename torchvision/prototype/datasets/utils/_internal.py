@@ -2,6 +2,7 @@ import enum
 import gzip
 import io
 import lzma
+import mmap
 import os
 import os.path
 import pathlib
@@ -285,10 +286,14 @@ def fromfile(
     itemsize = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
     np_dtype = byteorder + char + str(itemsize)
 
-    buffer = file.read(-1 if count == -1 else count * itemsize)
-    # torch.frombuffer can only deal with with the native byte order,
-    # so we use numpy for the I/O and convert to a tensor.
-    return torch.from_numpy(np.frombuffer(buffer, dtype=np_dtype).astype(np_dtype[1:]))
+    chunk_size = count * itemsize
+    try:
+        buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
+        file.seek(*(0, io.SEEK_END) if count == -1 else (chunk_size, io.SEEK_CUR))
+    except PermissionError:
+        buffer = bytearray(file.read(-1 if count == -1 else chunk_size))
+
+    return torch.from_numpy(np.frombuffer(buffer, dtype=np_dtype, count=count).astype(np_dtype[1:], copy=False))
 
 
 def read_flo(file: BinaryIO) -> torch.Tensor:
