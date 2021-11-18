@@ -18,12 +18,7 @@ from .utils import tqdm
 T = TypeVar("T")
 
 
-def pts_convert(
-    pts: int,
-    timebase_from: Fraction,
-    timebase_to: Fraction,
-    round_func: Callable = math.floor
-) -> int:
+def pts_convert(pts: int, timebase_from: Fraction, timebase_to: Fraction, round_func: Callable = math.floor) -> int:
     """convert pts between different time bases
     Args:
         pts: presentation timestamp, float
@@ -207,11 +202,7 @@ class VideoClips:
 
     @staticmethod
     def compute_clips_for_video(
-        video_pts: torch.Tensor,
-        num_frames: int,
-        step: int,
-        fps: int,
-        frame_rate: Optional[int] = None
+        video_pts: torch.Tensor, num_frames: int, step: int, fps: int, frame_rate: Optional[int] = None
     ) -> Tuple[torch.Tensor, Union[List[slice], torch.Tensor]]:
         if fps is None:
             # if for some reason the video doesn't have fps (because doesn't have a video stream)
@@ -220,7 +211,7 @@ class VideoClips:
         if frame_rate is None:
             frame_rate = fps
         total_frames = len(video_pts) * (float(frame_rate) / fps)
-        idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
+        _idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
         video_pts = video_pts[idxs]
         clips = unfold(video_pts, num_frames, step)
         if not clips.numel():
@@ -228,11 +219,11 @@ class VideoClips:
                 "There aren't enough frames in the current video to get a clip for the given clip length and "
                 "frames between clips. The video (and potentially others) will be skipped."
             )
-        # idxs: Union[List[slice], torch.Tensor]
-        if isinstance(idxs, slice):
-            idxs = [idxs] * len(clips)
+        idxs: Union[List[slice], torch.Tensor]
+        if isinstance(_idxs, slice):
+            idxs = [_idxs] * len(clips)
         else:
-            idxs = unfold(idxs, num_frames, step)
+            idxs = unfold(_idxs, num_frames, step)
         return clips, idxs
 
     def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[int] = None) -> None:
@@ -344,13 +335,13 @@ class VideoClips:
 
             audio_start_pts, audio_end_pts = 0, -1
             audio_timebase = Fraction(0, 1)
-            video_timebase = Fraction(info.video_timebase.numerator, info.video_timebase.denominator)
-            if info.has_audio:
-                audio_timebase = Fraction(info.audio_timebase.numerator, info.audio_timebase.denominator)
+            video_timebase = Fraction(_info.video_timebase.numerator, _info.video_timebase.denominator)
+            if _info.has_audio:
+                audio_timebase = Fraction(_info.audio_timebase.numerator, _info.audio_timebase.denominator)
                 audio_start_pts = pts_convert(video_start_pts, video_timebase, audio_timebase, math.floor)
                 audio_end_pts = pts_convert(video_end_pts, video_timebase, audio_timebase, math.ceil)
-                audio_fps = info.audio_sample_rate
-            video, audio, info = _read_video_from_file(
+                audio_fps = _info.audio_sample_rate
+            video, audio, _ = _read_video_from_file(
                 video_path,
                 video_width=self._video_width,
                 video_height=self._video_height,
