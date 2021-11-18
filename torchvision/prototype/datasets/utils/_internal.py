@@ -277,7 +277,7 @@ def fromfile(
 
     Args:
         file (IO): Open binary file.
-        dtype (torch.dtype): Data type of the underlying data.
+        dtype (torch.dtype): Data type of the underlying data as well as of the returned tensor.
         byte_order (str): Byte order of the data. Can be "little" or "big" endian.
         count (int): Number of values of the returned tensor. If ``-1`` (default), will read the complete file.
     """
