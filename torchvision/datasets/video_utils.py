@@ -10,7 +10,6 @@ from torchvision.io import (
     _read_video_from_file,
     read_video,
     read_video_timestamps,
-    VideoMetaData,
 )
 
 from .utils import tqdm
