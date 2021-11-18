@@ -216,6 +216,95 @@ class BoxCoder:
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2).flatten(1)
         return pred_boxes
 
+    
+class BoxLinearCoder:
+    """
+    The linear box-to-box transform defined in FCOS. The transformation is parameterized
+    by the distance from the center of (square) src box to 4 edges of the target box.
+    """
+
+    def __init__(self, normalize_by_size=True) -> None:
+        """
+        Args:
+            normalize_by_size (bool): normalize deltas by the size of src (anchor) boxes.
+        """
+        self.normalize_by_size = normalize_by_size
+
+    def encode(self, reference_boxes: List[Tensor], proposals: List[Tensor]) -> List[Tensor]:
+        boxes_per_image = [len(b) for b in reference_boxes]
+        reference_boxes = torch.cat(reference_boxes, dim=0)
+        proposals = torch.cat(proposals, dim=0)
+        targets = self.encode_single(reference_boxes, proposals)
+        return targets.split(boxes_per_image, 0)
+
+    def encode_single(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
+        """
+        Encode a set of proposals with respect to some
+        reference boxes
+        Args:
+            reference_boxes (Tensor): reference boxes
+            proposals (Tensor): boxes to be encoded
+        """
+        # get the center of reference_boxes
+        reference_boxes_ctr_x = 0.5 * (reference_boxes[:, 0] + reference_boxes[:, 2])
+        reference_boxes_ctr_y = 0.5 * (reference_boxes[:, 1] + reference_boxes[:, 3])
+
+        # get box regression transformation deltas
+        target_l = reference_boxes_ctr_x - proposals[:, 0]
+        target_t = reference_boxes_ctr_y - proposals[:, 1]
+        target_r = proposals[:, 2] - reference_boxes_ctr_x
+        target_b = proposals[:, 3] - reference_boxes_ctr_y
+
+        targets = torch.stack((target_l, target_t, target_r, target_b), dim=1)
+        if self.normalize_by_size:
+            stride_w = reference_boxes[:, 2] - reference_boxes[:, 0]
+            stride_h = reference_boxes[:, 3] - reference_boxes[:, 1]
+            strides = torch.stack([stride_w, stride_h, stride_w, stride_h], axis=1)
+            targets = targets / strides
+
+        return targets
+
+    def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
+        assert isinstance(boxes, (list, tuple))
+        assert isinstance(rel_codes, torch.Tensor)
+        boxes_per_image = [b.size(0) for b in boxes]
+        concat_boxes = torch.cat(boxes, dim=0)
+        box_sum = 0
+        for val in boxes_per_image:
+            box_sum += val
+        if box_sum > 0:
+            rel_codes = rel_codes.reshape(box_sum, -1)
+        pred_boxes = self.decode_single(rel_codes, concat_boxes)
+        if box_sum > 0:
+            pred_boxes = pred_boxes.reshape(box_sum, -1, 4)
+        return pred_boxes
+
+    def decode_single(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:
+        """
+        From a set of original boxes and encoded relative box offsets,
+        get the decoded boxes.
+        Args:
+            rel_codes (Tensor): encoded boxes
+            boxes (Tensor): reference boxes.
+        """
+
+        boxes = boxes.to(rel_codes.dtype)
+
+        ctr_x = 0.5 * (boxes[:, 0] + boxes[:, 2])
+        ctr_y = 0.5 * (boxes[:, 1] + boxes[:, 3])
+        if self.normalize_by_size:
+            stride_w = boxes[:, 2] - boxes[:, 0]
+            stride_h = boxes[:, 3] - boxes[:, 1]
+            strides = torch.stack([stride_w, stride_h, stride_w, stride_h], axis=1)
+            rel_codes = rel_codes * strides
+
+        pred_boxes1 = ctr_x - rel_codes[:, 0]
+        pred_boxes2 = ctr_y - rel_codes[:, 1]
+        pred_boxes3 = ctr_x + rel_codes[:, 2]
+        pred_boxes4 = ctr_y + rel_codes[:, 3]
+        pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=1)
+        return pred_boxes
+
 
 class Matcher:
     """
