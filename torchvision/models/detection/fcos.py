@@ -20,6 +20,9 @@ from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 
 
+__all__ = ["FCOS", "fcos_resnet50_fpn"]
+
+
 class FCOSHead(nn.Module):
     """
     A regression and classification head for use in FCOS.
