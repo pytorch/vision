@@ -49,7 +49,7 @@ class Feature(torch.Tensor):
                 add_suggestion(
                     f"{cls.__name__}() got unexpected keyword '{unknown_meta_attr}'.",
                     word=unknown_meta_attr,
-                    possibilities=cls._META_ATTRS,
+                    possibilities=sorted(cls._META_ATTRS),
                 )
             )
 

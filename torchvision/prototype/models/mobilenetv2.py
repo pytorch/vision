@@ -30,7 +30,7 @@ class MobileNetV2Weights(Weights):
 
 def mobilenet_v2(weights: Optional[MobileNetV2Weights] = None, progress: bool = True, **kwargs: Any) -> MobileNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = MobileNetV2Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
     weights = MobileNetV2Weights.verify(weights)
 
@@ -40,6 +40,6 @@ def mobilenet_v2(weights: Optional[MobileNetV2Weights] = None, progress: bool = 
     model = MobileNetV2(**kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
