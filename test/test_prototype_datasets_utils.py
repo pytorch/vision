@@ -8,8 +8,7 @@ from torchvision.prototype.datasets.utils._internal import read_flo
 @pytest.mark.parametrize("mode", ("rb", "r+b"))
 def test_read_flo(tmpdir, mode):
     path = tmpdir / "test.flo"
-    height, width = torch.randint(3, 10, (2,))
-    make_fake_flo_file(height, width, path)
+    make_fake_flo_file(3, 4, path)
 
     with open(path, mode) as file:
         actual = read_flo(file)
