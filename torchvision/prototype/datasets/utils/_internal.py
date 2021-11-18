@@ -277,8 +277,8 @@ def fromfile(
 
     Args:
         file (IO): Open binary file.
-        dtype (torch.dtype): Data type of the returned tensor.
-        byte_order (str): Byte order of the data. Can be ``"little"`` or ``"big"`` endian.
+        dtype (torch.dtype): Data type of the underlying data.
+        byte_order (str): Byte order of the data. Can be "little" or "big" endian.
         count (int): Number of values of the returned tensor. If ``-1`` (default), will read the complete file.
     """
     byteorder = "<" if byte_order == "little" else ">"
@@ -286,13 +286,19 @@ def fromfile(
     itemsize = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
     np_dtype = byteorder + char + str(itemsize)
 
-    chunk_size = count * itemsize
+    # PyTorch does not support tensors with underlying read-only memory. If the file was opened for updating, i.e.
+    # 'r+b' or 'w+b', the memory is already writable. Otherwise we need to copy it to a mutable location after reading.
     try:
         buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
-        file.seek(*(0, io.SEEK_END) if count == -1 else (chunk_size, io.SEEK_CUR))
+        # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
+        file.seek(*(0, io.SEEK_END) if count == -1 else (count * itemsize, io.SEEK_CUR))
     except PermissionError:
-        buffer = bytearray(file.read(-1 if count == -1 else chunk_size))
+        # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
+        buffer = bytearray(file.read(-1 if count == -1 else count * itemsize))
 
+    # We cannot use torch.frombuffer() directly, since it only supports the native byte order of the system. Thus, we
+    # read the data with np.frombuffer() with the correct byte order and convert it to the native one with the
+    # successive .astype() call.
     return torch.from_numpy(np.frombuffer(buffer, dtype=np_dtype, count=count).astype(np_dtype[1:], copy=False))
 
 
