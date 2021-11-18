@@ -7,7 +7,7 @@ import torch
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops import sigmoid_focal_loss
+from ...ops import sigmoid_focal_loss, giou_loss
 from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
@@ -18,50 +18,82 @@ from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
-from .retinanet import _sum
-
-
-def pairwise_point_box_distance(points: torch.Tensor, boxes: torch.Tensor):
-    """
-    Pairwise distance between N points and M boxes. The distance between a
-    point and a box is represented by the distance from the point to 4 edges
-    of the box. Distances are all positive when the point is inside the box.
-    Args:
-        points: Nx2 coordinates. Each row is (x, y)
-        boxes: M boxes
-    Returns:
-        Tensor: distances of size (N, M, 4). The 4 values are distances from
-            the point to the left, top, right, bottom of the box.
-    """
-    x, y = points.unsqueeze(dim=2).unbind(dim=1)  # (N, 1)
-    x0, y0, x1, y1 = boxes.unsqueeze(dim=0).unbind(dim=2)  # (1, M)
-    return torch.stack([x - x0, y - y0, x1 - x, y1 - y], dim=2)
 
 
 class FCOSHead(nn.Module):
     """
-    A regression and classification head for use in RetinaNet.
+    A regression and classification head for use in FCOS.
     Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
         num_classes (int): number of classes to be predicted
+        num_convs (int): number of conv layer of head
     """
 
-    def __init__(self, in_channels, num_anchors, num_classes):
+    def __init__(self, in_channels, num_anchors, num_classes, num_convs=4):
         super().__init__()
-        self.classification_head = FCOSClassificationHead(in_channels, num_anchors, num_classes)
-        self.regression_head = FCOSRegressionHead(in_channels, num_anchors)
+        self.classification_head = FCOSClassificationHead(in_channels, num_anchors, num_classes, num_convs)
+        self.regression_head = FCOSRegressionHead(in_channels, num_anchors, num_convs)
 
-    def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Dict[str, Tensor]
+    def compute_loss(self, targets, head_outputs, anchors, matched_idxs, box_coder):
+
+        cls_logits = head_outputs["cls_logits"] # [N, K, C]
+        bbox_regression = head_outputs["bbox_regression"] # [N, K, 4]
+        bbox_ctrness = head_outputs["bbox_ctrness"] # [N, K, 1]
+
+        all_gt_classes_targets = []
+        all_gt_boxes_targets = []
+        for targets_per_image, matched_idxs_per_image in zip(targets, matched_idxs):
+            gt_classes_targets = targets_per_image["labels"][matched_idxs_per_image.clip(min=0)]
+            gt_classes_targets[matched_idxs_per_image < 0] = -1 # backgroud
+            gt_boxes_targets = targets_per_image["boxes"][matched_idxs_per_image.clip(min=0)]
+            all_gt_classes_targets.append(gt_classes_targets)
+            all_gt_boxes_targets.append(gt_boxes_targets)
+
+        all_gt_classes_targets = torch.stack(all_gt_classes_targets)
+        # compute foregroud
+        foregroud_mask = all_gt_classes_targets >= 0
+        num_foreground = foregroud_mask.sum().item()
+
+        # classification loss
+        gt_classes_targets = torch.zeros_like(cls_logits)
+        gt_classes_targets[foregroud_mask, all_gt_classes_targets[foregroud_mask]] = 1.0
+        loss_cls = sigmoid_focal_loss(cls_logits, gt_classes_targets, reduction="sum")
+
+        # regression loss: GIoU loss
+        pred_boxes = [box_coder.decode_single(bbox_regression_per_image, anchors_per_image) \
+            for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)]
+        # amp issue: pred_boxes need to convert float
+        loss_bbox_reg = giou_loss(torch.stack(pred_boxes)[foregroud_mask].float(),
+            torch.stack(all_gt_boxes_targets)[foregroud_mask], reduction='sum')
+
+        # ctrness loss
+        bbox_reg_targets = [box_coder.encode_single(anchors_per_image, boxes_targets_per_image) \
+            for anchors_per_image, boxes_targets_per_image in zip(anchors, all_gt_boxes_targets)]
+        bbox_reg_targets = torch.stack(bbox_reg_targets, dim=0)
+        if len(bbox_reg_targets) == 0:
+            bbox_reg_targets.new_zeros(len(bbox_reg_targets))
+        left_right = bbox_reg_targets[:, :, [0, 2]]
+        top_bottom = bbox_reg_targets[:, :, [1, 3]]
+        gt_ctrness_targets = torch.sqrt((left_right.min(dim=-1)[0] / left_right.max(dim=-1)[0]) * (
+            top_bottom.min(dim=-1)[0] / top_bottom.max(dim=-1)[0]
+        ))
+        pred_centerness = bbox_ctrness.squeeze(dim=2)
+        loss_bbox_ctrness = nn.functional.binary_cross_entropy_with_logits(
+            pred_centerness[foregroud_mask], gt_ctrness_targets[foregroud_mask], reduction="sum"
+        )
+
         return {
-            "classification": self.classification_head.compute_loss(targets, head_outputs, matched_idxs),
-            "bbox_regression": self.regression_head.compute_loss(targets, head_outputs, anchors, matched_idxs),
+            "classification": loss_cls / max(1, num_foreground),
+            "bbox_regression": loss_bbox_reg / max(1, num_foreground),
+            "bbox_ctrness": loss_bbox_ctrness / max(1, num_foreground)
         }
 
     def forward(self, x):
         # type: (List[Tensor]) -> Dict[str, Tensor]
-        return {"cls_logits": self.classification_head(x), "bbox_regression": self.regression_head(x)}
+        cls_logits = self.classification_head(x)
+        bbox_regression, bbox_ctrness = self.regression_head(x)
+        return {"cls_logits": cls_logits, "bbox_regression": bbox_regression, "bbox_ctrness": bbox_ctrness}
 
 
 class FCOSClassificationHead(nn.Module):
@@ -79,7 +111,6 @@ class FCOSClassificationHead(nn.Module):
 
         self.num_classes = num_classes
         self.num_anchors = num_anchors
-        assert self.num_anchors == 1 # FCOS is anchor-free
  
         if norm_layer is None:
             norm_layer = lambda channels: nn.GroupNorm(32, channels)
@@ -98,32 +129,6 @@ class FCOSClassificationHead(nn.Module):
         self.cls_logits = nn.Conv2d(in_channels, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
         torch.nn.init.normal_(self.cls_logits.weight, std=0.01)
         torch.nn.init.constant_(self.cls_logits.bias, -math.log((1 - prior_probability) / prior_probability))
-
-    def compute_loss(self, targets, head_outputs, matched_idxs):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor]) -> Tensor
-        losses = []
-
-        cls_logits = head_outputs["cls_logits"]
-
-        for targets_per_image, cls_logits_per_image, matched_idxs_per_image in zip(targets, cls_logits, matched_idxs):
-            # determine only the foreground
-            foreground_idxs_per_image = matched_idxs_per_image >= 0
-            num_foreground = foreground_idxs_per_image.sum()
-
-            # create the target classification
-            gt_classes_target = torch.zeros_like(cls_logits_per_image)
-            gt_classes_target[
-                foreground_idxs_per_image,
-                targets_per_image["labels"][matched_idxs_per_image[foreground_idxs_per_image]],
-            ] = 1.0
-
-            # compute the classification loss
-            losses.append(
-                sigmoid_focal_loss(cls_logits_per_image, gt_classes_target,
-                    reduction="sum") / max(1, num_foreground)
-            )
-
-        return _sum(losses) / len(targets)
 
     def forward(self, x):
         # type: (List[Tensor]) -> Tensor
@@ -150,11 +155,8 @@ class FCOSRegressionHead(nn.Module):
     Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
+        num_convs (int): number of conv layer
     """
-
-    __annotations__ = {
-        "box_coder": det_utils.BoxCoder,
-    }
 
     def __init__(self, in_channels, num_anchors, num_convs=4, norm_layer=None):
         super().__init__()
@@ -169,8 +171,8 @@ class FCOSRegressionHead(nn.Module):
         self.conv = nn.Sequential(*conv)
 
         self.bbox_reg = nn.Conv2d(in_channels, num_anchors * 4, kernel_size=3, stride=1, padding=1)
-        self.ctrness = nn.Conv2d(in_channels, num_anchors * 1, kernel_size=3, stride=1, padding=1)
-        for layer in [self.bbox_reg, self.ctrness]:
+        self.bbox_ctrness = nn.Conv2d(in_channels, num_anchors * 1, kernel_size=3, stride=1, padding=1)
+        for layer in [self.bbox_reg, self.bbox_ctrness]:
             torch.nn.init.normal_(layer.weight, std=0.01)
             torch.nn.init.zeros_(layer.bias)
         
@@ -179,54 +181,30 @@ class FCOSRegressionHead(nn.Module):
                 torch.nn.init.normal_(layer.weight, std=0.01)
                 torch.nn.init.zeros_(layer.bias)
 
-        self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
-
-    def compute_loss(self, targets, head_outputs, anchors, matched_idxs):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[Tensor]) -> Tensor
-        losses = []
-
-        bbox_regression = head_outputs["bbox_regression"]
-
-        for targets_per_image, bbox_regression_per_image, anchors_per_image, matched_idxs_per_image in zip(
-            targets, bbox_regression, anchors, matched_idxs
-        ):
-            # determine only the foreground indices, ignore the rest
-            foreground_idxs_per_image = torch.where(matched_idxs_per_image >= 0)[0]
-            num_foreground = foreground_idxs_per_image.numel()
-
-            # select only the foreground boxes
-            matched_gt_boxes_per_image = targets_per_image["boxes"][matched_idxs_per_image[foreground_idxs_per_image]]
-            bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
-            anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
-
-            # compute the regression targets
-            target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
-
-            # compute the loss
-            losses.append(
-                torch.nn.functional.l1_loss(bbox_regression_per_image, target_regression, reduction="sum")
-                / max(1, num_foreground)
-            )
-
-        return _sum(losses) / max(1, len(targets))
-
     def forward(self, x):
         # type: (List[Tensor]) -> Tensor
         all_bbox_regression = []
+        all_bbox_ctrness = []
 
         for features in x:
-            bbox_regression = self.conv(features)
-            bbox_regression = self.bbox_reg(bbox_regression)
+            bbox_feature = self.conv(features)
+            bbox_regression = nn.functional.relu(self.bbox_reg(bbox_feature))
+            bbox_ctrness = self.bbox_ctrness(bbox_feature)
 
-            # Permute bbox regression output from (N, 4 * A, H, W) to (N, HWA, 4).
+            # permute bbox regression output from (N, 4 * A, H, W) to (N, HWA, 4).
             N, _, H, W = bbox_regression.shape
             bbox_regression = bbox_regression.view(N, -1, 4, H, W)
             bbox_regression = bbox_regression.permute(0, 3, 4, 1, 2)
             bbox_regression = bbox_regression.reshape(N, -1, 4)  # Size=(N, HWA, 4)
-
             all_bbox_regression.append(bbox_regression)
 
-        return torch.cat(all_bbox_regression, dim=1)
+            # permute bbox ctrness output from (N, 1 * A, H, W) to (N, HWA, 1).
+            bbox_ctrness = bbox_ctrness.view(N, -1, 1, H, W)
+            bbox_ctrness = bbox_ctrness.permute(0, 3, 4, 1, 2)
+            bbox_ctrness = bbox_ctrness.reshape(N, -1, 1)
+            all_bbox_ctrness.append(bbox_ctrness)
+
+        return torch.cat(all_bbox_regression, dim=1), torch.cat(all_bbox_ctrness, dim=1)
 
 
 class FCOS(nn.Module):
@@ -263,7 +241,9 @@ class FCOS(nn.Module):
         image_std (Tuple[float, float, float]): std values used for input normalization.
             They are generally the std values of the dataset on which the backbone has been trained on
         anchor_generator (AnchorGenerator): module that generates the anchors for a set of feature
-            maps.
+            maps. For FCOS, only set one anchor for per position of each level, the width and height equal to
+            the stride of feature map, and set aspect ratio = 1.0, so the center of anchor is equivalent to the point
+            in FCOS paper.
         head (nn.Module): Module run on top of the feature pyramid.
             Defaults to a module containing a classification and regression module.
         center_sampling_radius (int): radius of the "center" of a groundtruth box,
@@ -275,12 +255,12 @@ class FCOS(nn.Module):
     Example:
         >>> import torch
         >>> import torchvision
-        >>> from torchvision.models.detection import RetinaNet
+        >>> from torchvision.models.detection import FCOS
         >>> from torchvision.models.detection.anchor_utils import AnchorGenerator
         >>> # load a pre-trained model for classification and return
         >>> # only the features
         >>> backbone = torchvision.models.mobilenet_v2(pretrained=True).features
-        >>> # RetinaNet needs to know the number of
+        >>> # FCOS needs to know the number of
         >>> # output channels in a backbone. For mobilenet_v2, it's 1280
         >>> # so we need to add it here
         >>> backbone.out_channels = 1280
@@ -291,22 +271,18 @@ class FCOS(nn.Module):
         >>> # map could potentially have different sizes and
         >>> # aspect ratios
         >>> anchor_generator = AnchorGenerator(
-        >>>     sizes=((32, 64, 128, 256, 512),),
-        >>>     aspect_ratios=((0.5, 1.0, 2.0),)
+        >>>     sizes=((8,), (16,), (32,), (64,), (128,)),
+        >>>     aspect_ratios=((1.0,),)
         >>> )
         >>>
         >>> # put the pieces together inside a RetinaNet model
-        >>> model = RetinaNet(backbone,
-        >>>                   num_classes=2,
+        >>> model = FCOS(backbone,
+        >>>                   num_classes=80,
         >>>                   anchor_generator=anchor_generator)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
     """
-
-    __annotations__ = {
-        "box_coder": det_utils.BoxCoder
-    }
 
     def __init__(
         self,
@@ -321,7 +297,7 @@ class FCOS(nn.Module):
         anchor_generator=None,
         head=None,
         center_sampling_radius=1.5,
-        score_thresh=0.05,
+        score_thresh=0.2,
         nms_thresh=0.5,
         detections_per_img=300,
         topk_candidates=1000,
@@ -340,16 +316,17 @@ class FCOS(nn.Module):
         assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
 
         if anchor_generator is None:
-            anchor_sizes = ((8,), (16,), (32,), (64,), (128,))
-            aspect_ratios = ((1.0),) * len(anchor_sizes)
+            anchor_sizes = ((8,), (16,), (32,), (64,), (128,)) # equal to strides of multi-level feature map
+            aspect_ratios = ((1.0,),) * len(anchor_sizes) # set only one anchor
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
         self.anchor_generator = anchor_generator
+        assert self.anchor_generator.num_anchors_per_location()[0] == 1
 
         if head is None:
             head = FCOSHead(backbone.out_channels, anchor_generator.num_anchors_per_location()[0], num_classes)
         self.head = head
 
-        self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
+        self.box_coder = det_utils.BoxLinearCoder(normalize_by_size=True)
 
         if image_mean is None:
             image_mean = [0.485, 0.456, 0.406]
@@ -386,13 +363,16 @@ class FCOS(nn.Module):
 
             gt_boxes = targets_per_image["boxes"]
             gt_centers = (gt_boxes[:, :2] + gt_boxes[:, 2:]) / 2  # Nx2
-            anchor_centers = (anchors_per_image[:, :2] + anchors_per_image[:, 2:]) / 2
-            anchor_sizes = anchors_per_image.tensor[:, 2] - anchors_per_image.tensor[:, 0]
+            anchor_centers = (anchors_per_image[:, :2] + anchors_per_image[:, 2:]) / 2 # N
+            anchor_sizes = anchors_per_image[:, 2] - anchors_per_image[:, 0]
             # center sampling: anchor point must be close enough to gt center.
             pairwise_match = (anchor_centers[:, None, :] - gt_centers[None, :, :]).abs_().max(
                 dim=2
             ).values < self.center_sampling_radius * anchor_sizes[:, None]
-            pairwise_dist = pairwise_point_box_distance(anchor_centers, gt_boxes)
+            # compute pairwise distance between N points and M boxes
+            x, y = anchor_centers.unsqueeze(dim=2).unbind(dim=1)  # (N, 1)
+            x0, y0, x1, y1 = gt_boxes.unsqueeze(dim=0).unbind(dim=2)  # (1, M)
+            pairwise_dist = torch.stack([x - x0, y - y0, x1 - x, y1 - y], dim=2) # (N, M)
 
             # anchor point must be inside gt
             pairwise_match &= pairwise_dist.min(dim=2).values > 0
@@ -407,21 +387,21 @@ class FCOS(nn.Module):
                 pairwise_dist < upper_bound[:, None]
             )
 
-            # Match the GT box with minimum area, if there are multiple GT matches
+            # match the GT box with minimum area, if there are multiple GT matches
             gt_areas = (gt_boxes[:, 1] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1]) # N
             pairwise_match = pairwise_match.to(torch.float32) * (1e8 - gt_areas[None, :])
             min_values, matched_idx = pairwise_match.max(dim=1)  # R, per-anchor match
-            matched_idx[min_values < 1e-5] = -1  # Unmatched anchors are assigned -1
+            matched_idx[min_values < 1e-5] = -1  # unmatched anchors are assigned -1
 
             matched_idxs.append(matched_idx)
 
-
-        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
+        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs, self.box_coder)
 
     def postprocess_detections(self, head_outputs, anchors, image_shapes):
         # type: (Dict[str, List[Tensor]], List[List[Tensor]], List[Tuple[int, int]]) -> List[Dict[str, Tensor]]
         class_logits = head_outputs["cls_logits"]
         box_regression = head_outputs["bbox_regression"]
+        box_ctrness = head_outputs["bbox_ctrness"]
 
         num_images = len(image_shapes)
 
@@ -430,19 +410,22 @@ class FCOS(nn.Module):
         for index in range(num_images):
             box_regression_per_image = [br[index] for br in box_regression]
             logits_per_image = [cl[index] for cl in class_logits]
+            box_ctrness_per_image = [bc[index] for bc in box_ctrness]
             anchors_per_image, image_shape = anchors[index], image_shapes[index]
 
             image_boxes = []
             image_scores = []
             image_labels = []
 
-            for box_regression_per_level, logits_per_level, anchors_per_level in zip(
-                box_regression_per_image, logits_per_image, anchors_per_image
+            for box_regression_per_level, logits_per_level, box_ctrness_per_level, anchors_per_level in zip(
+                box_regression_per_image, logits_per_image, box_ctrness_per_image, anchors_per_image
             ):
                 num_classes = logits_per_level.shape[-1]
 
                 # remove low scoring boxes
-                scores_per_level = torch.sigmoid(logits_per_level).flatten()
+                scores_per_level = torch.sqrt(torch.sigmoid(logits_per_level) * \
+                    torch.sigmoid(box_ctrness_per_level)
+                ).flatten()
                 keep_idxs = scores_per_level > self.score_thresh
                 scores_per_level = scores_per_level[keep_idxs]
                 topk_idxs = torch.where(keep_idxs)[0]
@@ -584,7 +567,7 @@ def fcos_resnet50_fpn(
 ):
     """
     Constructs a FCOS model with a ResNet-50-FPN backbone.
-    Reference: `"Focal Loss for Dense Object Detection" <https://arxiv.org/abs/1708.02002>`_.
+    Reference: `"FCOS: Fully Convolutional One-Stage Object Detection" <https://arxiv.org/abs/1904.01355>`_.
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
     The behavior of the model changes depending if it is in training or evaluation mode.
@@ -626,14 +609,12 @@ def fcos_resnet50_fpn(
         pretrained_backbone = False
 
     backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
-    # skip P2 because it generates too many anchors (according to their paper)
-    backbone = _resnet_fpn_extractor(
-        backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)
+    backbone = resnet_fpn_extractor(
+        backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256) # use P5
     )
     model = FCOS(backbone, num_classes, **kwargs)
     if pretrained:
-        state_dict = load_state_dict_from_url(model_urls["retinanet_resnet50_fpn_coco"], progress=progress)
+        state_dict = load_state_dict_from_url(model_urls["fcos_resnet50_fpn_coco"], progress=progress)
         model.load_state_dict(state_dict)
         overwrite_eps(model, 0.0)
     return model
-
