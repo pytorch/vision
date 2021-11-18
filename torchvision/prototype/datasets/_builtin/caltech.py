@@ -11,7 +11,7 @@ from torchdata.datapipes.iter import (
     TarArchiveReader,
     Shuffler,
     Filter,
-    KeyZipper,
+    IterKeyZipper,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -22,6 +22,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat
+from torchvision.prototype.features import Label, BoundingBox
 
 
 class Caltech101(Dataset):
@@ -81,11 +82,11 @@ class Caltech101(Dataset):
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Tuple[str, str], Tuple[str, io.IOBase], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[str, str], Tuple[Tuple[str, io.IOBase], Tuple[str, io.IOBase]]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
-        key, image_data, ann_data = data
+        key, (image_data, ann_data) = data
         category, _ = key
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
@@ -95,8 +96,8 @@ class Caltech101(Dataset):
         image = decoder(image_buffer) if decoder else image_buffer
 
         ann = read_mat(ann_buffer)
-        bbox = torch.as_tensor(ann["box_coord"].astype(np.int64))
-        contour = torch.as_tensor(ann["obj_contour"])
+        bbox = BoundingBox(ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy")
+        contour = torch.tensor(ann["obj_contour"].T)
 
         return dict(
             category=category,
@@ -124,7 +125,7 @@ class Caltech101(Dataset):
         anns_dp = TarArchiveReader(anns_dp)
         anns_dp = Filter(anns_dp, self._is_ann)
 
-        dp = KeyZipper(
+        dp = IterKeyZipper(
             images_dp,
             anns_dp,
             key_fn=self._images_key_fn,
@@ -171,9 +172,9 @@ class Caltech256(Dataset):
 
         dir_name = pathlib.Path(path).parent.name
         label_str, category = dir_name.split(".")
-        label = torch.tensor(int(label_str))
+        label = Label(int(label_str), category=category)
 
-        return dict(label=label, category=category, image=decoder(buffer) if decoder else buffer)
+        return dict(label=label, image=decoder(buffer) if decoder else buffer)
 
     def _make_datapipe(
         self,

@@ -195,7 +195,7 @@ class FasterRCNN(GeneralizedRCNN):
                 raise ValueError("num_classes should be None when box_predictor is specified")
         else:
             if box_predictor is None:
-                raise ValueError("num_classes should not be None when box_predictor " "is not specified")
+                raise ValueError("num_classes should not be None when box_predictor is not specified")
 
         out_channels = backbone.out_channels
 
@@ -255,7 +255,7 @@ class FasterRCNN(GeneralizedRCNN):
             image_std = [0.229, 0.224, 0.225]
         transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
 
-        super(FasterRCNN, self).__init__(backbone, rpn, roi_heads, transform)
+        super().__init__(backbone, rpn, roi_heads, transform)
 
 
 class TwoMLPHead(nn.Module):
@@ -268,7 +268,7 @@ class TwoMLPHead(nn.Module):
     """
 
     def __init__(self, in_channels, representation_size):
-        super(TwoMLPHead, self).__init__()
+        super().__init__()
 
         self.fc6 = nn.Linear(in_channels, representation_size)
         self.fc7 = nn.Linear(representation_size, representation_size)
@@ -293,7 +293,7 @@ class FastRCNNPredictor(nn.Module):
     """
 
     def __init__(self, in_channels, num_classes):
-        super(FastRCNNPredictor, self).__init__()
+        super().__init__()
         self.cls_score = nn.Linear(in_channels, num_classes)
         self.bbox_pred = nn.Linear(in_channels, num_classes * 4)
 
@@ -379,7 +379,8 @@ def fasterrcnn_resnet50_fpn(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 3.
     """
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
@@ -436,7 +437,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
     )
     if pretrained:
         if model_urls.get(weights_name, None) is None:
-            raise ValueError("No checkpoint is available for model {}".format(weights_name))
+            raise ValueError(f"No checkpoint is available for model {weights_name}")
         state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
         model.load_state_dict(state_dict)
     return model
@@ -464,7 +465,8 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 3.
     """
     weights_name = "fasterrcnn_mobilenet_v3_large_320_fpn_coco"
     defaults = {
@@ -509,7 +511,8 @@ def fasterrcnn_mobilenet_v3_large_fpn(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 3.
     """
     weights_name = "fasterrcnn_mobilenet_v3_large_fpn_coco"
     defaults = {

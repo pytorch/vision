@@ -25,43 +25,6 @@ GoogLeNetOutputs.__annotations__ = {"logits": Tensor, "aux_logits2": Optional[Te
 _GoogLeNetOutputs = GoogLeNetOutputs
 
 
-def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> "GoogLeNet":
-    r"""GoogLeNet (Inception v1) model architecture from
-    `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
-    The required minimum input size of the model is 15x15.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
-            Default: *False* when pretrained is True otherwise *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *False*
-    """
-    if pretrained:
-        if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" not in kwargs:
-            kwargs["aux_logits"] = False
-        if kwargs["aux_logits"]:
-            warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, " "so make sure to train them"
-            )
-        original_aux_logits = kwargs["aux_logits"]
-        kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
-        model = GoogLeNet(**kwargs)
-        state_dict = load_state_dict_from_url(model_urls["googlenet"], progress=progress)
-        model.load_state_dict(state_dict)
-        if not original_aux_logits:
-            model.aux_logits = False
-            model.aux1 = None  # type: ignore[assignment]
-            model.aux2 = None  # type: ignore[assignment]
-        return model
-
-    return GoogLeNet(**kwargs)
-
-
 class GoogLeNet(nn.Module):
     __constants__ = ["aux_logits", "transform_input"]
 
@@ -75,7 +38,7 @@ class GoogLeNet(nn.Module):
         dropout: float = 0.2,
         dropout_aux: float = 0.7,
     ) -> None:
-        super(GoogLeNet, self).__init__()
+        super().__init__()
         _log_api_usage_once(self)
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
@@ -231,7 +194,7 @@ class Inception(nn.Module):
         pool_proj: int,
         conv_block: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
-        super(Inception, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.branch1 = conv_block(in_channels, ch1x1, kernel_size=1)
@@ -274,7 +237,7 @@ class InceptionAux(nn.Module):
         conv_block: Optional[Callable[..., nn.Module]] = None,
         dropout: float = 0.7,
     ) -> None:
-        super(InceptionAux, self).__init__()
+        super().__init__()
         if conv_block is None:
             conv_block = BasicConv2d
         self.conv = conv_block(in_channels, 128, kernel_size=1)
@@ -303,7 +266,7 @@ class InceptionAux(nn.Module):
 
 class BasicConv2d(nn.Module):
     def __init__(self, in_channels: int, out_channels: int, **kwargs: Any) -> None:
-        super(BasicConv2d, self).__init__()
+        super().__init__()
         self.conv = nn.Conv2d(in_channels, out_channels, bias=False, **kwargs)
         self.bn = nn.BatchNorm2d(out_channels, eps=0.001)
 
@@ -311,3 +274,40 @@ class BasicConv2d(nn.Module):
         x = self.conv(x)
         x = self.bn(x)
         return F.relu(x, inplace=True)
+
+
+def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> GoogLeNet:
+    r"""GoogLeNet (Inception v1) model architecture from
+    `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+    The required minimum input size of the model is 15x15.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
+            Default: *False* when pretrained is True otherwise *True*
+        transform_input (bool): If True, preprocesses the input according to the method with which it
+            was trained on ImageNet. Default: *False*
+    """
+    if pretrained:
+        if "transform_input" not in kwargs:
+            kwargs["transform_input"] = True
+        if "aux_logits" not in kwargs:
+            kwargs["aux_logits"] = False
+        if kwargs["aux_logits"]:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
+            )
+        original_aux_logits = kwargs["aux_logits"]
+        kwargs["aux_logits"] = True
+        kwargs["init_weights"] = False
+        model = GoogLeNet(**kwargs)
+        state_dict = load_state_dict_from_url(model_urls["googlenet"], progress=progress)
+        model.load_state_dict(state_dict)
+        if not original_aux_logits:
+            model.aux_logits = False
+            model.aux1 = None  # type: ignore[assignment]
+            model.aux2 = None  # type: ignore[assignment]
+        return model
+
+    return GoogLeNet(**kwargs)

@@ -144,7 +144,7 @@ class TestFxFeatureExtraction:
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
         out = model(self.inp)
-        sum([o.mean() for o in out.values()]).backward()
+        sum(o.mean() for o in out.values()).backward()
 
     def test_feature_extraction_methods_equivalence(self):
         model = models.resnet18(**self.model_defaults).eval()
@@ -176,7 +176,7 @@ class TestFxFeatureExtraction:
         )
         model = torch.jit.script(model)
         fgn_out = model(self.inp)
-        sum([o.mean() for o in fgn_out.values()]).backward()
+        sum(o.mean() for o in fgn_out.values()).backward()
 
     def test_train_eval(self):
         class TestModel(torch.nn.Module):
