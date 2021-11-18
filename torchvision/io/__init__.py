@@ -1,3 +1,5 @@
+from typing import Any, Dict, Iterator
+
 import torch
 
 from ._video_opt import (
@@ -10,11 +12,6 @@ from ._video_opt import (
     _read_video_from_memory,
     _read_video_timestamps_from_file,
     _read_video_timestamps_from_memory,
-)
-from .video import (
-    read_video,
-    read_video_timestamps,
-    write_video,
 )
 from .image import (
     ImageReadMode,
@@ -29,17 +26,22 @@ from .image import (
     write_jpeg,
     write_png,
 )
+from .video import (
+    read_video,
+    read_video_timestamps,
+    write_video,
+)
 
 
 if _HAS_VIDEO_OPT:
 
-    def _has_video_opt():
+    def _has_video_opt() -> bool:
         return True
 
 
 else:
 
-    def _has_video_opt():
+    def _has_video_opt() -> bool:
         return False
 
 
@@ -97,9 +99,13 @@ class VideoReader:
         stream (string, optional): descriptor of the required stream, followed by the stream id,
             in the format ``{stream_type}:{stream_id}``. Defaults to ``"video:0"``.
             Currently available options include ``['video', 'audio']``
+
+        num_threads (int, optional): number of threads used by the codec to decode video.
+            Default value (0) enables multithreading with codec-dependent heuristic. The performance
+            will depend on the version of FFMPEG codecs supported.
     """
 
-    def __init__(self, path, stream="video"):
+    def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
@@ -107,9 +113,9 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and"
                 + "build torchvision from source."
             )
-        self._c = torch.classes.torchvision.Video(path, stream)
+        self._c = torch.classes.torchvision.Video(path, stream, num_threads)
 
-    def __next__(self):
+    def __next__(self) -> Dict[str, Any]:
         """Decodes and returns the next frame of the current stream.
         Frames are encoded as a dict with mandatory
         data and pts fields, where data is a tensor, and pts is a
@@ -126,14 +132,15 @@ class VideoReader:
             raise StopIteration
         return {"data": frame, "pts": pts}
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Dict[str, Any]]:
         return self
 
-    def seek(self, time_s: float):
+    def seek(self, time_s: float, keyframes_only: bool = False) -> "VideoReader":
         """Seek within current stream.
 
         Args:
             time_s (float): seek time in seconds
+            keyframes_only (bool): allow to seek only to keyframes
 
         .. note::
             Current implementation is the so-called precise seek. This
@@ -141,10 +148,10 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
-        self._c.seek(time_s)
+        self._c.seek(time_s, keyframes_only)
         return self
 
-    def get_metadata(self):
+    def get_metadata(self) -> Dict[str, Any]:
         """Returns video metadata
 
         Returns:
@@ -152,7 +159,7 @@ class VideoReader:
         """
         return self._c.get_metadata()
 
-    def set_current_stream(self, stream: str):
+    def set_current_stream(self, stream: str) -> bool:
         """Set current stream.
         Explicitly define the stream we are operating on.
 

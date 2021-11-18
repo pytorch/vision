@@ -142,6 +142,8 @@ DenseNetImpl::DenseNetImpl(
     } else if (auto M = dynamic_cast<torch::nn::LinearImpl*>(module.get()))
       torch::nn::init::constant_(M->bias, 0);
   }
+
+  modelsimpl::deprecation_warning();
 }
 
 torch::Tensor DenseNetImpl::forward(torch::Tensor x) {

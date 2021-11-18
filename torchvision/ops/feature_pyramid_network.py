@@ -1,9 +1,10 @@
 from collections import OrderedDict
+from typing import Tuple, List, Dict, Optional
 
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from typing import Tuple, List, Dict, Optional
+from ..utils import _log_api_usage_once
 
 
 class ExtraFPNBlock(nn.Module):
@@ -21,6 +22,7 @@ class ExtraFPNBlock(nn.Module):
             of the FPN
         names (List[str]): the extended set of names for the results
     """
+
     def forward(
         self,
         results: List[Tensor],
@@ -67,13 +69,15 @@ class FeaturePyramidNetwork(nn.Module):
         >>>    ('feat3', torch.Size([1, 5, 8, 8]))]
 
     """
+
     def __init__(
         self,
         in_channels_list: List[int],
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
     ):
-        super(FeaturePyramidNetwork, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
         for in_channels in in_channels_list:
@@ -102,12 +106,10 @@ class FeaturePyramidNetwork(nn.Module):
         num_blocks = len(self.inner_blocks)
         if idx < 0:
             idx += num_blocks
-        i = 0
         out = x
-        for module in self.inner_blocks:
+        for i, module in enumerate(self.inner_blocks):
             if i == idx:
                 out = module(x)
-            i += 1
         return out
 
     def get_result_from_layer_blocks(self, x: Tensor, idx: int) -> Tensor:
@@ -118,12 +120,10 @@ class FeaturePyramidNetwork(nn.Module):
         num_blocks = len(self.layer_blocks)
         if idx < 0:
             idx += num_blocks
-        i = 0
         out = x
-        for module in self.layer_blocks:
+        for i, module in enumerate(self.layer_blocks):
             if i == idx:
                 out = module(x)
-            i += 1
         return out
 
     def forward(self, x: Dict[str, Tensor]) -> Dict[str, Tensor]:
@@ -165,6 +165,7 @@ class LastLevelMaxPool(ExtraFPNBlock):
     """
     Applies a max_pool2d on top of the last feature map
     """
+
     def forward(
         self,
         x: List[Tensor],
@@ -180,8 +181,9 @@ class LastLevelP6P7(ExtraFPNBlock):
     """
     This module is used in RetinaNet to generate extra layers, P6 and P7.
     """
+
     def __init__(self, in_channels: int, out_channels: int):
-        super(LastLevelP6P7, self).__init__()
+        super().__init__()
         self.p6 = nn.Conv2d(in_channels, out_channels, 3, 2, 1)
         self.p7 = nn.Conv2d(out_channels, out_channels, 3, 2, 1)
         for module in [self.p6, self.p7]:

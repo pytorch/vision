@@ -54,7 +54,7 @@ def unfold(tensor: torch.Tensor, size: int, step: int, dilation: int = 1) -> tor
     return torch.as_strided(tensor, new_size, new_stride)
 
 
-class _VideoTimestampsDataset(object):
+class _VideoTimestampsDataset:
     """
     Dataset used to parallelize the reading of the timestamps
     of a list of videos, given their paths in the filesystem.
@@ -80,7 +80,7 @@ def _collate_fn(x: T) -> T:
     return x
 
 
-class VideoClips(object):
+class VideoClips:
     """
     Given a list of video files, computes all consecutive subvideos of size
     `clip_length_in_frames`, where the distance between each subvideo in the
@@ -220,19 +220,19 @@ class VideoClips(object):
         if frame_rate is None:
             frame_rate = fps
         total_frames = len(video_pts) * (float(frame_rate) / fps)
-        _idxs = VideoClips._resample_video_idx(
-            int(math.floor(total_frames)), fps, frame_rate
-        )
-        video_pts = video_pts[_idxs]
+        idxs = VideoClips._resample_video_idx(int(math.floor(total_frames)), fps, frame_rate)
+        video_pts = video_pts[idxs]
         clips = unfold(video_pts, num_frames, step)
         if not clips.numel():
-            warnings.warn("There aren't enough frames in the current video to get a clip for the given clip length and "
-                          "frames between clips. The video (and potentially others) will be skipped.")
-        idxs: Union[List[slice], torch.Tensor]
-        if isinstance(_idxs, slice):
-            idxs = [_idxs] * len(clips)
+            warnings.warn(
+                "There aren't enough frames in the current video to get a clip for the given clip length and "
+                "frames between clips. The video (and potentially others) will be skipped."
+            )
+        # idxs: Union[List[slice], torch.Tensor]
+        if isinstance(idxs, slice):
+            idxs = [idxs] * len(clips)
         else:
-            idxs = unfold(_idxs, num_frames, step)
+            idxs = unfold(idxs, num_frames, step)
         return clips, idxs
 
     def compute_clips(self, num_frames: int, step: int, frame_rate: Optional[int] = None) -> None:
@@ -252,9 +252,7 @@ class VideoClips(object):
         self.clips = []
         self.resampling_idxs = []
         for video_pts, fps in zip(self.video_pts, self.video_fps):
-            clips, idxs = self.compute_clips_for_video(
-                video_pts, num_frames, step, fps, frame_rate
-            )
+            clips, idxs = self.compute_clips_for_video(video_pts, num_frames, step, fps, frame_rate)
             self.clips.append(clips)
             self.resampling_idxs.append(idxs)
         clip_lengths = torch.as_tensor([len(v) for v in self.clips])
@@ -310,10 +308,7 @@ class VideoClips(object):
             video_idx (int): index of the video in `video_paths`
         """
         if idx >= self.num_clips():
-            raise IndexError(
-                "Index {} out of range "
-                "({} number of clips)".format(idx, self.num_clips())
-            )
+            raise IndexError(f"Index {idx} out of range ({self.num_clips()} number of clips)")
         video_idx, clip_idx = self.get_clip_location(idx)
         video_path = self.video_paths[video_idx]
         clip_pts = self.clips[video_idx][clip_idx]
@@ -329,13 +324,9 @@ class VideoClips(object):
             if self._video_height != 0:
                 raise ValueError("pyav backend doesn't support _video_height != 0")
             if self._video_min_dimension != 0:
-                raise ValueError(
-                    "pyav backend doesn't support _video_min_dimension != 0"
-                )
+                raise ValueError("pyav backend doesn't support _video_min_dimension != 0")
             if self._video_max_dimension != 0:
-                raise ValueError(
-                    "pyav backend doesn't support _video_max_dimension != 0"
-                )
+                raise ValueError("pyav backend doesn't support _video_max_dimension != 0")
             if self._audio_samples != 0:
                 raise ValueError("pyav backend doesn't support _audio_samples != 0")
 
@@ -353,20 +344,12 @@ class VideoClips(object):
 
             audio_start_pts, audio_end_pts = 0, -1
             audio_timebase = Fraction(0, 1)
-            video_timebase = Fraction(
-                _info.video_timebase.numerator, _info.video_timebase.denominator
-            )
-            if _info.has_audio:
-                audio_timebase = Fraction(
-                    _info.audio_timebase.numerator, _info.audio_timebase.denominator
-                )
-                audio_start_pts = pts_convert(
-                    video_start_pts, video_timebase, audio_timebase, math.floor
-                )
-                audio_end_pts = pts_convert(
-                    video_end_pts, video_timebase, audio_timebase, math.ceil
-                )
-                audio_fps = _info.audio_sample_rate
+            video_timebase = Fraction(info.video_timebase.numerator, info.video_timebase.denominator)
+            if info.has_audio:
+                audio_timebase = Fraction(info.audio_timebase.numerator, info.audio_timebase.denominator)
+                audio_start_pts = pts_convert(video_start_pts, video_timebase, audio_timebase, math.floor)
+                audio_end_pts = pts_convert(video_end_pts, video_timebase, audio_timebase, math.ceil)
+                audio_fps = info.audio_sample_rate
             video, audio, info = _read_video_from_file(
                 video_path,
                 video_width=self._video_width,
@@ -391,9 +374,7 @@ class VideoClips(object):
                 resampling_idx = resampling_idx - resampling_idx[0]
             video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
-        assert len(video) == self.num_frames, "{} x {}".format(
-            video.shape, self.num_frames
-        )
+        assert len(video) == self.num_frames, f"{video.shape} x {self.num_frames}"
         return video, audio, info, video_idx
 
     def __getstate__(self) -> Dict[str, Any]:

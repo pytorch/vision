@@ -93,6 +93,8 @@ SqueezeNetImpl::SqueezeNetImpl(double version, int64_t num_classes)
       if (M->options.bias())
         torch::nn::init::constant_(M->bias, 0);
     }
+
+  modelsimpl::deprecation_warning();
 }
 
 torch::Tensor SqueezeNetImpl::forward(torch::Tensor x) {

@@ -35,7 +35,7 @@ from torchvision.datasets.utils import download_url
 
 # Download the sample video
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
     ".",
     "WUzgd7C1pWA.mp4"
 )
@@ -137,7 +137,7 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
     if end < start:
         raise ValueError(
             "end time should be larger than start time, got "
-            "start time={} and end time={}".format(start, end)
+            f"start time={start} and end time={end}"
         )
 
     video_frames = torch.empty(0)
@@ -187,26 +187,26 @@ os.makedirs("./dataset/2", exist_ok=True)
 # Download the videos
 from torchvision.datasets.utils import download_url
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/WUzgd7C1pWA.mp4?raw=true",
     "./dataset/1", "WUzgd7C1pWA.mp4"
 )
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/RATRACE_wave_f_nm_np1_fr_goo_37.avi?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/RATRACE_wave_f_nm_np1_fr_goo_37.avi?raw=true",
     "./dataset/1",
     "RATRACE_wave_f_nm_np1_fr_goo_37.avi"
 )
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/SOX5yA1l24A.mp4?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/SOX5yA1l24A.mp4?raw=true",
     "./dataset/2",
     "SOX5yA1l24A.mp4"
 )
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/v_SoccerJuggling_g23_c01.avi?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/v_SoccerJuggling_g23_c01.avi?raw=true",
     "./dataset/2",
     "v_SoccerJuggling_g23_c01.avi"
 )
 download_url(
-    "https://github.com/pytorch/vision/blob/master/test/assets/videos/v_SoccerJuggling_g24_c01.avi?raw=true",
+    "https://github.com/pytorch/vision/blob/main/test/assets/videos/v_SoccerJuggling_g24_c01.avi?raw=true",
     "./dataset/2",
     "v_SoccerJuggling_g24_c01.avi"
 )

@@ -34,6 +34,13 @@ inline bool double_compare(double a, double b) {
   return double(std::abs(a - b)) < std::numeric_limits<double>::epsilon();
 };
 
+inline void deprecation_warning() {
+  TORCH_WARN_ONCE(
+      "The vision::models namespace is not actively maintained, use at "
+      "your own discretion. We recommend using Torch Script instead: "
+      "https://pytorch.org/tutorials/advanced/cpp_export.html");
+}
+
 } // namespace modelsimpl
 } // namespace models
 } // namespace vision

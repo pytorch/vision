@@ -32,6 +32,8 @@ AlexNetImpl::AlexNetImpl(int64_t num_classes) {
 
   register_module("features", features);
   register_module("classifier", classifier);
+
+  modelsimpl::deprecation_warning();
 }
 
 torch::Tensor AlexNetImpl::forward(torch::Tensor x) {
