@@ -1,8 +1,6 @@
-# Before submitting
+## Before submitting
 
-- [ ] Was this discussed/approved via a Github issue? (no need for typos and docs improvements)
-- [ ] Did you make sure to update the docs?
-- [ ] Did you write any new necessary tests?
+Before submitting a PR, please make sure to check our contributing guidelines regarding [code formatting](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#code-formatting-and-typing), [tests](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#unit-tests), and [documentation](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md#documentation).
 
 ## What does this PR do?
 
