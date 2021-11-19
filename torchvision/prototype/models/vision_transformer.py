@@ -274,7 +274,6 @@ def vit_b_16(weights: bool = False, progress: bool = True, **kwargs: Any) -> Vis
     weights = VisionTransformer_B_16Weights.verify(weights)
 
     return _vision_transformer(
-        arch="b_16",
         weights=weights,
         progress=progress,
         patch_size=16,
@@ -298,7 +297,6 @@ def vit_b_32(weights: bool = False, progress: bool = True, **kwargs: Any) -> Vis
     weights = VisionTransformer_B_32Weights.verify(weights)
 
     return _vision_transformer(
-        arch="b_32",
         weights=weights,
         progress=progress,
         patch_size=32,
@@ -322,7 +320,6 @@ def vit_l_16(weights: bool = False, progress: bool = True, **kwargs: Any) -> Vis
     weights = VisionTransformer_L_16Weights.verify(weights)
 
     return _vision_transformer(
-        arch="l_16",
         weights=weights,
         progress=progress,
         patch_size=16,
@@ -346,7 +343,6 @@ def vit_l_32(weights: bool = False, progress: bool = True, **kwargs: Any) -> Vis
     weights = VisionTransformer_L_32Weights.verify(weights)
 
     return _vision_transformer(
-        arch="l_32",
         weights=weights,
         progress=progress,
         patch_size=32,
