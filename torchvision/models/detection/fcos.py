@@ -591,7 +591,8 @@ class FCOS(nn.Module):
 
 
 model_urls = {
-    "fcos_resnet50_fpn_coco": "",
+    "fcos_resnet50_fpn_coco":
+        "https://github.com/o295/checkpoints/releases/download/coco/fcos_resnet50_fpn_coco-46080c1a.pth",
 }
 
 
