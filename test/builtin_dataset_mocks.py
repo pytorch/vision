@@ -14,6 +14,7 @@ from datasets_utils import create_image_folder, make_tar, make_zip
 from torch.testing import make_tensor as _make_tensor
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype import datasets
+from torchvision.prototype.datasets._api import DEFAULT_DECODER_MAP, DEFAULT_DECODER
 from torchvision.prototype.datasets._api import find
 from torchvision.prototype.utils._internal import add_suggestion
 
@@ -99,14 +100,8 @@ class DatasetMocks:
         self._cache[(name, config)] = mock_resources, mock_info
         return mock_resources, mock_info
 
-    def _decoder(self, dataset_type):
-        if dataset_type == datasets.utils.DatasetType.RAW:
-            return datasets.decoder.raw
-        else:
-            return lambda file: file.close()
-
     def load(
-        self, name: str, decoder=DEFAULT_TEST_DECODER, split="train", **options: Any
+        self, name: str, decoder=DEFAULT_DECODER, split="train", **options: Any
     ) -> Tuple[IterDataPipe, Dict[str, Any]]:
         dataset = find(name)
         config = dataset.info.make_config(split=split, **options)
@@ -114,7 +109,7 @@ class DatasetMocks:
         datapipe = dataset._make_datapipe(
             [resource.to_datapipe() for resource in resources],
             config=config,
-            decoder=self._decoder(dataset.info.type) if decoder is DEFAULT_TEST_DECODER else decoder,
+            decoder=DEFAULT_DECODER_MAP.get(dataset.info.type) if decoder is DEFAULT_DECODER else decoder,
         )
         return datapipe, mock_info
 
@@ -149,9 +144,6 @@ class MNISTFakedata:
     @classmethod
     def _create_binary_file(cls, root, filename, *, num_samples, shape, dtype, compressor, low=0, high):
         with compressor(root / filename, "wb") as fh:
-            if dtype != torch.uint8:
-                print()
-
             for meta in (cls._magic(dtype, len(shape)), num_samples, *shape):
                 fh.write(cls._encode(meta))
 
