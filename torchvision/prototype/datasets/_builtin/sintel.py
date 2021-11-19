@@ -2,9 +2,8 @@ import io
 import pathlib
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Iterable, TypeVar
+from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Iterable, TypeVar, BinaryIO
 
-import numpy as np
 import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
@@ -23,7 +22,7 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_flo
 
 T = TypeVar("T")
 
@@ -97,20 +96,6 @@ class SINTEL(Dataset):
         else:
             return None
 
-    def _read_flo(self, file: io.IOBase) -> torch.Tensor:
-        magic = file.read(4)
-        if magic != b"PIEH":
-            raise ValueError("Magic number incorrect. Invalid .flo file")
-        w = np.frombuffer(file.read(4), dtype="<i4")[0]
-        h = np.frombuffer(file.read(4), dtype="<i4")[0]
-
-        data = file.read(2 * w * h * 4)
-        data_arr = np.frombuffer(data, dtype="<f4")
-
-        # Creating a copy of the underlying array, to avoid UserWarning: "The given NumPy array
-        #     is not writeable, and PyTorch does not support non-writeable tensors."
-        return torch.from_numpy(np.copy(data_arr.reshape(h, w, 2).transpose(2, 0, 1)))
-
     def _flows_key(self, data: Tuple[str, Any]) -> Tuple[str, int]:
         path = pathlib.Path(data[0])
         category = path.parent.name
@@ -125,29 +110,24 @@ class SINTEL(Dataset):
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Tuple[str, io.IOBase], Any],
+        data: Tuple[Tuple[Optional[str], Optional[BinaryIO]], Tuple[Tuple[str, BinaryIO], Tuple[str, BinaryIO]]],
         *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-        config: DatasetConfig,
+        decoder: Optional[Callable[[BinaryIO], torch.Tensor]],
     ) -> Dict[str, Any]:
-        flo, images = data
-        img1, img2 = images
-        flow_arr = self._read_flo(flo[1]) if flo[1] else None
-
-        path1, buffer1 = img1
-        path2, buffer2 = img2
-
-        # We return the scene dir name as the label
-        label = path1.split("/")[-2]
+        flow_data, images_data = data
+        flow_path, flow_buffer = flow_data
+        image1_data, image2_data = images_data
+        image1_path, image1_buffer = image1_data
+        image2_path, image2_buffer = image2_data
 
         return dict(
-            image1=decoder(buffer1) if decoder else buffer1,
-            image1_path=path1,
-            image2=decoder(buffer2) if decoder else buffer2,
-            image2_path=path2,
-            flow=flow_arr,
-            flow_path=flo[0],
-            label=label,
+            image1=decoder(image1_buffer) if decoder else image1_buffer,
+            image1_path=image1_path,
+            image2=decoder(image2_buffer) if decoder else image2_buffer,
+            image2_path=image2_path,
+            flow=read_flo(flow_buffer) if flow_buffer else None,
+            flow_path=flow_path,
+            scene=pathlib.Path(image1_path).parent.name,
         )
 
     def _make_datapipe(
@@ -185,4 +165,4 @@ class SINTEL(Dataset):
             pass_images_dp = InSceneGrouper(pass_images_dp)
             zipped_dp = Mapper(pass_images_dp, self._add_fake_flow_data)
 
-        return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder, config=config))
+        return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
