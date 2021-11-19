@@ -1,6 +1,6 @@
 import torch
 
-# copy from https://github.com/facebookresearch/fvcore/blob/main/fvcore/nn/giou_loss.py
+
 def giou_loss(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,
@@ -8,13 +8,22 @@ def giou_loss(
     eps: float = 1e-7,
 ) -> torch.Tensor:
     """
+    Original implementation from
+    https://github.com/facebookresearch/fvcore/blob/bfff2ef/fvcore/nn/giou_loss.py
+
     Generalized Intersection over Union Loss (Hamid Rezatofighi et. al)
     https://arxiv.org/abs/1902.09630
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
     boxes do not overlap and scales with the size of their smallest enclosing box.
     This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.
+
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``, and The two boxes should have the
+    same dimensions.
+
     Args:
-        boxes1, boxes2 (Tensor): box locations in XYXY format, shape (N, 4) or (4,).
+        boxes1 (Tensor[N, 4] or Tensor[4]): first set of boxes
+        boxes2 (Tensor[N, 4] or Tensor[4]): second set of boxes
         reduction: 'none' | 'mean' | 'sum'
                  'none': No reduction will be applied to the output.
                  'mean': The output will be averaged.
