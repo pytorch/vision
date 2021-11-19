@@ -35,8 +35,13 @@ class FCOSHead(nn.Module):
         num_convs (int): number of conv layer of head
     """
 
+    __annotations__ = {
+        "box_coder": det_utils.BoxLinearCoder,
+    }
+
     def __init__(self, in_channels, num_anchors, num_classes, num_convs=4):
         super().__init__()
+        self.box_coder = det_utils.BoxLinearCoder(normalize_by_size=True)
         self.classification_head = FCOSClassificationHead(in_channels, num_anchors, num_classes, num_convs)
         self.regression_head = FCOSRegressionHead(in_channels, num_anchors, num_convs)
 
@@ -46,7 +51,6 @@ class FCOSHead(nn.Module):
         head_outputs: Dict[str, Tensor],
         anchors: List[Tensor],
         matched_idxs: List[Tensor],
-        box_coder,
     ):
 
         cls_logits = head_outputs["cls_logits"]  # [N, K, C]
@@ -74,7 +78,7 @@ class FCOSHead(nn.Module):
 
         # regression loss: GIoU loss
         pred_boxes = [
-            box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
+            self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
             for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
         ]
         # amp issue: pred_boxes need to convert float
@@ -86,7 +90,7 @@ class FCOSHead(nn.Module):
 
         # ctrness loss
         bbox_reg_targets = [
-            box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
+            self.box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
             for anchors_per_image, boxes_targets_per_image in zip(anchors, all_gt_boxes_targets)
         ]
         bbox_reg_targets = torch.stack(bbox_reg_targets, dim=0)
@@ -319,6 +323,10 @@ class FCOS(nn.Module):
         >>> predictions = model(x)
     """
 
+    __annotations__ = {
+        "box_coder": det_utils.BoxLinearCoder,
+    }
+
     def __init__(
         self,
         backbone,
@@ -434,7 +442,7 @@ class FCOS(nn.Module):
 
             matched_idxs.append(matched_idx)
 
-        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs, self.box_coder)
+        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
     def postprocess_detections(
         self, head_outputs: Dict[str, List[Tensor]], anchors: List[List[Tensor]], image_shapes: List[Tuple[int, int]]

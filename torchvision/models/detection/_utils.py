@@ -223,7 +223,7 @@ class BoxLinearCoder:
     by the distance from the center of (square) src box to 4 edges of the target box.
     """
 
-    def __init__(self, normalize_by_size=True) -> None:
+    def __init__(self, normalize_by_size: bool = True) -> None:
         """
         Args:
             normalize_by_size (bool): normalize deltas by the size of src (anchor) boxes.
@@ -260,7 +260,7 @@ class BoxLinearCoder:
         if self.normalize_by_size:
             stride_w = reference_boxes[:, 2] - reference_boxes[:, 0]
             stride_h = reference_boxes[:, 3] - reference_boxes[:, 1]
-            strides = torch.stack([stride_w, stride_h, stride_w, stride_h], axis=1)
+            strides = torch.stack((stride_w, stride_h, stride_w, stride_h), dim=1)
             targets = targets / strides
 
         return targets
@@ -297,7 +297,7 @@ class BoxLinearCoder:
         if self.normalize_by_size:
             stride_w = boxes[:, 2] - boxes[:, 0]
             stride_h = boxes[:, 3] - boxes[:, 1]
-            strides = torch.stack([stride_w, stride_h, stride_w, stride_h], axis=1)
+            strides = torch.stack((stride_w, stride_h, stride_w, stride_h), dim=1)
             rel_codes = rel_codes * strides
 
         pred_boxes1 = ctr_x - rel_codes[:, 0]
