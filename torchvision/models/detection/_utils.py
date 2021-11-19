@@ -241,6 +241,7 @@ class BoxLinearCoder:
         """
         Encode a set of proposals with respect to some
         reference boxes
+
         Args:
             reference_boxes (Tensor): reference boxes
             proposals (Tensor): boxes to be encoded
@@ -283,6 +284,7 @@ class BoxLinearCoder:
         """
         From a set of original boxes and encoded relative box offsets,
         get the decoded boxes.
+
         Args:
             rel_codes (Tensor): encoded boxes
             boxes (Tensor): reference boxes.
