@@ -101,10 +101,11 @@ class DatasetMocks:
 
     def _decoder(self, dataset_type):
         def to_bytes(file):
-            try:
-                return file.read()
-            finally:
-                file.close()
+            # "ValueError: read from closed file" error, temporary fix for this PR
+            # try:
+            return file.read()
+            # finally:
+            #     file.close()
 
         if dataset_type == datasets.utils.DatasetType.RAW:
             return datasets.decoder.raw
@@ -540,4 +541,6 @@ def sintel(info, root, config):
     # that is 3 - 1 = 2 examples. Hence the formula below
     num_passes = 2 if config["pass_name"] == "both" else 1
     num_examples = (num_images_per_scene - 1) * num_scenes * num_passes
+
+    make_zip(root, "MPI-Sintel-complete.zip", "training", "test")
     return num_examples
