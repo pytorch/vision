@@ -45,6 +45,7 @@ class ImageNet(Dataset):
         return DatasetInfo(
             name,
             type=DatasetType.IMAGE,
+            dependencies=("scipy",),
             categories=categories,
             homepage="https://www.image-net.org/",
             valid_options=dict(split=("train", "val", "test")),

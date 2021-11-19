@@ -151,6 +151,11 @@ class TestDatasetInfo:
         with pytest.raises(ValueError, match=expected_error_msg):
             info.make_config(**options)
 
+    def test_check_dependencies(self):
+        info = make_minimal_dataset_info(dependencies=("fake_dependency",))
+        with pytest.raises(ModuleNotFoundError):
+            info.check_dependencies()
+
     def test_repr(self, info):
         output = repr(info)
 
