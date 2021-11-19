@@ -32,8 +32,8 @@ from torchvision.prototype.datasets.utils._internal import (
 )
 from torchvision.prototype.features import Image, Label
 
-__all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 
+__all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 
 prod = functools.partial(functools.reduce, operator.mul)
 

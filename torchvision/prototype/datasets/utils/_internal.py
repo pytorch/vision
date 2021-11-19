@@ -65,7 +65,6 @@ def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
     except ImportError as error:
         raise ModuleNotFoundError("Package `scipy` is required to be installed to read .mat files.") from error
 
-    # TODO: This can be removed as soon as https://github.com/pytorch/pytorch/pull/67718 is merged
     if isinstance(buffer, StreamWrapper):
         buffer = buffer.file_obj
 
