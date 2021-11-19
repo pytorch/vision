@@ -35,12 +35,23 @@ class FCOSHead(nn.Module):
         num_convs (int): number of conv layer of head
     """
 
+    __annotations__ = {
+        "box_coder": det_utils.BoxLinearCoder,
+    }
+
     def __init__(self, in_channels, num_anchors, num_classes, num_convs=4):
         super().__init__()
+        self.box_coder = det_utils.BoxLinearCoder(normalize_by_size=True)
         self.classification_head = FCOSClassificationHead(in_channels, num_anchors, num_classes, num_convs)
         self.regression_head = FCOSRegressionHead(in_channels, num_anchors, num_convs)
 
-    def compute_loss(self, targets, head_outputs, anchors, matched_idxs, box_coder):
+    def compute_loss(
+        self,
+        targets: List[Dict[str, Tensor]],
+        head_outputs: Dict[str, Tensor],
+        anchors: List[Tensor],
+        matched_idxs: List[Tensor],
+    ):
 
         cls_logits = head_outputs["cls_logits"]  # [N, K, C]
         bbox_regression = head_outputs["bbox_regression"]  # [N, K, 4]
@@ -67,7 +78,7 @@ class FCOSHead(nn.Module):
 
         # regression loss: GIoU loss
         pred_boxes = [
-            box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
+            self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
             for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
         ]
         # amp issue: pred_boxes need to convert float
@@ -79,7 +90,7 @@ class FCOSHead(nn.Module):
 
         # ctrness loss
         bbox_reg_targets = [
-            box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
+            self.box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
             for anchors_per_image, boxes_targets_per_image in zip(anchors, all_gt_boxes_targets)
         ]
         bbox_reg_targets = torch.stack(bbox_reg_targets, dim=0)
@@ -102,8 +113,7 @@ class FCOSHead(nn.Module):
             "bbox_ctrness": loss_bbox_ctrness / max(1, num_foreground),
         }
 
-    def forward(self, x):
-        # type: (List[Tensor]) -> Dict[str, Tensor]
+    def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
         cls_logits = self.classification_head(x)
         bbox_regression, bbox_ctrness = self.regression_head(x)
         return {
@@ -201,7 +211,7 @@ class FCOSRegressionHead(nn.Module):
                 torch.nn.init.normal_(layer.weight, std=0.01)
                 torch.nn.init.zeros_(layer.bias)
 
-    def forward(self, x: List[Tensor]) -> Tensor:
+    def forward(self, x: List[Tensor]) -> Tuple[Tensor, Tensor]:
         all_bbox_regression = []
         all_bbox_ctrness = []
 
@@ -302,14 +312,20 @@ class FCOS(nn.Module):
         >>>     aspect_ratios=((1.0,),)
         >>> )
         >>>
-        >>> # put the pieces together inside a RetinaNet model
-        >>> model = FCOS(backbone,
-        >>>                   num_classes=80,
-        >>>                   anchor_generator=anchor_generator)
+        >>> # put the pieces together inside a FCOS model
+        >>> model = FCOS(
+        >>>     backbone,
+        >>>     num_classes=80,
+        >>>     anchor_generator=anchor_generator,
+        >>> )
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
     """
+
+    __annotations__ = {
+        "box_coder": det_utils.BoxLinearCoder,
+    }
 
     def __init__(
         self,
@@ -426,7 +442,7 @@ class FCOS(nn.Module):
 
             matched_idxs.append(matched_idx)
 
-        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs, self.box_coder)
+        return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs)
 
     def postprocess_detections(
         self, head_outputs: Dict[str, List[Tensor]], anchors: List[List[Tensor]], image_shapes: List[Tuple[int, int]]
