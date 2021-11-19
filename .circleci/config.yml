@@ -262,7 +262,7 @@ jobs:
 
   prototype_test:
     docker:
-      - image: circleci/python:3.9
+      - image: circleci/python:3.7
     steps:
       - run:
           name: Install torch
