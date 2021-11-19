@@ -27,6 +27,7 @@ __all__ = ["FCOS", "fcos_resnet50_fpn"]
 class FCOSHead(nn.Module):
     """
     A regression and classification head for use in FCOS.
+
     Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
@@ -118,6 +119,7 @@ class FCOSHead(nn.Module):
 class FCOSClassificationHead(nn.Module):
     """
     A classification head for use in FCOS.
+
     Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
@@ -171,6 +173,7 @@ class FCOSClassificationHead(nn.Module):
 class FCOSRegressionHead(nn.Module):
     """
     A regression head for use in FCOS.
+
     Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
@@ -229,16 +232,21 @@ class FCOSRegressionHead(nn.Module):
 class FCOS(nn.Module):
     """
     Implements FCOS.
+
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes.
+
     The behavior of the model changes depending if it is in training or evaluation mode.
+
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
         - labels (Int64Tensor[N]): the class label for each ground-truth box
+
     The model returns a Dict[Tensor] during training, containing the classification and regression
     losses.
+
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
     follows:
@@ -246,6 +254,7 @@ class FCOS(nn.Module):
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
         - labels (Int64Tensor[N]): the predicted labels for each image
         - scores (Tensor[N]): the scores for each prediction
+
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
             It should contain an out_channels attribute, which indicates the number of output
@@ -271,7 +280,9 @@ class FCOS(nn.Module):
         nms_thresh (float): NMS threshold used for postprocessing the detections.
         detections_per_img (int): Number of best detections to keep after NMS.
         topk_candidates (int): Number of best detections to keep before NMS.
+
     Example:
+
         >>> import torch
         >>> import torchvision
         >>> from torchvision.models.detection import FCOS
@@ -603,9 +614,12 @@ def fcos_resnet50_fpn(
     """
     Constructs a FCOS model with a ResNet-50-FPN backbone.
     Reference: `"FCOS: Fully Convolutional One-Stage Object Detection" <https://arxiv.org/abs/1904.01355>`_.
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
+
     The behavior of the model changes depending if it is in training or evaluation mode.
+
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
@@ -613,6 +627,7 @@ def fcos_resnet50_fpn(
         - labels (``Int64Tensor[N]``): the class label for each ground-truth box
     The model returns a ``Dict[Tensor]`` during training, containing the classification and regression
     losses.
+
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
     follows, where ``N`` is the number of detections:
@@ -621,11 +636,14 @@ def fcos_resnet50_fpn(
         - labels (``Int64Tensor[N]``): the predicted labels for each detection
         - scores (``Tensor[N]``): the scores of each detection
     For more details on the output, you may refer to :ref:`instance_seg_output`.
-    Example::
+
+    Example:
+
         >>> model = torchvision.models.detection.fcos_resnet50_fpn(pretrained=True)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
+
     Args:
         pretrained (bool): If True, returns a model pre-trained on COCO train2017
         progress (bool): If True, displays a progress bar of the download to stderr
