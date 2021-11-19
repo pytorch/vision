@@ -1,11 +1,14 @@
 import enum
+import functools
 import gzip
 import io
 import lzma
+import mmap
 import os
 import os.path
 import pathlib
 import pickle
+from typing import BinaryIO
 from typing import (
     Sequence,
     Callable,
@@ -23,6 +26,7 @@ from typing import cast
 
 import numpy as np
 import PIL.Image
+import torch
 import torch.distributed as dist
 import torch.utils.data
 from torch.utils.data import IterDataPipe
@@ -42,6 +46,8 @@ __all__ = [
     "path_accessor",
     "path_comparator",
     "Decompressor",
+    "fromfile",
+    "read_flo",
 ]
 
 K = TypeVar("K")
@@ -101,35 +107,37 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
         yield from enumerate(self.datapipe, self.start)
 
 
-def getitem(*items: Any) -> Callable[[Any], Any]:
-    def wrapper(obj: Any) -> Any:
-        for item in items:
-            obj = obj[item]
-        return obj
+def _getitem_closure(obj: Any, *, items: Tuple[Any, ...]) -> Any:
+    for item in items:
+        obj = obj[item]
+    return obj
 
-    return wrapper
+
+def getitem(*items: Any) -> Callable[[Any], Any]:
+    return functools.partial(_getitem_closure, items=items)
+
+
+def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
+    return cast(D, getattr(path, name))
+
+
+def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
+    return getter(pathlib.Path(data[0]))
 
 
 def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[Tuple[str, Any]], D]:
     if isinstance(getter, str):
-        name = getter
+        getter = functools.partial(_path_attribute_accessor, name=getter)
 
-        def getter(path: pathlib.Path) -> D:
-            return cast(D, getattr(path, name))
+    return functools.partial(_path_accessor_closure, getter=getter)
 
-    def wrapper(data: Tuple[str, Any]) -> D:
-        return getter(pathlib.Path(data[0]))  # type: ignore[operator]
 
-    return wrapper
+def _path_comparator_closure(data: Tuple[str, Any], *, accessor: Callable[[Tuple[str, Any]], D], value: D) -> bool:
+    return accessor(data) == value
 
 
 def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
-    accessor = path_accessor(getter)
-
-    def wrapper(data: Tuple[str, Any]) -> bool:
-        return accessor(data) == value
-
-    return wrapper
+    return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
 
 
 class CompressionType(enum.Enum):
@@ -250,3 +258,66 @@ def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
     # dp = dp.cycle(2)
     dp = TakerDataPipe(dp, dataset_size)
     return dp
+
+
+def fromfile(
+    file: BinaryIO,
+    *,
+    dtype: torch.dtype,
+    byte_order: str,
+    count: int = -1,
+) -> torch.Tensor:
+    """Construct a tensor from a binary file.
+
+    .. note::
+
+        This function is similar to :func:`numpy.fromfile` with two notable differences:
+
+        1. This function only accepts an open binary file, but not a path to it.
+        2. This function has an additional ``byte_order`` parameter, since PyTorch's ``dtype``'s do not support that
+            concept.
+
+    .. note::
+
+        If the ``file`` was opened in update mode, i.e. "r+b" or "w+b", reading data is much faster. Be aware that as
+        long as the file is still open, inplace operations on the returned tensor will reflect back to the file.
+
+    Args:
+        file (IO): Open binary file.
+        dtype (torch.dtype): Data type of the underlying data as well as of the returned tensor.
+        byte_order (str): Byte order of the data. Can be "little" or "big" endian.
+        count (int): Number of values of the returned tensor. If ``-1`` (default), will read the complete file.
+    """
+    byte_order = "<" if byte_order == "little" else ">"
+    char = "f" if dtype.is_floating_point else ("i" if dtype.is_signed else "u")
+    item_size = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
+    np_dtype = byte_order + char + str(item_size)
+
+    # PyTorch does not support tensors with underlying read-only memory. In case
+    # - the file has a .fileno(),
+    # - the file was opened for updating, i.e. 'r+b' or 'w+b',
+    # - the file is seekable
+    # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it to
+    # a mutable location afterwards.
+    buffer: Union[memoryview, bytearray]
+    try:
+        buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
+        # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
+        file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
+    except (PermissionError, io.UnsupportedOperation):
+        # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
+        buffer = bytearray(file.read(-1 if count == -1 else count * item_size))
+
+    # We cannot use torch.frombuffer() directly, since it only supports the native byte order of the system. Thus, we
+    # read the data with np.frombuffer() with the correct byte order and convert it to the native one with the
+    # successive .astype() call.
+    return torch.from_numpy(np.frombuffer(buffer, dtype=np_dtype, count=count).astype(np_dtype[1:], copy=False))
+
+
+def read_flo(file: BinaryIO) -> torch.Tensor:
+    if file.read(4) != b"PIEH":
+        raise ValueError("Magic number incorrect. Invalid .flo file")
+
+    width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
+    flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
+    return flow.reshape((height, width, 2)).permute((2, 0, 1))

@@ -39,7 +39,7 @@ fi
 if [ $PYTHON_VERSION == "3.6" ]; then
     printf "Installing minimal PILLOW version\n"
     # Install the minimal PILLOW version. Otherwise, let setup.py install the latest
-    pip install pillow>=5.3.0
+    pip install "pillow>=5.3.0,!=8.3.*"
 fi
 
 printf "* Installing torchvision\n"
