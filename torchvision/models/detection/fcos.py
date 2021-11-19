@@ -67,23 +67,19 @@ class FCOSHead(nn.Module):
 
         # regression loss: GIoU loss
         pred_boxes = [
-            box_coder.decode_single(
-                bbox_regression_per_image, anchors_per_image
-            )
+            box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
             for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
         ]
         # amp issue: pred_boxes need to convert float
         loss_bbox_reg = giou_loss(
             torch.stack(pred_boxes)[foregroud_mask].float(),
             torch.stack(all_gt_boxes_targets)[foregroud_mask],
-            reduction='sum',
+            reduction="sum",
         )
 
         # ctrness loss
         bbox_reg_targets = [
-            box_coder.encode_single(
-                anchors_per_image, boxes_targets_per_image
-            )
+            box_coder.encode_single(anchors_per_image, boxes_targets_per_image)
             for anchors_per_image, boxes_targets_per_image in zip(anchors, all_gt_boxes_targets)
         ]
         bbox_reg_targets = torch.stack(bbox_reg_targets, dim=0)
@@ -91,9 +87,10 @@ class FCOSHead(nn.Module):
             bbox_reg_targets.new_zeros(len(bbox_reg_targets))
         left_right = bbox_reg_targets[:, :, [0, 2]]
         top_bottom = bbox_reg_targets[:, :, [1, 3]]
-        gt_ctrness_targets = torch.sqrt((left_right.min(dim=-1)[0] / left_right.max(dim=-1)[0]) * (
-            top_bottom.min(dim=-1)[0] / top_bottom.max(dim=-1)[0]
-        ))
+        gt_ctrness_targets = torch.sqrt(
+            (left_right.min(dim=-1)[0] / left_right.max(dim=-1)[0])
+            * (top_bottom.min(dim=-1)[0] / top_bottom.max(dim=-1)[0])
+        )
         pred_centerness = bbox_ctrness.squeeze(dim=2)
         loss_bbox_ctrness = nn.functional.binary_cross_entropy_with_logits(
             pred_centerness[foregroud_mask], gt_ctrness_targets[foregroud_mask], reduction="sum"
@@ -102,7 +99,7 @@ class FCOSHead(nn.Module):
         return {
             "classification": loss_cls / max(1, num_foreground),
             "bbox_regression": loss_bbox_reg / max(1, num_foreground),
-            "bbox_ctrness": loss_bbox_ctrness / max(1, num_foreground)
+            "bbox_ctrness": loss_bbox_ctrness / max(1, num_foreground),
         }
 
     def forward(self, x):
@@ -375,9 +372,7 @@ class FCOS(nn.Module):
 
     @torch.jit.unused
     def eager_outputs(
-        self,
-        losses: Dict[str, Tensor],
-        detections: List[Dict[str, Tensor]]
+        self, losses: Dict[str, Tensor], detections: List[Dict[str, Tensor]]
     ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         if self.training:
             return losses
@@ -419,11 +414,9 @@ class FCOS(nn.Module):
             lower_bound = anchor_sizes * 4
             lower_bound[: num_anchors_per_level[0]] = 0
             upper_bound = anchor_sizes * 8
-            upper_bound[-num_anchors_per_level[-1]:] = float("inf")
+            upper_bound[-num_anchors_per_level[-1] :] = float("inf")
             pairwise_dist = pairwise_dist.max(dim=2).values
-            pairwise_match &= (pairwise_dist > lower_bound[:, None]) & (
-                pairwise_dist < upper_bound[:, None]
-            )
+            pairwise_match &= (pairwise_dist > lower_bound[:, None]) & (pairwise_dist < upper_bound[:, None])
 
             # match the GT box with minimum area, if there are multiple GT matches
             gt_areas = (gt_boxes[:, 1] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])  # N
@@ -436,10 +429,7 @@ class FCOS(nn.Module):
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs, self.box_coder)
 
     def postprocess_detections(
-        self,
-        head_outputs: Dict[str, List[Tensor]],
-        anchors: List[List[Tensor]],
-        image_shapes: List[Tuple[int, int]]
+        self, head_outputs: Dict[str, List[Tensor]], anchors: List[List[Tensor]], image_shapes: List[Tuple[int, int]]
     ) -> List[Dict[str, Tensor]]:
         class_logits = head_outputs["cls_logits"]
         box_regression = head_outputs["bbox_regression"]
@@ -466,7 +456,8 @@ class FCOS(nn.Module):
 
                 # remove low scoring boxes
                 scores_per_level = torch.sqrt(
-                    torch.sigmoid(logits_per_level) * torch.sigmoid(box_ctrness_per_level)).flatten()
+                    torch.sigmoid(logits_per_level) * torch.sigmoid(box_ctrness_per_level)
+                ).flatten()
                 keep_idxs = scores_per_level > self.score_thresh
                 scores_per_level = scores_per_level[keep_idxs]
                 topk_idxs = torch.where(keep_idxs)[0]
@@ -603,8 +594,7 @@ class FCOS(nn.Module):
 
 
 model_urls = {
-    "fcos_resnet50_fpn_coco":
-        "https://github.com/o295/checkpoints/releases/download/coco/fcos_resnet50_fpn_coco-46080c1a.pth",
+    "fcos_resnet50_fpn_coco": "https://github.com/o295/checkpoints/releases/download/coco/fcos_resnet50_fpn_coco-46080c1a.pth",
 }
 
 

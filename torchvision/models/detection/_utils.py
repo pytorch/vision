@@ -216,7 +216,7 @@ class BoxCoder:
         pred_boxes = torch.stack((pred_boxes1, pred_boxes2, pred_boxes3, pred_boxes4), dim=2).flatten(1)
         return pred_boxes
 
-    
+
 class BoxLinearCoder:
     """
     The linear box-to-box transform defined in FCOS. The transformation is parameterized
