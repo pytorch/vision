@@ -302,10 +302,12 @@ class FCOS(nn.Module):
         >>>     aspect_ratios=((1.0,),)
         >>> )
         >>>
-        >>> # put the pieces together inside a RetinaNet model
-        >>> model = FCOS(backbone,
-        >>>                   num_classes=80,
-        >>>                   anchor_generator=anchor_generator)
+        >>> # put the pieces together inside a FCOS model
+        >>> model = FCOS(
+        >>>     backbone,
+        >>>     num_classes=80,
+        >>>     anchor_generator=anchor_generator,
+        >>> )
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
