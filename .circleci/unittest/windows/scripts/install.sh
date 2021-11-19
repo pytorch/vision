@@ -33,7 +33,7 @@ conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c conda-forge "pytorch-${UPLOAD
 if [ $PYTHON_VERSION == "3.6" ]; then
     printf "Installing minimal PILLOW version\n"
     # Install the minimal PILLOW version. Otherwise, let setup.py install the latest
-    pip install pillow>=5.3.0
+    pip install "pillow>=5.3.0,!=8.3.*"
 fi
 
 torch_cuda=$(python -c "import torch; print(torch.cuda.is_available())")
