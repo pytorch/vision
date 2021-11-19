@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ._api import Weights, WeightEntry
+from ._api import Weights
 
 __all__ = [
     "VisionTransformer",
