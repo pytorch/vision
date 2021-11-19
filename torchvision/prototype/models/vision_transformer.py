@@ -3,6 +3,7 @@
 # https://github.com/facebookresearch/ClassyVision/blob/main/classy_vision/models/vision_transformer.py
 
 import math
+import warnings
 from collections import OrderedDict
 from functools import partial
 from typing import Any, Callable, Optional
@@ -262,15 +263,22 @@ def _vision_transformer(weights: Optional[Weights], progress: bool, **kwargs: An
     return model
 
 
-def vit_b_16(weights: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+def vit_b_16(
+    weights: Optional[VisionTransformer_B_16Weights] = None, progress: bool = True, **kwargs: Any
+) -> VisionTransformer:
     """
-    Constructs a ViT_b_16 architecture from
+    Constructs a vit_b_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        weights (VisionTransformer_B_16Weights, optional): If not None, returns a model pre-trained on ImageNet. Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    if "pretrained" in kwargs:
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
+        if kwargs.pop("pretrained"):
+            raise ValueError("No checkpoint is available for model type vit_b_16")
+
     weights = VisionTransformer_B_16Weights.verify(weights)
 
     return _vision_transformer(
@@ -285,15 +293,22 @@ def vit_b_16(weights: bool = False, progress: bool = True, **kwargs: Any) -> Vis
     )
 
 
-def vit_b_32(weights: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+def vit_b_32(
+    weights: Optional[VisionTransformer_B_32Weights] = None, progress: bool = True, **kwargs: Any
+) -> VisionTransformer:
     """
-    Constructs a ViT_b_32 architecture from
+    Constructs a vit_b_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        weights (VisionTransformer_B_32Weights, optional): If not None, returns a model pre-trained on ImageNet. Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    if "pretrained" in kwargs:
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
+        if kwargs.pop("pretrained"):
+            raise ValueError("No checkpoint is available for model type vit_b_32")
+
     weights = VisionTransformer_B_32Weights.verify(weights)
 
     return _vision_transformer(
@@ -308,15 +323,22 @@ def vit_b_32(weights: bool = False, progress: bool = True, **kwargs: Any) -> Vis
     )
 
 
-def vit_l_16(weights: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+def vit_l_16(
+    weights: Optional[VisionTransformer_L_16Weights] = None, progress: bool = True, **kwargs: Any
+) -> VisionTransformer:
     """
-    Constructs a ViT_l_16 architecture from
+    Constructs a vit_l_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        weights (VisionTransformer_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet. Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    if "pretrained" in kwargs:
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
+        if kwargs.pop("pretrained"):
+            raise ValueError("No checkpoint is available for model type vit_l_16")
+
     weights = VisionTransformer_L_16Weights.verify(weights)
 
     return _vision_transformer(
@@ -331,15 +353,22 @@ def vit_l_16(weights: bool = False, progress: bool = True, **kwargs: Any) -> Vis
     )
 
 
-def vit_l_32(weights: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+def vit_l_32(
+    weights: Optional[VisionTransformer_B_32Weights] = None, progress: bool = True, **kwargs: Any
+) -> VisionTransformer:
     """
-    Constructs a ViT_l_32 architecture from
+    Constructs a vit_l_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        weights (VisionTransformer_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet. Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    if "pretrained" in kwargs:
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
+        if kwargs.pop("pretrained"):
+            raise ValueError("No checkpoint is available for model type vit_l_32")
+
     weights = VisionTransformer_L_32Weights.verify(weights)
 
     return _vision_transformer(
