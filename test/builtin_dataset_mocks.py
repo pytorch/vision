@@ -101,11 +101,10 @@ class DatasetMocks:
 
     def _decoder(self, dataset_type):
         def to_bytes(file):
-            # "ValueError: read from closed file" error, temporary fix for this PR
-            # try:
-            return file.read()
-            # finally:
-            #     file.close()
+            try:
+                return file.read()
+            finally:
+                file.close()
 
         if dataset_type == datasets.utils.DatasetType.RAW:
             return datasets.decoder.raw
