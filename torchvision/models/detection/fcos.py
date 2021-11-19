@@ -40,7 +40,14 @@ class FCOSHead(nn.Module):
         self.classification_head = FCOSClassificationHead(in_channels, num_anchors, num_classes, num_convs)
         self.regression_head = FCOSRegressionHead(in_channels, num_anchors, num_convs)
 
-    def compute_loss(self, targets, head_outputs, anchors, matched_idxs, box_coder):
+    def compute_loss(
+        self,
+        targets: List[Dict[str, Tensor]],
+        head_outputs: Dict[str, Tensor],
+        anchors: List[Tensor],
+        matched_idxs: List[Tensor],
+        box_coder,
+    ):
 
         cls_logits = head_outputs["cls_logits"]  # [N, K, C]
         bbox_regression = head_outputs["bbox_regression"]  # [N, K, 4]
@@ -102,8 +109,7 @@ class FCOSHead(nn.Module):
             "bbox_ctrness": loss_bbox_ctrness / max(1, num_foreground),
         }
 
-    def forward(self, x):
-        # type: (List[Tensor]) -> Dict[str, Tensor]
+    def forward(self, x: List[Tensor]) -> Dict[str, Tensor]:
         cls_logits = self.classification_head(x)
         bbox_regression, bbox_ctrness = self.regression_head(x)
         return {
@@ -201,7 +207,7 @@ class FCOSRegressionHead(nn.Module):
                 torch.nn.init.normal_(layer.weight, std=0.01)
                 torch.nn.init.zeros_(layer.bias)
 
-    def forward(self, x: List[Tensor]) -> Tensor:
+    def forward(self, x: List[Tensor]) -> Tuple[Tensor, Tensor]:
         all_bbox_regression = []
         all_bbox_ctrness = []
 
