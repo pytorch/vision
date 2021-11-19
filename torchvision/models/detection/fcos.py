@@ -149,8 +149,7 @@ class FCOSClassificationHead(nn.Module):
         torch.nn.init.normal_(self.cls_logits.weight, std=0.01)
         torch.nn.init.constant_(self.cls_logits.bias, -math.log((1 - prior_probability) / prior_probability))
 
-    def forward(self, x):
-        # type: (List[Tensor]) -> Tensor
+    def forward(self, x: List[Tensor]) -> Tensor:
         all_cls_logits = []
 
         for features in x:
@@ -201,8 +200,7 @@ class FCOSRegressionHead(nn.Module):
                 torch.nn.init.normal_(layer.weight, std=0.01)
                 torch.nn.init.zeros_(layer.bias)
 
-    def forward(self, x):
-        # type: (List[Tensor]) -> Tensor
+    def forward(self, x: List[Tensor]) -> Tensor:
         all_bbox_regression = []
         all_bbox_ctrness = []
 
@@ -364,15 +362,23 @@ class FCOS(nn.Module):
         self._has_warned = False
 
     @torch.jit.unused
-    def eager_outputs(self, losses, detections):
-        # type: (Dict[str, Tensor], List[Dict[str, Tensor]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+    def eager_outputs(
+        self,
+        losses: Dict[str, Tensor],
+        detections: List[Dict[str, Tensor]]
+    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         if self.training:
             return losses
 
         return detections
 
-    def compute_loss(self, targets, head_outputs, anchors, num_anchors_per_level):
-        # type: (List[Dict[str, Tensor]], Dict[str, Tensor], List[Tensor], List[int]) -> Dict[str, Tensor]
+    def compute_loss(
+        self,
+        targets: List[Dict[str, Tensor]],
+        head_outputs: Dict[str, Tensor],
+        anchors: List[Tensor],
+        num_anchors_per_level: List[int],
+    ) -> Dict[str, Tensor]:
         matched_idxs = []
         for anchors_per_image, targets_per_image in zip(anchors, targets):
             if targets_per_image["boxes"].numel() == 0:
@@ -417,8 +423,12 @@ class FCOS(nn.Module):
 
         return self.head.compute_loss(targets, head_outputs, anchors, matched_idxs, self.box_coder)
 
-    def postprocess_detections(self, head_outputs, anchors, image_shapes):
-        # type: (Dict[str, List[Tensor]], List[List[Tensor]], List[Tuple[int, int]]) -> List[Dict[str, Tensor]]
+    def postprocess_detections(
+        self,
+        head_outputs: Dict[str, List[Tensor]],
+        anchors: List[List[Tensor]],
+        image_shapes: List[Tuple[int, int]]
+    ) -> List[Dict[str, Tensor]]:
         class_logits = head_outputs["cls_logits"]
         box_regression = head_outputs["bbox_regression"]
         box_ctrness = head_outputs["bbox_ctrness"]
@@ -484,12 +494,16 @@ class FCOS(nn.Module):
 
         return detections
 
-    def forward(self, images, targets=None):
-        # type: (List[Tensor], Optional[List[Dict[str, Tensor]]]) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]
+    def forward(
+        self,
+        images: List[Tensor],
+        targets: Optional[List[Dict[str, Tensor]]] = None,
+    ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
         """
         Args:
             images (list[Tensor]): images to be processed
             targets (list[Dict[Tensor]]): ground-truth boxes present in the image (optional)
+
         Returns:
             result (list[BoxList] or dict[Tensor]): the output from the model.
                 During training, it returns a dict[Tensor] which contains the losses.
@@ -570,7 +584,7 @@ class FCOS(nn.Module):
 
         if torch.jit.is_scripting():
             if not self._has_warned:
-                warnings.warn("RetinaNet always returns a (Losses, Detections) tuple in scripting")
+                warnings.warn("FCOS always returns a (Losses, Detections) tuple in scripting")
                 self._has_warned = True
             return losses, detections
         return self.eager_outputs(losses, detections)
