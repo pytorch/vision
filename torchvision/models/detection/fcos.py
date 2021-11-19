@@ -2,7 +2,7 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Dict, List, Tuple, Optional
+from typing import Callable, Dict, List, Tuple, Optional
 
 import torch
 from torch import nn, Tensor
@@ -32,14 +32,14 @@ class FCOSHead(nn.Module):
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
         num_classes (int): number of classes to be predicted
-        num_convs (int): number of conv layer of head
+        num_convs (Optional[int]): number of conv layer of head. Default: 4.
     """
 
     __annotations__ = {
         "box_coder": det_utils.BoxLinearCoder,
     }
 
-    def __init__(self, in_channels, num_anchors, num_classes, num_convs=4):
+    def __init__(self, in_channels: int, num_anchors: int, num_classes: int, num_convs: Optional[int] = 4):
         super().__init__()
         self.box_coder = det_utils.BoxLinearCoder(normalize_by_size=True)
         self.classification_head = FCOSClassificationHead(in_channels, num_anchors, num_classes, num_convs)
@@ -128,13 +128,23 @@ class FCOSClassificationHead(nn.Module):
     A classification head for use in FCOS.
 
     Args:
-        in_channels (int): number of channels of the input feature
-        num_anchors (int): number of anchors to be predicted
-        num_classes (int): number of classes to be predicted
-        num_convs (int): number of conv layer
+        in_channels (int): number of channels of the input feature.
+        num_anchors (int): number of anchors to be predicted.
+        num_classes (int): number of classes to be predicted.
+        num_convs (Optional[int]): number of conv layer. Default: 4.
+        prior_probability (Optional[float]): probability of prior. Default: 0.01.
+        norm_layer: Module specifying the normalization layer to use.
     """
 
-    def __init__(self, in_channels, num_anchors, num_classes, num_convs=4, prior_probability=0.01, norm_layer=None):
+    def __init__(
+        self,
+        in_channels: int,
+        num_anchors: int,
+        num_classes: int,
+        num_convs: int = 4,
+        prior_probability: float = 0.01,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+    ):
         super().__init__()
 
         self.num_classes = num_classes
@@ -184,10 +194,17 @@ class FCOSRegressionHead(nn.Module):
     Args:
         in_channels (int): number of channels of the input feature
         num_anchors (int): number of anchors to be predicted
-        num_convs (int): number of conv layer
+        num_convs (Optional[int]): number of conv layer. Default: 4.
+        norm_layer: Module specifying the normalization layer to use.
     """
 
-    def __init__(self, in_channels, num_anchors, num_convs=4, norm_layer=None):
+    def __init__(
+        self,
+        in_channels: int,
+        num_anchors: int,
+        num_convs: int = 4,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+    ):
         super().__init__()
 
         if norm_layer is None:
@@ -615,7 +632,12 @@ model_urls = {
 
 
 def fcos_resnet50_fpn(
-    pretrained=False, progress=True, num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs
+    pretrained: bool = False,
+    progress: bool = True,
+    num_classes: int = 91,
+    pretrained_backbone: bool = True,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs,
 ):
     """
     Constructs a FCOS model with a ResNet-50-FPN backbone.
