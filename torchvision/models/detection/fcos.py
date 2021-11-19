@@ -1,6 +1,7 @@
 import math
 import warnings
 from collections import OrderedDict
+from functools import partial
 from typing import Dict, List, Tuple, Optional
 
 import torch
@@ -131,7 +132,7 @@ class FCOSClassificationHead(nn.Module):
         self.num_anchors = num_anchors
 
         if norm_layer is None:
-            norm_layer = lambda channels: nn.GroupNorm(32, channels)
+            norm_layer = partial(nn.GroupNorm, 32)
 
         conv = []
         for _ in range(num_convs):
@@ -180,7 +181,7 @@ class FCOSRegressionHead(nn.Module):
         super().__init__()
 
         if norm_layer is None:
-            norm_layer = lambda channels: nn.GroupNorm(32, channels)
+            norm_layer = partial(nn.GroupNorm, 32)
 
         conv = []
         for _ in range(num_convs):
