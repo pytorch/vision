@@ -11,8 +11,14 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+from ._api import Weights, WeightEntry
+
 __all__ = [
     "VisionTransformer",
+    "VisionTransformer_B_16Weights",
+    "VisionTransformer_B_32Weights",
+    "VisionTransformer_L_16Weights",
+    "VisionTransformer_L_32Weights",
     "vit_b_16",
     "vit_b_32",
     "vit_l_16",
@@ -223,27 +229,53 @@ class VisionTransformer(nn.Module):
         return x
 
 
-def _vision_transformer(arch: str, pretrained: bool, progress: bool, **kwargs: Any) -> VisionTransformer:
+class VisionTransformer_B_16Weights(Weights):
+    # If a default model is added here the corresponding changes need to be done in vit_b_16
+    pass
+
+
+class VisionTransformer_B_32Weights(Weights):
+    # If a default model is added here the corresponding changes need to be done in vit_b_32
+    pass
+
+
+class VisionTransformer_L_16Weights(Weights):
+    # If a default model is added here the corresponding changes need to be done in vit_l_16
+    pass
+
+
+class VisionTransformer_L_32Weights(Weights):
+    # If a default model is added here the corresponding changes need to be done in vit_l_32
+    pass
+
+
+def _vision_transformer(weights: Optional[Weights], progress: bool, **kwargs: Any) -> VisionTransformer:
     image_size = kwargs.get("image_size", 224)
     if "image_size" in kwargs:
         kwargs.pop("image_size")
+
     model = VisionTransformer(image_size=image_size, **kwargs)
-    # TODO: Adding pre-trained models
+
+    if weights:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
 
 
-def vit_b_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+def vit_b_16(weights: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a ViT_b_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        weights (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    weights = VisionTransformer_B_16Weights.verify(weights)
+
     return _vision_transformer(
         arch="b_16",
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         patch_size=16,
         num_layers=12,
@@ -254,18 +286,20 @@ def vit_b_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     )
 
 
-def vit_b_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+def vit_b_32(weights: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a ViT_b_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        weights (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    weights = VisionTransformer_B_32Weights.verify(weights)
+
     return _vision_transformer(
         arch="b_32",
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         patch_size=32,
         num_layers=12,
@@ -276,18 +310,20 @@ def vit_b_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     )
 
 
-def vit_l_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+def vit_l_16(weights: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a ViT_l_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        weights (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    weights = VisionTransformer_L_16Weights.verify(weights)
+
     return _vision_transformer(
         arch="l_16",
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         patch_size=16,
         num_layers=24,
@@ -298,18 +334,20 @@ def vit_l_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
     )
 
 
-def vit_l_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+def vit_l_32(weights: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a ViT_l_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
+        weights (bool, optional): If True, returns a model pre-trained on ImageNet. Default: False.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    weights = VisionTransformer_L_32Weights.verify(weights)
+
     return _vision_transformer(
         arch="l_32",
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         patch_size=32,
         num_layers=24,
