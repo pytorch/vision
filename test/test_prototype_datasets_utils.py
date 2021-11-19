@@ -9,7 +9,6 @@ from torchvision.prototype.datasets.utils._internal import read_flo, fromfile
 
 
 @pytest.mark.filterwarnings("error:The given NumPy array is not writeable:UserWarning")
-@pytest.mark.parametrize("mode", ("rb", "r+b"))
 @pytest.mark.parametrize(
     ("np_dtype", "torch_dtype", "byte_order"),
     [
@@ -20,10 +19,12 @@ from torchvision.prototype.datasets.utils._internal import read_flo, fromfile
         ("|u1", torch.uint8, sys.byteorder),
     ],
 )
-def test_fromfile(tmpdir, np_dtype, torch_dtype, byte_order, mode):
+@pytest.mark.parametrize("count", (-1, 2))
+@pytest.mark.parametrize("mode", ("rb", "r+b"))
+def test_fromfile(tmpdir, np_dtype, torch_dtype, byte_order, count, mode):
     path = tmpdir / "data.bin"
-    count = 5
-    np.random.randn(count).astype(np_dtype).tofile(path)
+    rng = np.random.RandomState(0)
+    rng.randn(5 if count == -1 else count + 1).astype(np_dtype).tofile(path)
 
     for count_ in (-1, count // 2):
         expected = torch.from_numpy(np.fromfile(path, dtype=np_dtype, count=count_).astype(np_dtype[1:]))
