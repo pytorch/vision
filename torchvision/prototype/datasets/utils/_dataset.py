@@ -111,7 +111,7 @@ class DatasetInfo:
 
         return DatasetConfig(self.default_config, **options)
 
-    def check_dependencies(self):
+    def check_dependencies(self) -> None:
         for dependency in self.dependecies:
             try:
                 importlib.import_module(dependency)
