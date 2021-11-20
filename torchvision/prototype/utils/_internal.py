@@ -29,7 +29,7 @@ def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
     if len(seq) == 1:
         return f"'{seq[0]}'"
 
-    return f"""'{"', '".join([str(item) for item in seq[:-1]])}', {separate_last}'{seq[-1]}'."""
+    return f"""'{"', '".join([str(item) for item in seq[:-1]])}', {separate_last}'{seq[-1]}'"""
 
 
 def add_suggestion(

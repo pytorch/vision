@@ -1,12 +1,10 @@
 import abc
-import codecs
 import functools
 import io
 import operator
 import pathlib
 import string
-import sys
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO
 
 import torch
 from torchdata.datapipes.iter import (
@@ -30,6 +28,7 @@ from torchvision.prototype.datasets.utils._internal import (
     image_buffer_from_array,
     Decompressor,
     INFINITE_BUFFER_SIZE,
+    fromfile,
 )
 from torchvision.prototype.features import Image, Label
 
@@ -50,50 +49,33 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
     }
 
     def __init__(
-        self, datapipe: IterDataPipe[Tuple[Any, io.IOBase]], *, start: Optional[int], stop: Optional[int]
+        self, datapipe: IterDataPipe[Tuple[Any, BinaryIO]], *, start: Optional[int], stop: Optional[int]
     ) -> None:
         self.datapipe = datapipe
         self.start = start
         self.stop = stop
 
-    @staticmethod
-    def _decode(input: bytes) -> int:
-        return int(codecs.encode(input, "hex"), 16)
-
-    @staticmethod
-    def _to_tensor(chunk: bytes, *, dtype: torch.dtype, shape: List[int], reverse_bytes: bool) -> torch.Tensor:
-        # As is, the chunk is not writeable, because it is read from a file and not from memory. Thus, we copy here to
-        # avoid the warning that torch.frombuffer would emit otherwise. This also enables inplace operations on the
-        # contents, which would otherwise fail.
-        chunk = bytearray(chunk)
-        if reverse_bytes:
-            chunk.reverse()
-            tensor = torch.frombuffer(chunk, dtype=dtype).flip(0)
-        else:
-            tensor = torch.frombuffer(chunk, dtype=dtype)
-        return tensor.reshape(shape)
-
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
-            magic = self._decode(file.read(4))
+            read = functools.partial(fromfile, file, byte_order="big")
+
+            magic = int(read(dtype=torch.int32, count=1))
             dtype = self._DTYPE_MAP[magic // 256]
             ndim = magic % 256 - 1
 
-            num_samples = self._decode(file.read(4))
-            shape = [self._decode(file.read(4)) for _ in range(ndim)]
-
-            num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
-            # The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,
-            # we need to reverse the bytes before we can read them with torch.frombuffer().
-            reverse_bytes = sys.byteorder == "little" and num_bytes_per_value > 1
-            chunk_size = (cast(int, prod(shape)) if shape else 1) * num_bytes_per_value
+            num_samples = int(read(dtype=torch.int32, count=1))
+            shape = cast(List[int], read(dtype=torch.int32, count=ndim).tolist()) if ndim else []
+            count = prod(shape) if shape else 1
 
             start = self.start or 0
             stop = min(self.stop, num_samples) if self.stop else num_samples
 
-            file.seek(start * chunk_size, 1)
+            if start:
+                num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
+                file.seek(num_bytes_per_value * count * start, 1)
+
             for _ in range(stop - start):
-                yield self._to_tensor(file.read(chunk_size), dtype=dtype, shape=shape, reverse_bytes=reverse_bytes)
+                yield read(dtype=dtype, count=count).reshape(shape)
 
 
 class _MNISTBase(Dataset):
