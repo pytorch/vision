@@ -234,7 +234,7 @@ class WideResNet101_2Weights(Weights):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 82.510,
             "acc@5": 96.020,
         },
