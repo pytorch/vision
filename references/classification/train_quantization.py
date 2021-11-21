@@ -132,7 +132,7 @@ def main(args):
                 model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
             print("Evaluate QAT model")
 
-            evaluate(model, criterion, data_loader_test, device=device)
+            evaluate(model, criterion, data_loader_test, device=device, log_suffix="QAT")
             quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device("cpu"))
