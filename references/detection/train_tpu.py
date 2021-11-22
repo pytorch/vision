@@ -32,6 +32,11 @@ from coco_utils import get_coco, get_coco_kp
 from engine import train_one_epoch, evaluate
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
+import torch_xla
+import torch_xla.utils.utils as xu
+import torch_xla.core.xla_model as xm
+import torch_xla.distributed.parallel_loader as pl
+import torch_xla.distributed.xla_multiprocessing as xmp
 
 try:
     from torchvision.prototype import models as PM
@@ -155,14 +160,16 @@ def main(args):
 
     utils.init_distributed_mode(args)
     print(args)
-
-    device = torch.device(args.device)
-
+    device = None
+    if args.device == 'tpu':
+        device = xm.xla_device()
+    else:
+        device = torch.device(args.device)
     # Data loading code
     print("Loading data")
 
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
-    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
+    dataset_test, _ = get_dataset(os.path.join(args.dataset, str(xm.get_ordinal())),, "val", get_transform(False, args), args.data_path)
 
     print("Creating data loaders")
     if args.distributed:
@@ -258,4 +265,5 @@ def main(args):
 
 if __name__ == "__main__":
     args = get_args_parser().parse_args()
-    main(args)
+    #main(args)
+    xmp.spawn(main, args)

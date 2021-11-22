@@ -32,11 +32,6 @@ from coco_utils import get_coco, get_coco_kp
 from engine import train_one_epoch, evaluate
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
-import torch_xla
-import torch_xla.utils.utils as xu
-import torch_xla.core.xla_model as xm
-import torch_xla.distributed.parallel_loader as pl
-import torch_xla.distributed.xla_multiprocessing as xmp
 
 try:
     from torchvision.prototype import models as PM

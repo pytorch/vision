@@ -8,6 +8,8 @@ import utils
 from coco_eval import CocoEvaluator
 from coco_utils import get_coco_api_from_dataset
 
+import torch_xla
+import torch_xla.core.xla_model as xm
 
 def train_one_epoch(model, optimizer, data_loader, device, epoch, print_freq):
     model.train()
@@ -85,12 +87,16 @@ def evaluate(model, data_loader, device):
     for images, targets in metric_logger.log_every(data_loader, 100, header):
         images = list(img.to(device) for img in images)
 
+        if device.type == 'xla':
+            images = images.to(device)
+            targets = targets.to(device)
+
         if torch.cuda.is_available():
             torch.cuda.synchronize()
         model_time = time.time()
         outputs = model(images)
 
-        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
+        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs] ##why doing this here?
         model_time = time.time() - model_time
 
         res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
@@ -98,6 +104,8 @@ def evaluate(model, data_loader, device):
         coco_evaluator.update(res)
         evaluator_time = time.time() - evaluator_time
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
+        if device.type == 'xla':
+            xm.mark_step()
 
     # gather the stats from all processes
     metric_logger.synchronize_between_processes()
