@@ -132,7 +132,7 @@ def main(args):
 
     if args.test_only:
         evaluate(model, data_loader_test, device=device)
-        do_flop(model, data_loader_test)
+        do_flop(model, data_loader_test, device=device)
         return
 
     print("Start training")
@@ -153,7 +153,7 @@ def main(args):
 
         # evaluate after every epoch
         evaluate(model, data_loader_test, device=device)
-        do_flop(model, data_loader_test)
+        do_flop(model, data_loader_test, device=device)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
@@ -161,11 +161,12 @@ def main(args):
 
 
 ########################## added by Yifan ###############################
-def do_flop(model, data_loader):
+def do_flop(model, data_loader, device):
     model.eval()
     counts = Counter()
     total_flops = []
     for idx, data in zip(tqdm.trange(len(data_loader)), data_loader):  # noqa
+        data = data.to(device)
         flops = FlopCountAnalysis(model, data)
         if idx > 0:
             flops.unsupported_ops_warnings(False).uncalled_modules_warnings(False)
