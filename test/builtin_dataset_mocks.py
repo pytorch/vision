@@ -144,9 +144,6 @@ class MNISTFakedata:
     @classmethod
     def _create_binary_file(cls, root, filename, *, num_samples, shape, dtype, compressor, low=0, high):
         with compressor(root / filename, "wb") as fh:
-            if dtype != torch.uint8:
-                print()
-
             for meta in (cls._magic(dtype, len(shape)), num_samples, *shape):
                 fh.write(cls._encode(meta))
 
