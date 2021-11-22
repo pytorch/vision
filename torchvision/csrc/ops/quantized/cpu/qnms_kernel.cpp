@@ -27,7 +27,8 @@ at::Tensor qnms_kernel_impl(
   auto y1_t = dets.select(1, 1).contiguous();
   auto x2_t = dets.select(1, 2).contiguous();
   auto y2_t = dets.select(1, 3).contiguous();
-  auto order_t = std::get<1>(scores.sort(0, /* descending=*/true));
+  auto order_t = std::get<1>(
+      scores.sort(/*stable=*/true, /*dim=*/0, /* descending=*/true));
   at::Tensor suppressed_t = at::zeros({ndets}, dets.options().dtype(at::kByte));
   at::Tensor keep_t = at::zeros({ndets}, dets.options().dtype(at::kLong));
   at::Tensor areas_t = at::zeros({ndets}, dets.options().dtype(at::kFloat));
