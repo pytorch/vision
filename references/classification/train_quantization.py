@@ -121,7 +121,7 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         print("Starting training for epoch", epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
+        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args)
         lr_scheduler.step()
         with torch.inference_mode():
             if epoch >= args.num_observer_update_epochs:
@@ -132,7 +132,7 @@ def main(args):
                 model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
             print("Evaluate QAT model")
 
-            evaluate(model, criterion, data_loader_test, device=device)
+            evaluate(model, criterion, data_loader_test, device=device, log_suffix="QAT")
             quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device("cpu"))
@@ -261,6 +261,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
+    parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
 
     # Prototype models only
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
