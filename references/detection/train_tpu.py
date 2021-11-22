@@ -37,6 +37,8 @@ import torch_xla.utils.utils as xu
 import torch_xla.core.xla_model as xm
 import torch_xla.distributed.parallel_loader as pl
 import torch_xla.distributed.xla_multiprocessing as xmp
+import torch_xla.debug.metrics as met
+
 
 try:
     from torchvision.prototype import models as PM
@@ -73,7 +75,10 @@ def get_args_parser(add_help=True):
     parser.add_argument("--model", default="maskrcnn_resnet50_fpn", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
-        "-b", "--batch-size", default=2, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
+        "-b", "--batch-size", default=1, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
+    )num_eval
+    parser.add_argument(
+        "-t", "--num_eval", default=10, type=int, help="total number of images to evaluate on tpu for testing"
     )
     parser.add_argument("--epochs", default=26, type=int, metavar="N", help="number of total epochs to run")
     parser.add_argument(
@@ -170,6 +175,7 @@ def main(args):
 
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
     dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
+    dataset_test = torch.utils.data.Subset(dataset_test, range(FLAGS.num_eval))
 
     print("Creating data loaders")
     if args.distributed:

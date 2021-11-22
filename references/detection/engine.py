@@ -96,7 +96,7 @@ def evaluate(model, data_loader, device):
         model_time = time.time()
         outputs = model(images)
 
-        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs] ##why doing this here?
+        outputs = [{k: v.to(cpu_device) for k, v in t.items()} for t in outputs]
         model_time = time.time() - model_time
 
         res = {target["image_id"].item(): output for target, output in zip(targets, outputs)}
@@ -104,6 +104,7 @@ def evaluate(model, data_loader, device):
         coco_evaluator.update(res)
         evaluator_time = time.time() - evaluator_time
         metric_logger.update(model_time=model_time, evaluator_time=evaluator_time)
+        print('Batch eval time {}'.format(evaluator_time))
         if device.type == 'xla':
             xm.mark_step()
 
