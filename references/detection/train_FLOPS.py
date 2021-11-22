@@ -163,13 +163,14 @@ def main(args):
 ########################## added by Yifan ###############################
 def do_flop(model, data_loader, device):
     model.eval()
-    metric_logger = utils.MetricLogger(delimiter="  ")
-    header = 'Test:'
     counts = Counter()
     total_flops = []
-    for images, targets in metric_logger.log_every(data_loader, 100, header):
-        images = list(img.to(device) for img in images)
-        flops = FlopCountAnalysis(model, images)
+    for idx, data in zip(tqdm.trange(len(data_loader)), data_loader):  # noqa
+        flops = FlopCountAnalysis(model, data)
+        if idx > 0:
+            flops.unsupported_ops_warnings(False).uncalled_modules_warnings(False)
+        data = list(img.to(device) for img in data)
+        flops = FlopCountAnalysis(model, data)
         counts += flops.by_operator()
         total_flops.append(flops.total())
 
