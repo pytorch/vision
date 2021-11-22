@@ -165,7 +165,7 @@ def do_flop(model, data_loader, device):
     model.eval()
     counts = Counter()
     total_flops = []
-    for idx, data in zip(tqdm.trange(len(100)), data_loader):  # noqa
+    for idx, data in zip(tqdm.trange(100), data_loader):  # noqa
         flops = FlopCountAnalysis(model, data)
         if idx > 0:
             flops.unsupported_ops_warnings(False).uncalled_modules_warnings(False)
