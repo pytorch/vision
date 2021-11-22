@@ -76,7 +76,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument(
         "-b", "--batch-size", default=1, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
-    )num_eval
+    )
     parser.add_argument(
         "-t", "--num_image", default=10, type=int, help="total number of images to evaluate on tpu for testing"
     )
