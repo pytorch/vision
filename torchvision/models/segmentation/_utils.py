@@ -5,6 +5,7 @@ from torch import nn, Tensor
 from torch.nn import functional as F
 
 from ..._internally_replaced_utils import load_state_dict_from_url
+from ...utils import _log_api_usage_once
 
 
 class _SimpleSegmentationModel(nn.Module):
@@ -12,6 +13,7 @@ class _SimpleSegmentationModel(nn.Module):
 
     def __init__(self, backbone: nn.Module, classifier: nn.Module, aux_classifier: Optional[nn.Module] = None) -> None:
         super().__init__()
+        _log_api_usage_once(self)
         self.backbone = backbone
         self.classifier = classifier
         self.aux_classifier = aux_classifier
