@@ -78,7 +78,7 @@ def get_args_parser(add_help=True):
         "-b", "--batch-size", default=1, type=int, help="images per gpu, the total batch size is $NGPU x batch_size"
     )num_eval
     parser.add_argument(
-        "-t", "--num_eval", default=10, type=int, help="total number of images to evaluate on tpu for testing"
+        "-t", "--num_image", default=10, type=int, help="total number of images to evaluate on tpu for testing"
     )
     parser.add_argument("--epochs", default=26, type=int, metavar="N", help="number of total epochs to run")
     parser.add_argument(
