@@ -35,6 +35,19 @@ from engine import train_one_epoch, evaluate
 import presets
 import utils
 
+########## added by Yifan #############
+import logging
+import numpy as np
+from collections import Counter
+import tqdm
+from fvcore.nn import flop_count_table  # can also try flop_count_str
+from detectron2.utils.analysis import (
+    FlopCountAnalysis,
+    activation_count_operators,
+    parameter_count_table,
+)
+#######################################
+
 
 def get_dataset(name, image_set, transform, data_path):
     paths = {
@@ -119,6 +132,7 @@ def main(args):
 
     if args.test_only:
         evaluate(model, data_loader_test, device=device)
+        do_flop(model, data_loader_test)
         return
 
     print("Start training")
@@ -139,10 +153,34 @@ def main(args):
 
         # evaluate after every epoch
         evaluate(model, data_loader_test, device=device)
+        do_flop(model, data_loader_test)
 
     total_time = time.time() - start_time
     total_time_str = str(datetime.timedelta(seconds=int(total_time)))
     print('Training time {}'.format(total_time_str))
+
+
+########################## added by Yifan ###############################
+def do_flop(model, data_loader):
+    model.eval()
+    counts = Counter()
+    total_flops = []
+    for idx, data in zip(tqdm.trange(args.num_inputs), data_loader):  # noqa
+        flops = FlopCountAnalysis(model, data)
+        if idx > 0:
+            flops.unsupported_ops_warnings(False).uncalled_modules_warnings(False)
+        counts += flops.by_operator()
+        total_flops.append(flops.total())
+
+    print("Flops table computed from only one input sample:\n" + flop_count_table(flops))
+    print(
+        "Average GFlops for each type of operators:\n"
+        + str([(k, v / (idx + 1) / 1e9) for k, v in counts.items()])
+    )
+    print(
+        "Total GFlops: {:.1f}±{:.1f}".format(np.mean(total_flops) / 1e9, np.std(total_flops) / 1e9)
+    )
+##############################################################################
 
 
 if __name__ == "__main__":
