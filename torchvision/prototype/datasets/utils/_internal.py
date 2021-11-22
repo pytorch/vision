@@ -21,6 +21,7 @@ from typing import (
     Optional,
     IO,
     Sized,
+    Iterable,
 )
 from typing import cast
 
@@ -32,6 +33,19 @@ import torch.utils.data
 from torch.utils.data import IterDataPipe
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
 from torchdata.datapipes.utils import StreamWrapper
+
+K = TypeVar("K")
+D = TypeVar("D")
+
+try:
+    from itertools import pairwise  # type: ignore[attr-defined]
+except ImportError:
+    from itertools import tee
+
+    def pairwise(iterable: Iterable[D]) -> Iterable[Tuple[D, D]]:
+        a, b = tee(iterable)
+        next(b, None)
+        return zip(a, b)
 
 
 __all__ = [
@@ -48,10 +62,8 @@ __all__ = [
     "Decompressor",
     "fromfile",
     "read_flo",
+    "InScenePairer",
 ]
-
-K = TypeVar("K")
-D = TypeVar("D")
 
 # pseudo-infinite until a true infinite buffer is supported by all datapipes
 INFINITE_BUFFER_SIZE = 1_000_000_000
@@ -117,17 +129,22 @@ def getitem(*items: Any) -> Callable[[Any], Any]:
     return functools.partial(_getitem_closure, items=items)
 
 
-def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
-    return cast(D, getattr(path, name))
+def _path_attribute_accessor(path: pathlib.Path, *, attrs: Sequence[str]) -> D:
+    obj: Any = path
+    for attr in attrs:
+        obj = getattr(obj, attr)
+    return cast(D, obj)
 
 
 def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
     return getter(pathlib.Path(data[0]))
 
 
-def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[Tuple[str, Any]], D]:
-    if isinstance(getter, str):
-        getter = functools.partial(_path_attribute_accessor, name=getter)
+def path_accessor(*attrs: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[Tuple[str, Any]], D]:
+    if not callable(attrs[0]):
+        getter = cast(Callable[[pathlib.Path], D], functools.partial(_path_attribute_accessor, attrs=attrs))
+    else:
+        getter = attrs[0]
 
     return functools.partial(_path_accessor_closure, getter=getter)
 
@@ -136,8 +153,8 @@ def _path_comparator_closure(data: Tuple[str, Any], *, accessor: Callable[[Tuple
     return accessor(data) == value
 
 
-def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
-    return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
+def path_comparator(*attrs: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
+    return functools.partial(_path_comparator_closure, accessor=path_accessor(*attrs), value=value)
 
 
 class CompressionType(enum.Enum):
@@ -321,3 +338,26 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
     width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
     flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
     return flow.reshape((height, width, 2)).permute((2, 0, 1))
+
+
+class InScenePairer(IterDataPipe[Tuple[Tuple[str, BinaryIO], Tuple[str, BinaryIO]]]):
+    def __init__(
+        self, datapipe: IterDataPipe[Tuple[str, BinaryIO]], *, scene_fn: Callable[[Tuple[str, BinaryIO]], K]
+    ) -> None:
+        self.datapipe = datapipe
+        self.scene_fn = scene_fn
+
+    def __iter__(self) -> Iterator[Tuple[Tuple[str, BinaryIO], Tuple[str, BinaryIO]]]:
+        prev_bytes = b""
+        for (path1, stream1), (path2, stream2) in pairwise(sorted(self.datapipe)):
+            if self.scene_fn(path1) != self.scene_fn(path2):
+                prev_bytes = b""
+                continue
+
+            buffer1 = io.BytesIO(prev_bytes) if prev_bytes else stream1
+            prev_bytes = stream2.read()
+            if prev_bytes == b"":
+                print()
+            buffer2 = io.BytesIO(prev_bytes)
+
+            yield (path1, buffer1), (path2, buffer2)

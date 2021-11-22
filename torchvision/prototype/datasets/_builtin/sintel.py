@@ -2,7 +2,7 @@ import io
 import pathlib
 import re
 from functools import partial
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Iterable, TypeVar, BinaryIO
+from typing import Any, Callable, Dict, List, Optional, Tuple, BinaryIO
 
 import torch
 from torchdata.datapipes.iter import (
@@ -22,31 +22,7 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_flo
-
-T = TypeVar("T")
-
-try:
-    from itertools import pairwise  # type: ignore[attr-defined]
-except ImportError:
-    from itertools import tee
-
-    def pairwise(iterable: Iterable[T]) -> Iterable[Tuple[T, T]]:
-        a, b = tee(iterable)
-        next(b, None)
-        return zip(a, b)
-
-
-class InSceneGrouper(IterDataPipe[Tuple[Tuple[str, T], Tuple[str, T]]]):
-    def __init__(self, datapipe: IterDataPipe[Tuple[str, T]]) -> None:
-        self.datapipe = datapipe
-
-    def __iter__(self) -> Iterator[Tuple[Tuple[str, Any], Tuple[str, Any]]]:
-        for item1, item2 in pairwise(sorted(self.datapipe)):
-            if pathlib.Path(item1[0]).parent != pathlib.Path(item2[0]).parent:
-                continue
-
-            yield item1, item2
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_flo, InScenePairer, path_accessor
 
 
 class SINTEL(Dataset):
@@ -102,7 +78,7 @@ class SINTEL(Dataset):
         idx = int(self._FILE_NAME_PATTERN.match(path.name).group("idx"))  # type: ignore[union-attr]
         return category, idx
 
-    def _add_fake_flow_data(self, data: Tuple[str, Any]) -> Tuple[tuple, Tuple[str, Any]]:
+    def _add_fake_flow_data(self, data: Tuple[str, Any]) -> Tuple[Tuple[None, None], Tuple[str, Any]]:
         return ((None, None), data)
 
     def _images_key(self, data: Tuple[Tuple[str, Any], Tuple[str, Any]]) -> Tuple[str, int]:
@@ -153,7 +129,9 @@ class SINTEL(Dataset):
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
             flo_dp = Shuffler(flo_dp, buffer_size=INFINITE_BUFFER_SIZE)
-            pass_images_dp: IterDataPipe[Tuple[str, Any], Tuple[str, Any]] = InSceneGrouper(pass_images_dp)
+            pass_images_dp: IterDataPipe[Tuple[str, Any], Tuple[str, Any]] = InScenePairer(
+                pass_images_dp, scene_fn=path_accessor("parent", "name")
+            )
             zipped_dp = IterKeyZipper(
                 flo_dp,
                 pass_images_dp,
@@ -162,7 +140,7 @@ class SINTEL(Dataset):
             )
         else:
             pass_images_dp = Shuffler(filtered_curr_split, buffer_size=INFINITE_BUFFER_SIZE)
-            pass_images_dp = InSceneGrouper(pass_images_dp)
+            pass_images_dp = InScenePairer(pass_images_dp, scene_fn=path_accessor("parent", "name"))
             zipped_dp = Mapper(pass_images_dp, self._add_fake_flow_data)
 
         return Mapper(zipped_dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
