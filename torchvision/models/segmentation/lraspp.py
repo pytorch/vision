@@ -34,11 +34,11 @@ class LRASPP(nn.Module):
         inter_channels (int, optional): the number of channels for intermediate computations.
     """
 
+    @_log_api_usage_once
     def __init__(
         self, backbone: nn.Module, low_channels: int, high_channels: int, num_classes: int, inter_channels: int = 128
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self)
         self.backbone = backbone
         self.classifier = LRASPPHead(low_channels, high_channels, num_classes, inter_channels)
 

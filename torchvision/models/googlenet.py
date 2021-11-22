@@ -28,6 +28,7 @@ _GoogLeNetOutputs = GoogLeNetOutputs
 class GoogLeNet(nn.Module):
     __constants__ = ["aux_logits", "transform_input"]
 
+    @_log_api_usage_once
     def __init__(
         self,
         num_classes: int = 1000,
@@ -39,7 +40,6 @@ class GoogLeNet(nn.Module):
         dropout_aux: float = 0.7,
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self)
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
         if init_weights is None:

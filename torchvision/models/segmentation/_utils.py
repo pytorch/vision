@@ -11,9 +11,9 @@ from ...utils import _log_api_usage_once
 class _SimpleSegmentationModel(nn.Module):
     __constants__ = ["aux_classifier"]
 
+    @_log_api_usage_once
     def __init__(self, backbone: nn.Module, classifier: nn.Module, aux_classifier: Optional[nn.Module] = None) -> None:
         super().__init__()
-        _log_api_usage_once(self)
         self.backbone = backbone
         self.classifier = classifier
         self.aux_classifier = aux_classifier

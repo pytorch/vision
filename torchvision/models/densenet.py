@@ -151,6 +151,7 @@ class DenseNet(nn.Module):
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
     """
 
+    @_log_api_usage_once
     def __init__(
         self,
         growth_rate: int = 32,
@@ -161,9 +162,7 @@ class DenseNet(nn.Module):
         num_classes: int = 1000,
         memory_efficient: bool = False,
     ) -> None:
-
         super().__init__()
-        _log_api_usage_once(self)
 
         # First convolution
         self.features = nn.Sequential(

@@ -165,6 +165,7 @@ class SSD(nn.Module):
         "proposal_matcher": det_utils.Matcher,
     }
 
+    @_log_api_usage_once
     def __init__(
         self,
         backbone: nn.Module,
@@ -182,7 +183,6 @@ class SSD(nn.Module):
         positive_fraction: float = 0.25,
     ):
         super().__init__()
-        _log_api_usage_once(self)
 
         self.backbone = backbone
 

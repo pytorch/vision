@@ -70,6 +70,7 @@ class FeaturePyramidNetwork(nn.Module):
 
     """
 
+    @_log_api_usage_once
     def __init__(
         self,
         in_channels_list: List[int],
@@ -77,7 +78,6 @@ class FeaturePyramidNetwork(nn.Module):
         extra_blocks: Optional[ExtraFPNBlock] = None,
     ):
         super().__init__()
-        _log_api_usage_once(self)
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
         for in_channels in in_channels_list:

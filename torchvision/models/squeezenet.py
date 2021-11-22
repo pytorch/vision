@@ -34,9 +34,9 @@ class Fire(nn.Module):
 
 
 class SqueezeNet(nn.Module):
+    @_log_api_usage_once
     def __init__(self, version: str = "1_0", num_classes: int = 1000, dropout: float = 0.5) -> None:
         super().__init__()
-        _log_api_usage_once(self)
         self.num_classes = num_classes
         if version == "1_0":
             self.features = nn.Sequential(

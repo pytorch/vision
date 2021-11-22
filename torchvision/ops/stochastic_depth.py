@@ -5,6 +5,7 @@ from torch import nn, Tensor
 from ..utils import _log_api_usage_once
 
 
+@_log_api_usage_once
 def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) -> Tensor:
     """
     Implements the Stochastic Depth from `"Deep Networks with Stochastic Depth"
@@ -23,7 +24,6 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
     Returns:
         Tensor[N, ...]: The randomly zeroed tensor.
     """
-    _log_api_usage_once("torchvision.ops.stochastic_depth")
     if p < 0.0 or p > 1.0:
         raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
     if mode not in ["batch", "row"]:

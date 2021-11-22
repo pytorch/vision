@@ -27,6 +27,7 @@ _InceptionOutputs = InceptionOutputs
 
 
 class Inception3(nn.Module):
+    @_log_api_usage_once
     def __init__(
         self,
         num_classes: int = 1000,
@@ -37,7 +38,6 @@ class Inception3(nn.Module):
         dropout: float = 0.5,
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self)
         if inception_blocks is None:
             inception_blocks = [BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, InceptionAux]
         if init_weights is None:

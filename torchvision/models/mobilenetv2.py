@@ -86,6 +86,7 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV2(nn.Module):
+    @_log_api_usage_once
     def __init__(
         self,
         num_classes: int = 1000,
@@ -111,7 +112,6 @@ class MobileNetV2(nn.Module):
 
         """
         super().__init__()
-        _log_api_usage_once(self)
 
         if block is None:
             block = InvertedResidual

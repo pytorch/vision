@@ -162,6 +162,7 @@ class Bottleneck(nn.Module):
 
 
 class ResNet(nn.Module):
+    @_log_api_usage_once
     def __init__(
         self,
         block: Type[Union[BasicBlock, Bottleneck]],
@@ -174,7 +175,6 @@ class ResNet(nn.Module):
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self)
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d
         self._norm_layer = norm_layer

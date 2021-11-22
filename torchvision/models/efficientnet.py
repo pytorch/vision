@@ -148,6 +148,7 @@ class MBConv(nn.Module):
 
 
 class EfficientNet(nn.Module):
+    @_log_api_usage_once
     def __init__(
         self,
         inverted_residual_setting: List[MBConvConfig],
@@ -170,7 +171,6 @@ class EfficientNet(nn.Module):
             norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
         """
         super().__init__()
-        _log_api_usage_once(self)
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")

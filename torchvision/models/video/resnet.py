@@ -188,6 +188,7 @@ class R2Plus1dStem(nn.Sequential):
 
 
 class VideoResNet(nn.Module):
+    @_log_api_usage_once
     def __init__(
         self,
         block: Type[Union[BasicBlock, Bottleneck]],
@@ -209,7 +210,6 @@ class VideoResNet(nn.Module):
             zero_init_residual (bool, optional): Zero init bottleneck residual BN. Defaults to False.
         """
         super().__init__()
-        _log_api_usage_once(self)
         self.inplanes = 64
 
         self.stem = stem()

@@ -316,6 +316,7 @@ class RetinaNet(nn.Module):
         "proposal_matcher": det_utils.Matcher,
     }
 
+    @_log_api_usage_once
     def __init__(
         self,
         backbone,
@@ -337,7 +338,6 @@ class RetinaNet(nn.Module):
         topk_candidates=1000,
     ):
         super().__init__()
-        _log_api_usage_once(self)
 
         if not hasattr(backbone, "out_channels"):
             raise ValueError(

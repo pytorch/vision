@@ -96,9 +96,9 @@ class MNASNet(torch.nn.Module):
     # Version 2 adds depth scaling in the initial stages of the network.
     _version = 2
 
+    @_log_api_usage_once
     def __init__(self, alpha: float, num_classes: int = 1000, dropout: float = 0.2) -> None:
         super().__init__()
-        _log_api_usage_once(self)
         assert alpha > 0.0
         self.alpha = alpha
         self.num_classes = num_classes

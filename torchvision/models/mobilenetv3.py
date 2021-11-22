@@ -129,6 +129,7 @@ class InvertedResidual(nn.Module):
 
 
 class MobileNetV3(nn.Module):
+    @_log_api_usage_once
     def __init__(
         self,
         inverted_residual_setting: List[InvertedResidualConfig],
@@ -151,7 +152,6 @@ class MobileNetV3(nn.Module):
             dropout (float): The droupout probability
         """
         super().__init__()
-        _log_api_usage_once(self)
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")

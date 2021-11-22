@@ -144,6 +144,7 @@ class MultiScaleRoIAlign(nn.Module):
 
     __annotations__ = {"scales": Optional[List[float]], "map_levels": Optional[LevelMapper]}
 
+    @_log_api_usage_once
     def __init__(
         self,
         featmap_names: List[str],
@@ -154,7 +155,6 @@ class MultiScaleRoIAlign(nn.Module):
         canonical_level: int = 4,
     ):
         super().__init__()
-        _log_api_usage_once(self)
         if isinstance(output_size, int):
             output_size = (output_size, output_size)
         self.featmap_names = featmap_names
