@@ -99,7 +99,9 @@ class TestModelsDetectionNegativeSamples:
         ],
     )
     def test_forward_negative_sample_frcnn(self, name):
-        model = torchvision.models.detection.__dict__[name](num_classes=2, min_size=100, max_size=100)
+        model = torchvision.models.detection.__dict__[name](
+            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False
+        )
 
         images, targets = self._make_empty_sample()
         loss_dict = model(images, targets)
@@ -108,7 +110,9 @@ class TestModelsDetectionNegativeSamples:
         assert_equal(loss_dict["loss_rpn_box_reg"], torch.tensor(0.0))
 
     def test_forward_negative_sample_mrcnn(self):
-        model = torchvision.models.detection.maskrcnn_resnet50_fpn(num_classes=2, min_size=100, max_size=100)
+        model = torchvision.models.detection.maskrcnn_resnet50_fpn(
+            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False
+        )
 
         images, targets = self._make_empty_sample(add_masks=True)
         loss_dict = model(images, targets)
@@ -118,7 +122,9 @@ class TestModelsDetectionNegativeSamples:
         assert_equal(loss_dict["loss_mask"], torch.tensor(0.0))
 
     def test_forward_negative_sample_krcnn(self):
-        model = torchvision.models.detection.keypointrcnn_resnet50_fpn(num_classes=2, min_size=100, max_size=100)
+        model = torchvision.models.detection.keypointrcnn_resnet50_fpn(
+            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False
+        )
 
         images, targets = self._make_empty_sample(add_keypoints=True)
         loss_dict = model(images, targets)

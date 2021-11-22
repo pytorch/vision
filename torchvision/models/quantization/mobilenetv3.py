@@ -43,7 +43,7 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
     ):
         version = local_metadata.get("version", None)
 
-        if version is None or version < 2:
+        if hasattr(self, "qconfig") and (version is None or version < 2):
             default_state_dict = {
                 "scale_activation.activation_post_process.scale": torch.tensor([1.0]),
                 "scale_activation.activation_post_process.zero_point": torch.tensor([0], dtype=torch.int32),

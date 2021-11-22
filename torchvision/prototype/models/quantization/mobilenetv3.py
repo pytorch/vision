@@ -47,7 +47,7 @@ def _mobilenet_v3_model(
         torch.quantization.prepare_qat(model, inplace=True)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     if quantize:
         torch.quantization.convert(model, inplace=True)
@@ -81,7 +81,7 @@ def mobilenet_v3_large(
     **kwargs: Any,
 ) -> QuantizableMobileNetV3:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         if kwargs.pop("pretrained"):
             weights = (
                 QuantizedMobileNetV3LargeWeights.ImageNet1K_QNNPACK_RefV1
