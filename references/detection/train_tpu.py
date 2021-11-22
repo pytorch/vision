@@ -175,7 +175,7 @@ def main(args):
 
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
     dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
-    dataset_test = torch.utils.data.Subset(dataset_test, range(FLAGS.num_eval))
+    dataset_test = torch.utils.data.Subset(dataset_test, range(args.num_image))
 
     print("Creating data loaders")
     if args.distributed:
