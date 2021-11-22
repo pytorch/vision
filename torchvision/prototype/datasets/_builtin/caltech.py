@@ -30,6 +30,7 @@ class Caltech101(Dataset):
         return DatasetInfo(
             "caltech101",
             type=DatasetType.IMAGE,
+            dependencies=("scipy",),
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
         )
 
