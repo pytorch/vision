@@ -169,7 +169,7 @@ def main(args):
     print("Loading data")
 
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
-    dataset_test, _ = get_dataset(os.path.join(args.dataset, str(xm.get_ordinal())),, "val", get_transform(False, args), args.data_path)
+    dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
 
     print("Creating data loaders")
     if args.distributed:
@@ -266,4 +266,4 @@ def main(args):
 if __name__ == "__main__":
     args = get_args_parser().parse_args()
     #main(args)
-    xmp.spawn(main, args)
+    xmp.spawn(main(args))

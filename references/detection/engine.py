@@ -88,9 +88,8 @@ def evaluate(model, data_loader, device):
         images = list(img.to(device) for img in images)
 
         if device.type == 'xla':
-            images = images.to(device)
-            targets = targets.to(device)
-
+            images = list(img.to(device) for img in images)
+            targets = [{k: v.to(device) for k, v in t.items()} for t in targets]
         if torch.cuda.is_available():
             torch.cuda.synchronize()
         model_time = time.time()
