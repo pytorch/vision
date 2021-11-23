@@ -13,7 +13,4 @@ def raw(buffer: io.IOBase) -> torch.Tensor:
 
 
 def pil(buffer: io.IOBase) -> features.Image:
-    try:
-        return features.Image(pil_to_tensor(PIL.Image.open(buffer)))
-    finally:
-        buffer.close()
+    return features.Image(pil_to_tensor(PIL.Image.open(buffer)))
