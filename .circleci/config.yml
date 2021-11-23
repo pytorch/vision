@@ -202,10 +202,9 @@ jobs:
             sudo apt-get update -y
             sudo apt install -y libturbojpeg-dev
             pip install --user --progress-bar off mypy
-            pip install --user --progress-bar off types-requests
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             pip install --user --progress-bar off git+https://github.com/pytorch/data.git
-            pip install --user --progress-bar off --no-build-isolation --editable .
+            pip install --user --progress-bar off --no-build-isolation --editable .[all]
             mypy --config-file mypy.ini
 
   docstring_parameters_sync:
@@ -241,7 +240,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --no-build-isolation .
+            pip install --user --progress-bar off --no-build-isolation .[all]
             pip install pytest
             python test/test_hub.py
 
@@ -254,7 +253,7 @@ jobs:
           command: |
             pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
             # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --no-build-isolation .
+            pip install --user --progress-bar off --no-build-isolation .[all]
             pip install --user onnx
             pip install --user onnxruntime
             pip install --user pytest
@@ -269,14 +268,14 @@ jobs:
           command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
       - run:
           name: Install prototype dependencies
-          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
+          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git iopath
       - checkout
       - run:
           name: Install torchvision
-          command: pip install --user --progress-bar off --no-build-isolation .
+          command: pip install --user --progress-bar off --no-build-isolation .[all]
       - run:
           name: Install test requirements
-          command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
+          command: pip install --user --progress-bar=off pytest pytest-mock
       - run:
           name: Run tests
           command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py

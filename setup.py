@@ -444,6 +444,15 @@ class clean(distutils.command.clean.clean):
         distutils.command.clean.clean.run(self)
 
 
+extras_require = dict(
+    # TODO: keep scipy extra for BC?
+    scipy=["scipy"],
+    io=["av"],
+    datasets=["scipy", "pycocotools", "lmdb"],
+)
+extras_require["all"] = sorted({extra for extras in extras_require.values() for extra in extras})
+
+
 if __name__ == "__main__":
     print(f"Building wheel {package_name}-{version}")
 
@@ -467,9 +476,7 @@ if __name__ == "__main__":
         package_data={package_name: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
         zip_safe=False,
         install_requires=requirements,
-        extras_require={
-            "scipy": ["scipy"],
-        },
+        extras_require=extras_require,
         ext_modules=get_extensions(),
         python_requires=">=3.6",
         cmdclass={
