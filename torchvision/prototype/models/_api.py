@@ -101,6 +101,11 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
         # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
         for t in ann.__args__:  # type: ignore[union-attr]
             if isinstance(t, type) and issubclass(t, Weights):
+                # ensure the name exists. handles builders with multiple types of weights like in quantization
+                try:
+                    t.from_str(weight_name)
+                except ValueError:
+                    continue
                 weights_class = t
                 break
 
