@@ -1,3 +1,4 @@
+import warnings
 from typing import Optional, List, Dict, Tuple, Union
 
 import torch
@@ -144,6 +145,7 @@ def _multiscale_roi_align(
     output_size: List[int],
     sampling_ratio: int,
     scales: Optional[List[float]] = None,
+    mapper: Optional[LevelMapper] = None,
 ) -> Tensor:
     """
     Args:
@@ -160,6 +162,7 @@ def _multiscale_roi_align(
         output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
         sampling_ratio (int): sampling ratio for ROIAlign
         scales (Optional[List[float]]): If None, scales will be automatically infered. Default value is None.
+        mapper (Optional[LevelMapper]): If none, mapper will be automatically infered. Default value is None.
     Returns:
         result (Tensor)
     """
@@ -171,12 +174,11 @@ def _multiscale_roi_align(
     num_levels = len(x_filtered)
     rois = _convert_to_roi_format(boxes)
 
-    if scales is None:
+    if scales is None or mapper is None:
         scales, mapper = _setup_scales(x_filtered, image_shapes, canonical_scale, canonical_level)
-    else:
-        mapper = None
 
     assert scales is not None
+    assert mapper is not None
 
     if num_levels == 1:
         return roi_align(
@@ -186,8 +188,6 @@ def _multiscale_roi_align(
             spatial_scale=scales[0],
             sampling_ratio=sampling_ratio,
         )
-
-    assert mapper is not None
 
     levels = mapper(boxes)
 
@@ -295,6 +295,25 @@ class MultiScaleRoIAlign(nn.Module):
         self.canonical_scale = canonical_scale
         self.canonical_level = canonical_level
 
+    def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
+        # TODO: deprecate eventually
+        warnings.warn("`convert_to_roi_format` will no loger be public in future releases.", FutureWarning)
+        return _convert_to_roi_format(boxes)
+
+    def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
+        # TODO: deprecate eventually
+        warnings.warn("`infer_scale` will no loger be public in future releases.", FutureWarning)
+        return _infer_scale(feature, original_size)
+
+    def setup_setup_scales(
+        self,
+        features: List[Tensor],
+        image_shapes: List[Tuple[int, int]],
+    ) -> None:
+        # TODO: deprecate eventually
+        warnings.warn("`setup_setup_scales` will no loger be public in future releases.", FutureWarning)
+        self.scales, self.map_levels = _setup_scales(features, image_shapes, self.canonical_scale, self.canonical_level)
+
     def forward(
         self,
         x: Dict[str, Tensor],
@@ -324,6 +343,7 @@ class MultiScaleRoIAlign(nn.Module):
             self.output_size,
             self.sampling_ratio,
             self.scales,
+            self.map_levels,
         )
 
     def __repr__(self) -> str:
