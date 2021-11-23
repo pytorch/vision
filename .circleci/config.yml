@@ -261,8 +261,9 @@ jobs:
             python test/test_onnx.py
 
   prototype_test:
-    docker:
-      - image: circleci/python:3.7
+    executor: windows-cpu
+#    docker:
+#      - image: circleci/python:3.7
     steps:
       - run:
           name: Install torch
