@@ -541,6 +541,14 @@ def resize(
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 
+    # Temporary fix for channels-last-like tensor
+    # Context: https://github.com/pytorch/vision/issues/4880 and
+    # https://github.com/pytorch/pytorch/issues/68430
+    # For channels-first tensor .contiguous() is no-op
+    # For unsqueezed 3D channels-list tensor,
+    #   we transform it to contiguous 4D channels-first tensor
+    img = img.contiguous()
+
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
