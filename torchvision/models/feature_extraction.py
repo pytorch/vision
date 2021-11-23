@@ -181,7 +181,7 @@ def _get_leaf_modules_for_ops():
     for _, obj in members:
         if inspect.isclass(obj) and issubclass(obj, torch.nn.Module):
             result.append(obj)
-    return tuple(result)
+    return result
 
 
 def get_graph_node_names(
