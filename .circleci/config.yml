@@ -100,14 +100,23 @@ commands:
           formulae: libtool
 
   checkout_and_install:
+    parameters:
+      editable:
+        type: boolean
+        default: true
     steps:
       - run:
           name: Install torch
-          command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+          command: >
+            pip install --user --progress-bar=off
+            --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
       - checkout
       - run:
           name: Install torchvision
-          command: pip install --user --progress-bar=off --no-build-isolation .
+          command: >
+            pip install --user --progress-bar=off
+            <<# parameters.editable >> --editable <</ parameters.editable >>
+            --no-build-isolation .
 
   install_prototype_dependencies:
     steps:
@@ -258,7 +267,8 @@ jobs:
           command: |
             sudo apt update -y
             sudo apt install -y libturbojpeg-dev
-      - checkout_and_install
+      - checkout_and_install:
+          editable: true
       - install_prototype_dependencies
       - run:
           name: Install Python type check utilities
@@ -267,7 +277,7 @@ jobs:
           name: Check Python types statically
           command: mypy --config-file mypy.ini
 
-  test_torchhub:
+  unittest_torchhub:
     docker:
       - image: circleci/python:3.7
     steps:
@@ -275,7 +285,7 @@ jobs:
       - run_tests:
           file_or_dir: test/test_hub.py
 
-  test_onnx:
+  unittest_onnx:
     docker:
       - image: circleci/python:3.7
     steps:
@@ -286,7 +296,7 @@ jobs:
       - run_tests:
           file_or_dir: test/test_onnx.py
 
-  test_prototype:
+  unittest_prototype:
     docker:
       - image: circleci/python:3.7
     steps:
@@ -1521,9 +1531,6 @@ workflows:
       - lint_python_and_config
       - lint_c
       - type_check_python
-      - test_torchhub
-      - test_onnx
-      - test_prototype
       - binary_ios_build:
           build_environment: binary-libtorchvision_ops-ios-12.0.0-x86_64
           ios_arch: x86_64
@@ -1540,6 +1547,9 @@ workflows:
 
   unittest:
     jobs:
+      - unittest_torchhub
+      - unittest_onnx
+      - unittest_prototype
       - unittest_linux_cpu:
           cu_version: cpu
           name: unittest_linux_cpu_py3.6
@@ -1681,9 +1691,6 @@ workflows:
       - lint_python_and_config
       - lint_c
       - type_check_python
-      - test_torchhub
-      - test_onnx
-      - test_prototype
       - binary_ios_build:
           build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-x86_64
           filters:
