@@ -115,8 +115,8 @@ commands:
           name: Install torchvision
           command: >
             pip install --user --progress-bar=off
-            <<# parameters.editable >> --editable <</ parameters.editable >>
-            --no-build-isolation .
+            --no-build-isolation
+            <<# parameters.editable >> --editable <</ parameters.editable >> .
 
   install_prototype_dependencies:
     steps:
@@ -240,7 +240,7 @@ jobs:
     steps:
       - run:
           name: Install additional system libraries
-          command: sudo apt update -qy && apt install -qy libtinfo5
+          command: sudo apt update -qy && sudo apt install -qy libtinfo5
       - checkout
       - run:
           name: Install lint utilities
@@ -262,7 +262,7 @@ jobs:
     steps:
       - run:
           name: Install additional system libraries
-          command: sudo apt update -qy && apt install -qy libturbojpeg-dev
+          command: sudo apt update -qy && sudo apt install -qy libturbojpeg-dev
       - checkout_and_install:
           editable: true
       - install_prototype_dependencies
@@ -1023,6 +1023,7 @@ workflows:
       - lint_python_and_config
       - lint_c
       - type_check_python
+
   build:
     jobs:
       - binary_linux_wheel:
