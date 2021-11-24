@@ -1013,7 +1013,7 @@ def elastic_deformation(
     dx = (
         gaussian_blur(
             torch.rand(*shape).unsqueeze(0).unsqueeze(0).to(img.device) * 2 - 1,
-            [4.0 * sigma[0] + 1.0, 4.0 * sigma[1] + 1.0],
+            [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
             sigma,
         )
         * alpha[0]
@@ -1022,7 +1022,7 @@ def elastic_deformation(
     dy = (
         gaussian_blur(
             torch.rand(*shape).unsqueeze(0).unsqueeze(0).to(img.device) * 2 - 1,
-            [4.0 * sigma[0] + 1.0, 4.0 * sigma[1] + 1.0],
+            [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
             sigma,
         )
         * alpha[1]
