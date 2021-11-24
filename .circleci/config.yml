@@ -99,20 +99,20 @@ commands:
       - brew_install:
           formulae: libtool
 
-  pip_install:
-    parameters:
-      name:
-        default: pip install
-        type: string
-      package:
-        type: string
-      options:
-        default: --user --progress-bar=off
-        type: string
-    steps:
-      - run:
-          name: <<parameters.name>> <<parameters.package>>
-          command: pip install <<parameters.options>> <<parameters.package>>
+#  pip_install:
+#    parameters:
+#      name:
+#        default: pip install
+#        type: string
+#      package:
+#        type: string
+#      options:
+#        default: --user --progress-bar=off
+#        type: string
+#    steps:
+#      - run:
+#          name: <<parameters.name>> <<parameters.package>>
+#          command: pip install <<parameters.options>> <<parameters.package>>
 
   checkout_and_install:
     steps:
@@ -136,9 +136,9 @@ commands:
       file_or_dir:
         type: string
     steps:
-      - pip_install:
+      - run:
           name: Install test utilities
-          package: pytest pytest-mock
+          command: pip install --user --progress-bar=off pytest pytest-mock
       - run:
           name: Run tests
           command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
