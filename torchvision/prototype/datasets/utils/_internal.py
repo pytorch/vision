@@ -302,7 +302,7 @@ def fromfile(
     # buffer: Union[memoryview, bytearray]
     # try:
     #     # FIXME: DEBUG
-    #     a = file.fileno()
+    a = file.fileno()
     #     b = mmap.mmap(a, 0)
     #     c = memoryview(b)
     #     d = file.tell()
