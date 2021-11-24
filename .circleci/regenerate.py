@@ -347,5 +347,7 @@ if __name__ == "__main__":
                 cmake_workflows=cmake_workflows,
                 ios_workflows=ios_workflows,
                 android_workflows=android_workflows,
+                pip_install="pip install --user --progress-bar=off",
+                apt_install="sudo apt update -y && apt install -y",
             )
         )

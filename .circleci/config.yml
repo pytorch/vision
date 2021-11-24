@@ -294,7 +294,7 @@ jobs:
       - install_prototype_dependencies
       - run:
           name: Install optional dependencies
-          run: pip install --user --progress-bar=off scipy
+          command: pip install --user --progress-bar=off scipy
       - run_tests:
           file_or_dir: test/test_prototype_*.py
 
