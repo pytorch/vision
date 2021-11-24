@@ -238,8 +238,6 @@ smoke_test_common: &smoke_test_common
   docker:
     - image: torchvision/smoke_test:latest
 
-# Trigger error
-
 jobs:
   circleci_consistency:
     docker:
@@ -249,14 +247,10 @@ jobs:
       - pip_install:
           args: jinja2 pyyaml
       - run:
-          name: Re-generate CircleCI config
+          name: Check CircleCI config consistency
           command: |
             python .circleci/regenerate.py
-            git diff --exit-code
-      - run:
-          name: Required action
-          when: on_fail
-          command: echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"
+            git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
   lint_python_and_config:
     docker:
