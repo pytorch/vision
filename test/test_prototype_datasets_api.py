@@ -151,6 +151,12 @@ class TestDatasetInfo:
         with pytest.raises(ValueError, match=expected_error_msg):
             info.make_config(**options)
 
+    def test_check_dependencies(self):
+        dependency = "fake_dependency"
+        info = make_minimal_dataset_info(dependencies=(dependency,))
+        with pytest.raises(ModuleNotFoundError, match=dependency):
+            info.check_dependencies()
+
     def test_repr(self, info):
         output = repr(info)
 
@@ -169,21 +175,14 @@ class TestDatasetInfo:
 
 class TestDataset:
     class DatasetMock(datasets.utils.Dataset):
-        def __init__(self, name="name", *, valid_options=None, resources=None):
-            self._name = name
-            self._valid_options = valid_options or dict(split=("train", "test"))
-
+        def __init__(self, info=None, *, resources=None):
+            self._info = info or make_minimal_dataset_info(valid_options=dict(split=("train", "test")))
             self.resources = unittest.mock.Mock(return_value=[]) if resources is None else lambda config: resources
             self._make_datapipe = unittest.mock.Mock()
             super().__init__()
 
         def _make_info(self):
-            return datasets.utils.DatasetInfo(
-                self._name,
-                type=datasets.utils.DatasetType.RAW,
-                categories=[],
-                valid_options=self._valid_options,
-            )
+            return self._info
 
         def resources(self, config):
             # This method is just defined to appease the ABC, but will be overwritten at instantiation
@@ -195,14 +194,13 @@ class TestDataset:
 
     def test_name(self):
         name = "sentinel"
-        dataset = self.DatasetMock(name=name)
+        dataset = self.DatasetMock(make_minimal_dataset_info(name=name))
 
         assert dataset.name == name
 
     def test_default_config(self):
         sentinel = "sentinel"
-        valid_options = dict(split=(sentinel, "train"))
-        dataset = self.DatasetMock(valid_options=valid_options)
+        dataset = self.DatasetMock(info=make_minimal_dataset_info(valid_options=dict(split=(sentinel, "train"))))
 
         assert dataset.default_config == datasets.utils.DatasetConfig(split=sentinel)
 
@@ -222,6 +220,12 @@ class TestDataset:
 
         (_, call_kwargs) = dataset._make_datapipe.call_args
         assert call_kwargs["config"] == config
+
+    def test_missing_dependencies(self):
+        dependency = "fake_dependency"
+        dataset = self.DatasetMock(make_minimal_dataset_info(dependencies=(dependency,)))
+        with pytest.raises(ModuleNotFoundError, match=dependency):
+            dataset.to_datapipe("root")
 
     def test_resources(self, mocker):
         resource_mock = mocker.Mock(spec=["to_datapipe"])
