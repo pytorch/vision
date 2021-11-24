@@ -323,9 +323,10 @@ class MultiScaleRoIAlign(nn.Module):
             result (Tensor)
         """
         x_filtered = _filter_input(x, self.featmap_names)
-        self.scales, self.map_levels = _setup_scales(
-            x_filtered, image_shapes, self.canonical_scale, self.canonical_level
-        )
+        if self.scales is None or self.map_levels is None:
+            self.scales, self.map_levels = _setup_scales(
+                x_filtered, image_shapes, self.canonical_scale, self.canonical_level
+            )
         assert self.scales is not None
         assert self.map_levels is not None
 
