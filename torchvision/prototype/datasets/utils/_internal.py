@@ -299,25 +299,25 @@ def fromfile(
     # - the file is seekable
     # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it to
     # a mutable location afterwards.
-    buffer: Union[memoryview, bytearray]
-    try:
-        # FIXME: DEBUG
-        a = file.fileno()
-        b = mmap.mmap(a, 0)
-        c = memoryview(b)
-        d = file.tell()
-        e = c[d:]
-        buffer = e
-        # buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
-        # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
-        offset, whence = (0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR)
-        file.seek(offset, whence)
-    except (PermissionError, io.UnsupportedOperation):
-        # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
-        f = file.read(-1 if count == -1 else count * item_size)
-        g = bytearray(f)
-        buffer = g
-        # buffer = bytearray(file.read(-1 if count == -1 else count * item_size))
+    # buffer: Union[memoryview, bytearray]
+    # try:
+    #     # FIXME: DEBUG
+    #     a = file.fileno()
+    #     b = mmap.mmap(a, 0)
+    #     c = memoryview(b)
+    #     d = file.tell()
+    #     e = c[d:]
+    #     buffer = e
+    #     # buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
+    #     # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
+    #     offset, whence = (0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR)
+    #     file.seek(offset, whence)
+    # except (PermissionError, io.UnsupportedOperation):
+    # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
+    f = file.read(-1 if count == -1 else count * item_size)
+    g = bytearray(f)
+    buffer = g
+    # buffer = bytearray(file.read(-1 if count == -1 else count * item_size))
 
     # We cannot use torch.frombuffer() directly, since it only supports the native byte order of the system. Thus, we
     # read the data with np.frombuffer() with the correct byte order and convert it to the native one with the
