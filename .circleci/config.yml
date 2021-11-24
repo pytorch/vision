@@ -99,21 +99,6 @@ commands:
       - brew_install:
           formulae: libtool
 
-#  pip_install:
-#    parameters:
-#      name:
-#        default: pip install
-#        type: string
-#      package:
-#        type: string
-#      options:
-#        default: --user --progress-bar=off
-#        type: string
-#    steps:
-#      - run:
-#          name: <<parameters.name>> <<parameters.package>>
-#          command: pip install <<parameters.options>> <<parameters.package>>
-
   checkout_and_install:
     steps:
       - checkout
@@ -289,7 +274,7 @@ jobs:
     steps:
       - checkout_and_install
       - run_tests:
-          - file_or_dir: test/test_hub.py
+          file_or_dir: test/test_hub.py
 
   test_onnx:
     docker:
@@ -300,7 +285,7 @@ jobs:
           name: Install ONNX
           command: pip install --user --progress-bar=off onnx onnx-runtime
       - run_tests:
-          - file_or_dir: test/test_onnx.py
+          file_or_dir: test/test_onnx.py
 
   test_prototype:
     docker:
@@ -309,7 +294,7 @@ jobs:
       - checkout_and_install
       - install_prototype_dependencies
       - run_tests:
-          - file_or_dir: test/test_prototype_*.py
+          file_or_dir: test/test_prototype_*.py
 
   binary_linux_wheel:
     <<: *binary_common
@@ -1531,13 +1516,12 @@ workflows:
           python_version: '3.7'
           requires:
           - build_docs
-      - python_lint
-      - python_type_check
-      - docstring_parameters_sync
-      - clang_format
-      - torchhub_test
-      - torch_onnx_test
-      - prototype_test
+      - lint_python_and_config
+      - lint_c
+      - type_check_python
+      - test_torchhub
+      - test_onnx
+      - test_prototype
       - binary_ios_build:
           build_environment: binary-libtorchvision_ops-ios-12.0.0-x86_64
           ios_arch: x86_64
@@ -1692,13 +1676,12 @@ workflows:
   nightly:
     jobs:
       - circleci_consistency
-      - python_lint
-      - python_type_check
-      - docstring_parameters_sync
-      - clang_format
-      - torchhub_test
-      - torch_onnx_test
-      - prototype_test
+      - lint_python_and_config
+      - lint_c
+      - type_check_python
+      - test_torchhub
+      - test_onnx
+      - test_prototype
       - binary_ios_build:
           build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-x86_64
           filters:
