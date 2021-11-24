@@ -5,6 +5,7 @@ import os
 import shutil
 import subprocess
 import sys
+from collections import defaultdict
 
 import torch
 from pkg_resources import parse_version, get_distribution, DistributionNotFound
@@ -444,13 +445,29 @@ class clean(distutils.command.clean.clean):
         distutils.command.clean.clean.run(self)
 
 
-extras_require = dict(
-    # TODO: keep scipy extra for BC?
-    scipy=["scipy"],
-    io=["av"],
-    datasets=["scipy", "pycocotools", "lmdb"],
-)
-extras_require["all"] = sorted({extra for extras in extras_require.values() for extra in extras})
+def get_optional_requirements(file_name="optional-requirements.txt"):
+    extras_require = defaultdict(lambda: set())
+    with open(os.path.join(cwd, file_name)) as file:
+        extra = None
+        for line in file:
+            if line.startswith("#"):
+                extra = line[1:].strip()
+                continue
+
+            extras_require[extra].add(line.strip())
+
+    unknown_extra = extras_require.pop(None, None)
+    if unknown_extra:
+        raise RuntimeError(
+            f"Requirement(s) {sorted(unknown_extra)} do not belong to any extra. "
+            f"Please place them in a existing extra or create new one by adding a comment with the name of the extra."
+        )
+
+    extras_require = {extra: sorted(requirements) for extra, requirements in extras_require.items()}
+    extras_require["all"] = sorted(
+        {requirement for requirements in extras_require.values() for requirement in requirements}
+    )
+    return extras_require
 
 
 if __name__ == "__main__":
@@ -476,7 +493,7 @@ if __name__ == "__main__":
         package_data={package_name: ["*.dll", "*.dylib", "*.so", "prototype/datasets/_builtin/*.categories"]},
         zip_safe=False,
         install_requires=requirements,
-        extras_require=extras_require,
+        extras_require=get_optional_requirements(),
         ext_modules=get_extensions(),
         python_requires=">=3.6",
         cmdclass={

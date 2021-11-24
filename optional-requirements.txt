@@ -1,0 +1,8 @@
+# scipy
+scipy
+# io
+av
+# datasets
+scipy
+lmdb
+pycocotools
