@@ -8,7 +8,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.efficientnet import EfficientNet, MBConvConfig
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = [
@@ -41,7 +41,7 @@ def _efficientnet(
     **kwargs: Any,
 ) -> EfficientNet:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     bneck_conf = partial(MBConvConfig, width_mult=width_mult, depth_mult=depth_mult)
     inverted_residual_setting = [

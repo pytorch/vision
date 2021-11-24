@@ -11,7 +11,7 @@ from ....models.detection.keypoint_rcnn import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
-from .._utils import _deprecated_param
+from .._utils import _deprecated_param, _ovewrite_value_param
 from ..resnet import ResNet50Weights, resnet50
 
 
@@ -72,8 +72,8 @@ def keypointrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
-        num_keypoints = len(weights.meta["keypoint_names"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        num_keypoints = _ovewrite_value_param(num_keypoints, len(weights.meta["keypoint_names"]))
     else:
         if num_classes is None:
             num_classes = 2

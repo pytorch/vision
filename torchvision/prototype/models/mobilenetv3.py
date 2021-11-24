@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.mobilenetv3 import MobileNetV3, _mobilenet_v3_conf, InvertedResidualConfig
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = [
@@ -27,7 +27,7 @@ def _mobilenet_v3(
     **kwargs: Any,
 ) -> MobileNetV3:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
 

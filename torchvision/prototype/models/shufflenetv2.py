@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.shufflenetv2 import ShuffleNetV2
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = [
@@ -30,7 +30,7 @@ def _shufflenetv2(
     **kwargs: Any,
 ) -> ShuffleNetV2:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = ShuffleNetV2(*args, **kwargs)
 

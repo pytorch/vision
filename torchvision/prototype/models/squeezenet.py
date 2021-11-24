@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.squeezenet import SqueezeNet
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = ["SqueezeNet", "SqueezeNet1_0Weights", "SqueezeNet1_1Weights", "squeezenet1_0", "squeezenet1_1"]
@@ -51,7 +51,7 @@ def squeezenet1_0(weights: Optional[SqueezeNet1_0Weights] = None, progress: bool
     weights = SqueezeNet1_0Weights.verify(weights)
 
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = SqueezeNet("1_0", **kwargs)
 
@@ -67,7 +67,7 @@ def squeezenet1_1(weights: Optional[SqueezeNet1_1Weights] = None, progress: bool
     weights = SqueezeNet1_1Weights.verify(weights)
 
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = SqueezeNet("1_1", **kwargs)
 

@@ -11,7 +11,7 @@ from ....models.quantization.inception import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param
+from .._utils import _deprecated_param, _ovewrite_named_param
 from ..inception import InceptionV3Weights
 
 
@@ -59,11 +59,11 @@ def inception_v3(
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        kwargs["aux_logits"] = True
-        kwargs["num_classes"] = len(weights.meta["categories"])
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         if "backend" in weights.meta:
-            kwargs["backend"] = weights.meta["backend"]
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableInception3(**kwargs)

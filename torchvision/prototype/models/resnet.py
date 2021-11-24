@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = [
@@ -41,7 +41,7 @@ def _resnet(
     **kwargs: Any,
 ) -> ResNet:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = ResNet(block, layers, **kwargs)
 
@@ -286,8 +286,8 @@ def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: 
         weights = _deprecated_param("pretrained", "weights", ResNeXt50_32x4dWeights.ImageNet1K_RefV1, kwargs)
     weights = ResNeXt50_32x4dWeights.verify(weights)
 
-    kwargs["groups"] = 32
-    kwargs["width_per_group"] = 4
+    _ovewrite_named_param(kwargs, "groups", 32)
+    _ovewrite_named_param(kwargs, "width_per_group", 4)
     return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
@@ -296,8 +296,8 @@ def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress
         weights = _deprecated_param("pretrained", "weights", ResNeXt101_32x8dWeights.ImageNet1K_RefV1, kwargs)
     weights = ResNeXt101_32x8dWeights.verify(weights)
 
-    kwargs["groups"] = 32
-    kwargs["width_per_group"] = 8
+    _ovewrite_named_param(kwargs, "groups", 32)
+    _ovewrite_named_param(kwargs, "width_per_group", 8)
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
@@ -306,7 +306,7 @@ def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: b
         weights = _deprecated_param("pretrained", "weights", WideResNet50_2Weights.ImageNet1K_Community, kwargs)
     weights = WideResNet50_2Weights.verify(weights)
 
-    kwargs["width_per_group"] = 64 * 2
+    _ovewrite_named_param(kwargs, "width_per_group", 64 * 2)
     return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
@@ -315,5 +315,5 @@ def wide_resnet101_2(weights: Optional[WideResNet101_2Weights] = None, progress:
         weights = _deprecated_param("pretrained", "weights", WideResNet101_2Weights.ImageNet1K_Community, kwargs)
     weights = WideResNet101_2Weights.verify(weights)
 
-    kwargs["width_per_group"] = 64 * 2
+    _ovewrite_named_param(kwargs, "width_per_group", 64 * 2)
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)

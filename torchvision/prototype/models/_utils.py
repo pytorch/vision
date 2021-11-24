@@ -18,3 +18,18 @@ def _deprecated_param(
             raise ValueError("No checkpoint is available for model.")
     else:
         return None
+
+
+def _ovewrite_named_param(kwargs: Dict[str, Any], param: str, new_value: Any) -> None:
+    if param in kwargs:
+        if kwargs[param] != new_value:
+            raise ValueError(f"The parameter {param} expected value {new_value} but got {kwargs[param]} instead.")
+    else:
+        kwargs[param] = new_value
+
+
+def _ovewrite_value_param(param: Any, new_value: Any) -> Any:
+    if param is not None:
+        if param != new_value:
+            raise ValueError(f"The parameter {param} expected value {new_value} but got {param} instead.")
+    return new_value

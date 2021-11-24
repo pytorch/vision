@@ -8,7 +8,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.regnet import RegNet, BlockParams
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = [
@@ -53,7 +53,7 @@ def _regnet(
     **kwargs: Any,
 ) -> RegNet:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     norm_layer = kwargs.pop("norm_layer", partial(nn.BatchNorm2d, eps=1e-05, momentum=0.1))
     model = RegNet(block_params, norm_layer=norm_layer, **kwargs)

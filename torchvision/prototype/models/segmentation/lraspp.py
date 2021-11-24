@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ....models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3
 from .._api import Weights, WeightEntry
 from .._meta import _VOC_CATEGORIES
-from .._utils import _deprecated_param
+from .._utils import _deprecated_param, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
 
 
@@ -51,7 +51,7 @@ def lraspp_mobilenet_v3_large(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 21
 

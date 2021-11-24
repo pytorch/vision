@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ....models.segmentation.fcn import FCN, _fcn_resnet
 from .._api import Weights, WeightEntry
 from .._meta import _VOC_CATEGORIES
-from .._utils import _deprecated_param
+from .._utils import _deprecated_param, _ovewrite_value_param
 from ..resnet import ResNet50Weights, ResNet101Weights, resnet50, resnet101
 
 
@@ -64,9 +64,9 @@ def fcn_resnet50(
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
     if weights is not None:
-        aux_loss = True
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param(aux_loss, True)
     elif num_classes is None:
         num_classes = 21
 
@@ -97,9 +97,9 @@ def fcn_resnet101(
     weights_backbone = ResNet101Weights.verify(weights_backbone)
 
     if weights is not None:
-        aux_loss = True
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param(aux_loss, True)
     elif num_classes is None:
         num_classes = 21
 

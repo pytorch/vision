@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.mobilenetv2 import MobileNetV2
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = ["MobileNetV2", "MobileNetV2Weights", "mobilenet_v2"]
@@ -34,7 +34,7 @@ def mobilenet_v2(weights: Optional[MobileNetV2Weights] = None, progress: bool = 
     weights = MobileNetV2Weights.verify(weights)
 
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = MobileNetV2(**kwargs)
 

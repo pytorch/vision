@@ -12,7 +12,7 @@ from ....models.detection.ssd import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
-from .._utils import _deprecated_param
+from .._utils import _deprecated_param, _ovewrite_value_param
 from ..vgg import VGG16Weights, vgg16
 
 
@@ -58,7 +58,7 @@ def ssd300_vgg16(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 

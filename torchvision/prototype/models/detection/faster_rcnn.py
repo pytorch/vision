@@ -14,7 +14,7 @@ from ....models.detection.faster_rcnn import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
-from .._utils import _deprecated_param
+from .._utils import _deprecated_param, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
 from ..resnet import ResNet50Weights, resnet50
 
@@ -91,7 +91,7 @@ def fasterrcnn_resnet50_fpn(
 
     if weights is not None:
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 
@@ -121,7 +121,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
 ) -> FasterRCNN:
     if weights is not None:
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
     elif num_classes is None:
         num_classes = 91
 

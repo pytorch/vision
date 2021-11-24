@@ -9,7 +9,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.densenet import DenseNet
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = [
@@ -53,7 +53,7 @@ def _densenet(
     **kwargs: Any,
 ) -> DenseNet:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = DenseNet(growth_rate, block_config, num_init_features, **kwargs)
 

@@ -8,7 +8,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.googlenet import GoogLeNet, GoogLeNetOutputs, _GoogLeNetOutputs
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNetWeights", "googlenet"]
@@ -37,10 +37,10 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
-        kwargs["num_classes"] = len(weights.meta["categories"])
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "init_weights", False)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = GoogLeNet(**kwargs)
 

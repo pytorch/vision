@@ -13,7 +13,7 @@ from ....models.quantization.resnet import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param
+from .._utils import _deprecated_param, _ovewrite_named_param
 from ..resnet import ResNet18Weights, ResNet50Weights, ResNeXt101_32x8dWeights
 
 
@@ -37,9 +37,9 @@ def _resnet(
     **kwargs: Any,
 ) -> QuantizableResNet:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         if "backend" in weights.meta:
-            kwargs["backend"] = weights.meta["backend"]
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableResNet(block, layers, **kwargs)
@@ -158,6 +158,6 @@ def resnext101_32x8d(
     else:
         weights = ResNeXt101_32x8dWeights.verify(weights)
 
-    kwargs["groups"] = 32
-    kwargs["width_per_group"] = 8
+    _ovewrite_named_param(kwargs, "groups", 32)
+    _ovewrite_named_param(kwargs, "width_per_group", 8)
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)

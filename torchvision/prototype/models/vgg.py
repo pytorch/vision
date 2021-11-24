@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.vgg import VGG, make_layers, cfgs
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param
+from ._utils import _deprecated_param, _ovewrite_named_param
 
 
 __all__ = [
@@ -33,7 +33,7 @@ __all__ = [
 
 def _vgg(cfg: str, batch_norm: bool, weights: Optional[Weights], progress: bool, **kwargs: Any) -> VGG:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
