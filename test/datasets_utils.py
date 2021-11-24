@@ -6,9 +6,13 @@ import itertools
 import os
 import pathlib
 import random
+import shutil
 import string
+import struct
+import tarfile
 import unittest
 import unittest.mock
+import zipfile
 from collections import defaultdict
 from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
@@ -18,7 +22,6 @@ import pytest
 import torch
 import torchvision.datasets
 import torchvision.io
-
 from common_utils import get_tmp_dir, disable_console_output
 
 
@@ -34,6 +37,8 @@ __all__ = [
     "create_image_folder",
     "create_video_file",
     "create_video_folder",
+    "make_tar",
+    "make_zip",
     "create_random_string",
 ]
 
@@ -134,7 +139,7 @@ def test_all_configs(test):
 
     def maybe_remove_duplicates(configs):
         try:
-            return [dict(config_) for config_ in set(tuple(sorted(config.items())) for config in configs)]
+            return [dict(config_) for config_ in {tuple(sorted(config.items())) for config in configs}]
         except TypeError:
             # A TypeError will be raised if a value of any config is not hashable, e.g. a list. In that case duplicate
             # removal would be a lot more elaborate and we simply bail out.
@@ -419,7 +424,7 @@ class DatasetTestCase(unittest.TestCase):
             defaults.append(
                 {
                     kwarg: default
-                    for kwarg, default in zip(argspec.args[-len(argspec.defaults):], argspec.defaults)
+                    for kwarg, default in zip(argspec.args[-len(argspec.defaults) :], argspec.defaults)
                     if not kwarg.startswith("_")
                 }
             )
@@ -640,7 +645,7 @@ class VideoDatasetTestCase(DatasetTestCase):
 
     def _set_default_frames_per_clip(self, inject_fake_data):
         argspec = inspect.getfullargspec(self.DATASET_CLASS.__init__)
-        args_without_default = argspec.args[1:(-len(argspec.defaults) if argspec.defaults else None)]
+        args_without_default = argspec.args[1 : (-len(argspec.defaults) if argspec.defaults else None)]
         frames_per_clip_last = args_without_default[-1] == "frames_per_clip"
 
         @functools.wraps(inject_fake_data)
@@ -836,6 +841,69 @@ def create_video_folder(
     ]
 
 
+def _split_files_or_dirs(root, *files_or_dirs):
+    files = set()
+    dirs = set()
+    for file_or_dir in files_or_dirs:
+        path = pathlib.Path(file_or_dir)
+        if not path.is_absolute():
+            path = root / path
+        if path.is_file():
+            files.add(path)
+        else:
+            dirs.add(path)
+            for sub_file_or_dir in path.glob("**/*"):
+                if sub_file_or_dir.is_file():
+                    files.add(sub_file_or_dir)
+                else:
+                    dirs.add(sub_file_or_dir)
+
+    if root in dirs:
+        dirs.remove(root)
+
+    return files, dirs
+
+
+def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
+    archive = pathlib.Path(root) / name
+    files, dirs = _split_files_or_dirs(root, *files_or_dirs)
+
+    with opener(archive) as fh:
+        for file in files:
+            adder(fh, file, file.relative_to(root))
+
+    if remove:
+        for file in files:
+            os.remove(file)
+        for dir in dirs:
+            shutil.rmtree(dir, ignore_errors=True)
+
+    return archive
+
+
+def make_tar(root, name, *files_or_dirs, remove=True, compression=None):
+    # TODO: detect compression from name
+    return _make_archive(
+        root,
+        name,
+        *files_or_dirs,
+        opener=lambda archive: tarfile.open(archive, f"w:{compression}" if compression else "w"),
+        adder=lambda fh, file, relative_file: fh.add(file, arcname=relative_file),
+        remove=remove,
+    )
+
+
+def make_zip(root, name, *files_or_dirs, remove=True):
+    return _make_archive(
+        root,
+        name,
+        *files_or_dirs,
+        opener=lambda archive: zipfile.ZipFile(archive, "w"),
+        adder=lambda fh, file, relative_file: fh.write(file, arcname=relative_file),
+        remove=remove,
+    )
+
+
 def create_random_string(length: int, *digits: str) -> str:
     """Create a random string.
 
@@ -849,3 +917,26 @@ def create_random_string(length: int, *digits: str) -> str:
         digits = "".join(itertools.chain(*digits))
 
     return "".join(random.choice(digits) for _ in range(length))
+
+
+def make_fake_pfm_file(h, w, file_name):
+    values = list(range(3 * h * w))
+    # Note: we pack everything in little endian: -1.0, and "<"
+    content = f"PF \n{w} {h} \n-1.0\n".encode() + struct.pack("<" + "f" * len(values), *values)
+    with open(file_name, "wb") as f:
+        f.write(content)
+
+
+def make_fake_flo_file(h, w, file_name):
+    """Creates a fake flow file in .flo format."""
+    # Everything needs to be in little Endian according to
+    # https://vision.middlebury.edu/flow/code/flow-code/README.txt
+    values = list(range(2 * h * w))
+    content = (
+        struct.pack("<4c", *(c.encode() for c in "PIEH"))
+        + struct.pack("<i", w)
+        + struct.pack("<i", h)
+        + struct.pack("<" + "f" * len(values), *values)
+    )
+    with open(file_name, "wb") as f:
+        f.write(content)

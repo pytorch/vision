@@ -3,7 +3,7 @@ name: pr-labels
 on:
   push:
     branches:
-      - master
+      - main
 
 jobs:
   is-properly-labeled:
@@ -32,4 +32,4 @@ jobs:
           message: |
             Hey ${{ steps.commit.outputs.merger }}!
 
-            You merged this PR, but no labels were added.
+            You merged this PR, but no labels were added. The list of valid labels is available at https://github.com/pytorch/vision/blob/main/.github/process_commit.py

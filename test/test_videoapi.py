@@ -1,14 +1,14 @@
 import collections
 import os
-import pytest
-from pytest import approx
+import urllib
 
+import pytest
 import torch
 import torchvision
-from torchvision.io import _HAS_VIDEO_OPT, VideoReader
+from pytest import approx
 from torchvision.datasets.utils import download_url
+from torchvision.io import _HAS_VIDEO_OPT, VideoReader
 
-from common_utils import PY39_SKIP
 
 try:
     import av
@@ -36,35 +36,20 @@ def fate(name, path="."):
 
 
 test_videos = {
-    "RATRACE_wave_f_nm_np1_fr_goo_37.avi": GroundTruth(
-        duration=2.0, video_fps=30.0, audio_sample_rate=None
-    ),
+    "RATRACE_wave_f_nm_np1_fr_goo_37.avi": GroundTruth(duration=2.0, video_fps=30.0, audio_sample_rate=None),
     "SchoolRulesHowTheyHelpUs_wave_f_nm_np1_ba_med_0.avi": GroundTruth(
         duration=2.0, video_fps=30.0, audio_sample_rate=None
     ),
-    "TrumanShow_wave_f_nm_np1_fr_med_26.avi": GroundTruth(
-        duration=2.0, video_fps=30.0, audio_sample_rate=None
-    ),
-    "v_SoccerJuggling_g23_c01.avi": GroundTruth(
-        duration=8.0, video_fps=29.97, audio_sample_rate=None
-    ),
-    "v_SoccerJuggling_g24_c01.avi": GroundTruth(
-        duration=8.0, video_fps=29.97, audio_sample_rate=None
-    ),
-    "R6llTwEh07w.mp4": GroundTruth(
-        duration=10.0, video_fps=30.0, audio_sample_rate=44100
-    ),
-    "SOX5yA1l24A.mp4": GroundTruth(
-        duration=11.0, video_fps=29.97, audio_sample_rate=48000
-    ),
-    "WUzgd7C1pWA.mp4": GroundTruth(
-        duration=11.0, video_fps=29.97, audio_sample_rate=48000
-    ),
+    "TrumanShow_wave_f_nm_np1_fr_med_26.avi": GroundTruth(duration=2.0, video_fps=30.0, audio_sample_rate=None),
+    "v_SoccerJuggling_g23_c01.avi": GroundTruth(duration=8.0, video_fps=29.97, audio_sample_rate=None),
+    "v_SoccerJuggling_g24_c01.avi": GroundTruth(duration=8.0, video_fps=29.97, audio_sample_rate=None),
+    "R6llTwEh07w.mp4": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
+    "SOX5yA1l24A.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
+    "WUzgd7C1pWA.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
 }
 
 
 @pytest.mark.skipif(_HAS_VIDEO_OPT is False, reason="Didn't compile with ffmpeg")
-@PY39_SKIP
 class TestVideoApi:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     def test_frame_reading(self):
@@ -80,13 +65,9 @@ class TestVideoApi:
 
                     assert float(av_frame.pts * av_frame.time_base) == approx(vr_frame["pts"], abs=0.1)
 
-                    av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(
-                        2, 0, 1
-                    )
+                    av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1)
                     vr_array = vr_frame["data"]
-                    mean_delta = torch.mean(
-                        torch.abs(av_array.float() - vr_array.float())
-                    )
+                    mean_delta = torch.mean(torch.abs(av_array.float() - vr_array.float()))
                     # on average the difference is very small and caused
                     # by decoding (around 1%)
                     # TODO: asses empirically how to set this? atm it's 1%
@@ -103,9 +84,7 @@ class TestVideoApi:
                     av_array = torch.tensor(av_frame.to_ndarray()).permute(1, 0)
                     vr_array = vr_frame["data"]
 
-                    max_delta = torch.max(
-                        torch.abs(av_array.float() - vr_array.float())
-                    )
+                    max_delta = torch.max(torch.abs(av_array.float() - vr_array.float()))
                     # we assure that there is never more than 1% difference in signal
                     assert max_delta.item() < 0.001
 
@@ -177,13 +156,54 @@ class TestVideoApi:
                 assert (lb <= frame["pts"]) and (ub >= frame["pts"])
 
     def test_fate_suite(self):
-        video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)
+        # TODO: remove the try-except statement once the connectivity issues are resolved
+        try:
+            video_path = fate("sub/MovText_capability_tester.mp4", VIDEO_DIR)
+        except (urllib.error.URLError, ConnectionError) as error:
+            pytest.skip(f"Skipping due to connectivity issues: {error}")
         vr = VideoReader(video_path)
         metadata = vr.get_metadata()
 
         assert metadata["subtitles"]["duration"] is not None
         os.remove(video_path)
 
+    @pytest.mark.skipif(av is None, reason="PyAV unavailable")
+    def test_keyframe_reading(self):
+        for test_video, config in test_videos.items():
+            full_path = os.path.join(VIDEO_DIR, test_video)
 
-if __name__ == '__main__':
+            av_reader = av.open(full_path)
+            # reduce streams to only keyframes
+            av_stream = av_reader.streams.video[0]
+            av_stream.codec_context.skip_frame = "NONKEY"
+
+            av_keyframes = []
+            vr_keyframes = []
+            if av_reader.streams.video:
+
+                # get all keyframes using pyav. Then, seek randomly into video reader
+                # and assert that all the returned values are in AV_KEYFRAMES
+
+                for av_frame in av_reader.decode(av_stream):
+                    av_keyframes.append(float(av_frame.pts * av_frame.time_base))
+
+            if len(av_keyframes) > 1:
+                video_reader = VideoReader(full_path, "video")
+                for i in range(1, len(av_keyframes)):
+                    seek_val = (av_keyframes[i] + av_keyframes[i - 1]) / 2
+                    data = next(video_reader.seek(seek_val, True))
+                    vr_keyframes.append(data["pts"])
+
+                data = next(video_reader.seek(config.duration, True))
+                vr_keyframes.append(data["pts"])
+
+                assert len(av_keyframes) == len(vr_keyframes)
+                # NOTE: this video gets different keyframe with different
+                # loaders (0.333 pyav, 0.666 for us)
+                if test_video != "TrumanShow_wave_f_nm_np1_fr_med_26.avi":
+                    for i in range(len(av_keyframes)):
+                        assert av_keyframes[i] == approx(vr_keyframes[i], rel=0.001)
+
+
+if __name__ == "__main__":
     pytest.main([__file__])

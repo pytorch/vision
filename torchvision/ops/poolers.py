@@ -1,11 +1,12 @@
-import torch
-from torch import nn, Tensor
+from typing import Optional, List, Dict, Tuple, Union
 
+import torch
 import torchvision
-from torchvision.ops import roi_align
+from torch import nn, Tensor
 from torchvision.ops.boxes import box_area
 
-from typing import Optional, List, Dict, Tuple, Union
+from ..utils import _log_api_usage_once
+from .roi_align import roi_align
 
 
 # copying result_idx_in_level to a specific index in result[]
@@ -16,15 +17,17 @@ from typing import Optional, List, Dict, Tuple, Union
 def _onnx_merge_levels(levels: Tensor, unmerged_results: List[Tensor]) -> Tensor:
     first_result = unmerged_results[0]
     dtype, device = first_result.dtype, first_result.device
-    res = torch.zeros((levels.size(0), first_result.size(1),
-                       first_result.size(2), first_result.size(3)),
-                      dtype=dtype, device=device)
+    res = torch.zeros(
+        (levels.size(0), first_result.size(1), first_result.size(2), first_result.size(3)), dtype=dtype, device=device
+    )
     for level in range(len(unmerged_results)):
         index = torch.where(levels == level)[0].view(-1, 1, 1, 1)
-        index = index.expand(index.size(0),
-                             unmerged_results[level].size(1),
-                             unmerged_results[level].size(2),
-                             unmerged_results[level].size(3))
+        index = index.expand(
+            index.size(0),
+            unmerged_results[level].size(1),
+            unmerged_results[level].size(2),
+            unmerged_results[level].size(3),
+        )
         res = res.scatter(0, index, unmerged_results[level])
     return res
 
@@ -40,7 +43,7 @@ def initLevelMapper(
     return LevelMapper(k_min, k_max, canonical_scale, canonical_level, eps)
 
 
-class LevelMapper(object):
+class LevelMapper:
     """Determine which FPN level each RoI in a set of RoIs should map to based
     on the heuristic in the FPN paper.
 
@@ -80,6 +83,29 @@ class LevelMapper(object):
         return (target_lvls.to(torch.int64) - self.k_min).to(torch.int64)
 
 
+def _convert_to_roi_format(boxes: List[Tensor]) -> Tensor:
+    concat_boxes = torch.cat(boxes, dim=0)
+    device, dtype = concat_boxes.device, concat_boxes.dtype
+    ids = torch.cat(
+        [torch.full_like(b[:, :1], i, dtype=dtype, layout=torch.strided, device=device) for i, b in enumerate(boxes)],
+        dim=0,
+    )
+    rois = torch.cat([ids, concat_boxes], dim=1)
+    return rois
+
+
+def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
+    # assumption: the scale is of the form 2 ** (-k), with k integer
+    size = feature.shape[-2:]
+    possible_scales: List[float] = []
+    for s1, s2 in zip(size, original_size):
+        approx_scale = float(s1) / float(s2)
+        scale = 2 ** float(torch.tensor(approx_scale).log2().round())
+        possible_scales.append(scale)
+    assert possible_scales[0] == possible_scales[1]
+    return possible_scales[0]
+
+
 class MultiScaleRoIAlign(nn.Module):
     """
     Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.
@@ -116,10 +142,7 @@ class MultiScaleRoIAlign(nn.Module):
 
     """
 
-    __annotations__ = {
-        'scales': Optional[List[float]],
-        'map_levels': Optional[LevelMapper]
-    }
+    __annotations__ = {"scales": Optional[List[float]], "map_levels": Optional[LevelMapper]}
 
     def __init__(
         self,
@@ -130,7 +153,8 @@ class MultiScaleRoIAlign(nn.Module):
         canonical_scale: int = 224,
         canonical_level: int = 4,
     ):
-        super(MultiScaleRoIAlign, self).__init__()
+        super().__init__()
+        _log_api_usage_once(self)
         if isinstance(output_size, int):
             output_size = (output_size, output_size)
         self.featmap_names = featmap_names
@@ -140,30 +164,6 @@ class MultiScaleRoIAlign(nn.Module):
         self.map_levels = None
         self.canonical_scale = canonical_scale
         self.canonical_level = canonical_level
-
-    def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
-        concat_boxes = torch.cat(boxes, dim=0)
-        device, dtype = concat_boxes.device, concat_boxes.dtype
-        ids = torch.cat(
-            [
-                torch.full_like(b[:, :1], i, dtype=dtype, layout=torch.strided, device=device)
-                for i, b in enumerate(boxes)
-            ],
-            dim=0,
-        )
-        rois = torch.cat([ids, concat_boxes], dim=1)
-        return rois
-
-    def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
-        # assumption: the scale is of the form 2 ** (-k), with k integer
-        size = feature.shape[-2:]
-        possible_scales: List[float] = []
-        for s1, s2 in zip(size, original_size):
-            approx_scale = float(s1) / float(s2)
-            scale = 2 ** float(torch.tensor(approx_scale).log2().round())
-            possible_scales.append(scale)
-        assert possible_scales[0] == possible_scales[1]
-        return possible_scales[0]
 
     def setup_scales(
         self,
@@ -178,7 +178,7 @@ class MultiScaleRoIAlign(nn.Module):
             max_y = max(shape[1], max_y)
         original_input_shape = (max_x, max_y)
 
-        scales = [self.infer_scale(feat, original_input_shape) for feat in features]
+        scales = [_infer_scale(feat, original_input_shape) for feat in features]
         # get the levels in the feature map by leveraging the fact that the network always
         # downsamples by a factor of 2 at each level.
         lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
@@ -215,7 +215,7 @@ class MultiScaleRoIAlign(nn.Module):
             if k in self.featmap_names:
                 x_filtered.append(v)
         num_levels = len(x_filtered)
-        rois = self.convert_to_roi_format(boxes)
+        rois = _convert_to_roi_format(boxes)
         if self.scales is None:
             self.setup_scales(x_filtered, image_shapes)
 
@@ -224,10 +224,11 @@ class MultiScaleRoIAlign(nn.Module):
 
         if num_levels == 1:
             return roi_align(
-                x_filtered[0], rois,
+                x_filtered[0],
+                rois,
                 output_size=self.output_size,
                 spatial_scale=scales[0],
-                sampling_ratio=self.sampling_ratio
+                sampling_ratio=self.sampling_ratio,
             )
 
         mapper = self.map_levels
@@ -240,7 +241,11 @@ class MultiScaleRoIAlign(nn.Module):
 
         dtype, device = x_filtered[0].dtype, x_filtered[0].device
         result = torch.zeros(
-            (num_rois, num_channels,) + self.output_size,
+            (
+                num_rois,
+                num_channels,
+            )
+            + self.output_size,
             dtype=dtype,
             device=device,
         )
@@ -251,9 +256,12 @@ class MultiScaleRoIAlign(nn.Module):
             rois_per_level = rois[idx_in_level]
 
             result_idx_in_level = roi_align(
-                per_level_feature, rois_per_level,
+                per_level_feature,
+                rois_per_level,
                 output_size=self.output_size,
-                spatial_scale=scale, sampling_ratio=self.sampling_ratio)
+                spatial_scale=scale,
+                sampling_ratio=self.sampling_ratio,
+            )
 
             if torchvision._is_tracing():
                 tracing_results.append(result_idx_in_level.to(dtype))
@@ -273,5 +281,7 @@ class MultiScaleRoIAlign(nn.Module):
         return result
 
     def __repr__(self) -> str:
-        return (f"{self.__class__.__name__}(featmap_names={self.featmap_names}, "
-                f"output_size={self.output_size}, sampling_ratio={self.sampling_ratio})")
+        return (
+            f"{self.__class__.__name__}(featmap_names={self.featmap_names}, "
+            f"output_size={self.output_size}, sampling_ratio={self.sampling_ratio})"
+        )

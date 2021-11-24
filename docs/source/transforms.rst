@@ -1,11 +1,13 @@
 .. _transforms:
 
-torchvision.transforms
-======================
+Transforming and augmenting images
+==================================
 
 .. currentmodule:: torchvision.transforms
 
-Transforms are common image transformations. They can be chained together using :class:`Compose`.
+Transforms are common image transformations available in the
+``torchvision.transforms`` module. They can be chained together using
+:class:`Compose`.
 Most transform classes have a function equivalent: :ref:`functional
 transforms <functional_transforms>` give fine-grained control over the
 transformations.
@@ -24,7 +26,7 @@ number of channels, ``H`` and ``W`` are image height and width. A batch of
 Tensor Images is a tensor of ``(B, C, H, W)`` shape, where ``B`` is a number
 of images in the batch.
 
-The expected range of the values of a tensor image is implicitely defined by
+The expected range of the values of a tensor image is implicitly defined by
 the tensor dtype. Tensor images with a float dtype are expected to have
 values in ``[0, 1)``. Tensor images with an integer dtype are expected to
 have values in ``[0, MAX_DTYPE]`` where ``MAX_DTYPE`` is the largest value
@@ -35,7 +37,7 @@ images of a given batch, but they will produce different transformations
 across calls. For reproducible transformations across calls, you may use
 :ref:`functional transforms <functional_transforms>`.
 
-The following examples illustate the use of the available transforms:
+The following examples illustrate the use of the available transforms:
 
     * :ref:`sphx_glr_auto_examples_plot_transforms.py`
 
@@ -90,132 +92,98 @@ For any custom transformations to be used with ``torch.jit.script``, they should
 Compositions of transforms
 --------------------------
 
-.. autoclass:: Compose
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    Compose
 
 
 Transforms on PIL Image and torch.\*Tensor
 ------------------------------------------
 
-.. autoclass:: CenterCrop
-    :members:
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: ColorJitter
-    :members:
+    CenterCrop
+    ColorJitter
+    FiveCrop
+    Grayscale
+    Pad
+    RandomAffine
+    RandomApply
+    RandomCrop
+    RandomGrayscale
+    RandomHorizontalFlip
+    RandomPerspective
+    RandomResizedCrop
+    RandomRotation
+    RandomSizedCrop
+    RandomVerticalFlip
+    Resize
+    TenCrop
+    GaussianBlur
+    RandomInvert
+    RandomPosterize
+    RandomSolarize
+    RandomAdjustSharpness
+    RandomAutocontrast
+    RandomEqualize
 
-.. autoclass:: FiveCrop
-    :members:
-
-.. autoclass:: Grayscale
-    :members:
-
-.. autoclass:: Pad
-    :members:
-
-.. autoclass:: RandomAffine
-    :members:
-
-.. autoclass:: RandomApply
-
-.. autoclass:: RandomCrop
-    :members:
-
-.. autoclass:: RandomGrayscale
-    :members:
-
-.. autoclass:: RandomHorizontalFlip
-    :members:
-
-.. autoclass:: RandomPerspective
-    :members:
-
-.. autoclass:: RandomResizedCrop
-    :members:
-
-.. autoclass:: RandomRotation
-    :members:
-
-.. autoclass:: RandomSizedCrop
-    :members:
-
-.. autoclass:: RandomVerticalFlip
-    :members:
-
-.. autoclass:: Resize
-    :members:
-
-.. autoclass:: Scale
-    :members:
-
-.. autoclass:: TenCrop
-    :members:
-
-.. autoclass:: GaussianBlur
-    :members:
-
-.. autoclass:: RandomInvert
-    :members:
-
-.. autoclass:: RandomPosterize
-    :members:
-
-.. autoclass:: RandomSolarize
-    :members:
-
-.. autoclass:: RandomAdjustSharpness
-    :members:
-
-.. autoclass:: RandomAutocontrast
-    :members:
-
-.. autoclass:: RandomEqualize
-    :members:
 
 .. _transforms_pil_only:
 
 Transforms on PIL Image only
 ----------------------------
 
-.. autoclass:: RandomChoice
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: RandomOrder
+    RandomChoice
+    RandomOrder
 
 .. _transforms_tensor_only:
 
 Transforms on torch.\*Tensor only
 ---------------------------------
 
-.. autoclass:: LinearTransformation
-    :members:
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: Normalize
-    :members:
-
-.. autoclass:: RandomErasing
-    :members:
-
-.. autoclass:: ConvertImageDtype
+    LinearTransformation
+    Normalize
+    RandomErasing
+    ConvertImageDtype
 
 .. _conversion_transforms:
 
 Conversion Transforms
 ---------------------
 
-.. autoclass:: ToPILImage
-    :members:
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: ToTensor
-    :members:
+    ToPILImage
+    ToTensor
+    PILToTensor
 
 
 Generic Transforms
 ------------------
 
-.. autoclass:: Lambda
-    :members:
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    Lambda
 
 
-AutoAugment Transforms
-----------------------
+Automatic Augmentation Transforms
+---------------------------------
 
 `AutoAugment <https://arxiv.org/pdf/1805.09501.pdf>`_ is a common Data Augmentation technique that can improve the accuracy of Image Classification models.
 Though the data augmentation policies are directly linked to their trained dataset, empirical studies show that
@@ -223,17 +191,21 @@ ImageNet policies provide significant improvements when applied to other dataset
 In TorchVision we implemented 3 policies learned on the following datasets: ImageNet, CIFAR10 and SVHN.
 The new transform can be used standalone or mixed-and-matched with existing transforms:
 
-.. autoclass:: AutoAugmentPolicy
-    :members:
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
 
-.. autoclass:: AutoAugment
-    :members:
-
+    AutoAugmentPolicy
+    AutoAugment
+    RandAugment
+    TrivialAugmentWide
 
 .. _functional_transforms:
 
 Functional Transforms
 ---------------------
+
+.. currentmodule:: torchvision.transforms.functional
 
 Functional transforms give you fine-grained control of the transformation pipeline.
 As opposed to the transformations above, functional transforms don't contain a random number
@@ -279,5 +251,41 @@ you can use a functional transform to build transform classes with custom behavi
     rotation_transform = MyRotationTransform(angles=[-30, -15, 0, 15, 30])
 
 
-.. automodule:: torchvision.transforms.functional
-    :members:
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    adjust_brightness
+    adjust_contrast
+    adjust_gamma
+    adjust_hue
+    adjust_saturation
+    adjust_sharpness
+    affine
+    autocontrast
+    center_crop
+    convert_image_dtype
+    crop
+    equalize
+    erase
+    five_crop
+    gaussian_blur
+    get_image_num_channels
+    get_image_size
+    hflip
+    invert
+    normalize
+    pad
+    perspective
+    pil_to_tensor
+    posterize
+    resize
+    resized_crop
+    rgb_to_grayscale
+    rotate
+    solarize
+    ten_crop
+    to_grayscale
+    to_pil_image
+    to_tensor
+    vflip

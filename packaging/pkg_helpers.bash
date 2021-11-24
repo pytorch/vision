@@ -52,7 +52,6 @@ setup_cuda() {
       else
         export CUDA_HOME=/usr/local/cuda-11.3/
       fi
-      export FORCE_CUDA=1
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
       ;;
     cu112)
@@ -61,7 +60,6 @@ setup_cuda() {
       else
         export CUDA_HOME=/usr/local/cuda-11.2/
       fi
-      export FORCE_CUDA=1
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
       ;;
     cu111)
@@ -70,7 +68,6 @@ setup_cuda() {
       else
         export CUDA_HOME=/usr/local/cuda-11.1/
       fi
-      export FORCE_CUDA=1
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
       ;;
     cu110)
@@ -79,7 +76,6 @@ setup_cuda() {
       else
         export CUDA_HOME=/usr/local/cuda-11.0/
       fi
-      export FORCE_CUDA=1
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0"
       ;;
     cu102)
@@ -88,7 +84,6 @@ setup_cuda() {
       else
         export CUDA_HOME=/usr/local/cuda-10.2/
       fi
-      export FORCE_CUDA=1
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu101)
@@ -97,7 +92,6 @@ setup_cuda() {
       else
         export CUDA_HOME=/usr/local/cuda-10.1/
       fi
-      export FORCE_CUDA=1
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu100)
@@ -106,7 +100,6 @@ setup_cuda() {
       else
         export CUDA_HOME=/usr/local/cuda-10.0/
       fi
-      export FORCE_CUDA=1
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5"
       ;;
     cu92)
@@ -115,7 +108,6 @@ setup_cuda() {
       else
         export CUDA_HOME=/usr/local/cuda-9.2/
       fi
-      export FORCE_CUDA=1
       export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0"
       ;;
     cpu)
@@ -128,6 +120,11 @@ setup_cuda() {
       exit 1
       ;;
   esac
+  if [[ -n "$CUDA_HOME" ]]; then
+    # Adds nvcc binary to the search path so that CMake's `find_package(CUDA)` will pick the right one
+    export PATH="$CUDA_HOME/bin:$PATH"
+    export FORCE_CUDA=1
+  fi
 }
 
 # Populate build version if necessary, and add version suffix
@@ -287,9 +284,9 @@ setup_conda_pytorch_constraint() {
 
 # Translate CUDA_VERSION into CUDA_CUDATOOLKIT_CONSTRAINT
 setup_conda_cudatoolkit_constraint() {
-  export CONDA_CPUONLY_FEATURE=""
+  export CONDA_BUILD_VARIANT="cuda"
   if [[ "$(uname)" == Darwin ]]; then
-    export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CONDA_BUILD_VARIANT="cpu"
   else
     case "$CU_VERSION" in
       cu113)
@@ -318,7 +315,7 @@ setup_conda_cudatoolkit_constraint() {
         ;;
       cpu)
         export CONDA_CUDATOOLKIT_CONSTRAINT=""
-        export CONDA_CPUONLY_FEATURE="- cpuonly"
+        export CONDA_BUILD_VARIANT="cpu"
         ;;
       *)
         echo "Unrecognized CU_VERSION=$CU_VERSION"
@@ -329,10 +326,10 @@ setup_conda_cudatoolkit_constraint() {
 }
 
 setup_conda_cudatoolkit_plain_constraint() {
-  export CONDA_CPUONLY_FEATURE=""
+  export CONDA_BUILD_VARIANT="cuda"
   export CMAKE_USE_CUDA=1
   if [[ "$(uname)" == Darwin ]]; then
-    export CONDA_CUDATOOLKIT_CONSTRAINT=""
+    export CONDA_BUILD_VARIANT="cpu"
     export CMAKE_USE_CUDA=0
   else
     case "$CU_VERSION" in
@@ -359,7 +356,7 @@ setup_conda_cudatoolkit_plain_constraint() {
         ;;
       cpu)
         export CONDA_CUDATOOLKIT_CONSTRAINT=""
-        export CONDA_CPUONLY_FEATURE="cpuonly"
+        export CONDA_BUILD_VARIANT="cpu"
         export CMAKE_USE_CUDA=0
         ;;
       *)

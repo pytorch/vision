@@ -1,5 +1,7 @@
 #include "stream.h"
 #include <c10/util/Logging.h>
+#include <stdio.h>
+#include <string.h>
 #include "util.h"
 
 namespace ffmpeg {
@@ -33,7 +35,7 @@ AVCodec* Stream::findCodec(AVCodecParameters* params) {
 // decode/encode process. Then fill this codec context with CODEC parameters
 // defined in stream parameters. Open the codec, and allocate the global frame
 // defined in the header file
-int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
+int Stream::openCodec(std::vector<DecoderMetadata>* metadata, int num_threads) {
   AVStream* steam = inputCtx_->streams[format_.stream];
 
   AVCodec* codec = findCodec(steam->codecpar);
@@ -48,6 +50,28 @@ int Stream::openCodec(std::vector<DecoderMetadata>* metadata) {
     LOG(ERROR) << "LoggingUuid #" << loggingUuid_
                << ", avcodec_alloc_context3 failed";
     return AVERROR(ENOMEM);
+  }
+  // multithreading heuristics
+  // if user defined,
+  if (num_threads > max_threads) {
+    num_threads = max_threads;
+  }
+
+  if (num_threads > 0) {
+    // if user defined, respect that
+    // note that default thread_type will be used
+    codecCtx_->thread_count = num_threads;
+  } else {
+    // otherwise set sensible defaults
+    // with the special case for the different MPEG4 codecs
+    // that don't have threading context functions
+    if (codecCtx_->codec->capabilities & AV_CODEC_CAP_INTRA_ONLY) {
+      codecCtx_->thread_type = FF_THREAD_FRAME;
+      codecCtx_->thread_count = 2;
+    } else {
+      codecCtx_->thread_count = 8;
+      codecCtx_->thread_type = FF_THREAD_SLICE;
+    }
   }
 
   int ret;

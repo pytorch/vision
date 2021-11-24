@@ -1,12 +1,13 @@
-from typing import Union, Optional, List, Tuple, Text, BinaryIO
-import pathlib
-import torch
 import math
+import pathlib
 import warnings
+from typing import Union, Optional, List, Tuple, BinaryIO, no_type_check
+
 import numpy as np
+import torch
 from PIL import Image, ImageDraw, ImageFont, ImageColor
 
-__all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks"]
+__all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks", "draw_keypoints"]
 
 
 @torch.no_grad()
@@ -18,7 +19,7 @@ def make_grid(
     value_range: Optional[Tuple[int, int]] = None,
     scale_each: bool = False,
     pad_value: int = 0,
-    **kwargs
+    **kwargs,
 ) -> torch.Tensor:
     """
     Make a grid of images.
@@ -41,9 +42,8 @@ def make_grid(
     Returns:
         grid (Tensor): the tensor containing grid of images.
     """
-    if not (torch.is_tensor(tensor) or
-            (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
-        raise TypeError(f'tensor or list of tensors expected, got {type(tensor)}')
+    if not (torch.is_tensor(tensor) or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
+        raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
     if "range" in kwargs.keys():
         warning = "range will be deprecated, please use value_range instead."
@@ -67,8 +67,9 @@ def make_grid(
     if normalize is True:
         tensor = tensor.clone()  # avoid modifying tensor in-place
         if value_range is not None:
-            assert isinstance(value_range, tuple), \
-                "value_range has to be a tuple (min, max) if specified. min and max are numbers"
+            assert isinstance(
+                value_range, tuple
+            ), "value_range has to be a tuple (min, max) if specified. min and max are numbers"
 
         def norm_ip(img, low, high):
             img.clamp_(min=low, max=high)
@@ -113,9 +114,9 @@ def make_grid(
 @torch.no_grad()
 def save_image(
     tensor: Union[torch.Tensor, List[torch.Tensor]],
-    fp: Union[Text, pathlib.Path, BinaryIO],
+    fp: Union[str, pathlib.Path, BinaryIO],
     format: Optional[str] = None,
-    **kwargs
+    **kwargs,
 ) -> None:
     """
     Save a given Tensor into an image file.
@@ -131,7 +132,7 @@ def save_image(
 
     grid = make_grid(tensor, **kwargs)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
-    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to('cpu', torch.uint8).numpy()
+    ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
     im = Image.fromarray(ndarr)
     im.save(fp, format=format)
 
@@ -145,7 +146,7 @@ def draw_bounding_boxes(
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
-    font_size: int = 10
+    font_size: int = 10,
 ) -> torch.Tensor:
 
     """
@@ -159,9 +160,9 @@ def draw_bounding_boxes(
             the boxes are absolute coordinates with respect to the image. In other words: `0 <= xmin < xmax < W` and
             `0 <= ymin < ymax < H`.
         labels (List[str]): List containing the labels of bounding boxes.
-        colors (Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]): List containing the colors
-            or a single color for all of the bounding boxes. The colors can be represented as `str` or
-            `Tuple[int, int, int]`.
+        colors (color or list of colors, optional): List containing the colors
+            of the boxes or single color for all boxes. The color can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
@@ -230,7 +231,7 @@ def draw_segmentation_masks(
     image: torch.Tensor,
     masks: torch.Tensor,
     alpha: float = 0.8,
-    colors: Optional[List[Union[str, Tuple[int, int, int]]]] = None,
+    colors: Optional[Union[List[Union[str, Tuple[int, int, int]]], str, Tuple[int, int, int]]] = None,
 ) -> torch.Tensor:
 
     """
@@ -242,10 +243,10 @@ def draw_segmentation_masks(
         masks (Tensor): Tensor of shape (num_masks, H, W) or (H, W) and dtype bool.
         alpha (float): Float number between 0 and 1 denoting the transparency of the masks.
             0 means full transparency, 1 means no transparency.
-        colors (list or None): List containing the colors of the masks. The colors can
-            be represented as PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
-            When ``masks`` has a single entry of shape (H, W), you can pass a single color instead of a list
-            with one element. By default, random colors are generated for each mask.
+        colors (color or list of colors, optional): List containing the colors
+            of the masks or single color for all masks. The color can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
+            By default, random colors are generated for each mask.
 
     Returns:
         img (Tensor[C, H, W]): Image Tensor, with segmentation masks drawn on top.
@@ -288,8 +289,7 @@ def draw_segmentation_masks(
     for color in colors:
         if isinstance(color, str):
             color = ImageColor.getrgb(color)
-        color = torch.tensor(color, dtype=out_dtype)
-        colors_.append(color)
+        colors_.append(torch.tensor(color, dtype=out_dtype))
 
     img_to_draw = image.detach().clone()
     # TODO: There might be a way to vectorize this
@@ -300,6 +300,88 @@ def draw_segmentation_masks(
     return out.to(out_dtype)
 
 
-def _generate_color_palette(num_masks):
+@torch.no_grad()
+def draw_keypoints(
+    image: torch.Tensor,
+    keypoints: torch.Tensor,
+    connectivity: Optional[List[Tuple[int, int]]] = None,
+    colors: Optional[Union[str, Tuple[int, int, int]]] = None,
+    radius: int = 2,
+    width: int = 3,
+) -> torch.Tensor:
+
+    """
+    Draws Keypoints on given RGB image.
+    The values of the input image should be uint8 between 0 and 255.
+
+    Args:
+        image (Tensor): Tensor of shape (3, H, W) and dtype uint8.
+        keypoints (Tensor): Tensor of shape (num_instances, K, 2) the K keypoints location for each of the N instances,
+            in the format [x, y].
+        connectivity (List[Tuple[int, int]]]): A List of tuple where,
+            each tuple contains pair of keypoints to be connected.
+        colors (str, Tuple): The color can be represented as
+            PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
+        radius (int): Integer denoting radius of keypoint.
+        width (int): Integer denoting width of line connecting keypoints.
+
+    Returns:
+        img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
+    """
+
+    if not isinstance(image, torch.Tensor):
+        raise TypeError(f"The image must be a tensor, got {type(image)}")
+    elif image.dtype != torch.uint8:
+        raise ValueError(f"The image dtype must be uint8, got {image.dtype}")
+    elif image.dim() != 3:
+        raise ValueError("Pass individual images, not batches")
+    elif image.size()[0] != 3:
+        raise ValueError("Pass an RGB image. Other Image formats are not supported")
+
+    if keypoints.ndim != 3:
+        raise ValueError("keypoints must be of shape (num_instances, K, 2)")
+
+    ndarr = image.permute(1, 2, 0).numpy()
+    img_to_draw = Image.fromarray(ndarr)
+    draw = ImageDraw.Draw(img_to_draw)
+    img_kpts = keypoints.to(torch.int64).tolist()
+
+    for kpt_id, kpt_inst in enumerate(img_kpts):
+        for inst_id, kpt in enumerate(kpt_inst):
+            x1 = kpt[0] - radius
+            x2 = kpt[0] + radius
+            y1 = kpt[1] - radius
+            y2 = kpt[1] + radius
+            draw.ellipse([x1, y1, x2, y2], fill=colors, outline=None, width=0)
+
+        if connectivity:
+            for connection in connectivity:
+                start_pt_x = kpt_inst[connection[0]][0]
+                start_pt_y = kpt_inst[connection[0]][1]
+
+                end_pt_x = kpt_inst[connection[1]][0]
+                end_pt_y = kpt_inst[connection[1]][1]
+
+                draw.line(
+                    ((start_pt_x, start_pt_y), (end_pt_x, end_pt_y)),
+                    width=width,
+                )
+
+    return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
+
+
+def _generate_color_palette(num_masks: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_masks)]
+
+
+@no_type_check
+def _log_api_usage_once(obj: str) -> None:  # type: ignore
+    if torch.jit.is_scripting() or torch.jit.is_tracing():
+        return
+    # NOTE: obj can be an object as well, but mocking it here to be
+    # only a string to appease torchscript
+    if isinstance(obj, str):
+        torch._C._log_api_usage_once(obj)
+    else:
+        torch._C._log_api_usage_once(f"{obj.__module__}.{obj.__class__.__name__}")
