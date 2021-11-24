@@ -150,8 +150,8 @@ def _multiscale_roi_align(
     boxes: List[Tensor],
     output_size: List[int],
     sampling_ratio: int,
-    scales: List[float],
-    mapper: LevelMapper,
+    scales: Optional[List[float]],
+    mapper: Optional[LevelMapper],
 ) -> Tensor:
     """
     Args:
@@ -161,11 +161,14 @@ def _multiscale_roi_align(
             reference. The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
         sampling_ratio (int): sampling ratio for ROIAlign
-        scales (List[float]): If None, scales will be automatically infered. Default value is None.
-        mapper (LevelMapper): If none, mapper will be automatically infered. Default value is None.
+        scales (Optional[List[float]]): If None, scales will be automatically infered. Default value is None.
+        mapper (Optional[LevelMapper]): If none, mapper will be automatically infered. Default value is None.
     Returns:
         result (Tensor)
     """
+    assert scales is not None
+    assert mapper is not None
+
     num_levels = len(x_filtered)
     rois = _convert_to_roi_format(boxes)
 
@@ -327,8 +330,6 @@ class MultiScaleRoIAlign(nn.Module):
             self.scales, self.map_levels = _setup_scales(
                 x_filtered, image_shapes, self.canonical_scale, self.canonical_level
             )
-        assert self.scales is not None
-        assert self.map_levels is not None
 
         return _multiscale_roi_align(
             x_filtered,
