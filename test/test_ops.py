@@ -7,14 +7,27 @@ from typing import Tuple
 import numpy as np
 import pytest
 import torch
+import torch.fx
 from common_utils import needs_cuda, cpu_and_gpu, assert_equal
 from PIL import Image
+from torch import nn
 from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
-from torchvision.models.feature_extraction import create_feature_extractor
+from torchvision.models.alexnet import AlexNet
+from torchvision.models.feature_extraction import create_feature_extractor, _get_leaf_modules_for_ops
 from torchvision.models.feature_extraction import get_graph_node_names
+
+
+class TestModuleWrapper(nn.Module):
+    def __init__(self, obj):
+        super().__init__()
+        self.layer = obj
+        self.n_inputs = 2
+
+    def forward(self, input, rois):
+        self.layer(input, rois)
 
 
 class RoIOpTester(ABC):
@@ -49,12 +62,13 @@ class RoIOpTester(ABC):
         torch.testing.assert_close(gt_y.to(y), y, rtol=tol, atol=tol)
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_feature_extractor(self, device):
-        op_obj = self.make_obj().to(device=device)
-        return_nodes = get_graph_node_names(op_obj,)[
-            1
-        ][-1:]
-        create_feature_extractor(op_obj, return_nodes=return_nodes)
+    def test_is_leaf_node(self, device):
+        op_obj = self.make_obj(5, 5, spatial_scale=1).to(device=device)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -119,7 +133,8 @@ class TestRoiPool(RoIOpTester):
         return ops.RoIPool((pool_h, pool_w), spatial_scale)(x, rois)
 
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, **kwargs):
-        return ops.RoIPool((pool_h, pool_w), spatial_scale)
+        obj = TestModuleWrapper(ops.RoIPool((pool_h, pool_w), spatial_scale))
+        return obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_pool)
@@ -156,21 +171,13 @@ class TestRoiPool(RoIOpTester):
     def test_boxes_shape(self):
         self._helper_boxes_shape(ops.roi_pool)
 
-    @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_feature_extractor(self, device):
-        op_obj = self.make_obj(5, 5, spatial_scale=1).to(device=device)
-        return_nodes = get_graph_node_names(op_obj,)[
-            1
-        ][-1:]
-        create_feature_extractor(op_obj, return_nodes=return_nodes)
-
 
 class TestPSRoIPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIPool((pool_h, pool_w), 1)(x, rois)
 
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, **kwargs):
-        return ops.PSRoIPool((pool_h, pool_w), spatial_scale)
+        return TestModuleWrapper(ops.PSRoIPool((pool_h, pool_w), spatial_scale))
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_pool)
@@ -252,8 +259,8 @@ class TestRoIAlign(RoIOpTester):
         )(x, rois)
 
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, aligned=False, **kwargs):
-        return ops.RoIAlign(
-            (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
+        return TestModuleWrapper(
+            ops.RoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned)
         )
 
     def get_script_fn(self, rois, pool_size):
@@ -408,7 +415,9 @@ class TestPSRoIAlign(RoIOpTester):
         return ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)(x, rois)
 
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, **kwargs):
-        return ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)
+        return TestModuleWrapper(
+            ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)
+        )
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_align)
@@ -461,7 +470,7 @@ class TestMultiScaleRoIAlign:
     def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, **kwargs):
         if fmap_names is None:
             fmap_names = ["0"]
-        return ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+        return TestModuleWrapper(ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio))
 
     def test_msroialign_repr(self):
         fmap_names = ["0"]
@@ -478,10 +487,13 @@ class TestMultiScaleRoIAlign:
         assert repr(t) == expected_string
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_feature_extractor(self, device):
+    def test_is_leaf_node(self, device):
         op_obj = self.make_obj().to(device=device)
-        return_nodes = get_graph_node_names(op_obj)[1][-1:]
-        create_feature_extractor(op_obj, return_nodes=return_nodes)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
 class TestNMS:
@@ -741,19 +753,21 @@ class TestDeformConv:
         return x, weight, offset, mask, bias, stride, pad, dilation
 
     def make_obj(self, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2):
-        layer = ops.DeformConv2d(
-            in_channels, out_channels, kernel_size, stride=(2, 1), padding=(1, 0), dilation=(2, 1), groups=groups
+        layer = TestModuleWrapper(
+            ops.DeformConv2d(
+                in_channels, out_channels, kernel_size, stride=(2, 1), padding=(1, 0), dilation=(2, 1), groups=groups
+            )
         )
         return layer
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_feature_extractor(self, device, dtype=None, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2):
-        dtype = dtype or self.dtype
-        op_obj = self.make_obj(in_channels, out_channels, kernel_size, groups).to(device=device)
-        return_nodes = get_graph_node_names(op_obj,)[
-            1
-        ][-1:]
-        create_feature_extractor(op_obj, return_nodes=return_nodes)
+    def test_is_leaf_node(self, device):
+        op_obj = self.make_obj().to(device=device)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("contiguous", (True, False))
@@ -1260,14 +1274,18 @@ class TestStochasticDepth:
         elif p == 1:
             assert out.equal(torch.zeros_like(x))
 
+    def make_obj(self, p, mode):
+        return TestModuleWrapper(ops.StochasticDepth(p, mode))
+
     @pytest.mark.parametrize("p", (0, 1))
     @pytest.mark.parametrize("mode", ["batch", "row"])
-    def test_feature_extractor(self, p, mode):
-        op_obj = ops.StochasticDepth(p=p, mode=mode)
-        return_nodes = get_graph_node_names(op_obj,)[
-            1
-        ][-1:]
-        create_feature_extractor(op_obj, return_nodes=return_nodes)
+    def test_is_leaf_node(self, p, mode):
+        op_obj = self.make_obj(p, mode)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
 class TestUtils:

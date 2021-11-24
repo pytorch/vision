@@ -108,6 +108,7 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
     return possible_scales[0]
 
 
+@torch.fx.wrap
 def _setup_scales(
     features: List[Tensor], image_shapes: List[Tuple[int, int]], canonical_scale: int, canonical_level: int
 ) -> Tuple[List[float], LevelMapper]:
@@ -135,30 +136,29 @@ def _setup_scales(
 
 
 @torch.fx.wrap
+def _filter_input(x: Dict[str, Tensor], featmap_names: List[str]) -> List[Tensor]:
+    x_filtered = []
+    for k, v in x.items():
+        if k in featmap_names:
+            x_filtered.append(v)
+    return x_filtered
+
+
+@torch.fx.wrap
 def _multiscale_roi_align(
-    x: Dict[str, Tensor],
+    x_filtered: List[Tensor],
     boxes: List[Tensor],
-    image_shapes: List[Tuple[int, int]],
-    featmap_names: List[str],
-    canonical_scale: int,
-    canonical_level: int,
     output_size: List[int],
     sampling_ratio: int,
-    scales: Optional[List[float]] = None,
-    mapper: Optional[LevelMapper] = None,
+    scales: List[float],
+    mapper: LevelMapper,
 ) -> Tensor:
     """
     Args:
-        x (OrderedDict[Tensor]): feature maps for each level. They are assumed to have
-            all the same number of channels, but they can have different sizes.
+        x_filtered (List[Tensor]): List of input tensors.
         boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in
             (x1, y1, x2, y2) format and in the image reference size, not the feature map
             reference. The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
-        image_shapes (List[Tuple[height, width]]): the sizes of each image before they
-            have been fed to a CNN to obtain feature maps. This allows us to infer the
-            scale factor for each one of the levels to be pooled.
-        canonical_scale (int): canonical_scale for LevelMapper
-        canonical_level (int): canonical_level for LevelMapper
         output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
         sampling_ratio (int): sampling ratio for ROIAlign
         scales (Optional[List[float]]): If None, scales will be automatically infered. Default value is None.
@@ -166,19 +166,8 @@ def _multiscale_roi_align(
     Returns:
         result (Tensor)
     """
-
-    x_filtered = []
-    for k, v in x.items():
-        if k in featmap_names:
-            x_filtered.append(v)
     num_levels = len(x_filtered)
     rois = _convert_to_roi_format(boxes)
-
-    if scales is None or mapper is None:
-        scales, mapper = _setup_scales(x_filtered, image_shapes, canonical_scale, canonical_level)
-
-    assert scales is not None
-    assert mapper is not None
 
     if num_levels == 1:
         return roi_align(
@@ -333,13 +322,16 @@ class MultiScaleRoIAlign(nn.Module):
         Returns:
             result (Tensor)
         """
+        x_filtered = _filter_input(x, self.featmap_names)
+        self.scales, self.map_levels = _setup_scales(
+            x_filtered, image_shapes, self.canonical_scale, self.canonical_level
+        )
+        assert self.scales is not None
+        assert self.map_levels is not None
+
         return _multiscale_roi_align(
-            x,
+            x_filtered,
             boxes,
-            image_shapes,
-            self.featmap_names,
-            self.canonical_scale,
-            self.canonical_level,
             self.output_size,
             self.sampling_ratio,
             self.scales,
