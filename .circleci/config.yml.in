@@ -99,6 +99,45 @@ commands:
       - brew_install:
           formulae: libtool
 
+  checkout_and_install:
+    parameters:
+      editable:
+        type: boolean
+        default: true
+    steps:
+      - run:
+          name: Install torch
+          command: >
+            {{ pip_install }}
+            --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+      - checkout
+      - run:
+          name: Install torchvision
+          command: >
+            {{ pip_install }}
+            <<# parameters.editable >> --editable <</ parameters.editable >>
+            --no-build-isolation .
+
+  install_prototype_dependencies:
+    steps:
+      - run:
+          name: Install prototype dependencies
+          command: {{ pip_install }} iopath git+https://github.com/pytorch/data
+
+  run_tests:
+    parameters:
+      file_or_dir:
+        type: string
+    steps:
+      - run:
+          name: Install test utilities
+          command: {{ pip_install }} pytest pytest-mock
+      - run:
+          name: Run tests
+          command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
+      - store_test_results:
+          path: test-results
+
 binary_common: &binary_common
   parameters:
     # Edit these defaults to do a release
@@ -173,115 +212,97 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off jinja2 pyyaml
+            {{ pip_install }} jinja2 pyyaml
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
-  python_lint:
+  lint_python_and_config:
     docker:
       - image: circleci/python:3.7
     steps:
       - checkout
       - run:
+          name: Install lint utilities
           command: |
-            pip install --user --progress-bar off pre-commit
+            {{ pip_install }} pre-commit
             pre-commit install-hooks
-      - run: pre-commit run --all-files
+      - run:
+          name: Lint Python code and config files
+          command: pre-commit run --all-files
       - run:
           name: Required lint modifications
           when: on_fail
           command: git --no-pager diff
 
-  python_type_check:
+  lint_c:
     docker:
       - image: circleci/python:3.7
     steps:
+      - run:
+          name: Install additional system libraries
+          command: {{ apt_install }} libtinfo5
       - checkout
       - run:
+          name: Install lint utilities
           command: |
-            sudo apt-get update -y
-            sudo apt install -y libturbojpeg-dev
-            pip install --user --progress-bar off mypy
-            pip install --user --progress-bar off types-requests
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            pip install --user --progress-bar off git+https://github.com/pytorch/data.git
-            pip install --user --progress-bar off --no-build-isolation --editable .
-            mypy --config-file mypy.ini
-
-  docstring_parameters_sync:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-      - run:
-          command: |
-            pip install --user pydocstyle
-            pydocstyle
-
-  clang_format:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-      - run:
-          command: |
-            sudo apt-get update -y
-            sudo apt install -y libtinfo5
             curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
             chmod +x clang-format
             sudo mv clang-format /opt/clang-format
-            ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
-
-  torchhub_test:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
       - run:
-          command: |
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --no-build-isolation .
-            pip install pytest
-            python test/test_hub.py
-
-  torch_onnx_test:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
+          name: Lint C code
+          command: ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
       - run:
-          command: |
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --no-build-isolation .
-            pip install --user onnx
-            pip install --user onnxruntime
-            pip install --user pytest
-            python test/test_onnx.py
+          name: Required lint modifications
+          when: on_fail
+          command: git --no-pager diff
 
-  prototype_test:
+  type_check_python:
     docker:
       - image: circleci/python:3.7
     steps:
       - run:
-          name: Install torch
-          command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+          name: Install additional system libraries
+          command: {{ apt_install }} libturbojpeg-dev
+      - checkout_and_install:
+          editable: true
+      - install_prototype_dependencies
       - run:
-          name: Install prototype dependencies
-          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
-      - checkout
+          name: Install Python type check utilities
+          command: {{ pip_install }} mypy
       - run:
-          name: Install torchvision
-          command: pip install --user --progress-bar off --no-build-isolation .
+          name: Check Python types statically
+          command: mypy --config-file mypy.ini
+
+  unittest_torchhub:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout_and_install
+      - run_tests:
+          file_or_dir: test/test_hub.py
+
+  unittest_onnx:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout_and_install
       - run:
-          name: Install test requirements
-          command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
+          name: Install ONNX
+          command: {{ pip_install }} onnx onnxruntime
+      - run_tests:
+          file_or_dir: test/test_onnx.py
+
+  unittest_prototype:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout_and_install
+      - install_prototype_dependencies
       - run:
-          name: Run tests
-          command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
-      - store_test_results:
-          path: test-results
+          name: Install optional dependencies
+          command: {{ pip_install }} scipy
+      - run_tests:
+          file_or_dir: test/test_prototype_*.py
 
   binary_linux_wheel:
     <<: *binary_common
@@ -519,7 +540,7 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user awscli
+            {{ pip_install }} awscli
             export PATH="$HOME/.local/bin:$PATH"
             # Prevent credential from leaking
             set +x
@@ -560,7 +581,7 @@ jobs:
           command: |
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+            {{ pip_install }} $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
       - run:
           name: smoke test
           command: |
@@ -629,7 +650,7 @@ jobs:
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+            {{ pip_install }} $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
       - run:
           name: smoke test
           command: |
@@ -955,7 +976,7 @@ jobs:
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
             pushd docs
-            pip install -r requirements.txt
+            {{ pip_install }} -r requirements.txt
             make html
             popd
       - persist_to_workspace:
@@ -996,23 +1017,24 @@ jobs:
 
 
 workflows:
-  build:
-{%- if True %}
+  lint:
     jobs:
       - circleci_consistency
+      - lint_python_and_config
+      - lint_c
+      - type_check_python
+
+  build:
+    jobs:
       {{ build_workflows(windows_latest_only=True) }}
-      - python_lint
-      - python_type_check
-      - docstring_parameters_sync
-      - clang_format
-      - torchhub_test
-      - torch_onnx_test
-      - prototype_test
       {{ ios_workflows() }}
       {{ android_workflows() }}
 
   unittest:
     jobs:
+      - unittest_torchhub
+      - unittest_onnx
+      - unittest_prototype
       {{ unittest_workflows() }}
 
   cmake:
@@ -1020,16 +1042,7 @@ workflows:
       {{ cmake_workflows() }}
 
   nightly:
-{%- endif %}
     jobs:
-      - circleci_consistency
-      - python_lint
-      - python_type_check
-      - docstring_parameters_sync
-      - clang_format
-      - torchhub_test
-      - torch_onnx_test
-      - prototype_test
       {{ ios_workflows(nightly=True) }}
       {{ android_workflows(nightly=True) }}
       {{ build_workflows(prefix="nightly_", filter_branch="nightly", upload=True) }}

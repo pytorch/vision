@@ -212,7 +212,7 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user --progress-bar off jinja2 pyyaml
+            pip install --user --progress-bar=off jinja2 pyyaml
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
@@ -224,7 +224,7 @@ jobs:
       - run:
           name: Install lint utilities
           command: |
-            pip install --user --progress-bar off pre-commit
+            pip install --user --progress-bar=off pre-commit
             pre-commit install-hooks
       - run:
           name: Lint Python code and config files
@@ -240,9 +240,7 @@ jobs:
     steps:
       - run:
           name: Install additional system libraries
-          command: |
-            sudo apt update -y
-            sudo apt install -y libtinfo5
+          command: sudo apt update -qy && apt install -qy libtinfo5
       - checkout
       - run:
           name: Install lint utilities
@@ -264,9 +262,7 @@ jobs:
     steps:
       - run:
           name: Install additional system libraries
-          command: |
-            sudo apt update -y
-            sudo apt install -y libturbojpeg-dev
+          command: sudo apt update -qy && apt install -qy libturbojpeg-dev
       - checkout_and_install:
           editable: true
       - install_prototype_dependencies
@@ -544,7 +540,7 @@ jobs:
       - checkout
       - run:
           command: |
-            pip install --user awscli
+            pip install --user --progress-bar=off awscli
             export PATH="$HOME/.local/bin:$PATH"
             # Prevent credential from leaking
             set +x
@@ -585,7 +581,7 @@ jobs:
           command: |
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+            pip install --user --progress-bar=off $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
       - run:
           name: smoke test
           command: |
@@ -654,7 +650,7 @@ jobs:
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            pip install $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+            pip install --user --progress-bar=off $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
       - run:
           name: smoke test
           command: |
@@ -980,7 +976,7 @@ jobs:
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
             pushd docs
-            pip install -r requirements.txt
+            pip install --user --progress-bar=off -r requirements.txt
             make html
             popd
       - persist_to_workspace:
@@ -1021,9 +1017,14 @@ jobs:
 
 
 workflows:
-  build:
+  lint:
     jobs:
       - circleci_consistency
+      - lint_python_and_config
+      - lint_c
+      - type_check_python
+  build:
+    jobs:
       - binary_linux_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -1528,9 +1529,6 @@ workflows:
           python_version: '3.7'
           requires:
           - build_docs
-      - lint_python_and_config
-      - lint_c
-      - type_check_python
       - binary_ios_build:
           build_environment: binary-libtorchvision_ops-ios-12.0.0-x86_64
           ios_arch: x86_64
@@ -1687,10 +1685,6 @@ workflows:
 
   nightly:
     jobs:
-      - circleci_consistency
-      - lint_python_and_config
-      - lint_c
-      - type_check_python
       - binary_ios_build:
           build_environment: nightly-binary-libtorchvision_ops-ios-12.0.0-x86_64
           filters:
