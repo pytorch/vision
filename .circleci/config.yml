@@ -101,7 +101,6 @@ commands:
 
   checkout_and_install:
     steps:
-      - checkout
       - run:
           name: Install torch
           command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
@@ -233,8 +232,8 @@ jobs:
       - run:
           name: Install additional system libraries
           command: |
-            - sudo apt update -y
-            - sudo apt install -y libtinfo5
+            sudo apt update -y
+            sudo apt install -y libtinfo5
       - checkout
       - run:
           name: Install lint utilities
@@ -257,8 +256,8 @@ jobs:
       - run:
           name: Install additional system libraries
           command: |
-            - sudo apt update -y
-            - sudo apt install -y libturbojpeg-dev
+            sudo apt update -y
+            sudo apt install -y libturbojpeg-dev
       - checkout_and_install
       - install_prototype_dependencies
       - run:
@@ -283,7 +282,7 @@ jobs:
       - checkout_and_install
       - run:
           name: Install ONNX
-          command: pip install --user --progress-bar=off onnx onnx-runtime
+          command: pip install --user --progress-bar=off onnx onnxruntime
       - run_tests:
           file_or_dir: test/test_onnx.py
 
@@ -293,6 +292,9 @@ jobs:
     steps:
       - checkout_and_install
       - install_prototype_dependencies
+      - run:
+          name: Install optional dependencies
+          run: pip install --user --progress-bar=off scipy
       - run_tests:
           file_or_dir: test/test_prototype_*.py
 
