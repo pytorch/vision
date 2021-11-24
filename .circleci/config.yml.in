@@ -99,17 +99,21 @@ commands:
       - brew_install:
           formulae: libtool
 
-    apt_install:
+  apt_install:
     parameters:
       args:
         type: string
-        default: args
+      descr:
+        type: string
+        default: ""
       update:
         type: boolean
         default: true
     steps:
       - run:
-          name: apt install << parameters.args >>
+          name: >
+            <<^ parameters.descr >> apt install << parameters.args >> <</ parameters.descr >>
+            <<# parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
           command: |
             <<# parameters.update >> sudo apt update -qy  <</ parameters.update >>
             sudo apt install << parameters.args >>
@@ -118,7 +122,6 @@ commands:
     parameters:
       args:
         type: string
-        default: args
       descr:
         type: string
         default: ""
@@ -128,8 +131,8 @@ commands:
     steps:
       - run:
           name: >
-            <<# parameters.descr >> pip install << parameters.args >> <</ parameters.descr >>
-            <<^ parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
+            <<^ parameters.descr >> pip install << parameters.args >> <</ parameters.descr >>
+            <<# parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
           command: >
             pip install
             <<# parameters.user >> --user <</ parameters.user >>
@@ -258,11 +261,12 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - checkout
+      - pip_install:
+          args: pre-commit
+          descr: Install lint utilities
       - run:
-          name: Install lint utilities
-          command: |
-            {{ pip_install }} pre-commit
-            pre-commit install-hooks
+          name: Install pre-commit hooks
+          command: pre-commit install-hooks
       - run:
           name: Lint Python code and config files
           command: pre-commit run --all-files
@@ -275,9 +279,9 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
-      - run:
-          name: Install additional system libraries
-          command: {{ apt_install }} libtinfo5
+      - apt_install:
+          args: libtinfo5
+          descr: Install additional system libraries
       - checkout
       - run:
           name: Install lint utilities
@@ -297,15 +301,15 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
-      - run:
-          name: Install additional system libraries
-          command: {{ apt_install }} libturbojpeg-dev
-      - checkout_and_install:
+      - apt_install:
+          args: libturbojpeg-dev
+          descr: Install additional system libraries
+      - install_torchvision:
           editable: true
       - install_prototype_dependencies
-      - run:
-          name: Install Python type check utilities
-          command: {{ pip_install }} mypy
+      - pip_install:
+          args: mypy
+          descr: Install Python type check utilities
       - run:
           name: Check Python types statically
           command: mypy --config-file mypy.ini
@@ -314,31 +318,31 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout_and_install
-      - run_tests:
+      - install_torchvision
+      - run_tests_selective:
           file_or_dir: test/test_hub.py
 
   unittest_onnx:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout_and_install
-      - run:
-          name: Install ONNX
-          command: {{ pip_install }} onnx onnxruntime
-      - run_tests:
+      - install_torchvision
+      - pip_install:
+          args: onnx onnxruntime
+          descr: Install ONNX
+      - run_tests_selective:
           file_or_dir: test/test_onnx.py
 
   unittest_prototype:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout_and_install
+      - install_torchvision
       - install_prototype_dependencies
-      - run:
-          name: Install optional dependencies
-          command: {{ pip_install }} scipy
-      - run_tests:
+      - pip_install:
+          args: scipy
+          descr: Install optional dependencies
+      - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
 
   binary_linux_wheel:
@@ -575,9 +579,10 @@ jobs:
           at: ~/workspace
       - designate_upload_channel
       - checkout
+      - pip_install:
+          args: awscli
       - run:
           command: |
-            {{ pip_install }} awscli
             export PATH="$HOME/.local/bin:$PATH"
             # Prevent credential from leaking
             set +x
@@ -618,7 +623,8 @@ jobs:
           command: |
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            {{ pip_install }} $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+      - pip_install:
+          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
       - run:
           name: smoke test
           command: |
@@ -687,7 +693,8 @@ jobs:
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            {{ pip_install }} $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+      - pip_install:
+          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
       - run:
           name: smoke test
           command: |
@@ -1013,7 +1020,7 @@ jobs:
             eval "$(./conda/bin/conda shell.bash hook)"
             conda activate ./env
             pushd docs
-            {{ pip_install }} -r requirements.txt
+            pip install --progress-bar=off -r requirements.txt
             make html
             popd
       - persist_to_workspace:

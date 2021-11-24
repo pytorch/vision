@@ -20,6 +20,19 @@ executors:
       shell: bash.exe
 
 commands:
+  checkout_merge:
+    description: "checkout merge branch"
+    steps:
+      - checkout
+#     - run:
+#         name: Checkout merge branch
+#         command: |
+#           set -ex
+#           BRANCH=$(git rev-parse --abbrev-ref HEAD)
+#           if [[ "$BRANCH" != "main" ]]; then
+#             git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
+#             git checkout "merged/$CIRCLE_BRANCH"
+#           fi
   designate_upload_channel:
     description: "inserts the correct upload channel into ${BASH_ENV}"
     steps:
@@ -90,13 +103,17 @@ commands:
     parameters:
       args:
         type: string
-        default: args
+      descr:
+        type: string
+        default: ""
       update:
         type: boolean
         default: true
     steps:
       - run:
-          name: apt install << parameters.args >>
+          name: >
+            <<^ parameters.descr >> apt install << parameters.args >> <</ parameters.descr >>
+            <<# parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
           command: |
             <<# parameters.update >> sudo apt update -qy  <</ parameters.update >>
             sudo apt install << parameters.args >>
@@ -105,7 +122,6 @@ commands:
     parameters:
       args:
         type: string
-        default: args
       descr:
         type: string
         default: ""
@@ -222,28 +238,37 @@ smoke_test_common: &smoke_test_common
   docker:
     - image: torchvision/smoke_test:latest
 
+# Trigger error
+
 jobs:
   circleci_consistency:
     docker:
       - image: circleci/python:3.7
     steps:
       - checkout
+      - pip_install:
+          args: jinja2 pyyaml
       - run:
+          name: Re-generate CircleCI config
           command: |
-            pip install --progress-bar=off jinja2 pyyaml
             python .circleci/regenerate.py
-            git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
+            git diff --exit-code
+      - run:
+          name: Required action
+          when: on_fail
+          command: echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"
 
   lint_python_and_config:
     docker:
       - image: circleci/python:3.7
     steps:
       - checkout
+      - pip_install:
+          args: pre-commit
+          descr: Install lint utilities
       - run:
-          name: Install lint utilities
-          command: |
-            pip install --progress-bar=off pre-commit
-            pre-commit install-hooks
+          name: Install pre-commit hooks
+          command: pre-commit install-hooks
       - run:
           name: Lint Python code and config files
           command: pre-commit run --all-files
@@ -256,9 +281,9 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
-      - run:
-          name: Install additional system libraries
-          command: sudo apt update -qy && sudo apt install -qy libtinfo5
+      - apt_install:
+          args: libtinfo5
+          descr: Install additional system libraries
       - checkout
       - run:
           name: Install lint utilities
@@ -278,15 +303,15 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
-      - run:
-          name: Install additional system libraries
-          command: sudo apt update -qy && sudo apt install -qy libturbojpeg-dev
+      - apt_install:
+          args: libturbojpeg-dev
+          descr: Install additional system libraries
       - install_torchvision:
           editable: true
       - install_prototype_dependencies
-      - run:
-          name: Install Python type check utilities
-          command: pip install --progress-bar=off mypy
+      - pip_install:
+          args: mypy
+          descr: Install Python type check utilities
       - run:
           name: Check Python types statically
           command: mypy --config-file mypy.ini
@@ -304,9 +329,9 @@ jobs:
       - image: circleci/python:3.7
     steps:
       - install_torchvision
-      - run:
-          name: Install ONNX
-          command: pip install --progress-bar=off onnx onnxruntime
+      - pip_install:
+          args: onnx onnxruntime
+          descr: Install ONNX
       - run_tests_selective:
           file_or_dir: test/test_onnx.py
 
@@ -316,9 +341,9 @@ jobs:
     steps:
       - install_torchvision
       - install_prototype_dependencies
-      - run:
-          name: Install optional dependencies
-          command: pip install --progress-bar=off scipy
+      - pip_install:
+          args: scipy
+          descr: Install optional dependencies
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
 
@@ -328,7 +353,7 @@ jobs:
       - image: << parameters.wheel_docker_image >>
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run: packaging/build_wheel.sh
       - store_artifacts:
@@ -344,7 +369,7 @@ jobs:
       - image: "<< parameters.conda_docker_image >>"
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run: packaging/build_conda.sh
       - store_artifacts:
@@ -360,7 +385,7 @@ jobs:
     <<: *binary_common
     executor: windows-cpu
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           name: Build conda packages
@@ -391,7 +416,7 @@ jobs:
     <<: *binary_common
     executor: windows-cpu
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           name: Build wheel packages
@@ -414,7 +439,7 @@ jobs:
     macos:
       xcode: "12.0"
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           # Cannot easily deduplicate this as source'ing activate
@@ -510,7 +535,7 @@ jobs:
     macos:
       xcode: "12.0"
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           command: |
@@ -556,9 +581,10 @@ jobs:
           at: ~/workspace
       - designate_upload_channel
       - checkout
+      - pip_install:
+          args: awscli
       - run:
           command: |
-            pip install --progress-bar=off awscli
             export PATH="$HOME/.local/bin:$PATH"
             # Prevent credential from leaking
             set +x
@@ -599,7 +625,8 @@ jobs:
           command: |
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            pip install --progress-bar=off $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+      - pip_install:
+          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
       - run:
           name: smoke test
           command: |
@@ -668,7 +695,8 @@ jobs:
             eval "$('/C/tools/miniconda3/Scripts/conda.exe' 'shell.bash' 'hook')"
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            pip install --progress-bar=off $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+      - pip_install:
+          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
       - run:
           name: smoke test
           command: |
@@ -899,7 +927,7 @@ jobs:
       - image: "pytorch/manylinux-cuda102"
     resource_class: 2xlarge+
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           name: Setup conda
@@ -917,7 +945,7 @@ jobs:
       UNICODE_ABI: << parameters.unicode_abi >>
       CU_VERSION: << parameters.cu_version >>
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           name: Setup conda
@@ -931,7 +959,7 @@ jobs:
     macos:
       xcode: "12.0"
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           command: |
@@ -946,7 +974,7 @@ jobs:
     executor:
       name: windows-cpu
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           command: |
@@ -959,7 +987,7 @@ jobs:
     executor:
       name: windows-gpu
     steps:
-      - checkout
+      - checkout_merge
       - designate_upload_channel
       - run:
           command: |
