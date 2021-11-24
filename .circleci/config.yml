@@ -86,18 +86,37 @@ commands:
       - brew_install:
           formulae: libtool
 
+  apt_install:
+    parameters:
+      args:
+        type: string
+        default: args
+      update:
+        type: boolean
+        default: true
+    steps:
+      - run:
+          name: apt install << parameters.args >>
+          command: |
+            <<# parameters.update >> sudo apt update -qy  <</ parameters.update >>
+            sudo apt install << parameters.args >>
+
   pip_install:
     parameters:
       args:
         type: string
         default: args
+      descr:
+        type: string
+        default: ""
       user:
         type: boolean
         default: true
-
     steps:
       - run:
-          name: pip install << parameters.args >>
+          name: >
+            <<# parameters.descr >> pip install << parameters.args >> <</ parameters.descr >>
+            <<^ parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
           command: >
             pip install
             <<# parameters.user >> --user <</ parameters.user >>
@@ -112,25 +131,17 @@ commands:
     steps:
       - pip_install:
           args: --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-#      - run:
-#          name: Install torch
-#          command: >
-#            pip install --progress-bar=off
-#            --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+          descr: Install PyTorch from nightly releases
       - checkout
-      - run:
-          name: Install torchvision
-          command: >
-            pip install --progress-bar=off
-            --no-build-isolation
-            <<# parameters.editable >> --editable <</ parameters.editable >> .
+      - pip_install:
+          args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
 
   install_prototype_dependencies:
     steps:
-      - run:
-          name: Install prototype dependencies
-          command: pip install --progress-bar=off iopath git+https://github.com/pytorch/data
+      - pip_install:
+          args: iopath git+https://github.com/pytorch/data
 
+  # Most of our tests will be run by default. This command can be used if only a selection of tests need to be run
   run_tests_selective:
     parameters:
       file_or_dir:
