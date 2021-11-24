@@ -60,7 +60,7 @@ class RoIOpTester(ABC):
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_is_leaf_node(self, device):
-        op_obj = self.make_obj(5, 5, spatial_scale=1).to(device=device)
+        op_obj = self.make_obj(5, 5, spatial_scale=1, wrap=True).to(device=device)
         graph_node_names = get_graph_node_names(op_obj)
 
         assert len(graph_node_names) == 2
@@ -129,9 +129,9 @@ class TestRoiPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.RoIPool((pool_h, pool_w), spatial_scale)(x, rois)
 
-    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, **kwargs):
-        obj = TestModuleWrapper(ops.RoIPool((pool_h, pool_w), spatial_scale))
-        return obj
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, wrap=False):
+        obj = ops.RoIPool((pool_h, pool_w), spatial_scale)
+        return TestModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_pool)
@@ -173,8 +173,9 @@ class TestPSRoIPool(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIPool((pool_h, pool_w), 1)(x, rois)
 
-    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, **kwargs):
-        return TestModuleWrapper(ops.PSRoIPool((pool_h, pool_w), spatial_scale))
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, wrap=False):
+        obj = ops.PSRoIPool((pool_h, pool_w), spatial_scale)
+        return TestModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_pool)
@@ -255,10 +256,11 @@ class TestRoIAlign(RoIOpTester):
             (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
         )(x, rois)
 
-    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, aligned=False, **kwargs):
-        return TestModuleWrapper(
-            ops.RoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned)
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, aligned=False, wrap=False):
+        obj = ops.RoIAlign(
+            (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
         )
+        return TestModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_align)
@@ -411,10 +413,9 @@ class TestPSRoIAlign(RoIOpTester):
     def fn(self, x, rois, pool_h, pool_w, spatial_scale=1, sampling_ratio=-1, **kwargs):
         return ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)(x, rois)
 
-    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, **kwargs):
-        return TestModuleWrapper(
-            ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)
-        )
+    def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, wrap=False):
+        obj = ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)
+        return TestModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_align)
@@ -464,10 +465,11 @@ class TestPSRoIAlign(RoIOpTester):
 
 
 class TestMultiScaleRoIAlign:
-    def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, **kwargs):
+    def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, wrap=False):
         if fmap_names is None:
             fmap_names = ["0"]
-        return TestModuleWrapper(ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio))
+        obj = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
+        return TestModuleWrapper(obj) if wrap else obj
 
     def test_msroialign_repr(self):
         fmap_names = ["0"]
@@ -485,7 +487,7 @@ class TestMultiScaleRoIAlign:
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_is_leaf_node(self, device):
-        op_obj = self.make_obj().to(device=device)
+        op_obj = self.make_obj(wrap=True).to(device=device)
         graph_node_names = get_graph_node_names(op_obj)
 
         assert len(graph_node_names) == 2
@@ -749,17 +751,15 @@ class TestDeformConv:
 
         return x, weight, offset, mask, bias, stride, pad, dilation
 
-    def make_obj(self, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2):
-        layer = TestModuleWrapper(
-            ops.DeformConv2d(
-                in_channels, out_channels, kernel_size, stride=(2, 1), padding=(1, 0), dilation=(2, 1), groups=groups
-            )
+    def make_obj(self, in_channels=6, out_channels=2, kernel_size=(3, 2), groups=2, wrap=False):
+        obj = ops.DeformConv2d(
+            in_channels, out_channels, kernel_size, stride=(2, 1), padding=(1, 0), dilation=(2, 1), groups=groups
         )
-        return layer
+        return TestModuleWrapper(obj) if wrap else obj
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_is_leaf_node(self, device):
-        op_obj = self.make_obj().to(device=device)
+        op_obj = self.make_obj(wrap=True).to(device=device)
         graph_node_names = get_graph_node_names(op_obj)
 
         assert len(graph_node_names) == 2
@@ -1271,13 +1271,14 @@ class TestStochasticDepth:
         elif p == 1:
             assert out.equal(torch.zeros_like(x))
 
-    def make_obj(self, p, mode):
-        return TestModuleWrapper(ops.StochasticDepth(p, mode))
+    def make_obj(self, p, mode, wrap=False):
+        obj = ops.StochasticDepth(p, mode)
+        return TestModuleWrapper(obj) if wrap else obj
 
     @pytest.mark.parametrize("p", (0, 1))
     @pytest.mark.parametrize("mode", ["batch", "row"])
     def test_is_leaf_node(self, p, mode):
-        op_obj = self.make_obj(p, mode)
+        op_obj = self.make_obj(p, mode, wrap=True)
         graph_node_names = get_graph_node_names(op_obj)
 
         assert len(graph_node_names) == 2
