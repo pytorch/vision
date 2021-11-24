@@ -30,7 +30,7 @@ class GoogLeNetWeights(Weights):
 
 def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
+        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
         weights = GoogLeNetWeights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
     weights = GoogLeNetWeights.verify(weights)
 
@@ -38,10 +38,6 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
     if weights is not None:
         if "transform_input" not in kwargs:
             kwargs["transform_input"] = True
-        if original_aux_logits:
-            warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
-            )
         kwargs["aux_logits"] = True
         kwargs["init_weights"] = False
         kwargs["num_classes"] = len(weights.meta["categories"])
@@ -49,10 +45,14 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
     model = GoogLeNet(**kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
             model.aux1 = None  # type: ignore[assignment]
             model.aux2 = None  # type: ignore[assignment]
+        else:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
+            )
 
     return model
