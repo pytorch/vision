@@ -998,7 +998,6 @@ def elastic_deformation(
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
-
     if isinstance(alpha, float) or isinstance(alpha, int):
         alpha = [
             alpha,
@@ -1010,11 +1009,19 @@ def elastic_deformation(
         ] * 2
 
     shape = list(img.shape[-2:])
-    
-    dx = gaussian_blur(torch.rand(*shape).unsqueeze(0).unsqueeze(0)*2 -1, [4*sigma[0]+1, 4*sigma[1]+1], sigma) * alpha[0]/shape[0]
-    dy = gaussian_blur(torch.rand(*shape).unsqueeze(0).unsqueeze(0)*2 -1, [4*sigma[0]+1, 4*sigma[1]+1], sigma) * alpha[1]/shape[1]
-    displacement = torch.concat([dx,dy],1).permute([0,2,3,1]) # 1 x H x W x 2
-    
+
+    dx = (
+        gaussian_blur(torch.rand(*shape).unsqueeze(0).unsqueeze(0) * 2 - 1, [4 * sigma[0] + 1, 4 * sigma[1] + 1], sigma)
+        * alpha[0]
+        / shape[0]
+    )
+    dy = (
+        gaussian_blur(torch.rand(*shape).unsqueeze(0).unsqueeze(0) * 2 - 1, [4 * sigma[0] + 1, 4 * sigma[1] + 1], sigma)
+        * alpha[1]
+        / shape[1]
+    )
+    displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
+
     hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in shape]
     grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
     identity_grid = torch.stack([grid_x, grid_y], -1).unsqueeze(0)  # 1 x H x W x 2

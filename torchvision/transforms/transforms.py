@@ -2037,10 +2037,7 @@ class ElasticDeformation(torch.nn.Module):
     def __init__(self, alpha, sigma, interpolation="bilinear", fill=0):
         super().__init__()
         if isinstance(alpha, list) and len(alpha) != 2:
-            raise ValueError(
-                "alpha should be a scalar or a list of two. Got a list of"
-                f"{len(alpha)}."
-            )
+            raise ValueError("alpha should be a scalar or a list of two. Got a list of" f"{len(alpha)}.")
 
         if isinstance(sigma, list) and len(sigma) != 2:
             raise ValueError("sigma should be a scalar or a list of two. Got a list of" f"{len(sigma)}.")
