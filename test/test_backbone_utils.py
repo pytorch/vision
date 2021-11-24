@@ -1,5 +1,6 @@
 import random
 from itertools import chain
+from typing import Mapping, Sequence
 
 import pytest
 import torch
@@ -98,7 +99,6 @@ class TestFxFeatureExtraction:
             "eq",
             "dim",
             "getattr",
-            "self_attention",
         ]
         train_nodes, eval_nodes = get_graph_node_names(
             model, tracer_kwargs={"leaf_modules": self.leaf_modules}, suppress_diff_warning=True
@@ -154,7 +154,16 @@ class TestFxFeatureExtraction:
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
         out = model(self.inp)
-        sum(o.mean() for o in out.values()).backward()
+        out_agg = 0
+        for node_out in out.values():
+            if isinstance(node_out, Sequence):
+                out_agg += sum(o.mean() for o in node_out if o is not None)
+            elif isinstance(node_out, Mapping):
+                out_agg += sum(o.mean() for o in node_out.values() if o is not None)
+            else:
+                # Assume that the only other alternative at this point is a Tensor
+                out_agg += node_out.mean()
+        out_agg.backward()
 
     def test_feature_extraction_methods_equivalence(self):
         model = models.resnet18(**self.model_defaults).eval()

@@ -250,12 +250,27 @@ class VisionTransformer_L_32Weights(Weights):
     pass
 
 
-def _vision_transformer(weights: Optional[Weights], progress: bool, **kwargs: Any) -> VisionTransformer:
-    image_size = kwargs.get("image_size", 224)
-    if "image_size" in kwargs:
-        kwargs.pop("image_size")
+def _vision_transformer(
+    patch_size: int,
+    num_layers: int,
+    num_heads: int,
+    hidden_dim: int,
+    mlp_dim: int,
+    weights: Optional[Weights],
+    progress: bool,
+    **kwargs: Any,
+) -> VisionTransformer:
+    image_size = kwargs.pop("image_size", 224)
 
-    model = VisionTransformer(image_size=image_size, **kwargs)
+    model = VisionTransformer(
+        image_size=image_size,
+        patch_size=patch_size,
+        num_layers=num_layers,
+        num_heads=num_heads,
+        hidden_dim=hidden_dim,
+        mlp_dim=mlp_dim,
+        **kwargs,
+    )
 
     if weights:
         model.load_state_dict(weights.get_state_dict(progress=progress))
@@ -282,13 +297,13 @@ def vit_b_16(
     weights = VisionTransformer_B_16Weights.verify(weights)
 
     return _vision_transformer(
-        weights=weights,
-        progress=progress,
         patch_size=16,
         num_layers=12,
         num_heads=12,
         hidden_dim=768,
         mlp_dim=3072,
+        weights=weights,
+        progress=progress,
         **kwargs,
     )
 
@@ -312,13 +327,13 @@ def vit_b_32(
     weights = VisionTransformer_B_32Weights.verify(weights)
 
     return _vision_transformer(
-        weights=weights,
-        progress=progress,
         patch_size=32,
         num_layers=12,
         num_heads=12,
         hidden_dim=768,
         mlp_dim=3072,
+        weights=weights,
+        progress=progress,
         **kwargs,
     )
 
@@ -342,13 +357,13 @@ def vit_l_16(
     weights = VisionTransformer_L_16Weights.verify(weights)
 
     return _vision_transformer(
-        weights=weights,
-        progress=progress,
         patch_size=16,
         num_layers=24,
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
+        weights=weights,
+        progress=progress,
         **kwargs,
     )
 
@@ -372,12 +387,12 @@ def vit_l_32(
     weights = VisionTransformer_L_32Weights.verify(weights)
 
     return _vision_transformer(
-        weights=weights,
-        progress=progress,
         patch_size=32,
         num_layers=24,
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
+        weights=weights,
+        progress=progress,
         **kwargs,
     )
