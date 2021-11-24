@@ -20,19 +20,6 @@ executors:
       shell: bash.exe
 
 commands:
-  checkout_merge:
-    description: "checkout merge branch"
-    steps:
-      - checkout
-#     - run:
-#         name: Checkout merge branch
-#         command: |
-#           set -ex
-#           BRANCH=$(git rev-parse --abbrev-ref HEAD)
-#           if [[ "$BRANCH" != "main" ]]; then
-#             git fetch --force origin ${CIRCLE_BRANCH}/merge:merged/${CIRCLE_BRANCH}
-#             git checkout "merged/$CIRCLE_BRANCH"
-#           fi
   designate_upload_channel:
     description: "inserts the correct upload channel into ${BASH_ENV}"
     steps:
@@ -99,17 +86,37 @@ commands:
       - brew_install:
           formulae: libtool
 
-  checkout_and_install:
+  pip_install:
+    parameters:
+      args:
+        type: string
+        default: args
+      user:
+        type: boolean
+        default: true
+
+    steps:
+      - run:
+          name: pip install << parameters.args >>
+          command: >
+            pip install
+            <<# parameters.user >> --user <</ parameters.user >>
+            --progress-bar=off
+            << parameters.args >>
+
+  install_torchvision:
     parameters:
       editable:
         type: boolean
         default: true
     steps:
-      - run:
-          name: Install torch
-          command: >
-            pip install --progress-bar=off
-            --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+      - pip_install:
+          args: --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+#      - run:
+#          name: Install torch
+#          command: >
+#            pip install --progress-bar=off
+#            --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
       - checkout
       - run:
           name: Install torchvision
@@ -124,7 +131,7 @@ commands:
           name: Install prototype dependencies
           command: pip install --progress-bar=off iopath git+https://github.com/pytorch/data
 
-  run_tests:
+  run_tests_selective:
     parameters:
       file_or_dir:
         type: string
@@ -263,7 +270,7 @@ jobs:
       - run:
           name: Install additional system libraries
           command: sudo apt update -qy && sudo apt install -qy libturbojpeg-dev
-      - checkout_and_install:
+      - install_torchvision:
           editable: true
       - install_prototype_dependencies
       - run:
@@ -277,31 +284,31 @@ jobs:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout_and_install
-      - run_tests:
+      - install_torchvision
+      - run_tests_selective:
           file_or_dir: test/test_hub.py
 
   unittest_onnx:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout_and_install
+      - install_torchvision
       - run:
           name: Install ONNX
           command: pip install --progress-bar=off onnx onnxruntime
-      - run_tests:
+      - run_tests_selective:
           file_or_dir: test/test_onnx.py
 
   unittest_prototype:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout_and_install
+      - install_torchvision
       - install_prototype_dependencies
       - run:
           name: Install optional dependencies
           command: pip install --progress-bar=off scipy
-      - run_tests:
+      - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
 
   binary_linux_wheel:
@@ -310,7 +317,7 @@ jobs:
       - image: << parameters.wheel_docker_image >>
     resource_class: 2xlarge+
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run: packaging/build_wheel.sh
       - store_artifacts:
@@ -326,7 +333,7 @@ jobs:
       - image: "<< parameters.conda_docker_image >>"
     resource_class: 2xlarge+
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run: packaging/build_conda.sh
       - store_artifacts:
@@ -342,7 +349,7 @@ jobs:
     <<: *binary_common
     executor: windows-cpu
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           name: Build conda packages
@@ -373,7 +380,7 @@ jobs:
     <<: *binary_common
     executor: windows-cpu
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           name: Build wheel packages
@@ -396,7 +403,7 @@ jobs:
     macos:
       xcode: "12.0"
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           # Cannot easily deduplicate this as source'ing activate
@@ -492,7 +499,7 @@ jobs:
     macos:
       xcode: "12.0"
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           command: |
@@ -881,7 +888,7 @@ jobs:
       - image: "pytorch/manylinux-cuda102"
     resource_class: 2xlarge+
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           name: Setup conda
@@ -899,7 +906,7 @@ jobs:
       UNICODE_ABI: << parameters.unicode_abi >>
       CU_VERSION: << parameters.cu_version >>
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           name: Setup conda
@@ -913,7 +920,7 @@ jobs:
     macos:
       xcode: "12.0"
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           command: |
@@ -928,7 +935,7 @@ jobs:
     executor:
       name: windows-cpu
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           command: |
@@ -941,7 +948,7 @@ jobs:
     executor:
       name: windows-gpu
     steps:
-      - checkout_merge
+      - checkout
       - designate_upload_channel
       - run:
           command: |
