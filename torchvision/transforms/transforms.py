@@ -2019,32 +2019,33 @@ class RandomEqualize(torch.nn.Module):
 class ElasticDeformation(torch.nn.Module):
     """Transform a tensor image with elastic deformations.
     This transform does not support PIL Image.
-    Given control_point_spacing and sigma, it will generate displacement
-    vectors for all pixels based on the random offsets of the control_points.
+    Given alpha and sigma, it will generate displacement
+    vectors for all pixels based on random offsets. Alpha controls the strength
+    and sigma controls the smoothness of the displacements.
     The displacements are added to an identity grid and the resulting grid is
     used to grid_sample from the image.
     Applications:
         Randomly transforms the morphology of objects in images and produces a
-        see-through-water-like effect
+        see-through-water-like effect.
     Args:
-        control_point_spacing: List [spacing of control_points H, spacing of control_points W] or (int), spacing between control_points in H and W direction
-        sigma: List [sigma H, sigma W] or (float) defining the standard deviation of the control_point random offsets
-        interpolation: str saying either NEAREST, BILINEAR or BICUBIC. Defining the interpolation used in grid_sample
+        alpha: List [alpha H, alpha W] or (float), defines the magnitude of displacements.
+        sigma: List [sigma H, sigma W] or (float) defining the smoothness of displacements.
+        interpolation: str saying either NEAREST, BILINEAR or BICUBIC. Defining the interpolation used in grid_sample.
         fill: Pixel fill value for the area outside the transformed image. Default is 0.
     """
 
-    def __init__(self, control_point_spacing, sigma, interpolation="nearest", fill=0):
+    def __init__(self, alpha, sigma, interpolation="bilinear", fill=0):
         super().__init__()
-        if isinstance(control_point_spacing, list) and len(control_point_spacing) != 2:
+        if isinstance(alpha, list) and len(alpha) != 2:
             raise ValueError(
-                "control_point_spacing should be an integer or a list of two. Got a list of"
-                f"{len(control_point_spacing)}."
+                "alpha should be a scalar or a list of two. Got a list of"
+                f"{len(alpha)}."
             )
 
         if isinstance(sigma, list) and len(sigma) != 2:
-            raise ValueError("sigma should be a float or a list of two. Got a list of" f"{len(sigma)}.")
+            raise ValueError("sigma should be a scalar or a list of two. Got a list of" f"{len(sigma)}.")
 
-        self.control_point_spacing = control_point_spacing
+        self.alpha = alpha
         self.sigma = sigma
         self.interpolation = interpolation
         self.fill = fill

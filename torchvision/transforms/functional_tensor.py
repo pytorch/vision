@@ -989,36 +989,32 @@ def equalize(img: Tensor) -> Tensor:
 
 def elastic_deformation(
     img: Tensor,
-    control_point_spacing: List[int],
-    sigma: List[float],
-    interpolation: str = "nearest",
+    alpha: List[float],
+    sigma: float,
+    interpolation: str = "bilinear",
     fill: Optional[List[float]] = None,
 ) -> Tensor:
-    # inspired by Jan Funkes implementation https://github.com/funkey/augment
 
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
-    shape = list(img.shape[-2:])
 
-    if isinstance(control_point_spacing, float) or isinstance(control_point_spacing, int):
-        control_point_spacing = [
-            control_point_spacing,
+    if isinstance(alpha, float) or isinstance(alpha, int):
+        alpha = [
+            alpha,
         ] * 2
 
     if isinstance(sigma, float) or isinstance(sigma, int):
-        sigma = [sigma] * 2
+        sigma = [
+            sigma,
+        ] * 2
 
-    control_points = tuple(max(1, int(round(float(shape[d]) / control_point_spacing[d]))) for d in range(2))
-
-    control_point_offsets = torch.zeros((2,) + control_points)
-    for d in range(2):
-        if sigma[d] > 0:
-            control_point_offsets[d] = torch.randn(size=control_points) * sigma[d] * 1 / (0.5 * shape[d])
-    displacement = (
-        resize(control_point_offsets, shape, interpolation="bicubic").unsqueeze(-1).transpose(0, -1)
-    )  # 1 x H x W x 2
-
+    shape = list(img.shape[-2:])
+    
+    dx = gaussian_blur(torch.rand(*shape).unsqueeze(0).unsqueeze(0)*2 -1, [4*sigma[0]+1, 4*sigma[1]+1], sigma) * alpha[0]/shape[0]
+    dy = gaussian_blur(torch.rand(*shape).unsqueeze(0).unsqueeze(0)*2 -1, [4*sigma[0]+1, 4*sigma[1]+1], sigma) * alpha[1]/shape[1]
+    displacement = torch.concat([dx,dy],1).permute([0,2,3,1]) # 1 x H x W x 2
+    
     hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in shape]
     grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
     identity_grid = torch.stack([grid_x, grid_y], -1).unsqueeze(0)  # 1 x H x W x 2
