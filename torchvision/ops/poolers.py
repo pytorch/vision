@@ -161,8 +161,8 @@ def _multiscale_roi_align(
             reference. The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
         sampling_ratio (int): sampling ratio for ROIAlign
-        scales (Optional[List[float]]): If None, scales will be automatically infered. Default value is None.
-        mapper (Optional[LevelMapper]): If none, mapper will be automatically infered. Default value is None.
+        scales (List[float]): If None, scales will be automatically infered. Default value is None.
+        mapper (LevelMapper): If none, mapper will be automatically infered. Default value is None.
     Returns:
         result (Tensor)
     """
