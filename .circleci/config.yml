@@ -99,6 +99,52 @@ commands:
       - brew_install:
           formulae: libtool
 
+  pip_install:
+    parameters:
+      name:
+        default: pip install
+        type: string
+      package:
+        type: string
+      options:
+        default: --user --progress-bar=off
+        type: string
+    steps:
+      - run:
+          name: <<parameters.name>> <<parameters.package>>
+          command: pip install <<parameters.options>> <<parameters.package>>
+
+  checkout_and_install:
+    steps:
+      - checkout
+      - run:
+          name: Install torch
+          command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+      - checkout
+      - run:
+          name: Install torchvision
+          command: pip install --user --progress-bar=off --no-build-isolation .
+
+  install_prototype_dependencies:
+    steps:
+      - run:
+          name: Install prototype dependencies
+          command: pip install --user --progress-bar=off iopath git+https://github.com/pytorch/data
+
+  run_tests:
+    parameters:
+      file_or_dir:
+        type: string
+    steps:
+      - pip_install:
+          name: Install test utilities
+          package: pytest pytest-mock
+      - run:
+          name: Run tests
+          command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
+      - store_test_results:
+          path: test-results
+
 binary_common: &binary_common
   parameters:
     # Edit these defaults to do a release
@@ -177,111 +223,93 @@ jobs:
             python .circleci/regenerate.py
             git diff --exit-code || (echo ".circleci/config.yml not in sync with config.yml.in! Run .circleci/regenerate.py to update config"; exit 1)
 
-  python_lint:
+  lint_python_and_config:
     docker:
       - image: circleci/python:3.7
     steps:
       - checkout
       - run:
+          name: Install lint utilities
           command: |
             pip install --user --progress-bar off pre-commit
             pre-commit install-hooks
-      - run: pre-commit run --all-files
+      - run:
+          name: Lint Python code and config files
+          command: pre-commit run --all-files
       - run:
           name: Required lint modifications
           when: on_fail
           command: git --no-pager diff
 
-  python_type_check:
+  lint_c:
     docker:
       - image: circleci/python:3.7
     steps:
+      - run:
+          name: Install additional system libraries
+          command: |
+            - sudo apt update -y
+            - sudo apt install -y libtinfo5
       - checkout
       - run:
+          name: Install lint utilities
           command: |
-            sudo apt-get update -y
-            sudo apt install -y libturbojpeg-dev
-            pip install --user --progress-bar off mypy
-            pip install --user --progress-bar off types-requests
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            pip install --user --progress-bar off git+https://github.com/pytorch/data.git
-            pip install --user --progress-bar off --no-build-isolation --editable .
-            mypy --config-file mypy.ini
-
-  docstring_parameters_sync:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-      - run:
-          command: |
-            pip install --user pydocstyle
-            pydocstyle
-
-  clang_format:
-    docker:
-      - image: circleci/python:3.7
-    steps:
-      - checkout
-      - run:
-          command: |
-            sudo apt-get update -y
-            sudo apt install -y libtinfo5
             curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
             chmod +x clang-format
             sudo mv clang-format /opt/clang-format
-            ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
+      - run:
+          name: Lint C code
+          command: ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
+      - run:
+          name: Required lint modifications
+          when: on_fail
+          command: git --no-pager diff
 
-  torchhub_test:
+  type_check_python:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout
       - run:
+          name: Install additional system libraries
           command: |
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --no-build-isolation .
-            pip install pytest
-            python test/test_hub.py
+            - sudo apt update -y
+            - sudo apt install -y libturbojpeg-dev
+      - checkout_and_install
+      - install_prototype_dependencies
+      - run:
+          name: Install Python type check utilities
+          command: pip install --user --progress-bar=off mypy
+      - run:
+          name: Check Python types statically
+          command: mypy --config-file mypy.ini
 
-  torch_onnx_test:
+  test_torchhub:
     docker:
       - image: circleci/python:3.7
     steps:
-      - checkout
-      - run:
-          command: |
-            pip install --user --progress-bar off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-            # need to install torchvision dependencies due to transitive imports
-            pip install --user --progress-bar off --no-build-isolation .
-            pip install --user onnx
-            pip install --user onnxruntime
-            pip install --user pytest
-            python test/test_onnx.py
+      - checkout_and_install
+      - run_tests:
+          - file_or_dir: test/test_hub.py
 
-  prototype_test:
+  test_onnx:
     docker:
       - image: circleci/python:3.7
     steps:
+      - checkout_and_install
       - run:
-          name: Install torch
-          command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
-      - run:
-          name: Install prototype dependencies
-          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
-      - checkout
-      - run:
-          name: Install torchvision
-          command: pip install --user --progress-bar off --no-build-isolation .
-      - run:
-          name: Install test requirements
-          command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
-      - run:
-          name: Run tests
-          command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
-      - store_test_results:
-          path: test-results
+          name: Install ONNX
+          command: pip install --user --progress-bar=off onnx onnx-runtime
+      - run_tests:
+          - file_or_dir: test/test_onnx.py
+
+  test_prototype:
+    docker:
+      - image: circleci/python:3.7
+    steps:
+      - checkout_and_install
+      - install_prototype_dependencies
+      - run_tests:
+          - file_or_dir: test/test_prototype_*.py
 
   binary_linux_wheel:
     <<: *binary_common
