@@ -115,8 +115,8 @@ commands:
     steps:
       - run:
           name: >
-            <<# parameters.descr >> pip install << parameters.args >> <</ parameters.descr >>
-            <<^ parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
+            <<^ parameters.descr >> pip install << parameters.args >> <</ parameters.descr >>
+            <<# parameters.descr >> << parameters.descr >>            <</ parameters.descr >>
           command: >
             pip install
             <<# parameters.user >> --user <</ parameters.user >>
