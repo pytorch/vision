@@ -10,13 +10,10 @@ import torch
 import torch.fx
 from common_utils import needs_cuda, cpu_and_gpu, assert_equal
 from PIL import Image
-from torch import nn
 from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
-from torchvision.models.alexnet import AlexNet
-from torchvision.models.feature_extraction import create_feature_extractor, _get_leaf_modules_for_ops
 from torchvision.models.feature_extraction import get_graph_node_names
 
 
