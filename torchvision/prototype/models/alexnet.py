@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
@@ -8,6 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.alexnet import AlexNet
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param
 
 
 __all__ = ["AlexNet", "AlexNetWeights", "alexnet"]
@@ -30,9 +30,9 @@ class AlexNetWeights(Weights):
 
 def alexnet(weights: Optional[AlexNetWeights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = AlexNetWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", AlexNetWeights.ImageNet1K_RefV1, kwargs)
     weights = AlexNetWeights.verify(weights)
+
     if weights is not None:
         kwargs["num_classes"] = len(weights.meta["categories"])
 

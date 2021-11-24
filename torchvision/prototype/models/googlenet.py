@@ -8,6 +8,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.googlenet import GoogLeNet, GoogLeNetOutputs, _GoogLeNetOutputs
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param
 
 
 __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNetWeights", "googlenet"]
@@ -30,8 +31,7 @@ class GoogLeNetWeights(Weights):
 
 def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = GoogLeNetWeights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", GoogLeNetWeights.ImageNet1K_TFV1, kwargs)
     weights = GoogLeNetWeights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)

@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Optional
 
 from torchvision.prototype.transforms import CocoEval
@@ -12,6 +11,7 @@ from ....models.detection.keypoint_rcnn import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
+from .._utils import _deprecated_param
 from ..resnet import ResNet50Weights, resnet50
 
 
@@ -58,18 +58,16 @@ def keypointrcnn_resnet50_fpn(
     **kwargs: Any,
 ) -> KeypointRCNN:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        pretrained = kwargs.pop("pretrained")
-        if type(pretrained) == str and pretrained == "legacy":
-            weights = KeypointRCNNResNet50FPNWeights.Coco_RefV1_Legacy
-        elif type(pretrained) == bool and pretrained:
-            weights = KeypointRCNNResNet50FPNWeights.Coco_RefV1
-        else:
-            weights = None
+        default_value = KeypointRCNNResNet50FPNWeights.Coco_RefV1
+        if kwargs["pretrained"] == "legacy":
+            default_value = KeypointRCNNResNet50FPNWeights.Coco_RefV1_Legacy
+            kwargs["pretrained"] = True
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)
     weights = KeypointRCNNResNet50FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
+        weights_backbone = _deprecated_param(
+            "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1, kwargs
+        )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
     if weights is not None:

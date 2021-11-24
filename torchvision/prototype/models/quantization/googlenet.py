@@ -12,6 +12,7 @@ from ....models.quantization.googlenet import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param
 from ..googlenet import GoogLeNetWeights
 
 
@@ -47,12 +48,10 @@ def googlenet(
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = QuantizedGoogLeNetWeights.ImageNet1K_FBGEMM_TFV1 if quantize else GoogLeNetWeights.ImageNet1K_TFV1
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedGoogLeNetWeights.ImageNet1K_FBGEMM_TFV1 if quantize else GoogLeNetWeights.ImageNet1K_TFV1
+        )
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedGoogLeNetWeights.verify(weights)
     else:

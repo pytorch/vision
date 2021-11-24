@@ -17,6 +17,7 @@ from ....models.detection.ssdlite import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
+from .._utils import _deprecated_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
 
 
@@ -50,12 +51,12 @@ def ssdlite320_mobilenet_v3_large(
     **kwargs: Any,
 ) -> SSD:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = SSDlite320MobileNetV3LargeFPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", SSDlite320MobileNetV3LargeFPNWeights.Coco_RefV1, kwargs)
     weights = SSDlite320MobileNetV3LargeFPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
+        weights_backbone = _deprecated_param(
+            "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs
+        )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 
     if "size" in kwargs:

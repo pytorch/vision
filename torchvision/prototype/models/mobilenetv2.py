@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
@@ -8,6 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.mobilenetv2 import MobileNetV2
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param
 
 
 __all__ = ["MobileNetV2", "MobileNetV2Weights", "mobilenet_v2"]
@@ -30,8 +30,7 @@ class MobileNetV2Weights(Weights):
 
 def mobilenet_v2(weights: Optional[MobileNetV2Weights] = None, progress: bool = True, **kwargs: Any) -> MobileNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = MobileNetV2Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", MobileNetV2Weights.ImageNet1K_RefV1, kwargs)
     weights = MobileNetV2Weights.verify(weights)
 
     if weights is not None:

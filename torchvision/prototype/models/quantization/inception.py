@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional, Union
 
@@ -12,6 +11,7 @@ from ....models.quantization.inception import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param
 from ..inception import InceptionV3Weights
 
 
@@ -47,14 +47,10 @@ def inception_v3(
     **kwargs: Any,
 ) -> QuantizableInception3:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1
-            )
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1
+        )
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedInceptionV3Weights.verify(weights)
     else:

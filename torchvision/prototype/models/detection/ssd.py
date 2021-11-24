@@ -12,6 +12,7 @@ from ....models.detection.ssd import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
+from .._utils import _deprecated_param
 from ..vgg import VGG16Weights, vgg16
 
 
@@ -44,12 +45,12 @@ def ssd300_vgg16(
     **kwargs: Any,
 ) -> SSD:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = SSD300VGG16Weights.Coco_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", SSD300VGG16Weights.Coco_RefV1, kwargs)
     weights = SSD300VGG16Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = VGG16Weights.ImageNet1K_Features if kwargs.pop("pretrained_backbone") else None
+        weights_backbone = _deprecated_param(
+            "pretrained_backbone", "weights_backbone", VGG16Weights.ImageNet1K_Features, kwargs
+        )
     weights_backbone = VGG16Weights.verify(weights_backbone)
 
     if "size" in kwargs:

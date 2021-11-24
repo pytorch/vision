@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, List, Optional, Union
 
@@ -14,6 +13,7 @@ from ....models.quantization.mobilenetv3 import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, _mobilenet_v3_conf
 
 
@@ -81,16 +81,12 @@ def mobilenet_v3_large(
     **kwargs: Any,
 ) -> QuantizableMobileNetV3:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedMobileNetV3LargeWeights.ImageNet1K_QNNPACK_RefV1
-                if quantize
-                else MobileNetV3LargeWeights.ImageNet1K_RefV1
-            )
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedMobileNetV3LargeWeights.ImageNet1K_QNNPACK_RefV1
+            if quantize
+            else MobileNetV3LargeWeights.ImageNet1K_RefV1
+        )
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedMobileNetV3LargeWeights.verify(weights)
     else:

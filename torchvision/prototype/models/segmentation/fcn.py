@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
@@ -8,6 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ....models.segmentation.fcn import FCN, _fcn_resnet
 from .._api import Weights, WeightEntry
 from .._meta import _VOC_CATEGORIES
+from .._utils import _deprecated_param
 from ..resnet import ResNet50Weights, ResNet101Weights, resnet50, resnet101
 
 
@@ -55,12 +55,12 @@ def fcn_resnet50(
     **kwargs: Any,
 ) -> FCN:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = FCNResNet50Weights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", FCNResNet50Weights.CocoWithVocLabels_RefV1, kwargs)
     weights = FCNResNet50Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
+        weights_backbone = _deprecated_param(
+            "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1, kwargs
+        )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
     if weights is not None:
@@ -88,12 +88,12 @@ def fcn_resnet101(
     **kwargs: Any,
 ) -> FCN:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = FCNResNet101Weights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", FCNResNet101Weights.CocoWithVocLabels_RefV1, kwargs)
     weights = FCNResNet101Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = ResNet101Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
+        weights_backbone = _deprecated_param(
+            "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_RefV1, kwargs
+        )
     weights_backbone = ResNet101Weights.verify(weights_backbone)
 
     if weights is not None:

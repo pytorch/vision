@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
@@ -18,6 +17,7 @@ from ....models.video.resnet import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _KINETICS400_CATEGORIES
+from .._utils import _deprecated_param
 
 
 __all__ = [
@@ -97,8 +97,7 @@ class R2Plus1D_18Weights(Weights):
 
 def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = R3D_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", R3D_18Weights.Kinetics400_RefV1, kwargs)
     weights = R3D_18Weights.verify(weights)
 
     return _video_resnet(
@@ -114,8 +113,7 @@ def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwa
 
 def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = MC3_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", MC3_18Weights.Kinetics400_RefV1, kwargs)
     weights = MC3_18Weights.verify(weights)
 
     return _video_resnet(
@@ -131,8 +129,7 @@ def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwa
 
 def r2plus1d_18(weights: Optional[R2Plus1D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = R2Plus1D_18Weights.Kinetics400_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", R2Plus1D_18Weights.Kinetics400_RefV1, kwargs)
     weights = R2Plus1D_18Weights.verify(weights)
 
     return _video_resnet(

@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
@@ -8,6 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.vgg import VGG, make_layers, cfgs
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param
 
 
 __all__ = [
@@ -163,8 +163,7 @@ class VGG19BNWeights(Weights):
 
 def vgg11(weights: Optional[VGG11Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = VGG11Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", VGG11Weights.ImageNet1K_RefV1, kwargs)
     weights = VGG11Weights.verify(weights)
 
     return _vgg("A", False, weights, progress, **kwargs)
@@ -172,8 +171,7 @@ def vgg11(weights: Optional[VGG11Weights] = None, progress: bool = True, **kwarg
 
 def vgg11_bn(weights: Optional[VGG11BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = VGG11BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", VGG11BNWeights.ImageNet1K_RefV1, kwargs)
     weights = VGG11BNWeights.verify(weights)
 
     return _vgg("A", True, weights, progress, **kwargs)
@@ -181,8 +179,7 @@ def vgg11_bn(weights: Optional[VGG11BNWeights] = None, progress: bool = True, **
 
 def vgg13(weights: Optional[VGG13Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = VGG13Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", VGG13Weights.ImageNet1K_RefV1, kwargs)
     weights = VGG13Weights.verify(weights)
 
     return _vgg("B", False, weights, progress, **kwargs)
@@ -190,8 +187,7 @@ def vgg13(weights: Optional[VGG13Weights] = None, progress: bool = True, **kwarg
 
 def vgg13_bn(weights: Optional[VGG13BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = VGG13BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", VGG13BNWeights.ImageNet1K_RefV1, kwargs)
     weights = VGG13BNWeights.verify(weights)
 
     return _vgg("B", True, weights, progress, **kwargs)
@@ -199,8 +195,7 @@ def vgg13_bn(weights: Optional[VGG13BNWeights] = None, progress: bool = True, **
 
 def vgg16(weights: Optional[VGG16Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = VGG16Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", VGG16Weights.ImageNet1K_RefV1, kwargs)
     weights = VGG16Weights.verify(weights)
 
     return _vgg("D", False, weights, progress, **kwargs)
@@ -208,8 +203,7 @@ def vgg16(weights: Optional[VGG16Weights] = None, progress: bool = True, **kwarg
 
 def vgg16_bn(weights: Optional[VGG16BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = VGG16BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", VGG16BNWeights.ImageNet1K_RefV1, kwargs)
     weights = VGG16BNWeights.verify(weights)
 
     return _vgg("D", True, weights, progress, **kwargs)
@@ -217,8 +211,7 @@ def vgg16_bn(weights: Optional[VGG16BNWeights] = None, progress: bool = True, **
 
 def vgg19(weights: Optional[VGG19Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = VGG19Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", VGG19Weights.ImageNet1K_RefV1, kwargs)
     weights = VGG19Weights.verify(weights)
 
     return _vgg("E", False, weights, progress, **kwargs)
@@ -226,8 +219,7 @@ def vgg19(weights: Optional[VGG19Weights] = None, progress: bool = True, **kwarg
 
 def vgg19_bn(weights: Optional[VGG19BNWeights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = VGG19BNWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", VGG19BNWeights.ImageNet1K_RefV1, kwargs)
     weights = VGG19BNWeights.verify(weights)
 
     return _vgg("E", True, weights, progress, **kwargs)

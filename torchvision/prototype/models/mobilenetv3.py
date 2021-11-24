@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional, List
 
@@ -8,6 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.mobilenetv3 import MobileNetV3, _mobilenet_v3_conf, InvertedResidualConfig
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param
 
 
 __all__ = [
@@ -84,8 +84,7 @@ def mobilenet_v3_large(
     weights: Optional[MobileNetV3LargeWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs)
     weights = MobileNetV3LargeWeights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
@@ -96,8 +95,7 @@ def mobilenet_v3_small(
     weights: Optional[MobileNetV3SmallWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = MobileNetV3SmallWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", MobileNetV3SmallWeights.ImageNet1K_RefV1, kwargs)
     weights = MobileNetV3SmallWeights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)

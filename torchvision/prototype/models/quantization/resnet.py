@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
@@ -14,6 +13,7 @@ from ....models.quantization.resnet import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param
 from ..resnet import ResNet18Weights, ResNet50Weights, ResNeXt101_32x8dWeights
 
 
@@ -109,12 +109,10 @@ def resnet18(
     **kwargs: Any,
 ) -> QuantizableResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = QuantizedResNet18Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet18Weights.ImageNet1K_RefV1
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedResNet18Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet18Weights.ImageNet1K_RefV1
+        )
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedResNet18Weights.verify(weights)
     else:
@@ -130,12 +128,10 @@ def resnet50(
     **kwargs: Any,
 ) -> QuantizableResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet50Weights.ImageNet1K_RefV1
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet50Weights.ImageNet1K_RefV1
+        )
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedResNet50Weights.verify(weights)
     else:
@@ -151,16 +147,12 @@ def resnext101_32x8d(
     **kwargs: Any,
 ) -> QuantizableResNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedResNeXt101_32x8dWeights.ImageNet1K_FBGEMM_RefV1
-                if quantize
-                else ResNeXt101_32x8dWeights.ImageNet1K_RefV1
-            )
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedResNeXt101_32x8dWeights.ImageNet1K_FBGEMM_RefV1
+            if quantize
+            else ResNeXt101_32x8dWeights.ImageNet1K_RefV1
+        )
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedResNeXt101_32x8dWeights.verify(weights)
     else:

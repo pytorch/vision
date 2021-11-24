@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Optional
 
 from torchvision.prototype.transforms import CocoEval
@@ -14,6 +13,7 @@ from ....models.detection.retinanet import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
+from .._utils import _deprecated_param
 from ..resnet import ResNet50Weights, resnet50
 
 
@@ -46,12 +46,12 @@ def retinanet_resnet50_fpn(
     **kwargs: Any,
 ) -> RetinaNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = RetinaNetResNet50FPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", RetinaNetResNet50FPNWeights.Coco_RefV1, kwargs)
     weights = RetinaNetResNet50FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
+        weights_backbone = _deprecated_param(
+            "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1, kwargs
+        )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
     if weights is not None:

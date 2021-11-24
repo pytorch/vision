@@ -1,5 +1,4 @@
 import re
-import warnings
 from functools import partial
 from typing import Any, Optional, Tuple
 
@@ -10,6 +9,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.densenet import DenseNet
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param
 
 
 __all__ = [
@@ -121,8 +121,7 @@ class DenseNet201Weights(Weights):
 
 def densenet121(weights: Optional[DenseNet121Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = DenseNet121Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", DenseNet121Weights.ImageNet1K_Community, kwargs)
     weights = DenseNet121Weights.verify(weights)
 
     return _densenet(32, (6, 12, 24, 16), 64, weights, progress, **kwargs)
@@ -130,8 +129,7 @@ def densenet121(weights: Optional[DenseNet121Weights] = None, progress: bool = T
 
 def densenet161(weights: Optional[DenseNet161Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = DenseNet161Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", DenseNet161Weights.ImageNet1K_Community, kwargs)
     weights = DenseNet161Weights.verify(weights)
 
     return _densenet(48, (6, 12, 36, 24), 96, weights, progress, **kwargs)
@@ -139,8 +137,7 @@ def densenet161(weights: Optional[DenseNet161Weights] = None, progress: bool = T
 
 def densenet169(weights: Optional[DenseNet169Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = DenseNet169Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", DenseNet169Weights.ImageNet1K_Community, kwargs)
     weights = DenseNet169Weights.verify(weights)
 
     return _densenet(32, (6, 12, 32, 32), 64, weights, progress, **kwargs)
@@ -148,8 +145,7 @@ def densenet169(weights: Optional[DenseNet169Weights] = None, progress: bool = T
 
 def densenet201(weights: Optional[DenseNet201Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = DenseNet201Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
+        weights = _deprecated_param("pretrained", "weights", DenseNet201Weights.ImageNet1K_Community, kwargs)
     weights = DenseNet201Weights.verify(weights)
 
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)

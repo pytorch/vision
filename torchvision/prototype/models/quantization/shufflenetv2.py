@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, List, Optional, Union
 
@@ -12,6 +11,7 @@ from ....models.quantization.shufflenetv2 import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param
 from ..shufflenetv2 import ShuffleNetV2_x0_5Weights, ShuffleNetV2_x1_0Weights
 
 
@@ -92,16 +92,12 @@ def shufflenet_v2_x0_5(
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedShuffleNetV2_x0_5Weights.ImageNet1K_FBGEMM_Community
-                if quantize
-                else ShuffleNetV2_x0_5Weights.ImageNet1K_Community
-            )
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedShuffleNetV2_x0_5Weights.ImageNet1K_FBGEMM_Community
+            if quantize
+            else ShuffleNetV2_x0_5Weights.ImageNet1K_Community
+        )
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedShuffleNetV2_x0_5Weights.verify(weights)
     else:
@@ -117,16 +113,12 @@ def shufflenet_v2_x1_0(
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedShuffleNetV2_x1_0Weights.ImageNet1K_FBGEMM_Community
-                if quantize
-                else ShuffleNetV2_x1_0Weights.ImageNet1K_Community
-            )
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedShuffleNetV2_x1_0Weights.ImageNet1K_FBGEMM_Community
+            if quantize
+            else ShuffleNetV2_x1_0Weights.ImageNet1K_Community
+        )
+        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedShuffleNetV2_x1_0Weights.verify(weights)
     else:

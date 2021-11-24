@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
@@ -8,6 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ....models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3
 from .._api import Weights, WeightEntry
 from .._meta import _VOC_CATEGORIES
+from .._utils import _deprecated_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
 
 
@@ -39,12 +39,14 @@ def lraspp_mobilenet_v3_large(
         raise NotImplementedError("This model does not use auxiliary loss")
 
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = LRASPPMobileNetV3LargeWeights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param(
+            "pretrained", "weights", LRASPPMobileNetV3LargeWeights.CocoWithVocLabels_RefV1, kwargs
+        )
     weights = LRASPPMobileNetV3LargeWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
+        weights_backbone = _deprecated_param(
+            "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs
+        )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 
     if weights is not None:
