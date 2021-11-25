@@ -302,7 +302,10 @@ def fromfile(
     # buffer: Union[memoryview, bytearray]
     # try:
     #     # FIXME: DEBUG
-    a = file.fileno()
+    try:
+        a = file.fileno()
+    except io.UnsupportedOperation:
+        pass
     #     b = mmap.mmap(a, 0)
     #     c = memoryview(b)
     #     d = file.tell()
