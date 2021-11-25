@@ -269,14 +269,14 @@ jobs:
           command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
       - run:
           name: Install prototype dependencies
-          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
+          command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git iopath
       - checkout
       - run:
           name: Install torchvision
           command: pip install --user --progress-bar off --no-build-isolation .
       - run:
           name: Install test requirements
-          command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
+          command: pip install --user --progress-bar=off pytest pytest-mock scipy pycocotools
       - run:
           name: Run tests
           command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
