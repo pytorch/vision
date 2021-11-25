@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional, List
 
@@ -8,6 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.mobilenetv3 import MobileNetV3, _mobilenet_v3_conf, InvertedResidualConfig
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = [
@@ -27,7 +27,7 @@ def _mobilenet_v3(
     **kwargs: Any,
 ) -> MobileNetV3:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
 
@@ -54,6 +54,7 @@ class MobileNetV3LargeWeights(Weights):
             "acc@1": 74.042,
             "acc@5": 91.340,
         },
+        default=False,
     )
     ImageNet1K_RefV2 = WeightEntry(
         url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
@@ -64,6 +65,7 @@ class MobileNetV3LargeWeights(Weights):
             "acc@1": 75.274,
             "acc@5": 92.566,
         },
+        default=True,
     )
 
 
@@ -77,15 +79,17 @@ class MobileNetV3SmallWeights(Weights):
             "acc@1": 67.668,
             "acc@5": 87.402,
         },
+        default=True,
     )
 
 
 def mobilenet_v3_large(
     weights: Optional[MobileNetV3LargeWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV3LargeWeights.ImageNet1K_RefV1)
     weights = MobileNetV3LargeWeights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
@@ -95,9 +99,10 @@ def mobilenet_v3_large(
 def mobilenet_v3_small(
     weights: Optional[MobileNetV3SmallWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = MobileNetV3SmallWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV3SmallWeights.ImageNet1K_RefV1)
     weights = MobileNetV3SmallWeights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)
