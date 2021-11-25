@@ -11,7 +11,7 @@ from ....models.quantization.shufflenetv2 import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _ovewrite_named_param
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..shufflenetv2 import ShuffleNetV2_x0_5Weights, ShuffleNetV2_x1_0Weights
 
 
@@ -91,6 +91,8 @@ def shufflenet_v2_x0_5(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
             QuantizedShuffleNetV2_x0_5Weights.ImageNet1K_FBGEMM_Community
@@ -112,6 +114,8 @@ def shufflenet_v2_x1_0(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
             QuantizedShuffleNetV2_x1_0Weights.ImageNet1K_FBGEMM_Community

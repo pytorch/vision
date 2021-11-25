@@ -11,7 +11,7 @@ from ....models.quantization.inception import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _ovewrite_named_param
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..inception import InceptionV3Weights
 
 
@@ -46,6 +46,8 @@ def inception_v3(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableInception3:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
             QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1

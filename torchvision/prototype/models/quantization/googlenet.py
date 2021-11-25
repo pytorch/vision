@@ -12,7 +12,7 @@ from ....models.quantization.googlenet import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _ovewrite_named_param
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..googlenet import GoogLeNetWeights
 
 
@@ -47,6 +47,8 @@ def googlenet(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
             QuantizedGoogLeNetWeights.ImageNet1K_FBGEMM_TFV1 if quantize else GoogLeNetWeights.ImageNet1K_TFV1

@@ -12,7 +12,7 @@ from ....models.detection.ssd import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
-from .._utils import _deprecated_param, _ovewrite_value_param
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..vgg import VGG16Weights, vgg16
 
 
@@ -38,15 +38,19 @@ class SSD300VGG16Weights(Weights):
 
 def ssd300_vgg16(
     weights: Optional[SSD300VGG16Weights] = None,
-    weights_backbone: Optional[VGG16Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
+    weights_backbone: Optional[VGG16Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> SSD:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", SSD300VGG16Weights.Coco_RefV1)
     weights = SSD300VGG16Weights.verify(weights)
+    if type(weights_backbone) == bool and weights_backbone:
+        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
             kwargs, "pretrained_backbone", "weights_backbone", VGG16Weights.ImageNet1K_Features

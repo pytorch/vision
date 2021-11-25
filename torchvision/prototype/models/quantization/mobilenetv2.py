@@ -12,7 +12,7 @@ from ....models.quantization.mobilenetv2 import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _ovewrite_named_param
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..mobilenetv2 import MobileNetV2Weights
 
 
@@ -47,6 +47,8 @@ def mobilenet_v2(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableMobileNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
             QuantizedMobileNetV2Weights.ImageNet1K_QNNPACK_RefV1 if quantize else MobileNetV2Weights.ImageNet1K_RefV1

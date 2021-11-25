@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.inception import Inception3, InceptionOutputs, _InceptionOutputs
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _ovewrite_named_param
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "InceptionV3Weights", "inception_v3"]
@@ -29,6 +29,8 @@ class InceptionV3Weights(Weights):
 
 
 def inception_v3(weights: Optional[InceptionV3Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", InceptionV3Weights.ImageNet1K_TFV1)
     weights = InceptionV3Weights.verify(weights)

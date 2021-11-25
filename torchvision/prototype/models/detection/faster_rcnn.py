@@ -14,7 +14,7 @@ from ....models.detection.faster_rcnn import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
-from .._utils import _deprecated_param, _ovewrite_value_param
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
 from ..resnet import ResNet50Weights, resnet50
 
@@ -74,15 +74,19 @@ class FasterRCNNMobileNetV3Large320FPNWeights(Weights):
 
 def fasterrcnn_resnet50_fpn(
     weights: Optional[FasterRCNNResNet50FPNWeights] = None,
-    weights_backbone: Optional[ResNet50Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
+    weights_backbone: Optional[ResNet50Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", FasterRCNNResNet50FPNWeights.Coco_RefV1)
     weights = FasterRCNNResNet50FPNWeights.verify(weights)
+    if type(weights_backbone) == bool and weights_backbone:
+        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
             kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
@@ -113,9 +117,9 @@ def fasterrcnn_resnet50_fpn(
 
 def _fasterrcnn_mobilenet_v3_large_fpn(
     weights: Optional[Union[FasterRCNNMobileNetV3LargeFPNWeights, FasterRCNNMobileNetV3Large320FPNWeights]],
-    weights_backbone: Optional[MobileNetV3LargeWeights],
     progress: bool,
     num_classes: Optional[int],
+    weights_backbone: Optional[MobileNetV3LargeWeights],
     trainable_backbone_layers: Optional[int],
     **kwargs: Any,
 ) -> FasterRCNN:
@@ -153,15 +157,19 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
 
 def fasterrcnn_mobilenet_v3_large_fpn(
     weights: Optional[FasterRCNNMobileNetV3LargeFPNWeights] = None,
-    weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
+    weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", FasterRCNNMobileNetV3LargeFPNWeights.Coco_RefV1)
     weights = FasterRCNNMobileNetV3LargeFPNWeights.verify(weights)
+    if type(weights_backbone) == bool and weights_backbone:
+        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
             kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
@@ -175,9 +183,9 @@ def fasterrcnn_mobilenet_v3_large_fpn(
     kwargs = {**defaults, **kwargs}
     return _fasterrcnn_mobilenet_v3_large_fpn(
         weights,
-        weights_backbone,
         progress,
         num_classes,
+        weights_backbone,
         trainable_backbone_layers,
         **kwargs,
     )
@@ -185,15 +193,19 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 
 def fasterrcnn_mobilenet_v3_large_320_fpn(
     weights: Optional[FasterRCNNMobileNetV3Large320FPNWeights] = None,
-    weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
+    weights_backbone: Optional[MobileNetV3LargeWeights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", FasterRCNNMobileNetV3Large320FPNWeights.Coco_RefV1)
     weights = FasterRCNNMobileNetV3Large320FPNWeights.verify(weights)
+    if type(weights_backbone) == bool and weights_backbone:
+        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
             kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
@@ -211,9 +223,9 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     kwargs = {**defaults, **kwargs}
     return _fasterrcnn_mobilenet_v3_large_fpn(
         weights,
-        weights_backbone,
         progress,
         num_classes,
+        weights_backbone,
         trainable_backbone_layers,
         **kwargs,
     )

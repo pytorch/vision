@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _ovewrite_named_param
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = [
@@ -242,6 +242,8 @@ class WideResNet101_2Weights(Weights):
 
 
 def resnet18(weights: Optional[ResNet18Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet18Weights.ImageNet1K_RefV1)
     weights = ResNet18Weights.verify(weights)
@@ -250,6 +252,8 @@ def resnet18(weights: Optional[ResNet18Weights] = None, progress: bool = True, *
 
 
 def resnet34(weights: Optional[ResNet34Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet34Weights.ImageNet1K_RefV1)
     weights = ResNet34Weights.verify(weights)
@@ -258,6 +262,8 @@ def resnet34(weights: Optional[ResNet34Weights] = None, progress: bool = True, *
 
 
 def resnet50(weights: Optional[ResNet50Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet50Weights.ImageNet1K_RefV1)
     weights = ResNet50Weights.verify(weights)
@@ -266,6 +272,8 @@ def resnet50(weights: Optional[ResNet50Weights] = None, progress: bool = True, *
 
 
 def resnet101(weights: Optional[ResNet101Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet101Weights.ImageNet1K_RefV1)
     weights = ResNet101Weights.verify(weights)
@@ -274,6 +282,8 @@ def resnet101(weights: Optional[ResNet101Weights] = None, progress: bool = True,
 
 
 def resnet152(weights: Optional[ResNet152Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet152Weights.ImageNet1K_RefV1)
     weights = ResNet152Weights.verify(weights)
@@ -282,6 +292,8 @@ def resnet152(weights: Optional[ResNet152Weights] = None, progress: bool = True,
 
 
 def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ResNeXt50_32x4dWeights.ImageNet1K_RefV1)
     weights = ResNeXt50_32x4dWeights.verify(weights)
@@ -292,6 +304,8 @@ def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: 
 
 
 def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ResNeXt101_32x8dWeights.ImageNet1K_RefV1)
     weights = ResNeXt101_32x8dWeights.verify(weights)
@@ -302,6 +316,8 @@ def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress
 
 
 def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", WideResNet50_2Weights.ImageNet1K_Community)
     weights = WideResNet50_2Weights.verify(weights)
@@ -311,6 +327,8 @@ def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: b
 
 
 def wide_resnet101_2(weights: Optional[WideResNet101_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", WideResNet101_2Weights.ImageNet1K_Community)
     weights = WideResNet101_2Weights.verify(weights)

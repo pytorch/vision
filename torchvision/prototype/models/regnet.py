@@ -8,7 +8,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.regnet import RegNet, BlockParams
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _ovewrite_named_param
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = [
@@ -247,6 +247,8 @@ class RegNet_x_32gfWeights(Weights):
 
 
 def regnet_y_400mf(weights: Optional[RegNet_y_400mfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_400mfWeights.ImageNet1K_RefV1)
     weights = RegNet_y_400mfWeights.verify(weights)
@@ -256,6 +258,8 @@ def regnet_y_400mf(weights: Optional[RegNet_y_400mfWeights] = None, progress: bo
 
 
 def regnet_y_800mf(weights: Optional[RegNet_y_800mfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_800mfWeights.ImageNet1K_RefV1)
     weights = RegNet_y_800mfWeights.verify(weights)
@@ -265,6 +269,8 @@ def regnet_y_800mf(weights: Optional[RegNet_y_800mfWeights] = None, progress: bo
 
 
 def regnet_y_1_6gf(weights: Optional[RegNet_y_1_6gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_1_6gfWeights.ImageNet1K_RefV1)
     weights = RegNet_y_1_6gfWeights.verify(weights)
@@ -276,6 +282,8 @@ def regnet_y_1_6gf(weights: Optional[RegNet_y_1_6gfWeights] = None, progress: bo
 
 
 def regnet_y_3_2gf(weights: Optional[RegNet_y_3_2gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_3_2gfWeights.ImageNet1K_RefV1)
     weights = RegNet_y_3_2gfWeights.verify(weights)
@@ -287,6 +295,8 @@ def regnet_y_3_2gf(weights: Optional[RegNet_y_3_2gfWeights] = None, progress: bo
 
 
 def regnet_y_8gf(weights: Optional[RegNet_y_8gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_8gfWeights.ImageNet1K_RefV1)
     weights = RegNet_y_8gfWeights.verify(weights)
@@ -298,6 +308,8 @@ def regnet_y_8gf(weights: Optional[RegNet_y_8gfWeights] = None, progress: bool =
 
 
 def regnet_y_16gf(weights: Optional[RegNet_y_16gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_16gfWeights.ImageNet1K_RefV1)
     weights = RegNet_y_16gfWeights.verify(weights)
@@ -309,6 +321,8 @@ def regnet_y_16gf(weights: Optional[RegNet_y_16gfWeights] = None, progress: bool
 
 
 def regnet_y_32gf(weights: Optional[RegNet_y_32gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_32gfWeights.ImageNet1K_RefV1)
     weights = RegNet_y_32gfWeights.verify(weights)
@@ -320,6 +334,8 @@ def regnet_y_32gf(weights: Optional[RegNet_y_32gfWeights] = None, progress: bool
 
 
 def regnet_x_400mf(weights: Optional[RegNet_x_400mfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_400mfWeights.ImageNet1K_RefV1)
     weights = RegNet_x_400mfWeights.verify(weights)
@@ -329,6 +345,8 @@ def regnet_x_400mf(weights: Optional[RegNet_x_400mfWeights] = None, progress: bo
 
 
 def regnet_x_800mf(weights: Optional[RegNet_x_800mfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_800mfWeights.ImageNet1K_RefV1)
     weights = RegNet_x_800mfWeights.verify(weights)
@@ -338,6 +356,8 @@ def regnet_x_800mf(weights: Optional[RegNet_x_800mfWeights] = None, progress: bo
 
 
 def regnet_x_1_6gf(weights: Optional[RegNet_x_1_6gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_1_6gfWeights.ImageNet1K_RefV1)
     weights = RegNet_x_1_6gfWeights.verify(weights)
@@ -347,6 +367,8 @@ def regnet_x_1_6gf(weights: Optional[RegNet_x_1_6gfWeights] = None, progress: bo
 
 
 def regnet_x_3_2gf(weights: Optional[RegNet_x_3_2gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_3_2gfWeights.ImageNet1K_RefV1)
     weights = RegNet_x_3_2gfWeights.verify(weights)
@@ -356,6 +378,8 @@ def regnet_x_3_2gf(weights: Optional[RegNet_x_3_2gfWeights] = None, progress: bo
 
 
 def regnet_x_8gf(weights: Optional[RegNet_x_8gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_8gfWeights.ImageNet1K_RefV1)
     weights = RegNet_x_8gfWeights.verify(weights)
@@ -365,6 +389,8 @@ def regnet_x_8gf(weights: Optional[RegNet_x_8gfWeights] = None, progress: bool =
 
 
 def regnet_x_16gf(weights: Optional[RegNet_x_16gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_16gfWeights.ImageNet1K_RefV1)
     weights = RegNet_x_16gfWeights.verify(weights)
@@ -374,6 +400,8 @@ def regnet_x_16gf(weights: Optional[RegNet_x_16gfWeights] = None, progress: bool
 
 
 def regnet_x_32gf(weights: Optional[RegNet_x_32gfWeights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_32gfWeights.ImageNet1K_RefV1)
     weights = RegNet_x_32gfWeights.verify(weights)

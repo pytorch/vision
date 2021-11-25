@@ -13,7 +13,7 @@ from ....models.quantization.resnet import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _ovewrite_named_param
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..resnet import ResNet18Weights, ResNet50Weights, ResNeXt101_32x8dWeights
 
 
@@ -108,6 +108,8 @@ def resnet18(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
             QuantizedResNet18Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet18Weights.ImageNet1K_RefV1
@@ -127,6 +129,8 @@ def resnet50(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
             QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet50Weights.ImageNet1K_RefV1
@@ -146,6 +150,8 @@ def resnext101_32x8d(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
             QuantizedResNeXt101_32x8dWeights.ImageNet1K_FBGEMM_RefV1

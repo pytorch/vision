@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.shufflenetv2 import ShuffleNetV2
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _ovewrite_named_param
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = [
@@ -83,6 +83,8 @@ class ShuffleNetV2_x2_0Weights(Weights):
 def shufflenet_v2_x0_5(
     weights: Optional[ShuffleNetV2_x0_5Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x0_5Weights.ImageNet1K_Community)
     weights = ShuffleNetV2_x0_5Weights.verify(weights)
@@ -93,6 +95,8 @@ def shufflenet_v2_x0_5(
 def shufflenet_v2_x1_0(
     weights: Optional[ShuffleNetV2_x1_0Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x1_0Weights.ImageNet1K_Community)
     weights = ShuffleNetV2_x1_0Weights.verify(weights)
@@ -103,6 +107,8 @@ def shufflenet_v2_x1_0(
 def shufflenet_v2_x1_5(
     weights: Optional[ShuffleNetV2_x1_5Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ShuffleNetV2_x1_5Weights.verify(weights)
@@ -113,6 +119,8 @@ def shufflenet_v2_x1_5(
 def shufflenet_v2_x2_0(
     weights: Optional[ShuffleNetV2_x2_0Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ShuffleNetV2_x2_0Weights.verify(weights)

@@ -9,7 +9,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.densenet import DenseNet
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _ovewrite_named_param
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = [
@@ -120,6 +120,8 @@ class DenseNet201Weights(Weights):
 
 
 def densenet121(weights: Optional[DenseNet121Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", DenseNet121Weights.ImageNet1K_Community)
     weights = DenseNet121Weights.verify(weights)
@@ -128,6 +130,8 @@ def densenet121(weights: Optional[DenseNet121Weights] = None, progress: bool = T
 
 
 def densenet161(weights: Optional[DenseNet161Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", DenseNet161Weights.ImageNet1K_Community)
     weights = DenseNet161Weights.verify(weights)
@@ -136,6 +140,8 @@ def densenet161(weights: Optional[DenseNet161Weights] = None, progress: bool = T
 
 
 def densenet169(weights: Optional[DenseNet169Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", DenseNet169Weights.ImageNet1K_Community)
     weights = DenseNet169Weights.verify(weights)
@@ -144,6 +150,8 @@ def densenet169(weights: Optional[DenseNet169Weights] = None, progress: bool = T
 
 
 def densenet201(weights: Optional[DenseNet201Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", DenseNet201Weights.ImageNet1K_Community)
     weights = DenseNet201Weights.verify(weights)

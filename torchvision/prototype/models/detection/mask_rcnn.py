@@ -12,7 +12,7 @@ from ....models.detection.mask_rcnn import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
-from .._utils import _deprecated_param, _ovewrite_value_param
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..resnet import ResNet50Weights, resnet50
 
 
@@ -39,15 +39,19 @@ class MaskRCNNResNet50FPNWeights(Weights):
 
 def maskrcnn_resnet50_fpn(
     weights: Optional[MaskRCNNResNet50FPNWeights] = None,
-    weights_backbone: Optional[ResNet50Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
+    weights_backbone: Optional[ResNet50Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> MaskRCNN:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", MaskRCNNResNet50FPNWeights.Coco_RefV1)
     weights = MaskRCNNResNet50FPNWeights.verify(weights)
+    if type(weights_backbone) == bool and weights_backbone:
+        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
             kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1

@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.mobilenetv2 import MobileNetV2
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _ovewrite_named_param
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = ["MobileNetV2", "MobileNetV2Weights", "mobilenet_v2"]
@@ -29,6 +29,8 @@ class MobileNetV2Weights(Weights):
 
 
 def mobilenet_v2(weights: Optional[MobileNetV2Weights] = None, progress: bool = True, **kwargs: Any) -> MobileNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV2Weights.ImageNet1K_RefV1)
     weights = MobileNetV2Weights.verify(weights)
