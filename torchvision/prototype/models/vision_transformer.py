@@ -13,6 +13,8 @@ import torch.nn as nn
 from torch import Tensor
 
 from ._api import Weights
+from ._utils import _deprecated_param, _deprecated_positional
+
 
 __all__ = [
     "VisionTransformer",
@@ -286,14 +288,14 @@ def vit_b_16(
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (VisionTransformer_B_16Weights, optional): If not None, returns a model pre-trained on ImageNet. Default: None.
+        weights (VisionTransformer_B_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
+            Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            raise ValueError("No checkpoint is available for model type vit_b_16")
-
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = VisionTransformer_B_16Weights.verify(weights)
 
     return _vision_transformer(
@@ -316,14 +318,14 @@ def vit_b_32(
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (VisionTransformer_B_32Weights, optional): If not None, returns a model pre-trained on ImageNet. Default: None.
+        weights (VisionTransformer_B_32Weights, optional): If not None, returns a model pre-trained on ImageNet.
+            Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            raise ValueError("No checkpoint is available for model type vit_b_32")
-
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = VisionTransformer_B_32Weights.verify(weights)
 
     return _vision_transformer(
@@ -346,14 +348,14 @@ def vit_l_16(
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (VisionTransformer_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet. Default: None.
+        weights (VisionTransformer_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
+            Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            raise ValueError("No checkpoint is available for model type vit_l_16")
-
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = VisionTransformer_L_16Weights.verify(weights)
 
     return _vision_transformer(
@@ -376,14 +378,14 @@ def vit_l_32(
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (VisionTransformer_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet. Default: None.
+        weights (VisionTransformer_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
+            Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            raise ValueError("No checkpoint is available for model type vit_l_32")
-
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = VisionTransformer_L_32Weights.verify(weights)
 
     return _vision_transformer(
