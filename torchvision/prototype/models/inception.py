@@ -30,7 +30,7 @@ class InceptionV3Weights(Weights):
 
 def inception_v3(weights: Optional[InceptionV3Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", InceptionV3Weights.ImageNet1K_TFV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", InceptionV3Weights.ImageNet1K_TFV1)
     weights = InceptionV3Weights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", True)

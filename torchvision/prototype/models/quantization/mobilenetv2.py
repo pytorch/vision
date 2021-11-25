@@ -51,7 +51,7 @@ def mobilenet_v2(
         default_value = (
             QuantizedMobileNetV2Weights.ImageNet1K_QNNPACK_RefV1 if quantize else MobileNetV2Weights.ImageNet1K_RefV1
         )
-        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedMobileNetV2Weights.verify(weights)
     else:

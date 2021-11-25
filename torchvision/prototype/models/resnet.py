@@ -243,7 +243,7 @@ class WideResNet101_2Weights(Weights):
 
 def resnet18(weights: Optional[ResNet18Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ResNet18Weights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet18Weights.ImageNet1K_RefV1)
     weights = ResNet18Weights.verify(weights)
 
     return _resnet(BasicBlock, [2, 2, 2, 2], weights, progress, **kwargs)
@@ -251,7 +251,7 @@ def resnet18(weights: Optional[ResNet18Weights] = None, progress: bool = True, *
 
 def resnet34(weights: Optional[ResNet34Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ResNet34Weights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet34Weights.ImageNet1K_RefV1)
     weights = ResNet34Weights.verify(weights)
 
     return _resnet(BasicBlock, [3, 4, 6, 3], weights, progress, **kwargs)
@@ -259,7 +259,7 @@ def resnet34(weights: Optional[ResNet34Weights] = None, progress: bool = True, *
 
 def resnet50(weights: Optional[ResNet50Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ResNet50Weights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet50Weights.ImageNet1K_RefV1)
     weights = ResNet50Weights.verify(weights)
 
     return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
@@ -267,7 +267,7 @@ def resnet50(weights: Optional[ResNet50Weights] = None, progress: bool = True, *
 
 def resnet101(weights: Optional[ResNet101Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ResNet101Weights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet101Weights.ImageNet1K_RefV1)
     weights = ResNet101Weights.verify(weights)
 
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
@@ -275,7 +275,7 @@ def resnet101(weights: Optional[ResNet101Weights] = None, progress: bool = True,
 
 def resnet152(weights: Optional[ResNet152Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ResNet152Weights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet152Weights.ImageNet1K_RefV1)
     weights = ResNet152Weights.verify(weights)
 
     return _resnet(Bottleneck, [3, 8, 36, 3], weights, progress, **kwargs)
@@ -283,7 +283,7 @@ def resnet152(weights: Optional[ResNet152Weights] = None, progress: bool = True,
 
 def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ResNeXt50_32x4dWeights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNeXt50_32x4dWeights.ImageNet1K_RefV1)
     weights = ResNeXt50_32x4dWeights.verify(weights)
 
     _ovewrite_named_param(kwargs, "groups", 32)
@@ -293,7 +293,7 @@ def resnext50_32x4d(weights: Optional[ResNeXt50_32x4dWeights] = None, progress: 
 
 def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ResNeXt101_32x8dWeights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNeXt101_32x8dWeights.ImageNet1K_RefV1)
     weights = ResNeXt101_32x8dWeights.verify(weights)
 
     _ovewrite_named_param(kwargs, "groups", 32)
@@ -303,7 +303,7 @@ def resnext101_32x8d(weights: Optional[ResNeXt101_32x8dWeights] = None, progress
 
 def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", WideResNet50_2Weights.ImageNet1K_Community, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", WideResNet50_2Weights.ImageNet1K_Community)
     weights = WideResNet50_2Weights.verify(weights)
 
     _ovewrite_named_param(kwargs, "width_per_group", 64 * 2)
@@ -312,7 +312,7 @@ def wide_resnet50_2(weights: Optional[WideResNet50_2Weights] = None, progress: b
 
 def wide_resnet101_2(weights: Optional[WideResNet101_2Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", WideResNet101_2Weights.ImageNet1K_Community, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", WideResNet101_2Weights.ImageNet1K_Community)
     weights = WideResNet101_2Weights.verify(weights)
 
     _ovewrite_named_param(kwargs, "width_per_group", 64 * 2)

@@ -40,12 +40,12 @@ def lraspp_mobilenet_v3_large(
 
     if "pretrained" in kwargs:
         weights = _deprecated_param(
-            "pretrained", "weights", LRASPPMobileNetV3LargeWeights.CocoWithVocLabels_RefV1, kwargs
+            kwargs, "pretrained", "weights", LRASPPMobileNetV3LargeWeights.CocoWithVocLabels_RefV1
         )
     weights = LRASPPMobileNetV3LargeWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
         )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

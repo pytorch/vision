@@ -78,11 +78,11 @@ def deeplabv3_resnet50(
     **kwargs: Any,
 ) -> DeepLabV3:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", DeepLabV3ResNet50Weights.CocoWithVocLabels_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", DeepLabV3ResNet50Weights.CocoWithVocLabels_RefV1)
     weights = DeepLabV3ResNet50Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -111,11 +111,11 @@ def deeplabv3_resnet101(
     **kwargs: Any,
 ) -> DeepLabV3:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", DeepLabV3ResNet101Weights.CocoWithVocLabels_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", DeepLabV3ResNet101Weights.CocoWithVocLabels_RefV1)
     weights = DeepLabV3ResNet101Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_RefV1
         )
     weights_backbone = ResNet101Weights.verify(weights_backbone)
 
@@ -145,12 +145,12 @@ def deeplabv3_mobilenet_v3_large(
 ) -> DeepLabV3:
     if "pretrained" in kwargs:
         weights = _deprecated_param(
-            "pretrained", "weights", DeepLabV3MobileNetV3LargeWeights.CocoWithVocLabels_RefV1, kwargs
+            kwargs, "pretrained", "weights", DeepLabV3MobileNetV3LargeWeights.CocoWithVocLabels_RefV1
         )
     weights = DeepLabV3MobileNetV3LargeWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
         )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

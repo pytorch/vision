@@ -45,11 +45,11 @@ def ssd300_vgg16(
     **kwargs: Any,
 ) -> SSD:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", SSD300VGG16Weights.Coco_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", SSD300VGG16Weights.Coco_RefV1)
     weights = SSD300VGG16Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", VGG16Weights.ImageNet1K_Features, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", VGG16Weights.ImageNet1K_Features
         )
     weights_backbone = VGG16Weights.verify(weights_backbone)
 

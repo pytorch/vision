@@ -81,11 +81,11 @@ def fasterrcnn_resnet50_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", FasterRCNNResNet50FPNWeights.Coco_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FasterRCNNResNet50FPNWeights.Coco_RefV1)
     weights = FasterRCNNResNet50FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -160,11 +160,11 @@ def fasterrcnn_mobilenet_v3_large_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", FasterRCNNMobileNetV3LargeFPNWeights.Coco_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FasterRCNNMobileNetV3LargeFPNWeights.Coco_RefV1)
     weights = FasterRCNNMobileNetV3LargeFPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
         )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 
@@ -192,11 +192,11 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", FasterRCNNMobileNetV3Large320FPNWeights.Coco_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FasterRCNNMobileNetV3Large320FPNWeights.Coco_RefV1)
     weights = FasterRCNNMobileNetV3Large320FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
         )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

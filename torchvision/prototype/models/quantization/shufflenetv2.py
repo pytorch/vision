@@ -97,7 +97,7 @@ def shufflenet_v2_x0_5(
             if quantize
             else ShuffleNetV2_x0_5Weights.ImageNet1K_Community
         )
-        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedShuffleNetV2_x0_5Weights.verify(weights)
     else:
@@ -118,7 +118,7 @@ def shufflenet_v2_x1_0(
             if quantize
             else ShuffleNetV2_x1_0Weights.ImageNet1K_Community
         )
-        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedShuffleNetV2_x1_0Weights.verify(weights)
     else:

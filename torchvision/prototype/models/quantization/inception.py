@@ -50,7 +50,7 @@ def inception_v3(
         default_value = (
             QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1
         )
-        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedInceptionV3Weights.verify(weights)
     else:

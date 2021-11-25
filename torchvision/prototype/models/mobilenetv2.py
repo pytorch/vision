@@ -30,7 +30,7 @@ class MobileNetV2Weights(Weights):
 
 def mobilenet_v2(weights: Optional[MobileNetV2Weights] = None, progress: bool = True, **kwargs: Any) -> MobileNetV2:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", MobileNetV2Weights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV2Weights.ImageNet1K_RefV1)
     weights = MobileNetV2Weights.verify(weights)
 
     if weights is not None:

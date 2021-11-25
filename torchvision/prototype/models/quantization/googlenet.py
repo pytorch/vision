@@ -51,7 +51,7 @@ def googlenet(
         default_value = (
             QuantizedGoogLeNetWeights.ImageNet1K_FBGEMM_TFV1 if quantize else GoogLeNetWeights.ImageNet1K_TFV1
         )
-        weights = _deprecated_param("pretrained", "weights", default_value, kwargs)  # type: ignore[assignment]
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedGoogLeNetWeights.verify(weights)
     else:

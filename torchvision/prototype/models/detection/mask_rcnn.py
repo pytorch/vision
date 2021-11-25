@@ -46,11 +46,11 @@ def maskrcnn_resnet50_fpn(
     **kwargs: Any,
 ) -> MaskRCNN:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", MaskRCNNResNet50FPNWeights.Coco_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MaskRCNNResNet50FPNWeights.Coco_RefV1)
     weights = MaskRCNNResNet50FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 

@@ -31,7 +31,7 @@ class GoogLeNetWeights(Weights):
 
 def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", GoogLeNetWeights.ImageNet1K_TFV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", GoogLeNetWeights.ImageNet1K_TFV1)
     weights = GoogLeNetWeights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)

@@ -97,7 +97,7 @@ class R2Plus1D_18Weights(Weights):
 
 def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", R3D_18Weights.Kinetics400_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", R3D_18Weights.Kinetics400_RefV1)
     weights = R3D_18Weights.verify(weights)
 
     return _video_resnet(
@@ -113,7 +113,7 @@ def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwa
 
 def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", MC3_18Weights.Kinetics400_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MC3_18Weights.Kinetics400_RefV1)
     weights = MC3_18Weights.verify(weights)
 
     return _video_resnet(
@@ -129,7 +129,7 @@ def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwa
 
 def r2plus1d_18(weights: Optional[R2Plus1D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", R2Plus1D_18Weights.Kinetics400_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", R2Plus1D_18Weights.Kinetics400_RefV1)
     weights = R2Plus1D_18Weights.verify(weights)
 
     return _video_resnet(

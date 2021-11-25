@@ -5,10 +5,11 @@ from ._api import Weights
 
 
 W = TypeVar("W", bound=Weights)
+V = TypeVar("V")
 
 
 def _deprecated_param(
-    deprecated_param: str, new_param: str, default_value: Optional[W], kwargs: Dict[str, Any]
+    kwargs: Dict[str, Any], deprecated_param: str, new_param: str, default_value: Optional[W]
 ) -> Optional[W]:
     warnings.warn(f"The parameter '{deprecated_param}' is deprecated, please use {new_param} instead.")
     if kwargs.pop(deprecated_param):
@@ -20,7 +21,7 @@ def _deprecated_param(
         return None
 
 
-def _ovewrite_named_param(kwargs: Dict[str, Any], param: str, new_value: Any) -> None:
+def _ovewrite_named_param(kwargs: Dict[str, Any], param: str, new_value: V) -> None:
     if param in kwargs:
         if kwargs[param] != new_value:
             raise ValueError(f"The parameter {param} expected value {new_value} but got {kwargs[param]} instead.")
@@ -28,7 +29,7 @@ def _ovewrite_named_param(kwargs: Dict[str, Any], param: str, new_value: Any) ->
         kwargs[param] = new_value
 
 
-def _ovewrite_value_param(param: Any, new_value: Any) -> Any:
+def _ovewrite_value_param(param: Optional[V], new_value: V) -> V:
     if param is not None:
         if param != new_value:
             raise ValueError(f"The parameter {param} expected value {new_value} but got {param} instead.")

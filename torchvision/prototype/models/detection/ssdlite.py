@@ -51,11 +51,11 @@ def ssdlite320_mobilenet_v3_large(
     **kwargs: Any,
 ) -> SSD:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", SSDlite320MobileNetV3LargeFPNWeights.Coco_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", SSDlite320MobileNetV3LargeFPNWeights.Coco_RefV1)
     weights = SSDlite320MobileNetV3LargeFPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
         )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

@@ -55,11 +55,11 @@ def fcn_resnet50(
     **kwargs: Any,
 ) -> FCN:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", FCNResNet50Weights.CocoWithVocLabels_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FCNResNet50Weights.CocoWithVocLabels_RefV1)
     weights = FCNResNet50Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -88,11 +88,11 @@ def fcn_resnet101(
     **kwargs: Any,
 ) -> FCN:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", FCNResNet101Weights.CocoWithVocLabels_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FCNResNet101Weights.CocoWithVocLabels_RefV1)
     weights = FCNResNet101Weights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_RefV1
         )
     weights_backbone = ResNet101Weights.verify(weights_backbone)
 

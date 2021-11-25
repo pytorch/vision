@@ -84,7 +84,7 @@ def mobilenet_v3_large(
     weights: Optional[MobileNetV3LargeWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", MobileNetV3LargeWeights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV3LargeWeights.ImageNet1K_RefV1)
     weights = MobileNetV3LargeWeights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
@@ -95,7 +95,7 @@ def mobilenet_v3_small(
     weights: Optional[MobileNetV3SmallWeights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", MobileNetV3SmallWeights.ImageNet1K_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV3SmallWeights.ImageNet1K_RefV1)
     weights = MobileNetV3SmallWeights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)

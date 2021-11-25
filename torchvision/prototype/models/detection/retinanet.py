@@ -46,11 +46,11 @@ def retinanet_resnet50_fpn(
     **kwargs: Any,
 ) -> RetinaNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", RetinaNetResNet50FPNWeights.Coco_RefV1, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RetinaNetResNet50FPNWeights.Coco_RefV1)
     weights = RetinaNetResNet50FPNWeights.verify(weights)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1, kwargs
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 

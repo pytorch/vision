@@ -84,7 +84,7 @@ def shufflenet_v2_x0_5(
     weights: Optional[ShuffleNetV2_x0_5Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ShuffleNetV2_x0_5Weights.ImageNet1K_Community, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x0_5Weights.ImageNet1K_Community)
     weights = ShuffleNetV2_x0_5Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
@@ -94,7 +94,7 @@ def shufflenet_v2_x1_0(
     weights: Optional[ShuffleNetV2_x1_0Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", ShuffleNetV2_x1_0Weights.ImageNet1K_Community, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x1_0Weights.ImageNet1K_Community)
     weights = ShuffleNetV2_x1_0Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
@@ -104,7 +104,7 @@ def shufflenet_v2_x1_5(
     weights: Optional[ShuffleNetV2_x1_5Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", None, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ShuffleNetV2_x1_5Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
@@ -114,7 +114,7 @@ def shufflenet_v2_x2_0(
     weights: Optional[ShuffleNetV2_x2_0Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", None, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ShuffleNetV2_x2_0Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)

@@ -79,7 +79,7 @@ def _mnasnet(alpha: float, weights: Optional[Weights], progress: bool, **kwargs:
 
 def mnasnet0_5(weights: Optional[MNASNet0_5Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", MNASNet0_5Weights.ImageNet1K_Community, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet0_5Weights.ImageNet1K_Community)
     weights = MNASNet0_5Weights.verify(weights)
 
     return _mnasnet(0.5, weights, progress, **kwargs)
@@ -87,7 +87,7 @@ def mnasnet0_5(weights: Optional[MNASNet0_5Weights] = None, progress: bool = Tru
 
 def mnasnet0_75(weights: Optional[MNASNet0_75Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", None, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = MNASNet0_75Weights.verify(weights)
 
     return _mnasnet(0.75, weights, progress, **kwargs)
@@ -95,7 +95,7 @@ def mnasnet0_75(weights: Optional[MNASNet0_75Weights] = None, progress: bool = T
 
 def mnasnet1_0(weights: Optional[MNASNet1_0Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", MNASNet1_0Weights.ImageNet1K_Community, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet1_0Weights.ImageNet1K_Community)
     weights = MNASNet1_0Weights.verify(weights)
 
     return _mnasnet(1.0, weights, progress, **kwargs)
@@ -103,7 +103,7 @@ def mnasnet1_0(weights: Optional[MNASNet1_0Weights] = None, progress: bool = Tru
 
 def mnasnet1_3(weights: Optional[MNASNet1_3Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     if "pretrained" in kwargs:
-        weights = _deprecated_param("pretrained", "weights", None, kwargs)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = MNASNet1_3Weights.verify(weights)
 
     return _mnasnet(1.3, weights, progress, **kwargs)
