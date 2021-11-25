@@ -38,7 +38,7 @@ def test_feature_type_support():
     [transform_type for transform_type in TRANSFORM_TYPES if transform_type is not transforms.Identity],
     ids=lambda transform_type: transform_type.__name__,
 )
-def test_no_op(transform_type):
+def test_feature_no_op_coverage(transform_type):
     unsupported_features = (
         FEATURE_TYPES - transform_type.supported_feature_types() - set(transform_type.NO_OP_FEATURE_TYPES)
     )
@@ -49,3 +49,13 @@ def test_no_op(transform_type):
             f"no-op for transform `{transform_type.__name__}`. Please either implement a feature transform for them, "
             f"or add them to the the `{transform_type.__name__}.NO_OP_FEATURE_TYPES` collection."
         )
+
+
+def test_non_feature_no_op():
+    class TestTransform(transforms.Transform):
+        @staticmethod
+        def image(input):
+            return input
+
+    no_op_sample = dict(int=0, float=0.0, bool=False, str="str")
+    assert TestTransform()(no_op_sample) == no_op_sample

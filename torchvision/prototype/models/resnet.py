@@ -230,13 +230,13 @@ class WideResNet101_2Weights(Weights):
         },
     )
     ImageNet1K_RefV2 = WeightEntry(
-        url="https://download.pytorch.org/models/wide_resnet101_2-b8680a8c.pth",
+        url="https://download.pytorch.org/models/wide_resnet101_2-d733dc28.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "acc@1": 82.492,
-            "acc@5": 96.110,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 82.510,
+            "acc@5": 96.020,
         },
     )
 

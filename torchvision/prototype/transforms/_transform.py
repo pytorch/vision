@@ -351,14 +351,16 @@ class Transform(nn.Module):
             sample: Sample.
             params: Parameter dictionary ``params`` that will be passed to ``feature_transform(input, **params)``.
         """
-        if isinstance(sample, collections.abc.Sequence):
+        # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
+        # "a" == "a"[0][0]...
+        if isinstance(sample, collections.abc.Sequence) and not isinstance(sample, str):
             return [self._transform_recursively(item, params=params) for item in sample]
         elif isinstance(sample, collections.abc.Mapping):
             return {name: self._transform_recursively(item, params=params) for name, item in sample.items()}
         else:
             feature_type = type(sample)
             if not self.supports(feature_type):
-                if feature_type in self.NO_OP_FEATURE_TYPES:
+                if not issubclass(feature_type, features.Feature) or feature_type in self.NO_OP_FEATURE_TYPES:
                     return sample
 
                 raise TypeError(
@@ -366,7 +368,7 @@ class Transform(nn.Module):
                     f"If you want it to be a no-op, add the feature type to {type(self).__name__}.NO_OP_FEATURE_TYPES."
                 )
 
-            return self.transform(sample, **params)
+            return self.transform(cast(Union[torch.Tensor, features.Feature], sample), **params)
 
     def get_params(self, sample: Any) -> Dict[str, Any]:
         """Returns the parameter dictionary used to transform the current sample.
