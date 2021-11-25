@@ -3,7 +3,6 @@
 # https://github.com/facebookresearch/ClassyVision/blob/main/classy_vision/models/vision_transformer.py
 
 import math
-import warnings
 from collections import OrderedDict
 from functools import partial
 from typing import Any, Callable, Optional
