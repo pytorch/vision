@@ -522,17 +522,15 @@ class CocoMockData:
         images_meta,
         fn,
     ):
-        image_ids = [image_meta["id"] for image_meta in images_meta]
-
-        num_anns_per_image = torch.randint(1, 5, (len(image_ids),))
+        num_anns_per_image = torch.randint(1, 5, (len(images_meta),))
         num_anns_total = int(num_anns_per_image.sum())
         ann_ids_iter = iter(torch.arange(num_anns_total)[torch.randperm(num_anns_total)])
 
         anns_meta = []
-        for image_id, num_anns in zip(image_ids, num_anns_per_image):
+        for image_meta, num_anns in zip(images_meta, num_anns_per_image):
             for _ in range(num_anns):
                 ann_id = int(next(ann_ids_iter))
-                anns_meta.append(dict(fn(ann_id, image_id), id=ann_id, image_id=image_id))
+                anns_meta.append(dict(fn(ann_id, image_meta), id=ann_id, image_id=image_meta["id"]))
         anns_meta.sort(key=lambda ann: ann["id"])
 
         with open(root / name, "w") as file:
@@ -541,30 +539,41 @@ class CocoMockData:
         return num_anns_per_image
 
     @staticmethod
-    def _make_instances_data(ann_id, image_id):
+    def _make_instances_data(ann_id, image_meta):
+        def make_rle_segmentation():
+            height, width = image_meta["height"], image_meta["width"]
+            numel = height * width
+            counts = []
+            while sum(counts) <= numel:
+                counts.append(int(torch.randint(5, 8, ())))
+            if sum(counts) > numel:
+                counts[-1] -= sum(counts) - numel
+            return dict(counts=counts, size=[height, width])
+
         return dict(
+            segmentation=make_rle_segmentation(),
             bbox=make_tensor((4,), dtype=torch.float32, low=0).tolist(),
-            iscrowd=bool(make_scalar(dtype=torch.bool)),
+            iscrowd=True,
             area=float(make_scalar(dtype=torch.float32)),
             category_id=int(make_scalar(dtype=torch.int64)),
         )
 
     @staticmethod
-    def _make_captions_data(ann_id, image_id):
-        return dict(caption=f"Caption {ann_id} describing image {image_id}.")
+    def _make_captions_data(ann_id, image_meta):
+        return dict(caption=f"Caption {ann_id} describing image {image_meta['id']}.")
 
     @classmethod
     def _make_annotations(cls, root, name, *, images_meta):
         num_anns_per_image = torch.zeros((len(images_meta),), dtype=torch.int64)
-        for ann_type, fn in (
+        for annotations, fn in (
             ("instances", cls._make_instances_data),
             ("captions", cls._make_captions_data),
         ):
             num_anns_per_image += cls._make_annotations_json(
-                root, f"{ann_type}_{name}.json", images_meta=images_meta, fn=fn
+                root, f"{annotations}_{name}.json", images_meta=images_meta, fn=fn
             )
 
-        return int(num_anns_per_image.gt(0).sum())
+        return int(num_anns_per_image.sum())
 
     @classmethod
     def generate(

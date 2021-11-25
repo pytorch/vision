@@ -32,7 +32,7 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     path_accessor,
 )
-from torchvision.prototype.features import BoundingBox, Label, Feature
+from torchvision.prototype.features import BoundingBox, Label
 from torchvision.prototype.features._feature import DEFAULT
 from torchvision.prototype.utils._internal import FrozenMapping
 
@@ -57,6 +57,7 @@ class Coco(Dataset):
         return DatasetInfo(
             name,
             type=DatasetType.IMAGE,
+            dependencies=("pycocotools",),
             categories=categories,
             homepage="https://cocodataset.org/",
             valid_options=dict(
@@ -94,19 +95,15 @@ class Coco(Dataset):
         )
         return [images, meta]
 
-    def _rle_to_mask(self, segmentation: Dict[str, List[int]]) -> torch.Tensor:
+    def _segmentation_to_mask(self, segmentation: Any, *, is_crowd: bool, image_size: Tuple[int, int]) -> torch.Tensor:
         from pycocotools import mask
+
+        if is_crowd:
+            segmentation = mask.frPyObjects(segmentation, *image_size)
+        else:
+            segmentation = mask.merge(mask.frPyObjects(segmentation, *image_size))
 
         return torch.from_numpy(mask.decode(segmentation)).to(torch.bool)
-
-        # rle = torch.tensor(segmentation["counts"])
-        # values = torch.tensor((False, True)).repeat((rle.numel() + 1) // 2)[: rle.numel()]
-        # return torch.repeat_interleave(values, rle).reshape(image_size[::-1]).permute(1, 0)
-
-    def _polygons_to_rle(self, segmentation: List[List[float]], *, image_size: Tuple[int, int]) -> torch.Tensor:
-        from pycocotools import mask
-
-        return mask.merge(mask.frPyObjects(segmentation, *image_size))
 
     def _decode_instances_anns(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
         image_size = (image_meta["height"], image_meta["width"])
@@ -114,20 +111,14 @@ class Coco(Dataset):
         categories = [self.info.categories[label] for label in labels]
         return dict(
             # TODO: create a segmentation feature
-            segmentations=Feature(
-                torch.stack(
-                    [
-                        self._rle_to_mask(
-                            ann["segmentation"]
-                            if ann["iscrowd"]
-                            else self._polygons_to_rle(ann["segmentation"], image_size=image_size)
-                        )
-                        for ann in anns
-                    ]
-                )
+            segmentations=torch.stack(
+                [
+                    self._segmentation_to_mask(ann["segmentation"], is_crowd=ann["iscrowd"], image_size=image_size)
+                    for ann in anns
+                ]
             ),
-            areas=Feature([ann["area"] for ann in anns]),
-            crowds=Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            areas=torch.tensor([ann["area"] for ann in anns]),
+            crowds=torch.tensor([ann["iscrowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",
