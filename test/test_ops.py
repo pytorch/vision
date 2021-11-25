@@ -60,7 +60,7 @@ class RoIOpTester(ABC):
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_is_leaf_node(self, device):
-        op_obj = self.make_obj(5, 5, spatial_scale=1, wrap=True).to(device=device)
+        op_obj = self.make_obj(wrap=True).to(device=device)
         graph_node_names = get_graph_node_names(op_obj)
 
         assert len(graph_node_names) == 2
