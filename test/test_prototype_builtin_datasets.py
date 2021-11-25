@@ -13,8 +13,8 @@ def to_bytes(file):
     return file.read()
 
 
-def config_id(config):
-    parts = []
+def config_id(name, config):
+    parts = [name]
     for name, value in config.items():
         if isinstance(value, bool):
             part = ("" if value else "no_") + name
@@ -38,12 +38,13 @@ def dataset_parametrization(*names, decoder=to_bytes):
             "caltech256",
             "caltech101",
             "imagenet",
+            "coco",
         )
 
     return pytest.mark.parametrize(
         ("dataset", "mock_info"),
         [
-            pytest.param(*builtin_dataset_mocks.load(name, decoder=decoder, **config), id=config_id(config))
+            pytest.param(*builtin_dataset_mocks.load(name, decoder=decoder, **config), id=config_id(name, config))
             for name in names
             for config in datasets.info(name)._configs
         ],

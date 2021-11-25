@@ -525,10 +525,6 @@ class CocoMockData:
         image_ids = [image_meta["id"] for image_meta in images_meta]
 
         num_anns_per_image = torch.randint(1, 5, (len(image_ids),))
-        # Force one unannotated image
-        # TODO: make this variable so that different annotations might have different missing annotations
-        num_anns_per_image[0] = 0
-
         num_anns_total = int(num_anns_per_image.sum())
         ann_ids_iter = iter(torch.arange(num_anns_total)[torch.randperm(num_anns_total)])
 
@@ -575,20 +571,17 @@ class CocoMockData:
         cls,
         root,
         *,
-        split,
         year,
         num_samples,
     ):
         annotations_dir = root / "annotations"
         annotations_dir.mkdir()
 
-        num_annotated_samples_per_split = {}
-        for split_ in ("train", "val"):
-            config_name = f"{split_}{year}"
+        for split in ("train", "val"):
+            config_name = f"{split}{year}"
 
             images_meta = cls._make_images_archive(root, config_name, num_samples=num_samples)
-
-            num_annotated_samples_per_split[split_] = cls._make_annotations(
+            cls._make_annotations(
                 annotations_dir,
                 config_name,
                 images_meta=images_meta,
@@ -596,11 +589,9 @@ class CocoMockData:
 
         make_zip(root, f"annotations_trainval{year}.zip", annotations_dir)
 
-        return num_annotated_samples_per_split[split]
+        return num_samples
 
 
 @dataset_mocks.register_mock_data_fn
 def coco(info, root, config):
-    num_samples = 5
-    num_annotated_samples = CocoMockData.generate(root, split=config.split, year=config.year, num_samples=num_samples)
-    return num_annotated_samples if any(config[ann_type] for ann_type in ("instances", "captions")) else num_samples
+    return CocoMockData.generate(root, year=config.year, num_samples=5)
