@@ -17,17 +17,16 @@ from torchvision import models, ops
 from torchvision.models.feature_extraction import get_graph_node_names
 
 
-class TestModuleWrapper(nn.Module):
-    def __init__(self, obj):
-        super().__init__()
-        self.layer = obj
-        self.n_inputs = 2
-
-    def forward(self, input, rois):
-        self.layer(input, rois)
-
-
 class RoIOpTester(ABC):
+    class RoIOpTesterModuleWrapper(nn.Module):
+        def __init__(self, obj):
+            super().__init__()
+            self.layer = obj
+            self.n_inputs = 2
+
+        def forward(self, a, b):
+            self.layer(a, b)
+
     dtype = torch.float64
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -131,7 +130,7 @@ class TestRoiPool(RoIOpTester):
 
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, wrap=False):
         obj = ops.RoIPool((pool_h, pool_w), spatial_scale)
-        return TestModuleWrapper(obj) if wrap else obj
+        return self.RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_pool)
@@ -175,7 +174,7 @@ class TestPSRoIPool(RoIOpTester):
 
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, wrap=False):
         obj = ops.PSRoIPool((pool_h, pool_w), spatial_scale)
-        return TestModuleWrapper(obj) if wrap else obj
+        return self.RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_pool)
@@ -260,7 +259,7 @@ class TestRoIAlign(RoIOpTester):
         obj = ops.RoIAlign(
             (pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio, aligned=aligned
         )
-        return TestModuleWrapper(obj) if wrap else obj
+        return self.RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.roi_align)
@@ -415,7 +414,7 @@ class TestPSRoIAlign(RoIOpTester):
 
     def make_obj(self, pool_h=5, pool_w=5, spatial_scale=1, sampling_ratio=-1, wrap=False):
         obj = ops.PSRoIAlign((pool_h, pool_w), spatial_scale=spatial_scale, sampling_ratio=sampling_ratio)
-        return TestModuleWrapper(obj) if wrap else obj
+        return self.RoIOpTesterModuleWrapper(obj) if wrap else obj
 
     def get_script_fn(self, rois, pool_size):
         scriped = torch.jit.script(ops.ps_roi_align)
@@ -465,18 +464,27 @@ class TestPSRoIAlign(RoIOpTester):
 
 
 class TestMultiScaleRoIAlign:
+    class MultiScaleRoIAlignModuleWrapper(nn.Module):
+        def __init__(self, obj):
+            super().__init__()
+            self.layer = obj
+            self.n_inputs = 3
+
+        def forward(self, a, b, c):
+            self.layer(a, b, c)
+
     def make_obj(self, fmap_names=None, output_size=(7, 7), sampling_ratio=2, wrap=False):
         if fmap_names is None:
             fmap_names = ["0"]
         obj = ops.poolers.MultiScaleRoIAlign(fmap_names, output_size, sampling_ratio)
-        return TestModuleWrapper(obj) if wrap else obj
+        return self.MultiScaleRoIAlignModuleWrapper(obj) if wrap else obj
 
     def test_msroialign_repr(self):
         fmap_names = ["0"]
         output_size = (7, 7)
         sampling_ratio = 2
         # Pass mock feature map names
-        t = self.make_obj(fmap_names, output_size, sampling_ratio)
+        t = self.make_obj(fmap_names, output_size, sampling_ratio, wrap=False)
 
         # Check integrity of object __repr__ attribute
         expected_string = (
@@ -644,6 +652,15 @@ class TestNMS:
 
 
 class TestDeformConv:
+    class DeformConvModuleWrapper(nn.Module):
+        def __init__(self, obj):
+            super().__init__()
+            self.layer = obj
+            self.n_inputs = 3
+
+        def forward(self, a, b, c):
+            self.layer(a, b, c)
+
     dtype = torch.float64
 
     def expected_fn(self, x, weight, offset, mask, bias, stride=1, padding=0, dilation=1):
@@ -755,7 +772,7 @@ class TestDeformConv:
         obj = ops.DeformConv2d(
             in_channels, out_channels, kernel_size, stride=(2, 1), padding=(1, 0), dilation=(2, 1), groups=groups
         )
-        return TestModuleWrapper(obj) if wrap else obj
+        return self.DeformConvModuleWrapper(obj) if wrap else obj
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_is_leaf_node(self, device):
@@ -778,7 +795,9 @@ class TestDeformConv:
         groups = 2
         tol = 2e-3 if dtype is torch.half else 1e-5
 
-        layer = self.make_obj(in_channels, out_channels, kernel_size, groups).to(device=x.device, dtype=dtype)
+        layer = self.make_obj(in_channels, out_channels, kernel_size, groups, wrap=False).to(
+            device=x.device, dtype=dtype
+        )
         res = layer(x, offset, mask)
 
         weight = layer.weight.data
@@ -1228,6 +1247,15 @@ class TestMasksToBoxes:
 
 
 class TestStochasticDepth:
+    class StochasticDepthWrapper(nn.Module):
+        def __init__(self, obj):
+            super().__init__()
+            self.layer = obj
+            self.n_inputs = 1
+
+        def forward(self, a):
+            self.layer(a)
+
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("p", [0.2, 0.5, 0.8])
     @pytest.mark.parametrize("mode", ["batch", "row"])
@@ -1273,7 +1301,7 @@ class TestStochasticDepth:
 
     def make_obj(self, p, mode, wrap=False):
         obj = ops.StochasticDepth(p, mode)
-        return TestModuleWrapper(obj) if wrap else obj
+        return self.StochasticDepthWrapper(obj) if wrap else obj
 
     @pytest.mark.parametrize("p", (0, 1))
     @pytest.mark.parametrize("mode", ["batch", "row"])
