@@ -175,7 +175,7 @@ def _warn_graph_differences(train_tracer: NodePathTracer, eval_tracer: NodePathT
     warnings.warn(msg + suggestion_msg)
 
 
-def _get_leaf_modules_for_ops():
+def _get_leaf_modules_for_ops() -> List[type]:
     members = inspect.getmembers(torchvision.ops)
     result = []
     for _, obj in members:
