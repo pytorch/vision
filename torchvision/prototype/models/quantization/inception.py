@@ -37,6 +37,7 @@ class QuantizedInceptionV3Weights(Weights):
             "acc@1": 77.176,
             "acc@5": 93.354,
         },
+        default=True,
     )
 
 

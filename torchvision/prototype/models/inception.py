@@ -25,6 +25,7 @@ class InceptionV3Weights(Weights):
             "acc@1": 77.294,
             "acc@5": 93.450,
         },
+        default=True,
     )
 
 

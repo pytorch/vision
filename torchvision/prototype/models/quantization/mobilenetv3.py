@@ -71,6 +71,7 @@ class QuantizedMobileNetV3LargeWeights(Weights):
             "acc@1": 73.004,
             "acc@5": 90.858,
         },
+        default=True,
     )
 
 

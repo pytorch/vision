@@ -38,6 +38,7 @@ class QuantizedMobileNetV2Weights(Weights):
             "acc@1": 71.658,
             "acc@5": 90.150,
         },
+        default=True,
     )
 
 

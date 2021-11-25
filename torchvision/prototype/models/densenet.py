@@ -80,6 +80,7 @@ class DenseNet121Weights(Weights):
             "acc@1": 74.434,
             "acc@5": 91.972,
         },
+        default=True,
     )
 
 
@@ -92,6 +93,7 @@ class DenseNet161Weights(Weights):
             "acc@1": 77.138,
             "acc@5": 93.560,
         },
+        default=True,
     )
 
 
@@ -104,6 +106,7 @@ class DenseNet169Weights(Weights):
             "acc@1": 75.600,
             "acc@5": 92.806,
         },
+        default=True,
     )
 
 
@@ -116,6 +119,7 @@ class DenseNet201Weights(Weights):
             "acc@1": 76.896,
             "acc@5": 93.370,
         },
+        default=True,
     )
 
 

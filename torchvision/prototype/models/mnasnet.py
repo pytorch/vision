@@ -40,6 +40,7 @@ class MNASNet0_5Weights(Weights):
             "acc@1": 67.734,
             "acc@5": 87.490,
         },
+        default=True,
     )
 
 
@@ -57,6 +58,7 @@ class MNASNet1_0Weights(Weights):
             "acc@1": 73.456,
             "acc@5": 91.510,
         },
+        default=True,
     )
 
 

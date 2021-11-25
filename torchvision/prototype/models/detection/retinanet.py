@@ -34,6 +34,7 @@ class RetinaNetResNet50FPNWeights(Weights):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
             "map": 36.4,
         },
+        default=True,
     )
 
 

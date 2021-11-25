@@ -57,6 +57,7 @@ class VGG11Weights(Weights):
             "acc@1": 69.020,
             "acc@5": 88.628,
         },
+        default=True,
     )
 
 
@@ -69,6 +70,7 @@ class VGG11BNWeights(Weights):
             "acc@1": 70.370,
             "acc@5": 89.810,
         },
+        default=True,
     )
 
 
@@ -81,6 +83,7 @@ class VGG13Weights(Weights):
             "acc@1": 69.928,
             "acc@5": 89.246,
         },
+        default=True,
     )
 
 
@@ -93,6 +96,7 @@ class VGG13BNWeights(Weights):
             "acc@1": 71.586,
             "acc@5": 90.374,
         },
+        default=True,
     )
 
 
@@ -105,6 +109,7 @@ class VGG16Weights(Weights):
             "acc@1": 71.592,
             "acc@5": 90.382,
         },
+        default=True,
     )
     # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
     # same input standardization method as the paper. Only the `features` weights have proper values, those on the
@@ -122,6 +127,7 @@ class VGG16Weights(Weights):
             "acc@1": float("nan"),
             "acc@5": float("nan"),
         },
+        default=False,
     )
 
 
@@ -134,6 +140,7 @@ class VGG16BNWeights(Weights):
             "acc@1": 73.360,
             "acc@5": 91.516,
         },
+        default=True,
     )
 
 
@@ -146,6 +153,7 @@ class VGG19Weights(Weights):
             "acc@1": 72.376,
             "acc@5": 90.876,
         },
+        default=True,
     )
 
 
@@ -158,6 +166,7 @@ class VGG19BNWeights(Weights):
             "acc@1": 74.218,
             "acc@5": 91.842,
         },
+        default=True,
     )
 
 

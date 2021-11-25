@@ -38,6 +38,7 @@ class QuantizedGoogLeNetWeights(Weights):
             "acc@1": 69.826,
             "acc@5": 89.404,
         },
+        default=True,
     )
 
 

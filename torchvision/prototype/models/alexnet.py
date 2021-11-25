@@ -25,6 +25,7 @@ class AlexNetWeights(Weights):
             "acc@1": 56.522,
             "acc@5": 79.066,
         },
+        default=True,
     )
 
 

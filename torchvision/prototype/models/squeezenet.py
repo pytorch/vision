@@ -30,6 +30,7 @@ class SqueezeNet1_0Weights(Weights):
             "acc@1": 58.092,
             "acc@5": 80.420,
         },
+        default=True,
     )
 
 
@@ -42,6 +43,7 @@ class SqueezeNet1_1Weights(Weights):
             "acc@1": 58.178,
             "acc@5": 80.624,
         },
+        default=True,
     )
 
 

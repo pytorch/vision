@@ -40,6 +40,7 @@ class DeepLabV3ResNet50Weights(Weights):
             "mIoU": 66.4,
             "acc": 92.4,
         },
+        default=True,
     )
 
 
@@ -53,6 +54,7 @@ class DeepLabV3ResNet101Weights(Weights):
             "mIoU": 67.4,
             "acc": 92.4,
         },
+        default=True,
     )
 
 
@@ -66,6 +68,7 @@ class DeepLabV3MobileNetV3LargeWeights(Weights):
             "mIoU": 60.3,
             "acc": 91.2,
         },
+        default=True,
     )
 
 

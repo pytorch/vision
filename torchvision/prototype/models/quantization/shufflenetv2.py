@@ -69,6 +69,7 @@ class QuantizedShuffleNetV2_x0_5Weights(Weights):
             "acc@1": 57.972,
             "acc@5": 79.780,
         },
+        default=True,
     )
 
 
@@ -82,6 +83,7 @@ class QuantizedShuffleNetV2_x1_0Weights(Weights):
             "acc@1": 68.360,
             "acc@5": 87.582,
         },
+        default=True,
     )
 
 

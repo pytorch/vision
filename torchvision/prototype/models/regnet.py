@@ -74,6 +74,7 @@ class RegNet_y_400mfWeights(Weights):
             "acc@1": 74.046,
             "acc@5": 91.716,
         },
+        default=True,
     )
 
 
@@ -87,6 +88,7 @@ class RegNet_y_800mfWeights(Weights):
             "acc@1": 76.420,
             "acc@5": 93.136,
         },
+        default=True,
     )
 
 
@@ -100,6 +102,7 @@ class RegNet_y_1_6gfWeights(Weights):
             "acc@1": 77.950,
             "acc@5": 93.966,
         },
+        default=True,
     )
 
 
@@ -113,6 +116,7 @@ class RegNet_y_3_2gfWeights(Weights):
             "acc@1": 78.948,
             "acc@5": 94.576,
         },
+        default=True,
     )
 
 
@@ -126,6 +130,7 @@ class RegNet_y_8gfWeights(Weights):
             "acc@1": 80.032,
             "acc@5": 95.048,
         },
+        default=True,
     )
 
 
@@ -139,6 +144,7 @@ class RegNet_y_16gfWeights(Weights):
             "acc@1": 80.424,
             "acc@5": 95.240,
         },
+        default=True,
     )
 
 
@@ -152,6 +158,7 @@ class RegNet_y_32gfWeights(Weights):
             "acc@1": 80.878,
             "acc@5": 95.340,
         },
+        default=True,
     )
 
 
@@ -165,6 +172,7 @@ class RegNet_x_400mfWeights(Weights):
             "acc@1": 72.834,
             "acc@5": 90.950,
         },
+        default=True,
     )
 
 
@@ -178,6 +186,7 @@ class RegNet_x_800mfWeights(Weights):
             "acc@1": 75.212,
             "acc@5": 92.348,
         },
+        default=True,
     )
 
 
@@ -191,6 +200,7 @@ class RegNet_x_1_6gfWeights(Weights):
             "acc@1": 77.040,
             "acc@5": 93.440,
         },
+        default=True,
     )
 
 
@@ -204,6 +214,7 @@ class RegNet_x_3_2gfWeights(Weights):
             "acc@1": 78.364,
             "acc@5": 93.992,
         },
+        default=True,
     )
 
 
@@ -217,6 +228,7 @@ class RegNet_x_8gfWeights(Weights):
             "acc@1": 79.344,
             "acc@5": 94.686,
         },
+        default=True,
     )
 
 
@@ -230,6 +242,7 @@ class RegNet_x_16gfWeights(Weights):
             "acc@1": 80.058,
             "acc@5": 94.944,
         },
+        default=True,
     )
 
 
@@ -243,6 +256,7 @@ class RegNet_x_32gfWeights(Weights):
             "acc@1": 80.622,
             "acc@5": 95.248,
         },
+        default=True,
     )
 
 

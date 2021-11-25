@@ -68,6 +68,7 @@ class R3D_18Weights(Weights):
             "acc@1": 52.75,
             "acc@5": 75.45,
         },
+        default=True,
     )
 
 
@@ -80,6 +81,7 @@ class MC3_18Weights(Weights):
             "acc@1": 53.90,
             "acc@5": 76.29,
         },
+        default=True,
     )
 
 
@@ -92,6 +94,7 @@ class R2Plus1D_18Weights(Weights):
             "acc@1": 57.50,
             "acc@5": 78.81,
         },
+        default=True,
     )
 
 

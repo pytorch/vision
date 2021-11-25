@@ -25,6 +25,7 @@ class LRASPPMobileNetV3LargeWeights(Weights):
             "mIoU": 57.9,
             "acc": 91.2,
         },
+        default=True,
     )
 
 

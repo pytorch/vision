@@ -26,6 +26,7 @@ class GoogLeNetWeights(Weights):
             "acc@1": 69.778,
             "acc@5": 89.530,
         },
+        default=True,
     )
 
 

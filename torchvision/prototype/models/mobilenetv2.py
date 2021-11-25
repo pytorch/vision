@@ -25,6 +25,7 @@ class MobileNetV2Weights(Weights):
             "acc@1": 71.878,
             "acc@5": 90.286,
         },
+        default=True,
     )
 
 

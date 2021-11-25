@@ -57,6 +57,7 @@ class ShuffleNetV2_x0_5Weights(Weights):
             "acc@1": 69.362,
             "acc@5": 88.316,
         },
+        default=True,
     )
 
 
@@ -69,6 +70,7 @@ class ShuffleNetV2_x1_0Weights(Weights):
             "acc@1": 60.552,
             "acc@5": 81.746,
         },
+        default=True,
     )
 
 

@@ -54,6 +54,7 @@ class MobileNetV3LargeWeights(Weights):
             "acc@1": 74.042,
             "acc@5": 91.340,
         },
+        default=False,
     )
     ImageNet1K_RefV2 = WeightEntry(
         url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
@@ -64,6 +65,7 @@ class MobileNetV3LargeWeights(Weights):
             "acc@1": 75.274,
             "acc@5": 92.566,
         },
+        default=True,
     )
 
 
@@ -77,6 +79,7 @@ class MobileNetV3SmallWeights(Weights):
             "acc@1": 67.668,
             "acc@5": 87.402,
         },
+        default=True,
     )
 
 

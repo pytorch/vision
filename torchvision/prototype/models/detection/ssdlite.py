@@ -38,6 +38,7 @@ class SSDlite320MobileNetV3LargeFPNWeights(Weights):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
             "map": 21.3,
         },
+        default=True,
     )
 
 

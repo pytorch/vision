@@ -79,6 +79,7 @@ class EfficientNetB0Weights(Weights):
             "acc@1": 77.692,
             "acc@5": 93.532,
         },
+        default=True,
     )
 
 
@@ -92,6 +93,7 @@ class EfficientNetB1Weights(Weights):
             "acc@1": 78.642,
             "acc@5": 94.186,
         },
+        default=True,
     )
 
 
@@ -105,6 +107,7 @@ class EfficientNetB2Weights(Weights):
             "acc@1": 80.608,
             "acc@5": 95.310,
         },
+        default=True,
     )
 
 
@@ -118,6 +121,7 @@ class EfficientNetB3Weights(Weights):
             "acc@1": 82.008,
             "acc@5": 96.054,
         },
+        default=True,
     )
 
 
@@ -131,6 +135,7 @@ class EfficientNetB4Weights(Weights):
             "acc@1": 83.384,
             "acc@5": 96.594,
         },
+        default=True,
     )
 
 
@@ -144,6 +149,7 @@ class EfficientNetB5Weights(Weights):
             "acc@1": 83.444,
             "acc@5": 96.628,
         },
+        default=True,
     )
 
 
@@ -157,6 +163,7 @@ class EfficientNetB6Weights(Weights):
             "acc@1": 84.008,
             "acc@5": 96.916,
         },
+        default=True,
     )
 
 
@@ -170,6 +177,7 @@ class EfficientNetB7Weights(Weights):
             "acc@1": 84.122,
             "acc@5": 96.908,
         },
+        default=True,
     )
 
 

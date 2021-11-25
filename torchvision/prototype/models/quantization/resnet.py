@@ -73,6 +73,7 @@ class QuantizedResNet18Weights(Weights):
             "acc@1": 69.494,
             "acc@5": 88.882,
         },
+        default=True,
     )
 
 
@@ -86,6 +87,7 @@ class QuantizedResNet50Weights(Weights):
             "acc@1": 75.920,
             "acc@5": 92.814,
         },
+        default=False,
     )
     ImageNet1K_FBGEMM_RefV2 = WeightEntry(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth",
@@ -96,6 +98,7 @@ class QuantizedResNet50Weights(Weights):
             "acc@1": 80.282,
             "acc@5": 94.976,
         },
+        default=True,
     )
 
 
@@ -109,6 +112,7 @@ class QuantizedResNeXt101_32x8dWeights(Weights):
             "acc@1": 78.986,
             "acc@5": 94.480,
         },
+        default=False,
     )
     ImageNet1K_FBGEMM_RefV2 = WeightEntry(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth",
@@ -119,6 +123,7 @@ class QuantizedResNeXt101_32x8dWeights(Weights):
             "acc@1": 82.574,
             "acc@5": 96.132,
         },
+        default=True,
     )
 
 

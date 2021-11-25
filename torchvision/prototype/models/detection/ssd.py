@@ -33,6 +33,7 @@ class SSD300VGG16Weights(Weights):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
             "map": 25.1,
         },
+        default=True,
     )
 
 

@@ -34,6 +34,7 @@ class MaskRCNNResNet50FPNWeights(Weights):
             "box_map": 37.9,
             "mask_map": 34.6,
         },
+        default=True,
     )
 
 

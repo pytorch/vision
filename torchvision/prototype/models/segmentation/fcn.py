@@ -30,6 +30,7 @@ class FCNResNet50Weights(Weights):
             "mIoU": 60.5,
             "acc": 91.4,
         },
+        default=True,
     )
 
 
@@ -43,6 +44,7 @@ class FCNResNet101Weights(Weights):
             "mIoU": 63.7,
             "acc": 91.9,
         },
+        default=True,
     )
 
 
