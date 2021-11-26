@@ -126,6 +126,8 @@ def test_old_vs_new_factory(model_fn, module_name, dev):
     model_new = _build_model(model_fn, **kwargs).to(device=dev)
     torch.testing.assert_close(model_new(x), model_old(x), rtol=0.0, atol=0.0, check_dtype=False)
 
+    assert False
+
 
 def test_smoke():
     import torchvision.prototype.models  # noqa: F401

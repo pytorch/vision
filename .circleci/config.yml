@@ -291,7 +291,10 @@ jobs:
           name: Run tests
           environment:
             PYTORCH_TEST_WITH_PROTOTYPE: 1
-          command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
+          command: >
+            pytest --junitxml=test-results/junit.xml -v --durations 20 -rP
+            test/test_prototype_models.py::test_old_vs_new_factory
+            -k "cpu and mobilenet_v3_large and quantization"
       - store_test_results:
           path: test-results
 

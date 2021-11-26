@@ -41,9 +41,18 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
         unexpected_keys,
         error_msgs,
     ):
+        print("=" * 80)
+        print(f"# {prefix}")
+        print("=" * 80)
+        print(local_metadata)
+
         version = local_metadata.get("version", None)
 
+        has_qconfig = hasattr(self, "qconfig")
+        print(f"has_qconfig={has_qconfig}")
         if hasattr(self, "qconfig") and (version is None or version < 2):
+            print("-" * 80)
+            print("# fixing state dict")
             default_state_dict = {
                 "scale_activation.activation_post_process.scale": torch.tensor([1.0]),
                 "scale_activation.activation_post_process.zero_point": torch.tensor([0], dtype=torch.int32),
@@ -53,6 +62,7 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
             for k, v in default_state_dict.items():
                 full_key = prefix + k
                 if full_key not in state_dict:
+                    print(full_key)
                     state_dict[full_key] = v
 
         super()._load_from_state_dict(
