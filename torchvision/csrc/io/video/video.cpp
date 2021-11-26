@@ -98,6 +98,7 @@ void Video::_getDecoderParams(
     int64_t getPtsOnly,
     std::string stream,
     long stream_id = -1,
+    bool fastSeek = true,
     bool all_streams = false,
     int64_t num_threads = 1,
     double seekFrameMarginUs = 10) {
@@ -106,6 +107,7 @@ void Video::_getDecoderParams(
   params.timeoutMs = decoderTimeoutMs;
   params.startOffset = videoStartUs;
   params.seekAccuracy = seekFrameMarginUs;
+  params.fastSeek = fastSeek;
   params.headerOnly = false;
   params.numThreads = num_threads;
 
@@ -165,6 +167,7 @@ Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
       0, // headerOnly
       std::get<0>(current_stream), // stream info - remove that
       long(-1), // stream_id parsed from info above change to -2
+      false, // fastseek: we're using the default param here
       true, // read all streams
       numThreads_ // global number of Threads for decoding
   );
@@ -246,6 +249,7 @@ bool Video::setCurrentStream(std::string stream = "video") {
       std::get<0>(current_stream), // stream
       long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
+      false, // fastseek param set to 0 false by default (changed in seek)
       false, // read all streams
       numThreads_ // global number of threads
   );
@@ -263,7 +267,7 @@ c10::Dict<std::string, c10::Dict<std::string, std::vector<double>>> Video::
   return streamsMetadata;
 }
 
-void Video::Seek(double ts) {
+void Video::Seek(double ts, bool fastSeek = false) {
   // initialize the class variables used for seeking and retrurn
   _getDecoderParams(
       ts, // video start
@@ -271,6 +275,7 @@ void Video::Seek(double ts) {
       std::get<0>(current_stream), // stream
       long(std::get<1>(
           current_stream)), // stream_id parsed from info above change to -2
+      fastSeek, // fastseek
       false, // read all streams
       numThreads_ // global number of threads
   );

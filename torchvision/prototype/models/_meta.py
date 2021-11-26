@@ -3,7 +3,7 @@ This file is part of the private API. Please do not refer to any variables defin
 removed on future versions without warning.
 """
 
-# This will eventually be replaced with a call at torchvision.datasets.find("imagenet").info.categories
+# This will eventually be replaced with a call at torchvision.datasets.info("imagenet").categories
 _IMAGENET_CATEGORIES = [
     "tench",
     "goldfish",
@@ -1007,7 +1007,7 @@ _IMAGENET_CATEGORIES = [
     "toilet tissue",
 ]
 
-# To be replaced with torchvision.datasets.find("coco").info.categories
+# To be replaced with torchvision.datasets.info("coco").categories
 _COCO_CATEGORIES = [
     "__background__",
     "person",
@@ -1102,7 +1102,29 @@ _COCO_CATEGORIES = [
     "toothbrush",
 ]
 
-# To be replaced with torchvision.datasets.find("voc").info.categories
+# To be replaced with torchvision.datasets.info("coco_kp")
+_COCO_PERSON_CATEGORIES = ["no person", "person"]
+_COCO_PERSON_KEYPOINT_NAMES = [
+    "nose",
+    "left_eye",
+    "right_eye",
+    "left_ear",
+    "right_ear",
+    "left_shoulder",
+    "right_shoulder",
+    "left_elbow",
+    "right_elbow",
+    "left_wrist",
+    "right_wrist",
+    "left_hip",
+    "right_hip",
+    "left_knee",
+    "right_knee",
+    "left_ankle",
+    "right_ankle",
+]
+
+# To be replaced with torchvision.datasets.info("voc").categories
 _VOC_CATEGORIES = [
     "__background__",
     "aeroplane",
@@ -1127,7 +1149,7 @@ _VOC_CATEGORIES = [
     "tvmonitor",
 ]
 
-# To be replaced with torchvision.datasets.find("kinetics400").info.categories
+# To be replaced with torchvision.datasets.info("kinetics400").categories
 _KINETICS400_CATEGORIES = [
     "abseiling",
     "air drumming",

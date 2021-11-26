@@ -187,6 +187,10 @@ jobs:
             pip install --user --progress-bar off pre-commit
             pre-commit install-hooks
       - run: pre-commit run --all-files
+      - run:
+          name: Required lint modifications
+          when: on_fail
+          command: git --no-pager diff
 
   python_type_check:
     docker:
@@ -221,6 +225,8 @@ jobs:
       - checkout
       - run:
           command: |
+            sudo apt-get update -y
+            sudo apt install -y libtinfo5
             curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
             chmod +x clang-format
             sudo mv clang-format /opt/clang-format
@@ -276,27 +282,18 @@ jobs:
           command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
       - run:
           name: Download model weights
+          background: true
           command: wget --no-verbose -P ~/.cache/torch/hub/checkpoints -i prototype_model_urls.txt
-#      - restore_cache:
-#          keys:
-#            {% raw %}
-#            - hub-{{ checksum "prototype_model_urls.txt" }}
-#            {% endraw %}
-#            - hub-
       - run:
-          name: Install test utilities
-          command: pip install --user --progress-bar=off pytest
+          name: Install test requirements
+          command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
       - run:
           name: Run tests
-          command: |
-            export PYTORCH_TEST_WITH_PROTOTYPE=1
-            pytest -sv --durations=20 test/test_prototype_*.py
-#      - save_cache:
-#          {% raw %}
-#          key: hub-{{ checksum "prototype_model_urls.txt" }}
-#          {% endraw %}
-#          paths:
-#            - ~/.cache/torch/hub
+          environment:
+            PYTORCH_TEST_WITH_PROTOTYPE: 1
+          command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
+      - store_test_results:
+          path: test-results
 
   binary_linux_wheel:
     <<: *binary_common
@@ -619,7 +616,7 @@ jobs:
             conda env remove -n python${PYTHON_VERSION} || true
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            conda install Pillow>=5.3.0
+            conda install "Pillow>=5.3.0,!=8.3.*"
             conda install -v -y -c pytorch-nightly pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:

@@ -12,7 +12,15 @@ from torch import nn
 from train import train_one_epoch, evaluate, load_data
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -46,7 +54,10 @@ def main(args):
 
     print("Creating model", args.model)
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
+    if not args.weights:
+        model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
+    else:
+        model = PM.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
@@ -110,7 +121,7 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         print("Starting training for epoch", epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args.print_freq)
+        train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args)
         lr_scheduler.step()
         with torch.inference_mode():
             if epoch >= args.num_observer_update_epochs:
@@ -121,7 +132,7 @@ def main(args):
                 model.apply(torch.nn.intrinsic.qat.freeze_bn_stats)
             print("Evaluate QAT model")
 
-            evaluate(model, criterion, data_loader_test, device=device)
+            evaluate(model, criterion, data_loader_test, device=device, log_suffix="QAT")
             quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device("cpu"))
@@ -250,6 +261,10 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
+    parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
+
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser
 
