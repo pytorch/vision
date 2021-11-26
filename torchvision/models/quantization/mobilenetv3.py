@@ -57,7 +57,6 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
             for k, v in default_state_dict.items():
                 full_key = prefix + k
                 if full_key not in state_dict:
-                    print(full_key)
                     state_dict[full_key] = v
 
         super()._load_from_state_dict(
