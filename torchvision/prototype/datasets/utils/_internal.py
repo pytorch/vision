@@ -304,6 +304,10 @@ def fromfile(
     #     # FIXME: DEBUG
     try:
         a = file.fileno()
+        try:
+            b = mmap.mmap(a, 0)
+        except PermissionError:
+            pass
     except io.UnsupportedOperation:
         pass
     #     b = mmap.mmap(a, 0)
