@@ -1,5 +1,4 @@
 import importlib
-import os
 
 import pytest
 import test_models as TM
@@ -60,13 +59,13 @@ def test_classification_model(model_fn, dev):
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.detection))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@run_if_test_with_prototype
 def test_detection_model(model_fn, dev):
     TM.test_detection_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.quantization))
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@run_if_test_with_prototype
 def test_quantized_classification_model(model_fn):
     TM.test_quantized_classification_model(model_fn)
 
