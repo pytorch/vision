@@ -276,6 +276,7 @@ jobs:
           command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
       - run:
           name: Download model weights
+          background: true
           command: wget --no-verbose -P ~/.cache/torch/hub/checkpoints -i prototype_model_urls.txt
 #      - restore_cache:
 #          keys:
