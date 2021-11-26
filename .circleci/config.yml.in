@@ -273,13 +273,14 @@ jobs:
       - run:
           name: Install prototype dependencies
           command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
+      - checkout
       - run:
           name: Download model weights
           background: true
           command: |
             sudo apt update -qy && sudo apt install -qy parallel wget
-            python scripts/collect_model_urls.py torchvision/prototype/models | parallel -j8 wget --no-verbose -P ~/.cache/torch/hub/checkpoints {}
-      - checkout
+            python scripts/collect_model_urls.py torchvision/prototype/models \
+                | parallel -j8 wget --no-verbose -P ~/.cache/torch/hub/checkpoints {}
       - run:
           name: Install torchvision
           command: pip install --user --progress-bar off --no-build-isolation .
