@@ -278,12 +278,12 @@ jobs:
           name: Install torchvision
           command: pip install --user --progress-bar off --no-build-isolation .
       - run:
-          name: Generate cache key
-          command: python scripts/collect_model_urls.py torchvision/prototype/models > prototype_model_urls.txt
-      - run:
           name: Download model weights
           background: true
-          command: wget --no-verbose -P ~/.cache/torch/hub/checkpoints -i prototype_model_urls.txt
+          command: |
+            sudo apt update -qy && sudo apt install -qy parallel
+            python scripts/collect_model_urls.py torchvision/prototype/models \
+                | parallel -j4 wget --no-verbose -P ~/.cache/torch/hub/checkpoints {}
       - run:
           name: Install test requirements
           command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
