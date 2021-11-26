@@ -46,11 +46,7 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
         if hasattr(self, "qconfig") and (version is None or version < 2):
             default_state_dict = {
                 "scale_activation.activation_post_process.scale": torch.tensor([1.0]),
-                "scale_activation.activation_post_process.activation_post_process.scale": torch.tensor([1.0]),
                 "scale_activation.activation_post_process.zero_point": torch.tensor([0], dtype=torch.int32),
-                "scale_activation.activation_post_process.activation_post_process.zero_point": torch.tensor(
-                    [0], dtype=torch.int32
-                ),
                 "scale_activation.activation_post_process.fake_quant_enabled": torch.tensor([1]),
                 "scale_activation.activation_post_process.observer_enabled": torch.tensor([1]),
             }
