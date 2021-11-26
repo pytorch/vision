@@ -31,14 +31,19 @@ def get_models_with_module_names(module):
 
 
 @pytest.mark.parametrize(
-    "model_fn, weight",
+    "model_fn, name, weight",
     [
-        (models.resnet50, models.ResNet50Weights.ImageNet1K_RefV2),
-        (models.quantization.resnet50, models.quantization.QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1),
+        (models.resnet50, "ImageNet1K_RefV1", models.ResNet50Weights.ImageNet1K_RefV1),
+        (models.resnet50, "default", models.ResNet50Weights.ImageNet1K_RefV2),
+        (
+            models.quantization.resnet50,
+            "ImageNet1K_FBGEMM_RefV1",
+            models.quantization.QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1,
+        ),
     ],
 )
-def test_get_weight(model_fn, weight):
-    assert models._api.get_weight(model_fn, weight.name) == weight
+def test_get_weight(model_fn, name, weight):
+    assert models._api.get_weight(model_fn, name) == weight
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
