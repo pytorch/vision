@@ -321,6 +321,10 @@ _model_tests_values = {
         "max_trainable": 6,
         "n_trn_params_per_layer": [96, 99, 138, 200, 239, 257, 266],
     },
+    "fcos_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [54, 64, 83, 96, 106, 107],
+    },
 }
 
 
