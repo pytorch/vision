@@ -704,7 +704,7 @@ def affine(
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
-def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
+def _compute_output_size(matrix: Union[List[float], Tensor], w: int, h: int) -> Tuple[int, int]:
 
     # Inspired of PIL implementation:
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
