@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 
 import torch
 from torch import Tensor
@@ -152,7 +152,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
     return l_img
 
 
-def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
+def adjust_brightness(img: Tensor, brightness_factor: Union[float, Tensor]) -> Tensor:
     if brightness_factor < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
 
@@ -163,7 +163,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     return _blend(img, torch.zeros_like(img), brightness_factor)
 
 
-def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
+def adjust_contrast(img: Tensor, contrast_factor: Union[float, Tensor]) -> Tensor:
     if contrast_factor < 0:
         raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
 
@@ -180,7 +180,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     return _blend(img, mean, contrast_factor)
 
 
-def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
+def adjust_hue(img: Tensor, hue_factor: Union[float, Tensor]) -> Tensor:
     if not (-0.5 <= hue_factor <= 0.5):
         raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
 
@@ -209,7 +209,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     return img_hue_adj
 
 
-def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
+def adjust_saturation(img: Tensor, saturation_factor: Union[float, Tensor]) -> Tensor:
     if saturation_factor < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
@@ -223,7 +223,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
-def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
+def adjust_gamma(img: Tensor, gamma: Union[float, Tensor], gain: float = 1) -> Tensor:
     if not isinstance(img, torch.Tensor):
         raise TypeError("Input img should be a Tensor.")
 
@@ -311,8 +311,7 @@ def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = Fa
     return first_five + second_five
 
 
-def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
-    ratio = float(ratio)
+def _blend(img1: Tensor, img2: Tensor, ratio: Union[float, Tensor]) -> Tensor:
     bound = 1.0 if img1.is_floating_point() else 255.0
     return (ratio * img1 + (1.0 - ratio) * img2).clamp(0, bound).to(img1.dtype)
 
@@ -562,7 +561,7 @@ def resize(
 
 def _assert_grid_transform_inputs(
     img: Tensor,
-    matrix: Optional[List[float]],
+    matrix: Optional[Union[List[float], Tensor]],
     interpolation: str,
     fill: Optional[List[float]],
     supported_interpolation_modes: List[str],
@@ -574,8 +573,8 @@ def _assert_grid_transform_inputs(
 
     _assert_image_tensor(img)
 
-    if matrix is not None and not isinstance(matrix, list):
-        raise TypeError("Argument matrix should be a list")
+    if matrix is not None and not isinstance(matrix, (list, Tensor)):
+        raise TypeError("Argument matrix should be a list or Tensor")
 
     if matrix is not None and len(matrix) != 6:
         raise ValueError("Argument matrix should have 6 float values")
@@ -692,12 +691,13 @@ def _gen_affine_grid(
 
 
 def affine(
-    img: Tensor, matrix: List[float], interpolation: str = "nearest", fill: Optional[List[float]] = None
+    img: Tensor, matrix: Union[List[float], torch.Tensor], interpolation: str = "nearest", fill: Optional[List[float]] = None
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
+    theta = matrix.to(dtype=dtype, device=img.device).reshape(1, 2, 3) if isinstance(matrix, Tensor) \
+        else torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     shape = img.shape
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
@@ -733,7 +733,7 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
 
 def rotate(
     img: Tensor,
-    matrix: List[float],
+    matrix: Union[List[float], torch.Tensor],
     interpolation: str = "nearest",
     expand: bool = False,
     fill: Optional[List[float]] = None,
@@ -742,7 +742,8 @@ def rotate(
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
+    theta = matrix.to(dtype=dtype, device=img.device).reshape(1, 2, 3) if isinstance(matrix, Tensor) \
+        else torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
 
@@ -873,7 +874,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     return img & mask
 
 
-def solarize(img: Tensor, threshold: float) -> Tensor:
+def solarize(img: Tensor, threshold: Union[float, torch.Tensor]) -> Tensor:
 
     _assert_image_tensor(img)
 
@@ -909,7 +910,7 @@ def _blurred_degenerate_image(img: Tensor) -> Tensor:
     return result
 
 
-def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
+def adjust_sharpness(img: Tensor, sharpness_factor: Union[float, torch.Tensor]) -> Tensor:
     if sharpness_factor < 0:
         raise ValueError(f"sharpness_factor ({sharpness_factor}) is not non-negative.")
 
