@@ -268,7 +268,6 @@ jobs:
       - run:
           name: Install torch
           command: |
-            pip install --user --progress-bar=off numpy
             pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
       - run:
           name: Install prototype dependencies
