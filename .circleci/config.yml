@@ -263,7 +263,7 @@ jobs:
   prototype_test:
     docker:
       - image: circleci/python:3.7
-    resource_class: large
+    resource_class: xlarge
     steps:
       - run:
           name: Install torch
@@ -273,10 +273,6 @@ jobs:
       - run:
           name: Install prototype dependencies
           command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
-      - checkout
-      - run:
-          name: Install torchvision
-          command: pip install --user --progress-bar off --no-build-isolation .
       - run:
           name: Download model weights
           background: true
@@ -284,6 +280,10 @@ jobs:
             sudo apt update -qy && sudo apt install -qy parallel
             python scripts/collect_model_urls.py torchvision/prototype/models \
                 | parallel -j4 wget --no-verbose -P ~/.cache/torch/hub/checkpoints {}
+      - checkout
+      - run:
+          name: Install torchvision
+          command: pip install --user --progress-bar off --no-build-isolation .
       - run:
           name: Install test requirements
           command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
