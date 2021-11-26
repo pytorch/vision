@@ -277,9 +277,9 @@ jobs:
           name: Download model weights
           background: true
           command: |
-            sudo apt update -qy && sudo apt install -qy parallel
+            sudo apt update -qy && sudo apt install -qy parallel wget
             python scripts/collect_model_urls.py torchvision/prototype/models \
-                | parallel -j4 wget --no-verbose -P ~/.cache/torch/hub/checkpoints {}
+                | parallel -j8 wget --no-verbose -P ~/.cache/torch/hub/checkpoints {}
       - checkout
       - run:
           name: Install torchvision
@@ -291,7 +291,7 @@ jobs:
           name: Run tests
           environment:
             PYTORCH_TEST_WITH_PROTOTYPE: 1
-          command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
+          command: pytest --junitxml=test-results/junit.xml -vs --durations 20 test/test_prototype_*.py
       - store_test_results:
           path: test-results
 
