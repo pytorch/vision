@@ -8,7 +8,7 @@ from torchvision.prototype import models
 
 run_if_test_with_prototype = run_on_env_var(
     "PYTORCH_TEST_WITH_PROTOTYPE",
-    skip_reason="Prototype code tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run it.",
+    skip_reason="Prototype tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run them.",
 )
 
 
