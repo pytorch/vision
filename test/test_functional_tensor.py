@@ -795,7 +795,6 @@ def test_solarize2(device, dtype, config, channels):
     )
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("config", [{"threshold": threshold} for threshold in [0.0, 0.25, 0.5, 0.75, 1.0, 1.5]])
 def test_solarize_threshold1(config):
     img = torch.rand((3, 12, 23)).to("cpu")
