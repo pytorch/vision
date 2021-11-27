@@ -802,7 +802,6 @@ def test_solarize_threshold1(config):
         F_t.solarize(img, **config)
 
 
-@pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("config", [{"threshold": threshold} for threshold in [0, 64, 128, 192, 255, 260]])
 def test_solarize_threshold2(config):
     img = torch.randint(0, 256, (3, 12, 23)).to("cpu")
