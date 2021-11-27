@@ -804,7 +804,7 @@ def test_solarize_threshold1_bound(config):
 @pytest.mark.parametrize("config", [{"threshold": threshold} for threshold in [1.5]])
 def test_solarize_threshold1_upper_bound(config):
     img = torch.rand((3, 12, 23)).to("cpu")
-    with pytest.raises(TypeError, match="If value is a sequence, it should have either a single value or 3"):
+    with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
         F_t.solarize(img, **config)
 
 
@@ -817,7 +817,7 @@ def test_solarize_threshold2_bound(config):
 @pytest.mark.parametrize("config", [{"threshold": threshold} for threshold in [260]])
 def test_solarize_threshold2_upper_bound(config):
     img = torch.randint(0, 256, (3, 12, 23)).to("cpu")
-    with pytest.raises(TypeError, match="If value is a sequence, it should have either a single value or 3"):
+    with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
         F_t.solarize(img, **config)
 
 
