@@ -1,11 +1,15 @@
 import importlib
-import os
 
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu
+from common_utils import cpu_and_gpu, run_on_env_var
 from torchvision.prototype import models
+
+run_if_test_with_prototype = run_on_env_var(
+    "PYTORCH_TEST_WITH_PROTOTYPE",
+    skip_reason="Prototype tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run them.",
+)
 
 
 def _get_original_model(model_fn):
@@ -48,34 +52,34 @@ def test_get_weight(model_fn, name, weight):
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@run_if_test_with_prototype
 def test_classification_model(model_fn, dev):
     TM.test_classification_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.detection))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@run_if_test_with_prototype
 def test_detection_model(model_fn, dev):
     TM.test_detection_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.quantization))
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@run_if_test_with_prototype
 def test_quantized_classification_model(model_fn):
     TM.test_quantized_classification_model(model_fn)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@run_if_test_with_prototype
 def test_segmentation_model(model_fn, dev):
     TM.test_segmentation_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.video))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@run_if_test_with_prototype
 def test_video_model(model_fn, dev):
     TM.test_video_model(model_fn, dev)
 
@@ -89,7 +93,7 @@ def test_video_model(model_fn, dev):
     + get_models_with_module_names(models.video),
 )
 @pytest.mark.parametrize("dev", cpu_and_gpu())
-@pytest.mark.skipif(os.getenv("PYTORCH_TEST_WITH_PROTOTYPE", "0") == "0", reason="Prototype code tests are disabled")
+@run_if_test_with_prototype
 def test_old_vs_new_factory(model_fn, module_name, dev):
     defaults = {
         "models": {
@@ -118,8 +122,11 @@ def test_old_vs_new_factory(model_fn, module_name, dev):
         x = [x]
 
     # compare with new model builder parameterized in the old fashion way
-    model_old = _build_model(_get_original_model(model_fn), **kwargs).to(device=dev)
-    model_new = _build_model(model_fn, **kwargs).to(device=dev)
+    try:
+        model_old = _build_model(_get_original_model(model_fn), **kwargs).to(device=dev)
+        model_new = _build_model(model_fn, **kwargs).to(device=dev)
+    except ModuleNotFoundError:
+        pytest.skip(f"Model '{model_name}' not available in both modules.")
     torch.testing.assert_close(model_new(x), model_old(x), rtol=0.0, atol=0.0, check_dtype=False)
 
 
