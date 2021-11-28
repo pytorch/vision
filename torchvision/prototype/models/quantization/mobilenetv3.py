@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, List, Optional, Union
 
@@ -14,6 +13,7 @@ from ....models.quantization.mobilenetv3 import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, _mobilenet_v3_conf
 
 
@@ -33,9 +33,9 @@ def _mobilenet_v3_model(
     **kwargs: Any,
 ) -> QuantizableMobileNetV3:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         if "backend" in weights.meta:
-            kwargs["backend"] = weights.meta["backend"]
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "qnnpack")
 
     model = QuantizableMobileNetV3(inverted_residual_setting, last_channel, block=QuantizableInvertedResidual, **kwargs)
@@ -47,7 +47,7 @@ def _mobilenet_v3_model(
         torch.quantization.prepare_qat(model, inplace=True)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     if quantize:
         torch.quantization.convert(model, inplace=True)
@@ -71,6 +71,7 @@ class QuantizedMobileNetV3LargeWeights(Weights):
             "acc@1": 73.004,
             "acc@5": 90.858,
         },
+        default=True,
     )
 
 
@@ -80,17 +81,15 @@ def mobilenet_v3_large(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableMobileNetV3:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedMobileNetV3LargeWeights.ImageNet1K_QNNPACK_RefV1
-                if quantize
-                else MobileNetV3LargeWeights.ImageNet1K_RefV1
-            )
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedMobileNetV3LargeWeights.ImageNet1K_QNNPACK_RefV1
+            if quantize
+            else MobileNetV3LargeWeights.ImageNet1K_RefV1
+        )
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedMobileNetV3LargeWeights.verify(weights)
     else:

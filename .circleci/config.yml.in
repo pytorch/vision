@@ -225,6 +225,8 @@ jobs:
       - checkout
       - run:
           command: |
+            sudo apt-get update -y
+            sudo apt install -y libtinfo5
             curl https://oss-clang-format.s3.us-east-2.amazonaws.com/linux64/clang-format-linux64 -o clang-format
             chmod +x clang-format
             sudo mv clang-format /opt/clang-format
@@ -261,14 +263,23 @@ jobs:
   prototype_test:
     docker:
       - image: circleci/python:3.7
+    resource_class: xlarge
     steps:
       - run:
           name: Install torch
-          command: pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+          command: |
+            pip install --user --progress-bar=off --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
       - run:
           name: Install prototype dependencies
           command: pip install --user --progress-bar=off git+https://github.com/pytorch/data.git
       - checkout
+      - run:
+          name: Download model weights
+          background: true
+          command: |
+            sudo apt update -qy && sudo apt install -qy parallel wget
+            python scripts/collect_model_urls.py torchvision/prototype/models \
+                | parallel -j0 wget --no-verbose -P ~/.cache/torch/hub/checkpoints {}
       - run:
           name: Install torchvision
           command: pip install --user --progress-bar off --no-build-isolation .
@@ -277,6 +288,8 @@ jobs:
           command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
       - run:
           name: Run tests
+          environment:
+            PYTORCH_TEST_WITH_PROTOTYPE: 1
           command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
       - store_test_results:
           path: test-results
@@ -602,7 +615,7 @@ jobs:
             conda env remove -n python${PYTHON_VERSION} || true
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            conda install Pillow>=5.3.0
+            conda install "Pillow>=5.3.0,!=8.3.*"
             conda install -v -y -c pytorch-nightly pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:

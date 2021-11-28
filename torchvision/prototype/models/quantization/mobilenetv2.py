@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional, Union
 
@@ -13,6 +12,7 @@ from ....models.quantization.mobilenetv2 import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..mobilenetv2 import MobileNetV2Weights
 
 
@@ -38,6 +38,7 @@ class QuantizedMobileNetV2Weights(Weights):
             "acc@1": 71.658,
             "acc@5": 90.150,
         },
+        default=True,
     )
 
 
@@ -47,26 +48,22 @@ def mobilenet_v2(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableMobileNetV2:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedMobileNetV2Weights.ImageNet1K_QNNPACK_RefV1
-                if quantize
-                else MobileNetV2Weights.ImageNet1K_RefV1
-            )
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedMobileNetV2Weights.ImageNet1K_QNNPACK_RefV1 if quantize else MobileNetV2Weights.ImageNet1K_RefV1
+        )
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedMobileNetV2Weights.verify(weights)
     else:
         weights = MobileNetV2Weights.verify(weights)
 
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         if "backend" in weights.meta:
-            kwargs["backend"] = weights.meta["backend"]
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "qnnpack")
 
     model = QuantizableMobileNetV2(block=QuantizableInvertedResidual, **kwargs)
@@ -75,6 +72,6 @@ def mobilenet_v2(
         quantize_model(model, backend)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
