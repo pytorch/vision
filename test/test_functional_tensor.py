@@ -821,6 +821,18 @@ def test_autocontrast(device, dtype, channels):
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("dtype", (None, torch.float32, torch.float64))
+@pytest.mark.parametrize("channels", [1, 3])
+def test_autocontrast_equal_minmax(device, dtype, channels):
+    a = _create_data_batch(32, 32, num_samples=1, channels=channels, device=device)
+    a = a / 2.0 + 0.3
+    assert (F.autocontrast(a)[0] == F.autocontrast(a[0])).all()
+
+    a[0, 0] = 0.7
+    assert (F.autocontrast(a)[0] == F.autocontrast(a[0])).all()
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("channels", [1, 3])
 def test_equalize(device, channels):
     torch.use_deterministic_algorithms(False)
