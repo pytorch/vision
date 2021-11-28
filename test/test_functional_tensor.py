@@ -794,11 +794,11 @@ def test_solarize2(device, dtype, config, channels):
         agg_method="max",
     )
 
-
-@pytest.mark.parametrize("config", [{"threshold": threshold} for threshold in [0.0, 0.25, 0.5, 0.75, 1.0,]])
-def test_solarize_threshold1_bound(config):
-    img = torch.rand((3, 12, 23)).to("cpu")
-    F_t.solarize(img, **config)
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("threshold", [0.0, 0.25, 0.5, 0.75, 1.0,])
+def test_solarize_threshold1_bound(threshold, device):
+    img = torch.rand((3, 12, 23)).to(device)
+    F_t.solarize(img, threshold)
 
 
 @pytest.mark.parametrize("config", [{"threshold": threshold} for threshold in [1.5]])
