@@ -941,12 +941,12 @@ def autocontrast(img: Tensor) -> Tensor:
     bound = 1.0 if img.is_floating_point() else 255.0
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
 
-    minimum = img.amin(dim=(-2, -1), keepdim=True).to(dtype)
-    maximum = img.amax(dim=(-2, -1), keepdim=True).to(dtype)
-    eq_idxs = torch.where(minimum == maximum)[0]
-    minimum[eq_idxs] = 0
-    maximum[eq_idxs] = bound
+    minimum = img.amin(dim=(-2, -1), keepdim=True).to(dtype).clone()
+    maximum = img.amax(dim=(-2, -1), keepdim=True).to(dtype).clone()
     scale = bound / (maximum - minimum)
+    eq_idxs = torch.isfinite(scale).logical_not()
+    minimum[eq_idxs] = 0
+    scale[eq_idxs] = 1
 
     return ((img - minimum) * scale).clamp(0, bound).to(img.dtype)
 

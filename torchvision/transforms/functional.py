@@ -961,11 +961,16 @@ def _get_inverse_affine_matrix_tensor(
             if device is None:
                 device = element.device
 
-    center = center.to(device=device) if isinstance(center, Tensor) else torch.tensor(center, device=device)
-    angle = angle.to(device=device) if isinstance(angle, Tensor) else torch.tensor(angle, device=device)
-    translate = translate.to(device=device) if isinstance(translate, Tensor) else torch.tensor(translate, device=device)
-    scale = scale.to(device=device) if isinstance(scale, Tensor) else torch.tensor(scale, device=device)
-    shear = shear.to(device=device) if isinstance(shear, Tensor) else torch.tensor(shear, device=device)
+    center = center.to(device=device).flatten() if isinstance(center, Tensor) \
+        else torch.tensor(center, device=device).flatten()
+    angle = angle.to(device=device).flatten() if isinstance(angle, Tensor) \
+        else torch.tensor(angle, device=device).flatten()
+    translate = translate.to(device=device).flatten() if isinstance(translate, Tensor) \
+        else torch.tensor(translate, device=device).flatten()
+    scale = scale.to(device=device).flatten() if isinstance(scale, Tensor) \
+        else torch.tensor(scale, device=device).flatten()
+    shear = shear.to(device=device).flatten() if isinstance(shear, Tensor) \
+        else torch.tensor(shear, device=device).flatten()
 
     rot = angle * math.pi / 180
     sx = shear[0] * math.pi / 180
@@ -983,18 +988,15 @@ def _get_inverse_affine_matrix_tensor(
     # Inverted rotation matrix with scale and shear
     # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
     zero = torch.zeros(1, device=device)
-    matrix = torch.cat([d, -b, zero, -c, a, zero])
-    matrix = [x / scale for x in matrix]
+    matrix = torch.cat([d, -b, zero, -c, a, zero]) / scale
 
     # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
-    matrix[2] += matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
-    matrix[5] += matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
-
     # Apply center translation: C * RSS^-1 * C^-1 * T^-1
-    matrix[2] += cx
-    matrix[5] += cy
+    new_matrix = matrix.clone()
+    new_matrix[2] = matrix[2] + cx + matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
+    new_matrix[5] = matrix[5] + cy + matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
 
-    return matrix
+    return new_matrix
 
 
 def rotate(
@@ -1078,10 +1080,10 @@ def rotate(
 
 def affine(
     img: Tensor,
-    angle: Union[float, Tensor],
-    translate: Union[List[int], Tensor],
-    scale: Union[float, Tensor],
-    shear: Union[List[float], Tensor],
+    angle: Union[float, Tensor] = 0.0,
+    translate: Union[List[int], Tensor] = [0.0, 0.0],
+    scale: Union[float, Tensor] = 1.0,
+    shear: Union[List[float], Tensor] = [0.0, 0.0],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
@@ -1181,7 +1183,7 @@ def affine(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
-    translate_f = [1.0 * t for t in translate]
+    translate_f = translate if isinstance(translate, Tensor) else [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix_tensor([0.0, 0.0], angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
