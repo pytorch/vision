@@ -128,7 +128,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 
     if left < 0 or top < 0 or right > w or bottom > h:
         padding_ltrb = [max(-left, 0), max(-top, 0), max(right - w, 0), max(bottom - h, 0)]
-        return pad(img[..., max(top, 0) : bottom, max(left, 0) : right], padding_ltrb, fill=0)
+        return pad(img[..., max(top, 0): bottom, max(left, 0): right], padding_ltrb, fill=0)
     return img[..., top:bottom, left:right]
 
 
@@ -223,7 +223,7 @@ def adjust_saturation(img: Tensor, saturation_factor: Union[float, Tensor]) -> T
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
-def adjust_gamma(img: Tensor, gamma: Union[float, Tensor], gain: float = 1) -> Tensor:
+def adjust_gamma(img: Tensor, gamma: Union[float, Tensor], gain: Union[float, Tensor] = 1) -> Tensor:
     if not isinstance(img, torch.Tensor):
         raise TypeError("Input img should be a Tensor.")
 
@@ -383,7 +383,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     if padding[0] < 0 or padding[1] < 0 or padding[2] < 0 or padding[3] < 0:
         neg_min_padding = [-min(x, 0) for x in padding]
         crop_left, crop_right, crop_top, crop_bottom = neg_min_padding
-        img = img[..., crop_top : img.shape[-2] - crop_bottom, crop_left : img.shape[-1] - crop_right]
+        img = img[..., crop_top: img.shape[-2] - crop_bottom, crop_left: img.shape[-1] - crop_right]
         padding = [max(x, 0) for x in padding]
 
     in_sizes = img.size()
@@ -691,7 +691,10 @@ def _gen_affine_grid(
 
 
 def affine(
-    img: Tensor, matrix: Union[List[float], torch.Tensor], interpolation: str = "nearest", fill: Optional[List[float]] = None
+    img: Tensor,
+    matrix: Union[List[float], torch.Tensor],
+    interpolation: str = "nearest",
+    fill: Optional[List[float]] = None,
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
@@ -860,7 +863,7 @@ def invert(img: Tensor) -> Tensor:
     return bound - img
 
 
-def posterize(img: Tensor, bits: int) -> Tensor:
+def posterize(img: Tensor, bits: Union[int, Tensor]) -> Tensor:
 
     _assert_image_tensor(img)
 
@@ -874,7 +877,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     return img & mask
 
 
-def solarize(img: Tensor, threshold: Union[float, torch.Tensor]) -> Tensor:
+def solarize(img: Tensor, threshold: Union[float, Tensor]) -> Tensor:
 
     _assert_image_tensor(img)
 
@@ -910,7 +913,7 @@ def _blurred_degenerate_image(img: Tensor) -> Tensor:
     return result
 
 
-def adjust_sharpness(img: Tensor, sharpness_factor: Union[float, torch.Tensor]) -> Tensor:
+def adjust_sharpness(img: Tensor, sharpness_factor: Union[float, Tensor]) -> Tensor:
     if sharpness_factor < 0:
         raise ValueError(f"sharpness_factor ({sharpness_factor}) is not non-negative.")
 
@@ -930,18 +933,20 @@ def autocontrast(img: Tensor) -> Tensor:
 
     if img.ndim < 3:
         raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
+    elif img.ndim == 3:
+        img = img.unsqueeze(0)
 
     _assert_channels(img, [1, 3])
 
     bound = 1.0 if img.is_floating_point() else 255.0
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
 
-    minimum = img.amin(dim=(-2, -1), keepdim=True).to(dtype)
-    maximum = img.amax(dim=(-2, -1), keepdim=True).to(dtype)
-    eq_idxs = torch.where(minimum == maximum)[0]
-    minimum[eq_idxs] = 0
-    maximum[eq_idxs] = bound
+    minimum = img.amin(dim=(-2, -1), keepdim=True).to(dtype).clone()
+    maximum = img.amax(dim=(-2, -1), keepdim=True).to(dtype).clone()
     scale = bound / (maximum - minimum)
+    eq_idxs = torch.isfinite(scale).logical_not()
+    minimum[eq_idxs] = 0
+    scale[eq_idxs] = 1
 
     return ((img - minimum) * scale).clamp(0, bound).to(img.dtype)
 
