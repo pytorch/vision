@@ -7,7 +7,6 @@ import os
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 
-import torch
 from torch.utils.data import IterDataPipe
 from torchvision.prototype.utils._internal import FrozenBunch, make_repr
 from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str

@@ -34,7 +34,7 @@ class AVKeyframeReader(IterDataPipe[Dict[str, Any]]):
                         })
 
 class AVRandomFrameReader(IterDataPipe[Dict[str, Any]]):
-    def __init__(self, video_dp: IterDataPipe[Dict[str, Any]], num_samples=1, transform=None) -> None:
+    def __init__(self, video_dp: IterDataPipe[Dict[str, Any]], num_samples=1) -> None:
         """TorchData Iterdatapype that takes in video datapipe
         and yields `num_samples` random frames from a video.
 
