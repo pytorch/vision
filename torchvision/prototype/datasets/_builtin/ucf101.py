@@ -24,7 +24,7 @@ from torchvision.prototype.datasets.utils import (
 )
 
 
-class ucf101(Dataset):
+class UCF101(Dataset):
     """This is a base datapipe that returns a file handler of the video.
     What we want to do is implement either several decoder options or additional
     datapipe extensions to make this work.
