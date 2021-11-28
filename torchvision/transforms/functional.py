@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Any, Optional, Union
 
 import numpy as np
 import torch
@@ -772,14 +772,14 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
     return first_five + second_five
 
 
-def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
+def adjust_brightness(img: Tensor, brightness_factor: Union[float, Tensor]) -> Tensor:
     """Adjust brightness of an image.
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
-        brightness_factor (float):  How much to adjust the brightness. Can be
+        brightness_factor (float or Tensor):  How much to adjust the brightness. Can be
             any non negative number. 0 gives a black image, 1 gives the
             original image while 2 increases the brightness by a factor of 2.
 
@@ -792,14 +792,14 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     return F_t.adjust_brightness(img, brightness_factor)
 
 
-def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
+def adjust_contrast(img: Tensor, contrast_factor: Union[float, Tensor]) -> Tensor:
     """Adjust contrast of an image.
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
-        contrast_factor (float): How much to adjust the contrast. Can be any
+        contrast_factor (float or Tensor): How much to adjust the contrast. Can be any
             non negative number. 0 gives a solid gray image, 1 gives the
             original image while 2 increases the contrast by a factor of 2.
 
@@ -812,14 +812,14 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     return F_t.adjust_contrast(img, contrast_factor)
 
 
-def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
+def adjust_saturation(img: Tensor, saturation_factor: Union[float, Tensor]) -> Tensor:
     """Adjust color saturation of an image.
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
-        saturation_factor (float):  How much to adjust the saturation. 0 will
+        saturation_factor (float or Tensor):  How much to adjust the saturation. 0 will
             give a black and white image, 1 will give the original image while
             2 will enhance the saturation by a factor of 2.
 
@@ -832,7 +832,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     return F_t.adjust_saturation(img, saturation_factor)
 
 
-def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
+def adjust_hue(img: Tensor, hue_factor: Union[float, Tensor]) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -851,7 +851,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
             If img is PIL Image mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
-        hue_factor (float):  How much to shift the hue channel. Should be in
+        hue_factor (float or Tensor):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
             0 means no shift. Therefore, both -0.5 and 0.5 will give an image
@@ -866,7 +866,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     return F_t.adjust_hue(img, hue_factor)
 
 
-def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
+def adjust_gamma(img: Tensor, gamma: Union[float, Tensor], gain: Union[float, Tensor] = 1) -> Tensor:
     r"""Perform gamma correction on an image.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
@@ -884,10 +884,10 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
             If img is PIL Image, modes with transparency (alpha channel) are not supported.
-        gamma (float): Non negative real number, same as :math:`\gamma` in the equation.
+        gamma (float or Tensor): Non negative real number, same as :math:`\gamma` in the equation.
             gamma larger than 1 make the shadows darker,
             while gamma smaller than 1 make dark regions lighter.
-        gain (float): The constant multiplier.
+        gain (float or Tensor): The constant multiplier.
     Returns:
         PIL Image or Tensor: Gamma correction adjusted image.
     """
@@ -948,12 +948,61 @@ def _get_inverse_affine_matrix(
     return matrix
 
 
+def _get_inverse_affine_matrix_tensor(
+    center: Union[List[float], Tensor],
+    angle: Union[float, Tensor],
+    translate: Union[List[float], Tensor],
+    scale: Union[float, Tensor],
+    shear: Union[List[float], Tensor],
+) -> Tensor:
+    device: Optional[torch.device] = None
+    for element in [center, angle, translate, scale, shear]:
+        if isinstance(element, Tensor):
+            if device is None:
+                device = element.device
+
+    center = center.to(device=device) if isinstance(center, Tensor) else torch.tensor(center, device=device)
+    angle = angle.to(device=device) if isinstance(angle, Tensor) else torch.tensor(angle, device=device)
+    translate = translate.to(device=device) if isinstance(translate, Tensor) else torch.tensor(translate, device=device)
+    scale = scale.to(device=device) if isinstance(scale, Tensor) else torch.tensor(scale, device=device)
+    shear = shear.to(device=device) if isinstance(shear, Tensor) else torch.tensor(shear, device=device)
+
+    rot = angle * math.pi / 180
+    sx = shear[0] * math.pi / 180
+    sy = shear[1] * math.pi / 180
+
+    cx, cy = center
+    tx, ty = translate
+
+    # RSS without scaling
+    a = torch.cos(rot - sy) / torch.cos(sy)
+    b = -torch.cos(rot - sy) * torch.tan(sx) / torch.cos(sy) - torch.sin(rot)
+    c = torch.sin(rot - sy) / torch.cos(sy)
+    d = -torch.sin(rot - sy) * torch.tan(sx) / torch.cos(sy) + torch.cos(rot)
+
+    # Inverted rotation matrix with scale and shear
+    # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
+    zero = torch.zeros(1, device=device)
+    matrix = torch.cat([d, -b, zero, -c, a, zero])
+    matrix = [x / scale for x in matrix]
+
+    # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
+    matrix[2] += matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
+    matrix[5] += matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
+
+    # Apply center translation: C * RSS^-1 * C^-1 * T^-1
+    matrix[2] += cx
+    matrix[5] += cy
+
+    return matrix
+
+
 def rotate(
     img: Tensor,
-    angle: float,
+    angle: Union[float, Tensor],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    center: Optional[List[int]] = None,
+    center: Optional[Union[List[int], Tensor]] = None,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
 ) -> Tensor:
@@ -963,7 +1012,7 @@ def rotate(
 
     Args:
         img (PIL Image or Tensor): image to be rotated.
-        angle (number): rotation angle value in degrees, counter-clockwise.
+        angle (number or Tensor): rotation angle value in degrees, counter-clockwise.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -972,7 +1021,7 @@ def rotate(
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
+        center (sequence or Tensor, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
@@ -1001,10 +1050,10 @@ def rotate(
         )
         interpolation = _interpolation_modes_from_int(interpolation)
 
-    if not isinstance(angle, (int, float)):
-        raise TypeError("Argument angle should be int or float")
+    if not isinstance(angle, (int, float, Tensor)):
+        raise TypeError("Argument angle should be int, float or Tensor")
 
-    if center is not None and not isinstance(center, (list, tuple)):
+    if center is not None and not isinstance(center, (list, tuple, Tensor)):
         raise TypeError("Argument center should be a sequence")
 
     if not isinstance(interpolation, InterpolationMode):
@@ -1014,24 +1063,25 @@ def rotate(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.rotate(img, angle=angle, interpolation=pil_interpolation, expand=expand, center=center, fill=fill)
 
-    center_f = [0.0, 0.0]
+    center_f = torch.zeros(2, device=img.device, dtype=torch.float)
     if center is not None:
         img_size = get_image_size(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+        center_f[0] = 1.0 * (center[0] - img_size[0] * 0.5)
+        center_f[1] = 1.0 * (center[1] - img_size[1] * 0.5)
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
-    matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    matrix = _get_inverse_affine_matrix_tensor(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
 
 def affine(
     img: Tensor,
-    angle: float,
-    translate: List[int],
-    scale: float,
-    shear: List[float],
+    angle: Union[float, Tensor],
+    translate: Union[List[int], Tensor],
+    scale: Union[float, Tensor],
+    shear: Union[List[float], Tensor],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
@@ -1043,10 +1093,10 @@ def affine(
 
     Args:
         img (PIL Image or Tensor): image to transform.
-        angle (number): rotation angle in degrees between -180 and 180, clockwise direction.
-        translate (sequence of integers): horizontal and vertical translations (post-rotation translation)
-        scale (float): overall scale
-        shear (float or sequence): shear angle value in degrees between -180 to 180, clockwise direction.
+        angle (number or Tensor): rotation angle in degrees between -180 and 180, clockwise direction.
+        translate (sequence of integers or Tensor): horizontal and vertical translations (post-rotation translation)
+        scale (float or Tensor): overall scale
+        shear (float or sequence or Tensor): shear angle value in degrees between -180 to 180, clockwise direction.
             If a sequence is specified, the first value corresponds to a shear parallel to the x axis, while
             the second value corresponds to a shear parallel to the y axis.
         interpolation (InterpolationMode): Desired interpolation enum defined by
@@ -1085,11 +1135,11 @@ def affine(
         warnings.warn("Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead")
         fill = fillcolor
 
-    if not isinstance(angle, (int, float)):
-        raise TypeError("Argument angle should be int or float")
+    if not isinstance(angle, (int, float, Tensor)):
+        raise TypeError("Argument angle should be int, float or Tensor")
 
-    if not isinstance(translate, (list, tuple)):
-        raise TypeError("Argument translate should be a sequence")
+    if not isinstance(translate, (list, tuple, Tensor)):
+        raise TypeError("Argument translate should be a sequence or Tensor")
 
     if len(translate) != 2:
         raise ValueError("Argument translate should be a sequence of length 2")
@@ -1097,7 +1147,7 @@ def affine(
     if scale <= 0.0:
         raise ValueError("Argument scale should be positive")
 
-    if not isinstance(shear, (numbers.Number, (list, tuple))):
+    if not isinstance(shear, (numbers.Number, (list, tuple, Tensor))):
         raise TypeError("Shear should be either a single value or a sequence of two values")
 
     if not isinstance(interpolation, InterpolationMode):
@@ -1127,12 +1177,12 @@ def affine(
         # it is visually better to estimate the center without 0.5 offset
         # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
         center = [img_size[0] * 0.5, img_size[1] * 0.5]
-        matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
+        matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear).tolist()
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
     translate_f = [1.0 * t for t in translate]
-    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
+    matrix = _get_inverse_affine_matrix_tensor([0.0, 0.0], angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
 
@@ -1204,7 +1254,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     if not inplace:
         img = img.clone()
 
-    img[..., i : i + h, j : j + w] = v
+    img[..., i: i + h, j: j + w] = v
     return img
 
 
@@ -1291,7 +1341,7 @@ def invert(img: Tensor) -> Tensor:
     return F_t.invert(img)
 
 
-def posterize(img: Tensor, bits: int) -> Tensor:
+def posterize(img: Tensor, bits: Union[int, Tensor]) -> Tensor:
     """Posterize an image by reducing the number of bits for each color channel.
 
     Args:
@@ -1300,7 +1350,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
             it is expected to be in [..., 1 or 3, H, W] format, where ... means
             it can have an arbitrary number of leading dimensions.
             If img is PIL Image, it is expected to be in mode "L" or "RGB".
-        bits (int): The number of bits to keep for each channel (0-8).
+        bits (int or Tensor): The number of bits to keep for each channel (0-8).
     Returns:
         PIL Image or Tensor: Posterized image.
     """
@@ -1313,7 +1363,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     return F_t.posterize(img, bits)
 
 
-def solarize(img: Tensor, threshold: float) -> Tensor:
+def solarize(img: Tensor, threshold: Union[float, Tensor]) -> Tensor:
     """Solarize an RGB/grayscale image by inverting all pixel values above a threshold.
 
     Args:
@@ -1321,7 +1371,7 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
             If img is PIL Image, it is expected to be in mode "L" or "RGB".
-        threshold (float): All pixels equal or above this value are inverted.
+        threshold (float or Tensor): All pixels equal or above this value are inverted.
     Returns:
         PIL Image or Tensor: Solarized image.
     """
@@ -1331,14 +1381,14 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
     return F_t.solarize(img, threshold)
 
 
-def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
+def adjust_sharpness(img: Tensor, sharpness_factor: Union[float, Tensor]) -> Tensor:
     """Adjust the sharpness of an image.
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
-        sharpness_factor (float):  How much to adjust the sharpness. Can be
+        sharpness_factor (float or Tensor):  How much to adjust the sharpness. Can be
             any non negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
 
