@@ -25,9 +25,11 @@ from torchvision.prototype.datasets.utils import (
 
 
 class UCF101(Dataset):
-    """This is a base datapipe that returns a file handler of the video.
-    What we want to do is implement either several decoder options or additional
-    datapipe extensions to make this work.
+    """
+    `UCF101 <https://www.crcv.ucf.edu/data/UCF101.php>`_ dataset.
+
+    UCF101 is an action recognition video dataset, containing 101 classes
+    of various human actions.
     """
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
