@@ -573,6 +573,15 @@ def test_randomness(fn, trans, kwargs, seed, p):
     trans(**kwargs).__repr__()
 
 
+def test_autocontrast_equal_minmax():
+    img_tensor = torch.tensor([[[10]], [[128]], [[245]]], dtype=torch.uint8).expand(3, 32, 32)
+    img_pil = F.to_pil_image(img_tensor)
+
+    img_tensor = F.autocontrast(img_tensor)
+    img_pil = F.autocontrast(img_pil)
+    torch.testing.assert_close(img_tensor, F.pil_to_tensor(img_pil))
+
+
 class TestToPil:
     def _get_1_channel_tensor_various_types():
         img_data_float = torch.Tensor(1, 4, 4).uniform_()
