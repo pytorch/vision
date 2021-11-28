@@ -83,7 +83,7 @@ class UCF101(Dataset):
         annotations_dp = ZipArchiveReader(annotations)
         annotations_dp = Filter(annotations_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt"))
         annotations_dp = CSVParser(annotations_dp, delimiter=" ")
-        # COMMENT OUT FOR TESTING
+        
         annotations_dp = Shuffler(annotations_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         files_dp = RarArchiveReader(files)
