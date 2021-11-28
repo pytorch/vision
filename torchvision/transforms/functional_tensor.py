@@ -692,7 +692,7 @@ def _gen_affine_grid(
 
 def affine(
     img: Tensor,
-    matrix: Union[List[float], torch.Tensor],
+    matrix: Union[List[float], Tensor],
     interpolation: str = "bilinear",
     fill: Optional[List[float]] = None,
 ) -> Tensor:
