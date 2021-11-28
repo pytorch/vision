@@ -128,7 +128,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 
     if left < 0 or top < 0 or right > w or bottom > h:
         padding_ltrb = [max(-left, 0), max(-top, 0), max(right - w, 0), max(bottom - h, 0)]
-        return pad(img[..., max(top, 0): bottom, max(left, 0): right], padding_ltrb, fill=0)
+        return pad(img[..., max(top, 0) : bottom, max(left, 0) : right], padding_ltrb, fill=0)
     return img[..., top:bottom, left:right]
 
 
@@ -383,7 +383,7 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
     if padding[0] < 0 or padding[1] < 0 or padding[2] < 0 or padding[3] < 0:
         neg_min_padding = [-min(x, 0) for x in padding]
         crop_left, crop_right, crop_top, crop_bottom = neg_min_padding
-        img = img[..., crop_top: img.shape[-2] - crop_bottom, crop_left: img.shape[-1] - crop_right]
+        img = img[..., crop_top : img.shape[-2] - crop_bottom, crop_left : img.shape[-1] - crop_right]
         padding = [max(x, 0) for x in padding]
 
     in_sizes = img.size()
@@ -699,8 +699,11 @@ def affine(
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
 
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    theta = matrix.to(dtype=dtype, device=img.device).reshape(1, 2, 3) if isinstance(matrix, Tensor) \
+    theta = (
+        matrix.to(dtype=dtype, device=img.device).reshape(1, 2, 3)
+        if isinstance(matrix, Tensor)
         else torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
+    )
     shape = img.shape
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])
@@ -745,8 +748,11 @@ def rotate(
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    theta = matrix.to(dtype=dtype, device=img.device).reshape(1, 2, 3) if isinstance(matrix, Tensor) \
+    theta = (
+        matrix.to(dtype=dtype, device=img.device).reshape(1, 2, 3)
+        if isinstance(matrix, Tensor)
         else torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
+    )
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
 

@@ -961,16 +961,25 @@ def _get_inverse_affine_matrix_tensor(
             if device is None:
                 device = element.device
 
-    center = center.to(device=device).flatten() if isinstance(center, Tensor) \
+    center = (
+        center.to(device=device).flatten()
+        if isinstance(center, Tensor)
         else torch.tensor(center, device=device).flatten()
-    angle = angle.to(device=device).flatten() if isinstance(angle, Tensor) \
-        else torch.tensor(angle, device=device).flatten()
-    translate = translate.to(device=device).flatten() if isinstance(translate, Tensor) \
+    )
+    angle = (
+        angle.to(device=device).flatten() if isinstance(angle, Tensor) else torch.tensor(angle, device=device).flatten()
+    )
+    translate = (
+        translate.to(device=device).flatten()
+        if isinstance(translate, Tensor)
         else torch.tensor(translate, device=device).flatten()
-    scale = scale.to(device=device).flatten() if isinstance(scale, Tensor) \
-        else torch.tensor(scale, device=device).flatten()
-    shear = shear.to(device=device).flatten() if isinstance(shear, Tensor) \
-        else torch.tensor(shear, device=device).flatten()
+    )
+    scale = (
+        scale.to(device=device).flatten() if isinstance(scale, Tensor) else torch.tensor(scale, device=device).flatten()
+    )
+    shear = (
+        shear.to(device=device).flatten() if isinstance(shear, Tensor) else torch.tensor(shear, device=device).flatten()
+    )
 
     rot = angle * math.pi / 180
     sx = shear[0] * math.pi / 180
@@ -1256,7 +1265,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     if not inplace:
         img = img.clone()
 
-    img[..., i: i + h, j: j + w] = v
+    img[..., i : i + h, j : j + w] = v
     return img
 
 
