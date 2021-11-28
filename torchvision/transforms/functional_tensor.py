@@ -739,7 +739,7 @@ def _compute_output_size(matrix: Union[List[float], Tensor], w: int, h: int) -> 
 
 def rotate(
     img: Tensor,
-    matrix: Union[List[float], torch.Tensor],
+    matrix: Union[List[float], Tensor],
     interpolation: str = "bilinear",
     expand: bool = False,
     fill: Optional[List[float]] = None,
