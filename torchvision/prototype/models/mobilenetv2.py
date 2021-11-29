@@ -5,16 +5,16 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mobilenetv2 import MobileNetV2
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
-__all__ = ["MobileNetV2", "MobileNetV2Weights", "mobilenet_v2"]
+__all__ = ["MobileNetV2", "MobileNet_V2_Weights", "mobilenet_v2"]
 
 
-class MobileNetV2Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class MobileNet_V2_Weights(WeightsEnum):
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -29,12 +29,12 @@ class MobileNetV2Weights(Weights):
     )
 
 
-def mobilenet_v2(weights: Optional[MobileNetV2Weights] = None, progress: bool = True, **kwargs: Any) -> MobileNetV2:
+def mobilenet_v2(weights: Optional[MobileNet_V2_Weights] = None, progress: bool = True, **kwargs: Any) -> MobileNetV2:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV2Weights.ImageNet1K_RefV1)
-    weights = MobileNetV2Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNet_V2_Weights.ImageNet1K_V1)
+    weights = MobileNet_V2_Weights.verify(weights)
 
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
