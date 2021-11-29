@@ -74,8 +74,8 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
             "acc@1": 74.046,
             "acc@5": 91.716,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_Y_800MF_Weights(WeightsEnum):
@@ -88,8 +88,8 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
             "acc@1": 76.420,
             "acc@5": 93.136,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_Y_1_6GF_Weights(WeightsEnum):
@@ -102,8 +102,8 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
             "acc@1": 77.950,
             "acc@5": 93.966,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_Y_3_2GF_Weights(WeightsEnum):
@@ -116,8 +116,8 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
             "acc@1": 78.948,
             "acc@5": 94.576,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_Y_8GF_Weights(WeightsEnum):
@@ -130,8 +130,8 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
             "acc@1": 80.032,
             "acc@5": 95.048,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_Y_16GF_Weights(WeightsEnum):
@@ -144,8 +144,8 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "acc@1": 80.424,
             "acc@5": 95.240,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_Y_32GF_Weights(WeightsEnum):
@@ -158,8 +158,8 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "acc@1": 80.878,
             "acc@5": 95.340,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_X_400MF_Weights(WeightsEnum):
@@ -172,8 +172,8 @@ class RegNet_X_400MF_Weights(WeightsEnum):
             "acc@1": 72.834,
             "acc@5": 90.950,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_X_800MF_Weights(WeightsEnum):
@@ -186,8 +186,8 @@ class RegNet_X_800MF_Weights(WeightsEnum):
             "acc@1": 75.212,
             "acc@5": 92.348,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_X_1_6GF_Weights(WeightsEnum):
@@ -200,8 +200,8 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
             "acc@1": 77.040,
             "acc@5": 93.440,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_X_3_2GF_Weights(WeightsEnum):
@@ -214,8 +214,8 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
             "acc@1": 78.364,
             "acc@5": 93.992,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_X_8GF_Weights(WeightsEnum):
@@ -228,8 +228,8 @@ class RegNet_X_8GF_Weights(WeightsEnum):
             "acc@1": 79.344,
             "acc@5": 94.686,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_X_16GF_Weights(WeightsEnum):
@@ -242,8 +242,8 @@ class RegNet_X_16GF_Weights(WeightsEnum):
             "acc@1": 80.058,
             "acc@5": 94.944,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class RegNet_X_32GF_Weights(WeightsEnum):
@@ -256,8 +256,8 @@ class RegNet_X_32GF_Weights(WeightsEnum):
             "acc@1": 80.622,
             "acc@5": 95.248,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def regnet_y_400mf(weights: Optional[RegNet_Y_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:

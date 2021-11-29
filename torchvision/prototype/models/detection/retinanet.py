@@ -34,8 +34,8 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
             "map": 36.4,
         },
-        default=True,
     )
+    default = Coco_V1
 
 
 def retinanet_resnet50_fpn(

@@ -30,7 +30,6 @@ class Weights:
     url: str
     transforms: Callable
     meta: Dict[str, Any]
-    default: bool
 
 
 class WeightsEnum(Enum):
@@ -59,9 +58,14 @@ class WeightsEnum(Enum):
 
     @classmethod
     def from_str(cls, value: str) -> "WeightsEnum":
-        for v in cls:
-            if v._name_ == value or (value == "default" and v.default):
-                return v
+        if value == "default":
+            default_value = getattr(cls, "default", None)
+            if default_value is not None:
+                return default_value
+        else:
+            for v in cls:
+                if v._name_ == value:
+                    return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
     def get_state_dict(self, progress: bool) -> OrderedDict:

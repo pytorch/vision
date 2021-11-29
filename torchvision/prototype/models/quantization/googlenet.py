@@ -38,8 +38,8 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
             "acc@1": 69.826,
             "acc@5": 89.404,
         },
-        default=True,
     )
+    default = ImageNet1K_FBGEMM_V1
 
 
 def googlenet(

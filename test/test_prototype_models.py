@@ -24,6 +24,19 @@ def _get_parent_module(model_fn):
     return module
 
 
+def _get_model_weights(model_fn):
+    module = _get_parent_module(model_fn)
+    weights_name = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
+    try:
+        return next(
+            v
+            for k, v in module.__dict__.items()
+            if k.endswith(weights_name) and k.replace(weights_name, "").lower() == model_fn.__name__
+        )
+    except StopIteration:
+        return None
+
+
 def _build_model(fn, **kwargs):
     try:
         model = fn(**kwargs)
@@ -65,10 +78,9 @@ def test_get_weight(model_fn, name, weight):
     + TM.get_models_from_module(models.video),
 )
 def test_naming_conventions(model_fn):
-    model_name = model_fn.__name__
-    module = _get_parent_module(model_fn)
-    weights_name = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
-    assert model_name in set(x.replace(weights_name, "").lower() for x in module.__dict__ if x.endswith(weights_name))
+    weights_enum = _get_model_weights(model_fn)
+    assert weights_enum is not None
+    assert len(weights_enum) == 0 or hasattr(weights_enum, "default")
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
