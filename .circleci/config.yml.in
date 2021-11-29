@@ -351,10 +351,11 @@ jobs:
       - pip_install:
           args: scipy
           descr: Install optional dependencies
+      - run:
+          name: Enable prototype tests
+          command: echo 'export PYTORCH_TEST_WITH_PROTOTYPE=1' >> $BASH_ENV
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
-          environment:
-            PYTORCH_TEST_WITH_PROTOTYPE: 1
 
   binary_linux_wheel:
     <<: *binary_common
