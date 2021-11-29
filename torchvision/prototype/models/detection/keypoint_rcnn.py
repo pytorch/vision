@@ -9,7 +9,7 @@ from ....models.detection.keypoint_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..resnet import ResNet50Weights, resnet50
@@ -25,8 +25,8 @@ __all__ = [
 _COMMON_META = {"categories": _COCO_PERSON_CATEGORIES, "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES}
 
 
-class KeypointRCNNResNet50FPNWeights(Weights):
-    Coco_RefV1_Legacy = WeightEntry(
+class KeypointRCNNResNet50FPNWeights(WeightsEnum):
+    Coco_RefV1_Legacy = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth",
         transforms=CocoEval,
         meta={
@@ -37,7 +37,7 @@ class KeypointRCNNResNet50FPNWeights(Weights):
         },
         default=False,
     )
-    Coco_RefV1 = WeightEntry(
+    Coco_RefV1 = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth",
         transforms=CocoEval,
         meta={

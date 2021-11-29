@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mobilenetv3 import MobileNetV3, _mobilenet_v3_conf, InvertedResidualConfig
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -22,7 +22,7 @@ __all__ = [
 def _mobilenet_v3(
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> MobileNetV3:
@@ -44,8 +44,8 @@ _COMMON_META = {
 }
 
 
-class MobileNetV3LargeWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class MobileNetV3LargeWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -56,7 +56,7 @@ class MobileNetV3LargeWeights(Weights):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = WeightEntry(
+    ImageNet1K_RefV2 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -69,8 +69,8 @@ class MobileNetV3LargeWeights(Weights):
     )
 
 
-class MobileNetV3SmallWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class MobileNetV3SmallWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

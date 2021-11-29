@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.inception import Inception3, InceptionOutputs, _InceptionOutputs
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -13,8 +13,8 @@ from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_p
 __all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "InceptionV3Weights", "inception_v3"]
 
 
-class InceptionV3Weights(Weights):
-    ImageNet1K_TFV1 = WeightEntry(
+class InceptionV3Weights(WeightsEnum):
+    ImageNet1K_TFV1 = Weights(
         url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={

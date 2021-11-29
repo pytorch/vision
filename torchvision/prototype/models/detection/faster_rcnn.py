@@ -12,7 +12,7 @@ from ....models.detection.faster_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
@@ -36,8 +36,8 @@ _COMMON_META = {
 }
 
 
-class FasterRCNNResNet50FPNWeights(Weights):
-    Coco_RefV1 = WeightEntry(
+class FasterRCNNResNet50FPNWeights(WeightsEnum):
+    Coco_RefV1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth",
         transforms=CocoEval,
         meta={
@@ -49,8 +49,8 @@ class FasterRCNNResNet50FPNWeights(Weights):
     )
 
 
-class FasterRCNNMobileNetV3LargeFPNWeights(Weights):
-    Coco_RefV1 = WeightEntry(
+class FasterRCNNMobileNetV3LargeFPNWeights(WeightsEnum):
+    Coco_RefV1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth",
         transforms=CocoEval,
         meta={
@@ -62,8 +62,8 @@ class FasterRCNNMobileNetV3LargeFPNWeights(Weights):
     )
 
 
-class FasterRCNNMobileNetV3Large320FPNWeights(Weights):
-    Coco_RefV1 = WeightEntry(
+class FasterRCNNMobileNetV3Large320FPNWeights(WeightsEnum):
+    Coco_RefV1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth",
         transforms=CocoEval,
         meta={

@@ -10,7 +10,7 @@ from ....models.quantization.googlenet import (
     _replace_relu,
     quantize_model,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..googlenet import GoogLeNetWeights
@@ -23,8 +23,8 @@ __all__ = [
 ]
 
 
-class QuantizedGoogLeNetWeights(Weights):
-    ImageNet1K_FBGEMM_TFV1 = WeightEntry(
+class QuantizedGoogLeNetWeights(WeightsEnum):
+    ImageNet1K_FBGEMM_TFV1 = Weights(
         url="https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

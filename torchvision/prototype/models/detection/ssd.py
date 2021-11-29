@@ -10,7 +10,7 @@ from ....models.detection.ssd import (
     DefaultBoxGenerator,
     SSD,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..vgg import VGG16Weights, vgg16
@@ -22,8 +22,8 @@ __all__ = [
 ]
 
 
-class SSD300VGG16Weights(Weights):
-    Coco_RefV1 = WeightEntry(
+class SSD300VGG16Weights(WeightsEnum):
+    Coco_RefV1 = Weights(
         url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
         transforms=CocoEval,
         meta={

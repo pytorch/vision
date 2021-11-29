@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -36,7 +36,7 @@ __all__ = [
 def _resnet(
     block: Type[Union[BasicBlock, Bottleneck]],
     layers: List[int],
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> ResNet:
@@ -54,8 +54,8 @@ def _resnet(
 _COMMON_META = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
 
 
-class ResNet18Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class ResNet18Weights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/resnet18-f37072fd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -68,8 +68,8 @@ class ResNet18Weights(Weights):
     )
 
 
-class ResNet34Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class ResNet34Weights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/resnet34-b627a593.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -82,8 +82,8 @@ class ResNet34Weights(Weights):
     )
 
 
-class ResNet50Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class ResNet50Weights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/resnet50-0676ba61.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -94,7 +94,7 @@ class ResNet50Weights(Weights):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = WeightEntry(
+    ImageNet1K_RefV2 = Weights(
         url="https://download.pytorch.org/models/resnet50-f46c3f97.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -107,8 +107,8 @@ class ResNet50Weights(Weights):
     )
 
 
-class ResNet101Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class ResNet101Weights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/resnet101-63fe2227.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -119,7 +119,7 @@ class ResNet101Weights(Weights):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = WeightEntry(
+    ImageNet1K_RefV2 = Weights(
         url="https://download.pytorch.org/models/resnet101-cd907fc2.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -132,8 +132,8 @@ class ResNet101Weights(Weights):
     )
 
 
-class ResNet152Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class ResNet152Weights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/resnet152-394f9c45.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -144,7 +144,7 @@ class ResNet152Weights(Weights):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = WeightEntry(
+    ImageNet1K_RefV2 = Weights(
         url="https://download.pytorch.org/models/resnet152-f82ba261.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -157,8 +157,8 @@ class ResNet152Weights(Weights):
     )
 
 
-class ResNeXt50_32x4dWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class ResNeXt50_32x4dWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/resnext50_32x4d-7cdf4587.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -169,7 +169,7 @@ class ResNeXt50_32x4dWeights(Weights):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = WeightEntry(
+    ImageNet1K_RefV2 = Weights(
         url="https://download.pytorch.org/models/resnext50_32x4d-1a0047aa.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -182,8 +182,8 @@ class ResNeXt50_32x4dWeights(Weights):
     )
 
 
-class ResNeXt101_32x8dWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class ResNeXt101_32x8dWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/resnext101_32x8d-8ba56ff5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -194,7 +194,7 @@ class ResNeXt101_32x8dWeights(Weights):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = WeightEntry(
+    ImageNet1K_RefV2 = Weights(
         url="https://download.pytorch.org/models/resnext101_32x8d-110c445d.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -207,8 +207,8 @@ class ResNeXt101_32x8dWeights(Weights):
     )
 
 
-class WideResNet50_2Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class WideResNet50_2Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -219,7 +219,7 @@ class WideResNet50_2Weights(Weights):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = WeightEntry(
+    ImageNet1K_RefV2 = Weights(
         url="https://download.pytorch.org/models/wide_resnet50_2-9ba9bcbe.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -232,8 +232,8 @@ class WideResNet50_2Weights(Weights):
     )
 
 
-class WideResNet101_2Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class WideResNet101_2Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -244,7 +244,7 @@ class WideResNet101_2Weights(Weights):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = WeightEntry(
+    ImageNet1K_RefV2 = Weights(
         url="https://download.pytorch.org/models/wide_resnet101_2-d733dc28.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={

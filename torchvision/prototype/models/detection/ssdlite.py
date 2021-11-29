@@ -15,7 +15,7 @@ from ....models.detection.ssdlite import (
     SSD,
     SSDLiteHead,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
@@ -27,8 +27,8 @@ __all__ = [
 ]
 
 
-class SSDlite320MobileNetV3LargeFPNWeights(Weights):
-    Coco_RefV1 = WeightEntry(
+class SSDlite320MobileNetV3LargeFPNWeights(WeightsEnum):
+    Coco_RefV1 = Weights(
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
         transforms=CocoEval,
         meta={

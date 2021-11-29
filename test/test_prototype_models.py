@@ -39,6 +39,7 @@ def get_models_with_module_names(module):
     [
         (models.resnet50, "ImageNet1K_RefV1", models.ResNet50Weights.ImageNet1K_RefV1),
         (models.resnet50, "default", models.ResNet50Weights.ImageNet1K_RefV2),
+        (models.quantization.resnet50, "default", models.quantization.QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV2),
         (
             models.quantization.resnet50,
             "ImageNet1K_FBGEMM_RefV1",

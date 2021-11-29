@@ -6,7 +6,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.googlenet import GoogLeNet, GoogLeNetOutputs, _GoogLeNetOutputs
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -14,8 +14,8 @@ from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_p
 __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNetWeights", "googlenet"]
 
 
-class GoogLeNetWeights(Weights):
-    ImageNet1K_TFV1 = WeightEntry(
+class GoogLeNetWeights(WeightsEnum):
+    ImageNet1K_TFV1 = Weights(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

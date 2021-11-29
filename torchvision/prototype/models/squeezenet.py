@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.squeezenet import SqueezeNet
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -21,8 +21,8 @@ _COMMON_META = {
 }
 
 
-class SqueezeNet1_0Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class SqueezeNet1_0Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -34,8 +34,8 @@ class SqueezeNet1_0Weights(Weights):
     )
 
 
-class SqueezeNet1_1Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class SqueezeNet1_1Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

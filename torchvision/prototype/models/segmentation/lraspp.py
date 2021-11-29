@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import VocEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
@@ -14,8 +14,8 @@ from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
 __all__ = ["LRASPP", "LRASPPMobileNetV3LargeWeights", "lraspp_mobilenet_v3_large"]
 
 
-class LRASPPMobileNetV3LargeWeights(Weights):
-    CocoWithVocLabels_RefV1 = WeightEntry(
+class LRASPPMobileNetV3LargeWeights(WeightsEnum):
+    CocoWithVocLabels_RefV1 = Weights(
         url="https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={

@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mobilenetv2 import MobileNetV2
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -13,8 +13,8 @@ from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_p
 __all__ = ["MobileNetV2", "MobileNetV2Weights", "mobilenet_v2"]
 
 
-class MobileNetV2Weights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class MobileNetV2Weights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

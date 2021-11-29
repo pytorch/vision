@@ -10,7 +10,7 @@ from ....models.detection.mask_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..resnet import ResNet50Weights, resnet50
@@ -23,8 +23,8 @@ __all__ = [
 ]
 
 
-class MaskRCNNResNet50FPNWeights(Weights):
-    Coco_RefV1 = WeightEntry(
+class MaskRCNNResNet50FPNWeights(WeightsEnum):
+    Coco_RefV1 = Weights(
         url="https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
         transforms=CocoEval,
         meta={

@@ -10,7 +10,7 @@ from ....models.quantization.mobilenetv2 import (
     _replace_relu,
     quantize_model,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..mobilenetv2 import MobileNetV2Weights
@@ -23,8 +23,8 @@ __all__ = [
 ]
 
 
-class QuantizedMobileNetV2Weights(Weights):
-    ImageNet1K_QNNPACK_RefV1 = WeightEntry(
+class QuantizedMobileNetV2Weights(WeightsEnum):
+    ImageNet1K_QNNPACK_RefV1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

@@ -7,7 +7,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.densenet import DenseNet
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -25,7 +25,7 @@ __all__ = [
 ]
 
 
-def _load_state_dict(model: nn.Module, weights: Weights, progress: bool) -> None:
+def _load_state_dict(model: nn.Module, weights: WeightsEnum, progress: bool) -> None:
     # '.'s are no longer allowed in module names, but previous _DenseLayer
     # has keys 'norm.1', 'relu.1', 'conv.1', 'norm.2', 'relu.2', 'conv.2'.
     # They are also in the checkpoints in model_urls. This pattern is used
@@ -48,7 +48,7 @@ def _densenet(
     growth_rate: int,
     block_config: Tuple[int, int, int, int],
     num_init_features: int,
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> DenseNet:
@@ -71,8 +71,8 @@ _COMMON_META = {
 }
 
 
-class DenseNet121Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class DenseNet121Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/densenet121-a639ec97.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -84,8 +84,8 @@ class DenseNet121Weights(Weights):
     )
 
 
-class DenseNet161Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class DenseNet161Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/densenet161-8d451a50.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -97,8 +97,8 @@ class DenseNet161Weights(Weights):
     )
 
 
-class DenseNet169Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class DenseNet169Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/densenet169-b2777c0a.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -110,8 +110,8 @@ class DenseNet169Weights(Weights):
     )
 
 
-class DenseNet201Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class DenseNet201Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/densenet201-c1103571.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

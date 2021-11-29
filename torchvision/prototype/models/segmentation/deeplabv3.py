@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import VocEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.deeplabv3 import DeepLabV3, _deeplabv3_mobilenetv3, _deeplabv3_resnet
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
@@ -30,8 +30,8 @@ _COMMON_META = {
 }
 
 
-class DeepLabV3ResNet50Weights(Weights):
-    CocoWithVocLabels_RefV1 = WeightEntry(
+class DeepLabV3ResNet50Weights(WeightsEnum):
+    CocoWithVocLabels_RefV1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -44,8 +44,8 @@ class DeepLabV3ResNet50Weights(Weights):
     )
 
 
-class DeepLabV3ResNet101Weights(Weights):
-    CocoWithVocLabels_RefV1 = WeightEntry(
+class DeepLabV3ResNet101Weights(WeightsEnum):
+    CocoWithVocLabels_RefV1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -58,8 +58,8 @@ class DeepLabV3ResNet101Weights(Weights):
     )
 
 
-class DeepLabV3MobileNetV3LargeWeights(Weights):
-    CocoWithVocLabels_RefV1 = WeightEntry(
+class DeepLabV3MobileNetV3LargeWeights(WeightsEnum):
+    CocoWithVocLabels_RefV1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={

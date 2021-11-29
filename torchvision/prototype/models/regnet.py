@@ -6,7 +6,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.regnet import RegNet, BlockParams
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -48,7 +48,7 @@ _COMMON_META = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpo
 
 def _regnet(
     block_params: BlockParams,
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> RegNet:
@@ -64,8 +64,8 @@ def _regnet(
     return model
 
 
-class RegNet_y_400mfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_y_400mfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_400mf-c65dace8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -78,8 +78,8 @@ class RegNet_y_400mfWeights(Weights):
     )
 
 
-class RegNet_y_800mfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_y_800mfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_800mf-1b27b58c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -92,8 +92,8 @@ class RegNet_y_800mfWeights(Weights):
     )
 
 
-class RegNet_y_1_6gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_y_1_6gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_1_6gf-b11a554e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -106,8 +106,8 @@ class RegNet_y_1_6gfWeights(Weights):
     )
 
 
-class RegNet_y_3_2gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_y_3_2gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_3_2gf-b5a9779c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -120,8 +120,8 @@ class RegNet_y_3_2gfWeights(Weights):
     )
 
 
-class RegNet_y_8gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_y_8gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_8gf-d0d0e4a8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -134,8 +134,8 @@ class RegNet_y_8gfWeights(Weights):
     )
 
 
-class RegNet_y_16gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_y_16gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_16gf-9e6ed7dd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -148,8 +148,8 @@ class RegNet_y_16gfWeights(Weights):
     )
 
 
-class RegNet_y_32gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_y_32gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_32gf-4dee3f7a.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -162,8 +162,8 @@ class RegNet_y_32gfWeights(Weights):
     )
 
 
-class RegNet_x_400mfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_x_400mfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_400mf-adf1edd5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -176,8 +176,8 @@ class RegNet_x_400mfWeights(Weights):
     )
 
 
-class RegNet_x_800mfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_x_800mfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_800mf-ad17e45c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -190,8 +190,8 @@ class RegNet_x_800mfWeights(Weights):
     )
 
 
-class RegNet_x_1_6gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_x_1_6gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_1_6gf-e3633e7f.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -204,8 +204,8 @@ class RegNet_x_1_6gfWeights(Weights):
     )
 
 
-class RegNet_x_3_2gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_x_3_2gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_3_2gf-f342aeae.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -218,8 +218,8 @@ class RegNet_x_3_2gfWeights(Weights):
     )
 
 
-class RegNet_x_8gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_x_8gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_8gf-03ceed89.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -232,8 +232,8 @@ class RegNet_x_8gfWeights(Weights):
     )
 
 
-class RegNet_x_16gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_x_16gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_16gf-2007eb11.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -246,8 +246,8 @@ class RegNet_x_16gfWeights(Weights):
     )
 
 
-class RegNet_x_32gfWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class RegNet_x_32gfWeights(WeightsEnum):
+    ImageNet1K_RefV1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_32gf-9d47f8d0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

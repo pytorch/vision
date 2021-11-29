@@ -9,7 +9,7 @@ from ....models.quantization.shufflenetv2 import (
     _replace_relu,
     quantize_model,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..shufflenetv2 import ShuffleNetV2_x0_5Weights, ShuffleNetV2_x1_0Weights
@@ -27,7 +27,7 @@ __all__ = [
 def _shufflenetv2(
     stages_repeats: List[int],
     stages_out_channels: List[int],
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     quantize: bool,
     **kwargs: Any,
@@ -59,8 +59,8 @@ _COMMON_META = {
 }
 
 
-class QuantizedShuffleNetV2_x0_5Weights(Weights):
-    ImageNet1K_FBGEMM_Community = WeightEntry(
+class QuantizedShuffleNetV2_x0_5Weights(WeightsEnum):
+    ImageNet1K_FBGEMM_Community = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -73,8 +73,8 @@ class QuantizedShuffleNetV2_x0_5Weights(Weights):
     )
 
 
-class QuantizedShuffleNetV2_x1_0Weights(Weights):
-    ImageNet1K_FBGEMM_Community = WeightEntry(
+class QuantizedShuffleNetV2_x1_0Weights(WeightsEnum):
+    ImageNet1K_FBGEMM_Community = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

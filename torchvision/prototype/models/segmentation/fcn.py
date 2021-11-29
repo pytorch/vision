@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import VocEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.fcn import FCN, _fcn_resnet
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
 from ..resnet import ResNet50Weights, ResNet101Weights, resnet50, resnet101
@@ -20,8 +20,8 @@ _COMMON_META = {
 }
 
 
-class FCNResNet50Weights(Weights):
-    CocoWithVocLabels_RefV1 = WeightEntry(
+class FCNResNet50Weights(WeightsEnum):
+    CocoWithVocLabels_RefV1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -34,8 +34,8 @@ class FCNResNet50Weights(Weights):
     )
 
 
-class FCNResNet101Weights(Weights):
-    CocoWithVocLabels_RefV1 = WeightEntry(
+class FCNResNet101Weights(WeightsEnum):
+    CocoWithVocLabels_RefV1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={

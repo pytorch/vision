@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mnasnet import MNASNet
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -31,8 +31,8 @@ _COMMON_META = {
 }
 
 
-class MNASNet0_5Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class MNASNet0_5Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/mnasnet0.5_top1_67.823-3ffadce67e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -44,13 +44,13 @@ class MNASNet0_5Weights(Weights):
     )
 
 
-class MNASNet0_75Weights(Weights):
+class MNASNet0_75Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in mnasnet0_75
     pass
 
 
-class MNASNet1_0Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class MNASNet1_0Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -62,12 +62,12 @@ class MNASNet1_0Weights(Weights):
     )
 
 
-class MNASNet1_3Weights(Weights):
+class MNASNet1_3Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in mnasnet1_3
     pass
 
 
-def _mnasnet(alpha: float, weights: Optional[Weights], progress: bool, **kwargs: Any) -> MNASNet:
+def _mnasnet(alpha: float, weights: Optional[WeightsEnum], progress: bool, **kwargs: Any) -> MNASNet:
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 

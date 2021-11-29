@@ -9,7 +9,7 @@ from ....models.quantization.inception import (
     _replace_relu,
     quantize_model,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..inception import InceptionV3Weights
@@ -22,8 +22,8 @@ __all__ = [
 ]
 
 
-class QuantizedInceptionV3Weights(Weights):
-    ImageNet1K_FBGEMM_TFV1 = WeightEntry(
+class QuantizedInceptionV3Weights(WeightsEnum):
+    ImageNet1K_FBGEMM_TFV1 = Weights(
         url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={

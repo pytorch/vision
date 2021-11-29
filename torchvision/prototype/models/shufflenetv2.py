@@ -5,7 +5,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.shufflenetv2 import ShuffleNetV2
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -24,7 +24,7 @@ __all__ = [
 
 
 def _shufflenetv2(
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     *args: Any,
     **kwargs: Any,
@@ -48,8 +48,8 @@ _COMMON_META = {
 }
 
 
-class ShuffleNetV2_x0_5Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class ShuffleNetV2_x0_5Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -61,8 +61,8 @@ class ShuffleNetV2_x0_5Weights(Weights):
     )
 
 
-class ShuffleNetV2_x1_0Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class ShuffleNetV2_x1_0Weights(WeightsEnum):
+    ImageNet1K_Community = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -74,11 +74,11 @@ class ShuffleNetV2_x1_0Weights(Weights):
     )
 
 
-class ShuffleNetV2_x1_5Weights(Weights):
+class ShuffleNetV2_x1_5Weights(WeightsEnum):
     pass
 
 
-class ShuffleNetV2_x2_0Weights(Weights):
+class ShuffleNetV2_x2_0Weights(WeightsEnum):
     pass
 
 

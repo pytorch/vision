@@ -6,7 +6,7 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.efficientnet import EfficientNet, MBConvConfig
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
@@ -36,7 +36,7 @@ def _efficientnet(
     width_mult: float,
     depth_mult: float,
     dropout: float,
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> EfficientNet:
@@ -69,8 +69,8 @@ _COMMON_META = {
 }
 
 
-class EfficientNetB0Weights(Weights):
-    ImageNet1K_TimmV1 = WeightEntry(
+class EfficientNetB0Weights(WeightsEnum):
+    ImageNet1K_TimmV1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -83,8 +83,8 @@ class EfficientNetB0Weights(Weights):
     )
 
 
-class EfficientNetB1Weights(Weights):
-    ImageNet1K_TimmV1 = WeightEntry(
+class EfficientNetB1Weights(WeightsEnum):
+    ImageNet1K_TimmV1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
         transforms=partial(ImageNetEval, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -97,8 +97,8 @@ class EfficientNetB1Weights(Weights):
     )
 
 
-class EfficientNetB2Weights(Weights):
-    ImageNet1K_TimmV1 = WeightEntry(
+class EfficientNetB2Weights(WeightsEnum):
+    ImageNet1K_TimmV1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
         transforms=partial(ImageNetEval, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -111,8 +111,8 @@ class EfficientNetB2Weights(Weights):
     )
 
 
-class EfficientNetB3Weights(Weights):
-    ImageNet1K_TimmV1 = WeightEntry(
+class EfficientNetB3Weights(WeightsEnum):
+    ImageNet1K_TimmV1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
         transforms=partial(ImageNetEval, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -125,8 +125,8 @@ class EfficientNetB3Weights(Weights):
     )
 
 
-class EfficientNetB4Weights(Weights):
-    ImageNet1K_TimmV1 = WeightEntry(
+class EfficientNetB4Weights(WeightsEnum):
+    ImageNet1K_TimmV1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
         transforms=partial(ImageNetEval, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -139,8 +139,8 @@ class EfficientNetB4Weights(Weights):
     )
 
 
-class EfficientNetB5Weights(Weights):
-    ImageNet1K_TFV1 = WeightEntry(
+class EfficientNetB5Weights(WeightsEnum):
+    ImageNet1K_TFV1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
         transforms=partial(ImageNetEval, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -153,8 +153,8 @@ class EfficientNetB5Weights(Weights):
     )
 
 
-class EfficientNetB6Weights(Weights):
-    ImageNet1K_TFV1 = WeightEntry(
+class EfficientNetB6Weights(WeightsEnum):
+    ImageNet1K_TFV1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
         transforms=partial(ImageNetEval, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -167,8 +167,8 @@ class EfficientNetB6Weights(Weights):
     )
 
 
-class EfficientNetB7Weights(Weights):
-    ImageNet1K_TFV1 = WeightEntry(
+class EfficientNetB7Weights(WeightsEnum):
+    ImageNet1K_TFV1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
         transforms=partial(ImageNetEval, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC),
         meta={

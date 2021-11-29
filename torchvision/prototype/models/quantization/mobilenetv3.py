@@ -11,7 +11,7 @@ from ....models.quantization.mobilenetv3 import (
     QuantizableMobileNetV3,
     _replace_relu,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, _mobilenet_v3_conf
@@ -27,7 +27,7 @@ __all__ = [
 def _mobilenet_v3_model(
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     quantize: bool,
     **kwargs: Any,
@@ -56,8 +56,8 @@ def _mobilenet_v3_model(
     return model
 
 
-class QuantizedMobileNetV3LargeWeights(Weights):
-    ImageNet1K_QNNPACK_RefV1 = WeightEntry(
+class QuantizedMobileNetV3LargeWeights(WeightsEnum):
+    ImageNet1K_QNNPACK_RefV1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={

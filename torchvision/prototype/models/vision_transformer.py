@@ -11,7 +11,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ._api import Weights
+from ._api import WeightsEnum
 from ._utils import _deprecated_param, _deprecated_positional
 
 
@@ -231,22 +231,22 @@ class VisionTransformer(nn.Module):
         return x
 
 
-class VisionTransformer_B_16Weights(Weights):
+class VisionTransformer_B_16Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in vit_b_16
     pass
 
 
-class VisionTransformer_B_32Weights(Weights):
+class VisionTransformer_B_32Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in vit_b_32
     pass
 
 
-class VisionTransformer_L_16Weights(Weights):
+class VisionTransformer_L_16Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in vit_l_16
     pass
 
 
-class VisionTransformer_L_32Weights(Weights):
+class VisionTransformer_L_32Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in vit_l_32
     pass
 
@@ -257,7 +257,7 @@ def _vision_transformer(
     num_heads: int,
     hidden_dim: int,
     mlp_dim: int,
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> VisionTransformer:

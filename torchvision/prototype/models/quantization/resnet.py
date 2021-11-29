@@ -11,7 +11,7 @@ from ....models.quantization.resnet import (
     _replace_relu,
     quantize_model,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..resnet import ResNet18Weights, ResNet50Weights, ResNeXt101_32x8dWeights
@@ -31,7 +31,7 @@ __all__ = [
 def _resnet(
     block: Type[Union[QuantizableBasicBlock, QuantizableBottleneck]],
     layers: List[int],
-    weights: Optional[Weights],
+    weights: Optional[WeightsEnum],
     progress: bool,
     quantize: bool,
     **kwargs: Any,
@@ -63,8 +63,8 @@ _COMMON_META = {
 }
 
 
-class QuantizedResNet18Weights(Weights):
-    ImageNet1K_FBGEMM_RefV1 = WeightEntry(
+class QuantizedResNet18Weights(WeightsEnum):
+    ImageNet1K_FBGEMM_RefV1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -77,8 +77,8 @@ class QuantizedResNet18Weights(Weights):
     )
 
 
-class QuantizedResNet50Weights(Weights):
-    ImageNet1K_FBGEMM_RefV1 = WeightEntry(
+class QuantizedResNet50Weights(WeightsEnum):
+    ImageNet1K_FBGEMM_RefV1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -89,7 +89,7 @@ class QuantizedResNet50Weights(Weights):
         },
         default=False,
     )
-    ImageNet1K_FBGEMM_RefV2 = WeightEntry(
+    ImageNet1K_FBGEMM_RefV2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -102,8 +102,8 @@ class QuantizedResNet50Weights(Weights):
     )
 
 
-class QuantizedResNeXt101_32x8dWeights(Weights):
-    ImageNet1K_FBGEMM_RefV1 = WeightEntry(
+class QuantizedResNeXt101_32x8dWeights(WeightsEnum):
+    ImageNet1K_FBGEMM_RefV1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -114,7 +114,7 @@ class QuantizedResNeXt101_32x8dWeights(Weights):
         },
         default=False,
     )
-    ImageNet1K_FBGEMM_RefV2 = WeightEntry(
+    ImageNet1K_FBGEMM_RefV2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
