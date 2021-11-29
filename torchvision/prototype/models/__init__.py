@@ -10,6 +10,7 @@ from .resnet import *
 from .shufflenetv2 import *
 from .squeezenet import *
 from .vgg import *
+from .vision_transformer import *
 from . import detection
 from . import quantization
 from . import segmentation
