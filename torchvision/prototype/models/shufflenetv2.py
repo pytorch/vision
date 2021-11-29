@@ -49,7 +49,7 @@ _COMMON_META = {
 
 
 class ShuffleNetV2_x0_5Weights(WeightsEnum):
-    ImageNet1K_Community = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -62,7 +62,7 @@ class ShuffleNetV2_x0_5Weights(WeightsEnum):
 
 
 class ShuffleNetV2_x1_0Weights(WeightsEnum):
-    ImageNet1K_Community = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -88,7 +88,7 @@ def shufflenet_v2_x0_5(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x0_5Weights.ImageNet1K_Community)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x0_5Weights.ImageNet1K_V1)
     weights = ShuffleNetV2_x0_5Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
@@ -100,7 +100,7 @@ def shufflenet_v2_x1_0(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x1_0Weights.ImageNet1K_Community)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x1_0Weights.ImageNet1K_V1)
     weights = ShuffleNetV2_x1_0Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)

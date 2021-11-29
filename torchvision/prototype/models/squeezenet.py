@@ -22,7 +22,7 @@ _COMMON_META = {
 
 
 class SqueezeNet1_0Weights(WeightsEnum):
-    ImageNet1K_Community = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -35,7 +35,7 @@ class SqueezeNet1_0Weights(WeightsEnum):
 
 
 class SqueezeNet1_1Weights(WeightsEnum):
-    ImageNet1K_Community = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -51,7 +51,7 @@ def squeezenet1_0(weights: Optional[SqueezeNet1_0Weights] = None, progress: bool
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SqueezeNet1_0Weights.ImageNet1K_Community)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", SqueezeNet1_0Weights.ImageNet1K_V1)
     weights = SqueezeNet1_0Weights.verify(weights)
 
     if weights is not None:
@@ -69,7 +69,7 @@ def squeezenet1_1(weights: Optional[SqueezeNet1_1Weights] = None, progress: bool
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SqueezeNet1_1Weights.ImageNet1K_Community)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", SqueezeNet1_1Weights.ImageNet1K_V1)
     weights = SqueezeNet1_1Weights.verify(weights)
 
     if weights is not None:

@@ -65,7 +65,7 @@ def _regnet(
 
 
 class RegNet_y_400mfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_400mf-c65dace8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -79,7 +79,7 @@ class RegNet_y_400mfWeights(WeightsEnum):
 
 
 class RegNet_y_800mfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_800mf-1b27b58c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -93,7 +93,7 @@ class RegNet_y_800mfWeights(WeightsEnum):
 
 
 class RegNet_y_1_6gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_1_6gf-b11a554e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -107,7 +107,7 @@ class RegNet_y_1_6gfWeights(WeightsEnum):
 
 
 class RegNet_y_3_2gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_3_2gf-b5a9779c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -121,7 +121,7 @@ class RegNet_y_3_2gfWeights(WeightsEnum):
 
 
 class RegNet_y_8gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_8gf-d0d0e4a8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -135,7 +135,7 @@ class RegNet_y_8gfWeights(WeightsEnum):
 
 
 class RegNet_y_16gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_16gf-9e6ed7dd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -149,7 +149,7 @@ class RegNet_y_16gfWeights(WeightsEnum):
 
 
 class RegNet_y_32gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_32gf-4dee3f7a.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -163,7 +163,7 @@ class RegNet_y_32gfWeights(WeightsEnum):
 
 
 class RegNet_x_400mfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_400mf-adf1edd5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -177,7 +177,7 @@ class RegNet_x_400mfWeights(WeightsEnum):
 
 
 class RegNet_x_800mfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_800mf-ad17e45c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -191,7 +191,7 @@ class RegNet_x_800mfWeights(WeightsEnum):
 
 
 class RegNet_x_1_6gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_1_6gf-e3633e7f.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -205,7 +205,7 @@ class RegNet_x_1_6gfWeights(WeightsEnum):
 
 
 class RegNet_x_3_2gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_3_2gf-f342aeae.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -219,7 +219,7 @@ class RegNet_x_3_2gfWeights(WeightsEnum):
 
 
 class RegNet_x_8gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_8gf-03ceed89.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -233,7 +233,7 @@ class RegNet_x_8gfWeights(WeightsEnum):
 
 
 class RegNet_x_16gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_16gf-2007eb11.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -247,7 +247,7 @@ class RegNet_x_16gfWeights(WeightsEnum):
 
 
 class RegNet_x_32gfWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_32gf-9d47f8d0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -264,7 +264,7 @@ def regnet_y_400mf(weights: Optional[RegNet_y_400mfWeights] = None, progress: bo
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_400mfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_400mfWeights.ImageNet1K_V1)
     weights = RegNet_y_400mfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=16, w_0=48, w_a=27.89, w_m=2.09, group_width=8, se_ratio=0.25, **kwargs)
@@ -275,7 +275,7 @@ def regnet_y_800mf(weights: Optional[RegNet_y_800mfWeights] = None, progress: bo
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_800mfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_800mfWeights.ImageNet1K_V1)
     weights = RegNet_y_800mfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=14, w_0=56, w_a=38.84, w_m=2.4, group_width=16, se_ratio=0.25, **kwargs)
@@ -286,7 +286,7 @@ def regnet_y_1_6gf(weights: Optional[RegNet_y_1_6gfWeights] = None, progress: bo
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_1_6gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_1_6gfWeights.ImageNet1K_V1)
     weights = RegNet_y_1_6gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -299,7 +299,7 @@ def regnet_y_3_2gf(weights: Optional[RegNet_y_3_2gfWeights] = None, progress: bo
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_3_2gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_3_2gfWeights.ImageNet1K_V1)
     weights = RegNet_y_3_2gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -312,7 +312,7 @@ def regnet_y_8gf(weights: Optional[RegNet_y_8gfWeights] = None, progress: bool =
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_8gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_8gfWeights.ImageNet1K_V1)
     weights = RegNet_y_8gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -325,7 +325,7 @@ def regnet_y_16gf(weights: Optional[RegNet_y_16gfWeights] = None, progress: bool
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_16gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_16gfWeights.ImageNet1K_V1)
     weights = RegNet_y_16gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -338,7 +338,7 @@ def regnet_y_32gf(weights: Optional[RegNet_y_32gfWeights] = None, progress: bool
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_32gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_y_32gfWeights.ImageNet1K_V1)
     weights = RegNet_y_32gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -351,7 +351,7 @@ def regnet_x_400mf(weights: Optional[RegNet_x_400mfWeights] = None, progress: bo
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_400mfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_400mfWeights.ImageNet1K_V1)
     weights = RegNet_x_400mfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=22, w_0=24, w_a=24.48, w_m=2.54, group_width=16, **kwargs)
@@ -362,7 +362,7 @@ def regnet_x_800mf(weights: Optional[RegNet_x_800mfWeights] = None, progress: bo
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_800mfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_800mfWeights.ImageNet1K_V1)
     weights = RegNet_x_800mfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=16, w_0=56, w_a=35.73, w_m=2.28, group_width=16, **kwargs)
@@ -373,7 +373,7 @@ def regnet_x_1_6gf(weights: Optional[RegNet_x_1_6gfWeights] = None, progress: bo
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_1_6gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_1_6gfWeights.ImageNet1K_V1)
     weights = RegNet_x_1_6gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=18, w_0=80, w_a=34.01, w_m=2.25, group_width=24, **kwargs)
@@ -384,7 +384,7 @@ def regnet_x_3_2gf(weights: Optional[RegNet_x_3_2gfWeights] = None, progress: bo
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_3_2gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_3_2gfWeights.ImageNet1K_V1)
     weights = RegNet_x_3_2gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=25, w_0=88, w_a=26.31, w_m=2.25, group_width=48, **kwargs)
@@ -395,7 +395,7 @@ def regnet_x_8gf(weights: Optional[RegNet_x_8gfWeights] = None, progress: bool =
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_8gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_8gfWeights.ImageNet1K_V1)
     weights = RegNet_x_8gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=23, w_0=80, w_a=49.56, w_m=2.88, group_width=120, **kwargs)
@@ -406,7 +406,7 @@ def regnet_x_16gf(weights: Optional[RegNet_x_16gfWeights] = None, progress: bool
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_16gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_16gfWeights.ImageNet1K_V1)
     weights = RegNet_x_16gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=22, w_0=216, w_a=55.59, w_m=2.1, group_width=128, **kwargs)
@@ -417,7 +417,7 @@ def regnet_x_32gf(weights: Optional[RegNet_x_32gfWeights] = None, progress: bool
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_32gfWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_x_32gfWeights.ImageNet1K_V1)
     weights = RegNet_x_32gfWeights.verify(weights)
 
     params = BlockParams.from_init_params(depth=23, w_0=320, w_a=69.86, w_m=2.0, group_width=168, **kwargs)

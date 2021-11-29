@@ -21,7 +21,7 @@ _COMMON_META = {
 
 
 class FCNResNet50Weights(WeightsEnum):
-    CocoWithVocLabels_RefV1 = Weights(
+    CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -35,7 +35,7 @@ class FCNResNet50Weights(WeightsEnum):
 
 
 class FCNResNet101Weights(WeightsEnum):
-    CocoWithVocLabels_RefV1 = Weights(
+    CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -59,13 +59,13 @@ def fcn_resnet50(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", FCNResNet50Weights.CocoWithVocLabels_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FCNResNet50Weights.CocoWithVocLabels_V1)
     weights = FCNResNet50Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_V1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -96,13 +96,13 @@ def fcn_resnet101(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", FCNResNet101Weights.CocoWithVocLabels_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FCNResNet101Weights.CocoWithVocLabels_V1)
     weights = FCNResNet101Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_V1
         )
     weights_backbone = ResNet101Weights.verify(weights_backbone)
 

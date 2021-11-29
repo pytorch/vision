@@ -14,7 +14,7 @@ __all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "InceptionV3We
 
 
 class InceptionV3Weights(WeightsEnum):
-    ImageNet1K_TFV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={
@@ -33,7 +33,7 @@ def inception_v3(weights: Optional[InceptionV3Weights] = None, progress: bool = 
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", InceptionV3Weights.ImageNet1K_TFV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", InceptionV3Weights.ImageNet1K_V1)
     weights = InceptionV3Weights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", True)

@@ -70,7 +70,7 @@ _COMMON_META = {
 
 
 class EfficientNetB0Weights(WeightsEnum):
-    ImageNet1K_TimmV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -84,7 +84,7 @@ class EfficientNetB0Weights(WeightsEnum):
 
 
 class EfficientNetB1Weights(WeightsEnum):
-    ImageNet1K_TimmV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
         transforms=partial(ImageNetEval, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -98,7 +98,7 @@ class EfficientNetB1Weights(WeightsEnum):
 
 
 class EfficientNetB2Weights(WeightsEnum):
-    ImageNet1K_TimmV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
         transforms=partial(ImageNetEval, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -112,7 +112,7 @@ class EfficientNetB2Weights(WeightsEnum):
 
 
 class EfficientNetB3Weights(WeightsEnum):
-    ImageNet1K_TimmV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
         transforms=partial(ImageNetEval, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -126,7 +126,7 @@ class EfficientNetB3Weights(WeightsEnum):
 
 
 class EfficientNetB4Weights(WeightsEnum):
-    ImageNet1K_TimmV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
         transforms=partial(ImageNetEval, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -140,7 +140,7 @@ class EfficientNetB4Weights(WeightsEnum):
 
 
 class EfficientNetB5Weights(WeightsEnum):
-    ImageNet1K_TFV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
         transforms=partial(ImageNetEval, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -154,7 +154,7 @@ class EfficientNetB5Weights(WeightsEnum):
 
 
 class EfficientNetB6Weights(WeightsEnum):
-    ImageNet1K_TFV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
         transforms=partial(ImageNetEval, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -168,7 +168,7 @@ class EfficientNetB6Weights(WeightsEnum):
 
 
 class EfficientNetB7Weights(WeightsEnum):
-    ImageNet1K_TFV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
         transforms=partial(ImageNetEval, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC),
         meta={
@@ -187,7 +187,7 @@ def efficientnet_b0(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB0Weights.ImageNet1K_TimmV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB0Weights.ImageNet1K_V1)
     weights = EfficientNetB0Weights.verify(weights)
 
     return _efficientnet(width_mult=1.0, depth_mult=1.0, dropout=0.2, weights=weights, progress=progress, **kwargs)
@@ -199,7 +199,7 @@ def efficientnet_b1(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB1Weights.ImageNet1K_TimmV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB1Weights.ImageNet1K_V1)
     weights = EfficientNetB1Weights.verify(weights)
 
     return _efficientnet(width_mult=1.0, depth_mult=1.1, dropout=0.2, weights=weights, progress=progress, **kwargs)
@@ -211,7 +211,7 @@ def efficientnet_b2(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB2Weights.ImageNet1K_TimmV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB2Weights.ImageNet1K_V1)
     weights = EfficientNetB2Weights.verify(weights)
 
     return _efficientnet(width_mult=1.1, depth_mult=1.2, dropout=0.3, weights=weights, progress=progress, **kwargs)
@@ -223,7 +223,7 @@ def efficientnet_b3(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB3Weights.ImageNet1K_TimmV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB3Weights.ImageNet1K_V1)
     weights = EfficientNetB3Weights.verify(weights)
 
     return _efficientnet(width_mult=1.2, depth_mult=1.4, dropout=0.3, weights=weights, progress=progress, **kwargs)
@@ -235,7 +235,7 @@ def efficientnet_b4(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB4Weights.ImageNet1K_TimmV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB4Weights.ImageNet1K_V1)
     weights = EfficientNetB4Weights.verify(weights)
 
     return _efficientnet(width_mult=1.4, depth_mult=1.8, dropout=0.4, weights=weights, progress=progress, **kwargs)
@@ -247,7 +247,7 @@ def efficientnet_b5(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB5Weights.ImageNet1K_TFV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB5Weights.ImageNet1K_V1)
     weights = EfficientNetB5Weights.verify(weights)
 
     return _efficientnet(
@@ -267,7 +267,7 @@ def efficientnet_b6(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB6Weights.ImageNet1K_TFV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB6Weights.ImageNet1K_V1)
     weights = EfficientNetB6Weights.verify(weights)
 
     return _efficientnet(
@@ -287,7 +287,7 @@ def efficientnet_b7(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB7Weights.ImageNet1K_TFV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNetB7Weights.ImageNet1K_V1)
     weights = EfficientNetB7Weights.verify(weights)
 
     return _efficientnet(

@@ -64,12 +64,12 @@ _COMMON_META = {
 
 
 class QuantizedResNet18Weights(WeightsEnum):
-    ImageNet1K_FBGEMM_RefV1 = Weights(
+    ImageNet1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
-            "unquantized": ResNet18Weights.ImageNet1K_RefV1,
+            "unquantized": ResNet18Weights.ImageNet1K_V1,
             "acc@1": 69.494,
             "acc@5": 88.882,
         },
@@ -78,23 +78,23 @@ class QuantizedResNet18Weights(WeightsEnum):
 
 
 class QuantizedResNet50Weights(WeightsEnum):
-    ImageNet1K_FBGEMM_RefV1 = Weights(
+    ImageNet1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
-            "unquantized": ResNet50Weights.ImageNet1K_RefV1,
+            "unquantized": ResNet50Weights.ImageNet1K_V1,
             "acc@1": 75.920,
             "acc@5": 92.814,
         },
         default=False,
     )
-    ImageNet1K_FBGEMM_RefV2 = Weights(
+    ImageNet1K_FBGEMM_V2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "unquantized": ResNet50Weights.ImageNet1K_RefV2,
+            "unquantized": ResNet50Weights.ImageNet1K_V2,
             "acc@1": 80.282,
             "acc@5": 94.976,
         },
@@ -103,23 +103,23 @@ class QuantizedResNet50Weights(WeightsEnum):
 
 
 class QuantizedResNeXt101_32x8dWeights(WeightsEnum):
-    ImageNet1K_FBGEMM_RefV1 = Weights(
+    ImageNet1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
-            "unquantized": ResNeXt101_32x8dWeights.ImageNet1K_RefV1,
+            "unquantized": ResNeXt101_32x8dWeights.ImageNet1K_V1,
             "acc@1": 78.986,
             "acc@5": 94.480,
         },
         default=False,
     )
-    ImageNet1K_FBGEMM_RefV2 = Weights(
+    ImageNet1K_FBGEMM_V2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "unquantized": ResNeXt101_32x8dWeights.ImageNet1K_RefV2,
+            "unquantized": ResNeXt101_32x8dWeights.ImageNet1K_V2,
             "acc@1": 82.574,
             "acc@5": 96.132,
         },
@@ -136,9 +136,7 @@ def resnet18(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        default_value = (
-            QuantizedResNet18Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet18Weights.ImageNet1K_RefV1
-        )
+        default_value = QuantizedResNet18Weights.ImageNet1K_FBGEMM_V1 if quantize else ResNet18Weights.ImageNet1K_V1
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedResNet18Weights.verify(weights)
@@ -157,9 +155,7 @@ def resnet50(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        default_value = (
-            QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1 if quantize else ResNet50Weights.ImageNet1K_RefV1
-        )
+        default_value = QuantizedResNet50Weights.ImageNet1K_FBGEMM_V1 if quantize else ResNet50Weights.ImageNet1K_V1
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedResNet50Weights.verify(weights)
@@ -179,9 +175,7 @@ def resnext101_32x8d(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
-            QuantizedResNeXt101_32x8dWeights.ImageNet1K_FBGEMM_RefV1
-            if quantize
-            else ResNeXt101_32x8dWeights.ImageNet1K_RefV1
+            QuantizedResNeXt101_32x8dWeights.ImageNet1K_FBGEMM_V1 if quantize else ResNeXt101_32x8dWeights.ImageNet1K_V1
         )
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:

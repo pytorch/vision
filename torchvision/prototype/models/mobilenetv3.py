@@ -45,7 +45,7 @@ _COMMON_META = {
 
 
 class MobileNetV3LargeWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -56,7 +56,7 @@ class MobileNetV3LargeWeights(WeightsEnum):
         },
         default=False,
     )
-    ImageNet1K_RefV2 = Weights(
+    ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -70,7 +70,7 @@ class MobileNetV3LargeWeights(WeightsEnum):
 
 
 class MobileNetV3SmallWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -89,7 +89,7 @@ def mobilenet_v3_large(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV3LargeWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV3LargeWeights.ImageNet1K_V1)
     weights = MobileNetV3LargeWeights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
@@ -102,7 +102,7 @@ def mobilenet_v3_small(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV3SmallWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV3SmallWeights.ImageNet1K_V1)
     weights = MobileNetV3SmallWeights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)

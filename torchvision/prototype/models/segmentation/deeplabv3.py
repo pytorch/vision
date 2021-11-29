@@ -31,7 +31,7 @@ _COMMON_META = {
 
 
 class DeepLabV3ResNet50Weights(WeightsEnum):
-    CocoWithVocLabels_RefV1 = Weights(
+    CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -45,7 +45,7 @@ class DeepLabV3ResNet50Weights(WeightsEnum):
 
 
 class DeepLabV3ResNet101Weights(WeightsEnum):
-    CocoWithVocLabels_RefV1 = Weights(
+    CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -59,7 +59,7 @@ class DeepLabV3ResNet101Weights(WeightsEnum):
 
 
 class DeepLabV3MobileNetV3LargeWeights(WeightsEnum):
-    CocoWithVocLabels_RefV1 = Weights(
+    CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -83,13 +83,13 @@ def deeplabv3_resnet50(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", DeepLabV3ResNet50Weights.CocoWithVocLabels_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", DeepLabV3ResNet50Weights.CocoWithVocLabels_V1)
     weights = DeepLabV3ResNet50Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_V1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -120,13 +120,13 @@ def deeplabv3_resnet101(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", DeepLabV3ResNet101Weights.CocoWithVocLabels_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", DeepLabV3ResNet101Weights.CocoWithVocLabels_V1)
     weights = DeepLabV3ResNet101Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet101Weights.ImageNet1K_V1
         )
     weights_backbone = ResNet101Weights.verify(weights_backbone)
 
@@ -158,14 +158,14 @@ def deeplabv3_mobilenet_v3_large(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(
-            kwargs, "pretrained", "weights", DeepLabV3MobileNetV3LargeWeights.CocoWithVocLabels_RefV1
+            kwargs, "pretrained", "weights", DeepLabV3MobileNetV3LargeWeights.CocoWithVocLabels_V1
         )
     weights = DeepLabV3MobileNetV3LargeWeights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_V1
         )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

@@ -14,7 +14,7 @@ __all__ = ["AlexNet", "AlexNetWeights", "alexnet"]
 
 
 class AlexNetWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/alexnet-owt-7be5be79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -33,7 +33,7 @@ def alexnet(weights: Optional[AlexNetWeights] = None, progress: bool = True, **k
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", AlexNetWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", AlexNetWeights.ImageNet1K_V1)
     weights = AlexNetWeights.verify(weights)
 
     if weights is not None:

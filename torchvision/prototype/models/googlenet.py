@@ -15,7 +15,7 @@ __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNetWeigh
 
 
 class GoogLeNetWeights(WeightsEnum):
-    ImageNet1K_TFV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -34,7 +34,7 @@ def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True,
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", GoogLeNetWeights.ImageNet1K_TFV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", GoogLeNetWeights.ImageNet1K_V1)
     weights = GoogLeNetWeights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)

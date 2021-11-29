@@ -60,7 +60,7 @@ _COMMON_META = {
 
 
 class R3D_18Weights(WeightsEnum):
-    Kinetics400_RefV1 = Weights(
+    Kinetics400_V1 = Weights(
         url="https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
         transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
@@ -73,7 +73,7 @@ class R3D_18Weights(WeightsEnum):
 
 
 class MC3_18Weights(WeightsEnum):
-    Kinetics400_RefV1 = Weights(
+    Kinetics400_V1 = Weights(
         url="https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
         transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
@@ -86,7 +86,7 @@ class MC3_18Weights(WeightsEnum):
 
 
 class R2Plus1D_18Weights(WeightsEnum):
-    Kinetics400_RefV1 = Weights(
+    Kinetics400_V1 = Weights(
         url="https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
         transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
@@ -102,7 +102,7 @@ def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwa
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", R3D_18Weights.Kinetics400_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", R3D_18Weights.Kinetics400_V1)
     weights = R3D_18Weights.verify(weights)
 
     return _video_resnet(
@@ -120,7 +120,7 @@ def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwa
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MC3_18Weights.Kinetics400_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MC3_18Weights.Kinetics400_V1)
     weights = MC3_18Weights.verify(weights)
 
     return _video_resnet(
@@ -138,7 +138,7 @@ def r2plus1d_18(weights: Optional[R2Plus1D_18Weights] = None, progress: bool = T
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", R2Plus1D_18Weights.Kinetics400_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", R2Plus1D_18Weights.Kinetics400_V1)
     weights = R2Plus1D_18Weights.verify(weights)
 
     return _video_resnet(

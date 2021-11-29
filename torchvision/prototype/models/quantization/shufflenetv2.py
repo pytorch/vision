@@ -60,12 +60,12 @@ _COMMON_META = {
 
 
 class QuantizedShuffleNetV2_x0_5Weights(WeightsEnum):
-    ImageNet1K_FBGEMM_Community = Weights(
+    ImageNet1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
-            "unquantized": ShuffleNetV2_x0_5Weights.ImageNet1K_Community,
+            "unquantized": ShuffleNetV2_x0_5Weights.ImageNet1K_V1,
             "acc@1": 57.972,
             "acc@5": 79.780,
         },
@@ -74,12 +74,12 @@ class QuantizedShuffleNetV2_x0_5Weights(WeightsEnum):
 
 
 class QuantizedShuffleNetV2_x1_0Weights(WeightsEnum):
-    ImageNet1K_FBGEMM_Community = Weights(
+    ImageNet1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
-            "unquantized": ShuffleNetV2_x1_0Weights.ImageNet1K_Community,
+            "unquantized": ShuffleNetV2_x1_0Weights.ImageNet1K_V1,
             "acc@1": 68.360,
             "acc@5": 87.582,
         },
@@ -97,9 +97,9 @@ def shufflenet_v2_x0_5(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
-            QuantizedShuffleNetV2_x0_5Weights.ImageNet1K_FBGEMM_Community
+            QuantizedShuffleNetV2_x0_5Weights.ImageNet1K_FBGEMM_V1
             if quantize
-            else ShuffleNetV2_x0_5Weights.ImageNet1K_Community
+            else ShuffleNetV2_x0_5Weights.ImageNet1K_V1
         )
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
@@ -120,9 +120,9 @@ def shufflenet_v2_x1_0(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
-            QuantizedShuffleNetV2_x1_0Weights.ImageNet1K_FBGEMM_Community
+            QuantizedShuffleNetV2_x1_0Weights.ImageNet1K_FBGEMM_V1
             if quantize
-            else ShuffleNetV2_x1_0Weights.ImageNet1K_Community
+            else ShuffleNetV2_x1_0Weights.ImageNet1K_V1
         )
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:

@@ -14,7 +14,7 @@ __all__ = ["MobileNetV2", "MobileNetV2Weights", "mobilenet_v2"]
 
 
 class MobileNetV2Weights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -33,7 +33,7 @@ def mobilenet_v2(weights: Optional[MobileNetV2Weights] = None, progress: bool = 
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV2Weights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNetV2Weights.ImageNet1K_V1)
     weights = MobileNetV2Weights.verify(weights)
 
     if weights is not None:

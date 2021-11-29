@@ -28,7 +28,7 @@ __all__ = [
 
 
 class SSDlite320MobileNetV3LargeFPNWeights(WeightsEnum):
-    Coco_RefV1 = Weights(
+    Coco_V1 = Weights(
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
         transforms=CocoEval,
         meta={
@@ -54,13 +54,13 @@ def ssdlite320_mobilenet_v3_large(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SSDlite320MobileNetV3LargeFPNWeights.Coco_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", SSDlite320MobileNetV3LargeFPNWeights.Coco_V1)
     weights = SSDlite320MobileNetV3LargeFPNWeights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_V1
         )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

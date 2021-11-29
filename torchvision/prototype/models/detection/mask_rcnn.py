@@ -24,7 +24,7 @@ __all__ = [
 
 
 class MaskRCNNResNet50FPNWeights(WeightsEnum):
-    Coco_RefV1 = Weights(
+    Coco_V1 = Weights(
         url="https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
         transforms=CocoEval,
         meta={
@@ -49,13 +49,13 @@ def maskrcnn_resnet50_fpn(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MaskRCNNResNet50FPNWeights.Coco_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MaskRCNNResNet50FPNWeights.Coco_V1)
     weights = MaskRCNNResNet50FPNWeights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_V1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -75,7 +75,7 @@ def maskrcnn_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == MaskRCNNResNet50FPNWeights.Coco_RefV1:
+        if weights == MaskRCNNResNet50FPNWeights.Coco_V1:
             overwrite_eps(model, 0.0)
 
     return model

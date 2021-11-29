@@ -15,7 +15,7 @@ __all__ = ["LRASPP", "LRASPPMobileNetV3LargeWeights", "lraspp_mobilenet_v3_large
 
 
 class LRASPPMobileNetV3LargeWeights(WeightsEnum):
-    CocoWithVocLabels_RefV1 = Weights(
+    CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -42,15 +42,13 @@ def lraspp_mobilenet_v3_large(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(
-            kwargs, "pretrained", "weights", LRASPPMobileNetV3LargeWeights.CocoWithVocLabels_RefV1
-        )
+        weights = _deprecated_param(kwargs, "pretrained", "weights", LRASPPMobileNetV3LargeWeights.CocoWithVocLabels_V1)
     weights = LRASPPMobileNetV3LargeWeights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_V1
         )
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 

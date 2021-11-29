@@ -32,7 +32,7 @@ _COMMON_META = {
 
 
 class MNASNet0_5Weights(WeightsEnum):
-    ImageNet1K_Community = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/mnasnet0.5_top1_67.823-3ffadce67e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -50,7 +50,7 @@ class MNASNet0_75Weights(WeightsEnum):
 
 
 class MNASNet1_0Weights(WeightsEnum):
-    ImageNet1K_Community = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -83,7 +83,7 @@ def mnasnet0_5(weights: Optional[MNASNet0_5Weights] = None, progress: bool = Tru
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet0_5Weights.ImageNet1K_Community)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet0_5Weights.ImageNet1K_V1)
     weights = MNASNet0_5Weights.verify(weights)
 
     return _mnasnet(0.5, weights, progress, **kwargs)
@@ -103,7 +103,7 @@ def mnasnet1_0(weights: Optional[MNASNet1_0Weights] = None, progress: bool = Tru
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet1_0Weights.ImageNet1K_Community)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet1_0Weights.ImageNet1K_V1)
     weights = MNASNet1_0Weights.verify(weights)
 
     return _mnasnet(1.0, weights, progress, **kwargs)

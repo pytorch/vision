@@ -23,7 +23,7 @@ __all__ = [
 
 
 class QuantizedInceptionV3Weights(WeightsEnum):
-    ImageNet1K_FBGEMM_TFV1 = Weights(
+    ImageNet1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={
@@ -33,7 +33,7 @@ class QuantizedInceptionV3Weights(WeightsEnum):
             "backend": "fbgemm",
             "quantization": "ptq",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
-            "unquantized": InceptionV3Weights.ImageNet1K_TFV1,
+            "unquantized": InceptionV3Weights.ImageNet1K_V1,
             "acc@1": 77.176,
             "acc@5": 93.354,
         },
@@ -51,7 +51,7 @@ def inception_v3(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
-            QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1
+            QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_V1 if quantize else InceptionV3Weights.ImageNet1K_V1
         )
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:

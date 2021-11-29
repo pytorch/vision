@@ -26,7 +26,7 @@ _COMMON_META = {"categories": _COCO_PERSON_CATEGORIES, "keypoint_names": _COCO_P
 
 
 class KeypointRCNNResNet50FPNWeights(WeightsEnum):
-    Coco_RefV1_Legacy = Weights(
+    Coco_Legacy = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth",
         transforms=CocoEval,
         meta={
@@ -37,7 +37,7 @@ class KeypointRCNNResNet50FPNWeights(WeightsEnum):
         },
         default=False,
     )
-    Coco_RefV1 = Weights(
+    Coco_V1 = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth",
         transforms=CocoEval,
         meta={
@@ -62,9 +62,9 @@ def keypointrcnn_resnet50_fpn(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        default_value = KeypointRCNNResNet50FPNWeights.Coco_RefV1
+        default_value = KeypointRCNNResNet50FPNWeights.Coco_V1
         if kwargs["pretrained"] == "legacy":
-            default_value = KeypointRCNNResNet50FPNWeights.Coco_RefV1_Legacy
+            default_value = KeypointRCNNResNet50FPNWeights.Coco_Legacy
             kwargs["pretrained"] = True
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)
     weights = KeypointRCNNResNet50FPNWeights.verify(weights)
@@ -72,7 +72,7 @@ def keypointrcnn_resnet50_fpn(
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_V1
         )
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
@@ -96,7 +96,7 @@ def keypointrcnn_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == KeypointRCNNResNet50FPNWeights.Coco_RefV1:
+        if weights == KeypointRCNNResNet50FPNWeights.Coco_V1:
             overwrite_eps(model, 0.0)
 
     return model

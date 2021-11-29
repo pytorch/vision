@@ -49,7 +49,7 @@ _COMMON_META = {
 
 
 class VGG11Weights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg11-8a719046.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -62,7 +62,7 @@ class VGG11Weights(WeightsEnum):
 
 
 class VGG11BNWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg11_bn-6002323d.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -75,7 +75,7 @@ class VGG11BNWeights(WeightsEnum):
 
 
 class VGG13Weights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg13-19584684.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -88,7 +88,7 @@ class VGG13Weights(WeightsEnum):
 
 
 class VGG13BNWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg13_bn-abd245e5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -101,7 +101,7 @@ class VGG13BNWeights(WeightsEnum):
 
 
 class VGG16Weights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg16-397923af.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -132,7 +132,7 @@ class VGG16Weights(WeightsEnum):
 
 
 class VGG16BNWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg16_bn-6c64b313.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -145,7 +145,7 @@ class VGG16BNWeights(WeightsEnum):
 
 
 class VGG19Weights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg19-dcbb9e9d.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -158,7 +158,7 @@ class VGG19Weights(WeightsEnum):
 
 
 class VGG19BNWeights(WeightsEnum):
-    ImageNet1K_RefV1 = Weights(
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg19_bn-c79401a0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -174,7 +174,7 @@ def vgg11(weights: Optional[VGG11Weights] = None, progress: bool = True, **kwarg
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG11Weights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG11Weights.ImageNet1K_V1)
     weights = VGG11Weights.verify(weights)
 
     return _vgg("A", False, weights, progress, **kwargs)
@@ -184,7 +184,7 @@ def vgg11_bn(weights: Optional[VGG11BNWeights] = None, progress: bool = True, **
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG11BNWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG11BNWeights.ImageNet1K_V1)
     weights = VGG11BNWeights.verify(weights)
 
     return _vgg("A", True, weights, progress, **kwargs)
@@ -194,7 +194,7 @@ def vgg13(weights: Optional[VGG13Weights] = None, progress: bool = True, **kwarg
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG13Weights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG13Weights.ImageNet1K_V1)
     weights = VGG13Weights.verify(weights)
 
     return _vgg("B", False, weights, progress, **kwargs)
@@ -204,7 +204,7 @@ def vgg13_bn(weights: Optional[VGG13BNWeights] = None, progress: bool = True, **
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG13BNWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG13BNWeights.ImageNet1K_V1)
     weights = VGG13BNWeights.verify(weights)
 
     return _vgg("B", True, weights, progress, **kwargs)
@@ -214,7 +214,7 @@ def vgg16(weights: Optional[VGG16Weights] = None, progress: bool = True, **kwarg
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG16Weights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG16Weights.ImageNet1K_V1)
     weights = VGG16Weights.verify(weights)
 
     return _vgg("D", False, weights, progress, **kwargs)
@@ -224,7 +224,7 @@ def vgg16_bn(weights: Optional[VGG16BNWeights] = None, progress: bool = True, **
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG16BNWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG16BNWeights.ImageNet1K_V1)
     weights = VGG16BNWeights.verify(weights)
 
     return _vgg("D", True, weights, progress, **kwargs)
@@ -234,7 +234,7 @@ def vgg19(weights: Optional[VGG19Weights] = None, progress: bool = True, **kwarg
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG19Weights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG19Weights.ImageNet1K_V1)
     weights = VGG19Weights.verify(weights)
 
     return _vgg("E", False, weights, progress, **kwargs)
@@ -244,7 +244,7 @@ def vgg19_bn(weights: Optional[VGG19BNWeights] = None, progress: bool = True, **
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG19BNWeights.ImageNet1K_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG19BNWeights.ImageNet1K_V1)
     weights = VGG19BNWeights.verify(weights)
 
     return _vgg("E", True, weights, progress, **kwargs)

@@ -23,7 +23,7 @@ __all__ = [
 
 
 class SSD300VGG16Weights(WeightsEnum):
-    Coco_RefV1 = Weights(
+    Coco_V1 = Weights(
         url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
         transforms=CocoEval,
         meta={
@@ -48,7 +48,7 @@ def ssd300_vgg16(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SSD300VGG16Weights.Coco_RefV1)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", SSD300VGG16Weights.Coco_V1)
     weights = SSD300VGG16Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)

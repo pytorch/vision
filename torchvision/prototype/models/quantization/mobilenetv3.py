@@ -57,7 +57,7 @@ def _mobilenet_v3_model(
 
 
 class QuantizedMobileNetV3LargeWeights(WeightsEnum):
-    ImageNet1K_QNNPACK_RefV1 = Weights(
+    ImageNet1K_QNNPACK_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -67,7 +67,7 @@ class QuantizedMobileNetV3LargeWeights(WeightsEnum):
             "backend": "qnnpack",
             "quantization": "qat",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3",
-            "unquantized": MobileNetV3LargeWeights.ImageNet1K_RefV1,
+            "unquantized": MobileNetV3LargeWeights.ImageNet1K_V1,
             "acc@1": 73.004,
             "acc@5": 90.858,
         },
@@ -85,9 +85,9 @@ def mobilenet_v3_large(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         default_value = (
-            QuantizedMobileNetV3LargeWeights.ImageNet1K_QNNPACK_RefV1
+            QuantizedMobileNetV3LargeWeights.ImageNet1K_QNNPACK_V1
             if quantize
-            else MobileNetV3LargeWeights.ImageNet1K_RefV1
+            else MobileNetV3LargeWeights.ImageNet1K_V1
         )
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
