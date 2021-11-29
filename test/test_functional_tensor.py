@@ -794,6 +794,7 @@ def test_solarize2(device, dtype, config, channels):
         agg_method="max",
     )
 
+
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("threshold", [0.0, 0.25, 0.5, 0.75, 1.0])
 def test_solarize_threshold1_bound(threshold, device):
