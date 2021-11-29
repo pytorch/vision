@@ -12,12 +12,12 @@ from ....models.detection.keypoint_rcnn import (
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
-from ..resnet import ResNet50Weights, resnet50
+from ..resnet import ResNet50_Weights, resnet50
 
 
 __all__ = [
     "KeypointRCNN",
-    "KeypointRCNNResNet50FPNWeights",
+    "KeypointRCNN_ResNet50_FPN_Weights",
     "keypointrcnn_resnet50_fpn",
 ]
 
@@ -25,7 +25,7 @@ __all__ = [
 _COMMON_META = {"categories": _COCO_PERSON_CATEGORIES, "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES}
 
 
-class KeypointRCNNResNet50FPNWeights(WeightsEnum):
+class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
     Coco_Legacy = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth",
         transforms=CocoEval,
@@ -51,30 +51,30 @@ class KeypointRCNNResNet50FPNWeights(WeightsEnum):
 
 
 def keypointrcnn_resnet50_fpn(
-    weights: Optional[KeypointRCNNResNet50FPNWeights] = None,
+    weights: Optional[KeypointRCNN_ResNet50_FPN_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
     num_keypoints: Optional[int] = None,
-    weights_backbone: Optional[ResNet50Weights] = None,
+    weights_backbone: Optional[ResNet50_Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> KeypointRCNN:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        default_value = KeypointRCNNResNet50FPNWeights.Coco_V1
+        default_value = KeypointRCNN_ResNet50_FPN_Weights.Coco_V1
         if kwargs["pretrained"] == "legacy":
-            default_value = KeypointRCNNResNet50FPNWeights.Coco_Legacy
+            default_value = KeypointRCNN_ResNet50_FPN_Weights.Coco_Legacy
             kwargs["pretrained"] = True
         weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)
-    weights = KeypointRCNNResNet50FPNWeights.verify(weights)
+    weights = KeypointRCNN_ResNet50_FPN_Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_V1
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50_Weights.ImageNet1K_V1
         )
-    weights_backbone = ResNet50Weights.verify(weights_backbone)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
     if weights is not None:
         weights_backbone = None
@@ -96,7 +96,7 @@ def keypointrcnn_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == KeypointRCNNResNet50FPNWeights.Coco_V1:
+        if weights == KeypointRCNN_ResNet50_FPN_Weights.Coco_V1:
             overwrite_eps(model, 0.0)
 
     return model

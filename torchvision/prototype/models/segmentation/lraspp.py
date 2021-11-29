@@ -8,13 +8,13 @@ from ....models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
-from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
+from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
 
 
-__all__ = ["LRASPP", "LRASPPMobileNetV3LargeWeights", "lraspp_mobilenet_v3_large"]
+__all__ = ["LRASPP", "LRASPP_MobileNet_V3_Large_Weights", "lraspp_mobilenet_v3_large"]
 
 
-class LRASPPMobileNetV3LargeWeights(WeightsEnum):
+class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
     CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
         transforms=partial(VocEval, resize_size=520),
@@ -30,10 +30,10 @@ class LRASPPMobileNetV3LargeWeights(WeightsEnum):
 
 
 def lraspp_mobilenet_v3_large(
-    weights: Optional[LRASPPMobileNetV3LargeWeights] = None,
+    weights: Optional[LRASPP_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
-    weights_backbone: Optional[MobileNetV3LargeWeights] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = None,
     **kwargs: Any,
 ) -> LRASPP:
     if kwargs.pop("aux_loss", False):
@@ -42,15 +42,17 @@ def lraspp_mobilenet_v3_large(
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", LRASPPMobileNetV3LargeWeights.CocoWithVocLabels_V1)
-    weights = LRASPPMobileNetV3LargeWeights.verify(weights)
+        weights = _deprecated_param(
+            kwargs, "pretrained", "weights", LRASPP_MobileNet_V3_Large_Weights.CocoWithVocLabels_V1
+        )
+    weights = LRASPP_MobileNet_V3_Large_Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", MobileNetV3LargeWeights.ImageNet1K_V1
+            kwargs, "pretrained_backbone", "weights_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1
         )
-    weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
+    weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
 
     if weights is not None:
         weights_backbone = None

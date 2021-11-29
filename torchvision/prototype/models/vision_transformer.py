@@ -17,10 +17,10 @@ from ._utils import _deprecated_param, _deprecated_positional
 
 __all__ = [
     "VisionTransformer",
-    "VisionTransformer_B_16Weights",
-    "VisionTransformer_B_32Weights",
-    "VisionTransformer_L_16Weights",
-    "VisionTransformer_L_32Weights",
+    "ViT_B_16_Weights",
+    "ViT_B_32_Weights",
+    "ViT_L_16_Weights",
+    "ViT_L_32_Weights",
     "vit_b_16",
     "vit_b_32",
     "vit_l_16",
@@ -231,22 +231,22 @@ class VisionTransformer(nn.Module):
         return x
 
 
-class VisionTransformer_B_16Weights(WeightsEnum):
+class ViT_B_16_Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in vit_b_16
     pass
 
 
-class VisionTransformer_B_32Weights(WeightsEnum):
+class ViT_B_32_Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in vit_b_32
     pass
 
 
-class VisionTransformer_L_16Weights(WeightsEnum):
+class ViT_L_16_Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in vit_l_16
     pass
 
 
-class VisionTransformer_L_32Weights(WeightsEnum):
+class ViT_L_32_Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in vit_l_32
     pass
 
@@ -279,15 +279,13 @@ def _vision_transformer(
     return model
 
 
-def vit_b_16(
-    weights: Optional[VisionTransformer_B_16Weights] = None, progress: bool = True, **kwargs: Any
-) -> VisionTransformer:
+def vit_b_16(weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (VisionTransformer_B_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
+        weights (ViT_B_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
             Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
@@ -295,7 +293,7 @@ def vit_b_16(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", None)
-    weights = VisionTransformer_B_16Weights.verify(weights)
+    weights = ViT_B_16_Weights.verify(weights)
 
     return _vision_transformer(
         patch_size=16,
@@ -309,15 +307,13 @@ def vit_b_16(
     )
 
 
-def vit_b_32(
-    weights: Optional[VisionTransformer_B_32Weights] = None, progress: bool = True, **kwargs: Any
-) -> VisionTransformer:
+def vit_b_32(weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (VisionTransformer_B_32Weights, optional): If not None, returns a model pre-trained on ImageNet.
+        weights (ViT_B_32Weights, optional): If not None, returns a model pre-trained on ImageNet.
             Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
@@ -325,7 +321,7 @@ def vit_b_32(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", None)
-    weights = VisionTransformer_B_32Weights.verify(weights)
+    weights = ViT_B_32_Weights.verify(weights)
 
     return _vision_transformer(
         patch_size=32,
@@ -339,15 +335,13 @@ def vit_b_32(
     )
 
 
-def vit_l_16(
-    weights: Optional[VisionTransformer_L_16Weights] = None, progress: bool = True, **kwargs: Any
-) -> VisionTransformer:
+def vit_l_16(weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (VisionTransformer_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
+        weights (ViT_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
             Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
@@ -355,7 +349,7 @@ def vit_l_16(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", None)
-    weights = VisionTransformer_L_16Weights.verify(weights)
+    weights = ViT_L_16_Weights.verify(weights)
 
     return _vision_transformer(
         patch_size=16,
@@ -369,15 +363,13 @@ def vit_l_16(
     )
 
 
-def vit_l_32(
-    weights: Optional[VisionTransformer_B_32Weights] = None, progress: bool = True, **kwargs: Any
-) -> VisionTransformer:
+def vit_l_32(weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (VisionTransformer_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
+        weights (ViT_L_32Weights, optional): If not None, returns a model pre-trained on ImageNet.
             Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
@@ -385,7 +377,7 @@ def vit_l_32(
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", None)
-    weights = VisionTransformer_L_32Weights.verify(weights)
+    weights = ViT_L_32_Weights.verify(weights)
 
     return _vision_transformer(
         patch_size=32,

@@ -12,10 +12,10 @@ from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_p
 
 __all__ = [
     "ShuffleNetV2",
-    "ShuffleNetV2_x0_5Weights",
-    "ShuffleNetV2_x1_0Weights",
-    "ShuffleNetV2_x1_5Weights",
-    "ShuffleNetV2_x2_0Weights",
+    "ShuffleNet_V2_X0_5_Weights",
+    "ShuffleNet_V2_X1_0_Weights",
+    "ShuffleNet_V2_X1_5_Weights",
+    "ShuffleNet_V2_X2_0_Weights",
     "shufflenet_v2_x0_5",
     "shufflenet_v2_x1_0",
     "shufflenet_v2_x1_5",
@@ -48,7 +48,7 @@ _COMMON_META = {
 }
 
 
-class ShuffleNetV2_x0_5Weights(WeightsEnum):
+class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
@@ -61,7 +61,7 @@ class ShuffleNetV2_x0_5Weights(WeightsEnum):
     )
 
 
-class ShuffleNetV2_x1_0Weights(WeightsEnum):
+class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageNetEval, crop_size=224),
@@ -74,57 +74,57 @@ class ShuffleNetV2_x1_0Weights(WeightsEnum):
     )
 
 
-class ShuffleNetV2_x1_5Weights(WeightsEnum):
+class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
     pass
 
 
-class ShuffleNetV2_x2_0Weights(WeightsEnum):
+class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
     pass
 
 
 def shufflenet_v2_x0_5(
-    weights: Optional[ShuffleNetV2_x0_5Weights] = None, progress: bool = True, **kwargs: Any
+    weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x0_5Weights.ImageNet1K_V1)
-    weights = ShuffleNetV2_x0_5Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1)
+    weights = ShuffleNet_V2_X0_5_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
 def shufflenet_v2_x1_0(
-    weights: Optional[ShuffleNetV2_x1_0Weights] = None, progress: bool = True, **kwargs: Any
+    weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNetV2_x1_0Weights.ImageNet1K_V1)
-    weights = ShuffleNetV2_x1_0Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1)
+    weights = ShuffleNet_V2_X1_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
 def shufflenet_v2_x1_5(
-    weights: Optional[ShuffleNetV2_x1_5Weights] = None, progress: bool = True, **kwargs: Any
+    weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", None)
-    weights = ShuffleNetV2_x1_5Weights.verify(weights)
+    weights = ShuffleNet_V2_X1_5_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
 def shufflenet_v2_x2_0(
-    weights: Optional[ShuffleNetV2_x2_0Weights] = None, progress: bool = True, **kwargs: Any
+    weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
         weights = _deprecated_param(kwargs, "pretrained", "weights", None)
-    weights = ShuffleNetV2_x2_0Weights.verify(weights)
+    weights = ShuffleNet_V2_X2_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)

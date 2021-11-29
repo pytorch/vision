@@ -22,9 +22,9 @@ from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_
 
 __all__ = [
     "VideoResNet",
-    "R3D_18Weights",
-    "MC3_18Weights",
-    "R2Plus1D_18Weights",
+    "R3D_18_Weights",
+    "MC3_18_Weights",
+    "R2Plus1D_18_Weights",
     "r3d_18",
     "mc3_18",
     "r2plus1d_18",
@@ -59,7 +59,7 @@ _COMMON_META = {
 }
 
 
-class R3D_18Weights(WeightsEnum):
+class R3D_18_Weights(WeightsEnum):
     Kinetics400_V1 = Weights(
         url="https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
         transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
@@ -72,7 +72,7 @@ class R3D_18Weights(WeightsEnum):
     )
 
 
-class MC3_18Weights(WeightsEnum):
+class MC3_18_Weights(WeightsEnum):
     Kinetics400_V1 = Weights(
         url="https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
         transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
@@ -85,7 +85,7 @@ class MC3_18Weights(WeightsEnum):
     )
 
 
-class R2Plus1D_18Weights(WeightsEnum):
+class R2Plus1D_18_Weights(WeightsEnum):
     Kinetics400_V1 = Weights(
         url="https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
         transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
@@ -98,12 +98,12 @@ class R2Plus1D_18Weights(WeightsEnum):
     )
 
 
-def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
+def r3d_18(weights: Optional[R3D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", R3D_18Weights.Kinetics400_V1)
-    weights = R3D_18Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", R3D_18_Weights.Kinetics400_V1)
+    weights = R3D_18_Weights.verify(weights)
 
     return _video_resnet(
         BasicBlock,
@@ -116,12 +116,12 @@ def r3d_18(weights: Optional[R3D_18Weights] = None, progress: bool = True, **kwa
     )
 
 
-def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
+def mc3_18(weights: Optional[MC3_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MC3_18Weights.Kinetics400_V1)
-    weights = MC3_18Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MC3_18_Weights.Kinetics400_V1)
+    weights = MC3_18_Weights.verify(weights)
 
     return _video_resnet(
         BasicBlock,
@@ -134,12 +134,12 @@ def mc3_18(weights: Optional[MC3_18Weights] = None, progress: bool = True, **kwa
     )
 
 
-def r2plus1d_18(weights: Optional[R2Plus1D_18Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
+def r2plus1d_18(weights: Optional[R2Plus1D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", R2Plus1D_18Weights.Kinetics400_V1)
-    weights = R2Plus1D_18Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", R2Plus1D_18_Weights.Kinetics400_V1)
+    weights = R2Plus1D_18_Weights.verify(weights)
 
     return _video_resnet(
         BasicBlock,

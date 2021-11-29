@@ -37,13 +37,17 @@ def get_models_with_module_names(module):
 @pytest.mark.parametrize(
     "model_fn, name, weight",
     [
-        (models.resnet50, "ImageNet1K_RefV1", models.ResNet50Weights.ImageNet1K_RefV1),
-        (models.resnet50, "default", models.ResNet50Weights.ImageNet1K_RefV2),
-        (models.quantization.resnet50, "default", models.quantization.QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV2),
+        (models.resnet50, "ImageNet1K_V1", models.ResNet50_Weights.ImageNet1K_V1),
+        (models.resnet50, "default", models.ResNet50_Weights.ImageNet1K_V2),
         (
             models.quantization.resnet50,
-            "ImageNet1K_FBGEMM_RefV1",
-            models.quantization.QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1,
+            "default",
+            models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V2,
+        ),
+        (
+            models.quantization.resnet50,
+            "ImageNet1K_FBGEMM_V1",
+            models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1,
         ),
     ],
 )
