@@ -796,6 +796,36 @@ def test_solarize2(device, dtype, config, channels):
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("threshold", [0.0, 0.25, 0.5, 0.75, 1.0])
+def test_solarize_threshold1_bound(threshold, device):
+    img = torch.rand((3, 12, 23)).to(device)
+    F_t.solarize(img, threshold)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("threshold", [1.5])
+def test_solarize_threshold1_upper_bound(threshold, device):
+    img = torch.rand((3, 12, 23)).to(device)
+    with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
+        F_t.solarize(img, threshold)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("threshold", [0, 64, 128, 192, 255])
+def test_solarize_threshold2_bound(threshold, device):
+    img = torch.randint(0, 256, (3, 12, 23)).to(device)
+    F_t.solarize(img, threshold)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("threshold", [260])
+def test_solarize_threshold2_upper_bound(threshold, device):
+    img = torch.randint(0, 256, (3, 12, 23)).to(device)
+    with pytest.raises(TypeError, match="Threshold should be less than bound of img."):
+        F_t.solarize(img, threshold)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("dtype", (None, torch.float32, torch.float64))
 @pytest.mark.parametrize("config", [{"sharpness_factor": f} for f in [0.2, 0.5, 1.0, 1.5, 2.0]])
 @pytest.mark.parametrize("channels", [1, 3])
