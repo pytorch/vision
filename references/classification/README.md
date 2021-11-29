@@ -20,7 +20,7 @@ the following parameters:
 ### AlexNet and VGG
 
 Since `AlexNet` and the original `VGG` architectures do not include batch 
-normalization, the default initial learning rate `--lr 0.1` is to high.
+normalization, the default initial learning rate `--lr 0.1` is too high.
 
 ```
 torchrun --nproc_per_node=8 train.py\

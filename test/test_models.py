@@ -133,14 +133,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
         with freeze_rng_state():
             results_from_imported = m_import(*args)
         tol = 3e-4
-        try:
-            torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
-        except ValueError:
-            # custom check for the models that return named tuples:
-            # we compare field by field while ignoring None as assert_close can't handle None
-            for a, b in zip(results, results_from_imported):
-                if a is not None:
-                    torch.testing.assert_close(a, b, atol=tol, rtol=tol)
+        torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
 
     TEST_WITH_SLOW = os.getenv("PYTORCH_TEST_WITH_SLOW", "0") == "1"
     if not TEST_WITH_SLOW or skip:
@@ -514,6 +507,7 @@ def test_classification_model(model_fn, dev):
     }
     model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
+    num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
 
     model = model_fn(**kwargs)
@@ -522,7 +516,7 @@ def test_classification_model(model_fn, dev):
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
-    assert out.shape[-1] == 50
+    assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
     _check_fx_compatible(model, x)
 
@@ -787,19 +781,19 @@ def test_quantized_classification_model(model_fn):
         model = model_fn(**kwargs)
         if eval_mode:
             model.eval()
-            model.qconfig = torch.quantization.default_qconfig
+            model.qconfig = torch.ao.quantization.default_qconfig
         else:
             model.train()
-            model.qconfig = torch.quantization.default_qat_qconfig
+            model.qconfig = torch.ao.quantization.default_qat_qconfig
 
         model.fuse_model()
         if eval_mode:
-            torch.quantization.prepare(model, inplace=True)
+            torch.ao.quantization.prepare(model, inplace=True)
         else:
-            torch.quantization.prepare_qat(model, inplace=True)
+            torch.ao.quantization.prepare_qat(model, inplace=True)
             model.eval()
 
-        torch.quantization.convert(model, inplace=True)
+        torch.ao.quantization.convert(model, inplace=True)
 
     try:
         torch.jit.script(model)

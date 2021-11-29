@@ -30,6 +30,7 @@ class WeightEntry:
     url: str
     transforms: Callable
     meta: Dict[str, Any]
+    default: bool
 
 
 class Weights(Enum):
@@ -59,7 +60,7 @@ class Weights(Enum):
     @classmethod
     def from_str(cls, value: str) -> "Weights":
         for v in cls:
-            if v._name_ == value:
+            if v._name_ == value or (value == "default" and v.default):
                 return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
@@ -101,6 +102,11 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
         # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
         for t in ann.__args__:  # type: ignore[union-attr]
             if isinstance(t, type) and issubclass(t, Weights):
+                # ensure the name exists. handles builders with multiple types of weights like in quantization
+                try:
+                    t.from_str(weight_name)
+                except ValueError:
+                    continue
                 weights_class = t
                 break
 
