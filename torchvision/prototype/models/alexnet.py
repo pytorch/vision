@@ -7,7 +7,10 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.alexnet import AlexNet
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import (
+    handle_legacy_interface,
+    handle_num_categories_mismatch,
+)
 
 
 __all__ = ["AlexNet", "AlexNetWeights", "alexnet"]
@@ -29,16 +32,10 @@ class AlexNetWeights(Weights):
     )
 
 
-def alexnet(weights: Optional[AlexNetWeights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", AlexNetWeights.ImageNet1K_RefV1)
+@handle_legacy_interface(AlexNetWeights.ImageNet1K_RefV1)
+@handle_num_categories_mismatch()
+def alexnet(*, weights: Optional[AlexNetWeights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
     weights = AlexNetWeights.verify(weights)
-
-    if weights is not None:
-        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
-
     model = AlexNet(**kwargs)
 
     if weights is not None:

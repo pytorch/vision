@@ -11,7 +11,7 @@ from ....models.quantization.shufflenetv2 import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from .._utils import handle_legacy_interface, handle_num_categories_mismatch
 from ..shufflenetv2 import ShuffleNetV2_x0_5Weights, ShuffleNetV2_x1_0Weights
 
 
@@ -24,18 +24,20 @@ __all__ = [
 ]
 
 
+@handle_num_categories_mismatch()
 def _shufflenetv2(
     stages_repeats: List[int],
     stages_out_channels: List[int],
+    *,
     weights: Optional[Weights],
     progress: bool,
     quantize: bool,
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
-    if weights is not None:
-        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
-        if "backend" in weights.meta:
-            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
+    # FIXME
+    # if weights is not None:
+    # if "backend" in weights.meta:
+    #     _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableShuffleNetV2(stages_repeats, stages_out_channels, **kwargs)
@@ -87,47 +89,37 @@ class QuantizedShuffleNetV2_x1_0Weights(Weights):
     )
 
 
+@handle_legacy_interface(
+    lambda kwargs: QuantizedShuffleNetV2_x0_5Weights.ImageNet1K_FBGEMM_Community
+    if kwargs.get("quantize", False)
+    else ShuffleNetV2_x0_5Weights.ImageNet1K_Community
+)
 def shufflenet_v2_x0_5(
+    *,
     weights: Optional[Union[QuantizedShuffleNetV2_x0_5Weights, ShuffleNetV2_x0_5Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = (
-            QuantizedShuffleNetV2_x0_5Weights.ImageNet1K_FBGEMM_Community
-            if quantize
-            else ShuffleNetV2_x0_5Weights.ImageNet1K_Community
-        )
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = QuantizedShuffleNetV2_x0_5Weights.verify(weights)
-    else:
-        weights = ShuffleNetV2_x0_5Weights.verify(weights)
-
-    return _shufflenetv2([4, 8, 4], [24, 48, 96, 192, 1024], weights, progress, quantize, **kwargs)
+    weights = (QuantizedShuffleNetV2_x0_5Weights if quantize else ShuffleNetV2_x0_5Weights).verify(weights)
+    return _shufflenetv2(
+        [4, 8, 4], [24, 48, 96, 192, 1024], weights=weights, progress=progress, quantize=quantize, **kwargs
+    )
 
 
+@handle_legacy_interface(
+    lambda kwargs: QuantizedShuffleNetV2_x1_0Weights.ImageNet1K_FBGEMM_Community
+    if kwargs.get("quantize", False)
+    else ShuffleNetV2_x1_0Weights.ImageNet1K_Community
+)
 def shufflenet_v2_x1_0(
+    *,
     weights: Optional[Union[QuantizedShuffleNetV2_x1_0Weights, ShuffleNetV2_x1_0Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = (
-            QuantizedShuffleNetV2_x1_0Weights.ImageNet1K_FBGEMM_Community
-            if quantize
-            else ShuffleNetV2_x1_0Weights.ImageNet1K_Community
-        )
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = QuantizedShuffleNetV2_x1_0Weights.verify(weights)
-    else:
-        weights = ShuffleNetV2_x1_0Weights.verify(weights)
-
-    return _shufflenetv2([4, 8, 4], [24, 116, 232, 464, 1024], weights, progress, quantize, **kwargs)
+    weights = (QuantizedShuffleNetV2_x1_0Weights if quantize else QuantizedShuffleNetV2_x1_0Weights).verify(weights)
+    return _shufflenetv2(
+        [4, 8, 4], [24, 116, 232, 464, 1024], weights=weights, progress=progress, quantize=quantize, **kwargs
+    )
