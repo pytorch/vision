@@ -1,7 +1,7 @@
-import warnings
 from functools import partial
 from typing import Any, Optional, Union
 
+from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.inception import (
@@ -9,9 +9,9 @@ from ....models.quantization.inception import (
     _replace_relu,
     quantize_model,
 )
-from ...transforms.presets import ImageNetEval
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..inception import InceptionV3Weights
 
 
@@ -37,6 +37,7 @@ class QuantizedInceptionV3Weights(Weights):
             "acc@1": 77.176,
             "acc@5": 93.354,
         },
+        default=True,
     )
 
 
@@ -46,15 +47,13 @@ def inception_v3(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableInception3:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1
-            )
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1
+        )
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedInceptionV3Weights.verify(weights)
     else:
@@ -63,11 +62,11 @@ def inception_v3(
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        kwargs["aux_logits"] = True
-        kwargs["num_classes"] = len(weights.meta["categories"])
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         if "backend" in weights.meta:
-            kwargs["backend"] = weights.meta["backend"]
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableInception3(**kwargs)
@@ -79,7 +78,7 @@ def inception_v3(
         if quantize and not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not quantize and not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None

@@ -30,6 +30,7 @@ class WeightEntry:
     url: str
     transforms: Callable
     meta: Dict[str, Any]
+    default: bool
 
 
 class Weights(Enum):
@@ -50,7 +51,7 @@ class Weights(Enum):
         if obj is not None:
             if type(obj) is str:
                 obj = cls.from_str(obj)
-            elif not isinstance(obj, cls) and not isinstance(obj, WeightEntry):
+            elif not isinstance(obj, cls):
                 raise TypeError(
                     f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
                 )
@@ -59,11 +60,11 @@ class Weights(Enum):
     @classmethod
     def from_str(cls, value: str) -> "Weights":
         for v in cls:
-            if v._name_ == value:
+            if v._name_ == value or (value == "default" and v.default):
                 return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
-    def state_dict(self, progress: bool) -> OrderedDict:
+    def get_state_dict(self, progress: bool) -> OrderedDict:
         return load_state_dict_from_url(self.url, progress=progress)
 
     def __repr__(self):
@@ -90,7 +91,7 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
     """
     sig = signature(fn)
     if "weights" not in sig.parameters:
-        raise ValueError("The method is missing the 'weights' argument.")
+        raise ValueError("The method is missing the 'weights' parameter.")
 
     ann = signature(fn).parameters["weights"].annotation
     weights_class = None
@@ -101,6 +102,11 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
         # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
         for t in ann.__args__:  # type: ignore[union-attr]
             if isinstance(t, type) and issubclass(t, Weights):
+                # ensure the name exists. handles builders with multiple types of weights like in quantization
+                try:
+                    t.from_str(weight_name)
+                except ValueError:
+                    continue
                 weights_class = t
                 break
 

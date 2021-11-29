@@ -2,6 +2,7 @@ import warnings
 from functools import partial
 from typing import Any, Optional, Union
 
+from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.googlenet import (
@@ -9,9 +10,9 @@ from ....models.quantization.googlenet import (
     _replace_relu,
     quantize_model,
 )
-from ...transforms.presets import ImageNetEval
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 from ..googlenet import GoogLeNetWeights
 
 
@@ -37,6 +38,7 @@ class QuantizedGoogLeNetWeights(Weights):
             "acc@1": 69.826,
             "acc@5": 89.404,
         },
+        default=True,
     )
 
 
@@ -46,13 +48,13 @@ def googlenet(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = QuantizedGoogLeNetWeights.ImageNet1K_FBGEMM_TFV1 if quantize else GoogLeNetWeights.ImageNet1K_TFV1
-        else:
-            weights = None
-
+        default_value = (
+            QuantizedGoogLeNetWeights.ImageNet1K_FBGEMM_TFV1 if quantize else GoogLeNetWeights.ImageNet1K_TFV1
+        )
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
         weights = QuantizedGoogLeNetWeights.verify(weights)
     else:
@@ -61,16 +63,12 @@ def googlenet(
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if original_aux_logits:
-            warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
-            )
-        kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
-        kwargs["num_classes"] = len(weights.meta["categories"])
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "init_weights", False)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         if "backend" in weights.meta:
-            kwargs["backend"] = weights.meta["backend"]
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableGoogLeNet(**kwargs)
@@ -79,10 +77,14 @@ def googlenet(
         quantize_model(model, backend)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
             model.aux1 = None  # type: ignore[assignment]
             model.aux2 = None  # type: ignore[assignment]
+        else:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
+            )
 
     return model

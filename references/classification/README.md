@@ -20,7 +20,7 @@ the following parameters:
 ### AlexNet and VGG
 
 Since `AlexNet` and the original `VGG` architectures do not include batch 
-normalization, the default initial learning rate `--lr 0.1` is to high.
+normalization, the default initial learning rate `--lr 0.1` is too high.
 
 ```
 torchrun --nproc_per_node=8 train.py\
@@ -168,7 +168,7 @@ For all post training quantized models, the settings are:
 ```
 python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
 ```
-Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d` and `shufflenet_v2_x1_0`.
+Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d`, `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0`.
 
 ### QAT MobileNetV2
 

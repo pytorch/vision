@@ -1,13 +1,13 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
+from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.alexnet import AlexNet
-from ..transforms.presets import ImageNetEval
 from ._api import Weights, WeightEntry
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = ["AlexNet", "AlexNetWeights", "alexnet"]
@@ -25,20 +25,23 @@ class AlexNetWeights(Weights):
             "acc@1": 56.522,
             "acc@5": 79.066,
         },
+        default=True,
     )
 
 
 def alexnet(weights: Optional[AlexNetWeights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = AlexNetWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
+        weights = _deprecated_param(kwargs, "pretrained", "weights", AlexNetWeights.ImageNet1K_RefV1)
     weights = AlexNetWeights.verify(weights)
+
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = AlexNet(**kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
