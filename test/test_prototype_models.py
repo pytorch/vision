@@ -49,24 +49,22 @@ def _build_model(fn, **kwargs):
 
 
 @pytest.mark.parametrize(
-    "model_fn, name, weight",
+    "name, weight",
     [
-        (models.resnet50, "ImageNet1K_V1", models.ResNet50_Weights.ImageNet1K_V1),
-        (models.resnet50, "default", models.ResNet50_Weights.ImageNet1K_V2),
+        ("ResNet50_Weights.ImageNet1K_V1", models.ResNet50_Weights.ImageNet1K_V1),
+        ("ResNet50_Weights.default", models.ResNet50_Weights.ImageNet1K_V2),
         (
-            models.quantization.resnet50,
-            "default",
+            "ResNet50_QuantizedWeights.default",
             models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V2,
         ),
         (
-            models.quantization.resnet50,
-            "ImageNet1K_FBGEMM_V1",
+            "ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1",
             models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1,
         ),
     ],
 )
-def test_get_weight(model_fn, name, weight):
-    assert models._api.get_weight(model_fn, name) == weight
+def test_get_weight(name, weight):
+    assert models.get_weight(name) == weight
 
 
 @pytest.mark.parametrize(
