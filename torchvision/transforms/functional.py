@@ -57,7 +57,6 @@ pil_modes_mapping = {
 }
 
 _is_pil_image = F_pil._is_pil_image
-_MODULE = "torchvision.transforms.functional"
 
 
 def get_image_size(img: Tensor) -> List[int]:
@@ -69,7 +68,7 @@ def get_image_size(img: Tensor) -> List[int]:
     Returns:
         List[int]: The image size.
     """
-    _log_api_usage_once(f"{_MODULE}.get_image_size")
+    _log_api_usage_once("torchvision.transforms.functional.get_image_size")
     if isinstance(img, torch.Tensor):
         return F_t.get_image_size(img)
 
@@ -85,7 +84,7 @@ def get_image_num_channels(img: Tensor) -> int:
     Returns:
         int: The number of channels.
     """
-    _log_api_usage_once(f"{_MODULE}.get_image_num_channels")
+    _log_api_usage_once("torchvision.transforms.functional.get_image_num_channels")
     if isinstance(img, torch.Tensor):
         return F_t.get_image_num_channels(img)
 
@@ -114,7 +113,7 @@ def to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    _log_api_usage_once(f"{_MODULE}.to_tensor")
+    _log_api_usage_once("torchvision.transforms.functional.to_tensor")
     if not (F_pil._is_pil_image(pic) or _is_numpy(pic)):
         raise TypeError(f"pic should be PIL Image or ndarray. Got {type(pic)}")
 
@@ -171,7 +170,7 @@ def pil_to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    _log_api_usage_once(f"{_MODULE}.pil_to_tensor")
+    _log_api_usage_once("torchvision.transforms.functional.pil_to_tensor")
     if not F_pil._is_pil_image(pic):
         raise TypeError(f"pic should be PIL Image. Got {type(pic)}")
 
@@ -211,7 +210,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
             of the integer ``dtype``.
     """
-    _log_api_usage_once(f"{_MODULE}.convert_image_dtype")
+    _log_api_usage_once("torchvision.transforms.functional.convert_image_dtype")
     if not isinstance(image, torch.Tensor):
         raise TypeError("Input img should be Tensor Image")
 
@@ -232,7 +231,7 @@ def to_pil_image(pic, mode=None):
     Returns:
         PIL Image: Image converted to PIL Image.
     """
-    _log_api_usage_once(f"{_MODULE}.to_pil_image")
+    _log_api_usage_once("torchvision.transforms.functional.to_pil_image")
     if not (isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
         raise TypeError(f"pic should be Tensor or ndarray. Got {type(pic)}.")
 
@@ -330,7 +329,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     Returns:
         Tensor: Normalized Tensor image.
     """
-    _log_api_usage_once(f"{_MODULE}.normalize")
+    _log_api_usage_once("torchvision.transforms.functional.normalize")
     if not isinstance(tensor, torch.Tensor):
         raise TypeError(f"Input tensor should be a torch tensor. Got {type(tensor)}.")
 
@@ -410,7 +409,7 @@ def resize(
     Returns:
         PIL Image or Tensor: Resized image.
     """
-    _log_api_usage_once(f"{_MODULE}.resize")
+    _log_api_usage_once("torchvision.transforms.functional.resize")
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
         warnings.warn(
@@ -432,7 +431,7 @@ def resize(
 
 
 def scale(*args, **kwargs):
-    _log_api_usage_once(f"{_MODULE}.scale")
+    _log_api_usage_once("torchvision.transforms.functional.scale")
     warnings.warn("The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.")
     return resize(*args, **kwargs)
 
@@ -478,7 +477,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     Returns:
         PIL Image or Tensor: Padded image.
     """
-    _log_api_usage_once(f"{_MODULE}.pad")
+    _log_api_usage_once("torchvision.transforms.functional.pad")
     if not isinstance(img, torch.Tensor):
         return F_pil.pad(img, padding=padding, fill=fill, padding_mode=padding_mode)
 
@@ -502,7 +501,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
         PIL Image or Tensor: Cropped image.
     """
 
-    _log_api_usage_once(f"{_MODULE}.crop")
+    _log_api_usage_once("torchvision.transforms.functional.crop")
     if not isinstance(img, torch.Tensor):
         return F_pil.crop(img, top, left, height, width)
 
@@ -523,7 +522,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     Returns:
         PIL Image or Tensor: Cropped image.
     """
-    _log_api_usage_once(f"{_MODULE}.center_crop")
+    _log_api_usage_once("torchvision.transforms.functional.center_crop")
     if isinstance(output_size, numbers.Number):
         output_size = (int(output_size), int(output_size))
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
@@ -580,7 +579,7 @@ def resized_crop(
     Returns:
         PIL Image or Tensor: Cropped image.
     """
-    _log_api_usage_once(f"{_MODULE}.resized_crop")
+    _log_api_usage_once("torchvision.transforms.functional.resized_crop")
     img = crop(img, top, left, height, width)
     img = resize(img, size, interpolation)
     return img
@@ -598,7 +597,7 @@ def hflip(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor:  Horizontally flipped image.
     """
-    _log_api_usage_once(f"{_MODULE}.hflip")
+    _log_api_usage_once("torchvision.transforms.functional.hflip")
     if not isinstance(img, torch.Tensor):
         return F_pil.hflip(img)
 
@@ -664,7 +663,7 @@ def perspective(
     Returns:
         PIL Image or Tensor: transformed Image.
     """
-    _log_api_usage_once(f"{_MODULE}.perspective")
+    _log_api_usage_once("torchvision.transforms.functional.perspective")
 
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
 
@@ -698,7 +697,7 @@ def vflip(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor:  Vertically flipped image.
     """
-    _log_api_usage_once(f"{_MODULE}.vflip")
+    _log_api_usage_once("torchvision.transforms.functional.vflip")
     if not isinstance(img, torch.Tensor):
         return F_pil.vflip(img)
 
@@ -724,7 +723,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
        tuple: tuple (tl, tr, bl, br, center)
        Corresponding top left, top right, bottom left, bottom right and center crop.
     """
-    _log_api_usage_once(f"{_MODULE}.five_crop")
+    _log_api_usage_once("torchvision.transforms.functional.five_crop")
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
     elif isinstance(size, (tuple, list)) and len(size) == 1:
@@ -772,7 +771,7 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
         Corresponding top left, top right, bottom left, bottom right and
         center crop and same for the flipped image.
     """
-    _log_api_usage_once(f"{_MODULE}.ten_crop")
+    _log_api_usage_once("torchvision.transforms.functional.ten_crop")
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
     elif isinstance(size, (tuple, list)) and len(size) == 1:
@@ -806,7 +805,7 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Brightness adjusted image.
     """
-    _log_api_usage_once(f"{_MODULE}.adjust_brightness")
+    _log_api_usage_once("torchvision.transforms.functional.adjust_brightness")
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_brightness(img, brightness_factor)
 
@@ -827,7 +826,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Contrast adjusted image.
     """
-    _log_api_usage_once(f"{_MODULE}.adjust_contrast")
+    _log_api_usage_once("torchvision.transforms.functional.adjust_contrast")
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_contrast(img, contrast_factor)
 
@@ -848,7 +847,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Saturation adjusted image.
     """
-    _log_api_usage_once(f"{_MODULE}.adjust_saturation")
+    _log_api_usage_once("torchvision.transforms.functional.adjust_saturation")
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_saturation(img, saturation_factor)
 
@@ -883,7 +882,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Hue adjusted image.
     """
-    _log_api_usage_once(f"{_MODULE}.adjust_hue")
+    _log_api_usage_once("torchvision.transforms.functional.adjust_hue")
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_hue(img, hue_factor)
 
@@ -915,7 +914,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     Returns:
         PIL Image or Tensor: Gamma correction adjusted image.
     """
-    _log_api_usage_once(f"{_MODULE}.adjust_gamma")
+    _log_api_usage_once("torchvision.transforms.functional.adjust_gamma")
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_gamma(img, gamma, gain)
 
@@ -1012,7 +1011,7 @@ def rotate(
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
-    _log_api_usage_once(f"{_MODULE}.rotate")
+    _log_api_usage_once("torchvision.transforms.functional.rotate")
     if resample is not None:
         warnings.warn(
             "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
@@ -1093,7 +1092,7 @@ def affine(
     Returns:
         PIL Image or Tensor: Transformed image.
     """
-    _log_api_usage_once(f"{_MODULE}.affine")
+    _log_api_usage_once("torchvision.transforms.functional.affine")
     if resample is not None:
         warnings.warn(
             "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
@@ -1178,7 +1177,7 @@ def to_grayscale(img, num_output_channels=1):
         - if num_output_channels = 1 : returned image is single channel
         - if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
-    _log_api_usage_once(f"{_MODULE}.to_grayscale")
+    _log_api_usage_once("torchvision.transforms.functional.to_grayscale")
     if isinstance(img, Image.Image):
         return F_pil.to_grayscale(img, num_output_channels)
 
@@ -1204,7 +1203,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
         - if num_output_channels = 1 : returned image is single channel
         - if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
-    _log_api_usage_once(f"{_MODULE}.rgb_to_grayscale")
+    _log_api_usage_once("torchvision.transforms.functional.rgb_to_grayscale")
     if not isinstance(img, torch.Tensor):
         return F_pil.to_grayscale(img, num_output_channels)
 
@@ -1227,7 +1226,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     Returns:
         Tensor Image: Erased image.
     """
-    _log_api_usage_once(f"{_MODULE}.erase")
+    _log_api_usage_once("torchvision.transforms.functional.erase")
     if not isinstance(img, torch.Tensor):
         raise TypeError(f"img should be Tensor Image. Got {type(img)}")
 
@@ -1264,7 +1263,7 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
     """
-    _log_api_usage_once(f"{_MODULE}.gaussian_blur")
+    _log_api_usage_once("torchvision.transforms.functional.gaussian_blur")
     if not isinstance(kernel_size, (int, list, tuple)):
         raise TypeError(f"kernel_size should be int or a sequence of integers. Got {type(kernel_size)}")
     if isinstance(kernel_size, int):
@@ -1316,7 +1315,7 @@ def invert(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor: Color inverted image.
     """
-    _log_api_usage_once(f"{_MODULE}.invert")
+    _log_api_usage_once("torchvision.transforms.functional.invert")
     if not isinstance(img, torch.Tensor):
         return F_pil.invert(img)
 
@@ -1336,7 +1335,7 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     Returns:
         PIL Image or Tensor: Posterized image.
     """
-    _log_api_usage_once(f"{_MODULE}.posterize")
+    _log_api_usage_once("torchvision.transforms.functional.posterize")
     if not (0 <= bits <= 8):
         raise ValueError(f"The number if bits should be between 0 and 8. Got {bits}")
 
@@ -1358,7 +1357,7 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Solarized image.
     """
-    _log_api_usage_once(f"{_MODULE}.solarize")
+    _log_api_usage_once("torchvision.transforms.functional.solarize")
     if not isinstance(img, torch.Tensor):
         return F_pil.solarize(img, threshold)
 
@@ -1379,7 +1378,7 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Sharpness adjusted image.
     """
-    _log_api_usage_once(f"{_MODULE}.adjust_sharpness")
+    _log_api_usage_once("torchvision.transforms.functional.adjust_sharpness")
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_sharpness(img, sharpness_factor)
 
@@ -1400,7 +1399,7 @@ def autocontrast(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor: An image that was autocontrasted.
     """
-    _log_api_usage_once(f"{_MODULE}.autocontrast")
+    _log_api_usage_once("torchvision.transforms.functional.autocontrast")
     if not isinstance(img, torch.Tensor):
         return F_pil.autocontrast(img)
 
@@ -1422,7 +1421,7 @@ def equalize(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor: An image that was equalized.
     """
-    _log_api_usage_once(f"{_MODULE}.equalize")
+    _log_api_usage_once("torchvision.transforms.functional.equalize")
     if not isinstance(img, torch.Tensor):
         return F_pil.equalize(img)
 
