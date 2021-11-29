@@ -10,21 +10,21 @@ from ....models.detection.mask_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
-from ..resnet import ResNet50Weights, resnet50
+from ..resnet import ResNet50_Weights, resnet50
 
 
 __all__ = [
     "MaskRCNN",
-    "MaskRCNNResNet50FPNWeights",
+    "MaskRCNN_ResNet50_FPN_Weights",
     "maskrcnn_resnet50_fpn",
 ]
 
 
-class MaskRCNNResNet50FPNWeights(Weights):
-    Coco_RefV1 = WeightEntry(
+class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
+    Coco_V1 = Weights(
         url="https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
         transforms=CocoEval,
         meta={
@@ -39,25 +39,25 @@ class MaskRCNNResNet50FPNWeights(Weights):
 
 
 def maskrcnn_resnet50_fpn(
-    weights: Optional[MaskRCNNResNet50FPNWeights] = None,
+    weights: Optional[MaskRCNN_ResNet50_FPN_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
-    weights_backbone: Optional[ResNet50Weights] = None,
+    weights_backbone: Optional[ResNet50_Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> MaskRCNN:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MaskRCNNResNet50FPNWeights.Coco_RefV1)
-    weights = MaskRCNNResNet50FPNWeights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MaskRCNN_ResNet50_FPN_Weights.Coco_V1)
+    weights = MaskRCNN_ResNet50_FPN_Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet50Weights.ImageNet1K_RefV1
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50_Weights.ImageNet1K_V1
         )
-    weights_backbone = ResNet50Weights.verify(weights_backbone)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
     if weights is not None:
         weights_backbone = None
@@ -75,7 +75,7 @@ def maskrcnn_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == MaskRCNNResNet50FPNWeights.Coco_RefV1:
+        if weights == MaskRCNN_ResNet50_FPN_Weights.Coco_V1:
             overwrite_eps(model, 0.0)
 
     return model
