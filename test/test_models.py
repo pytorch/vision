@@ -507,6 +507,7 @@ def test_classification_model(model_fn, dev):
     }
     model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
+    num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
 
     model = model_fn(**kwargs)
@@ -515,7 +516,7 @@ def test_classification_model(model_fn, dev):
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
-    assert out.shape[-1] == 50
+    assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
     _check_fx_compatible(model, x)
 

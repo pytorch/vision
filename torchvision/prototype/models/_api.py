@@ -30,6 +30,7 @@ class WeightEntry:
     url: str
     transforms: Callable
     meta: Dict[str, Any]
+    default: bool
 
 
 class Weights(Enum):
@@ -59,7 +60,7 @@ class Weights(Enum):
     @classmethod
     def from_str(cls, value: str) -> "Weights":
         for v in cls:
-            if v._name_ == value:
+            if v._name_ == value or (value == "default" and v.default):
                 return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
