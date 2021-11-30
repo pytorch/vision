@@ -30,8 +30,8 @@ class FCN_ResNet50_Weights(WeightsEnum):
             "mIoU": 60.5,
             "acc": 91.4,
         },
-        default=True,
     )
+    default = CocoWithVocLabels_V1
 
 
 class FCN_ResNet101_Weights(WeightsEnum):
@@ -44,8 +44,8 @@ class FCN_ResNet101_Weights(WeightsEnum):
             "mIoU": 63.7,
             "acc": 91.9,
         },
-        default=True,
     )
+    default = CocoWithVocLabels_V1
 
 
 def fcn_resnet50(

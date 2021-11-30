@@ -57,8 +57,8 @@ class VGG11_Weights(WeightsEnum):
             "acc@1": 69.020,
             "acc@5": 88.628,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class VGG11_BN_Weights(WeightsEnum):
@@ -70,8 +70,8 @@ class VGG11_BN_Weights(WeightsEnum):
             "acc@1": 70.370,
             "acc@5": 89.810,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class VGG13_Weights(WeightsEnum):
@@ -83,8 +83,8 @@ class VGG13_Weights(WeightsEnum):
             "acc@1": 69.928,
             "acc@5": 89.246,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class VGG13_BN_Weights(WeightsEnum):
@@ -96,8 +96,8 @@ class VGG13_BN_Weights(WeightsEnum):
             "acc@1": 71.586,
             "acc@5": 90.374,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class VGG16_Weights(WeightsEnum):
@@ -109,7 +109,6 @@ class VGG16_Weights(WeightsEnum):
             "acc@1": 71.592,
             "acc@5": 90.382,
         },
-        default=True,
     )
     # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
     # same input standardization method as the paper. Only the `features` weights have proper values, those on the
@@ -127,8 +126,8 @@ class VGG16_Weights(WeightsEnum):
             "acc@1": float("nan"),
             "acc@5": float("nan"),
         },
-        default=False,
     )
+    default = ImageNet1K_V1
 
 
 class VGG16_BN_Weights(WeightsEnum):
@@ -140,8 +139,8 @@ class VGG16_BN_Weights(WeightsEnum):
             "acc@1": 73.360,
             "acc@5": 91.516,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class VGG19_Weights(WeightsEnum):
@@ -153,8 +152,8 @@ class VGG19_Weights(WeightsEnum):
             "acc@1": 72.376,
             "acc@5": 90.876,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class VGG19_BN_Weights(WeightsEnum):
@@ -166,8 +165,8 @@ class VGG19_BN_Weights(WeightsEnum):
             "acc@1": 74.218,
             "acc@5": 91.842,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def vgg11(weights: Optional[VGG11_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:

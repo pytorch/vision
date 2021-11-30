@@ -38,8 +38,8 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
             "map": 21.3,
         },
-        default=True,
     )
+    default = Coco_V1
 
 
 def ssdlite320_mobilenet_v3_large(

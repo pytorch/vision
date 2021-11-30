@@ -26,8 +26,8 @@ class GoogLeNet_Weights(WeightsEnum):
             "acc@1": 69.778,
             "acc@5": 89.530,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def googlenet(weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:

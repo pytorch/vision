@@ -54,7 +54,6 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             "acc@1": 74.042,
             "acc@5": 91.340,
         },
-        default=False,
     )
     ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
@@ -65,8 +64,8 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             "acc@1": 75.274,
             "acc@5": 92.566,
         },
-        default=True,
     )
+    default = ImageNet1K_V2
 
 
 class MobileNet_V3_Small_Weights(WeightsEnum):
@@ -79,8 +78,8 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
             "acc@1": 67.668,
             "acc@5": 87.402,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def mobilenet_v3_large(
