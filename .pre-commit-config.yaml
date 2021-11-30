@@ -28,3 +28,8 @@ repos:
     hooks:
       - id: flake8
         args: [--config=setup.cfg]
+
+  - repo: https://github.com/PyCQA/pydocstyle
+    rev: 6.1.1
+    hooks:
+      - id: pydocstyle

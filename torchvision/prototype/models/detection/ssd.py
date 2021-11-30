@@ -10,20 +10,20 @@ from ....models.detection.ssd import (
     DefaultBoxGenerator,
     SSD,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
-from ..vgg import VGG16Weights, vgg16
+from ..vgg import VGG16_Weights, vgg16
 
 
 __all__ = [
-    "SSD300VGG16Weights",
+    "SSD300_VGG16_Weights",
     "ssd300_vgg16",
 ]
 
 
-class SSD300VGG16Weights(Weights):
-    Coco_RefV1 = WeightEntry(
+class SSD300_VGG16_Weights(WeightsEnum):
+    Coco_V1 = Weights(
         url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
         transforms=CocoEval,
         meta={
@@ -38,25 +38,25 @@ class SSD300VGG16Weights(Weights):
 
 
 def ssd300_vgg16(
-    weights: Optional[SSD300VGG16Weights] = None,
+    weights: Optional[SSD300_VGG16_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
-    weights_backbone: Optional[VGG16Weights] = None,
+    weights_backbone: Optional[VGG16_Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> SSD:
     if type(weights) == bool and weights:
         _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SSD300VGG16Weights.Coco_RefV1)
-    weights = SSD300VGG16Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", SSD300_VGG16_Weights.Coco_V1)
+    weights = SSD300_VGG16_Weights.verify(weights)
     if type(weights_backbone) == bool and weights_backbone:
         _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
         weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", VGG16Weights.ImageNet1K_Features
+            kwargs, "pretrained_backbone", "weights_backbone", VGG16_Weights.ImageNet1K_Features
         )
-    weights_backbone = VGG16Weights.verify(weights_backbone)
+    weights_backbone = VGG16_Weights.verify(weights_backbone)
 
     if "size" in kwargs:
         warnings.warn("The size of the model is already fixed; ignoring the parameter.")
