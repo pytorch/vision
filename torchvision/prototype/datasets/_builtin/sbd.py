@@ -37,6 +37,7 @@ class SBD(Dataset):
         return DatasetInfo(
             "sbd",
             type=DatasetType.IMAGE,
+            dependencies=("scipy",),
             homepage="http://home.bharathh.info/pubs/codes/SBD/download.html",
             valid_options=dict(
                 split=("train", "val", "train_noval"),
