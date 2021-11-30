@@ -30,7 +30,8 @@ def handle_legacy_interface(
                 if weights_param in kwargs and not isinstance(weights_arg, bool):
                     continue
 
-                pretrained_arg = weights_arg or kwargs.pop(pretrained_param, False)
+                pretrained_positional = pretrained_param not in kwargs
+                pretrained_arg = weights_arg if pretrained_positional else kwargs.pop(pretrained_param)
                 if pretrained_arg:
                     default_arg = default(kwargs) if callable(default) else default
                     if default_arg is None:
@@ -38,22 +39,19 @@ def handle_legacy_interface(
                 else:
                     default_arg = None
 
-                warnings.warn(
-                    f"The parameter '{pretrained_param}' is deprecated, please use '{weights_param}' instead. "
-                    f"The current behavior is equivalent to passing `{weights_param}={default_arg}`. "
-                    f"You can also use `{weights_param}='default'` to get the most up-to-date weights."
-                )
+                msg = f"The current behavior is equivalent to passing `{weights_param}={default_arg}`."
+                if not pretrained_positional:
+                    msg = (
+                        f"The parameter '{pretrained_param}' is deprecated, please use '{weights_param}' instead. {msg}"
+                    )
+                if default_arg is not None:
+                    msg = f"{msg} You can also use `{weights_param}='default'` to get the most up-to-date weights."
+                warnings.warn(msg)
                 kwargs[weights_param] = default_arg
 
             return builder(**kwargs)
 
-        return kwonly_to_pos_or_kw(
-            param_map={
-                new_param: pretrained_param
-                for pretrained_param, (new_param, _) in default_weights.items()  # type: ignore[union-attr]
-            },
-            warn=True,
-        )(inner_wrapper)
+        return kwonly_to_pos_or_kw(inner_wrapper)
 
     return outer_wrapper
 

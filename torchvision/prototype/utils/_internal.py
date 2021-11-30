@@ -7,21 +7,7 @@ import os
 import os.path
 import textwrap
 import warnings
-from typing import (
-    Collection,
-    Sequence,
-    Callable,
-    Any,
-    Iterator,
-    NoReturn,
-    Mapping,
-    TypeVar,
-    Iterable,
-    Tuple,
-    cast,
-    Dict,
-    Optional,
-)
+from typing import Collection, Sequence, Callable, Any, Iterator, NoReturn, Mapping, TypeVar, Iterable, Tuple, cast
 
 __all__ = [
     "StrEnum",
@@ -146,11 +132,7 @@ class FrozenBunch(FrozenMapping):
         return make_repr(type(self).__name__, self.items())
 
 
-def kwonly_to_pos_or_kw(
-    *,
-    param_map: Optional[Dict[str, str]] = None,
-    warn: bool = False,
-) -> Callable[[Callable[..., D]], Callable[..., D]]:
+def kwonly_to_pos_or_kw(fn: Callable[..., D]) -> Callable[..., D]:
     """Decorates a function that uses keyword only parameters to also allow them being passed as positionals.
 
     For example, consider the use case of changing the signature of ``old_fn`` into the one from ``new_fn``:
@@ -168,47 +150,28 @@ def kwonly_to_pos_or_kw(
 
     .. code::
 
-        @kwonly_to_pos_or_kw()
+        @kwonly_to_pos_or_kw
         def new_fn(foo, *, bar, baz=None):
             ...
 
         new_fn("foo", "bar, "baz")
-
-    Args:
-        param_map (Optional[Dict[str, str]]): Optional parameter name map, that takes precedence over the names
-            found in the wrapped function. This is useful in case parameters are not only converted but also renamed.
-        warn (bool): If ``True`` , emits a warning in case a keyword-only parameter is used as positional.
     """
-    if param_map is None:
-        param_map = dict()
+    params = inspect.signature(fn).parameters
 
-    def outer_wrapper(fn: Callable[..., D]) -> Callable[..., D]:
-        params = inspect.signature(fn).parameters
+    keyword_only_start_idx = next(idx for idx, param in enumerate(params.values()) if param.kind == param.KEYWORD_ONLY)
+    keyword_only_parameters = tuple(inspect.signature(fn).parameters)[keyword_only_start_idx:]
 
-        keyword_only_start_idx = next(
-            idx for idx, param in enumerate(params.values()) if param.kind == param.KEYWORD_ONLY
-        )
+    @functools.wraps(fn)
+    def wrapper(*args: Any, **kwargs: Any) -> D:
+        args, keyword_only_args = args[:keyword_only_start_idx], args[keyword_only_start_idx:]
+        if keyword_only_args:
+            keyword_only_kwargs = dict(zip(keyword_only_parameters, keyword_only_args))
+            warnings.warn(
+                f"Using {sequence_to_str(tuple(keyword_only_kwargs.keys()), separate_last='and ')} as positional "
+                f"parameter(s) is deprecated. Please use keyword parameter(s) instead."
+            )
+            kwargs.update(keyword_only_kwargs)
 
-        keyword_only_parameters = [
-            param_map.get(parameter, parameter)  # type: ignore[union-attr]
-            for parameter in tuple(inspect.signature(fn).parameters)[keyword_only_start_idx:]
-        ]
+        return fn(*args, **kwargs)
 
-        @functools.wraps(fn)
-        def inner_wrapper(*args: Any, **kwargs: Any) -> D:
-            args, keyword_only_args = args[:keyword_only_start_idx], args[keyword_only_start_idx:]
-            if keyword_only_args:
-                keyword_only_kwargs = dict(zip(keyword_only_parameters, keyword_only_args))
-                if warn:
-                    warnings.warn(
-                        f"Using {sequence_to_str(tuple(keyword_only_kwargs.keys()), separate_last='and ')} "
-                        "as positional parameter(s) is deprecated. "
-                        "Please use it/them as keyword parameter(s) instead."
-                    )
-                kwargs.update(keyword_only_kwargs)
-
-            return fn(*args, **kwargs)
-
-        return inner_wrapper
-
-    return outer_wrapper
+    return wrapper
