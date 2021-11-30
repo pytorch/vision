@@ -15,6 +15,7 @@ import zipfile
 from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
 from urllib.parse import urlparse
 
+import requests
 import torch
 from torch.utils.model_zoo import tqdm
 
