@@ -14,10 +14,7 @@ from ....models.detection.faster_rcnn import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _COCO_CATEGORIES
-from .._utils import (
-    handle_legacy_interface,
-    handle_num_categories_mismatch,
-)
+from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
 from ..resnet import ResNet50Weights, resnet50
 
@@ -84,7 +81,6 @@ class FasterRCNNMobileNetV3Large320FPNWeights(Weights):
         pretrained_backbone=("weights_backbone", ResNet50Weights.ImageNet1K_RefV1),
     )
 )
-@handle_num_categories_mismatch()
 def fasterrcnn_resnet50_fpn(
     *,
     weights: Optional[FasterRCNNResNet50FPNWeights] = None,
@@ -96,6 +92,12 @@ def fasterrcnn_resnet50_fpn(
 ) -> FasterRCNN:
     weights = FasterRCNNResNet50FPNWeights.verify(weights)
     weights_backbone = ResNet50Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 3
@@ -113,7 +115,6 @@ def fasterrcnn_resnet50_fpn(
     return model
 
 
-@handle_num_categories_mismatch()
 def _fasterrcnn_mobilenet_v3_large_fpn(
     *,
     weights: Optional[Union[FasterRCNNMobileNetV3LargeFPNWeights, FasterRCNNMobileNetV3Large320FPNWeights]],
@@ -123,6 +124,12 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
     trainable_backbone_layers: Optional[int],
     **kwargs: Any,
 ) -> FasterRCNN:
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
+
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 6, 3
     )

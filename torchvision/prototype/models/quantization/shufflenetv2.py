@@ -11,7 +11,7 @@ from ....models.quantization.shufflenetv2 import (
 )
 from .._api import Weights, WeightEntry
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, handle_num_categories_mismatch
+from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..shufflenetv2 import ShuffleNetV2_x0_5Weights, ShuffleNetV2_x1_0Weights
 
 
@@ -24,7 +24,6 @@ __all__ = [
 ]
 
 
-@handle_num_categories_mismatch()
 def _shufflenetv2(
     stages_repeats: List[int],
     stages_out_channels: List[int],
@@ -34,10 +33,10 @@ def _shufflenetv2(
     quantize: bool,
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
-    # FIXME
-    # if weights is not None:
-    # if "backend" in weights.meta:
-    #     _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if "backend" in weights.meta:
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableShuffleNetV2(stages_repeats, stages_out_channels, **kwargs)

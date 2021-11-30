@@ -53,23 +53,7 @@ def handle_legacy_interface(
     return outer_wrapper
 
 
-def handle_num_categories_mismatch(*, param: str = "num_classes") -> Callable[[Callable[..., M]], Callable[..., M]]:
-    def outer_wrapper(builder: Callable[..., M]) -> Callable[..., M]:
-        @functools.wraps(builder)
-        def inner_wrapper(*args: Any, weights: Optional[W], **kwargs: Any) -> M:
-            if param in kwargs and weights is not None and kwargs[param] != len(weights.meta["categories"]):
-                raise ValueError(
-                    f"The number of categories of the weights does not match the `{param}` argument: "
-                    f"{len(weights.meta['categories'])} != {kwargs[param]}."
-                )
-
-            return builder(*args, weights=weights, **kwargs)
-
-        return inner_wrapper
-
-    return outer_wrapper
-
-
+# TODO: remove this in favor of handle_legacy_interface
 def _deprecated_param(
     kwargs: Dict[str, Any], deprecated_param: str, new_param: str, default_value: Optional[W]
 ) -> Optional[W]:
@@ -83,6 +67,7 @@ def _deprecated_param(
         return None
 
 
+# TODO: remove this in favor of handle_legacy_interface
 def _deprecated_positional(kwargs: Dict[str, Any], deprecated_param: str, new_param: str, default_value: V) -> None:
     warnings.warn(
         f"The positional parameter '{deprecated_param}' is deprecated, please use keyword parameter '{new_param}'"
