@@ -7,11 +7,11 @@ from typing import Any, Callable, Dict
 from ..._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["Weights", "WeightEntry", "get_weight"]
+__all__ = ["WeightsEnum", "Weights", "get_weight"]
 
 
 @dataclass
-class WeightEntry:
+class Weights:
     """
     This class is used to group important attributes associated with the pre-trained weights.
 
@@ -30,19 +30,20 @@ class WeightEntry:
     url: str
     transforms: Callable
     meta: Dict[str, Any]
+    default: bool
 
 
-class Weights(Enum):
+class WeightsEnum(Enum):
     """
     This class is the parent class of all model weights. Each model building method receives an optional `weights`
     parameter with its associated pre-trained weights. It inherits from `Enum` and its values should be of type
-    `WeightEntry`.
+    `Weights`.
 
     Args:
-        value (WeightEntry): The data class entry with the weight information.
+        value (Weights): The data class entry with the weight information.
     """
 
-    def __init__(self, value: WeightEntry):
+    def __init__(self, value: Weights):
         self._value_ = value
 
     @classmethod
@@ -57,9 +58,9 @@ class Weights(Enum):
         return obj
 
     @classmethod
-    def from_str(cls, value: str) -> "Weights":
+    def from_str(cls, value: str) -> "WeightsEnum":
         for v in cls:
-            if v._name_ == value:
+            if v._name_ == value or (value == "default" and v.default):
                 return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
@@ -70,14 +71,14 @@ class Weights(Enum):
         return f"{self.__class__.__name__}.{self._name_}"
 
     def __getattr__(self, name):
-        # Be able to fetch WeightEntry attributes directly
-        for f in fields(WeightEntry):
+        # Be able to fetch Weights attributes directly
+        for f in fields(Weights):
             if f.name == name:
                 return object.__getattribute__(self.value, name)
         return super().__getattr__(name)
 
 
-def get_weight(fn: Callable, weight_name: str) -> Weights:
+def get_weight(fn: Callable, weight_name: str) -> WeightsEnum:
     """
     Gets the weight enum of a specific model builder method and weight name combination.
 
@@ -86,32 +87,32 @@ def get_weight(fn: Callable, weight_name: str) -> Weights:
         weight_name (str): The name of the weight enum entry of the specific model.
 
     Returns:
-        Weights: The requested weight enum.
+        WeightsEnum: The requested weight enum.
     """
     sig = signature(fn)
     if "weights" not in sig.parameters:
         raise ValueError("The method is missing the 'weights' parameter.")
 
     ann = signature(fn).parameters["weights"].annotation
-    weights_class = None
-    if isinstance(ann, type) and issubclass(ann, Weights):
-        weights_class = ann
+    weights_enum = None
+    if isinstance(ann, type) and issubclass(ann, WeightsEnum):
+        weights_enum = ann
     else:
         # handle cases like Union[Optional, T]
         # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
         for t in ann.__args__:  # type: ignore[union-attr]
-            if isinstance(t, type) and issubclass(t, Weights):
+            if isinstance(t, type) and issubclass(t, WeightsEnum):
                 # ensure the name exists. handles builders with multiple types of weights like in quantization
                 try:
                     t.from_str(weight_name)
                 except ValueError:
                     continue
-                weights_class = t
+                weights_enum = t
                 break
 
-    if weights_class is None:
+    if weights_enum is None:
         raise ValueError(
             "The weight class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
-    return weights_class.from_str(weight_name)
+    return weights_enum.from_str(weight_name)
