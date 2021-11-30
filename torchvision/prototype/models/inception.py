@@ -25,8 +25,8 @@ class Inception_V3_Weights(WeightsEnum):
             "acc@1": 77.294,
             "acc@5": 93.450,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def inception_v3(weights: Optional[Inception_V3_Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:

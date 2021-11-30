@@ -68,8 +68,8 @@ class R3D_18_Weights(WeightsEnum):
             "acc@1": 52.75,
             "acc@5": 75.45,
         },
-        default=True,
     )
+    default = Kinetics400_V1
 
 
 class MC3_18_Weights(WeightsEnum):
@@ -81,8 +81,8 @@ class MC3_18_Weights(WeightsEnum):
             "acc@1": 53.90,
             "acc@5": 76.29,
         },
-        default=True,
     )
+    default = Kinetics400_V1
 
 
 class R2Plus1D_18_Weights(WeightsEnum):
@@ -94,8 +94,8 @@ class R2Plus1D_18_Weights(WeightsEnum):
             "acc@1": 57.50,
             "acc@5": 78.81,
         },
-        default=True,
     )
+    default = Kinetics400_V1
 
 
 def r3d_18(weights: Optional[R3D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:

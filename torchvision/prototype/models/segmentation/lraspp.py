@@ -25,8 +25,8 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
             "mIoU": 57.9,
             "acc": 91.2,
         },
-        default=True,
     )
+    default = CocoWithVocLabels_V1
 
 
 def lraspp_mobilenet_v3_large(
