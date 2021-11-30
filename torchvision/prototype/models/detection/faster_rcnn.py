@@ -94,6 +94,7 @@ def fasterrcnn_resnet50_fpn(
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:
+    weights = FasterRCNNResNet50FPNWeights.verify(weights)
     weights_backbone = ResNet50Weights.verify(weights_backbone)
 
     trainable_backbone_layers = _validate_trainable_layers(
@@ -163,6 +164,7 @@ def fasterrcnn_mobilenet_v3_large_fpn(
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:
+    weights = FasterRCNNMobileNetV3LargeFPNWeights.verify(weights)
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 
     defaults = {
@@ -195,6 +197,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FasterRCNN:
+    weights = FasterRCNNMobileNetV3Large320FPNWeights.verify(weights)
     weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
 
     defaults = {
