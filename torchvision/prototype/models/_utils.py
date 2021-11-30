@@ -1,11 +1,9 @@
 import functools
-import inspect
 import warnings
-from typing import Any, Dict, Optional, TypeVar, Callable, Tuple, Union, cast
-from warnings import warn
+from typing import Any, Dict, Optional, TypeVar, Callable, Tuple, Union
 
 from torch import nn
-from torchvision.prototype.utils._internal import sequence_to_str
+from torchvision.prototype.utils._internal import kwonly_to_pos_or_kw
 
 from ._api import Weights
 
@@ -14,89 +12,43 @@ M = TypeVar("M", bound=nn.Module)
 V = TypeVar("V")
 
 
-def handle_positional_to_keyword_only(
-    builder: Callable[..., M],
-    args: Tuple[Any, ...],
-    kwargs: Dict[str, Any],
-    *,
-    keyword_only_start_idx: int,
-    parameter_map: Dict[str, str],
-) -> Tuple[Tuple[Any, ...], Dict[str, Any]]:
-    keyword_only_parameters = [
-        parameter_map.get(parameter, parameter) for parameter in tuple(inspect.signature(builder).parameters)
-    ]
-
-    args, keyword_only_args = args[:keyword_only_start_idx], args[keyword_only_start_idx:]
-
-    if keyword_only_args:
-        keyword_only_kwargs = dict(zip(keyword_only_parameters, keyword_only_args))
-        if warn:
-            warnings.warn(
-                f"Using {sequence_to_str(tuple(keyword_only_kwargs.keys()), separate_last='and ')} "
-                "as positional parameter(s) is deprecated. Please use them as keyword parameter(s) instead."
-            )
-        kwargs.update(keyword_only_kwargs)
-
-    return args, kwargs
-
-
-def handle_pretrained_to_weights(
-    builder: Callable[..., M],
-    kwargs: Dict[str, Any],
-    *,
-    default_weights: Dict[str, Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]],
-) -> Dict[str, Any]:
-    for deprecated_param, (new_param, default) in default_weights.items():
-        if not kwargs.pop(deprecated_param, False):
-            continue
-
-        warnings.warn(f"The parameter '{deprecated_param}' is deprecated, please use '{new_param}' instead.")
-
-        default_arg = default(kwargs) if callable(default) else default
-        if default_arg is None:
-            raise ValueError(f"No checkpoint is available for model {builder.__name__}")
-
-        kwargs[new_param] = default_arg
-
-    return kwargs
-
-
 def handle_legacy_interface(
     default_weights: Union[
         Optional[W],
         Callable[[Dict[str, Any]], Optional[W]],
         Dict[str, Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]],
     ],
-    *,
-    keyword_only_start_idx: int = 0,
 ):
     if not isinstance(default_weights, dict):
         default_weights = dict(pretrained=("weights", default_weights))
 
     def outer_wrapper(builder: Callable[..., M]) -> Callable[..., M]:
         @functools.wraps(builder)
-        def inner_wrapper(*args: Any, **kwargs: Any) -> M:
-            # mypy does not pick up on the type change in the our scope. Note that although we use nonlocal here,
-            # we do not change the default values, since `cast` is a no-op at runtime.
-            nonlocal default_weights
-            default_weights = cast(
-                Dict[str, Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]], default_weights
-            )
+        def inner_wrapper(**kwargs: Any) -> M:
+            for deprecated_param, (new_param, default) in default_weights.items():  # type: ignore[union-attr]
+                if not kwargs.pop(deprecated_param, False):
+                    continue
 
-            args, kwargs = handle_positional_to_keyword_only(
-                builder,
-                args,
-                kwargs,
-                keyword_only_start_idx=keyword_only_start_idx,
-                parameter_map={
-                    new_param: deprecated_param for deprecated_param, (new_param, _) in default_weights.items()
-                },
-            )
-            kwargs = handle_pretrained_to_weights(builder, kwargs, default_weights=default_weights)
+                default_arg = default(kwargs) if callable(default) else default
+                if default_arg is None:
+                    raise ValueError(f"No checkpoint is available for model {builder.__name__}")
 
-            return builder(*args, **kwargs)
+                warnings.warn(
+                    f"The parameter '{deprecated_param}' is deprecated, please use '{new_param}' instead. "
+                    f"The current behavior is equivalent to passing `weights={default_arg}`. "
+                    f"You can also use `weights='default'` to get the most up-to-date weights."
+                )
+                kwargs[new_param] = default_arg
 
-        return inner_wrapper
+            return builder(**kwargs)
+
+        return kwonly_to_pos_or_kw(
+            param_map={
+                new_param: deprecated_param
+                for deprecated_param, (new_param, _) in default_weights.items()  # type: ignore[union-attr]
+            },
+            warn=True,
+        )(inner_wrapper)
 
     return outer_wrapper
 
