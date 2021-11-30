@@ -89,9 +89,12 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
 
 
 @handle_legacy_interface(
-    lambda kwargs: ShuffleNet_V2_X0_5_QuantizedWeights.ImageNet1K_FBGEMM_V1
-    if kwargs.get("quantize", False)
-    else ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1
+    weights=(
+        "pretrained",
+        lambda kwargs: ShuffleNet_V2_X0_5_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1,
+    )
 )
 def shufflenet_v2_x0_5(
     *,
@@ -107,9 +110,12 @@ def shufflenet_v2_x0_5(
 
 
 @handle_legacy_interface(
-    lambda kwargs: ShuffleNet_V2_X1_0_QuantizedWeights.ImageNet1K_FBGEMM_V1
-    if kwargs.get("quantize", False)
-    else ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1
+    weights=(
+        "pretrained",
+        lambda kwargs: ShuffleNet_V2_X1_0_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1,
+    )
 )
 def shufflenet_v2_x1_0(
     *,

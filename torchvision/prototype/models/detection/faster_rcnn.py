@@ -76,10 +76,8 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
 
 
 @handle_legacy_interface(
-    dict(
-        pretrained=("weights", FasterRCNN_ResNet50_FPN_Weights.Coco_V1),
-        pretrained_backbone=("weights_backbone", ResNet50_Weights.ImageNet1K_V1),
-    )
+    weights=("pretrained", FasterRCNN_ResNet50_FPN_Weights.Coco_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
 )
 def fasterrcnn_resnet50_fpn(
     *,
@@ -157,10 +155,8 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
 
 
 @handle_legacy_interface(
-    dict(
-        pretrained=("weights", FasterRCNN_MobileNet_V3_Large_FPN_Weights.Coco_V1),
-        pretrained_backbone=("weights_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
-    )
+    weights=("pretrained", FasterRCNN_MobileNet_V3_Large_FPN_Weights.Coco_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
 )
 def fasterrcnn_mobilenet_v3_large_fpn(
     *,
@@ -190,10 +186,8 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 
 
 @handle_legacy_interface(
-    dict(
-        pretrained=("weights", FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.Coco_V1),
-        pretrained_backbone=("weights_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
-    )
+    weights=("pretrained", FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.Coco_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
 )
 def fasterrcnn_mobilenet_v3_large_320_fpn(
     *,

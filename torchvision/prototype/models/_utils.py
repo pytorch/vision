@@ -13,19 +13,12 @@ V = TypeVar("V")
 
 
 def handle_legacy_interface(
-    default_weights: Union[
-        Optional[W],
-        Callable[[Dict[str, Any]], Optional[W]],
-        Dict[str, Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]],
-    ],
+    **pretrained_weights: Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]
 ):
-    if not isinstance(default_weights, dict):
-        default_weights = dict(pretrained=("weights", default_weights))
-
     def outer_wrapper(builder: Callable[..., M]) -> Callable[..., M]:
         @functools.wraps(builder)
         def inner_wrapper(**kwargs: Any) -> M:
-            for pretrained_param, (weights_param, default) in default_weights.items():  # type: ignore[union-attr]
+            for weights_param, (pretrained_param, default) in pretrained_weights.items():  # type: ignore[union-attr]
                 weights_arg = kwargs.get(weights_param)
                 if weights_param in kwargs and not isinstance(weights_arg, bool):
                     continue

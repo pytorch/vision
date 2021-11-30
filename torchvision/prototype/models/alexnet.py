@@ -29,7 +29,7 @@ class AlexNet_Weights(WeightsEnum):
     default = ImageNet1K_V1
 
 
-@handle_legacy_interface(AlexNet_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", AlexNet_Weights.ImageNet1K_V1))
 def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
     weights = AlexNet_Weights.verify(weights)
 
