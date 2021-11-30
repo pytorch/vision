@@ -159,7 +159,7 @@ commands:
           args: iopath git+https://github.com/pytorch/data
           descr: Install prototype dependencies
 
-  # Most of our tests will be run by default. This command can be used if only a selection of tests need to be run
+  # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup. This command can be used if only a selection of tests need to be run, for ad-hoc files.
   run_tests_selective:
     parameters:
       file_or_dir:
