@@ -18,6 +18,12 @@ def _get_original_model(model_fn):
     return module.__dict__[model_fn.__name__]
 
 
+def _get_parent_module(model_fn):
+    parent_module_name = ".".join(model_fn.__module__.split(".")[:-1])
+    module = importlib.import_module(parent_module_name)
+    return module
+
+
 def _build_model(fn, **kwargs):
     try:
         model = fn(**kwargs)
@@ -29,25 +35,40 @@ def _build_model(fn, **kwargs):
     return model.eval()
 
 
-def get_models_with_module_names(module):
-    module_name = module.__name__.split(".")[-1]
-    return [(fn, module_name) for fn in TM.get_models_from_module(module)]
-
-
 @pytest.mark.parametrize(
     "model_fn, name, weight",
     [
-        (models.resnet50, "ImageNet1K_RefV1", models.ResNet50Weights.ImageNet1K_RefV1),
-        (models.resnet50, "default", models.ResNet50Weights.ImageNet1K_RefV2),
+        (models.resnet50, "ImageNet1K_V1", models.ResNet50_Weights.ImageNet1K_V1),
+        (models.resnet50, "default", models.ResNet50_Weights.ImageNet1K_V2),
         (
             models.quantization.resnet50,
-            "ImageNet1K_FBGEMM_RefV1",
-            models.quantization.QuantizedResNet50Weights.ImageNet1K_FBGEMM_RefV1,
+            "default",
+            models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V2,
+        ),
+        (
+            models.quantization.resnet50,
+            "ImageNet1K_FBGEMM_V1",
+            models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1,
         ),
     ],
 )
 def test_get_weight(model_fn, name, weight):
     assert models._api.get_weight(model_fn, name) == weight
+
+
+@pytest.mark.parametrize(
+    "model_fn",
+    TM.get_models_from_module(models)
+    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(models.video),
+)
+def test_naming_conventions(model_fn):
+    model_name = model_fn.__name__
+    module = _get_parent_module(model_fn)
+    weights_name = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
+    assert model_name in set(x.replace(weights_name, "").lower() for x in module.__dict__ if x.endswith(weights_name))
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
@@ -85,16 +106,16 @@ def test_video_model(model_fn, dev):
 
 
 @pytest.mark.parametrize(
-    "model_fn, module_name",
-    get_models_with_module_names(models)
-    + get_models_with_module_names(models.detection)
-    + get_models_with_module_names(models.quantization)
-    + get_models_with_module_names(models.segmentation)
-    + get_models_with_module_names(models.video),
+    "model_fn",
+    TM.get_models_from_module(models)
+    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(models.video),
 )
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
-def test_old_vs_new_factory(model_fn, module_name, dev):
+def test_old_vs_new_factory(model_fn, dev):
     defaults = {
         "models": {
             "input_shape": (1, 3, 224, 224),
@@ -114,6 +135,7 @@ def test_old_vs_new_factory(model_fn, module_name, dev):
         },
     }
     model_name = model_fn.__name__
+    module_name = model_fn.__module__.split(".")[-2]
     kwargs = {"pretrained": True, **defaults[module_name], **TM._model_params.get(model_name, {})}
     input_shape = kwargs.pop("input_shape")
     kwargs.pop("num_classes", None)  # ignore this as it's an incompatible speed optimization for pre-trained models

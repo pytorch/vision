@@ -344,8 +344,9 @@ jobs:
           background: true
           command: |
             sudo apt update -qy && sudo apt install -qy parallel wget
+            mkdir -p ~/.cache/torch/hub/checkpoints
             python scripts/collect_model_urls.py torchvision/prototype/models \
-                | parallel -j0 wget --no-verbose -P ~/.cache/torch/hub/checkpoints {}
+                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
       - install_torchvision
       - install_prototype_dependencies
       - pip_install:
