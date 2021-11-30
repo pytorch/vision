@@ -62,7 +62,7 @@ _COMMON_META = {
 class R3D_18Weights(Weights):
     Kinetics400_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
-        transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
+        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "acc@1": 52.75,
@@ -74,7 +74,7 @@ class R3D_18Weights(Weights):
 class MC3_18Weights(Weights):
     Kinetics400_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
-        transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
+        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "acc@1": 53.90,
@@ -86,7 +86,7 @@ class MC3_18Weights(Weights):
 class R2Plus1D_18Weights(Weights):
     Kinetics400_RefV1 = WeightEntry(
         url="https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
-        transforms=partial(Kinect400Eval, resize_size=(128, 171), crop_size=(112, 112)),
+        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "acc@1": 57.50,
