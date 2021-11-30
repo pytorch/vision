@@ -10,7 +10,7 @@ from typing import Any, Dict, Tuple
 import numpy as np
 import pytest
 import torch
-from datasets_utils import create_image_folder, make_tar, make_zip
+from datasets_utils import create_image_folder, make_tar, make_zip, make_fake_flo_file
 from torch.testing import make_tensor as _make_tensor
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype import datasets
@@ -490,3 +490,42 @@ def imagenet(info, root, config):
     make_tar(root, f"{devkit_root}.tar.gz", devkit_root, compression="gz")
 
     return num_samples
+
+
+@dataset_mocks.register_mock_data_fn
+def sintel(info, root, config):
+    FLOW_H, FLOW_W = 3, 4
+
+    num_images_per_scene = 3 if config["split"] == "train" else 4
+    num_scenes = 2
+
+    for split_dir in ("training", "test"):
+        for pass_name in ("clean", "final"):
+            image_root = root / split_dir / pass_name
+
+            for scene_id in range(num_scenes):
+                scene_dir = image_root / f"scene_{scene_id}"
+                create_image_folder(
+                    image_root,
+                    name=str(scene_dir),
+                    file_name_fn=lambda image_idx: f"frame_000{image_idx}.png",
+                    num_examples=num_images_per_scene,
+                )
+
+    flow_root = root / "training" / "flow"
+    for scene_id in range(num_scenes):
+        scene_dir = flow_root / f"scene_{scene_id}"
+        scene_dir.mkdir(exist_ok=True, parents=True)
+        for i in range(num_images_per_scene - 1):
+            file_name = str(scene_dir / f"frame_000{i}.flo")
+            make_fake_flo_file(h=FLOW_H, w=FLOW_W, file_name=file_name)
+
+    # with e.g. num_images_per_scene = 3, for a single scene with have 3 images
+    # which are frame_0000, frame_0001 and frame_0002
+    # They will be consecutively paired as (frame_0000, frame_0001), (frame_0001, frame_0002),
+    # that is 3 - 1 = 2 examples. Hence the formula below
+    num_passes = 2 if config["pass_name"] == "both" else 1
+    num_examples = (num_images_per_scene - 1) * num_scenes * num_passes
+
+    make_zip(root, "MPI-Sintel-complete.zip", "training", "test")
+    return num_examples

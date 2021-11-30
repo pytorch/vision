@@ -129,7 +129,7 @@ class VOC(Dataset):
         )
 
         split_dp = Filter(split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task]))
-        split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
+        split_dp = Filter(split_dp, path_comparator("name", value=f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
         split_dp = Shuffler(split_dp, buffer_size=INFINITE_BUFFER_SIZE)
 

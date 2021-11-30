@@ -148,7 +148,7 @@ class ImageNet(Dataset):
             dp = Mapper(dp, self._collate_train_data)
         elif config.split == "val":
             devkit_dp = TarArchiveReader(devkit_dp)
-            devkit_dp = Filter(devkit_dp, path_comparator("name", "ILSVRC2012_validation_ground_truth.txt"))
+            devkit_dp = Filter(devkit_dp, path_comparator("name", value="ILSVRC2012_validation_ground_truth.txt"))
             devkit_dp = LineReader(devkit_dp, return_path=False)
             devkit_dp = Mapper(devkit_dp, int)
             devkit_dp = Enumerator(devkit_dp, 1)
@@ -179,7 +179,7 @@ class ImageNet(Dataset):
         resources = self.resources(self.default_config)
         devkit_dp = resources[1].to_datapipe(root / self.name)
         devkit_dp = TarArchiveReader(devkit_dp)
-        devkit_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
+        devkit_dp = Filter(devkit_dp, path_comparator("name", value="meta.mat"))
 
         meta = next(iter(devkit_dp))[1]
         synsets = read_mat(meta, squeeze_me=True)["synsets"]

@@ -27,6 +27,7 @@ def dataset_parametrization(*names, decoder=to_bytes):
             "caltech256",
             "caltech101",
             "imagenet",
+            "sintel",
         )
 
     params = []

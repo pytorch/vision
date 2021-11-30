@@ -115,7 +115,7 @@ class Coco(Dataset):
         images_dp, meta_dp = resource_dps
 
         meta_dp = ZipArchiveReader(meta_dp)
-        meta_dp = Filter(meta_dp, path_comparator("name", f"instances_{config.split}{config.year}.json"))
+        meta_dp = Filter(meta_dp, path_comparator("name", value=f"instances_{config.split}{config.year}.json"))
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
         meta_dp = MappingIterator(meta_dp)
