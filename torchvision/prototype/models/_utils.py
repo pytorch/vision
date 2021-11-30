@@ -5,9 +5,9 @@ from typing import Any, Dict, Optional, TypeVar, Callable, Tuple, Union
 from torch import nn
 from torchvision.prototype.utils._internal import kwonly_to_pos_or_kw
 
-from ._api import Weights
+from ._api import WeightsEnum
 
-W = TypeVar("W", bound=Weights)
+W = TypeVar("W", bound=WeightsEnum)
 M = TypeVar("M", bound=nn.Module)
 V = TypeVar("V")
 
