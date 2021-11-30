@@ -16,6 +16,7 @@ from torchvision import models, ops
 
 
 class RoIOpTester(ABC):
+    # Blop
     dtype = torch.float64
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
