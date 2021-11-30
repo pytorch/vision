@@ -202,7 +202,8 @@ def kwonly_to_pos_or_kw(
                 if warn:
                     warnings.warn(
                         f"Using {sequence_to_str(tuple(keyword_only_kwargs.keys()), separate_last='and ')} "
-                        "as positional parameter(s) is deprecated. Please use them as keyword parameter(s) instead."
+                        "as positional parameter(s) is deprecated. "
+                        "Please use it/them as keyword parameter(s) instead."
                     )
                 kwargs.update(keyword_only_kwargs)
 

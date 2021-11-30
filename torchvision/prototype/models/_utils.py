@@ -25,27 +25,32 @@ def handle_legacy_interface(
     def outer_wrapper(builder: Callable[..., M]) -> Callable[..., M]:
         @functools.wraps(builder)
         def inner_wrapper(**kwargs: Any) -> M:
-            for deprecated_param, (new_param, default) in default_weights.items():  # type: ignore[union-attr]
-                if not kwargs.pop(deprecated_param, False):
+            for pretrained_param, (weights_param, default) in default_weights.items():  # type: ignore[union-attr]
+                weights_arg = kwargs.get(weights_param)
+                if weights_param in kwargs and not isinstance(weights_arg, bool):
                     continue
 
-                default_arg = default(kwargs) if callable(default) else default
-                if default_arg is None:
-                    raise ValueError(f"No checkpoint is available for model {builder.__name__}")
+                pretrained_arg = weights_arg or kwargs.pop(pretrained_param, False)
+                if pretrained_arg:
+                    default_arg = default(kwargs) if callable(default) else default
+                    if default_arg is None:
+                        raise ValueError(f"No checkpoint is available for model {builder.__name__}")
+                else:
+                    default_arg = None
 
                 warnings.warn(
-                    f"The parameter '{deprecated_param}' is deprecated, please use '{new_param}' instead. "
-                    f"The current behavior is equivalent to passing `weights={default_arg}`. "
-                    f"You can also use `weights='default'` to get the most up-to-date weights."
+                    f"The parameter '{pretrained_param}' is deprecated, please use '{weights_param}' instead. "
+                    f"The current behavior is equivalent to passing `{weights_param}={default_arg}`. "
+                    f"You can also use `{weights_param}='default'` to get the most up-to-date weights."
                 )
-                kwargs[new_param] = default_arg
+                kwargs[weights_param] = default_arg
 
             return builder(**kwargs)
 
         return kwonly_to_pos_or_kw(
             param_map={
-                new_param: deprecated_param
-                for deprecated_param, (new_param, _) in default_weights.items()  # type: ignore[union-attr]
+                new_param: pretrained_param
+                for pretrained_param, (new_param, _) in default_weights.items()  # type: ignore[union-attr]
             },
             warn=True,
         )(inner_wrapper)
