@@ -2,7 +2,7 @@ from typing import Any, List, Optional
 
 import torch
 from torch import nn, Tensor
-from torch.quantization import QuantStub, DeQuantStub, fuse_modules
+from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation, SqueezeExcitation
@@ -46,7 +46,11 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
         if hasattr(self, "qconfig") and (version is None or version < 2):
             default_state_dict = {
                 "scale_activation.activation_post_process.scale": torch.tensor([1.0]),
+                "scale_activation.activation_post_process.activation_post_process.scale": torch.tensor([1.0]),
                 "scale_activation.activation_post_process.zero_point": torch.tensor([0], dtype=torch.int32),
+                "scale_activation.activation_post_process.activation_post_process.zero_point": torch.tensor(
+                    [0], dtype=torch.int32
+                ),
                 "scale_activation.activation_post_process.fake_quant_enabled": torch.tensor([1]),
                 "scale_activation.activation_post_process.observer_enabled": torch.tensor([1]),
             }
@@ -132,13 +136,13 @@ def _mobilenet_v3_model(
         backend = "qnnpack"
 
         model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qat_qconfig(backend)
-        torch.quantization.prepare_qat(model, inplace=True)
+        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
+        torch.ao.quantization.prepare_qat(model, inplace=True)
 
         if pretrained:
             _load_weights(arch, model, quant_model_urls.get(arch + "_" + backend, None), progress)
 
-        torch.quantization.convert(model, inplace=True)
+        torch.ao.quantization.convert(model, inplace=True)
         model.eval()
     else:
         if pretrained:
