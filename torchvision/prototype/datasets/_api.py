@@ -2,7 +2,6 @@ import io
 import os
 from typing import Any, Callable, Dict, List, Optional
 
-import torch
 from torch.utils.data import IterDataPipe
 from torchvision.prototype.datasets import home
 from torchvision.prototype.datasets.decoder import raw, pil
