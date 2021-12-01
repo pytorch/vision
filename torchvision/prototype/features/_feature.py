@@ -12,7 +12,7 @@ DEFAULT = object()
 
 
 class Feature(torch.Tensor):
-    _META_ATTRS: Set[str]
+    _META_ATTRS: Set[str] = set()
     _meta_data: Dict[str, Any]
 
     def __init_subclass__(cls):
