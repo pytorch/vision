@@ -118,7 +118,7 @@ class BoundingBox(Feature):
         if data.dtype.is_floating_point:
             w = w.ceil()
             h = h.ceil()
-        return int(h), int(w)
+        return int(h.max()), int(w.max())
 
     @classmethod
     def from_parts(
