@@ -68,9 +68,9 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
     def __init__(
             self,
             video_dp: IterDataPipe[Dict[str, Any]],
-            num_frames_per_clip=8,
-            num_clips_per_video=1,
-            step_between_clips=1) -> None:
+            num_frames_per_clip: int=8,
+            num_clips_per_video: int=1,
+            step_between_clips: int=1) -> None:
         """TorchData Iterdatapype that takes in video datapipe
         and yields `num_clips_per_video` video clips (sequences of `num_frames_per_clip` frames) from a video.
         Clips are sampled from all possible clips of length `num_frames_per_clip` spaced `step_between_clips` apart.
@@ -87,7 +87,7 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
         self.num_clips_per_video = num_clips_per_video
         self.step_between_clips = step_between_clips
 
-    def _unfold(self, tensor, dilation=1):
+    def _unfold(self, tensor: torch.Tensor, dilation: int=1) -> torch.Tensor:
         """
         similar to tensor.unfold, but with the dilation
         and specialized for 1d tensors
