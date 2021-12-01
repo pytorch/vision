@@ -73,8 +73,8 @@ class ResNet18_QuantizedWeights(WeightsEnum):
             "acc@1": 69.494,
             "acc@5": 88.882,
         },
-        default=True,
     )
+    default = ImageNet1K_FBGEMM_V1
 
 
 class ResNet50_QuantizedWeights(WeightsEnum):
@@ -87,7 +87,6 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             "acc@1": 75.920,
             "acc@5": 92.814,
         },
-        default=False,
     )
     ImageNet1K_FBGEMM_V2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth",
@@ -98,8 +97,8 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             "acc@1": 80.282,
             "acc@5": 94.976,
         },
-        default=True,
     )
+    default = ImageNet1K_FBGEMM_V2
 
 
 class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
@@ -112,7 +111,6 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             "acc@1": 78.986,
             "acc@5": 94.480,
         },
-        default=False,
     )
     ImageNet1K_FBGEMM_V2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth",
@@ -123,8 +121,8 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             "acc@1": 82.574,
             "acc@5": 96.132,
         },
-        default=True,
     )
+    default = ImageNet1K_FBGEMM_V2
 
 
 def resnet18(

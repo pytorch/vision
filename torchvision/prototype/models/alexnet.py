@@ -25,8 +25,8 @@ class AlexNet_Weights(WeightsEnum):
             "acc@1": 56.522,
             "acc@5": 79.066,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def alexnet(weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:

@@ -30,8 +30,8 @@ class SqueezeNet1_0_Weights(WeightsEnum):
             "acc@1": 58.092,
             "acc@5": 80.420,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class SqueezeNet1_1_Weights(WeightsEnum):
@@ -43,8 +43,8 @@ class SqueezeNet1_1_Weights(WeightsEnum):
             "acc@1": 58.178,
             "acc@5": 80.624,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def squeezenet1_0(weights: Optional[SqueezeNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> SqueezeNet:

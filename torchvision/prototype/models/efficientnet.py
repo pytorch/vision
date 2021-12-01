@@ -79,8 +79,8 @@ class EfficientNet_B0_Weights(WeightsEnum):
             "acc@1": 77.692,
             "acc@5": 93.532,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B1_Weights(WeightsEnum):
@@ -93,8 +93,8 @@ class EfficientNet_B1_Weights(WeightsEnum):
             "acc@1": 78.642,
             "acc@5": 94.186,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B2_Weights(WeightsEnum):
@@ -107,8 +107,8 @@ class EfficientNet_B2_Weights(WeightsEnum):
             "acc@1": 80.608,
             "acc@5": 95.310,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B3_Weights(WeightsEnum):
@@ -121,8 +121,8 @@ class EfficientNet_B3_Weights(WeightsEnum):
             "acc@1": 82.008,
             "acc@5": 96.054,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B4_Weights(WeightsEnum):
@@ -135,8 +135,8 @@ class EfficientNet_B4_Weights(WeightsEnum):
             "acc@1": 83.384,
             "acc@5": 96.594,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B5_Weights(WeightsEnum):
@@ -149,8 +149,8 @@ class EfficientNet_B5_Weights(WeightsEnum):
             "acc@1": 83.444,
             "acc@5": 96.628,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B6_Weights(WeightsEnum):
@@ -163,8 +163,8 @@ class EfficientNet_B6_Weights(WeightsEnum):
             "acc@1": 84.008,
             "acc@5": 96.916,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B7_Weights(WeightsEnum):
@@ -177,8 +177,8 @@ class EfficientNet_B7_Weights(WeightsEnum):
             "acc@1": 84.122,
             "acc@5": 96.908,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def efficientnet_b0(
