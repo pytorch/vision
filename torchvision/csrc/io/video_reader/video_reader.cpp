@@ -583,6 +583,7 @@ torch::List<torch::Tensor> read_video_from_memory(
     int64_t audioEndPts,
     int64_t audioTimeBaseNum,
     int64_t audioTimeBaseDen) {
+  C10_LOG_API_USAGE_ONCE("torchvision.io.read_video_from_memory");
   return readVideo(
       false,
       input_video,
@@ -627,6 +628,7 @@ torch::List<torch::Tensor> read_video_from_file(
     int64_t audioEndPts,
     int64_t audioTimeBaseNum,
     int64_t audioTimeBaseDen) {
+  C10_LOG_API_USAGE_ONCE("torchvision.io.read_video_from_file");
   torch::Tensor dummy_input_video = torch::ones({0});
   return readVideo(
       true,
@@ -653,10 +655,12 @@ torch::List<torch::Tensor> read_video_from_file(
 }
 
 torch::List<torch::Tensor> probe_video_from_memory(torch::Tensor input_video) {
+  C10_LOG_API_USAGE_ONCE("torchvision.io.probe_video_from_memory");
   return probeVideo(false, input_video, "");
 }
 
 torch::List<torch::Tensor> probe_video_from_file(std::string videoPath) {
+  C10_LOG_API_USAGE_ONCE("torchvision.io.probe_video_from_file");
   torch::Tensor dummy_input_video = torch::ones({0});
   return probeVideo(true, dummy_input_video, videoPath);
 }
