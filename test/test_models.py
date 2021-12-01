@@ -22,7 +22,11 @@ ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 
 def get_models_from_module(module):
     # TODO add a registration mechanism to torchvision.models
-    return [v for k, v in module.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+    return [
+        v
+        for k, v in module.__dict__.items()
+        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
+    ]
 
 
 @pytest.fixture
@@ -781,19 +785,19 @@ def test_quantized_classification_model(model_fn):
         model = model_fn(**kwargs)
         if eval_mode:
             model.eval()
-            model.qconfig = torch.quantization.default_qconfig
+            model.qconfig = torch.ao.quantization.default_qconfig
         else:
             model.train()
-            model.qconfig = torch.quantization.default_qat_qconfig
+            model.qconfig = torch.ao.quantization.default_qat_qconfig
 
         model.fuse_model()
         if eval_mode:
-            torch.quantization.prepare(model, inplace=True)
+            torch.ao.quantization.prepare(model, inplace=True)
         else:
-            torch.quantization.prepare_qat(model, inplace=True)
+            torch.ao.quantization.prepare_qat(model, inplace=True)
             model.eval()
 
-        torch.quantization.convert(model, inplace=True)
+        torch.ao.quantization.convert(model, inplace=True)
 
     try:
         torch.jit.script(model)

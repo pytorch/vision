@@ -233,14 +233,6 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         _save_response_content(itertools.chain((first_chunk,), content), fpath)
 
 
-def _get_confirm_token(response: "requests.models.Response") -> Optional[str]:  # type: ignore[name-defined]
-    for key, value in response.cookies.items():
-        if key.startswith("download_warning"):
-            return value
-
-    return None
-
-
 def _save_response_content(
     response_gen: Iterator[bytes],
     destination: str,  # type: ignore[name-defined]

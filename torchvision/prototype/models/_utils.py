@@ -1,10 +1,10 @@
 import warnings
 from typing import Any, Dict, Optional, TypeVar
 
-from ._api import Weights
+from ._api import WeightsEnum
 
 
-W = TypeVar("W", bound=Weights)
+W = TypeVar("W", bound=WeightsEnum)
 V = TypeVar("V")
 
 
