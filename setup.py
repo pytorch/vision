@@ -426,6 +426,49 @@ def get_extensions():
             )
         )
 
+    # Locating video codec
+    # Should be included in CUDA_HOME for CUDA >= 10.1, which is the minimum version we have in the CI
+    video_codec_found = (
+        extension is CUDAExtension
+        and CUDA_HOME is not None
+        and os.path.exists("/usr/local/include/cuviddec.h")
+        and os.path.exists("/usr/local/include/nvcuvid.h")
+    )
+
+    print(f"video codec found: {video_codec_found}")
+
+    gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
+    print(f"DECODER PATH {gpu_decoder_path}")
+    gpu_decoder_src = (
+        glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
+    )
+    cuda_libs = os.path.join(CUDA_HOME, 'lib64')
+    cuda_inc = os.path.join(CUDA_HOME, 'include')
+
+    if video_codec_found and has_ffmpeg:
+        ext_modules.append(
+            extension(
+                "torchvision.Decoder",
+                gpu_decoder_src,
+                include_dirs=include_dirs + [gpu_decoder_path] + [cuda_inc],
+                library_dirs=ffmpeg_library_dir + library_dirs + [cuda_libs] + ['/usr/local/lib'],
+                libraries=[
+                    "avcodec",
+                    "avformat",
+                    "avutil",
+                    "swresample",
+                    "swscale",
+                    "nvcuvid",
+                    "cuda",
+                    "cudart",
+                    "z",
+                    "pthread",
+                    "dl",
+                ],
+                extra_compile_args=extra_compile_args,
+            )
+        )
+
     return ext_modules
 
 

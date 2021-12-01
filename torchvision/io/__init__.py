@@ -32,6 +32,10 @@ from .video import (
     write_video,
 )
 
+from .gpu_decoder import (
+    GPUDecoder
+)
+
 
 if _HAS_VIDEO_OPT:
 
