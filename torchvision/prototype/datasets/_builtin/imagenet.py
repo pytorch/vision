@@ -121,12 +121,12 @@ class ImageNet(Dataset):
         self,
         data: Tuple[Optional[ImageNetLabel], Tuple[str, io.IOBase]],
         *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         label, (path, buffer) = data
         return dict(
             path=path,
-            image=decoder(buffer) if decoder else buffer,
+            image=decoder(buffer).pop('img') if decoder else buffer,
             label=label,
         )
 
@@ -135,7 +135,7 @@ class ImageNet(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, devkit_dp = resource_dps
 

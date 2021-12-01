@@ -161,17 +161,17 @@ class Coco(Dataset):
             return None
 
     def _collate_and_decode_image(
-        self, data: Tuple[str, io.IOBase], *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+        self, data: Tuple[str, io.IOBase], *, decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]]
     ) -> Dict[str, Any]:
         path, buffer = data
-        return dict(path=path, image=decoder(buffer) if decoder else buffer)
+        return dict(path=path, image=decoder(buffer).pop('img') if decoder else buffer)
 
     def _collate_and_decode_sample(
         self,
         data: Tuple[Tuple[List[Dict[str, Any]], Dict[str, Any]], Tuple[str, io.IOBase]],
         *,
         annotations: Optional[str],
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         ann_data, image_data = data
         anns, image_meta = ann_data
@@ -187,7 +187,7 @@ class Coco(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, meta_dp = resource_dps
 

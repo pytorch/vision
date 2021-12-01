@@ -115,14 +115,14 @@ class CelebA(Dataset):
         self,
         data: Tuple[Tuple[str, Tuple[str, List[str]], Tuple[str, io.IOBase]], Tuple[str, Dict[str, Any]]],
         *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, _, image_data = split_and_image_data
         path, buffer = image_data
         _, ann = ann_data
 
-        image = decoder(buffer) if decoder else buffer
+        image = decoder(buffer).pop('img') if decoder else buffer
 
         identity = int(ann["identity"]["identity"])
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
@@ -146,7 +146,7 @@ class CelebA(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         splits_dp, images_dp, identities_dp, attributes_dp, bboxes_dp, landmarks_dp = resource_dps
 

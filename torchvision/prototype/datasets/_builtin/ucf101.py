@@ -74,7 +74,7 @@ class UCF101(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
 
         annotations = resource_dps[0]
@@ -83,7 +83,7 @@ class UCF101(Dataset):
         annotations_dp = ZipArchiveReader(annotations)
         annotations_dp = Filter(annotations_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt"))
         annotations_dp = CSVParser(annotations_dp, delimiter=" ")
-        
+
         annotations_dp = Shuffler(annotations_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         files_dp = RarArchiveReader(files)

@@ -104,7 +104,7 @@ class _MNISTBase(Dataset):
         data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         image, label = data
 
@@ -112,7 +112,7 @@ class _MNISTBase(Dataset):
             image = Image(image)
         else:
             image_buffer = image_buffer_from_array(image.numpy())
-            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
+            image = decoder(image_buffer).pop('img') if decoder else image_buffer  # type: ignore[assignment]
 
         label = Label(label, dtype=torch.int64, category=self.info.categories[int(label)])
 
@@ -123,7 +123,7 @@ class _MNISTBase(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, labels_dp = resource_dps
         start, stop = self.start_and_stop(config)
@@ -286,7 +286,7 @@ class EMNIST(_MNISTBase):
         data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         # In these two splits, some lowercase letters are merged into their uppercase ones (see Fig 2. in the paper).
         # That means for example that there is 'D', 'd', and 'C', but not 'c'. Since the labels are nevertheless dense,
@@ -307,7 +307,7 @@ class EMNIST(_MNISTBase):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         archive_dp = ZipArchiveReader(archive_dp)
@@ -372,7 +372,7 @@ class QMNIST(_MNISTBase):
         data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         image, ann = data
         label, *extra_anns = ann

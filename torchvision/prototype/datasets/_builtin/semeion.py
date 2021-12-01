@@ -40,7 +40,7 @@ class SEMEION(Dataset):
         self,
         data: Tuple[str, ...],
         *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         image_data = torch.tensor([float(pixel) for pixel in data[:256]], dtype=torch.uint8).reshape(16, 16)
         label_data = [int(label) for label in data[256:] if label]
@@ -49,7 +49,7 @@ class SEMEION(Dataset):
             image = image_data.unsqueeze(0)
         else:
             image_buffer = image_buffer_from_array(image_data.numpy())
-            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
+            image = decoder(image_buffer).pop('img') if decoder else image_buffer  # type: ignore[assignment]
 
         label = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
         category = self.info.categories[label]
@@ -60,7 +60,7 @@ class SEMEION(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = CSVParser(dp, delimiter=" ")

@@ -62,7 +62,7 @@ class _CifarBase(Dataset):
         self,
         data: Tuple[np.ndarray, int],
         *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         image_array, category_idx = data
 
@@ -71,7 +71,7 @@ class _CifarBase(Dataset):
             image = Image(image_array)
         else:
             image_buffer = image_buffer_from_array(image_array.transpose((1, 2, 0)))
-            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
+            image = decoder(image_buffer).pop('img') if decoder else image_buffer  # type: ignore[assignment]
 
         label = Label(category_idx, category=self.categories[category_idx])
 
@@ -82,7 +82,7 @@ class _CifarBase(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = TarArchiveReader(dp)
