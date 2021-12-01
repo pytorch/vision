@@ -6,7 +6,6 @@ import pickle
 from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Iterator, cast
 
 import numpy as np
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Filter,

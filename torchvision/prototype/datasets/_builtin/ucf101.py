@@ -4,7 +4,6 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from torchvision.prototype.datasets.utils._internal import RarArchiveReader, INFINITE_BUFFER_SIZE
 
-import torch
 from torchdata.datapipes.iter import CSVParser, KeyZipper
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import (
