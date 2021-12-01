@@ -51,7 +51,7 @@ def info(name: str) -> DatasetInfo:
 
 DEFAULT_DECODER = object()
 
-DEFAULT_DECODER_MAP: Dict[DatasetType, Callable[[io.IOBase], torch.Tensor]] = {
+DEFAULT_DECODER_MAP: Dict[DatasetType, Optional[Callable[[io.IOBase], Dict[str, Any]]]] = {
     DatasetType.RAW: raw,
     DatasetType.IMAGE: pil,
     DatasetType.VIDEO: None,
@@ -61,7 +61,7 @@ DEFAULT_DECODER_MAP: Dict[DatasetType, Callable[[io.IOBase], torch.Tensor]] = {
 def load(
     name: str,
     *,
-    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = DEFAULT_DECODER,  # type: ignore[assignment]
+    decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = DEFAULT_DECODER,  # type: ignore[assignment]
     split: str = "train",
     **options: Any,
 ) -> IterDataPipe[Dict[str, Any]]:
