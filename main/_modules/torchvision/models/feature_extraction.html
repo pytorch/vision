@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+1482987 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+e2ab566 ) &#x25BC</a>
     </div>
     
 
@@ -317,14 +317,17 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.feature_extraction</h1><div class="highlight"><pre>
-<span></span><span class="kn">import</span> <span class="nn">re</span>
+<span></span><span class="kn">import</span> <span class="nn">inspect</span>
+<span class="kn">import</span> <span class="nn">math</span>
+<span class="kn">import</span> <span class="nn">re</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">copy</span> <span class="kn">import</span> <span class="n">deepcopy</span>
 <span class="kn">from</span> <span class="nn">itertools</span> <span class="kn">import</span> <span class="n">chain</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Dict</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Any</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
+<span class="kn">import</span> <span class="nn">torchvision</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">fx</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
 <span class="kn">from</span> <span class="nn">torch.fx.graph_module</span> <span class="kn">import</span> <span class="n">_copy_attr</span>
@@ -491,8 +494,19 @@
     <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="n">msg</span> <span class="o">+</span> <span class="n">suggestion_msg</span><span class="p">)</span>
 
 
+<span class="k">def</span> <span class="nf">_get_leaf_modules_for_ops</span><span class="p">()</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">type</span><span class="p">]:</span>
+    <span class="n">members</span> <span class="o">=</span> <span class="n">inspect</span><span class="o">.</span><span class="n">getmembers</span><span class="p">(</span><span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+    <span class="n">result</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">obj</span> <span class="ow">in</span> <span class="n">members</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">inspect</span><span class="o">.</span><span class="n">isclass</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">issubclass</span><span class="p">(</span><span class="n">obj</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+            <span class="n">result</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">obj</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">result</span>
+
+
 <div class="viewcode-block" id="get_graph_node_names"><a class="viewcode-back" href="../../../generated/torchvision.models.feature_extraction.get_graph_node_names.html#torchvision.models.feature_extraction.get_graph_node_names">[docs]</a><span class="k">def</span> <span class="nf">get_graph_node_names</span><span class="p">(</span>
-    <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span> <span class="n">tracer_kwargs</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{},</span> <span class="n">suppress_diff_warning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
+    <span class="n">tracer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">suppress_diff_warning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">]]:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Dev utility to return node names in order of execution. See note on node</span>
@@ -517,6 +531,7 @@
 <span class="sd">        tracer_kwargs (dict, optional): a dictionary of keywork arguments for</span>
 <span class="sd">            ``NodePathTracer`` (they are eventually passed onto</span>
 <span class="sd">            `torch.fx.Tracer &lt;https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer&gt;`_).</span>
+<span class="sd">            By default it will be set to wrap and make leaf nodes all torchvision ops.</span>
 <span class="sd">        suppress_diff_warning (bool, optional): whether to suppress a warning</span>
 <span class="sd">            when there are discrepancies between the train and eval version of</span>
 <span class="sd">            the graph. Defaults to False.</span>
@@ -530,6 +545,14 @@
 <span class="sd">        &gt;&gt;&gt; model = torchvision.models.resnet18()</span>
 <span class="sd">        &gt;&gt;&gt; train_nodes, eval_nodes = get_graph_node_names(model)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tracer_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tracer_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;autowrap_modules&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">math</span><span class="p">,</span>
+                <span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;leaf_modules&quot;</span><span class="p">:</span> <span class="n">_get_leaf_modules_for_ops</span><span class="p">(),</span>
+        <span class="p">}</span>
     <span class="n">is_training</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training</span>
     <span class="n">train_tracer</span> <span class="o">=</span> <span class="n">NodePathTracer</span><span class="p">(</span><span class="o">**</span><span class="n">tracer_kwargs</span><span class="p">)</span>
     <span class="n">train_tracer</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">())</span>
@@ -613,7 +636,7 @@
     <span class="n">return_nodes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">train_return_nodes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">eval_return_nodes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-    <span class="n">tracer_kwargs</span><span class="p">:</span> <span class="n">Dict</span> <span class="o">=</span> <span class="p">{},</span>
+    <span class="n">tracer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">suppress_diff_warning</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">fx</span><span class="o">.</span><span class="n">GraphModule</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
@@ -672,6 +695,7 @@
 <span class="sd">        tracer_kwargs (dict, optional): a dictionary of keywork arguments for</span>
 <span class="sd">            ``NodePathTracer`` (which passes them onto it&#39;s parent class</span>
 <span class="sd">            `torch.fx.Tracer &lt;https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer&gt;`_).</span>
+<span class="sd">            By default it will be set to wrap and make leaf nodes all torchvision ops.</span>
 <span class="sd">        suppress_diff_warning (bool, optional): whether to suppress a warning</span>
 <span class="sd">            when there are discrepancies between the train and eval version of</span>
 <span class="sd">            the graph. Defaults to False.</span>
@@ -716,6 +740,14 @@
 <span class="sd">        &gt;&gt;&gt;                    &#39;autowrap_functions&#39;: [leaf_function]})</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">tracer_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">tracer_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s2">&quot;autowrap_modules&quot;</span><span class="p">:</span> <span class="p">(</span>
+                <span class="n">math</span><span class="p">,</span>
+                <span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="p">,</span>
+            <span class="p">),</span>
+            <span class="s2">&quot;leaf_modules&quot;</span><span class="p">:</span> <span class="n">_get_leaf_modules_for_ops</span><span class="p">(),</span>
+        <span class="p">}</span>
     <span class="n">is_training</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training</span>
 
     <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span>
