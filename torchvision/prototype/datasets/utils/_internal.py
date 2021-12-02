@@ -306,7 +306,7 @@ def fromfile(
         mmap.mmap(file.fileno(), 0)
         print("mmap worked")
     except PermissionError as error:
-        print(f"mmap failed with {error}")
+        print(f"mmap failed with {type(error)}: {error}")
     #     b = mmap.mmap(a, 0)
     #     c = memoryview(b)
     #     d = file.tell()
