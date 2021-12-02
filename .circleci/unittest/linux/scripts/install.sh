@@ -42,5 +42,8 @@ if [ $PYTHON_VERSION == "3.6" ]; then
     pip install "pillow>=5.3.0,!=8.3.*"
 fi
 
-printf "* Installing torchvision and all optional dependencies\n"
-python setup.py develop easy_install torchvision[all]
+printf "* Installing optional dependencies\n"
+pip install -r optional-requirements.txt
+
+printf "* Installing torchvision\n"
+python setup.py develop

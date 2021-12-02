@@ -48,5 +48,8 @@ fi
 
 source "$this_dir/set_cuda_envs.sh"
 
-printf "* Installing torchvision and all optional dependencies\n"
-"$this_dir/vc_env_helper.bat" python setup.py develop easy_install torchvision[all]
+printf "* Installing optional dependencies\n"
+pip install -r optional-requirements.txt
+
+printf "* Installing torchvision\n"
+"$this_dir/vc_env_helper.bat" python setup.py develop
