@@ -75,6 +75,8 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
                 file.seek(num_bytes_per_value * count * start, 1)
 
             for _ in range(stop - start):
+                print("#" * 80)
+                print(f"{shape}: {_}")
                 yield read(dtype=dtype, count=count).reshape(shape)
 
 

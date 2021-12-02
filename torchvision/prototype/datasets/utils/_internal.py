@@ -302,11 +302,13 @@ def fromfile(
     # buffer: Union[memoryview, bytearray]
     # try:
     #     # FIXME: DEBUG
+
+    # https://bugs.python.org/issue12562
     try:
-        mmap.mmap(file.fileno(), 0)
+        mmap.mmap(file.fileno(), tagname=str(float(torch.rand(()))), length=0)
         print("mmap worked")
     except PermissionError as error:
-        print(f"mmap failed with {type(error)}: {error}")
+        print(f"mmap failed with {error}")
     #     b = mmap.mmap(a, 0)
     #     c = memoryview(b)
     #     d = file.tell()
