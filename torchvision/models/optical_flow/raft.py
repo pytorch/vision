@@ -5,7 +5,14 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.ops import ConvNormActivation
 
-from .utils import grid_sample, make_coords_grid, upsample_flow
+from ._utils import grid_sample, make_coords_grid, upsample_flow
+
+
+__all__ = (
+    "RAFT",
+    "raft_large",
+    "raft_small",
+)
 
 
 class ResidualBlock(nn.Module):
@@ -470,7 +477,7 @@ def _raft(
     )
 
 
-def raft(*, pretrained=False, progress=True, **kwargs):
+def raft_large(*, pretrained=False, progress=True, **kwargs):
 
     if pretrained:
         raise NotImplementedError("Pretrained weights aren't available yet")
