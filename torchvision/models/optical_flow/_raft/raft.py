@@ -475,9 +475,9 @@ def _raft(
     )
 
 
-def raft(*, weights=None, progress=True, **kwargs):
+def raft(*, pretrained=False, progress=True, **kwargs):
 
-    if weights is not None:
+    if pretrained:
         raise NotImplementedError("Pretrained weights aren't available yet")
 
     return _raft(
@@ -508,9 +508,9 @@ def raft(*, weights=None, progress=True, **kwargs):
     )
 
 
-def raft_small(*, weights=None, progress=True, **kwargs):
+def raft_small(*, pretrained=False, progress=True, **kwargs):
 
-    if weights is not None:
+    if pretrained:
         raise NotImplementedError("Pretrained weights aren't available yet")
 
     return _raft(
