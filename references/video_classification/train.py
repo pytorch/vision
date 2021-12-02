@@ -269,9 +269,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(
-            model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, scaler
-        )
+        train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, scaler)
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
             checkpoint = {
