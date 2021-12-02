@@ -135,8 +135,8 @@ class AVClipReader(IterDataPipe[Dict[str, Any]]):
                     start_pts, end_pts, pts_unit = _video_opt._convert_to_sec(start_pts, end_pts, "pts", time_base)
                     video_frames = video._read_from_stream(
                         container,
-                        start_pts,
-                        end_pts,
+                        float(start_pts),
+                        float(end_pts),
                         pts_unit,
                         stream,
                         {"video": 0},
