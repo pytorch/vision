@@ -45,8 +45,8 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn",
             "map": 37.0,
         },
-        default=True,
     )
+    default = Coco_V1
 
 
 class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
@@ -58,8 +58,8 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn",
             "map": 32.8,
         },
-        default=True,
     )
+    default = Coco_V1
 
 
 class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
@@ -71,8 +71,8 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn",
             "map": 22.8,
         },
-        default=True,
     )
+    default = Coco_V1
 
 
 def fasterrcnn_resnet50_fpn(

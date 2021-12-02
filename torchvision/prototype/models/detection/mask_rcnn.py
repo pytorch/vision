@@ -34,8 +34,8 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "box_map": 37.9,
             "mask_map": 34.6,
         },
-        default=True,
     )
+    default = Coco_V1
 
 
 def maskrcnn_resnet50_fpn(

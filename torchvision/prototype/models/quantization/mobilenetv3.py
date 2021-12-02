@@ -71,8 +71,8 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
             "acc@1": 73.004,
             "acc@5": 90.858,
         },
-        default=True,
     )
+    default = ImageNet1K_QNNPACK_V1
 
 
 def mobilenet_v3_large(

@@ -35,7 +35,6 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "box_map": 50.6,
             "kp_map": 61.1,
         },
-        default=False,
     )
     Coco_V1 = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth",
@@ -46,8 +45,8 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "box_map": 54.6,
             "kp_map": 65.0,
         },
-        default=True,
     )
+    default = Coco_V1
 
 
 def keypointrcnn_resnet50_fpn(

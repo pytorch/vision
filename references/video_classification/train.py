@@ -160,8 +160,7 @@ def main(args):
     if not args.weights:
         transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
     else:
-        fn = PM.video.__dict__[args.model]
-        weights = PM._api.get_weight(fn, args.weights)
+        weights = PM.get_weight(args.weights)
         transform_test = weights.transforms()
 
     if args.cache_dataset and os.path.exists(cache_path):
