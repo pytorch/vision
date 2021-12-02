@@ -270,7 +270,7 @@ def main(args):
         if args.distributed:
             train_sampler.set_epoch(epoch)
         train_one_epoch(
-            model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, args.amp
+            model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, scaler
         )
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
@@ -375,4 +375,3 @@ def parse_args():
 if __name__ == "__main__":
     args = parse_args()
     main(args)
-
