@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
@@ -6,12 +5,13 @@ from torchvision.prototype.transforms import VocEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.fcn import FCN, _fcn_resnet
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
-from ..resnet import ResNet50Weights, ResNet101Weights, resnet50, resnet101
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
+from ..resnet import ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
 
 
-__all__ = ["FCN", "FCNResNet50Weights", "FCNResNet101Weights", "fcn_resnet50", "fcn_resnet101"]
+__all__ = ["FCN", "FCN_ResNet50_Weights", "FCN_ResNet101_Weights", "fcn_resnet50", "fcn_resnet101"]
 
 
 _COMMON_META = {
@@ -20,8 +20,8 @@ _COMMON_META = {
 }
 
 
-class FCNResNet50Weights(Weights):
-    CocoWithVocLabels_RefV1 = WeightEntry(
+class FCN_ResNet50_Weights(WeightsEnum):
+    CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -31,10 +31,11 @@ class FCNResNet50Weights(Weights):
             "acc": 91.4,
         },
     )
+    default = CocoWithVocLabels_V1
 
 
-class FCNResNet101Weights(Weights):
-    CocoWithVocLabels_RefV1 = WeightEntry(
+class FCN_ResNet101_Weights(WeightsEnum):
+    CocoWithVocLabels_V1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -44,29 +45,36 @@ class FCNResNet101Weights(Weights):
             "acc": 91.9,
         },
     )
+    default = CocoWithVocLabels_V1
 
 
 def fcn_resnet50(
-    weights: Optional[FCNResNet50Weights] = None,
-    weights_backbone: Optional[ResNet50Weights] = None,
+    weights: Optional[FCN_ResNet50_Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
+    weights_backbone: Optional[ResNet50_Weights] = None,
     **kwargs: Any,
 ) -> FCN:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = FCNResNet50Weights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
-    weights = FCNResNet50Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FCN_ResNet50_Weights.CocoWithVocLabels_V1)
+    weights = FCN_ResNet50_Weights.verify(weights)
+    if type(weights_backbone) == bool and weights_backbone:
+        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
-    weights_backbone = ResNet50Weights.verify(weights_backbone)
+        weights_backbone = _deprecated_param(
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50_Weights.ImageNet1K_V1
+        )
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
     if weights is not None:
-        aux_loss = True
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param(aux_loss, True)
+    elif num_classes is None:
+        num_classes = 21
 
     backbone = resnet50(weights=weights_backbone, replace_stride_with_dilation=[False, True, True])
     model = _fcn_resnet(backbone, num_classes, aux_loss)
@@ -78,26 +86,32 @@ def fcn_resnet50(
 
 
 def fcn_resnet101(
-    weights: Optional[FCNResNet101Weights] = None,
-    weights_backbone: Optional[ResNet101Weights] = None,
+    weights: Optional[FCN_ResNet101_Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
+    weights_backbone: Optional[ResNet101_Weights] = None,
     **kwargs: Any,
 ) -> FCN:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = FCNResNet101Weights.CocoWithVocLabels_RefV1 if kwargs.pop("pretrained") else None
-    weights = FCNResNet101Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", FCN_ResNet101_Weights.CocoWithVocLabels_V1)
+    weights = FCN_ResNet101_Weights.verify(weights)
+    if type(weights_backbone) == bool and weights_backbone:
+        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = ResNet101Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
-    weights_backbone = ResNet101Weights.verify(weights_backbone)
+        weights_backbone = _deprecated_param(
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet101_Weights.ImageNet1K_V1
+        )
+    weights_backbone = ResNet101_Weights.verify(weights_backbone)
 
     if weights is not None:
-        aux_loss = True
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param(aux_loss, True)
+    elif num_classes is None:
+        num_classes = 21
 
     backbone = resnet101(weights=weights_backbone, replace_stride_with_dilation=[False, True, True])
     model = _fcn_resnet(backbone, num_classes, aux_loss)

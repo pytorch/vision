@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional, Union
 
@@ -10,20 +9,21 @@ from ....models.quantization.inception import (
     _replace_relu,
     quantize_model,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
-from ..inception import InceptionV3Weights
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ..inception import Inception_V3_Weights
 
 
 __all__ = [
     "QuantizableInception3",
-    "QuantizedInceptionV3Weights",
+    "Inception_V3_QuantizedWeights",
     "inception_v3",
 ]
 
 
-class QuantizedInceptionV3Weights(Weights):
-    ImageNet1K_FBGEMM_TFV1 = WeightEntry(
+class Inception_V3_QuantizedWeights(WeightsEnum):
+    ImageNet1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={
@@ -33,41 +33,40 @@ class QuantizedInceptionV3Weights(Weights):
             "backend": "fbgemm",
             "quantization": "ptq",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
-            "unquantized": InceptionV3Weights.ImageNet1K_TFV1,
+            "unquantized": Inception_V3_Weights.ImageNet1K_V1,
             "acc@1": 77.176,
             "acc@5": 93.354,
         },
     )
+    default = ImageNet1K_FBGEMM_V1
 
 
 def inception_v3(
-    weights: Optional[Union[QuantizedInceptionV3Weights, InceptionV3Weights]] = None,
+    weights: Optional[Union[Inception_V3_QuantizedWeights, Inception_V3_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableInception3:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = (
-                QuantizedInceptionV3Weights.ImageNet1K_FBGEMM_TFV1 if quantize else InceptionV3Weights.ImageNet1K_TFV1
-            )
-        else:
-            weights = None
-
+        default_value = (
+            Inception_V3_QuantizedWeights.ImageNet1K_FBGEMM_V1 if quantize else Inception_V3_Weights.ImageNet1K_V1
+        )
+        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
     if quantize:
-        weights = QuantizedInceptionV3Weights.verify(weights)
+        weights = Inception_V3_QuantizedWeights.verify(weights)
     else:
-        weights = InceptionV3Weights.verify(weights)
+        weights = Inception_V3_Weights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        kwargs["aux_logits"] = True
-        kwargs["num_classes"] = len(weights.meta["categories"])
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         if "backend" in weights.meta:
-            kwargs["backend"] = weights.meta["backend"]
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableInception3(**kwargs)

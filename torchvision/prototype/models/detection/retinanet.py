@@ -1,4 +1,3 @@
-import warnings
 from typing import Any, Optional
 
 from torchvision.prototype.transforms import CocoEval
@@ -12,20 +11,21 @@ from ....models.detection.retinanet import (
     misc_nn_ops,
     overwrite_eps,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
-from ..resnet import ResNet50Weights, resnet50
+from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
+from ..resnet import ResNet50_Weights, resnet50
 
 
 __all__ = [
     "RetinaNet",
-    "RetinaNetResNet50FPNWeights",
+    "RetinaNet_ResNet50_FPN_Weights",
     "retinanet_resnet50_fpn",
 ]
 
 
-class RetinaNetResNet50FPNWeights(Weights):
-    Coco_RefV1 = WeightEntry(
+class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
+    Coco_V1 = Weights(
         url="https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth",
         transforms=CocoEval,
         meta={
@@ -35,28 +35,35 @@ class RetinaNetResNet50FPNWeights(Weights):
             "map": 36.4,
         },
     )
+    default = Coco_V1
 
 
 def retinanet_resnet50_fpn(
-    weights: Optional[RetinaNetResNet50FPNWeights] = None,
-    weights_backbone: Optional[ResNet50Weights] = None,
+    weights: Optional[RetinaNet_ResNet50_FPN_Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[ResNet50_Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> RetinaNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = RetinaNetResNet50FPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
-    weights = RetinaNetResNet50FPNWeights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", RetinaNet_ResNet50_FPN_Weights.Coco_V1)
+    weights = RetinaNet_ResNet50_FPN_Weights.verify(weights)
+    if type(weights_backbone) == bool and weights_backbone:
+        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
     if "pretrained_backbone" in kwargs:
-        warnings.warn("The parameter pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = ResNet50Weights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
-    weights_backbone = ResNet50Weights.verify(weights_backbone)
+        weights_backbone = _deprecated_param(
+            kwargs, "pretrained_backbone", "weights_backbone", ResNet50_Weights.ImageNet1K_V1
+        )
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
     if weights is not None:
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 3
@@ -71,7 +78,7 @@ def retinanet_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == RetinaNetResNet50FPNWeights.Coco_RefV1:
+        if weights == RetinaNet_ResNet50_FPN_Weights.Coco_V1:
             overwrite_eps(model, 0.0)
 
     return model

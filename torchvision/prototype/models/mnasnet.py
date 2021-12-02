@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
@@ -6,16 +5,17 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mnasnet import MNASNet
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
 __all__ = [
     "MNASNet",
-    "MNASNet0_5Weights",
-    "MNASNet0_75Weights",
-    "MNASNet1_0Weights",
-    "MNASNet1_3Weights",
+    "MNASNet0_5_Weights",
+    "MNASNet0_75_Weights",
+    "MNASNet1_0_Weights",
+    "MNASNet1_3_Weights",
     "mnasnet0_5",
     "mnasnet0_75",
     "mnasnet1_0",
@@ -31,8 +31,8 @@ _COMMON_META = {
 }
 
 
-class MNASNet0_5Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class MNASNet0_5_Weights(WeightsEnum):
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/mnasnet0.5_top1_67.823-3ffadce67e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -41,15 +41,16 @@ class MNASNet0_5Weights(Weights):
             "acc@5": 87.490,
         },
     )
+    default = ImageNet1K_V1
 
 
-class MNASNet0_75Weights(Weights):
+class MNASNet0_75_Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in mnasnet0_75
     pass
 
 
-class MNASNet1_0Weights(Weights):
-    ImageNet1K_Community = WeightEntry(
+class MNASNet1_0_Weights(WeightsEnum):
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -58,16 +59,17 @@ class MNASNet1_0Weights(Weights):
             "acc@5": 91.510,
         },
     )
+    default = ImageNet1K_V1
 
 
-class MNASNet1_3Weights(Weights):
+class MNASNet1_3_Weights(WeightsEnum):
     # If a default model is added here the corresponding changes need to be done in mnasnet1_3
     pass
 
 
-def _mnasnet(alpha: float, weights: Optional[Weights], progress: bool, **kwargs: Any) -> MNASNet:
+def _mnasnet(alpha: float, weights: Optional[WeightsEnum], progress: bool, **kwargs: Any) -> MNASNet:
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = MNASNet(alpha, **kwargs)
 
@@ -77,42 +79,41 @@ def _mnasnet(alpha: float, weights: Optional[Weights], progress: bool, **kwargs:
     return model
 
 
-def mnasnet0_5(weights: Optional[MNASNet0_5Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+def mnasnet0_5(weights: Optional[MNASNet0_5_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = MNASNet0_5Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
-
-    weights = MNASNet0_5Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet0_5_Weights.ImageNet1K_V1)
+    weights = MNASNet0_5_Weights.verify(weights)
 
     return _mnasnet(0.5, weights, progress, **kwargs)
 
 
-def mnasnet0_75(weights: Optional[MNASNet0_75Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+def mnasnet0_75(weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            raise ValueError("No checkpoint is available for model type mnasnet0_75")
-
-    weights = MNASNet0_75Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
+    weights = MNASNet0_75_Weights.verify(weights)
 
     return _mnasnet(0.75, weights, progress, **kwargs)
 
 
-def mnasnet1_0(weights: Optional[MNASNet1_0Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+def mnasnet1_0(weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = MNASNet1_0Weights.ImageNet1K_Community if kwargs.pop("pretrained") else None
-    weights = MNASNet1_0Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet1_0_Weights.ImageNet1K_V1)
+    weights = MNASNet1_0_Weights.verify(weights)
 
     return _mnasnet(1.0, weights, progress, **kwargs)
 
 
-def mnasnet1_3(weights: Optional[MNASNet1_3Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+def mnasnet1_3(weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            raise ValueError("No checkpoint is available for model type mnasnet1_3")
-
-    weights = MNASNet1_3Weights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
+    weights = MNASNet1_3_Weights.verify(weights)
 
     return _mnasnet(1.3, weights, progress, **kwargs)
