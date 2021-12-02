@@ -116,6 +116,7 @@ class ConvNormActivation(torch.nn.Sequential):
         activation_layer (Callable[..., torch.nn.Module], optinal): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
         dilation (int): Spacing between kernel elements. Default: 1
         inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``
+        bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.
 
     """
 
@@ -131,9 +132,12 @@ class ConvNormActivation(torch.nn.Sequential):
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         dilation: int = 1,
         inplace: bool = True,
+        bias: Optional[bool] = None,
     ) -> None:
         if padding is None:
             padding = (kernel_size - 1) // 2 * dilation
+        if bias is None:
+            bias = norm_layer is None
         layers = [
             torch.nn.Conv2d(
                 in_channels,
@@ -143,7 +147,7 @@ class ConvNormActivation(torch.nn.Sequential):
                 padding,
                 dilation=dilation,
                 groups=groups,
-                bias=norm_layer is None,
+                bias=bias,
             )
         ]
         if norm_layer is not None:
