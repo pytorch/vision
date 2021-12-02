@@ -280,17 +280,8 @@ class CorrBlock:
         to build the correlation pyramid.
         """
 
-        def compute_corr_volume(fmap1, fmap2):
-            batch_size, num_channels, h, w = fmap1.shape
-            fmap1 = fmap1.view(batch_size, num_channels, h * w)
-            fmap2 = fmap2.view(batch_size, num_channels, h * w)
-
-            corr = torch.matmul(fmap1.transpose(1, 2), fmap2)
-            corr = corr.view(batch_size, h, w, 1, h, w)
-            return corr / torch.sqrt(torch.tensor(num_channels))
-
         torch._assert(fmap1.shape == fmap2.shape, "Input feature maps should have the same shapes")
-        corr_volume = compute_corr_volume(fmap1, fmap2)
+        corr_volume = self._compute_corr_volume(fmap1, fmap2)
 
         batch_size, h, w, num_channels, _, _ = corr_volume.shape  # _, _ = h, w
         corr_volume = corr_volume.reshape(batch_size * h * w, num_channels, h, w)
@@ -328,6 +319,16 @@ class CorrBlock:
         )
 
         return corr_features
+
+    def _compute_corr_volume(self, fmap1, fmap2):
+        batch_size, num_channels, h, w = fmap1.shape
+        fmap1 = fmap1.view(batch_size, num_channels, h * w)
+        fmap2 = fmap2.view(batch_size, num_channels, h * w)
+
+        corr = torch.matmul(fmap1.transpose(1, 2), fmap2)
+        corr = corr.view(batch_size, h, w, 1, h, w)
+        return corr / torch.sqrt(torch.tensor(num_channels))
+
 
 
 class RAFT(nn.Module):
