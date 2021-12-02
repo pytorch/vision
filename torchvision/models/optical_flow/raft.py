@@ -490,7 +490,7 @@ def _raft(
 def raft_large(*, pretrained=False, progress=True, **kwargs):
 
     if pretrained:
-        raise NotImplementedError("Pretrained weights aren't available yet")
+        raise ValueError("Pretrained weights aren't available yet")
 
     return _raft(
         # Feature encoder
@@ -523,7 +523,7 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
 def raft_small(*, pretrained=False, progress=True, **kwargs):
 
     if pretrained:
-        raise NotImplementedError("Pretrained weights aren't available yet")
+        raise ValueError("Pretrained weights aren't available yet")
 
     return _raft(
         # Feature encoder
