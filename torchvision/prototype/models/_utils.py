@@ -53,17 +53,22 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[A
                 else:
                     default_weights_arg = None
 
-                msg = f"The current behavior is equivalent to passing `{weights_param}={default_weights_arg}`."
                 if not pretrained_positional:
-                    msg = (
-                        f"The parameter '{pretrained_param}' is deprecated, please use '{weights_param}' instead. {msg}"
+                    warnings.warn(
+                        f"The parameter '{pretrained_param}' is deprecated, please use '{weights_param}' instead."
                     )
-                if default_weights_arg is not None:
+
+                msg = (
+                    f"Boolean arguments for '{weights_param}' are deprecated. "
+                    f"The current behavior is equivalent to passing `{weights_param}={default_weights_arg}`."
+                )
+                if pretrained_arg:
                     msg = (
-                        f"{msg} You can also use `{weights_param}={default_weights_arg}.default` "
+                        f"{msg} You can also use `{weights_param}={type(default_weights_arg).__name__}.default` "
                         f"to get the most up-to-date weights."
                     )
                 warnings.warn(msg)
+
                 kwargs[weights_param] = default_weights_arg
 
             return builder(*args, **kwargs)
