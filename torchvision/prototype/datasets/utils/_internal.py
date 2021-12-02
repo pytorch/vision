@@ -303,15 +303,10 @@ def fromfile(
     # try:
     #     # FIXME: DEBUG
     try:
-        a = file.fileno()
-        print("fileno worked")
-        try:
-            b = mmap.mmap(a, 0)
-            print("mmap worked")
-        except PermissionError:
-            print("mmap failed")
-    except io.UnsupportedOperation:
-        print("fileno failed")
+        mmap.mmap(file.fileno(), 0)
+        print("mmap worked")
+    except PermissionError as error:
+        print(f"mmap failed with {error}")
     #     b = mmap.mmap(a, 0)
     #     c = memoryview(b)
     #     d = file.tell()
