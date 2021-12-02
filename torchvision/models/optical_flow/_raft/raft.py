@@ -27,7 +27,7 @@ class ResidualBlock(nn.Module):
         )
 
         if stride == 1:
-            self.downsample = None
+            self.downsample = nn.Identity()
         else:
             self.downsample = ConvNormActivation(
                 in_channels,
@@ -46,8 +46,7 @@ class ResidualBlock(nn.Module):
         y = self.convnormrelu1(y)
         y = self.convnormrelu2(y)
 
-        if self.downsample is not None:
-            x = self.downsample(x)
+        x = self.downsample(x)
 
         return self.relu(x + y)
 
@@ -69,7 +68,7 @@ class BottleneckBlock(nn.Module):
         self.relu = nn.ReLU(inplace=True)
 
         if stride == 1:
-            self.downsample = None
+            self.downsample = nn.Identity()
         else:
             self.downsample = ConvNormActivation(
                 in_channels,
@@ -87,8 +86,7 @@ class BottleneckBlock(nn.Module):
         y = self.convnormrelu2(y)
         y = self.convnormrelu3(y)
 
-        if self.downsample is not None:
-            x = self.downsample(x)
+        x = self.downsample(x)
 
         return self.relu(x + y)
 
@@ -148,7 +146,7 @@ class MotionEncoder(nn.Module):
         if len(corr_layers) == 2:
             self.convcorr2 = ConvNormActivation(corr_layers[0], corr_layers[1], norm_layer=None, kernel_size=3)
         else:
-            self.convcorr2 = None
+            self.convcorr2 = nn.Identity()
 
         self.convflow1 = ConvNormActivation(2, flow_layers[0], norm_layer=None, kernel_size=7)
         self.convflow2 = ConvNormActivation(flow_layers[0], flow_layers[1], norm_layer=None, kernel_size=3)
@@ -162,8 +160,7 @@ class MotionEncoder(nn.Module):
 
     def forward(self, flow, corr_features):
         corr = self.convcorr1(corr_features)
-        if self.convcorr2 is not None:
-            corr = self.convcorr2(corr)
+        corr = self.convcorr2(corr)
 
         flow_orig = flow
         flow = self.convflow1(flow)
@@ -205,14 +202,13 @@ class RecurrentBlock(nn.Module):
                 input_size=input_size, hidden_size=hidden_size, kernel_size=kernel_size[1], padding=padding[1]
             )
         else:
-            self.convgru2 = None
+            self.convgru2 = lambda h, _: h  # identity
 
         self.hidden_size = hidden_size
 
     def forward(self, h, x):
         h = self.convgru1(h, x)
-        if self.convgru2 is not None:
-            h = self.convgru2(h, x)
+        h = self.convgru2(h, x)
         return h
 
 
