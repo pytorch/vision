@@ -372,7 +372,7 @@ class RAFT(nn.Module):
         )
         hidden_state, context = torch.split(context_out, [hidden_state_size, out_channels_context], dim=1)
         hidden_state = torch.tanh(hidden_state)
-        context = torch.relu(context)
+        context = F.relu(context)
 
         coords0 = make_coords_grid(batch_size, h // 8, w // 8).cuda()
         coords1 = make_coords_grid(batch_size, h // 8, w // 8).cuda()
