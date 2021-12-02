@@ -10,7 +10,7 @@ from .utils import grid_sample, make_coords_grid, upsample_flow
 
 class ResidualBlock(nn.Module):
     # This is pretty similar to resnet.BasicBlock except for one call to relu, and the bias terms
-    def __init__(self, in_channels, out_channels, *norm_layer, stride=1):
+    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
         super().__init__()
 
         # Note regarding bias=True:
@@ -474,8 +474,8 @@ def _raft(
 
 def raft(*, weights=None, progress=True, **kwargs):
 
-    if weights is not None or progress is not None:
-        raise NotImplemented("Pretrained weights aren't available yet")
+    if weights is not None:
+        raise NotImplementedError("Pretrained weights aren't available yet")
 
     return _raft(
         # Feature encoder
@@ -507,8 +507,8 @@ def raft(*, weights=None, progress=True, **kwargs):
 
 def raft_small(*, weights=None, progress=True, **kwargs):
 
-    if weights is not None or progress is not None:
-        raise NotImplemented("Pretrained weights aren't available yet")
+    if weights is not None:
+        raise NotImplementedError("Pretrained weights aren't available yet")
 
     return _raft(
         # Feature encoder
