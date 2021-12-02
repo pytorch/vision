@@ -112,7 +112,7 @@ class _MNISTBase(Dataset):
             image = Image(image)
         else:
             image_buffer = image_buffer_from_array(image.numpy())
-            image = decoder(image_buffer).pop('img') if decoder else image_buffer  # type: ignore[assignment]
+            image = decoder(image_buffer).pop("img") if decoder else image_buffer  # type: ignore[assignment]
 
         label = Label(label, dtype=torch.int64, category=self.info.categories[int(label)])
 

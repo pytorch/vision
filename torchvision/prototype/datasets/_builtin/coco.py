@@ -153,7 +153,7 @@ class Coco(Dataset):
         self, data: Tuple[str, io.IOBase], *, decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]]
     ) -> Dict[str, Any]:
         path, buffer = data
-        return dict(path=path, image=decoder(buffer).pop('img') if decoder else buffer)
+        return dict(path=path, image=decoder(buffer).pop("img") if decoder else buffer)
 
     def _collate_and_decode_sample(
         self,

@@ -122,7 +122,7 @@ class CelebA(Dataset):
         path, buffer = image_data
         _, ann = ann_data
 
-        image = decoder(buffer).pop('img') if decoder else buffer
+        image = decoder(buffer).pop("img") if decoder else buffer
 
         identity = int(ann["identity"]["identity"])
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}

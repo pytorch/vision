@@ -102,7 +102,7 @@ class SBD(Dataset):
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        image = decoder(image_buffer).pop('img') if decoder else image_buffer
+        image = decoder(image_buffer).pop("img") if decoder else image_buffer
 
         if config.boundaries or config.segmentation:
             boundaries, segmentation = self._decode_ann(

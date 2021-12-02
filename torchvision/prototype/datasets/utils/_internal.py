@@ -336,7 +336,7 @@ def fromfile(
     # a mutable location afterwards.
     buffer: Union[memoryview, bytearray]
     try:
-        buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell():]
+        buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
         # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
         file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
     except (PermissionError, io.UnsupportedOperation):

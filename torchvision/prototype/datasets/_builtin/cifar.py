@@ -70,7 +70,7 @@ class _CifarBase(Dataset):
             image = Image(image_array)
         else:
             image_buffer = image_buffer_from_array(image_array.transpose((1, 2, 0)))
-            image = decoder(image_buffer).pop('img') if decoder else image_buffer  # type: ignore[assignment]
+            image = decoder(image_buffer).pop("img") if decoder else image_buffer  # type: ignore[assignment]
 
         label = Label(category_idx, category=self.categories[category_idx])
 

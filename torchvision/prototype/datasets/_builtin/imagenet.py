@@ -125,7 +125,7 @@ class ImageNet(Dataset):
         label, (path, buffer) = data
         return dict(
             path=path,
-            image=decoder(buffer).pop('img') if decoder else buffer,
+            image=decoder(buffer).pop("img") if decoder else buffer,
             label=label,
         )
 

@@ -102,7 +102,7 @@ class VOC(Dataset):
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        image = decoder(image_buffer).pop('img') if decoder else image_buffer
+        image = decoder(image_buffer).pop("img") if decoder else image_buffer
 
         if config.task == "detection":
             ann = self._decode_detection_ann(ann_buffer)

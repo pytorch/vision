@@ -1,7 +1,7 @@
 import io
+from typing import Any, Dict
 
 import PIL.Image
-from typing import Any, Dict
 from torchvision.prototype import features
 from torchvision.transforms.functional import pil_to_tensor
 

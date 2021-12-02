@@ -94,7 +94,7 @@ class Caltech101(Dataset):
 
         label = self.info.categories.index(category)
 
-        image = decoder(image_buffer).pop('img') if decoder else image_buffer
+        image = decoder(image_buffer).pop("img") if decoder else image_buffer
 
         ann = read_mat(ann_buffer)
         bbox = BoundingBox(ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy")
@@ -175,7 +175,7 @@ class Caltech256(Dataset):
         label_str, category = dir_name.split(".")
         label = Label(int(label_str), category=category)
 
-        image = decoder(buffer).pop('img') if decoder else buffer
+        image = decoder(buffer).pop("img") if decoder else buffer
 
         return dict(label=label, image=image)
 

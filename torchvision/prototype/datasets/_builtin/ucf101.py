@@ -2,9 +2,6 @@ import io
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from torchvision.prototype.datasets.utils._internal import RarArchiveReader, INFINITE_BUFFER_SIZE
-
-from torchdata.datapipes.iter import CSVParser, IterKeyZipper
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import (
     Filter,
@@ -12,7 +9,7 @@ from torch.utils.data.datapipes.iter import (
     ZipArchiveReader,
     Shuffler,
 )
-from torchvision.prototype.datasets.utils._internal import path_accessor, path_comparator
+from torchdata.datapipes.iter import CSVParser, IterKeyZipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -21,6 +18,8 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
+from torchvision.prototype.datasets.utils._internal import RarArchiveReader, INFINITE_BUFFER_SIZE
+from torchvision.prototype.datasets.utils._internal import path_accessor, path_comparator
 
 
 class UCF101(Dataset):
@@ -30,11 +29,12 @@ class UCF101(Dataset):
     UCF101 is an action recognition video dataset, containing 101 classes
     of various human actions.
     """
+
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "UCF101",
             type=DatasetType.VIDEO,
-            valid_options={'split': ["train", "test"], 'fold': ["1", "2", "3"]},
+            valid_options={"split": ["train", "test"], "fold": ["1", "2", "3"]},
             homepage="https://www.crcv.ucf.edu/data/UCF101.php",
         )
 
@@ -47,7 +47,7 @@ class UCF101(Dataset):
             HttpResource(
                 "https://www.crcv.ucf.edu/data/UCF101/UCF101.rar",
                 sha256="ca8dfadb4c891cb11316f94d52b6b0ac2a11994e67a0cae227180cd160bd8e55",
-            )
+            ),
         ]
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
