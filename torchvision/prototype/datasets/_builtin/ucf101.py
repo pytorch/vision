@@ -20,6 +20,7 @@ from torchvision.prototype.datasets.utils import (
 )
 from torchvision.prototype.datasets.utils._internal import RarArchiveReader, INFINITE_BUFFER_SIZE
 from torchvision.prototype.datasets.utils._internal import path_accessor, path_comparator
+from torchvision.prototype.features import Label
 
 
 class UCF101(Dataset):
@@ -32,9 +33,10 @@ class UCF101(Dataset):
 
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
-            "UCF101",
+            "ucf101",
             type=DatasetType.VIDEO,
-            valid_options={"split": ["train", "test"], "fold": ["1", "2", "3"]},
+            dependencies=("rarfile",),
+            valid_options={"split": ("train", "test"), "fold": ("1", "2", "3")},
             homepage="https://www.crcv.ucf.edu/data/UCF101.php",
         )
 
@@ -62,11 +64,13 @@ class UCF101(Dataset):
         *,
         decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        annotations_d, file_d = data
-        label = annotations_d[1]
-        _path, file_handle = file_d
-        file = decoder(file_handle) if decoder else file_handle
-        return {"path": _path, "file": file, "target": label}
+        split_data, image_data = data
+        path, buffer = image_data
+        return dict(
+            decoder(buffer) if decoder else dict(buffer=buffer),
+            path=path,
+            label=Label(int(split_data[1]), category=pathlib.Path(path).parent.name),
+        )
 
     def _make_datapipe(
         self,
@@ -75,16 +79,16 @@ class UCF101(Dataset):
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
+        splits_dp, images_dp = resource_dps
 
-        annotations = resource_dps[0]
-        files = resource_dps[1]
+        splits_dp = ZipArchiveReader(splits_dp)
+        splits_dp: IterDataPipe[Tuple[str, io.IOBase]] = Filter(
+            splits_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt")
+        )
+        splits_dp = CSVParser(splits_dp, delimiter=" ")
+        splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-        annotations_dp = ZipArchiveReader(annotations)
-        annotations_dp = Filter(annotations_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt"))
-        annotations_dp = CSVParser(annotations_dp, delimiter=" ")
+        images_dp = RarArchiveReader(images_dp)
 
-        annotations_dp = Shuffler(annotations_dp, buffer_size=INFINITE_BUFFER_SIZE)
-
-        files_dp = RarArchiveReader(files)
-        dp = IterKeyZipper(annotations_dp, files_dp, path_accessor("name"))
+        dp = IterKeyZipper(splits_dp, images_dp, path_accessor("name"))
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))

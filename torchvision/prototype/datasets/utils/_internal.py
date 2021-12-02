@@ -187,12 +187,6 @@ class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
 
 class RarArchiveReader(IterDataPipe[Tuple[str, io.BufferedIOBase]]):
     def __init__(self, datapipe: IterDataPipe[Tuple[str, io.BufferedIOBase]]):
-        self._rarfile = self._verify_dependencies()
-        super().__init__()
-        self.datapipe = datapipe
-
-    @staticmethod
-    def _verify_dependencies():
         try:
             import rarfile
         except ImportError as error:
@@ -204,11 +198,14 @@ class RarArchiveReader(IterDataPipe[Tuple[str, io.BufferedIOBase]]):
         # check if at least one system library for reading rar archives is available to be used by rarfile
         rarfile.tool_setup()
 
-        return rarfile
+        super().__init__()
+        self.datapipe = datapipe
 
     def __iter__(self) -> Iterator[Tuple[str, io.BufferedIOBase]]:
+        import rarfile
+
         for path, stream in self.datapipe:
-            rar = self._rarfile.RarFile(stream)
+            rar = rarfile.RarFile(stream)
             for info in rar.infolist():
                 if info.filename.endswith("/"):
                     continue

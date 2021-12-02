@@ -102,8 +102,6 @@ class SBD(Dataset):
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        image = decoder(image_buffer).pop("img") if decoder else image_buffer
-
         if config.boundaries or config.segmentation:
             boundaries, segmentation = self._decode_ann(
                 read_mat(ann_buffer), decode_boundaries=config.boundaries, decode_segmentation=config.segmentation
@@ -112,8 +110,8 @@ class SBD(Dataset):
             boundaries = segmentation = None
 
         return dict(
+            decoder(image_buffer) if decoder else dict(image_buffer=image_buffer),
             image_path=image_path,
-            image=image,
             ann_path=ann_path,
             boundaries=boundaries,
             segmentation=segmentation,

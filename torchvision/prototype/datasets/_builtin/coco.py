@@ -153,23 +153,22 @@ class Coco(Dataset):
         self, data: Tuple[str, io.IOBase], *, decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]]
     ) -> Dict[str, Any]:
         path, buffer = data
-        return dict(path=path, image=decoder(buffer).pop("img") if decoder else buffer)
+        return dict(image=decoder(buffer) if decoder else dict(buffer=buffer), path=path)
 
     def _collate_and_decode_sample(
         self,
         data: Tuple[Tuple[List[Dict[str, Any]], Dict[str, Any]], Tuple[str, io.IOBase]],
         *,
-        annotations: Optional[str],
+        annotations: str,
         decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> Dict[str, Any]:
         ann_data, image_data = data
         anns, image_meta = ann_data
 
-        sample = self._collate_and_decode_image(image_data, decoder=decoder)
-        if annotations:
-            sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
-
-        return sample
+        return {
+            **self._collate_and_decode_image(image_data, decoder=decoder),
+            **self._ANN_DECODERS[annotations](self, anns, image_meta),
+        }
 
     def _make_datapipe(
         self,

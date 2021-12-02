@@ -94,16 +94,14 @@ class Caltech101(Dataset):
 
         label = self.info.categories.index(category)
 
-        image = decoder(image_buffer).pop("img") if decoder else image_buffer
-
         ann = read_mat(ann_buffer)
         bbox = BoundingBox(ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy")
         contour = torch.tensor(ann["obj_contour"].T)
 
         return dict(
+            decoder(image_buffer) if decoder else dict(buffer=image_buffer),
             category=category,
             label=label,
-            image=image,
             image_path=image_path,
             bbox=bbox,
             contour=contour,
@@ -175,9 +173,7 @@ class Caltech256(Dataset):
         label_str, category = dir_name.split(".")
         label = Label(int(label_str), category=category)
 
-        image = decoder(buffer).pop("img") if decoder else buffer
-
-        return dict(label=label, image=image)
+        return dict(decoder(buffer) if decoder else dict(buffer=buffer), label=label)
 
     def _make_datapipe(
         self,

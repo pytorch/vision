@@ -13,4 +13,4 @@ def raw(buffer: io.IOBase) -> Dict[str, Any]:
 
 
 def pil(buffer: io.IOBase) -> Dict[str, Any]:
-    return dict(img=features.Image(pil_to_tensor(PIL.Image.open(buffer))))
+    return dict(image=features.Image(pil_to_tensor(PIL.Image.open(buffer))))
