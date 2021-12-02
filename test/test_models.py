@@ -818,11 +818,8 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
 
 
-from torchvision.models.optical_flow import raft_large, raft_small
-
-
 @needs_cuda
-@pytest.mark.parametrize("model_builder", (raft_large, raft_small))
+@pytest.mark.parametrize("model_builder", (models.optical_flow.raft_large, models.optical_flow.raft_small))
 @pytest.mark.parametrize("scripted", (False, True))
 def test_raft(model_builder, scripted):
 
