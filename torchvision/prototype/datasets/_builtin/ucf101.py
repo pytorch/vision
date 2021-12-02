@@ -2,9 +2,6 @@ import io
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
-from torchvision.prototype.datasets.utils._internal import RarArchiveReader, INFINITE_BUFFER_SIZE
-
-from torchdata.datapipes.iter import CSVParser, IterKeyZipper
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import (
     Filter,
@@ -12,7 +9,7 @@ from torch.utils.data.datapipes.iter import (
     ZipArchiveReader,
     Shuffler,
 )
-from torchvision.prototype.datasets.utils._internal import path_accessor, path_comparator
+from torchdata.datapipes.iter import CSVParser, IterKeyZipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -21,6 +18,9 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
+from torchvision.prototype.datasets.utils._internal import RarArchiveReader, INFINITE_BUFFER_SIZE
+from torchvision.prototype.datasets.utils._internal import path_accessor, path_comparator
+from torchvision.prototype.features import Label
 
 
 class UCF101(Dataset):
@@ -30,11 +30,13 @@ class UCF101(Dataset):
     UCF101 is an action recognition video dataset, containing 101 classes
     of various human actions.
     """
+
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
-            "UCF101",
+            "ucf101",
             type=DatasetType.VIDEO,
-            valid_options={'split': ["train", "test"], 'fold': ["1", "2", "3"]},
+            dependencies=("rarfile",),
+            valid_options={"split": ("train", "test"), "fold": ("1", "2", "3")},
             homepage="https://www.crcv.ucf.edu/data/UCF101.php",
         )
 
@@ -47,7 +49,7 @@ class UCF101(Dataset):
             HttpResource(
                 "https://www.crcv.ucf.edu/data/UCF101/UCF101.rar",
                 sha256="ca8dfadb4c891cb11316f94d52b6b0ac2a11994e67a0cae227180cd160bd8e55",
-            )
+            ),
         ]
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
@@ -62,11 +64,13 @@ class UCF101(Dataset):
         *,
         decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
-        annotations_d, file_d = data
-        label = annotations_d[1]
-        _path, file_handle = file_d
-        file = decoder(file_handle) if decoder else file_handle
-        return {"path": _path, "file": file, "target": label}
+        split_data, image_data = data
+        path, buffer = image_data
+        return dict(
+            decoder(buffer) if decoder else dict(buffer=buffer),
+            path=path,
+            label=Label(int(split_data[1]), category=pathlib.Path(path).parent.name),
+        )
 
     def _make_datapipe(
         self,
@@ -75,16 +79,16 @@ class UCF101(Dataset):
         config: DatasetConfig,
         decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
     ) -> IterDataPipe[Dict[str, Any]]:
+        splits_dp, images_dp = resource_dps
 
-        annotations = resource_dps[0]
-        files = resource_dps[1]
+        splits_dp = ZipArchiveReader(splits_dp)
+        splits_dp: IterDataPipe[Tuple[str, io.IOBase]] = Filter(
+            splits_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt")
+        )
+        splits_dp = CSVParser(splits_dp, delimiter=" ")
+        splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-        annotations_dp = ZipArchiveReader(annotations)
-        annotations_dp = Filter(annotations_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt"))
-        annotations_dp = CSVParser(annotations_dp, delimiter=" ")
+        images_dp = RarArchiveReader(images_dp)
 
-        annotations_dp = Shuffler(annotations_dp, buffer_size=INFINITE_BUFFER_SIZE)
-
-        files_dp = RarArchiveReader(files)
-        dp = IterKeyZipper(annotations_dp, files_dp, path_accessor("name"))
+        dp = IterKeyZipper(splits_dp, images_dp, path_accessor("name"))
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))

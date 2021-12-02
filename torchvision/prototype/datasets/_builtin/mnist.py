@@ -108,15 +108,15 @@ class _MNISTBase(Dataset):
     ) -> Dict[str, Any]:
         image, label = data
 
+        sample: Dict[str, Any] = dict(label=Label(label, dtype=torch.int64, category=self.info.categories[int(label)]))
+
         if decoder is raw:
-            image = Image(image)
+            sample["image"] = Image(image)
         else:
             image_buffer = image_buffer_from_array(image.numpy())
-            image = decoder(image_buffer).pop('img') if decoder else image_buffer  # type: ignore[assignment]
+            sample.update(decoder(image_buffer) if decoder else dict(buffer=image_buffer))
 
-        label = Label(label, dtype=torch.int64, category=self.info.categories[int(label)])
-
-        return dict(image=image, label=label)
+        return sample
 
     def _make_datapipe(
         self,

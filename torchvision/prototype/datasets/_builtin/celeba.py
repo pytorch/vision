@@ -122,8 +122,6 @@ class CelebA(Dataset):
         path, buffer = image_data
         _, ann = ann_data
 
-        image = decoder(buffer).pop('img') if decoder else buffer
-
         identity = int(ann["identity"]["identity"])
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
         bbox = torch.tensor([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
@@ -133,8 +131,8 @@ class CelebA(Dataset):
         }
 
         return dict(
+            decoder(buffer) if decoder else dict(buffer=buffer),
             path=path,
-            image=image,
             identity=identity,
             attributes=attributes,
             bbox=bbox,

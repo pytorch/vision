@@ -102,14 +102,18 @@ class VOC(Dataset):
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        image = decoder(image_buffer).pop('img') if decoder else image_buffer
+        sample = dict(
+            decoder(image_buffer) if decoder else dict(image_buffer=image_buffer),
+            image_path=image_path,
+            ann_path=ann_path,
+        )
 
         if config.task == "detection":
-            ann = self._decode_detection_ann(ann_buffer)
+            sample["bounding_boxes"] = self._decode_detection_ann(ann_buffer)
         else:  # config.task == "segmentation":
-            ann = decoder(ann_buffer) if decoder else ann_buffer  # type: ignore[assignment]
+            sample.update(decoder(ann_buffer) if decoder else dict(ann_buffer=ann_buffer))
 
-        return dict(image_path=image_path, image=image, ann_path=ann_path, ann=ann)
+        return sample
 
     def _make_datapipe(
         self,

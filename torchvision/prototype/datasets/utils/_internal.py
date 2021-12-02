@@ -187,12 +187,6 @@ class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
 
 class RarArchiveReader(IterDataPipe[Tuple[str, io.BufferedIOBase]]):
     def __init__(self, datapipe: IterDataPipe[Tuple[str, io.BufferedIOBase]]):
-        self._rarfile = self._verify_dependencies()
-        super().__init__()
-        self.datapipe = datapipe
-
-    @staticmethod
-    def _verify_dependencies():
         try:
             import rarfile
         except ImportError as error:
@@ -204,11 +198,14 @@ class RarArchiveReader(IterDataPipe[Tuple[str, io.BufferedIOBase]]):
         # check if at least one system library for reading rar archives is available to be used by rarfile
         rarfile.tool_setup()
 
-        return rarfile
+        super().__init__()
+        self.datapipe = datapipe
 
     def __iter__(self) -> Iterator[Tuple[str, io.BufferedIOBase]]:
+        import rarfile
+
         for path, stream in self.datapipe:
-            rar = self._rarfile.RarFile(stream)
+            rar = rarfile.RarFile(stream)
             for info in rar.infolist():
                 if info.filename.endswith("/"):
                     continue
@@ -336,7 +333,7 @@ def fromfile(
     # a mutable location afterwards.
     buffer: Union[memoryview, bytearray]
     try:
-        buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell():]
+        buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
         # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
         file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
     except (PermissionError, io.UnsupportedOperation):

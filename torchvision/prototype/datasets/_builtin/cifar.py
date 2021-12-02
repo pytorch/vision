@@ -3,7 +3,7 @@ import functools
 import io
 import pathlib
 import pickle
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Iterator, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, cast
 
 import numpy as np
 from torchdata.datapipes.iter import (
@@ -65,16 +65,15 @@ class _CifarBase(Dataset):
     ) -> Dict[str, Any]:
         image_array, category_idx = data
 
-        image: Union[Image, io.BytesIO]
+        sample: Dict[str, Any] = dict(label=Label(category_idx, category=self.categories[category_idx]))
+
         if decoder is raw:
-            image = Image(image_array)
+            sample["image"] = Image(image_array)
         else:
             image_buffer = image_buffer_from_array(image_array.transpose((1, 2, 0)))
-            image = decoder(image_buffer).pop('img') if decoder else image_buffer  # type: ignore[assignment]
+            sample.update(decoder(image_buffer) if decoder else dict(buffer=image_buffer))
 
-        label = Label(category_idx, category=self.categories[category_idx])
-
-        return dict(image=image, label=label)
+        return sample
 
     def _make_datapipe(
         self,

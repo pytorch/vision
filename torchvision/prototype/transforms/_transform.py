@@ -360,7 +360,13 @@ class Transform(nn.Module):
         else:
             feature_type = type(sample)
             if not self.supports(feature_type):
-                if not issubclass(feature_type, features.Feature) or feature_type in self.NO_OP_FEATURE_TYPES:
+                if (
+                    not issubclass(feature_type, features.Feature)
+                    # issubclass is not a strict check, but also allows the type checked against. Thus, we need to
+                    # check it separately
+                    or feature_type is features.Feature
+                    or feature_type in self.NO_OP_FEATURE_TYPES
+                ):
                     return sample
 
                 raise TypeError(

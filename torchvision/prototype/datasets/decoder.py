@@ -1,7 +1,7 @@
 import io
+from typing import Any, Dict
 
 import PIL.Image
-from typing import Any, Dict
 from torchvision.prototype import features
 from torchvision.transforms.functional import pil_to_tensor
 
@@ -13,4 +13,4 @@ def raw(buffer: io.IOBase) -> Dict[str, Any]:
 
 
 def pil(buffer: io.IOBase) -> Dict[str, Any]:
-    return dict(img=features.Image(pil_to_tensor(PIL.Image.open(buffer))))
+    return dict(image=features.Image(pil_to_tensor(PIL.Image.open(buffer))))

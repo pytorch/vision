@@ -10,7 +10,7 @@ from torchvision.prototype.utils._internal import sequence_to_str
 
 
 def to_bytes(file):
-    return file.read()
+    return dict(data=file.read())
 
 
 def config_id(name, config):
