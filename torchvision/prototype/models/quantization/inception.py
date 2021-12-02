@@ -37,8 +37,8 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
             "acc@1": 77.176,
             "acc@5": 93.354,
         },
-        default=True,
     )
+    default = ImageNet1K_FBGEMM_V1
 
 
 def inception_v3(

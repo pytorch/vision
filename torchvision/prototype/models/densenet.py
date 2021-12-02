@@ -80,8 +80,8 @@ class DenseNet121_Weights(WeightsEnum):
             "acc@1": 74.434,
             "acc@5": 91.972,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class DenseNet161_Weights(WeightsEnum):
@@ -93,8 +93,8 @@ class DenseNet161_Weights(WeightsEnum):
             "acc@1": 77.138,
             "acc@5": 93.560,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class DenseNet169_Weights(WeightsEnum):
@@ -106,8 +106,8 @@ class DenseNet169_Weights(WeightsEnum):
             "acc@1": 75.600,
             "acc@5": 92.806,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class DenseNet201_Weights(WeightsEnum):
@@ -119,8 +119,8 @@ class DenseNet201_Weights(WeightsEnum):
             "acc@1": 76.896,
             "acc@5": 93.370,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 def densenet121(weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:

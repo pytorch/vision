@@ -64,8 +64,8 @@ class ResNet18_Weights(WeightsEnum):
             "acc@1": 69.758,
             "acc@5": 89.078,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class ResNet34_Weights(WeightsEnum):
@@ -78,8 +78,8 @@ class ResNet34_Weights(WeightsEnum):
             "acc@1": 73.314,
             "acc@5": 91.420,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class ResNet50_Weights(WeightsEnum):
@@ -92,7 +92,6 @@ class ResNet50_Weights(WeightsEnum):
             "acc@1": 76.130,
             "acc@5": 92.862,
         },
-        default=False,
     )
     ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnet50-f46c3f97.pth",
@@ -103,8 +102,8 @@ class ResNet50_Weights(WeightsEnum):
             "acc@1": 80.674,
             "acc@5": 95.166,
         },
-        default=True,
     )
+    default = ImageNet1K_V2
 
 
 class ResNet101_Weights(WeightsEnum):
@@ -117,7 +116,6 @@ class ResNet101_Weights(WeightsEnum):
             "acc@1": 77.374,
             "acc@5": 93.546,
         },
-        default=False,
     )
     ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnet101-cd907fc2.pth",
@@ -128,8 +126,8 @@ class ResNet101_Weights(WeightsEnum):
             "acc@1": 81.886,
             "acc@5": 95.780,
         },
-        default=True,
     )
+    default = ImageNet1K_V2
 
 
 class ResNet152_Weights(WeightsEnum):
@@ -142,7 +140,6 @@ class ResNet152_Weights(WeightsEnum):
             "acc@1": 78.312,
             "acc@5": 94.046,
         },
-        default=False,
     )
     ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnet152-f82ba261.pth",
@@ -153,8 +150,8 @@ class ResNet152_Weights(WeightsEnum):
             "acc@1": 82.284,
             "acc@5": 96.002,
         },
-        default=True,
     )
+    default = ImageNet1K_V2
 
 
 class ResNeXt50_32X4D_Weights(WeightsEnum):
@@ -167,7 +164,6 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
             "acc@1": 77.618,
             "acc@5": 93.698,
         },
-        default=False,
     )
     ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnext50_32x4d-1a0047aa.pth",
@@ -178,8 +174,8 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
             "acc@1": 81.198,
             "acc@5": 95.340,
         },
-        default=True,
     )
+    default = ImageNet1K_V2
 
 
 class ResNeXt101_32X8D_Weights(WeightsEnum):
@@ -192,7 +188,6 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
             "acc@1": 79.312,
             "acc@5": 94.526,
         },
-        default=False,
     )
     ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnext101_32x8d-110c445d.pth",
@@ -203,8 +198,8 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
             "acc@1": 82.834,
             "acc@5": 96.228,
         },
-        default=True,
     )
+    default = ImageNet1K_V2
 
 
 class Wide_ResNet50_2_Weights(WeightsEnum):
@@ -217,7 +212,6 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
             "acc@1": 78.468,
             "acc@5": 94.086,
         },
-        default=False,
     )
     ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/wide_resnet50_2-9ba9bcbe.pth",
@@ -228,8 +222,8 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
             "acc@1": 81.602,
             "acc@5": 95.758,
         },
-        default=True,
     )
+    default = ImageNet1K_V2
 
 
 class Wide_ResNet101_2_Weights(WeightsEnum):
@@ -242,7 +236,6 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
             "acc@1": 78.848,
             "acc@5": 94.284,
         },
-        default=False,
     )
     ImageNet1K_V2 = Weights(
         url="https://download.pytorch.org/models/wide_resnet101_2-d733dc28.pth",
@@ -253,8 +246,8 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
             "acc@1": 82.510,
             "acc@5": 96.020,
         },
-        default=True,
     )
+    default = ImageNet1K_V2
 
 
 def resnet18(weights: Optional[ResNet18_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:

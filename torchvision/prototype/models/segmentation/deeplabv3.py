@@ -40,8 +40,8 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
             "mIoU": 66.4,
             "acc": 92.4,
         },
-        default=True,
     )
+    default = CocoWithVocLabels_V1
 
 
 class DeepLabV3_ResNet101_Weights(WeightsEnum):
@@ -54,8 +54,8 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
             "mIoU": 67.4,
             "acc": 92.4,
         },
-        default=True,
     )
+    default = CocoWithVocLabels_V1
 
 
 class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
@@ -68,8 +68,8 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
             "mIoU": 60.3,
             "acc": 91.2,
         },
-        default=True,
     )
+    default = CocoWithVocLabels_V1
 
 
 def deeplabv3_resnet50(
