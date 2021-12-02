@@ -304,12 +304,14 @@ def fromfile(
     #     # FIXME: DEBUG
     try:
         a = file.fileno()
+        print("fileno worked")
         try:
             b = mmap.mmap(a, 0)
+            print("mmap worked")
         except PermissionError:
-            pass
+            print("mmap failed")
     except io.UnsupportedOperation:
-        pass
+        print("fileno failed")
     #     b = mmap.mmap(a, 0)
     #     c = memoryview(b)
     #     d = file.tell()
