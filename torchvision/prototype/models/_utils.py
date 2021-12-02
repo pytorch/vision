@@ -12,39 +12,63 @@ M = TypeVar("M", bound=nn.Module)
 V = TypeVar("V")
 
 
-def handle_legacy_interface(
-    **pretrained_weights: Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]
-):
+def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[Any, Dict[str, Any]], Optional[W]]]]):
+    """Decorates a model builder with the new interface to make it compatible with the old.
+
+    In particular this handles two things:
+
+    1. Allows positional parameters again, but emits a deprecation warning in case they are used. See
+        :func:`torchvision.prototype.utils._internal.kwonly_to_pos_or_kw` for details.
+    2. Handles the default value change from ``pretrained=False`` to ``weights=None`` and ``pretrained=True`` to
+        ``weights=Weights`` and emits a deprecation warning with instructions for the new interface.
+
+    Args:
+        **weights (Tuple[str, Union[Optional[W], Callable[[Any, Dict[str, Any]], Optional[W]]]]): Deprecated parameter
+            name and default value for the legacy ``pretrained=True``. The default value can be a callable in which
+            case it will be called with the value of ``pretrained`` and the other keyword arguments. For example:
+    """
+
     def outer_wrapper(builder: Callable[..., M]) -> Callable[..., M]:
+        @kwonly_to_pos_or_kw
         @functools.wraps(builder)
-        def inner_wrapper(**kwargs: Any) -> M:
-            for weights_param, (pretrained_param, default) in pretrained_weights.items():  # type: ignore[union-attr]
-                weights_arg = kwargs.get(weights_param)
-                if weights_param in kwargs and not isinstance(weights_arg, bool):
+        def inner_wrapper(*args: Any, **kwargs: Any) -> M:
+            for weights_param, (pretrained_param, default) in weights.items():  # type: ignore[union-attr]
+                # If neither the weights nor the pretrained parameter as passed, or the weights argument already use
+                # the new style (not a boolean like pretrained did), there is nothing to do.
+                if (weights_param not in kwargs and pretrained_param not in kwargs) or not isinstance(
+                    kwargs.get(weights_param, False), bool
+                ):
                     continue
 
-                pretrained_positional = pretrained_param not in kwargs
-                pretrained_arg = weights_arg if pretrained_positional else kwargs.pop(pretrained_param)
+                # If the pretrained parameter was passed as positional argument, it is now mapped to
+                # `kwargs[weights_param]`. This happens because the @kwonly_to_pos_or_kw use the current signature to
+                # infer the names of positionally passed arguments and thus has no knowledge that there used to be a
+                # pretrained parameter.
+                pretrained_positional = weights_param in kwargs
+                pretrained_arg = kwargs.pop(weights_param if pretrained_positional else pretrained_param)
                 if pretrained_arg:
-                    default_arg = default(kwargs) if callable(default) else default
-                    if default_arg is None:
-                        raise ValueError(f"No checkpoint is available for model {builder.__name__}")
+                    default_weights_arg = default(pretrained_arg, kwargs) if callable(default) else default
+                    if not isinstance(default_weights_arg, WeightsEnum):
+                        raise ValueError(f"No weights available for model {builder.__name__}")
                 else:
-                    default_arg = None
+                    default_weights_arg = None
 
-                msg = f"The current behavior is equivalent to passing `{weights_param}={default_arg}`."
+                msg = f"The current behavior is equivalent to passing `{weights_param}={default_weights_arg}`."
                 if not pretrained_positional:
                     msg = (
                         f"The parameter '{pretrained_param}' is deprecated, please use '{weights_param}' instead. {msg}"
                     )
-                if default_arg is not None:
-                    msg = f"{msg} You can also use `{weights_param}='default'` to get the most up-to-date weights."
+                if default_weights_arg is not None:
+                    msg = (
+                        f"{msg} You can also use `{weights_param}={default_weights_arg}.default` "
+                        f"to get the most up-to-date weights."
+                    )
                 warnings.warn(msg)
-                kwargs[weights_param] = default_arg
+                kwargs[weights_param] = default_weights_arg
 
-            return builder(**kwargs)
+            return builder(*args, **kwargs)
 
-        return kwonly_to_pos_or_kw(inner_wrapper)
+        return inner_wrapper
 
     return outer_wrapper
 

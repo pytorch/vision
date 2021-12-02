@@ -158,14 +158,20 @@ def kwonly_to_pos_or_kw(fn: Callable[..., D]) -> Callable[..., D]:
     """
     params = inspect.signature(fn).parameters
 
-    keyword_only_start_idx = next(idx for idx, param in enumerate(params.values()) if param.kind == param.KEYWORD_ONLY)
-    keyword_only_parameters = tuple(inspect.signature(fn).parameters)[keyword_only_start_idx:]
+    try:
+        keyword_only_start_idx = next(
+            idx for idx, param in enumerate(params.values()) if param.kind == param.KEYWORD_ONLY
+        )
+    except StopIteration:
+        raise TypeError(f"Found no keyword-only parameter on function '{fn.__name__}'") from None
+
+    keyword_only_params = tuple(inspect.signature(fn).parameters)[keyword_only_start_idx:]
 
     @functools.wraps(fn)
     def wrapper(*args: Any, **kwargs: Any) -> D:
         args, keyword_only_args = args[:keyword_only_start_idx], args[keyword_only_start_idx:]
         if keyword_only_args:
-            keyword_only_kwargs = dict(zip(keyword_only_parameters, keyword_only_args))
+            keyword_only_kwargs = dict(zip(keyword_only_params, keyword_only_args))
             warnings.warn(
                 f"Using {sequence_to_str(tuple(keyword_only_kwargs.keys()), separate_last='and ')} as positional "
                 f"parameter(s) is deprecated. Please use keyword parameter(s) instead."
