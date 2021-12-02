@@ -1,4 +1,5 @@
 import io
+import pathlib
 
 import builtin_dataset_mocks
 import pytest
@@ -49,6 +50,34 @@ def dataset_parametrization(*names, decoder=to_bytes):
             for config in datasets.info(name)._configs
         ],
     )
+
+
+def test_optional_dependencies():
+    required_dependencies = set()
+    for name in datasets.list():
+        required_dependencies.update(datasets.info(name).dependecies)
+
+    with open(pathlib.Path(__file__).parents[1] / "optional-requirements.txt") as file:
+        for line in file:
+            if line.startswith("#") and line[1:].strip() == "datasets":
+                break
+
+        registered_dependencies = set()
+        for line in file:
+            if line.startswith("#"):
+                break
+
+            registered_dependencies.add(line.strip())
+
+    # TODO: Until we have feature parity between the stable and prototype datasets, we check if the registered
+    #  dependencies are a superset of the requires ones. Afterwards we should check for equality.
+    missing_dependencies = required_dependencies - registered_dependencies
+    if missing_dependencies:
+        raise AssertionError(
+            f"The datasets depend on the third-party packages {sequence_to_str(sorted(missing_dependencies))}, "
+            f"but they are not listed in the '# datasets' section in the file $TORCHVISION/optional-requirements.txt. "
+            "Please add them."
+        )
 
 
 class TestCommon:
