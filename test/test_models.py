@@ -110,7 +110,7 @@ def _assert_expected(output, name, prec):
         MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
         binary_size = os.path.getsize(expected_file)
         if binary_size > MAX_PICKLE_SIZE:
-            raise RuntimeError(f"The output for {filename}, is larger than 50kb")
+            raise RuntimeError(f"The output for {filename}, is larger than 50kb - got {binary_size}kb")
     else:
         expected = torch.load(expected_file)
         rtol = atol = prec
@@ -816,6 +816,35 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
+
+
+from torchvision.models.optical_flow import raft_large, raft_small
+
+
+@needs_cuda
+@pytest.mark.parametrize("model_builder", (raft_large, raft_small))
+@pytest.mark.parametrize("scripted", (False, True))
+def test_raft(model_builder, scripted):
+
+    torch.manual_seed(0)
+
+    # We need very small images, otherwise the pickle size would exceed the 50KB
+    # As a resut we need to override the correlation pyramid to not downsample
+    # too much, otherwise we would get nan values (effective H and W would be
+    # reduced to 1)
+    corr_block = models.optical_flow.raft.CorrBlock(num_levels=2, radius=2)
+
+    model = model_builder(corr_block=corr_block).eval().to("cuda")
+    if scripted:
+        model = torch.jit.script(model)
+
+    bs = 1
+    img1 = torch.rand(bs, 3, 80, 72).cuda()
+    img2 = torch.rand(bs, 3, 80, 72).cuda()
+
+    preds = model(img1, img2)
+    flow_pred = preds[-1]
+    _assert_expected(flow_pred, name=model_builder.__name__, prec=1e-6)
 
 
 if __name__ == "__main__":

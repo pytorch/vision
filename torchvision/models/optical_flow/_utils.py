@@ -1,8 +1,11 @@
+from typing import Optional
+
 import torch
 import torch.nn.functional as F
+from torch import Tensor
 
 
-def grid_sample(img, absolute_grid, *args, **kwargs):
+def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", align_corners: Optional[bool] = None):
     """Same as torch's grid_sample, with absolute pixel coordinates instead of normalized coordinates."""
     h, w = img.shape[-2:]
 
@@ -11,16 +14,16 @@ def grid_sample(img, absolute_grid, *args, **kwargs):
     ygrid = 2 * ygrid / (h - 1) - 1
     normalized_grid = torch.cat([xgrid, ygrid], dim=-1)
 
-    return F.grid_sample(img, normalized_grid, *args, **kwargs)
+    return F.grid_sample(img, normalized_grid, mode=mode, align_corners=align_corners)
 
 
-def make_coords_grid(batch_size, h, w):
+def make_coords_grid(batch_size: int, h: int, w: int):
     coords = torch.meshgrid(torch.arange(h), torch.arange(w), indexing="ij")
     coords = torch.stack(coords[::-1], dim=0).float()
     return coords[None].repeat(batch_size, 1, 1, 1)
 
 
-def upsample_flow(flow, up_mask=None):
+def upsample_flow(flow, up_mask: Optional[Tensor] = None):
     """Upsample flow by a factor of 8.
 
     If up_mask is None we just interpolate.

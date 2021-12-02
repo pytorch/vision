@@ -1,6 +1,9 @@
+from typing import List
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch import Tensor
 from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.ops import ConvNormActivation
@@ -194,6 +197,11 @@ class ConvGRU(nn.Module):
         return h
 
 
+def _pass_through_h(h, _):
+    # Declared here for torchscript
+    return h
+
+
 class RecurrentBlock(nn.Module):
     def __init__(self, *, input_size, hidden_size, kernel_size=((1, 5), (5, 1)), padding=((0, 2), (2, 0))):
         super().__init__()
@@ -209,7 +217,7 @@ class RecurrentBlock(nn.Module):
                 input_size=input_size, hidden_size=hidden_size, kernel_size=kernel_size[1], padding=padding[1]
             )
         else:
-            self.convgru2 = lambda h, _: h  # identity
+            self.convgru2 = _pass_through_h
 
         self.hidden_size = hidden_size
 
@@ -268,10 +276,13 @@ class MaskPredictor(nn.Module):
         return self.multiplier * x
 
 
-class CorrBlock:
-    def __init__(self, *, num_levels=4, radius=4):
+class CorrBlock(nn.Module):
+    def __init__(self, *, num_levels: int = 4, radius: int = 4):
+        super().__init__()
         self.num_levels = num_levels
         self.radius = radius
+
+        self.corr_pyramid: List[Tensor] = [torch.tensor(0)]  # useless, but torchscript is otherwise confused :')
 
         # The neighborhood of a centroid pixel x' is {x' + delta, ||delta||_inf <= radius}
         # so it's a square surrounding x', and its sides have a length of 2 * radius + 1
@@ -302,7 +313,7 @@ class CorrBlock:
         neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
         di = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
         dj = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
-        delta = torch.stack(torch.meshgrid(di, dj, indexing="ij"), axis=-1).to(centroids_coords.device)
+        delta = torch.stack(torch.meshgrid(di, dj, indexing="ij"), dim=-1).to(centroids_coords.device)
         delta = delta.view(1, neighborhood_side_len, neighborhood_side_len, 2)
 
         batch_size, _, h, w = centroids_coords.shape  # _ = 2
@@ -337,7 +348,6 @@ class CorrBlock:
         return corr / torch.sqrt(torch.tensor(num_channels))
 
 
-
 class RAFT(nn.Module):
     def __init__(self, *, feature_encoder, context_encoder, corr_block, update_block, mask_predictor=None):
         super().__init__()
@@ -352,7 +362,7 @@ class RAFT(nn.Module):
         if not hasattr(self.update_block, "hidden_state_size"):
             raise ValueError("The update_block parameter should expose a 'hidden_state_size' attribute.")
 
-    def forward(self, image1, image2, *, num_flow_updates=12):
+    def forward(self, image1, image2, num_flow_updates: int = 12):
 
         batch_size, _, h, w = image1.shape
         torch._assert((h, w) == image2.shape[-2:], "input images should have the same shape")
@@ -360,12 +370,12 @@ class RAFT(nn.Module):
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
-        torch._assert(fmap1.shape[-2:] == (h / 8, w / 8), "The feature encoder should downsample H and W by 8")
+        torch._assert(fmap1.shape[-2:] == (h // 8, w // 8), "The feature encoder should downsample H and W by 8")
 
         self.corr_block.build_pyramid(fmap1, fmap2)
 
         context_out = self.context_encoder(image1)
-        torch._assert(context_out.shape[-2:] == (h / 8, w / 8), "The context encoder should downsample H and W by 8")
+        torch._assert(context_out.shape[-2:] == (h // 8, w // 8), "The context encoder should downsample H and W by 8")
 
         # As in the original paper, the actual output of the context encoder is split in 2 parts:
         # - one part is used to initialize the hidden state of the reccurent units of the update block
