@@ -19,7 +19,8 @@ __all__ = (
 
 
 class ResidualBlock(nn.Module):
-    # This is pretty similar to resnet.BasicBlock except for one call to relu, and the bias terms
+    """Slightly modified Residual block with extra relu and biases."""
+
     def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
         super().__init__()
 
@@ -62,6 +63,8 @@ class ResidualBlock(nn.Module):
 
 
 class BottleneckBlock(nn.Module):
+    """Slightly modified BottleNeck block (extra relu and biases)"""
+
     def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
         super(BottleneckBlock, self).__init__()
 
@@ -102,6 +105,11 @@ class BottleneckBlock(nn.Module):
 
 
 class FeatureEncoder(nn.Module):
+    """The feature encoder, used both as the actual feature encoder, and as the context encoder.
+
+    It must downsample its input by 8.
+    """
+
     def __init__(self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), norm_layer=nn.BatchNorm2d):
         super().__init__()
 
@@ -146,6 +154,11 @@ class FeatureEncoder(nn.Module):
 
 
 class MotionEncoder(nn.Module):
+    """The motion encoder, part of the update block.
+
+    Takes the current predicted flow and the correlation features as input and returns an encoded version of these.
+    """
+
     def __init__(self, *, in_channels_corr, corr_layers=(256, 192), flow_layers=(128, 64), out_channels=128):
         super().__init__()
 
@@ -182,6 +195,8 @@ class MotionEncoder(nn.Module):
 
 
 class ConvGRU(nn.Module):
+    """Convolutional Gru unit."""
+
     def __init__(self, *, input_size, hidden_size, kernel_size, padding):
         super().__init__()
         self.convz = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
@@ -203,6 +218,12 @@ def _pass_through_h(h, _):
 
 
 class RecurrentBlock(nn.Module):
+    """Recurrent block, part of the update block.
+
+    Takes the current hidden state and the concatenation of (motion encoder output, context) as input.
+    Returns an updated hidden state.
+    """
+
     def __init__(self, *, input_size, hidden_size, kernel_size=((1, 5), (5, 1)), padding=((0, 2), (2, 0))):
         super().__init__()
 
@@ -228,6 +249,11 @@ class RecurrentBlock(nn.Module):
 
 
 class FlowHead(nn.Module):
+    """Flow head, part of the update block.
+
+    Takes the hidden state of the recurrent unit as input, and outputs the predicted "delta flow".
+    """
+
     def __init__(self, *, in_channels, hidden_size):
         super().__init__()
         self.conv1 = nn.Conv2d(in_channels, hidden_size, 3, padding=1)
@@ -239,6 +265,11 @@ class FlowHead(nn.Module):
 
 
 class UpdateBlock(nn.Module):
+    """The update block which contains the motion encoder, the recurrent block, and the flow head.
+
+    It must expose a ``hidden_state_size`` attribute which is the hidden state size of its recurrent block.
+    """
+
     def __init__(self, *, motion_encoder, recurrent_block, flow_head):
         super().__init__()
         self.motion_encoder = motion_encoder
@@ -257,6 +288,12 @@ class UpdateBlock(nn.Module):
 
 
 class MaskPredictor(nn.Module):
+    """Mask predictor to be used when upsampling the predicted flow.
+
+    It takes the hidden state of the recurrent unit as input and outputs the mask.
+    This is not used in the raft-small model.
+    """
+
     def __init__(self, *, in_channels, hidden_size, multiplier=0.25):
         super().__init__()
         self.convrelu = ConvNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
@@ -277,6 +314,15 @@ class MaskPredictor(nn.Module):
 
 
 class CorrBlock(nn.Module):
+    """The correlation block.
+
+    Creates a correlation pyramid with ``num_levels`` levels from the outputs of the feature encoder,
+    and then indexes from this pyramid to create correlation features.
+    The "indexing" of a given centroid pixel x' is done by concatenating its surrounding neighbors that
+    are within a ``radius``, according to the infinity norm (see paper section 3.2).
+    Note: typo in the paper, it should be infinity norm, not 1-norm.
+    """
+
     def __init__(self, *, num_levels: int = 4, radius: int = 4):
         super().__init__()
         self.num_levels = num_levels
@@ -350,6 +396,41 @@ class CorrBlock(nn.Module):
 
 class RAFT(nn.Module):
     def __init__(self, *, feature_encoder, context_encoder, corr_block, update_block, mask_predictor=None):
+        """RAFT model from
+        `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
+
+        args:
+            feature_encoder (nn.Module): The feature encoder. It must downsample the input by 8.
+                Its input is the concatenation of ``image1`` and ``image2``.
+            context_encoder (nn.Module): The context encoder. It must downsample the input by 8.
+                Its input is ``image1``. As in the original implementation, its output will be split into 2 parts:
+
+                - one part will be used as the actual "context", passed to the recurrent unit of the ``update_block``
+                - one part will be used to initialize the hidden state of the of the recurrent unit of
+                  the ``update_block``
+
+                These 2 parts are split according to the ``hidden_state_size`` of the ``update_block``, so the output
+                of the ``context_encoder`` must be strictly greater than ``hidden_state_size``.
+
+            clorr_block (nn.Module): The correlation block, which creates a correlation pyramid from the output of the
+                ``feature_encoder``, and then indexes from this pyramid to create correlation features. It must expose
+                2 methods:
+
+                - a ``build_pyramid`` method that takes ``feature_map_1`` and ``feature_map_2`` as input (these are the
+                  output of the ``feature_encoder``).
+                - a ``index_pyramid`` method that takes the coordinates of the centroid pixels as input, and returns
+                  the correlation features. See paper section 3.2.
+
+                It must expose an ``out_channels`` attribute.
+
+            update_block (nn.Module): The update block, which contains the motion encoder, the recurrent unit, and the
+                flow head. It takes as input the hidden state of its recurrent unit, the context, the correlation
+                features, and the current predicted flow. It outputs an updated hidden state, and the ``delta_flow``
+                prediction (see paper appendix A). It must expose a ``hidden_state_size`` attribute.
+            maks_predictor (nn.Module, optional): Predicts the mask that will be used to upsample the predicted flow.
+                The output channel must be 8 * 8 * 9 - see paper section 3.3, and Appendix B.
+                If ``None`` (default), the flow is upsampled using interpolation.
+        """
         super().__init__()
 
         self.feature_encoder = feature_encoder
@@ -378,13 +459,13 @@ class RAFT(nn.Module):
         torch._assert(context_out.shape[-2:] == (h // 8, w // 8), "The context encoder should downsample H and W by 8")
 
         # As in the original paper, the actual output of the context encoder is split in 2 parts:
-        # - one part is used to initialize the hidden state of the reccurent units of the update block
+        # - one part is used to initialize the hidden state of the recurent units of the update block
         # - the rest is the "actual" context.
         hidden_state_size = self.update_block.hidden_state_size
         out_channels_context = context_out.shape[1] - hidden_state_size
         torch._assert(
             out_channels_context > 0,
-            f"The context encoder outputs {context_out.shape[1]} channels, but it should have at least "
+            f"The context encoder outputs {context_out.shape[1]} channels, but it should have at strictly more than"
             f"hidden_state={hidden_state_size} channels",
         )
         hidden_state, context = torch.split(context_out, [hidden_state_size, out_channels_context], dim=1)
@@ -488,6 +569,18 @@ def _raft(
 
 
 def raft_large(*, pretrained=False, progress=True, **kwargs):
+    """RAFT model from
+    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
+
+    Args:
+        pretrained (bool): TODO not implemented yet
+        progress (bool): If True, displays a progress bar of the download to stderr
+        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
+            to override any default.
+
+    Returns:
+        nn.Module: The model.
+    """
 
     if pretrained:
         raise ValueError("Pretrained weights aren't available yet")
@@ -508,7 +601,7 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
         motion_encoder_corr_layers=(256, 192),
         motion_encoder_flow_layers=(128, 64),
         motion_encoder_out_channels=128,
-        # Reccurrent block
+        # Recurrent block
         recurrent_block_hidden_state_size=128,
         recurrent_block_kernel_size=((1, 5), (5, 1)),
         recurrent_block_padding=((0, 2), (2, 0)),
@@ -521,6 +614,19 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
 
 
 def raft_small(*, pretrained=False, progress=True, **kwargs):
+    """RAFT "small" model from
+    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
+
+    Args:
+        pretrained (bool): TODO not implemented yet
+        progress (bool): If True, displays a progress bar of the download to stderr
+        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
+            to override any default.
+
+    Returns:
+        nn.Module: The model.
+
+    """
 
     if pretrained:
         raise ValueError("Pretrained weights aren't available yet")
@@ -541,7 +647,7 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
         motion_encoder_corr_layers=(96,),
         motion_encoder_flow_layers=(64, 32),
         motion_encoder_out_channels=82,
-        # Reccurrent block
+        # Recurrent block
         recurrent_block_hidden_state_size=96,
         recurrent_block_kernel_size=(3,),
         recurrent_block_padding=(1,),

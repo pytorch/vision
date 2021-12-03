@@ -7,7 +7,7 @@ Models and pre-trained weights
 The ``torchvision.models`` subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
-keypoint detection and video classification.
+keypoint detection, video classification, and optical flow.
 
 .. note ::
     Backward compatibility is guaranteed for loading a serialized 
@@ -798,3 +798,16 @@ ResNet (2+1)D
     :template: function.rst
 
     torchvision.models.video.r2plus1d_18
+
+Optical flow
+============
+
+Raft
+----
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.optical_flow.raft_large
+    torchvision.models.optical_flow.raft_small
