@@ -23,9 +23,11 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[A
         ``weights=Weights`` and emits a deprecation warning with instructions for the new interface.
 
     Args:
-        **weights (Tuple[str, Union[Optional[W], Callable[[Any, Dict[str, Any]], Optional[W]]]]): Deprecated parameter
+        **weights (Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]): Deprecated parameter
             name and default value for the legacy ``pretrained=True``. The default value can be a callable in which
-            case it will be called with the value of ``pretrained`` and the other keyword arguments. For example:
+            case it will be called with a dictionary of the keyword arguments. The only key that is guaranteed to be in
+            the dictionary is the deprecated parameter name passed as first element in the tuple. All other parameters
+            should be accessed with :meth:`~dict.get`.
     """
 
     def outer_wrapper(builder: Callable[..., M]) -> Callable[..., M]:
@@ -34,20 +36,31 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[A
         def inner_wrapper(*args: Any, **kwargs: Any) -> M:
             for weights_param, (pretrained_param, default) in weights.items():  # type: ignore[union-attr]
                 # If neither the weights nor the pretrained parameter as passed, or the weights argument already use
-                # the new style (not a boolean like pretrained did), there is nothing to do.
-                if (weights_param not in kwargs and pretrained_param not in kwargs) or not isinstance(
-                    kwargs.get(weights_param, False), bool
+                # the new style arguments, there is nothing to do. Note that we cannot use `None` as sentinel for the
+                # weight argument, since it is a valid value.
+                sentinel = object()
+                weights_arg = kwargs.get(weights_param, sentinel)
+                if (
+                    (weights_param not in kwargs and pretrained_param not in kwargs)
+                    or isinstance(weights_arg, WeightsEnum)
+                    or weights_arg is None
                 ):
                     continue
 
                 # If the pretrained parameter was passed as positional argument, it is now mapped to
-                # `kwargs[weights_param]`. This happens because the @kwonly_to_pos_or_kw use the current signature to
-                # infer the names of positionally passed arguments and thus has no knowledge that there used to be a
-                # pretrained parameter.
-                pretrained_positional = weights_param in kwargs
-                pretrained_arg = kwargs.pop(weights_param if pretrained_positional else pretrained_param)
+                # `kwargs[weights_param]`. This happens because the @kwonly_to_pos_or_kw decorator uses the current
+                # signature to infer the names of positionally passed arguments and thus has no knowledge that there
+                # used to be a pretrained parameter.
+                pretrained_positional = weights_arg is not sentinel
+                if pretrained_positional:
+                    # We put the pretrained argument under its legacy name in the keyword argument dictionary to have a
+                    # unified access to the value if the default value is a callable.
+                    kwargs[pretrained_param] = pretrained_arg = kwargs.pop(weights_param)
+                else:
+                    pretrained_arg = kwargs[pretrained_param]
+
                 if pretrained_arg:
-                    default_weights_arg = default(pretrained_arg, kwargs) if callable(default) else default
+                    default_weights_arg = default(kwargs) if callable(default) else default
                     if not isinstance(default_weights_arg, WeightsEnum):
                         raise ValueError(f"No weights available for model {builder.__name__}")
                 else:
@@ -59,7 +72,7 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[A
                     )
 
                 msg = (
-                    f"Boolean arguments for '{weights_param}' are deprecated. "
+                    f"Arguments other than a weight enum or `None` for '{weights_param}' are deprecated. "
                     f"The current behavior is equivalent to passing `{weights_param}={default_weights_arg}`."
                 )
                 if pretrained_arg:
@@ -69,6 +82,7 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[A
                     )
                 warnings.warn(msg)
 
+                del kwargs[pretrained_param]
                 kwargs[weights_param] = default_weights_arg
 
             return builder(*args, **kwargs)

@@ -52,8 +52,8 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda pretrained, other_kwargs: KeypointRCNN_ResNet50_FPN_Weights.Coco_Legacy
-        if pretrained == "legacy"
+        lambda kwargs: KeypointRCNN_ResNet50_FPN_Weights.Coco_Legacy
+        if kwargs["pretrained"] == "legacy"
         else KeypointRCNN_ResNet50_FPN_Weights.Coco_V1,
     ),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),

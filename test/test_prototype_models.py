@@ -239,7 +239,7 @@ class TestHandleLegacyInterface:
         @handle_legacy_interface(
             weights=(
                 "pretrained",
-                lambda pretrained, other_kwargs: self.TestWeights.Sentinel if other_kwargs["flag"] else None,
+                lambda kwargs: self.TestWeights.Sentinel if kwargs["flag"] else None,
             )
         )
         def builder(*, weights=None, flag):
