@@ -412,7 +412,7 @@ class RAFT(nn.Module):
                 These 2 parts are split according to the ``hidden_state_size`` of the ``update_block``, so the output
                 of the ``context_encoder`` must be strictly greater than ``hidden_state_size``.
 
-            clorr_block (nn.Module): The correlation block, which creates a correlation pyramid from the output of the
+            corr_block (nn.Module): The correlation block, which creates a correlation pyramid from the output of the
                 ``feature_encoder``, and then indexes from this pyramid to create correlation features. It must expose
                 2 methods:
 
@@ -427,7 +427,7 @@ class RAFT(nn.Module):
                 flow head. It takes as input the hidden state of its recurrent unit, the context, the correlation
                 features, and the current predicted flow. It outputs an updated hidden state, and the ``delta_flow``
                 prediction (see paper appendix A). It must expose a ``hidden_state_size`` attribute.
-            maks_predictor (nn.Module, optional): Predicts the mask that will be used to upsample the predicted flow.
+            mask_predictor (nn.Module, optional): Predicts the mask that will be used to upsample the predicted flow.
                 The output channel must be 8 * 8 * 9 - see paper section 3.3, and Appendix B.
                 If ``None`` (default), the flow is upsampled using interpolation.
         """
