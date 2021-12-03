@@ -261,9 +261,8 @@ jobs:
             python test/test_onnx.py
 
   prototype_test:
-    executor: windows-cpu
-#    docker:
-#      - image: circleci/python:3.7
+    docker:
+      - image: circleci/python:3.7
     steps:
       - run:
           name: Install torch
@@ -280,9 +279,7 @@ jobs:
           command: pip install --user --progress-bar=off pytest pytest-mock scipy iopath
       - run:
           name: Run tests
-          command: |
-            export PATH="C:\Users\circleci\AppData\Roaming\Python\Python37\Scripts":$PATH
-            pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
+          command: pytest --junitxml=test-results/junit.xml -v --durations 20 test/test_prototype_*.py
       - store_test_results:
           path: test-results
 
