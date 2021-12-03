@@ -305,8 +305,8 @@ def fromfile(
         # - the file has a .fileno(),
         # - the file was opened for updating, i.e. 'r+b' or 'w+b',
         # - the file is seekable
-        # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it to
-        # a mutable location afterwards.
+        # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it
+        # to a mutable location afterwards.
         try:
             buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
             # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
@@ -314,7 +314,8 @@ def fromfile(
         except (PermissionError, io.UnsupportedOperation):
             buffer = _read_mutable_buffer_fallback(file, count, item_size)
     else:
-        #
+        # On Windows just trying to call mmap.mmap() on a file that does not support it, may corrupt the internal state
+        # so no data can be read afterwards. Thus, we simply ignore the possible speed-up.
         buffer = _read_mutable_buffer_fallback(file, count, item_size)
 
     # We cannot use torch.frombuffer() directly, since it only supports the native byte order of the system. Thus, we
