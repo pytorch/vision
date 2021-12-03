@@ -261,7 +261,7 @@ def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
     return dp
 
 
-def _read_mutable_buffer_fallback(file, count, item_size):
+def _read_mutable_buffer_fallback(file: BinaryIO, count: int, item_size: int) -> bytearray:
     # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
     return bytearray(file.read(-1 if count == -1 else count * item_size))
 
