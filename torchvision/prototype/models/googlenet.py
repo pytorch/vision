@@ -6,15 +6,16 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.googlenet import GoogLeNet, GoogLeNetOutputs, _GoogLeNetOutputs
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
 
 
-__all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNetWeights", "googlenet"]
+__all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNet_Weights", "googlenet"]
 
 
-class GoogLeNetWeights(Weights):
-    ImageNet1K_TFV1 = WeightEntry(
+class GoogLeNet_Weights(WeightsEnum):
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -26,21 +27,23 @@ class GoogLeNetWeights(Weights):
             "acc@5": 89.530,
         },
     )
+    default = ImageNet1K_V1
 
 
-def googlenet(weights: Optional[GoogLeNetWeights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
+def googlenet(weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
+    if type(weights) == bool and weights:
+        _deprecated_positional(kwargs, "pretrained", "weights", True)
     if "pretrained" in kwargs:
-        warnings.warn("The parameter pretrained is deprecated, please use weights instead.")
-        weights = GoogLeNetWeights.ImageNet1K_TFV1 if kwargs.pop("pretrained") else None
-    weights = GoogLeNetWeights.verify(weights)
+        weights = _deprecated_param(kwargs, "pretrained", "weights", GoogLeNet_Weights.ImageNet1K_V1)
+    weights = GoogLeNet_Weights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
-        kwargs["num_classes"] = len(weights.meta["categories"])
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "init_weights", False)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = GoogLeNet(**kwargs)
 
