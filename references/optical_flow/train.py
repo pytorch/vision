@@ -105,7 +105,7 @@ def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
         # then average over the images. This is in contrast with the other epe computation, where we
         # average only once over all the pixels of all images.
         logger.meters["per_image_epe"].update(epe.mean().item(), n=1)  # f1-epe in paper
-        logger.meters["f1"].update(bad_predictions.mean().item(), n=bad_predictions.numel())  # f1-all in paper
+        logger.meters["f1"].update(bad_predictions.mean().item() * 100, n=bad_predictions.numel())  # f1-all in paper
 
     logger = utils.MetricLogger()
     for meter_name in ("epe", "1px", "3px", "5px", "per_image_epe", "f1"):
