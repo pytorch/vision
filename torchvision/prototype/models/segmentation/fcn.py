@@ -59,6 +59,7 @@ def fcn_resnet50(
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
     weights_backbone: Optional[ResNet50_Weights] = None,
+    **kwargs: Any,
 ) -> FCN:
     weights = FCN_ResNet50_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
@@ -90,6 +91,7 @@ def fcn_resnet101(
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
     weights_backbone: Optional[ResNet101_Weights] = None,
+    **kwargs: Any,
 ) -> FCN:
     weights = FCN_ResNet101_Weights.verify(weights)
     weights_backbone = ResNet101_Weights.verify(weights_backbone)
