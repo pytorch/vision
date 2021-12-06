@@ -160,7 +160,7 @@ def resnet50(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-    weights = (ResNet18_QuantizedWeights if quantize else ResNet18_Weights).verify(weights)
+    weights = (ResNet50_QuantizedWeights if quantize else ResNet50_Weights).verify(weights)
 
     return _resnet(QuantizableBottleneck, [3, 4, 6, 3], weights, progress, quantize, **kwargs)
 
