@@ -43,7 +43,6 @@ class OpticalFlowPresetTrain(torch.nn.Module):
             T.AsymmetricColorJitter(
                 brightness=brightness, contrast=contrast, saturation=saturation, hue=hue, p=asymmetric_jitter_prob
             ),
-            T.RandomApply([T.RandomErase()], p=0.5),
             T.RandomResizeAndCrop(
                 crop_size=crop_size, min_scale=min_scale, max_scale=max_scale, stretch_prob=stretch_prob
             ),
@@ -55,6 +54,7 @@ class OpticalFlowPresetTrain(torch.nn.Module):
         transforms += [
             T.ConvertImageDtype(torch.float32),
             T.Normalize(mean=0.5, std=0.5),  # map [0, 1] into [-1, 1]
+            T.RandomErasing(max_erase=2),
             T.MakeValidFlowMask(),
             T.ValidateModelInput(),
         ]

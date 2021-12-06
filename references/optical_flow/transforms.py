@@ -99,18 +99,20 @@ class AsymmetricColorJitter(T.ColorJitter):
         return img1, img2, flow, valid_flow_mask
 
 
-class RandomErase(torch.nn.Module):
-    def forward(self, img1, img2, flow, valid_flow_mask):
-        bounds = [50, 100]
-        ht, wd = img2.shape[:2]
+class RandomErasing(T.RandomErasing):
+    # This only erases img2, and with an extra max_erase param
+    def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False, max_erase=1):
+        super().__init__()
+        self.max_erase = max_erase
+        assert self.max_erase > 0
 
-        # Warning : This won't work with image values in [0, 1] because of round()
-        mean_color = img2.view(3, -1).float().mean(axis=-1).round()
-        for _ in range(torch.randint(1, 3, size=(1,)).item()):
-            x0 = torch.randint(0, wd, size=(1,)).item()
-            y0 = torch.randint(0, ht, size=(1,)).item()
-            dx, dy = torch.randint(bounds[0], bounds[1], size=(2,))
-            img2[:, y0 : y0 + dy, x0 : x0 + dx] = mean_color[:, None, None]
+    def forward(self, img1, img2, flow, valid_flow_mask):
+        if torch.rand(1) > self.p:
+            return img1, img2, flow, valid_flow_mask
+
+        for _ in range(torch.randint(self.max_erase, size=(1,)).item()):
+            x, y, h, w, v = self.get_params(img2, scale=self.scale, ratio=self.ratio, value=[self.value])
+            img2 = F.erase(img2, x, y, h, w, v, self.inplace)
 
         return img1, img2, flow, valid_flow_mask
 
@@ -241,15 +243,6 @@ class RandomResizeAndCrop(torch.nn.Module):
         valid_new[ii_valid_new, jj_valid_new] = 1
 
         return flow_new, valid_new
-
-
-class RandomApply(T.RandomApply):
-    def forward(self, img1, img2, flow, valid_flow_mask):
-        if self.p < torch.rand(1):
-            return img1, img2, flow, valid_flow_mask
-        for t in self.transforms:
-            img1, img2, flow, valid_flow_mask = t(img1, img2, flow, valid_flow_mask)
-        return img1, img2, flow, valid_flow_mask
 
 
 class Compose:
