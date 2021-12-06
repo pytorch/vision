@@ -92,29 +92,6 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
     return outer_wrapper
 
 
-# TODO: remove this in favor of handle_legacy_interface
-def _deprecated_param(
-    kwargs: Dict[str, Any], deprecated_param: str, new_param: str, default_value: Optional[W]
-) -> Optional[W]:
-    warnings.warn(f"The parameter '{deprecated_param}' is deprecated, please use '{new_param}' instead.")
-    if kwargs.pop(deprecated_param):
-        if default_value is not None:
-            return default_value
-        else:
-            raise ValueError("No checkpoint is available for model.")
-    else:
-        return None
-
-
-# TODO: remove this in favor of handle_legacy_interface
-def _deprecated_positional(kwargs: Dict[str, Any], deprecated_param: str, new_param: str, default_value: V) -> None:
-    warnings.warn(
-        f"The positional parameter '{deprecated_param}' is deprecated, please use keyword parameter '{new_param}'"
-        + " instead."
-    )
-    kwargs[deprecated_param] = default_value
-
-
 def _ovewrite_named_param(kwargs: Dict[str, Any], param: str, new_value: V) -> None:
     if param in kwargs:
         if kwargs[param] != new_value:
