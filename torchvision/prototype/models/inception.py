@@ -31,6 +31,8 @@ class Inception_V3_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", Inception_V3_Weights.ImageNet1K_V1))
 def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
+    weights = Inception_V3_Weights.verify(weights)
+
     original_aux_logits = kwargs.get("aux_logits", True)
     if weights is not None:
         if "transform_input" not in kwargs:
