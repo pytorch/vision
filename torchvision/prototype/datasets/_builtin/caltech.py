@@ -22,7 +22,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat
-from torchvision.prototype.features import Label, BoundingBox
+from torchvision.prototype.features import Label, BoundingBox, Feature
 
 
 class Caltech101(Dataset):
@@ -98,7 +98,7 @@ class Caltech101(Dataset):
 
         ann = read_mat(ann_buffer)
         bbox = BoundingBox(ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy")
-        contour = torch.tensor(ann["obj_contour"].T)
+        contour = Feature(ann["obj_contour"].T)
 
         return dict(
             category=category,

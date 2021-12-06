@@ -21,20 +21,8 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     read_mat,
 )
-from torchvision.prototype.features import Label, DEFAULT
+from torchvision.prototype.features import Label
 from torchvision.prototype.utils._internal import FrozenMapping
-
-
-class ImageNetLabel(Label):
-    wnid: Optional[str]
-
-    @classmethod
-    def _parse_meta_data(
-        cls,
-        category: Optional[str] = DEFAULT,  # type: ignore[assignment]
-        wnid: Optional[str] = DEFAULT,  # type: ignore[assignment]
-    ) -> Dict[str, Tuple[Any, Any]]:
-        return dict(category=(category, None), wnid=(wnid, None))
 
 
 class ImageNet(Dataset):
@@ -92,12 +80,12 @@ class ImageNet(Dataset):
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[ImageNetLabel, Tuple[str, io.IOBase]]:
+    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[Label, str, str], Tuple[str, io.IOBase]]:
         path = pathlib.Path(data[0])
         wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("wnid")  # type: ignore[union-attr]
         category = self.wnid_to_category[wnid]
-        label = ImageNetLabel(self.categories.index(category), category=category, wnid=wnid)
-        return label, data
+        label_data = (Label(self.categories.index(category)), category, wnid)
+        return label_data, data
 
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
@@ -107,28 +95,32 @@ class ImageNet(Dataset):
 
     def _collate_val_data(
         self, data: Tuple[Tuple[int, int], Tuple[str, io.IOBase]]
-    ) -> Tuple[ImageNetLabel, Tuple[str, io.IOBase]]:
+    ) -> Tuple[Tuple[Label, str, str], Tuple[str, io.IOBase]]:
         label_data, image_data = data
         _, label = label_data
         category = self.categories[label]
         wnid = self.category_to_wnid[category]
-        return ImageNetLabel(label, category=category, wnid=wnid), image_data
+        return (Label(label), category, wnid), image_data
 
     def _collate_test_data(self, data: Tuple[str, io.IOBase]) -> Tuple[None, Tuple[str, io.IOBase]]:
         return None, data
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Optional[ImageNetLabel], Tuple[str, io.IOBase]],
+        data: Tuple[Optional[Tuple[Label, str, str]], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
-        label, (path, buffer) = data
-        return dict(
+        label_data, (path, buffer) = data
+
+        sample = dict(
             path=path,
             image=decoder(buffer) if decoder else buffer,
-            label=label,
         )
+        if label_data:
+            sample.update(dict(zip(("label", "category", "wnid"), label_data)))
+
+        return sample
 
     def _make_datapipe(
         self,
