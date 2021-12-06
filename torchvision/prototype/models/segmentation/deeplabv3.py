@@ -83,6 +83,7 @@ def deeplabv3_resnet50(
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
     weights_backbone: Optional[ResNet50_Weights] = None,
+    **kwargs: Any,
 ) -> DeepLabV3:
     weights = DeepLabV3_ResNet50_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
@@ -114,6 +115,7 @@ def deeplabv3_resnet101(
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
     weights_backbone: Optional[ResNet101_Weights] = None,
+    **kwargs: Any,
 ) -> DeepLabV3:
     weights = DeepLabV3_ResNet101_Weights.verify(weights)
     weights_backbone = ResNet101_Weights.verify(weights_backbone)
@@ -145,6 +147,7 @@ def deeplabv3_mobilenet_v3_large(
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
     weights_backbone: Optional[MobileNet_V3_Large_Weights] = None,
+    **kwargs: Any,
 ) -> DeepLabV3:
     weights = DeepLabV3_MobileNet_V3_Large_Weights.verify(weights)
     weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
