@@ -100,8 +100,8 @@ class EfficientNet_B1_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning",
-            "acc@1": 78.934,
-            "acc@5": 94.570,
+            "acc@1": 79.226,
+            "acc@5": 94.740,
         },
     )
     default = ImageNet1K_V2
