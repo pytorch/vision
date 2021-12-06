@@ -9,8 +9,7 @@ from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    HttpResource,
-    OnlineResource,
+    ManualDownloadResource,
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
@@ -23,6 +22,11 @@ from torchvision.prototype.datasets.utils._internal import (
 )
 from torchvision.prototype.features import Label, DEFAULT
 from torchvision.prototype.utils._internal import FrozenMapping
+
+
+class ImageNetResource(ManualDownloadResource):
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__("Register on https://image-net.org/ and follow the instructions there.", **kwargs)
 
 
 class ImageNetLabel(Label):
@@ -79,12 +83,12 @@ class ImageNet(Dataset):
         "test_v10102019": "9cf7f8249639510f17d3d8a0deb47cd22a435886ba8e29e2b3223e65a4079eb4",
     }
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
+    def resources(self, config: DatasetConfig) -> List[ManualDownloadResource]:
         name = "test_v10102019" if config.split == "test" else config.split
-        images = HttpResource(f"ILSVRC2012_img_{name}.tar", sha256=self._IMAGES_CHECKSUMS[name])
+        images = ImageNetResource(file_name=f"ILSVRC2012_img_{name}.tar", sha256=self._IMAGES_CHECKSUMS[name])
 
-        devkit = HttpResource(
-            "ILSVRC2012_devkit_t12.tar.gz",
+        devkit = ImageNetResource(
+            file_name="ILSVRC2012_devkit_t12.tar.gz",
             sha256="b59243268c0d266621fd587d2018f69e906fb22875aca0e295b48cafaa927953",
         )
 
@@ -139,15 +143,12 @@ class ImageNet(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, devkit_dp = resource_dps
 
-        images_dp = TarArchiveReader(images_dp)
-
         if config.split == "train":
             # the train archive is a tar of tars
             dp = TarArchiveReader(images_dp)
             dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_train_data)
         elif config.split == "val":
-            devkit_dp = TarArchiveReader(devkit_dp)
             devkit_dp = Filter(devkit_dp, path_comparator("name", "ILSVRC2012_validation_ground_truth.txt"))
             devkit_dp = LineReader(devkit_dp, return_path=False)
             devkit_dp = Mapper(devkit_dp, int)
@@ -177,8 +178,7 @@ class ImageNet(Dataset):
 
     def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
         resources = self.resources(self.default_config)
-        devkit_dp = resources[1].to_datapipe(root / self.name)
-        devkit_dp = TarArchiveReader(devkit_dp)
+        devkit_dp = resources[1].load(root / self.name)
         devkit_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
 
         meta = next(iter(devkit_dp))[1]

@@ -211,10 +211,10 @@ class TestDataset:
             pytest.param(make_minimal_dataset_info().default_config, None, id="default"),
         ],
     )
-    def test_to_datapipe_config(self, config, kwarg):
+    def test_load_config(self, config, kwarg):
         dataset = self.DatasetMock()
 
-        dataset.to_datapipe("", config=kwarg)
+        dataset.load("", config=kwarg)
 
         dataset.resources.assert_called_with(config)
 
@@ -228,15 +228,16 @@ class TestDataset:
             dataset.to_datapipe("root")
 
     def test_resources(self, mocker):
-        resource_mock = mocker.Mock(spec=["to_datapipe"])
+        resource_mock = mocker.Mock(spec=["load"])
         sentinel = object()
-        resource_mock.to_datapipe.return_value = sentinel
+        resource_mock.load.return_value = sentinel
         dataset = self.DatasetMock(resources=[resource_mock])
 
         root = "root"
-        dataset.to_datapipe(root)
+        dataset.load(root)
 
-        resource_mock.to_datapipe.assert_called_with(root)
+        (call_args, _) = resource_mock.load.call_args
+        assert call_args[0] == root
 
         (call_args, _) = dataset._make_datapipe.call_args
         assert call_args[0][0] is sentinel
@@ -245,7 +246,7 @@ class TestDataset:
         dataset = self.DatasetMock()
 
         sentinel = object()
-        dataset.to_datapipe("", decoder=sentinel)
+        dataset.load("", decoder=sentinel)
 
         (_, call_kwargs) = dataset._make_datapipe.call_args
         assert call_kwargs["decoder"] is sentinel
