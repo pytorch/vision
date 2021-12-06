@@ -12,7 +12,7 @@ M = TypeVar("M", bound=nn.Module)
 V = TypeVar("V")
 
 
-def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[Any, Dict[str, Any]], Optional[W]]]]):
+def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[Dict[str, Any]], Optional[W]]]]):
     """Decorates a model builder with the new interface to make it compatible with the old.
 
     In particular this handles two things:
