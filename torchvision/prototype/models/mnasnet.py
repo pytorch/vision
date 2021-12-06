@@ -87,21 +87,21 @@ def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool =
 
 
 @handle_legacy_interface(weights=("pretrained", None))
-def mnasnet0_75(weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet0_75_Weights.verify(weights)
 
     return _mnasnet(0.75, weights, progress, **kwargs)
 
 
 @handle_legacy_interface(weights=("pretrained", MNASNet1_0_Weights.ImageNet1K_V1))
-def mnasnet1_0(weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet1_0_Weights.verify(weights)
 
     return _mnasnet(1.0, weights, progress, **kwargs)
 
 
 @handle_legacy_interface(weights=("pretrained", None))
-def mnasnet1_3(weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
+def mnasnet1_3(*, weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet1_3_Weights.verify(weights)
 
     return _mnasnet(1.3, weights, progress, **kwargs)
