@@ -141,6 +141,7 @@ class TestONNXExporter:
         model = ops.RoIAlign((5, 5), 1, -1)
         self.run_model(model, [(x, single_roi)])
 
+    @pytest.mark.skip(reason="ROIAlign with aligned=True is not supported in ONNX, but will be supported in opset 16.")
     def test_roi_align_aligned(self):
         x = torch.rand(1, 1, 10, 10, dtype=torch.float32)
         single_roi = torch.tensor([[0, 1.5, 1.5, 3, 3]], dtype=torch.float32)
