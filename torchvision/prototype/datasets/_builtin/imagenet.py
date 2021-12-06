@@ -9,6 +9,7 @@ from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
+    OnlineResource,
     ManualDownloadResource,
     DatasetType,
 )
@@ -83,7 +84,7 @@ class ImageNet(Dataset):
         "test_v10102019": "9cf7f8249639510f17d3d8a0deb47cd22a435886ba8e29e2b3223e65a4079eb4",
     }
 
-    def resources(self, config: DatasetConfig) -> List[ManualDownloadResource]:
+    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         name = "test_v10102019" if config.split == "test" else config.split
         images = ImageNetResource(file_name=f"ILSVRC2012_img_{name}.tar", sha256=self._IMAGES_CHECKSUMS[name])
 
