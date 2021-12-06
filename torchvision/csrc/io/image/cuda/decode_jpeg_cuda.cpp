@@ -33,7 +33,7 @@ torch::Tensor decode_jpeg_cuda(
     const torch::Tensor& data,
     ImageReadMode mode,
     torch::Device device) {
-  C10_LOG_API_USAGE_ONCE("torchvision.io.decode_jpeg_cuda");
+  C10_LOG_API_USAGE_ONCE("torchvision.io.decode_jpeg_cuda_cpp");
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
 
   TORCH_CHECK(
