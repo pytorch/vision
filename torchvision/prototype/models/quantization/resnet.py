@@ -13,7 +13,7 @@ from ....models.quantization.resnet import (
 )
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..resnet import ResNet18_Weights, ResNet50_Weights, ResNeXt101_32X8D_Weights
 
 
@@ -125,63 +125,62 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
     default = ImageNet1K_FBGEMM_V2
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ResNet18_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ResNet18_Weights.ImageNet1K_V1,
+    )
+)
 def resnet18(
+    *,
     weights: Optional[Union[ResNet18_QuantizedWeights, ResNet18_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = ResNet18_QuantizedWeights.ImageNet1K_FBGEMM_V1 if quantize else ResNet18_Weights.ImageNet1K_V1
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = ResNet18_QuantizedWeights.verify(weights)
-    else:
-        weights = ResNet18_Weights.verify(weights)
+    weights = (ResNet18_QuantizedWeights if quantize else ResNet18_Weights).verify(weights)
 
     return _resnet(QuantizableBasicBlock, [2, 2, 2, 2], weights, progress, quantize, **kwargs)
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ResNet50_Weights.ImageNet1K_V1,
+    )
+)
 def resnet50(
+    *,
     weights: Optional[Union[ResNet50_QuantizedWeights, ResNet50_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1 if quantize else ResNet50_Weights.ImageNet1K_V1
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = ResNet50_QuantizedWeights.verify(weights)
-    else:
-        weights = ResNet50_Weights.verify(weights)
+    weights = (ResNet18_QuantizedWeights if quantize else ResNet18_Weights).verify(weights)
 
     return _resnet(QuantizableBottleneck, [3, 4, 6, 3], weights, progress, quantize, **kwargs)
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ResNeXt101_32X8D_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ResNeXt101_32X8D_Weights.ImageNet1K_V1,
+    )
+)
 def resnext101_32x8d(
+    *,
     weights: Optional[Union[ResNeXt101_32X8D_QuantizedWeights, ResNeXt101_32X8D_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = (
-            ResNeXt101_32X8D_QuantizedWeights.ImageNet1K_FBGEMM_V1
-            if quantize
-            else ResNeXt101_32X8D_Weights.ImageNet1K_V1
-        )
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = ResNeXt101_32X8D_QuantizedWeights.verify(weights)
-    else:
-        weights = ResNeXt101_32X8D_Weights.verify(weights)
+    weights = (ResNeXt101_32X8D_QuantizedWeights if quantize else ResNeXt101_32X8D_Weights).verify(weights)
 
     _ovewrite_named_param(kwargs, "groups", 32)
     _ovewrite_named_param(kwargs, "width_per_group", 8)
