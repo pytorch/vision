@@ -5,9 +5,6 @@ import torchvision.transforms.functional as F
 
 class ValidateModelInput(torch.nn.Module):
     # Pass-through transform that checks the shape and dtypes to make sure the model gets what it expects
-    def __init__(self):
-        super().__init__()
-
     def forward(self, img1, img2, flow, valid_flow_mask):
 
         assert all(isinstance(arg, torch.Tensor) for arg in (img1, img2, flow, valid_flow_mask) if arg is not None)
@@ -82,6 +79,7 @@ class PILToTensor(torch.nn.Module):
 
 
 class AsymmetricColorJitter(T.ColorJitter):
+    # p determines the proba of doing asymmertric vs symmetric color jittering
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0, p=0.2):
         super().__init__(brightness=brightness, contrast=contrast, saturation=saturation, hue=hue)
         self.p = p
@@ -143,21 +141,18 @@ class RandomVerticalFlip(T.RandomVerticalFlip):
         return img1, img2, flow, valid_flow_mask
 
 
-class MaybeResizeAndCrop(torch.nn.Module):
+class RandomResizeAndCrop(torch.nn.Module):
     # This transform will resize the input with a given proba, and then crop it.
     # These are the reversed operations of the built-in RandomResizedCrop,
-    # although the order of the operations doesn't matter too much.
-    # The reason we don't rely on RandomResizedCrop is because of a significant
-    # difference in the parametrization of both transforms.
+    # although the order of the operations doesn't matter too much: resizing a
+    # crop would give the same result as cropping a resized image, up to
+    # interpolation artifact at the borders of the output.
     #
-    # There *is* a mapping between the inputs of MaybeResizeAndCrop and those of
-    # RandomResizedCrop, but the issue is that the parameters are sampled at
-    # random, with different distributions. Plotting (the equivalent of) `scale`
-    # and `ratio` from MaybeResizeAndCrop shows that the distributions of these
-    # parameters are very different from what can be obtained from the
-    # parametrization of RandomResizedCrop. I tried training RAFT by using
-    # RandomResizedCrop and tweaking the parameters a bit, but couldn't get
-    # an epe as good as with MaybeResizeAndCrop.
+    # The reason we don't rely on RandomResizedCrop is because of a significant
+    # difference in the parametrization of both transforms, in particular,
+    # because of the way the random parameters are sampled in both transforms,
+    # which leads to fairly different resuts (and different epe). For more details see
+    # https://github.com/pytorch/vision/pull/5026/files#r762932579
     def __init__(self, crop_size, min_scale=-0.2, max_scale=0.5, stretch_prob=0.8):
         super().__init__()
         self.crop_size = crop_size
@@ -204,11 +199,11 @@ class MaybeResizeAndCrop(torch.nn.Module):
         y0 = torch.randint(0, img1.shape[1] - self.crop_size[0], size=(1,)).item()
         x0 = torch.randint(0, img1.shape[2] - self.crop_size[1], size=(1,)).item()
 
-        img1 = img1[:, y0 : y0 + self.crop_size[0], x0 : x0 + self.crop_size[1]]
-        img2 = img2[:, y0 : y0 + self.crop_size[0], x0 : x0 + self.crop_size[1]]
-        flow = flow[:, y0 : y0 + self.crop_size[0], x0 : x0 + self.crop_size[1]]
+        img1 = F.crop(img1, y0, x0, self.crop_size[0], self.crop_size[1])
+        img2 = F.crop(img2, y0, x0, self.crop_size[0], self.crop_size[1])
+        flow = F.crop(flow, y0, x0, self.crop_size[0], self.crop_size[1])
         if valid_flow_mask is not None:
-            valid_flow_mask = valid_flow_mask[y0 : y0 + self.crop_size[0], x0 : x0 + self.crop_size[1]]
+            valid_flow_mask = F.crop(valid_flow_mask, y0, x0, self.crop_size[0], self.crop_size[1])
 
         return img1, img2, flow, valid_flow_mask
 

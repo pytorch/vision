@@ -22,7 +22,7 @@ class OpticalFlowPresetEval(torch.nn.Module):
 class OpticalFlowPresetTrain(torch.nn.Module):
     def __init__(
         self,
-        # MaybeRandomResizeAndCrop params
+        # RandomResizeAndCrop params
         crop_size,
         min_scale=-0.2,
         max_scale=0.5,
@@ -44,7 +44,7 @@ class OpticalFlowPresetTrain(torch.nn.Module):
                 brightness=brightness, contrast=contrast, saturation=saturation, hue=hue, p=asymmetric_jitter_prob
             ),
             T.RandomApply([T.RandomErase()], p=0.5),
-            T.MaybeResizeAndCrop(
+            T.RandomResizeAndCrop(
                 crop_size=crop_size, min_scale=min_scale, max_scale=max_scale, stretch_prob=stretch_prob
             ),
         ]
