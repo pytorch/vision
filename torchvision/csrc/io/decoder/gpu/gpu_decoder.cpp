@@ -65,7 +65,7 @@ int64_t GPUDecoder::getTotalFramesDecoded()
 
 TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
-    .def(torch::init<std::string>())
+    .def(torch::init<std::string, bool>())
     .def("decode", &GPUDecoder::decode)
     .def("getDecodeTime", &GPUDecoder::getDecodeTime)
     .def("getDemuxTime", &GPUDecoder::getDemuxTime)

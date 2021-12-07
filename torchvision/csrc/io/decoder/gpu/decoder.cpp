@@ -72,8 +72,6 @@ void Decoder::release() const
 torch::Tensor Decoder::Decode(const uint8_t *data, int64_t size, int64_t flags, int64_t pts)
 {
   numDecodedFrames = 0;
-  frameTensor = torch::empty({GetFrameSize()},
-      torch::dtype(torch::kU8).device(useDeviceFrame? torch::kCUDA : torch::kCPU));
   CUVIDSOURCEDATAPACKET pkt = {
     .flags = flags | CUVID_PKT_TIMESTAMP,
     .payload_size = size,
@@ -143,7 +141,16 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *dispInfo)
         printf("Decode Error occurred for picture %d\n", picNumInDecodeOrder[dispInfo->picture_index]);
     }
 
-    uint8_t *decodedFrame = frameTensor.data_ptr<uint8_t>();
+    uint8_t *decodedFrame = nullptr;
+    if (useDeviceFrame) {
+      cuMemAlloc((CUdeviceptr *)&decodedFrame, GetFrameSize());
+    }
+    else {
+      frameTensor = torch::empty({GetFrameSize()},
+          torch::dtype(torch::kU8).device(torch::kCPU));
+      decodedFrame = frameTensor.data_ptr<uint8_t>();
+    }
+
     numDecodedFrames++;
 
     // Copy luma plane
@@ -180,6 +187,11 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *dispInfo)
     CheckForCudaErrors(
       cuStreamSynchronize(cuvidStream),
       __LINE__);
+    if (useDeviceFrame) {
+      auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
+      frameTensor = torch::from_blob(
+        decodedFrame, {GetFrameSize()}, [](auto p) { cuMemFree((CUdeviceptr)p); }, options);
+    }
     CheckForCudaErrors(
       cuCtxPopCurrent(NULL),
       __LINE__);

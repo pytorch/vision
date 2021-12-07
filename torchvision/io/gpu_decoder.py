@@ -2,9 +2,9 @@ import torch
 
 
 class GPUDecoder:
-    def __init__(self, src_file: str):
+    def __init__(self, src_file: str, use_dev_frame: bool = True):
         torch.ops.load_library('build/lib.linux-x86_64-3.8/torchvision/Decoder.so')
-        self.decoder = torch.classes.torchvision.GPUDecoder(src_file)
+        self.decoder = torch.classes.torchvision.GPUDecoder(src_file, use_dev_frame)
 
     def decode_frame(self):
         return self.decoder.decode()

@@ -4,7 +4,7 @@
 
 class GPUDecoder : public torch::CustomClassHolder {
   public:
-    GPUDecoder(std::string, bool = false);
+    GPUDecoder(std::string, bool);
     ~GPUDecoder();
     torch::Tensor decode();
     double getDecodeTime();
