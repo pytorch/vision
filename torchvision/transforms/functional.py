@@ -1011,7 +1011,7 @@ def _get_inverse_affine_matrix_tensor(
 def rotate(
     img: Tensor,
     angle: Union[float, Tensor],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[Union[List[float], Tensor]] = None,
     fill: Optional[List[float]] = None,
@@ -1025,7 +1025,7 @@ def rotate(
         img (PIL Image or Tensor): image to be rotated.
         angle (number or Tensor): rotation angle value in degrees, counter-clockwise.
         interpolation (InterpolationMode): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         expand (bool, optional): Optional expansion flag.
@@ -1096,7 +1096,7 @@ def affine(
     translate: Union[List[int], Tensor] = [0.0, 0.0],
     scale: Union[float, Tensor] = 1.0,
     shear: Union[List[float], Tensor] = [0.0, 0.0],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
     fillcolor: Optional[List[float]] = None,
@@ -1114,7 +1114,7 @@ def affine(
             If a sequence is specified, the first value corresponds to a shear parallel to the x axis, while
             the second value corresponds to a shear parallel to the y axis.
         interpolation (InterpolationMode): Desired interpolation enum defined by
-            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed

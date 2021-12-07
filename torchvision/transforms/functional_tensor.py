@@ -699,7 +699,7 @@ def _gen_affine_grid(
 def affine(
     img: Tensor,
     matrix: Union[List[float], Tensor],
-    interpolation: str = "bilinear",
+    interpolation: str = "nearest",
     fill: Optional[List[float]] = None,
 ) -> Tensor:
     _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
@@ -746,7 +746,7 @@ def _compute_output_size(matrix: Union[List[float], Tensor], w: int, h: int) -> 
 def rotate(
     img: Tensor,
     matrix: Union[List[float], Tensor],
-    interpolation: str = "bilinear",
+    interpolation: str = "nearest",
     expand: bool = False,
     fill: Optional[List[float]] = None,
 ) -> Tensor:
