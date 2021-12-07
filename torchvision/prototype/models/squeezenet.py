@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.squeezenet import SqueezeNet
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = ["SqueezeNet", "SqueezeNet1_0_Weights", "SqueezeNet1_1_Weights", "squeezenet1_0", "squeezenet1_1"]
@@ -47,11 +47,10 @@ class SqueezeNet1_1_Weights(WeightsEnum):
     default = ImageNet1K_V1
 
 
-def squeezenet1_0(weights: Optional[SqueezeNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> SqueezeNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SqueezeNet1_0_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", SqueezeNet1_0_Weights.ImageNet1K_V1))
+def squeezenet1_0(
+    *, weights: Optional[SqueezeNet1_0_Weights] = None, progress: bool = True, **kwargs: Any
+) -> SqueezeNet:
     weights = SqueezeNet1_0_Weights.verify(weights)
 
     if weights is not None:
@@ -65,11 +64,10 @@ def squeezenet1_0(weights: Optional[SqueezeNet1_0_Weights] = None, progress: boo
     return model
 
 
-def squeezenet1_1(weights: Optional[SqueezeNet1_1_Weights] = None, progress: bool = True, **kwargs: Any) -> SqueezeNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SqueezeNet1_1_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", SqueezeNet1_1_Weights.ImageNet1K_V1))
+def squeezenet1_1(
+    *, weights: Optional[SqueezeNet1_1_Weights] = None, progress: bool = True, **kwargs: Any
+) -> SqueezeNet:
     weights = SqueezeNet1_1_Weights.verify(weights)
 
     if weights is not None:

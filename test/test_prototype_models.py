@@ -5,6 +5,8 @@ import test_models as TM
 import torch
 from common_utils import cpu_and_gpu, run_on_env_var
 from torchvision.prototype import models
+from torchvision.prototype.models._api import WeightsEnum, Weights
+from torchvision.prototype.models._utils import handle_legacy_interface
 
 run_if_test_with_prototype = run_on_env_var(
     "PYTORCH_TEST_WITH_PROTOTYPE",
@@ -164,3 +166,87 @@ def test_old_vs_new_factory(model_fn, dev):
 
 def test_smoke():
     import torchvision.prototype.models  # noqa: F401
+
+
+# With this filter, every unexpected warning will be turned into an error
+@pytest.mark.filterwarnings("error")
+class TestHandleLegacyInterface:
+    class TestWeights(WeightsEnum):
+        Sentinel = Weights(url="https://pytorch.org", transforms=lambda x: x, meta=dict())
+
+    @pytest.mark.parametrize(
+        "kwargs",
+        [
+            pytest.param(dict(), id="empty"),
+            pytest.param(dict(weights=None), id="None"),
+            pytest.param(dict(weights=TestWeights.Sentinel), id="Weights"),
+        ],
+    )
+    def test_no_warn(self, kwargs):
+        @handle_legacy_interface(weights=("pretrained", self.TestWeights.Sentinel))
+        def builder(*, weights=None):
+            pass
+
+        builder(**kwargs)
+
+    @pytest.mark.parametrize("pretrained", (True, False))
+    def test_pretrained_pos(self, pretrained):
+        @handle_legacy_interface(weights=("pretrained", self.TestWeights.Sentinel))
+        def builder(*, weights=None):
+            pass
+
+        with pytest.warns(UserWarning, match="positional"):
+            builder(pretrained)
+
+    @pytest.mark.parametrize("pretrained", (True, False))
+    def test_pretrained_kw(self, pretrained):
+        @handle_legacy_interface(weights=("pretrained", self.TestWeights.Sentinel))
+        def builder(*, weights=None):
+            pass
+
+        with pytest.warns(UserWarning, match="deprecated"):
+            builder(pretrained)
+
+    @pytest.mark.parametrize("pretrained", (True, False))
+    @pytest.mark.parametrize("positional", (True, False))
+    def test_equivalent_behavior_weights(self, pretrained, positional):
+        @handle_legacy_interface(weights=("pretrained", self.TestWeights.Sentinel))
+        def builder(*, weights=None):
+            pass
+
+        args, kwargs = ((pretrained,), dict()) if positional else ((), dict(pretrained=pretrained))
+        with pytest.warns(UserWarning, match=f"weights={self.TestWeights.Sentinel if pretrained else None}"):
+            builder(*args, **kwargs)
+
+    def test_multi_params(self):
+        weights_params = ("weights", "weights_other")
+        pretrained_params = [param.replace("weights", "pretrained") for param in weights_params]
+
+        @handle_legacy_interface(
+            **{
+                weights_param: (pretrained_param, self.TestWeights.Sentinel)
+                for weights_param, pretrained_param in zip(weights_params, pretrained_params)
+            }
+        )
+        def builder(*, weights=None, weights_other=None):
+            pass
+
+        for pretrained_param in pretrained_params:
+            with pytest.warns(UserWarning, match="deprecated"):
+                builder(**{pretrained_param: True})
+
+    def test_default_callable(self):
+        @handle_legacy_interface(
+            weights=(
+                "pretrained",
+                lambda kwargs: self.TestWeights.Sentinel if kwargs["flag"] else None,
+            )
+        )
+        def builder(*, weights=None, flag):
+            pass
+
+        with pytest.warns(UserWarning, match="deprecated"):
+            builder(pretrained=True, flag=True)
+
+        with pytest.raises(ValueError, match="weights"):
+            builder(pretrained=True, flag=False)

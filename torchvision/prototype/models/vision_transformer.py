@@ -11,8 +11,9 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+from ...utils import _log_api_usage_once
 from ._api import WeightsEnum
-from ._utils import _deprecated_param, _deprecated_positional
+from ._utils import handle_legacy_interface
 
 
 __all__ = [
@@ -139,6 +140,7 @@ class VisionTransformer(nn.Module):
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
+        _log_api_usage_once(self)
         torch._assert(image_size % patch_size == 0, "Input shape indivisible by patch size!")
         self.image_size = image_size
         self.patch_size = patch_size
@@ -279,7 +281,8 @@ def _vision_transformer(
     return model
 
 
-def vit_b_16(weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+@handle_legacy_interface(weights=("pretrained", None))
+def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
@@ -289,10 +292,6 @@ def vit_b_16(weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, 
             Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ViT_B_16_Weights.verify(weights)
 
     return _vision_transformer(
@@ -307,7 +306,8 @@ def vit_b_16(weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, 
     )
 
 
-def vit_b_32(weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+@handle_legacy_interface(weights=("pretrained", None))
+def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
@@ -317,10 +317,6 @@ def vit_b_32(weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, 
             Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ViT_B_32_Weights.verify(weights)
 
     return _vision_transformer(
@@ -335,7 +331,8 @@ def vit_b_32(weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, 
     )
 
 
-def vit_l_16(weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+@handle_legacy_interface(weights=("pretrained", None))
+def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
@@ -345,10 +342,6 @@ def vit_l_16(weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, 
             Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ViT_L_16_Weights.verify(weights)
 
     return _vision_transformer(
@@ -363,7 +356,8 @@ def vit_l_16(weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, 
     )
 
 
-def vit_l_32(weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+@handle_legacy_interface(weights=("pretrained", None))
+def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
@@ -373,10 +367,6 @@ def vit_l_32(weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, 
             Default: None.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
     """
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ViT_L_32_Weights.verify(weights)
 
     return _vision_transformer(
