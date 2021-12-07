@@ -8,18 +8,18 @@ class RASampler(torch.utils.data.Sampler):
     """Sampler that restricts data loading to a subset of the dataset for distributed,
     with repeated augmentation.
     It ensures that different each augmented version of a sample will be visible to a
-    different process (GPU)
-    Heavily based on torch.utils.data.DistributedSampler
+    different process (GPU).
+    Heavily based on 'torch.utils.data.DistributedSampler'.
     """
 
     def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True):
         if num_replicas is None:
             if not dist.is_available():
-                raise RuntimeError("Requires distributed package to be available")
+                raise RuntimeError("Requires distributed package to be available!")
             num_replicas = dist.get_world_size()
         if rank is None:
             if not dist.is_available():
-                raise RuntimeError("Requires distributed package to be available")
+                raise RuntimeError("Requires distributed package to be available!")
             rank = dist.get_rank()
         self.dataset = dataset
         self.num_replicas = num_replicas
@@ -31,7 +31,7 @@ class RASampler(torch.utils.data.Sampler):
         self.shuffle = shuffle
 
     def __iter__(self):
-        # deterministically shuffle based on epoch
+        # Deterministically shuffle based on epoch
         g = torch.Generator()
         g.manual_seed(self.epoch)
         if self.shuffle:

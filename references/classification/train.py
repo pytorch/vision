@@ -9,7 +9,7 @@ import torch.utils.data
 import torchvision
 import transforms
 import utils
-from references.classification.ra_sampler import RASampler
+from references.classification.sampler import RASampler
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
