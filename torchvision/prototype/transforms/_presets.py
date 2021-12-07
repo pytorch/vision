@@ -1,5 +1,6 @@
 from typing import Dict, Optional, Tuple
 
+import numpy as np
 import torch
 from torch import Tensor, nn
 
@@ -97,3 +98,36 @@ class VocEval(nn.Module):
                 target = F.pil_to_tensor(target)
             target = target.squeeze(0).to(torch.int64)
         return img, target
+
+
+class RaftEval(nn.Module):
+    def forward(
+        self, img1: Tensor, img2: Tensor, flow: Optional[Tensor], valid_flow_mask: Optional[Tensor]
+    ) -> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:
+
+        img1, img2, flow, valid_flow_mask = self._pil_or_numpy_to_tensor(img1, img2, flow, valid_flow_mask)
+
+        img1 = F.convert_image_dtype(img1, torch.float32)
+        img2 = F.convert_image_dtype(img2, torch.float32)
+
+        # map [0, 1] into [-1, 1]
+        img1 = F.normalize(img1, mean=0.5, std=0.5)
+        img2 = F.normalize(img2, mean=0.5, std=0.5)
+
+        img1 = img1.contiguous()
+        img2 = img2.contiguous()
+
+        return img1, img2, flow, valid_flow_mask
+
+    def _pil_or_numpy_to_tensor(self, img1, img2, flow, valid_flow_mask):
+        if not isinstance(img1, Tensor):
+            img1 = F.pil_to_tensor(img1)
+        if not isinstance(img2, Tensor):
+            img2 = F.pil_to_tensor(img2)
+
+        if flow is not None and not isinstance(flow, np.ndarray):
+            flow = torch.from_numpy(flow)
+        if valid_flow_mask is not None and not isinstance(flow, np.ndarray):
+            valid_flow_mask = torch.from_numpy(valid_flow_mask)
+
+        return img1, img2, flow, valid_flow_mask
