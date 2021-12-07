@@ -1,6 +1,7 @@
 import abc
 import csv
 import enum
+import importlib
 import io
 import itertools
 import os
@@ -9,10 +10,11 @@ from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
 
 import torch
 from torch.utils.data import IterDataPipe
+from torchvision.prototype.utils._internal import FrozenBunch, make_repr
 from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str
 
 from .._home import use_sharded_dataset
-from ._internal import FrozenBunch, make_repr, BUILTIN_DIR, _make_sharded_datapipe
+from ._internal import BUILTIN_DIR, _make_sharded_datapipe
 from ._resource import OnlineResource
 
 
@@ -31,6 +33,7 @@ class DatasetInfo:
         name: str,
         *,
         type: Union[str, DatasetType],
+        dependencies: Sequence[str] = (),
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
@@ -40,6 +43,8 @@ class DatasetInfo:
     ) -> None:
         self.name = name.lower()
         self.type = DatasetType[type.upper()] if isinstance(type, str) else type
+
+        self.dependecies = dependencies
 
         if categories is None:
             path = BUILTIN_DIR / f"{self.name}.categories"
@@ -106,6 +111,16 @@ class DatasetInfo:
 
         return DatasetConfig(self.default_config, **options)
 
+    def check_dependencies(self) -> None:
+        for dependency in self.dependecies:
+            try:
+                importlib.import_module(dependency)
+            except ModuleNotFoundError as error:
+                raise ModuleNotFoundError(
+                    f"Dataset '{self.name}' depends on the third-party package '{dependency}'. "
+                    f"Please install it, for example with `pip install {dependency}`."
+                ) from error
+
     def __repr__(self) -> str:
         items = [("name", self.name)]
         for key in ("citation", "homepage", "license"):
@@ -171,6 +186,8 @@ class Dataset(abc.ABC):
             root = os.path.join(root, *config.values())
             dataset_size = self.info.extra["sizes"][config]
             return _make_sharded_datapipe(root, dataset_size)
+
+        self.info.check_dependencies()
         resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
 

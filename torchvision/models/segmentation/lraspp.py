@@ -4,6 +4,7 @@ from typing import Any, Dict
 from torch import nn, Tensor
 from torch.nn import functional as F
 
+from ...utils import _log_api_usage_once
 from .. import mobilenetv3
 from ..feature_extraction import create_feature_extractor
 from ._utils import _load_weights
@@ -37,6 +38,7 @@ class LRASPP(nn.Module):
         self, backbone: nn.Module, low_channels: int, high_channels: int, num_classes: int, inter_channels: int = 128
     ) -> None:
         super().__init__()
+        _log_api_usage_once(self)
         self.backbone = backbone
         self.classifier = LRASPPHead(low_channels, high_channels, num_classes, inter_channels)
 

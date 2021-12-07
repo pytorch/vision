@@ -30,23 +30,23 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
-        with torch.cuda.amp.autocast(enabled=args.amp):
+        with torch.cuda.amp.autocast(enabled=scaler is not None):
             output = model(image)
             loss = criterion(output, target)
 
         optimizer.zero_grad()
-        if args.amp:
+        if scaler is not None:
             scaler.scale(loss).backward()
             if args.clip_grad_norm is not None:
                 # we should unscale the gradients of optimizer's assigned params if do gradient clipping
                 scaler.unscale_(optimizer)
-                nn.utils.clip_grad_norm_(utils.get_optimizer_params(optimizer), args.clip_grad_norm)
+                nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad_norm)
             scaler.step(optimizer)
             scaler.update()
         else:
             loss.backward()
             if args.clip_grad_norm is not None:
-                nn.utils.clip_grad_norm_(utils.get_optimizer_params(optimizer), args.clip_grad_norm)
+                nn.utils.clip_grad_norm_(model.parameters(), args.clip_grad_norm)
             optimizer.step()
 
         if model_ema and i % args.model_ema_steps == 0:
@@ -158,8 +158,7 @@ def load_data(traindir, valdir, args):
                 crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
             )
         else:
-            fn = PM.quantization.__dict__[args.model] if hasattr(args, "backend") else PM.__dict__[args.model]
-            weights = PM._api.get_weight(fn, args.weights)
+            weights = PM.get_weight(args.weights)
             preprocessing = weights.transforms()
 
         dataset_test = torchvision.datasets.ImageFolder(
@@ -325,6 +324,8 @@ def main(args):
         args.start_epoch = checkpoint["epoch"] + 1
         if model_ema:
             model_ema.load_state_dict(checkpoint["model_ema"])
+        if scaler:
+            scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
         # We disable the cudnn benchmarking because it can noticeably affect the accuracy
@@ -356,6 +357,8 @@ def main(args):
             }
             if model_ema:
                 checkpoint["model_ema"] = model_ema.state_dict()
+            if scaler:
+                checkpoint["scaler"] = scaler.state_dict()
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
             utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 

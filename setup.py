@@ -62,8 +62,8 @@ requirements = [
     pytorch_dep,
 ]
 
-# Excluding 8.3.0 because of https://github.com/pytorch/vision/issues/4146
-pillow_ver = " >= 5.3.0, !=8.3.0"
+# Excluding 8.3.* because of https://github.com/pytorch/vision/issues/4934
+pillow_ver = " >= 5.3.0, !=8.3.*"
 pillow_req = "pillow-simd" if get_dist("pillow-simd") is not None else "pillow"
 requirements.append(pillow_req + pillow_ver)
 
