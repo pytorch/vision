@@ -1086,7 +1086,8 @@ def rotate(
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
-    matrix = _get_inverse_affine_matrix_tensor(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    matrix = _get_inverse_affine_matrix_tensor(center_f, -angle if isinstance(angle, Tensor) else -angle,
+                                               [0.0, 0.0], 1.0, [0.0, 0.0])
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
 
