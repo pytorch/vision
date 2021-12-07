@@ -101,8 +101,13 @@ class AsymmetricColorJitter(T.ColorJitter):
 
 class RandomErasing(T.RandomErasing):
     # This only erases img2, and with an extra max_erase param
+    # This max_erase is needed because in the RAFT training ref does:
+    # 0 erasing with .5 proba
+    # 1 erase with .25 proba
+    # 2 erase with .25 proba
+    # and there's no accurate way to achieve this otherwise.
     def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False, max_erase=1):
-        super().__init__()
+        super().__init__(p=p, scale=scale, ratio=ratio, value=value, inplace=inplace)
         self.max_erase = max_erase
         assert self.max_erase > 0
 
@@ -171,12 +176,12 @@ class RandomResizeAndCrop(torch.nn.Module):
         # It shouldn't matter much
         min_scale = max((self.crop_size[0] + 8) / h, (self.crop_size[1] + 8) / w)
 
-        scale = 2 ** torch.FloatTensor(1).uniform_(self.min_scale, self.max_scale).item()
+        scale = 2 ** torch.empty(1, dtype=torch.float32).uniform_(self.min_scale, self.max_scale).item()
         scale_x = scale
         scale_y = scale
         if torch.rand(1) < self.stretch_prob:
-            scale_x *= 2 ** torch.FloatTensor(1).uniform_(-self.max_stretch, self.max_stretch).item()
-            scale_y *= 2 ** torch.FloatTensor(1).uniform_(-self.max_stretch, self.max_stretch).item()
+            scale_x *= 2 ** torch.empty(1, dtype=torch.float32).uniform_(-self.max_stretch, self.max_stretch).item()
+            scale_y *= 2 ** torch.empty(1, dtype=torch.float32).uniform_(-self.max_stretch, self.max_stretch).item()
 
         scale_x = max(scale_x, min_scale)
         scale_y = max(scale_y, min_scale)
@@ -245,8 +250,9 @@ class RandomResizeAndCrop(torch.nn.Module):
         return flow_new, valid_new
 
 
-class Compose:
+class Compose(torch.nn.Module):
     def __init__(self, transforms):
+        super().__init__()
         self.transforms = transforms
 
     def forward(self, img1, img2, flow, valid_flow_mask):
