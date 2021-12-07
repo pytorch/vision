@@ -13,6 +13,7 @@ from torch import Tensor
 
 from ._api import WeightsEnum
 from ._utils import handle_legacy_interface
+from ...utils import _log_api_usage_once
 
 
 __all__ = [
@@ -139,6 +140,7 @@ class VisionTransformer(nn.Module):
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
     ):
         super().__init__()
+        _log_api_usage_once(self)
         torch._assert(image_size % patch_size == 0, "Input shape indivisible by patch size!")
         self.image_size = image_size
         self.patch_size = patch_size
