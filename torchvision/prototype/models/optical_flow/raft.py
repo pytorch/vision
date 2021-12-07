@@ -6,7 +6,8 @@ from torchvision.models.optical_flow import RAFT
 from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, ResidualBlock
 # from torchvision.prototype.transforms import RaftEval
 
-# from .._api import WeightsEnum, Weights
+from .._api import WeightsEnum
+# from .._api import Weights
 from .._utils import handle_legacy_interface
 
 
