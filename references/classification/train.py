@@ -14,6 +14,7 @@ from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 
+
 try:
     from torchvision.prototype import models as PM
 except ImportError:

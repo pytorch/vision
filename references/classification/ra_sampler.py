@@ -27,7 +27,6 @@ class RASampler(torch.utils.data.Sampler):
         self.epoch = 0
         self.num_samples = int(math.ceil(len(self.dataset) * 3.0 / self.num_replicas))
         self.total_size = self.num_samples * self.num_replicas
-        # self.num_selected_samples = int(math.ceil(len(self.dataset) / self.num_replicas))
         self.num_selected_samples = int(math.floor(len(self.dataset) // 256 * 256 / self.num_replicas))
         self.shuffle = shuffle
 
@@ -40,12 +39,12 @@ class RASampler(torch.utils.data.Sampler):
         else:
             indices = list(range(len(self.dataset)))
 
-        # add extra samples to make it evenly divisible
+        # Add extra samples to make it evenly divisible
         indices = [ele for ele in indices for i in range(3)]
         indices += indices[: (self.total_size - len(indices))]
         assert len(indices) == self.total_size
 
-        # subsample
+        # Subsample
         indices = indices[self.rank : self.total_size : self.num_replicas]
         assert len(indices) == self.num_samples
 
