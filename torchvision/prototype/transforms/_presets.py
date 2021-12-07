@@ -128,7 +128,7 @@ class RaftEval(nn.Module):
 
         if flow is not None and not isinstance(flow, Tensor):
             flow = torch.from_numpy(flow)
-        if valid_flow_mask is not None and not isinstance(flow, Tensor):
+        if valid_flow_mask is not None and not isinstance(valid_flow_mask, Tensor):
             valid_flow_mask = torch.from_numpy(valid_flow_mask)
 
         return img1, img2, flow, valid_flow_mask
