@@ -17,7 +17,7 @@ from ....models.detection.ssdlite import (
 )
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
+from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
 
 
@@ -42,7 +42,12 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
     default = Coco_V1
 
 
+@handle_legacy_interface(
+    weights=("pretrained", SSDLite320_MobileNet_V3_Large_Weights.Coco_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+)
 def ssdlite320_mobilenet_v3_large(
+    *,
     weights: Optional[SSDLite320_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
@@ -51,17 +56,7 @@ def ssdlite320_mobilenet_v3_large(
     norm_layer: Optional[Callable[..., nn.Module]] = None,
     **kwargs: Any,
 ) -> SSD:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SSDLite320_MobileNet_V3_Large_Weights.Coco_V1)
     weights = SSDLite320_MobileNet_V3_Large_Weights.verify(weights)
-    if type(weights_backbone) == bool and weights_backbone:
-        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
-    if "pretrained_backbone" in kwargs:
-        weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1
-        )
     weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
 
     if "size" in kwargs:

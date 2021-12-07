@@ -32,21 +32,8 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     path_accessor,
 )
-from torchvision.prototype.features import BoundingBox, Label
-from torchvision.prototype.features._feature import DEFAULT
+from torchvision.prototype.features import BoundingBox, Label, Feature
 from torchvision.prototype.utils._internal import FrozenMapping
-
-
-class CocoLabel(Label):
-    super_category: Optional[str]
-
-    @classmethod
-    def _parse_meta_data(
-        cls,
-        category: Optional[str] = DEFAULT,  # type: ignore[assignment]
-        super_category: Optional[str] = DEFAULT,  # type: ignore[assignment]
-    ) -> Dict[str, Tuple[Any, Any]]:
-        return dict(category=(category, None), super_category=(super_category, None))
 
 
 class Coco(Dataset):
@@ -111,27 +98,24 @@ class Coco(Dataset):
         categories = [self.info.categories[label] for label in labels]
         return dict(
             # TODO: create a segmentation feature
-            segmentations=torch.stack(
-                [
-                    self._segmentation_to_mask(ann["segmentation"], is_crowd=ann["iscrowd"], image_size=image_size)
-                    for ann in anns
-                ]
+            segmentations=Feature(
+                torch.stack(
+                    [
+                        self._segmentation_to_mask(ann["segmentation"], is_crowd=ann["iscrowd"], image_size=image_size)
+                        for ann in anns
+                    ]
+                )
             ),
-            areas=torch.tensor([ann["area"] for ann in anns]),
-            crowds=torch.tensor([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            areas=Feature([ann["area"] for ann in anns]),
+            crowds=Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",
                 image_size=image_size,
             ),
-            labels=[
-                CocoLabel(
-                    label,
-                    category=category,
-                    super_category=self.info.extra.category_to_super_category[category],
-                )
-                for label, category in zip(labels, categories)
-            ],
+            labels=Label(labels),
+            categories=categories,
+            super_categories=[self.info.extra.category_to_super_category[category] for category in categories],
             ann_ids=[ann["id"] for ann in anns],
         )
 
@@ -141,7 +125,12 @@ class Coco(Dataset):
             ann_ids=[ann["id"] for ann in anns],
         )
 
-    _ANN_DECODERS = OrderedDict([("instances", _decode_instances_anns), ("captions", _decode_captions_ann)])
+    _ANN_DECODERS = OrderedDict(
+        [
+            ("instances", _decode_instances_anns),
+            ("captions", _decode_captions_ann),
+        ]
+    )
 
     _META_FILE_PATTERN = re.compile(
         fr"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
