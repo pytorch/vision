@@ -1013,7 +1013,7 @@ def rotate(
     angle: Union[float, Tensor],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     expand: bool = False,
-    center: Optional[Union[List[int], Tensor]] = None,
+    center: Optional[Union[List[float], Tensor]] = None,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
 ) -> Tensor:
@@ -1074,12 +1074,14 @@ def rotate(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.rotate(img, angle=angle, interpolation=pil_interpolation, expand=expand, center=center, fill=fill)
 
-    center_f = torch.zeros(2, device=img.device, dtype=torch.float)
+    center_f: Union[List[float], Tensor] = [0.0, 0.0]
     if center is not None:
         img_size = get_image_size(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f[0] = 1.0 * (center[0] - img_size[0] * 0.5)
-        center_f[1] = 1.0 * (center[1] - img_size[1] * 0.5)
+        if isinstance(center, Tensor):
+            center_f = 1.0 * (center - img_size * 0.5)
+        elif center is not None:
+            center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
