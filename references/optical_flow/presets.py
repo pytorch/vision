@@ -15,7 +15,7 @@ class OpticalFlowPresetEval(torch.nn.Module):
             ]
         )
 
-    def __call__(self, img1, img2, flow, valid):
+    def forward(self, img1, img2, flow, valid):
         return self.transforms(img1, img2, flow, valid)
 
 
@@ -60,5 +60,5 @@ class OpticalFlowPresetTrain(torch.nn.Module):
         ]
         self.transforms = T.Compose(transforms)
 
-    def __call__(self, img1, img2, flow, valid):
+    def forward(self, img1, img2, flow, valid):
         return self.transforms(img1, img2, flow, valid)

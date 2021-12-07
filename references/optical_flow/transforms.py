@@ -249,7 +249,7 @@ class Compose:
     def __init__(self, transforms):
         self.transforms = transforms
 
-    def __call__(self, img1, img2, flow, valid_flow_mask):
+    def forward(self, img1, img2, flow, valid_flow_mask):
         for t in self.transforms:
             img1, img2, flow, valid_flow_mask = t(img1, img2, flow, valid_flow_mask)
         return img1, img2, flow, valid_flow_mask
