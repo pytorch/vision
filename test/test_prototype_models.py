@@ -96,7 +96,7 @@ def test_schema_meta_validation(model_fn):
     defaults = {
         "all": ["interpolation", "recipe"],
         "models": classification_fields,
-        "detection": ["categories"],
+        "detection": ["categories", "map"],
         "quantization": classification_fields + ["backend", "quantization", "unquantized"],
         "segmentation": ["categories", "mIoU", "acc"],
         "video": classification_fields,
