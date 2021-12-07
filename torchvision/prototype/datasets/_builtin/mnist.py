@@ -140,6 +140,14 @@ class _MNISTBase(Dataset):
 
 
 class MNIST(_MNISTBase):
+    @staticmethod
+    def _legacy_input_map(options: Dict[str, Any]) -> Dict[str, Any]:
+        return dict(split="train" if options.get("train", False) else "test")
+
+    @staticmethod
+    def _legacy_output_map(sample: Dict[str, Any]) -> Tuple[Image, Label]:
+        return sample["image"], sample["label"]
+
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "mnist",
@@ -149,6 +157,8 @@ class MNIST(_MNISTBase):
             valid_options=dict(
                 split=("train", "test"),
             ),
+            legacy_input_map=self._legacy_input_map,
+            legacy_output_map=self._legacy_output_map,
         )
 
     _URL_BASE = "http://yann.lecun.com/exdb/mnist"

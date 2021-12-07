@@ -3,7 +3,7 @@ import os
 from typing import Any, Callable, Dict, List, Optional
 
 import torch
-from torch.utils.data import IterDataPipe
+from torchdata.datapipes.iter import IterDataPipe, Mapper
 from torchvision.prototype.datasets import home
 from torchvision.prototype.datasets.decoder import raw, pil
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetType
@@ -61,16 +61,21 @@ def load(
     name: str,
     *,
     decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = DEFAULT_DECODER,  # type: ignore[assignment]
-    split: str = "train",
+    legacy: bool = False,
     **options: Any,
 ) -> IterDataPipe[Dict[str, Any]]:
-    name = name.lower()
     dataset = find(name)
+
+    if legacy and not dataset.supports_legacy_interface:
+        raise ValueError()
 
     if decoder is DEFAULT_DECODER:
         decoder = DEFAULT_DECODER_MAP.get(dataset.info.type)
 
-    config = dataset.info.make_config(split=split, **options)
-    root = os.path.join(home(), name)
+    config = (dataset.info.make_legacy_config if legacy else dataset.info.make_config)(**options)
+    root = os.path.join(home(), dataset.name)
 
-    return dataset.to_datapipe(root, config=config, decoder=decoder)
+    dp = dataset.to_datapipe(root, config=config, decoder=decoder)
+    if legacy:
+        dp = Mapper(dp, dataset.info.to_legacy_sample)
+    return dp

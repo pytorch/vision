@@ -40,6 +40,8 @@ class DatasetInfo:
         license: Optional[str] = None,
         valid_options: Optional[Dict[str, Sequence]] = None,
         extra: Optional[Dict[str, Any]] = None,
+        legacy_input_map: Optional[Callable[[Dict[str, Any]], Dict[str, Any]]] = None,
+        legacy_output_map: Optional[Callable[[Dict[str, Any]], Any]] = None,
     ) -> None:
         self.name = name.lower()
         self.type = DatasetType[type.upper()] if isinstance(type, str) else type
@@ -78,9 +80,16 @@ class DatasetInfo:
 
         self.extra = FrozenBunch(extra or dict())
 
+        self._legacy_input_map = legacy_input_map
+        self._legacy_output_map = legacy_output_map
+
     @property
     def default_config(self) -> DatasetConfig:
         return self._configs[0]
+
+    @property
+    def supports_legacy_interface(self) -> bool:
+        return bool(self._legacy_input_map or self._legacy_output_map)
 
     @staticmethod
     def read_categories_file(path: pathlib.Path) -> List[List[str]]:
@@ -110,6 +119,17 @@ class DatasetInfo:
                 )
 
         return DatasetConfig(self.default_config, **options)
+
+    def make_legacy_config(self, **options: Any) -> DatasetConfig:
+        if self._legacy_input_map:
+            options = self._legacy_input_map(options)
+        return self.make_config(**options)
+
+    def to_legacy_sample(self, sample: Dict[str, Any]) -> Any:
+        if self._legacy_output_map:
+            sample = self._legacy_output_map(sample)
+
+        return sample
 
     def check_dependencies(self) -> None:
         for dependency in self.dependecies:
@@ -154,6 +174,10 @@ class Dataset(abc.ABC):
     @property
     def categories(self) -> Tuple[str, ...]:
         return self.info.categories
+
+    @property
+    def supports_legacy_interface(self) -> bool:
+        return self.info.supports_legacy_interface
 
     @abc.abstractmethod
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
