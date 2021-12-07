@@ -311,7 +311,7 @@ jobs:
           descr: Install Python type check utilities
       - run:
           name: Install library stub packages
-          run: mypy --install-types
+          command: mypy --install-types
       - run:
           name: Check Python types statically
           command: mypy --config-file mypy.ini
