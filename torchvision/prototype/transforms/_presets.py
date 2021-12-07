@@ -6,7 +6,7 @@ from torch import Tensor, nn
 from ...transforms import functional as F, InterpolationMode
 
 
-__all__ = ["CocoEval", "ImageNetEval", "Kinect400Eval", "VocEval"]
+__all__ = ["CocoEval", "ImageNetEval", "Kinect400Eval", "VocEval", "RaftEval"]
 
 
 class CocoEval(nn.Module):

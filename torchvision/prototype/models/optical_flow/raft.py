@@ -4,9 +4,11 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.models.optical_flow import RAFT
 from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, ResidualBlock
+
 # from torchvision.prototype.transforms import RaftEval
 
 from .._api import WeightsEnum
+
 # from .._api import Weights
 from .._utils import handle_legacy_interface
 
@@ -15,6 +17,8 @@ __all__ = (
     "RAFT",
     "raft_large",
     "raft_small",
+    "Raft_Large_Weights",
+    "Raft_Small_Weights",
 )
 
 
@@ -86,9 +90,6 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
         nn.Module: The model.
     """
 
-    if weights is not None:
-        raise ValueError("No checkpoint is available for raft_large")
-
     weights = Raft_Large_Weights.verify(weights)
 
     return _raft(
@@ -134,9 +135,6 @@ def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, *
         nn.Module: The model.
 
     """
-
-    if weights is not None:
-        raise ValueError("No checkpoint is available for raft_small")
 
     weights = Raft_Small_Weights.verify(weights)
 
