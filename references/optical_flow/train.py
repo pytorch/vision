@@ -310,11 +310,8 @@ def get_args_parser(add_help=True):
     # TODO: remove
     parser.add_argument("--map-orig-to-ours", action="store_true")
 
-    # TODO: remove the default
-    _DATASET_ROOT = "/data/home/nicolashug/cluster/work/downloads"
     parser.add_argument(
         "--dataset-root",
-        default=_DATASET_ROOT,
         help="Root folder where the datasets are stored. Will be passed as the 'root' parameter of the datasets.",
     )
 
