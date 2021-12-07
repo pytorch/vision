@@ -112,7 +112,7 @@ def test_schema_meta_validation(model_fn):
         if missing_fields:
             problematic_weights[w] = missing_fields
 
-    assert len(problematic_weights) == 0, str(problematic_weights)
+    assert not problematic_weights
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
