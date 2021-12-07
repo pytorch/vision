@@ -11,9 +11,9 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
+from ...utils import _log_api_usage_once
 from ._api import WeightsEnum
 from ._utils import handle_legacy_interface
-from ...utils import _log_api_usage_once
 
 
 __all__ = [

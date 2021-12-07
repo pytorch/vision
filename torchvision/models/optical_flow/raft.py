@@ -8,8 +8,8 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.ops import ConvNormActivation
 
-from ._utils import grid_sample, make_coords_grid, upsample_flow
 from ...utils import _log_api_usage_once
+from ._utils import grid_sample, make_coords_grid, upsample_flow
 
 
 __all__ = (
