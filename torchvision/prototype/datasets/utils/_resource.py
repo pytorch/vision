@@ -7,9 +7,9 @@ from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
-    IoPathFileLoader,
     IterableWrapper,
     FileLister,
+    FileLoader,
     IterDataPipe,
     ZipArchiveReader,
     TarArchiveReader,
@@ -62,9 +62,9 @@ class OnlineResource(abc.ABC):
 
     def _default_loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
-            return IoPathFileLoader(FileLister(str(path), recursive=True), mode="rb")
+            return FileLoader(FileLister(str(path), recursive=True))
 
-        dp = IoPathFileLoader(IterableWrapper((str(path),)), mode="rb")
+        dp = FileLoader(IterableWrapper((str(path),)))
 
         archive_loader = self._guess_archive_loader(path)
         if archive_loader:
