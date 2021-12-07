@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.vgg import VGG, make_layers, cfgs
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [
@@ -169,81 +169,57 @@ class VGG19_BN_Weights(WeightsEnum):
     default = ImageNet1K_V1
 
 
-def vgg11(weights: Optional[VGG11_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG11_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", VGG11_Weights.ImageNet1K_V1))
+def vgg11(*, weights: Optional[VGG11_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     weights = VGG11_Weights.verify(weights)
 
     return _vgg("A", False, weights, progress, **kwargs)
 
 
-def vgg11_bn(weights: Optional[VGG11_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG11_BN_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", VGG11_BN_Weights.ImageNet1K_V1))
+def vgg11_bn(*, weights: Optional[VGG11_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     weights = VGG11_BN_Weights.verify(weights)
 
     return _vgg("A", True, weights, progress, **kwargs)
 
 
-def vgg13(weights: Optional[VGG13_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG13_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", VGG13_Weights.ImageNet1K_V1))
+def vgg13(*, weights: Optional[VGG13_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     weights = VGG13_Weights.verify(weights)
 
     return _vgg("B", False, weights, progress, **kwargs)
 
 
-def vgg13_bn(weights: Optional[VGG13_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG13_BN_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", VGG13_BN_Weights.ImageNet1K_V1))
+def vgg13_bn(*, weights: Optional[VGG13_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     weights = VGG13_BN_Weights.verify(weights)
 
     return _vgg("B", True, weights, progress, **kwargs)
 
 
-def vgg16(weights: Optional[VGG16_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG16_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", VGG16_Weights.ImageNet1K_V1))
+def vgg16(*, weights: Optional[VGG16_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     weights = VGG16_Weights.verify(weights)
 
     return _vgg("D", False, weights, progress, **kwargs)
 
 
-def vgg16_bn(weights: Optional[VGG16_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG16_BN_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", VGG16_BN_Weights.ImageNet1K_V1))
+def vgg16_bn(*, weights: Optional[VGG16_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     weights = VGG16_BN_Weights.verify(weights)
 
     return _vgg("D", True, weights, progress, **kwargs)
 
 
-def vgg19(weights: Optional[VGG19_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG19_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", VGG19_Weights.ImageNet1K_V1))
+def vgg19(*, weights: Optional[VGG19_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     weights = VGG19_Weights.verify(weights)
 
     return _vgg("E", False, weights, progress, **kwargs)
 
 
-def vgg19_bn(weights: Optional[VGG19_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", VGG19_BN_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", VGG19_BN_Weights.ImageNet1K_V1))
+def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
     weights = VGG19_BN_Weights.verify(weights)
 
     return _vgg("E", True, weights, progress, **kwargs)
