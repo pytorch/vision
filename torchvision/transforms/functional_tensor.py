@@ -16,7 +16,7 @@ def _assert_image_tensor(img: Tensor) -> None:
         raise TypeError("Tensor is not a torch image.")
 
 
-def _assert_threshold(img: Tensor, threshold: float) -> None:
+def _assert_threshold(img: Tensor, threshold: Union[float, Tensor]) -> None:
     bound = 1 if img.is_floating_point() else 255
     if threshold > bound:
         raise TypeError("Threshold should be less than bound of img.")
