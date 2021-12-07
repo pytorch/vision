@@ -585,7 +585,7 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
     """
 
     if pretrained:
-        raise ValueError("Pretrained weights aren't available yet")
+        raise ValueError("No checkpoint is available for raft_large")
 
     return _raft(
         # Feature encoder
@@ -631,7 +631,7 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
     """
 
     if pretrained:
-        raise ValueError("Pretrained weights aren't available yet")
+        raise ValueError("No checkpoint is available for raft_small")
 
     return _raft(
         # Feature encoder

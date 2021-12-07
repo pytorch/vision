@@ -7,6 +7,7 @@ from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, Residua
 from torchvision.prototype.transforms import RaftEval
 
 from .._api import WeightsEnum, Weights
+from .._utils import handle_legacy_interface
 
 
 __all__ = (
@@ -17,57 +18,60 @@ __all__ = (
 
 
 class Raft_Large_Weights(WeightsEnum):
-    C_T = Weights(
-        # Chairs + Things
-        url="",
-        transforms=RaftEval,
-        meta={
-            "recipe": "",
-            "epe": -1234,
-        },
-    )
+    pass
+    # C_T_V1 = Weights(
+    #     # Chairs + Things
+    #     url="",
+    #     transforms=RaftEval,
+    #     meta={
+    #         "recipe": "",
+    #         "epe": -1234,
+    #     },
+    # )
 
-    C_T_SKHT = Weights(
-        # Chairs + Things + Sintel fine-tuning, i.e.:
-        # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean)
-        # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel
-        url="",
-        transforms=RaftEval,
-        meta={
-            "recipe": "",
-            "epe": -1234,
-        },
-    )
+    # C_T_SKHT_V1 = Weights(
+    #     # Chairs + Things + Sintel fine-tuning, i.e.:
+    #     # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean)
+    #     # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel
+    #     url="",
+    #     transforms=RaftEval,
+    #     meta={
+    #         "recipe": "",
+    #         "epe": -1234,
+    #     },
+    # )
 
-    C_T_SKHT_K = Weights(
-        # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning i.e.:
-        # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean) + Kitti
-        # Same as CT_SKHT with extra fine-tuning on Kitti
-        # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel and then on Kitti
-        url="",
-        transforms=RaftEval,
-        meta={
-            "recipe": "",
-            "epe": -1234,
-        },
-    )
+    # C_T_SKHT_K_V1 = Weights(
+    #     # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning i.e.:
+    #     # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean) + Kitti
+    #     # Same as CT_SKHT with extra fine-tuning on Kitti
+    #     # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel and then on Kitti
+    #     url="",
+    #     transforms=RaftEval,
+    #     meta={
+    #         "recipe": "",
+    #         "epe": -1234,
+    #     },
+    # )
 
-    default = C_T
+    # default = C_T_V1
 
 
 class Raft_Small_Weights(WeightsEnum):
-    C_T = Weights(
-        url="",  # TODO
-        transforms=RaftEval,
-        meta={
-            "recipe": "",
-            "epe": -1234,
-        },
-    )
-    default = C_T
+    pass
+    # C_T_V1 = Weights(
+    #     url="",  # TODO
+    #     transforms=RaftEval,
+    #     meta={
+    #         "recipe": "",
+    #         "epe": -1234,
+    #     },
+    # )
+    # default = C_T_V1
 
 
-def raft_large(weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs):
+@handle_legacy_interface(weights=("pretrained", None))
+def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs):
     """RAFT model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
@@ -82,7 +86,7 @@ def raft_large(weights: Optional[Raft_Large_Weights] = None, progress=True, **kw
     """
 
     if weights is not None:
-        raise ValueError("Pretrained weights aren't available yet")
+        raise ValueError("No checkpoint is available for raft_large")
 
     weights = Raft_Large_Weights.verify(weights)
 
@@ -114,7 +118,8 @@ def raft_large(weights: Optional[Raft_Large_Weights] = None, progress=True, **kw
     )
 
 
-def raft_small(weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs):
+@handle_legacy_interface(weights=("pretrained", None))
+def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs):
     """RAFT "small" model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
@@ -130,7 +135,7 @@ def raft_small(weights: Optional[Raft_Small_Weights] = None, progress=True, **kw
     """
 
     if weights is not None:
-        raise ValueError("Pretrained weights aren't available yet")
+        raise ValueError("No checkpoint is available for raft_small")
 
     weights = Raft_Small_Weights.verify(weights)
 
