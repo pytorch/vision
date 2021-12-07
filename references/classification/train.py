@@ -9,10 +9,10 @@ import torch.utils.data
 import torchvision
 import transforms
 import utils
+from references.classification.ra_sampler import RASampler
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
-
 
 try:
     from torchvision.prototype import models as PM
@@ -30,12 +30,12 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
     for i, (image, target) in enumerate(metric_logger.log_every(data_loader, args.print_freq, header)):
         start_time = time.time()
         image, target = image.to(device), target.to(device)
-        with torch.cuda.amp.autocast(enabled=scaler is not None):
+        with torch.cuda.amp.autocast(enabled=args.amp):
             output = model(image)
             loss = criterion(output, target)
 
         optimizer.zero_grad()
-        if scaler is not None:
+        if args.amp:
             scaler.scale(loss).backward()
             if args.clip_grad_norm is not None:
                 # we should unscale the gradients of optimizer's assigned params if do gradient clipping
@@ -158,7 +158,8 @@ def load_data(traindir, valdir, args):
                 crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
             )
         else:
-            weights = PM.get_weight(args.weights)
+            fn = PM.quantization.__dict__[args.model] if hasattr(args, "backend") else PM.__dict__[args.model]
+            weights = PM._api.get_weight(fn, args.weights)
             preprocessing = weights.transforms()
 
         dataset_test = torchvision.datasets.ImageFolder(
@@ -172,7 +173,10 @@ def load_data(traindir, valdir, args):
 
     print("Creating data loaders")
     if args.distributed:
-        train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
+        if args.ra_sampler:
+            train_sampler = RASampler(dataset, shuffle=True)
+        else:
+            train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
         test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
@@ -225,10 +229,10 @@ def main(args):
     )
 
     print("Creating model")
-    if not args.weights:
-        model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
-    else:
-        model = PM.__dict__[args.model](weights=args.weights, num_classes=num_classes)
+    # if not args.weights:
+    #     model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
+    # else:
+    model = PM.__dict__[args.model](weights=args.weights, num_classes=num_classes)
     model.to(device)
 
     if args.distributed and args.sync_bn:
@@ -484,6 +488,7 @@ def get_args_parser(add_help=True):
 
     # Prototype models only
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--ra-sampler", action="store_true", help="whether to use ra_sampler in training")
 
     return parser
 
