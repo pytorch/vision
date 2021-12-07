@@ -12,7 +12,7 @@ from ....models.detection.mask_rcnn import (
 )
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
+from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..resnet import ResNet50_Weights, resnet50
 
 
@@ -38,7 +38,12 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
     default = Coco_V1
 
 
+@handle_legacy_interface(
+    weights=("pretrained", MaskRCNN_ResNet50_FPN_Weights.Coco_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+)
 def maskrcnn_resnet50_fpn(
+    *,
     weights: Optional[MaskRCNN_ResNet50_FPN_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
@@ -46,17 +51,7 @@ def maskrcnn_resnet50_fpn(
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> MaskRCNN:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MaskRCNN_ResNet50_FPN_Weights.Coco_V1)
     weights = MaskRCNN_ResNet50_FPN_Weights.verify(weights)
-    if type(weights_backbone) == bool and weights_backbone:
-        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
-    if "pretrained_backbone" in kwargs:
-        weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet50_Weights.ImageNet1K_V1
-        )
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
     if weights is not None:
