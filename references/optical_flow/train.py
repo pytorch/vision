@@ -155,6 +155,35 @@ def validate(model, args):
             warnings.warn(f"Can't validate on {val_dataset}, skipping.")
 
 
+def train_one_epoch(model, optimizer, scheduler, train_loader, logger, current_step, args):
+    for data_blob in logger.log_every(train_loader):
+
+        optimizer.zero_grad()
+
+        image1, image2, flow_gt, valid_flow_mask = (x.cuda() for x in data_blob)
+        flow_predictions = model(image1, image2, num_flow_updates=args.num_flow_updates)
+
+        loss = utils.sequence_loss(flow_predictions, flow_gt, valid_flow_mask, args.gamma)
+        metrics, _ = utils.compute_metrics(flow_predictions[-1], flow_gt, valid_flow_mask)
+
+        metrics.pop("f1")
+        logger.update(loss=loss, **metrics)
+
+        loss.backward()
+
+        torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
+
+        optimizer.step()
+        scheduler.step()
+
+        current_step += 1
+
+        if current_step == args.num_steps:
+            return True, current_step
+
+    return False, current_step
+
+
 def main(args):
     utils.setup_ddp(args)
 
@@ -210,34 +239,18 @@ def main(args):
     done = False
     current_epoch = current_step = 0
     while not done:
-        sampler.set_epoch(current_epoch)  # needed, otherwise the data loading order would be the same for all epochs
         print(f"EPOCH {current_epoch}")
 
-        for data_blob in logger.log_every(train_loader):
-
-            optimizer.zero_grad()
-
-            image1, image2, flow_gt, valid_flow_mask = (x.cuda() for x in data_blob)
-            flow_predictions = model(image1, image2, num_flow_updates=args.num_flow_updates)
-
-            loss = utils.sequence_loss(flow_predictions, flow_gt, valid_flow_mask, args.gamma)
-            metrics, _ = utils.compute_metrics(flow_predictions[-1], flow_gt, valid_flow_mask)
-
-            metrics.pop("f1")
-            logger.update(loss=loss, **metrics)
-
-            loss.backward()
-
-            torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
-
-            optimizer.step()
-            scheduler.step()
-
-            current_step += 1
-
-            if current_step == args.num_steps:
-                done = True
-                break
+        sampler.set_epoch(current_epoch)  # needed, otherwise the data loading order would be the same for all epochs
+        done, current_step = train_one_epoch(
+            model=model,
+            optimizer=optimizer,
+            scheduler=scheduler,
+            train_loader=train_loader,
+            logger=logger,
+            current_step=current_step,
+            args=args,
+        )
 
         # Note: we don't sync the SmoothedValues across processes, so the printed metrics are just those of rank 0
         print(f"Epoch {current_epoch} done. ", logger)
@@ -313,6 +326,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--dataset-root",
         help="Root folder where the datasets are stored. Will be passed as the 'root' parameter of the datasets.",
+        required=True,
     )
 
     return parser
