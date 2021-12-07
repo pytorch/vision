@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional
+from typing import Any, Optional
 
 from torchvision.prototype.transforms import VocEval
 from torchvision.transforms.functional import InterpolationMode
