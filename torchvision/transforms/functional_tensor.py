@@ -1,3 +1,4 @@
+import math
 import warnings
 from typing import Optional, Tuple, List
 
@@ -586,6 +587,12 @@ def _assert_grid_transform_inputs(
     if matrix is not None and len(matrix) != 6:
         raise ValueError("Argument matrix should have 6 float values")
 
+    # if matrix is not None and not isinstance(matrix, Tensor):
+    #     raise TypeError("Argument matrix should be a Tensor")
+
+    # if matrix is not None and list(matrix.shape) != [2, 3]:
+    #     raise ValueError("Argument matrix should have shape [2, 3]")
+
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
@@ -710,7 +717,7 @@ def affine(
     return _apply_grid_transform(img, grid, interpolation, fill=fill)
 
 
-def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]:
+def _compute_output_size(theta: Tensor, w: int, h: int) -> Tuple[int, int]:
 
     # Inspired of PIL implementation:
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
@@ -724,7 +731,6 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
             [0.5 * w, -0.5 * h, 1.0],
         ]
     )
-    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
     new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
@@ -739,16 +745,17 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
 
 def rotate(
     img: Tensor,
-    matrix: List[float],
+    matrix: Tensor,
     interpolation: str = "nearest",
     expand: bool = False,
     fill: Optional[List[float]] = None,
 ) -> Tensor:
-    _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
+    # _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
+    matrix = matrix.unsqueeze(0)
     w, h = img.shape[-1], img.shape[-2]
-    ow, oh = _compute_output_size(matrix, w, h) if expand else (w, h)
+    ow, oh = _compute_output_size(matrix.detach(), w, h) if expand else (w, h)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
+    theta = matrix.to(dtype=dtype, device=img.device)
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=w, h=h, ow=ow, oh=oh)
 

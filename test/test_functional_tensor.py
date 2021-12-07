@@ -154,6 +154,19 @@ class TestRotate:
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)
 
+    @pytest.mark.parametrize("fn", [F.rotate, scripted_rotate])
+    @pytest.mark.parametrize("center", [None, torch.tensor([0.1, 0.2], requires_grad=True)])
+    def test_differentiable_rotate(self, fn, center):
+        alpha = torch.tensor(1.0, requires_grad=True)
+        x = torch.zeros(1, 3, 10, 10)
+
+        y = fn(x, alpha, interpolation=BILINEAR, center=center)
+        assert y.requires_grad
+        y.mean().backward()
+        assert alpha.grad is not None
+        if center is not None:
+            assert center.grad is not None
+
 
 class TestAffine:
 

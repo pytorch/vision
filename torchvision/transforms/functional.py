@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Any, Optional, Union
 
 import numpy as np
 import torch
@@ -948,12 +948,48 @@ def _get_inverse_affine_matrix(
     return matrix
 
 
+def _get_inverse_affine_matrix_tensor(
+    center: Tensor, angle: Tensor, translate: Tensor, scale: Tensor, shear: Tensor
+) -> Tensor:
+    output = torch.zeros(3, 3)
+
+    rot = angle * torch.pi / 180.0
+    shear_rad = shear * torch.pi / 180.0
+
+    m_center = torch.eye(3, 3)
+    m_center[:2, 2] = center
+
+    i_m_center = torch.eye(3, 3)
+    i_m_center[:2, 2] = -center
+
+    i_m_translate = torch.eye(3, 3)
+    i_m_translate[:2, 2] = -translate
+
+    # RSS without scaling
+    sx, sy = shear_rad[0], shear_rad[1]
+    a = torch.cos(rot - sy) / torch.cos(sy)
+    b = torch.cos(rot - sy) * torch.tan(sx) / torch.cos(sy) + torch.sin(rot)
+    c = -torch.sin(rot - sy) / torch.cos(sy)
+    d = -torch.sin(rot - sy) * torch.tan(sx) / torch.cos(sy) + torch.cos(rot)
+
+    output[0, 0] = d
+    output[0, 1] = b
+    output[1, 0] = c
+    output[1, 1] = a
+    output = output / scale
+    output[2, 2] = 1.0
+
+    output = torch.chain_matmul(m_center, output, i_m_center, i_m_translate)
+    output = output[:2, :]
+    return output
+
+
 def rotate(
     img: Tensor,
-    angle: float,
+    angle: Union[float, int, Tensor],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    center: Optional[List[int]] = None,
+    center: Optional[Union[List[int], Tuple[int, int], Tensor]] = None,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
 ) -> Tensor:
@@ -963,7 +999,7 @@ def rotate(
 
     Args:
         img (PIL Image or Tensor): image to be rotated.
-        angle (number): rotation angle value in degrees, counter-clockwise.
+        angle (number or Tensor): rotation angle value in degrees, counter-clockwise.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -972,7 +1008,7 @@ def rotate(
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
             Note that the expand flag assumes rotation around the center and no translation.
-        center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
+        center (sequence or Tensor, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
@@ -1001,28 +1037,48 @@ def rotate(
         )
         interpolation = _interpolation_modes_from_int(interpolation)
 
-    if not isinstance(angle, (int, float)):
-        raise TypeError("Argument angle should be int or float")
+    if not isinstance(angle, (int, float, Tensor)):
+        raise TypeError("Argument angle should be int or float or Tensor")
 
-    if center is not None and not isinstance(center, (list, tuple)):
-        raise TypeError("Argument center should be a sequence")
+    if center is not None and not isinstance(center, (list, tuple, Tensor)):
+        raise TypeError("Argument center should be a sequence or a Tensor")
 
     if not isinstance(interpolation, InterpolationMode):
         raise TypeError("Argument interpolation should be a InterpolationMode")
 
     if not isinstance(img, torch.Tensor):
+        if not isinstance(angle, (int, float)):
+            raise TypeError("Argument angle should be int or float")
+
+        if center is not None and not isinstance(center, (list, tuple)):
+            raise TypeError("Argument center should be a sequence")
+
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.rotate(img, angle=angle, interpolation=pil_interpolation, expand=expand, center=center, fill=fill)
 
-    center_f = [0.0, 0.0]
+    if isinstance(angle, torch.Tensor) and angle.requires_grad:
+        # assert img.dtype is float
+        pass
+
+    center_t = torch.tensor([0.0, 0.0])
     if center is not None:
-        img_size = get_image_size(img)
+        # ct = torch.tensor([float(c) for c in list(center)]) if not isinstance(center, Tensor) else center
+        # THIS DOES NOT PASS JIT as we mix list/tuple of ints but list/tuple of floats are required
+        ct = torch.tensor(center) if not isinstance(center, Tensor) else center
+        img_size = torch.tensor(get_image_size(img))
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+        center_t = 1.0 * (ct - img_size * 0.5)
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
-    matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    angle_t = torch.tensor(float(angle)) if not isinstance(angle, Tensor) else angle
+    matrix = _get_inverse_affine_matrix_tensor(
+        center_t,
+        -angle_t,
+        torch.tensor([0.0, 0.0]),
+        torch.tensor(1.0),
+        torch.tensor([0.0, 0.0])
+    )
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
 
