@@ -225,7 +225,7 @@ class TestDataset:
         dependency = "fake_dependency"
         dataset = self.DatasetMock(make_minimal_dataset_info(dependencies=(dependency,)))
         with pytest.raises(ModuleNotFoundError, match=dependency):
-            dataset.to_datapipe("root")
+            dataset.load("root")
 
     def test_resources(self, mocker):
         resource_mock = mocker.Mock(spec=["load"])
