@@ -180,15 +180,19 @@ def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=400)
         raise ValueError(f"Gamma should be < 1, got {gamma}.")
 
     # exlude invalid pixels and extremely large diplacements
-    norm_2 = torch.sum(flow_gt ** 2, dim=1).sqrt()
-    valid_flow_mask = valid_flow_mask & (norm_2 < max_flow)
+    flow_norm = torch.sum(flow_gt ** 2, dim=1).sqrt()
+    valid_flow_mask = valid_flow_mask & (flow_norm < max_flow)
 
-    flow_loss = 0
-    num_predictions = len(flow_preds)
-    for i, flow_pred in enumerate(flow_preds):
-        weight = gamma ** (num_predictions - i - 1)
-        abs_diff = (flow_pred - flow_gt).abs()
-        flow_loss += weight * (abs_diff * valid_flow_mask[:, None, :, :]).mean()
+    valid_flow_mask = valid_flow_mask[:, None, :, :]
+
+    flow_preds = torch.stack(flow_preds)  # shape = (num_flow_updates, batch_size, 2, H, W)
+
+    abs_diff = (flow_preds - flow_gt).abs()
+    abs_diff = (abs_diff * valid_flow_mask).mean(axis=(1, 2, 3, 4))
+
+    num_predictions = flow_preds.shape[0]
+    weights = gamma ** torch.arange(num_predictions - 1, -1, -1).to(flow_gt.device)
+    flow_loss = (abs_diff * weights).sum()
 
     return flow_loss
 
