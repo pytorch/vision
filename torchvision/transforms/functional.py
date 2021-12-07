@@ -1076,11 +1076,11 @@ def rotate(
 
     center_f: Union[List[float], Tensor] = [0.0, 0.0]
     if center is not None:
-        img_size: Union[List[int], Tensor] = get_image_size(img)
+        img_size = get_image_size(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         if isinstance(center, Tensor):
-            img_size = torch.tensor(img_size)
-            center_f = 1.0 * (center - img_size * 0.5)
+            img_size_t = torch.tensor(img_size)
+            center_f = 1.0 * (center - img_size_t * 0.5)
         elif center is not None:
             center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
 
