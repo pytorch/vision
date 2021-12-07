@@ -152,6 +152,27 @@ class MetricLogger:
         print(f"{header} Total time: {total_time_str}")
 
 
+def compute_metrics(flow_pred, flow_gt, valid_flow_mask=None):
+
+    epe = ((flow_pred - flow_gt) ** 2).sum(dim=1).sqrt()
+    flow_norm = (flow_gt ** 2).sum(dim=1).sqrt()
+
+    if valid_flow_mask is not None:
+        epe = epe[valid_flow_mask]
+        flow_norm = flow_norm[valid_flow_mask]
+
+    relative_epe = epe / flow_norm
+
+    metrics = {
+        "epe": epe.mean().item(),
+        "1px": (epe < 1).float().mean().item(),
+        "3px": (epe < 3).float().mean().item(),
+        "5px": (epe < 5).float().mean().item(),
+        "f1": ((epe > 3) & (relative_epe > 0.05)).float().mean().item() * 100,
+    }
+    return metrics, epe.numel()
+
+
 def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=400):
     """Loss function defined over sequence of flow predictions"""
 
@@ -169,19 +190,7 @@ def sequence_loss(flow_preds, flow_gt, valid_flow_mask, gamma=0.8, max_flow=400)
         abs_diff = (flow_pred - flow_gt).abs()
         flow_loss += weight * (abs_diff * valid_flow_mask[:, None, :, :]).mean()
 
-    last_pred = flow_preds[-1]
-    epe = ((last_pred - flow_gt) ** 2).sum(dim=1).sqrt()
-    epe = epe[valid_flow_mask]
-
-    metrics = {
-        "flow_loss": flow_loss,
-        "epe": epe.mean().item(),
-        "1px": (epe < 1).float().mean().item(),
-        "3px": (epe < 3).float().mean().item(),
-        "5px": (epe < 5).float().mean().item(),
-    }
-
-    return flow_loss, metrics
+    return flow_loss
 
 
 class InputPadder:

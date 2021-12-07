@@ -59,13 +59,15 @@ def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
 
     We process as many samples as possible with ddp, and process the rest on a single worker.
     """
+    batch_size = batch_size or args.batch_size
+
     model.eval()
 
     sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
         sampler=sampler,
-        batch_size=batch_size or args.batch_size,
+        batch_size=batch_size,
         pin_memory=True,
         num_workers=args.num_workers,
     )
@@ -87,25 +89,16 @@ def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
 
         flow_predictions = model(image1, image2, num_flow_updates=num_flow_updates)
         flow_pred = flow_predictions[-1]
-
         flow_pred = padder.unpad(flow_pred).cpu()
 
-        epe = ((flow_pred - flow_gt) ** 2).sum(dim=1).sqrt()
+        metrics, num_pixels_tot = utils.compute_metrics(flow_pred, flow_gt, valid_flow_mask)
 
-        logger.meters["epe"].update(epe.mean().item(), n=epe.numel())
-        for distance in (1, 3, 5):
-            logger.meters[f"{distance}px"].update((epe < distance).float().mean().item(), n=epe.numel())
-
-        relative_epe = epe / (flow_gt ** 2).sum(dim=1).sqrt()
-        if valid_flow_mask is not None:
-            epe, relative_epe = epe[valid_flow_mask], relative_epe[valid_flow_mask]
-        bad_predictions = ((epe > 3) & (relative_epe > 0.05)).float()
-
-        # note the n=1 for per_image_epe: we compute an average over averages. We first average within each image and
-        # then average over the images. This is in contrast with the other epe computation, where we
-        # average only once over all the pixels of all images.
-        logger.meters["per_image_epe"].update(epe.mean().item(), n=1)  # f1-epe in paper
-        logger.meters["f1"].update(bad_predictions.mean().item() * 100, n=bad_predictions.numel())  # f1-all in paper
+        # We compute per-pixel epe (epe) and per-image epe (called f1-epe in RAFT paper).
+        # per-pixel epe: average epe of all pixels of all images
+        # per-image epe: average epe on each image independently, then average over images
+        for name in ("epe", "1px", "3px", "5px", "f1"):  # f1 is called f1-all in paper
+            logger.meters[name].update(metrics[name], n=num_pixels_tot)
+        logger.meters["per_image_epe"].update(metrics["epe"], n=batch_size)
 
     logger = utils.MetricLogger()
     for meter_name in ("epe", "1px", "3px", "5px", "per_image_epe", "f1"):
@@ -224,18 +217,21 @@ def main(args):
 
             optimizer.zero_grad()
 
-            image1, image2, flow, valid_flow_mask = (x.cuda() for x in data_blob)
+            image1, image2, flow_gt, valid_flow_mask = (x.cuda() for x in data_blob)
             flow_predictions = model(image1, image2, num_flow_updates=args.num_flow_updates)
 
-            loss, metrics = utils.sequence_loss(flow_predictions, flow, valid_flow_mask, args.gamma)
+            loss = utils.sequence_loss(flow_predictions, flow_gt, valid_flow_mask, args.gamma)
+            metrics, _ = utils.compute_metrics(flow_predictions[-1], flow_gt, valid_flow_mask)
+
+            metrics.pop("f1")
+            logger.update(loss=loss, **metrics)
+
             loss.backward()
 
             torch.nn.utils.clip_grad_norm_(model.parameters(), max_norm=1)
 
             optimizer.step()
             scheduler.step()
-
-            logger.update(**metrics)
 
             current_step += 1
 
