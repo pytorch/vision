@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
 from torchvision.prototype.transforms import CocoEval
+from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.keypoint_rcnn import (
     _resnet_fpn_extractor,
@@ -22,7 +23,11 @@ __all__ = [
 ]
 
 
-_COMMON_META = {"categories": _COCO_PERSON_CATEGORIES, "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES}
+_COMMON_META = {
+    "categories": _COCO_PERSON_CATEGORIES,
+    "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
 
 
 class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
