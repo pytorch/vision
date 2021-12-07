@@ -8,6 +8,7 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.ops import ConvNormActivation
 
+from ...utils import _log_api_usage_once
 from ._utils import grid_sample, make_coords_grid, upsample_flow
 
 
@@ -432,6 +433,7 @@ class RAFT(nn.Module):
                 If ``None`` (default), the flow is upsampled using interpolation.
         """
         super().__init__()
+        _log_api_usage_once(self)
 
         self.feature_encoder = feature_encoder
         self.context_encoder = context_encoder

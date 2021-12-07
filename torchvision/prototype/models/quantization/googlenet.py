@@ -12,7 +12,7 @@ from ....models.quantization.googlenet import (
 )
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..googlenet import GoogLeNet_Weights
 
 
@@ -42,21 +42,22 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
     default = ImageNet1K_FBGEMM_V1
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: GoogLeNet_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else GoogLeNet_Weights.ImageNet1K_V1,
+    )
+)
 def googlenet(
+    *,
     weights: Optional[Union[GoogLeNet_QuantizedWeights, GoogLeNet_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = GoogLeNet_QuantizedWeights.ImageNet1K_FBGEMM_V1 if quantize else GoogLeNet_Weights.ImageNet1K_V1
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = GoogLeNet_QuantizedWeights.verify(weights)
-    else:
-        weights = GoogLeNet_Weights.verify(weights)
+    weights = (GoogLeNet_QuantizedWeights if quantize else GoogLeNet_Weights).verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
