@@ -985,8 +985,8 @@ def _get_inverse_affine_matrix_tensor(
     sx = shear[0] * torch.pi / 180.0
     sy = shear[1] * torch.pi / 180.0
 
-    cx, cy = center
-    tx, ty = translate
+    cx, cy = center[0], center[1]
+    tx, ty = translate[0], translate[1]
 
     # RSS without scaling
     a = torch.cos(rot - sy) / torch.cos(sy)
