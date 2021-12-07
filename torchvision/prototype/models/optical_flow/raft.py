@@ -2,8 +2,8 @@ from typing import Optional
 
 from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
-from torchvision.models.optical_flow import RAFT, BottleneckBlock, ResidualBlock
-from torchvision.models.optical_flow.raft import _raft
+from torchvision.models.optical_flow import RAFT
+from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, ResidualBlock
 from torchvision.prototype.transforms import RaftEval
 
 from .._api import WeightsEnum, Weights
