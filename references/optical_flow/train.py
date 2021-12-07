@@ -258,6 +258,7 @@ def main(args):
         current_epoch += 1
 
         if args.rank == 0:
+            # TODO: Also save the optimizer and scheduler
             torch.save(model.state_dict(), Path(args.output_dir) / f"{args.name}_{current_epoch}.pth")
             torch.save(model.state_dict(), Path(args.output_dir) / f"{args.name}.pth")
 
