@@ -119,7 +119,7 @@ class RaftEval(nn.Module):
 
         return img1, img2, flow, valid_flow_mask
 
-    def _pil_or_numpy_to_tensor(self, img1, img2, flow, valid_flow_mask):
+    def _pil_or_numpy_to_tensor(self, img1: Tensor, img2: Tensor, flow: Optional[Tensor], valid_flow_mask: Optional[Tensor])-> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:
         if not isinstance(img1, Tensor):
             img1 = F.pil_to_tensor(img1)
         if not isinstance(img2, Tensor):
