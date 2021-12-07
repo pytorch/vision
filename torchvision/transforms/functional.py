@@ -981,9 +981,9 @@ def _get_inverse_affine_matrix_tensor(
         shear.to(device=device).flatten() if isinstance(shear, Tensor) else torch.tensor(shear, device=device).flatten()
     )
 
-    rot = angle * math.pi / 180
-    sx = shear[0] * math.pi / 180
-    sy = shear[1] * math.pi / 180
+    rot = angle * torch.pi / 180.0
+    sx = shear[0] * torch.pi / 180.0
+    sy = shear[1] * torch.pi / 180.0
 
     cx, cy = center
     tx, ty = translate
@@ -1076,7 +1076,7 @@ def rotate(
 
     center_f: Union[List[float], Tensor] = [0.0, 0.0]
     if center is not None:
-        img_size = get_image_size(img)
+        img_size: Union[List[int], Tensor] = get_image_size(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         if isinstance(center, Tensor):
             img_size = torch.tensor(img_size)
