@@ -376,12 +376,7 @@ def _generate_color_palette(num_masks: int):
 
 
 @no_type_check
-def _log_api_usage_once(obj: str) -> None:  # type: ignore
+def _log_api_usage_once(module: str, name: str) -> None:
     if torch.jit.is_scripting() or torch.jit.is_tracing():
         return
-    # NOTE: obj can be an object as well, but mocking it here to be
-    # only a string to appease torchscript
-    if isinstance(obj, str):
-        torch._C._log_api_usage_once(obj)
-    else:
-        torch._C._log_api_usage_once(f"{obj.__module__}.{obj.__class__.__name__}")
+    torch._C._log_api_usage_once(f"torchvision.{module}.{name}")
