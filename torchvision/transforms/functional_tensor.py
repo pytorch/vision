@@ -731,8 +731,8 @@ def _compute_output_size(matrix: Union[List[float], Tensor], w: int, h: int) -> 
         ]
     )
     if isinstance(matrix, list):
-        theta = torch.tensor(matrix, dtype=torch.float)
-    theta = theta.reshape(1, 2, 3)
+        matrix = torch.tensor(matrix, dtype=torch.float)
+    theta = matrix.reshape(1, 2, 3)
     new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
