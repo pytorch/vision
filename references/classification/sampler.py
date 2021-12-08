@@ -10,6 +10,9 @@ class RASampler(torch.utils.data.Sampler):
     It ensures that different each augmented version of a sample will be visible to a
     different process (GPU).
     Heavily based on 'torch.utils.data.DistributedSampler'.
+
+    This is borrowed from the DeiT Repo:
+    https://github.com/facebookresearch/deit/blob/main/samplers.py
     """
 
     def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True):
