@@ -407,6 +407,8 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
     extractor = _ARCHIVE_EXTRACTORS[archive_type]
 
     extractor(from_path, to_path, compression)
+    if remove_finished:
+        os.remove(from_path)
 
     return to_path
 
