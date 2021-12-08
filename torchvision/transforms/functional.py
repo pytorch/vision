@@ -1089,7 +1089,7 @@ def rotate(
     if isinstance(angle, Tensor):
         angle = -angle
     else:
-        angle = -1.0 * angle
+        angle = float(-angle)
     matrix = _get_inverse_affine_matrix_tensor(center_f, angle, [0.0, 0.0], 1.0, [0.0, 0.0])
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
