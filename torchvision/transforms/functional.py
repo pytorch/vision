@@ -1185,7 +1185,10 @@ def affine(
         shear = list(shear)
 
     if len(shear) == 1:
-        shear = [shear[0], shear[0]]
+        if isinstance(shear, list):
+            shear = [shear[0], shear[0]]
+        else:
+            shear = shear.flatten().repeat(2)
 
     if len(shear) != 2:
         raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
