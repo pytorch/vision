@@ -789,7 +789,8 @@ def adjust_brightness(img: Tensor, brightness_factor: Union[float, Tensor]) -> T
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_brightness(img, brightness_factor)
 
-    return F_t.adjust_brightness(img, brightness_factor)
+    brightness_factor_t = torch.as_tensor(brightness_factor, device=img.device)
+    return F_t.adjust_brightness(img, brightness_factor_t)
 
 
 def adjust_contrast(img: Tensor, contrast_factor: Union[float, Tensor]) -> Tensor:
@@ -809,7 +810,8 @@ def adjust_contrast(img: Tensor, contrast_factor: Union[float, Tensor]) -> Tenso
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_contrast(img, contrast_factor)
 
-    return F_t.adjust_contrast(img, contrast_factor)
+    contrast_factor_t = torch.as_tensor(contrast_factor, device=img.device)
+    return F_t.adjust_contrast(img, contrast_factor_t)
 
 
 def adjust_saturation(img: Tensor, saturation_factor: Union[float, Tensor]) -> Tensor:
@@ -829,7 +831,8 @@ def adjust_saturation(img: Tensor, saturation_factor: Union[float, Tensor]) -> T
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_saturation(img, saturation_factor)
 
-    return F_t.adjust_saturation(img, saturation_factor)
+    saturation_factor_t = torch.as_tensor(saturation_factor, device=img.device)
+    return F_t.adjust_saturation(img, saturation_factor_t)
 
 
 def adjust_hue(img: Tensor, hue_factor: Union[float, Tensor]) -> Tensor:
@@ -863,7 +866,8 @@ def adjust_hue(img: Tensor, hue_factor: Union[float, Tensor]) -> Tensor:
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_hue(img, hue_factor)
 
-    return F_t.adjust_hue(img, hue_factor)
+    hue_factor_t = torch.as_tensor(hue_factor, device=img.device)
+    return F_t.adjust_hue(img, hue_factor_t)
 
 
 def adjust_gamma(img: Tensor, gamma: Union[float, Tensor], gain: Union[float, Tensor] = 1) -> Tensor:
@@ -894,7 +898,9 @@ def adjust_gamma(img: Tensor, gamma: Union[float, Tensor], gain: Union[float, Te
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_gamma(img, gamma, gain)
 
-    return F_t.adjust_gamma(img, gamma, gain)
+    gamma_t = torch.as_tensor(gamma, device=img.device)
+    gain_t = torch.as_tensor(gain, device=img.device)
+    return F_t.adjust_gamma(img, gamma_t, gain_t)
 
 
 def _get_inverse_affine_matrix(
@@ -949,42 +955,15 @@ def _get_inverse_affine_matrix(
 
 
 def _get_inverse_affine_matrix_tensor(
-    center: Union[List[float], Tensor],
-    angle: Union[float, Tensor],
-    translate: Union[List[float], Tensor],
-    scale: Union[float, Tensor],
-    shear: Union[List[float], Tensor],
+    center: Tensor,
+    angle: Tensor,
+    translate: Tensor,
+    scale: Tensor,
+    shear: Tensor,
 ) -> Tensor:
-    device: Optional[torch.device] = None
-    for element in [center, angle, translate, scale, shear]:
-        if isinstance(element, Tensor):
-            if device is None:
-                device = element.device
-
-    center = (
-        center.to(device=device).flatten()
-        if isinstance(center, Tensor)
-        else torch.tensor(center, device=device).flatten()
-    )
-    angle = (
-        angle.to(device=device).flatten() if isinstance(angle, Tensor) else torch.tensor(angle, device=device).flatten()
-    )
-    translate = (
-        translate.to(device=device).flatten()
-        if isinstance(translate, Tensor)
-        else torch.tensor(translate, device=device).flatten()
-    )
-    scale = (
-        scale.to(device=device).flatten() if isinstance(scale, Tensor) else torch.tensor(scale, device=device).flatten()
-    )
-    shear = (
-        shear.to(device=device).flatten() if isinstance(shear, Tensor) else torch.tensor(shear, device=device).flatten()
-    )
-
     rot = angle * torch.pi / 180.0
-    sx = shear[0] * torch.pi / 180.0
-    sy = shear[1] * torch.pi / 180.0
-
+    shear_rad = shear[0] * torch.pi / 180.0
+    sx, sy = shear_rad[0], shear_rad[1]
     cx, cy = center[0], center[1]
     tx, ty = translate[0], translate[1]
 
@@ -996,7 +975,7 @@ def _get_inverse_affine_matrix_tensor(
 
     # Inverted rotation matrix with scale and shear
     # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
-    zero = torch.zeros(1, device=device)
+    zero = torch.zeros(1, device=a.device)
     matrix = torch.cat([d, -b, zero, -c, a, zero]) / scale
 
     # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
@@ -1074,27 +1053,21 @@ def rotate(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.rotate(img, angle=angle, interpolation=pil_interpolation, expand=expand, center=center, fill=fill)
 
-    center_f: Union[List[float], Tensor] = [0.0, 0.0]
+    center_t = torch.zeros(2, device=img.device)
     if center is not None:
         img_size = get_image_size(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        if isinstance(center, Tensor):
-            img_size_t = torch.tensor(img_size)
-            center_f = 1.0 * (center - img_size_t * 0.5)
-        elif center is not None:
-            center_l = center if isinstance(center, list) else list(center)
-            center_f = [1.0 * (c - s * 0.5) for c, s in zip(center_l, img_size)]
+        center_org = torch.as_tensor(center, device=img.device)
+        img_size_t = torch.as_tensor(img_size, device=img.device)
+        center_t = 1.0 * (center_org - img_size_t * 0.5)
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
-    if isinstance(angle, int):
-        angle = float(angle)
-
-    if isinstance(angle, Tensor):
-        angle = -angle
-    else:
-        angle = -angle
-    matrix = _get_inverse_affine_matrix_tensor(center_f, angle, [0.0, 0.0], 1.0, [0.0, 0.0])
+    angle = -torch.as_tensor(angle, dtype=torch.float, device=img.device)
+    translate = torch.zeros(2, dtype=torch.float, device=img.device)
+    scale = torch.zeros(1, dtype=torch.float, device=img.device)
+    shear = torch.zeros(2, dtype=torch.float, device=img.device)
+    matrix = _get_inverse_affine_matrix_tensor(center_t, angle, translate, scale, shear)
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
 
@@ -1172,7 +1145,7 @@ def affine(
     if len(translate) != 2:
         raise ValueError("Argument translate should be a sequence of length 2")
 
-    scale_float = scale if isinstance(scale, float) else scale.item()
+    scale_float = scale.item() if isinstance(scale, Tensor) else scale
     if scale_float <= 0.0:
         raise ValueError("Argument scale should be positive")
 
@@ -1195,10 +1168,10 @@ def affine(
         shear = list(shear)
 
     if len(shear) == 1:
-        if isinstance(shear, list):
-            shear = [shear[0], shear[0]]
-        else:
+        if isinstance(shear, Tensor):
             shear = shear.flatten().repeat(2)
+        else:
+            shear = [shear[0], shear[0]]
 
     if len(shear) != 2:
         raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
@@ -1213,10 +1186,12 @@ def affine(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
-    translate_f = translate
-    if isinstance(translate, list):
-        translate_f = [1.0 * t for t in translate]
-    matrix = _get_inverse_affine_matrix_tensor([0.0, 0.0], angle, translate_f, scale, shear)
+    center_t = torch.zeros(2, device=img.device, dtype=torch.float)
+    angle_t = torch.as_tensor(angle, device=img.device, dtype=torch.float)
+    translate_t = torch.as_tensor(translate, device=img.device, dtype=torch.float)
+    scale_t = torch.as_tensor(scale, device=img.device, dtype=torch.float)
+    shear_t = torch.as_tensor(shear, device=img.device, dtype=torch.float)
+    matrix = _get_inverse_affine_matrix_tensor(center_t, angle_t, translate_t, scale_t, shear_t)
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
 
@@ -1375,7 +1350,7 @@ def invert(img: Tensor) -> Tensor:
     return F_t.invert(img)
 
 
-def posterize(img: Tensor, bits: Union[int, Tensor]) -> Tensor:
+def posterize(img: Tensor, bits: int) -> Tensor:
     """Posterize an image by reducing the number of bits for each color channel.
 
     Args:
@@ -1384,7 +1359,7 @@ def posterize(img: Tensor, bits: Union[int, Tensor]) -> Tensor:
             it is expected to be in [..., 1 or 3, H, W] format, where ... means
             it can have an arbitrary number of leading dimensions.
             If img is PIL Image, it is expected to be in mode "L" or "RGB".
-        bits (int or Tensor): The number of bits to keep for each channel (0-8).
+        bits (int): The number of bits to keep for each channel (0-8).
     Returns:
         PIL Image or Tensor: Posterized image.
     """
@@ -1397,7 +1372,7 @@ def posterize(img: Tensor, bits: Union[int, Tensor]) -> Tensor:
     return F_t.posterize(img, bits)
 
 
-def solarize(img: Tensor, threshold: Union[float, Tensor]) -> Tensor:
+def solarize(img: Tensor, threshold: float) -> Tensor:
     """Solarize an RGB/grayscale image by inverting all pixel values above a threshold.
 
     Args:
@@ -1405,7 +1380,7 @@ def solarize(img: Tensor, threshold: Union[float, Tensor]) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
             If img is PIL Image, it is expected to be in mode "L" or "RGB".
-        threshold (float or Tensor): All pixels equal or above this value are inverted.
+        threshold (float): All pixels equal or above this value are inverted.
     Returns:
         PIL Image or Tensor: Solarized image.
     """
@@ -1432,7 +1407,8 @@ def adjust_sharpness(img: Tensor, sharpness_factor: Union[float, Tensor]) -> Ten
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_sharpness(img, sharpness_factor)
 
-    return F_t.adjust_sharpness(img, sharpness_factor)
+    sharpness_factor_t = torch.as_tensor(sharpness_factor, device=img.device)
+    return F_t.adjust_sharpness(img, sharpness_factor_t)
 
 
 def autocontrast(img: Tensor) -> Tensor:
