@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional, Union
+from typing import List, Tuple, Any, Optional
 
 import numpy as np
 import torch
@@ -772,7 +772,7 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
     return first_five + second_five
 
 
-def adjust_brightness(img: Tensor, brightness_factor: Union[float, Tensor]) -> Tensor:
+def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     """Adjust brightness of an image.
 
     Args:
@@ -793,7 +793,7 @@ def adjust_brightness(img: Tensor, brightness_factor: Union[float, Tensor]) -> T
     return F_t.adjust_brightness(img, brightness_factor_t)
 
 
-def adjust_contrast(img: Tensor, contrast_factor: Union[float, Tensor]) -> Tensor:
+def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     """Adjust contrast of an image.
 
     Args:
@@ -814,7 +814,7 @@ def adjust_contrast(img: Tensor, contrast_factor: Union[float, Tensor]) -> Tenso
     return F_t.adjust_contrast(img, contrast_factor_t)
 
 
-def adjust_saturation(img: Tensor, saturation_factor: Union[float, Tensor]) -> Tensor:
+def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     """Adjust color saturation of an image.
 
     Args:
@@ -835,7 +835,7 @@ def adjust_saturation(img: Tensor, saturation_factor: Union[float, Tensor]) -> T
     return F_t.adjust_saturation(img, saturation_factor_t)
 
 
-def adjust_hue(img: Tensor, hue_factor: Union[float, Tensor]) -> Tensor:
+def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     """Adjust hue of an image.
 
     The image hue is adjusted by converting the image to HSV and
@@ -870,7 +870,7 @@ def adjust_hue(img: Tensor, hue_factor: Union[float, Tensor]) -> Tensor:
     return F_t.adjust_hue(img, hue_factor_t)
 
 
-def adjust_gamma(img: Tensor, gamma: Union[float, Tensor], gain: Union[float, Tensor] = 1) -> Tensor:
+def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     r"""Perform gamma correction on an image.
 
     Also known as Power Law Transform. Intensities in RGB mode are adjusted
@@ -989,10 +989,10 @@ def _get_inverse_affine_matrix_tensor(
 
 def rotate(
     img: Tensor,
-    angle: Union[int, float, Tensor],
+    angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    center: Optional[Union[List[float], Tuple[float, float], Tensor]] = None,
+    center: Optional[List[float]] = None,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
 ) -> Tensor:
@@ -1073,10 +1073,10 @@ def rotate(
 
 def affine(
     img: Tensor,
-    angle: Union[int, float, Tensor] = 0.0,
-    translate: Optional[Union[List[float], Tensor]] = None,
-    scale: Union[float, Tensor] = 1.0,
-    shear: Optional[Union[List[float], Tensor]] = None,
+    angle: float = 0.0,
+    translate: Optional[List[float]] = None,
+    scale: float = 1.0,
+    shear: Optional[List[float]] = None,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
@@ -1390,7 +1390,7 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
     return F_t.solarize(img, threshold)
 
 
-def adjust_sharpness(img: Tensor, sharpness_factor: Union[float, Tensor]) -> Tensor:
+def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
     """Adjust the sharpness of an image.
 
     Args:
