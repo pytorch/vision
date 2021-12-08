@@ -5,6 +5,7 @@ from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.models.optical_flow import RAFT
 from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, ResidualBlock
 from torchvision.prototype.transforms import RaftEval
+from torchvision.transforms.functional import InterpolationMode
 
 from .._api import WeightsEnum
 from .._api import Weights
@@ -20,12 +21,16 @@ __all__ = (
 )
 
 
+_COMMON_META = {"interpolation": InterpolationMode.BILINEAR}
+
+
 class Raft_Large_Weights(WeightsEnum):
     C_T_V1 = Weights(
         # Chairs + Things, ported from original paper repo (raft-things.pth)
         url="https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth",
         transforms=RaftEval,
         meta={
+            **_COMMON_META,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_train_cleanpass_epe": 1.4411,
             "sintel_train_finalpass_epe": 2.7894,
@@ -37,7 +42,8 @@ class Raft_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
         transforms=RaftEval,
         meta={
-            "recipe": "",  # TODO
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_train_cleanpass_epe": 1.3822,
             "sintel_train_finalpass_epe": 2.7161,
         },
@@ -84,68 +90,6 @@ class Raft_Small_Weights(WeightsEnum):
     # default = C_T_V1
 
 
-def _raft_builder(
-    *,
-    weights,
-    progress,
-    # Feature encoder
-    feature_encoder_layers,
-    feature_encoder_block,
-    feature_encoder_norm_layer,
-    # Context encoder
-    context_encoder_layers,
-    context_encoder_block,
-    context_encoder_norm_layer,
-    # Correlation block
-    corr_block_num_levels,
-    corr_block_radius,
-    # Motion encoder
-    motion_encoder_corr_layers,
-    motion_encoder_flow_layers,
-    motion_encoder_out_channels,
-    # Recurrent block
-    recurrent_block_hidden_state_size,
-    recurrent_block_kernel_size,
-    recurrent_block_padding,
-    # Flow Head
-    flow_head_hidden_size,
-    # Mask predictor
-    use_mask_predictor,
-    **kwargs,
-):
-    model = _raft(
-        # Feature encoder
-        feature_encoder_layers=feature_encoder_layers,
-        feature_encoder_block=feature_encoder_block,
-        feature_encoder_norm_layer=feature_encoder_norm_layer,
-        # Context encoder
-        context_encoder_layers=context_encoder_layers,
-        context_encoder_block=context_encoder_block,
-        context_encoder_norm_layer=context_encoder_norm_layer,
-        # Correlation block
-        corr_block_num_levels=corr_block_num_levels,
-        corr_block_radius=corr_block_radius,
-        # Motion encoder
-        motion_encoder_corr_layers=motion_encoder_corr_layers,
-        motion_encoder_flow_layers=motion_encoder_flow_layers,
-        motion_encoder_out_channels=motion_encoder_out_channels,
-        # Recurrent block
-        recurrent_block_hidden_state_size=recurrent_block_hidden_state_size,
-        recurrent_block_kernel_size=recurrent_block_kernel_size,
-        recurrent_block_padding=recurrent_block_padding,
-        # Flow head
-        flow_head_hidden_size=flow_head_hidden_size,
-        # Mask predictor
-        use_mask_predictor=use_mask_predictor,
-        **kwargs,
-    )
-
-    if weights is not None:
-        model.load_state_dict(weights.get_state_dict(progress=progress))
-
-    return model
-
-
 @handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_V2))
 def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs):
     """RAFT model from
@@ -163,9 +107,7 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
 
     weights = Raft_Large_Weights.verify(weights)
 
-    return _raft_builder(
-        weights=weights,
-        progress=progress,
+    model = _raft(
         # Feature encoder
         feature_encoder_layers=(64, 64, 96, 128, 256),
         feature_encoder_block=ResidualBlock,
@@ -192,6 +134,11 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
         **kwargs,
     )
 
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
+    return model
+
 
 @handle_legacy_interface(weights=("pretrained", None))
 def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs):
@@ -211,9 +158,7 @@ def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, *
 
     weights = Raft_Small_Weights.verify(weights)
 
-    return _raft_builder(
-        weights=weights,
-        progress=progress,
+    model = _raft(
         # Feature encoder
         feature_encoder_layers=(32, 32, 64, 96, 128),
         feature_encoder_block=BottleneckBlock,
@@ -239,3 +184,7 @@ def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, *
         use_mask_predictor=False,
         **kwargs,
     )
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+    return model
