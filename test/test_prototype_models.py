@@ -201,13 +201,18 @@ def test_old_vs_new_factory(model_fn, dev):
     if module_name == "detection":
         x = [x]
 
+    if module_name == "optical_flow":
+        args = [x, x]  # RAFT model requires img1, img2 as input
+    else:
+        args = [x]
+
     # compare with new model builder parameterized in the old fashion way
     try:
         model_old = _build_model(_get_original_model(model_fn), **kwargs).to(device=dev)
         model_new = _build_model(model_fn, **kwargs).to(device=dev)
     except ModuleNotFoundError:
         pytest.skip(f"Model '{model_name}' not available in both modules.")
-    torch.testing.assert_close(model_new(x), model_old(x), rtol=0.0, atol=0.0, check_dtype=False)
+    torch.testing.assert_close(model_new(*args), model_old(*args), rtol=0.0, atol=0.0, check_dtype=False)
 
 
 def test_smoke():

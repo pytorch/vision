@@ -3,10 +3,16 @@ import warnings
 from pathlib import Path
 
 import torch
+import torchvision.models.optical_flow
 import utils
 from presets import OpticalFlowPresetTrain, OpticalFlowPresetEval
 from torchvision.datasets import KittiFlow, FlyingChairs, FlyingThings3D, Sintel, HD1K
-from torchvision.models.optical_flow import raft_large, raft_small
+
+try:
+    from torchvision.prototype import models as PM
+    from torchvision.prototype.models import optical_flow as PMOF
+except ImportError:
+    PM = None
 
 
 def get_train_dataset(stage, dataset_root):
@@ -125,6 +131,13 @@ def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
 
 def validate(model, args):
     val_datasets = args.val_dataset or []
+
+    if args.weights:
+        weights = PM.get_weight(args.weights)
+        preprocessing = weights.transforms()
+    else:
+        preprocessing = OpticalFlowPresetEval()
+
     for name in val_datasets:
         if name == "kitti":
             # Kitti has different image sizes so we need to individually pad them, we can't batch.
@@ -134,14 +147,14 @@ def validate(model, args):
                     f"Batch-size={args.batch_size} was passed. For technical reasons, evaluating on Kitti can only be done with a batch-size of 1."
                 )
 
-            val_dataset = KittiFlow(root=args.dataset_root, split="train", transforms=OpticalFlowPresetEval())
+            val_dataset = KittiFlow(root=args.dataset_root, split="train", transforms=preprocessing)
             _validate(
                 model, args, val_dataset, num_flow_updates=24, padder_mode="kitti", header="Kitti val", batch_size=1
             )
         elif name == "sintel":
             for pass_name in ("clean", "final"):
                 val_dataset = Sintel(
-                    root=args.dataset_root, split="train", pass_name=pass_name, transforms=OpticalFlowPresetEval()
+                    root=args.dataset_root, split="train", pass_name=pass_name, transforms=preprocessing
                 )
                 _validate(
                     model,
@@ -187,7 +200,11 @@ def train_one_epoch(model, optimizer, scheduler, train_loader, logger, current_s
 def main(args):
     utils.setup_ddp(args)
 
-    model = raft_small() if args.small else raft_large()
+    if args.weights:
+        model = PMOF.__dict__[args.model](weights=args.weights)
+    else:
+        model = torchvision.models.optical_flow.__dict__[args.model](pretrained=args.pretrained)
+
     model = model.to(args.local_rank)
     model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
 
@@ -306,7 +323,12 @@ def get_args_parser(add_help=True):
         "--freeze-batch-norm", action="store_true", help="Set BatchNorm modules of the model in eval mode."
     )
 
-    parser.add_argument("--small", action="store_true", help="Use the 'small' RAFT architecture.")
+    parser.add_argument(
+        "--model", type=str, default="raft_large", help="The name of the model to use - either raft_large or raft_small"
+    )
+    # TODO: resume, pretrained, and weights should be in an exclusive arg group
+    parser.add_argument("--pretrained", action="store_true", help="Whether to use pretrained weights")
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load.")
 
     parser.add_argument(
         "--num_flow_updates",
