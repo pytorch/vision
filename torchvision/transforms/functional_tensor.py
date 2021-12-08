@@ -229,7 +229,10 @@ def adjust_saturation(img: Tensor, saturation_factor: Tensor) -> Tensor:
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
 
 
-def adjust_gamma(img: Tensor, gamma: Tensor, gain: Tensor = 1) -> Tensor:
+def adjust_gamma(img: Tensor, gamma: Tensor, gain: Optional[Tensor] = None) -> Tensor:
+    if gain is None:
+        gain = torch.ones(1, device=img.device, dtype=torch.float)
+
     if not isinstance(img, torch.Tensor):
         raise TypeError("Input img should be a Tensor.")
 
