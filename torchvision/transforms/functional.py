@@ -1097,7 +1097,7 @@ def rotate(
 def affine(
     img: Tensor,
     angle: Union[float, Tensor] = 0.0,
-    translate: Union[List[int], Tensor] = [0.0, 0.0],
+    translate: Union[List[float], Tensor] = [0.0, 0.0],
     scale: Union[float, Tensor] = 1.0,
     shear: Union[List[float], Tensor] = [0.0, 0.0],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
