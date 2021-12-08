@@ -85,6 +85,38 @@ def test_naming_conventions(model_fn):
     assert len(weights_enum) == 0 or hasattr(weights_enum, "default")
 
 
+@pytest.mark.parametrize(
+    "model_fn",
+    TM.get_models_from_module(models)
+    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(models.video),
+)
+def test_schema_meta_validation(model_fn):
+    classification_fields = ["size", "categories", "acc@1", "acc@5"]
+    defaults = {
+        "all": ["interpolation", "recipe"],
+        "models": classification_fields,
+        "detection": ["categories", "map"],
+        "quantization": classification_fields + ["backend", "quantization", "unquantized"],
+        "segmentation": ["categories", "mIoU", "acc"],
+        "video": classification_fields,
+    }
+    module_name = model_fn.__module__.split(".")[-2]
+    fields = set(defaults["all"] + defaults[module_name])
+
+    weights_enum = _get_model_weights(model_fn)
+
+    problematic_weights = {}
+    for w in weights_enum:
+        missing_fields = fields - set(w.meta.keys())
+        if missing_fields:
+            problematic_weights[w] = missing_fields
+
+    assert not problematic_weights
+
+
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
