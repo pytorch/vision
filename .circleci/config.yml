@@ -311,7 +311,7 @@ jobs:
           descr: Install Python type check utilities
       - run:
           name: Check Python types statically
-          command: mypy --config-file mypy.ini
+          command: mypy --install-types --non-interactive --config-file mypy.ini
 
   unittest_torchhub:
     docker:
