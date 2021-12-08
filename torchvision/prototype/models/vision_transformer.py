@@ -2,7 +2,6 @@
 # https://github.com/google-research/vision_transformer
 # https://github.com/facebookresearch/ClassyVision/blob/main/classy_vision/models/vision_transformer.py
 
-import logging
 import math
 from collections import OrderedDict
 from functools import partial
@@ -382,7 +381,9 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
     )
 
 
-def interpolate_embeddings(image_size: int, patch_size: int, model_state: Mapping[str, torch.Tensor], reset_heads=False):
+def interpolate_embeddings(
+    image_size: int, patch_size: int, model_state: Mapping[str, torch.Tensor], reset_heads=False
+):
     """This function helps interpolating positional embeddings during checkpoint loading,
     especially when you want to apply a pre-trained model on images with different resolution.
 
@@ -416,10 +417,6 @@ def interpolate_embeddings(image_size: int, patch_size: int, model_state: Mappin
         pos_embedding_img = pos_embedding_img.permute(0, 2, 1)
         seq_length_1d = int(math.sqrt(seq_length))
         torch._assert(seq_length_1d * seq_length_1d == seq_length, "seq_length is not a perfect square!")
-
-        logging.info(
-            "Interpolating the position embeddings from image " f"{seq_length_1d * patch_size} to size {image_size}"
-        )
 
         # (1, hidden_dim, seq_length) -> (1, hidden_dim, seq_l_1d, seq_l_1d)
         pos_embedding_img = pos_embedding_img.reshape(1, hidden_dim, seq_length_1d, seq_length_1d)
