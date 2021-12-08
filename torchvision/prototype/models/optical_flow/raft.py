@@ -21,6 +21,17 @@ __all__ = (
 
 
 class Raft_Large_Weights(WeightsEnum):
+    C_T_V1 = Weights(
+        # Chairs + Things, ported from original paper repo (raft-things.pth)
+        url="https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth",
+        transforms=RaftEval,
+        meta={
+            "recipe": "https://github.com/princeton-vl/RAFT",
+            "sintel_train_cleanpass_epe": 1.4411,
+            "sintel_train_finalpass_epe": 2.7894,
+        },
+    )
+
     C_T_V2 = Weights(
         # Chairs + Things
         url="https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
