@@ -28,8 +28,6 @@ __all__ = [
     "vit_l_32",
 ]
 
-StateDictType = OrderedDict[str, torch.Tensor]
-
 
 class MLPBlock(nn.Sequential):
     """Transformer MLP block."""
@@ -384,8 +382,8 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
 
 
 def interpolate_embeddings(
-    image_size: int, patch_size: int, model_state: StateDictType, reset_heads: bool = False
-) -> StateDictType:
+    image_size: int, patch_size: int, model_state: OrderedDict[str, torch.Tensor], reset_heads: bool = False
+) -> OrderedDict[str, torch.Tensor]:
     """This function helps interpolating positional embeddings during checkpoint loading,
     especially when you want to apply a pre-trained model on images with different resolution.
 
@@ -444,7 +442,7 @@ def interpolate_embeddings(
         model_state["encoder.pos_embedding"] = new_pos_embedding
 
         if reset_heads:
-            model_state_copy: StateDictType = OrderedDict()
+            model_state_copy: OrderedDict[str, torch.Tensor] = OrderedDict()
             for k, v in model_state.items():
                 if not k.startswith("heads"):
                     model_state_copy[k] = v
