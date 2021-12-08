@@ -120,7 +120,7 @@ def test_video_model(model_fn, dev):
 
 
 @needs_cuda
-@pytest.mark.parametrize("model_builder", (models.optical_flow.raft_large, models.optical_flow.raft_small))
+@pytest.mark.parametrize("model_builder", TM.get_models_from_module(models.optical_flow))
 @pytest.mark.parametrize("scripted", (False, True))
 @run_if_test_with_prototype
 def test_raft(model_builder, scripted):
