@@ -1,16 +1,17 @@
 #include <time.h>
 #include "gpu_decoder.h"
 
-GPUDecoder::GPUDecoder(std::string src_file, bool useDevFrame) : demuxer(src_file.c_str())
+GPUDecoder::GPUDecoder(std::string src_file, bool useDevFrame, int64_t dev) : demuxer(src_file.c_str()), device(dev)
 {
-  if (cudaSuccess != cudaSetDevice(0)) {
+  if (cudaSuccess != cudaSetDevice(device)) {
    printf("Error setting device\n");
    return;
   }
   CheckForCudaErrors(
-    cuCtxCreate(&ctx, CU_CTX_SCHED_SPIN, 0),
+    cuDevicePrimaryCtxRetain(&ctx, device),
     __LINE__);
   dec.init(ctx, FFmpeg2NvCodecId(demuxer.GetVideoCodec()), useDevFrame);
+  initialised = true;
   demux_time = 0.0;
   decode_time = 0.0;
   totalFrames = 0;
@@ -19,7 +20,11 @@ GPUDecoder::GPUDecoder(std::string src_file, bool useDevFrame) : demuxer(src_fil
 GPUDecoder::~GPUDecoder()
 {
   dec.release();
-  cuCtxDestroy(ctx);
+  if (initialised) {
+    CheckForCudaErrors(
+      cuDevicePrimaryCtxRelease(device),
+      __LINE__);
+  }
 }
 
 torch::Tensor GPUDecoder::decode()
@@ -65,7 +70,7 @@ int64_t GPUDecoder::getTotalFramesDecoded()
 
 TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
-    .def(torch::init<std::string, bool>())
+    .def(torch::init<std::string, bool, int64_t>())
     .def("decode", &GPUDecoder::decode)
     .def("getDecodeTime", &GPUDecoder::getDecodeTime)
     .def("getDemuxTime", &GPUDecoder::getDemuxTime)

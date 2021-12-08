@@ -5,7 +5,6 @@
 #include <unordered_map>
 #include "decoder.h"
 
-
 static float GetChromaHeightFactor(cudaVideoSurfaceFormat surfaceFormat)
 {
     return (surfaceFormat == cudaVideoSurfaceFormat_YUV444 || surfaceFormat == cudaVideoSurfaceFormat_YUV444_16Bit) ? 1.0 : 0.5;
