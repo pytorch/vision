@@ -12,7 +12,7 @@ try:
     from torchvision.prototype import models as PM
     from torchvision.prototype.models import optical_flow as PMOF
 except ImportError:
-    PM = None
+    PM = PMOF = None
 
 
 def get_train_dataset(stage, dataset_root):
