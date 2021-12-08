@@ -1082,7 +1082,7 @@ def rotate(
             img_size_t = torch.tensor(img_size)
             center_f = 1.0 * (center - img_size_t * 0.5)
         elif center is not None:
-            center_l = list(center)
+            center_l = center if isinstance(center, list) else list(center)
             center_f = [1.0 * (c - s * 0.5) for c, s in zip(center_l, img_size)]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
