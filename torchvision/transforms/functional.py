@@ -1162,7 +1162,8 @@ def affine(
     if len(translate) != 2:
         raise ValueError("Argument translate should be a sequence of length 2")
 
-    if float(scale) <= 0.0:
+    scale_float = scale if isinstance(scale, float) else scale.item()
+    if scale_float <= 0.0:
         raise ValueError("Argument scale should be positive")
 
     if not isinstance(shear, (numbers.Number, (list, tuple, Tensor))):
