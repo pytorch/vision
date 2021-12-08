@@ -5,7 +5,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, Optional, Union
+from typing import Any, Callable, Optional
 
 import torch
 import torch.nn as nn
