@@ -18,7 +18,8 @@ def _assert_image_tensor(img: Tensor) -> None:
 
 def _assert_threshold(img: Tensor, threshold: Union[float, Tensor]) -> None:
     bound = 1 if img.is_floating_point() else 255
-    if threshold > bound:
+    threshold_f = threshold if isinstance(threshold, float) else threshold.item()
+    if threshold_f > bound:
         raise TypeError("Threshold should be less than bound of img.")
 
 
@@ -159,7 +160,8 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
 
 def adjust_brightness(img: Tensor, brightness_factor: Union[float, Tensor]) -> Tensor:
-    if brightness_factor < 0:
+    brightness_factor_f = brightness_factor if isinstance(brightness_factor, float) else brightness_factor.item()
+    if brightness_factor_f < 0:
         raise ValueError(f"brightness_factor ({brightness_factor}) is not non-negative.")
 
     _assert_image_tensor(img)
@@ -170,7 +172,8 @@ def adjust_brightness(img: Tensor, brightness_factor: Union[float, Tensor]) -> T
 
 
 def adjust_contrast(img: Tensor, contrast_factor: Union[float, Tensor]) -> Tensor:
-    if contrast_factor < 0:
+    contrast_factor_f = contrast_factor if isinstance(contrast_factor, float) else contrast_factor.item()
+    if contrast_factor_f < 0:
         raise ValueError(f"contrast_factor ({contrast_factor}) is not non-negative.")
 
     _assert_image_tensor(img)
@@ -187,7 +190,8 @@ def adjust_contrast(img: Tensor, contrast_factor: Union[float, Tensor]) -> Tenso
 
 
 def adjust_hue(img: Tensor, hue_factor: Union[float, Tensor]) -> Tensor:
-    if not (-0.5 <= hue_factor <= 0.5):
+    hue_factor_f = hue_factor if isinstance(hue_factor, float) else hue_factor.item()
+    if not (-0.5 <= hue_factor_f <= 0.5):
         raise ValueError(f"hue_factor ({hue_factor}) is not in [-0.5, 0.5].")
 
     if not (isinstance(img, torch.Tensor)):
@@ -216,7 +220,8 @@ def adjust_hue(img: Tensor, hue_factor: Union[float, Tensor]) -> Tensor:
 
 
 def adjust_saturation(img: Tensor, saturation_factor: Union[float, Tensor]) -> Tensor:
-    if saturation_factor < 0:
+    saturation_factor_f = saturation_factor if isinstance(saturation_factor, float) else saturation_factor.item()
+    if saturation_factor_f < 0:
         raise ValueError(f"saturation_factor ({saturation_factor}) is not non-negative.")
 
     _assert_image_tensor(img)
@@ -235,7 +240,8 @@ def adjust_gamma(img: Tensor, gamma: Union[float, Tensor], gain: Union[float, Te
 
     _assert_channels(img, [1, 3])
 
-    if gamma < 0:
+    gamma_f = gamma if isinstance(gamma, float) else gamma.item()
+    if gamma_f < 0:
         raise ValueError("Gamma should be a non-negative real number")
 
     result = img

@@ -1010,7 +1010,7 @@ def _get_inverse_affine_matrix_tensor(
 
 def rotate(
     img: Tensor,
-    angle: Union[float, Tensor],
+    angle: Union[int, float, Tensor],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
     center: Optional[Union[List[float], Tensor]] = None,
@@ -1089,7 +1089,7 @@ def rotate(
     if isinstance(angle, Tensor):
         angle = -angle
     else:
-        angle = -angle
+        angle = -1.0 * angle
     matrix = _get_inverse_affine_matrix_tensor(center_f, angle, [0.0, 0.0], 1.0, [0.0, 0.0])
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
