@@ -1,4 +1,3 @@
-import warnings
 from functools import partial
 from typing import Any, Optional
 
@@ -6,15 +5,16 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.alexnet import AlexNet
-from ._api import Weights, WeightEntry
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
-__all__ = ["AlexNet", "AlexNetWeights", "alexnet"]
+__all__ = ["AlexNet", "AlexNet_Weights", "alexnet"]
 
 
-class AlexNetWeights(Weights):
-    ImageNet1K_RefV1 = WeightEntry(
+class AlexNet_Weights(WeightsEnum):
+    ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/alexnet-owt-7be5be79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -26,19 +26,19 @@ class AlexNetWeights(Weights):
             "acc@5": 79.066,
         },
     )
+    default = ImageNet1K_V1
 
 
-def alexnet(weights: Optional[AlexNetWeights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
-    if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = AlexNetWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained") else None
-    weights = AlexNetWeights.verify(weights)
+@handle_legacy_interface(weights=("pretrained", AlexNet_Weights.ImageNet1K_V1))
+def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
+    weights = AlexNet_Weights.verify(weights)
+
     if weights is not None:
-        kwargs["num_classes"] = len(weights.meta["categories"])
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = AlexNet(**kwargs)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model

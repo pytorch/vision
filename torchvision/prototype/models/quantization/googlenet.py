@@ -10,20 +10,21 @@ from ....models.quantization.googlenet import (
     _replace_relu,
     quantize_model,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
-from ..googlenet import GoogLeNetWeights
+from .._utils import handle_legacy_interface, _ovewrite_named_param
+from ..googlenet import GoogLeNet_Weights
 
 
 __all__ = [
     "QuantizableGoogLeNet",
-    "QuantizedGoogLeNetWeights",
+    "GoogLeNet_QuantizedWeights",
     "googlenet",
 ]
 
 
-class QuantizedGoogLeNetWeights(Weights):
-    ImageNet1K_FBGEMM_TFV1 = WeightEntry(
+class GoogLeNet_QuantizedWeights(WeightsEnum):
+    ImageNet1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -33,44 +34,40 @@ class QuantizedGoogLeNetWeights(Weights):
             "backend": "fbgemm",
             "quantization": "ptq",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
-            "unquantized": GoogLeNetWeights.ImageNet1K_TFV1,
+            "unquantized": GoogLeNet_Weights.ImageNet1K_V1,
             "acc@1": 69.826,
             "acc@5": 89.404,
         },
     )
+    default = ImageNet1K_FBGEMM_V1
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: GoogLeNet_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else GoogLeNet_Weights.ImageNet1K_V1,
+    )
+)
 def googlenet(
-    weights: Optional[Union[QuantizedGoogLeNetWeights, GoogLeNetWeights]] = None,
+    *,
+    weights: Optional[Union[GoogLeNet_QuantizedWeights, GoogLeNet_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
-    if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        if kwargs.pop("pretrained"):
-            weights = QuantizedGoogLeNetWeights.ImageNet1K_FBGEMM_TFV1 if quantize else GoogLeNetWeights.ImageNet1K_TFV1
-        else:
-            weights = None
-
-    if quantize:
-        weights = QuantizedGoogLeNetWeights.verify(weights)
-    else:
-        weights = GoogLeNetWeights.verify(weights)
+    weights = (GoogLeNet_QuantizedWeights if quantize else GoogLeNet_Weights).verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", False)
     if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if original_aux_logits:
-            warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
-            )
-        kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
-        kwargs["num_classes"] = len(weights.meta["categories"])
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "init_weights", False)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         if "backend" in weights.meta:
-            kwargs["backend"] = weights.meta["backend"]
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableGoogLeNet(**kwargs)
@@ -79,10 +76,14 @@ def googlenet(
         quantize_model(model, backend)
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
             model.aux1 = None  # type: ignore[assignment]
             model.aux2 = None  # type: ignore[assignment]
+        else:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
+            )
 
     return model

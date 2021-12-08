@@ -15,19 +15,20 @@ from ....models.detection.ssdlite import (
     SSD,
     SSDLiteHead,
 )
-from .._api import Weights, WeightEntry
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
-from ..mobilenetv3 import MobileNetV3LargeWeights, mobilenet_v3_large
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
 
 
 __all__ = [
-    "SSDlite320MobileNetV3LargeFPNWeights",
+    "SSDLite320_MobileNet_V3_Large_Weights",
     "ssdlite320_mobilenet_v3_large",
 ]
 
 
-class SSDlite320MobileNetV3LargeFPNWeights(Weights):
-    Coco_RefV1 = WeightEntry(
+class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
+    Coco_V1 = Weights(
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
         transforms=CocoEval,
         meta={
@@ -38,32 +39,34 @@ class SSDlite320MobileNetV3LargeFPNWeights(Weights):
             "map": 21.3,
         },
     )
+    default = Coco_V1
 
 
+@handle_legacy_interface(
+    weights=("pretrained", SSDLite320_MobileNet_V3_Large_Weights.Coco_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+)
 def ssdlite320_mobilenet_v3_large(
-    weights: Optional[SSDlite320MobileNetV3LargeFPNWeights] = None,
-    weights_backbone: Optional[MobileNetV3LargeWeights] = None,
+    *,
+    weights: Optional[SSDLite320_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     norm_layer: Optional[Callable[..., nn.Module]] = None,
     **kwargs: Any,
 ) -> SSD:
-    if "pretrained" in kwargs:
-        warnings.warn("The argument pretrained is deprecated, please use weights instead.")
-        weights = SSDlite320MobileNetV3LargeFPNWeights.Coco_RefV1 if kwargs.pop("pretrained") else None
-    weights = SSDlite320MobileNetV3LargeFPNWeights.verify(weights)
-    if "pretrained_backbone" in kwargs:
-        warnings.warn("The argument pretrained_backbone is deprecated, please use weights_backbone instead.")
-        weights_backbone = MobileNetV3LargeWeights.ImageNet1K_RefV1 if kwargs.pop("pretrained_backbone") else None
-    weights_backbone = MobileNetV3LargeWeights.verify(weights_backbone)
+    weights = SSDLite320_MobileNet_V3_Large_Weights.verify(weights)
+    weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
 
     if "size" in kwargs:
-        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+        warnings.warn("The size of the model is already fixed; ignoring the parameter.")
 
     if weights is not None:
         weights_backbone = None
-        num_classes = len(weights.meta["categories"])
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
         weights is not None or weights_backbone is not None, trainable_backbone_layers, 6, 6
@@ -114,6 +117,6 @@ def ssdlite320_mobilenet_v3_large(
     )
 
     if weights is not None:
-        model.load_state_dict(weights.state_dict(progress=progress))
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
