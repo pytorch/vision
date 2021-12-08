@@ -8,7 +8,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    TarArchiveReader,
     Shuffler,
     Filter,
     IterKeyZipper,
@@ -38,6 +37,7 @@ class Caltech101(Dataset):
         images = HttpResource(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
             sha256="af6ece2f339791ca20f855943d8b55dd60892c0a25105fcd631ee3d6430f9926",
+            decompress=True,
         )
         anns = HttpResource(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
@@ -119,11 +119,9 @@ class Caltech101(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
-        images_dp = TarArchiveReader(images_dp)
         images_dp = Filter(images_dp, self._is_not_background_image)
         images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-        anns_dp = TarArchiveReader(anns_dp)
         anns_dp = Filter(anns_dp, self._is_ann)
 
         dp = IterKeyZipper(
@@ -137,8 +135,7 @@ class Caltech101(Dataset):
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
-        dp = TarArchiveReader(dp)
+        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
         dp = Filter(dp, self._is_not_background_image)
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
@@ -185,13 +182,11 @@ class Caltech256(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
-        dp = TarArchiveReader(dp)
         dp = Filter(dp, self._is_not_rogue_file)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
-        dp = TarArchiveReader(dp)
+        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
         dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
         return [name.split(".")[1] for name in sorted(dir_names)]

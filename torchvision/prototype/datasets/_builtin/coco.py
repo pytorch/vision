@@ -11,7 +11,6 @@ from torchdata.datapipes.iter import (
     Shuffler,
     Filter,
     Demultiplexer,
-    ZipArchiveReader,
     Grouper,
     IterKeyZipper,
     JsonParser,
@@ -180,13 +179,10 @@ class Coco(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, meta_dp = resource_dps
 
-        images_dp = ZipArchiveReader(images_dp)
-
         if config.annotations is None:
             dp = Shuffler(images_dp)
             return Mapper(dp, self._collate_and_decode_image, fn_kwargs=dict(decoder=decoder))
 
-        meta_dp = ZipArchiveReader(meta_dp)
         meta_dp = Filter(
             meta_dp,
             self._filter_meta_files,
@@ -234,8 +230,7 @@ class Coco(Dataset):
         config = self.default_config
         resources = self.resources(config)
 
-        dp = resources[1].to_datapipe(pathlib.Path(root) / self.name)
-        dp = ZipArchiveReader(dp)
+        dp = resources[1].load(pathlib.Path(root) / self.name)
         dp = Filter(
             dp, self._filter_meta_files, fn_kwargs=dict(split=config.split, year=config.year, annotations="instances")
         )
