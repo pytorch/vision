@@ -1013,7 +1013,7 @@ def rotate(
     angle: Union[int, float, Tensor],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    center: Optional[Union[List[float], Tensor]] = None,
+    center: Optional[Union[List[float], Tuple[float, float], Tensor]] = None,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
 ) -> Tensor:
@@ -1066,9 +1066,6 @@ def rotate(
 
     if center is not None and not isinstance(center, (list, tuple, Tensor)):
         raise TypeError("Argument center should be a sequence")
-
-    if isinstance(center, tuple):
-        center = list(center)
 
     if not isinstance(interpolation, InterpolationMode):
         raise TypeError("Argument interpolation should be a InterpolationMode")
