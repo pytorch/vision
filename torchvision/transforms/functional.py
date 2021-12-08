@@ -1013,7 +1013,7 @@ def rotate(
     angle: Union[int, float, Tensor],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    center: Optional[Union[List[float], Tensor]] = None,
+    center: Optional[Union[List[float], Tuple[float, ...], Tensor]] = None,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
 ) -> Tensor:
@@ -1086,17 +1086,20 @@ def rotate(
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
+    if isinstance(angle, int):
+        angle = float(angle)
+
     if isinstance(angle, Tensor):
         angle = -angle
     else:
-        angle = float(-angle)
+        angle = -angle
     matrix = _get_inverse_affine_matrix_tensor(center_f, angle, [0.0, 0.0], 1.0, [0.0, 0.0])
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
 
 def affine(
     img: Tensor,
-    angle: Union[float, Tensor] = 0.0,
+    angle: Union[int, float, Tensor] = 0.0,
     translate: Optional[Union[List[float], Tensor]] = None,
     scale: Union[float, Tensor] = 1.0,
     shear: Optional[Union[List[float], Tensor]] = None,

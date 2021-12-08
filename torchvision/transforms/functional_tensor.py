@@ -589,7 +589,7 @@ def _assert_grid_transform_inputs(
         raise TypeError("Argument matrix should be a list or Tensor")
 
     if matrix is not None and len(matrix) != 6:
-        raise ValueError("Argument matrix should have 6 float values")
+        raise ValueError("Argument matrix should have 6 float values", str(matrix))
 
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
