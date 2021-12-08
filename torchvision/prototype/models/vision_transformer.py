@@ -5,7 +5,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Mapping, Optional
+from typing import Any, Callable, Dict, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -27,6 +27,8 @@ __all__ = [
     "vit_l_16",
     "vit_l_32",
 ]
+
+StateDictType = Union[Dict[str, torch.Tensor], "OrderedDict[str, torch.Tensor]"]
 
 
 class MLPBlock(nn.Sequential):
@@ -382,8 +384,8 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
 
 
 def interpolate_embeddings(
-    image_size: int, patch_size: int, model_state: Mapping[str, torch.Tensor], reset_heads=False
-):
+    image_size: int, patch_size: int, model_state: StateDictType, reset_heads=False
+) -> StateDictType:
     """This function helps interpolating positional embeddings during checkpoint loading,
     especially when you want to apply a pre-trained model on images with different resolution.
 
