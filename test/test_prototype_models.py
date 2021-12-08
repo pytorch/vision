@@ -3,7 +3,7 @@ import importlib
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu, run_on_env_var
+from common_utils import cpu_and_gpu, run_on_env_var, needs_cuda
 from torchvision.prototype import models
 from torchvision.prototype.models._api import WeightsEnum, Weights
 from torchvision.prototype.models._utils import handle_legacy_interface
@@ -75,12 +75,46 @@ def test_get_weight(name, weight):
     + TM.get_models_from_module(models.detection)
     + TM.get_models_from_module(models.quantization)
     + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video),
+    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(models.optical_flow),
 )
 def test_naming_conventions(model_fn):
     weights_enum = _get_model_weights(model_fn)
+    print(weights_enum)
     assert weights_enum is not None
     assert len(weights_enum) == 0 or hasattr(weights_enum, "default")
+
+
+@pytest.mark.parametrize(
+    "model_fn",
+    TM.get_models_from_module(models)
+    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(models.video),
+)
+def test_schema_meta_validation(model_fn):
+    classification_fields = ["size", "categories", "acc@1", "acc@5"]
+    defaults = {
+        "all": ["interpolation", "recipe"],
+        "models": classification_fields,
+        "detection": ["categories", "map"],
+        "quantization": classification_fields + ["backend", "quantization", "unquantized"],
+        "segmentation": ["categories", "mIoU", "acc"],
+        "video": classification_fields,
+    }
+    module_name = model_fn.__module__.split(".")[-2]
+    fields = set(defaults["all"] + defaults[module_name])
+
+    weights_enum = _get_model_weights(model_fn)
+
+    problematic_weights = {}
+    for w in weights_enum:
+        missing_fields = fields - set(w.meta.keys())
+        if missing_fields:
+            problematic_weights[w] = missing_fields
+
+    assert not problematic_weights
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
@@ -117,13 +151,22 @@ def test_video_model(model_fn, dev):
     TM.test_video_model(model_fn, dev)
 
 
+@needs_cuda
+@pytest.mark.parametrize("model_builder", TM.get_models_from_module(models.optical_flow))
+@pytest.mark.parametrize("scripted", (False, True))
+@run_if_test_with_prototype
+def test_raft(model_builder, scripted):
+    TM.test_raft(model_builder, scripted)
+
+
 @pytest.mark.parametrize(
     "model_fn",
     TM.get_models_from_module(models)
     + TM.get_models_from_module(models.detection)
     + TM.get_models_from_module(models.quantization)
     + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video),
+    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(models.optical_flow),
 )
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
@@ -144,6 +187,9 @@ def test_old_vs_new_factory(model_fn, dev):
         },
         "video": {
             "input_shape": (1, 3, 4, 112, 112),
+        },
+        "optical_flow": {
+            "input_shape": (1, 3, 128, 128),
         },
     }
     model_name = model_fn.__name__
@@ -171,7 +217,7 @@ def test_smoke():
 # With this filter, every unexpected warning will be turned into an error
 @pytest.mark.filterwarnings("error")
 class TestHandleLegacyInterface:
-    class TestWeights(WeightsEnum):
+    class ModelWeights(WeightsEnum):
         Sentinel = Weights(url="https://pytorch.org", transforms=lambda x: x, meta=dict())
 
     @pytest.mark.parametrize(
@@ -179,11 +225,11 @@ class TestHandleLegacyInterface:
         [
             pytest.param(dict(), id="empty"),
             pytest.param(dict(weights=None), id="None"),
-            pytest.param(dict(weights=TestWeights.Sentinel), id="Weights"),
+            pytest.param(dict(weights=ModelWeights.Sentinel), id="Weights"),
         ],
     )
     def test_no_warn(self, kwargs):
-        @handle_legacy_interface(weights=("pretrained", self.TestWeights.Sentinel))
+        @handle_legacy_interface(weights=("pretrained", self.ModelWeights.Sentinel))
         def builder(*, weights=None):
             pass
 
@@ -191,7 +237,7 @@ class TestHandleLegacyInterface:
 
     @pytest.mark.parametrize("pretrained", (True, False))
     def test_pretrained_pos(self, pretrained):
-        @handle_legacy_interface(weights=("pretrained", self.TestWeights.Sentinel))
+        @handle_legacy_interface(weights=("pretrained", self.ModelWeights.Sentinel))
         def builder(*, weights=None):
             pass
 
@@ -200,7 +246,7 @@ class TestHandleLegacyInterface:
 
     @pytest.mark.parametrize("pretrained", (True, False))
     def test_pretrained_kw(self, pretrained):
-        @handle_legacy_interface(weights=("pretrained", self.TestWeights.Sentinel))
+        @handle_legacy_interface(weights=("pretrained", self.ModelWeights.Sentinel))
         def builder(*, weights=None):
             pass
 
@@ -210,12 +256,12 @@ class TestHandleLegacyInterface:
     @pytest.mark.parametrize("pretrained", (True, False))
     @pytest.mark.parametrize("positional", (True, False))
     def test_equivalent_behavior_weights(self, pretrained, positional):
-        @handle_legacy_interface(weights=("pretrained", self.TestWeights.Sentinel))
+        @handle_legacy_interface(weights=("pretrained", self.ModelWeights.Sentinel))
         def builder(*, weights=None):
             pass
 
         args, kwargs = ((pretrained,), dict()) if positional else ((), dict(pretrained=pretrained))
-        with pytest.warns(UserWarning, match=f"weights={self.TestWeights.Sentinel if pretrained else None}"):
+        with pytest.warns(UserWarning, match=f"weights={self.ModelWeights.Sentinel if pretrained else None}"):
             builder(*args, **kwargs)
 
     def test_multi_params(self):
@@ -224,7 +270,7 @@ class TestHandleLegacyInterface:
 
         @handle_legacy_interface(
             **{
-                weights_param: (pretrained_param, self.TestWeights.Sentinel)
+                weights_param: (pretrained_param, self.ModelWeights.Sentinel)
                 for weights_param, pretrained_param in zip(weights_params, pretrained_params)
             }
         )
@@ -239,7 +285,7 @@ class TestHandleLegacyInterface:
         @handle_legacy_interface(
             weights=(
                 "pretrained",
-                lambda kwargs: self.TestWeights.Sentinel if kwargs["flag"] else None,
+                lambda kwargs: self.ModelWeights.Sentinel if kwargs["flag"] else None,
             )
         )
         def builder(*, weights=None, flag):
