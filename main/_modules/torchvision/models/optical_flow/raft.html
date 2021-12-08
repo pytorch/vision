@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+7cb82cd ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+2afeea5 ) &#x25BC</a>
     </div>
     
 
@@ -327,6 +327,7 @@
 <span class="kn">from</span> <span class="nn">torch.nn.modules.instancenorm</span> <span class="kn">import</span> <span class="n">InstanceNorm2d</span>
 <span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">ConvNormActivation</span>
 
+<span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">make_coords_grid</span><span class="p">,</span> <span class="n">upsample_flow</span>
 
 
@@ -751,6 +752,7 @@
 <span class="sd">                If ``None`` (default), the flow is upsampled using interpolation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">feature_encoder</span> <span class="o">=</span> <span class="n">feature_encoder</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">context_encoder</span> <span class="o">=</span> <span class="n">context_encoder</span>

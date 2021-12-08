@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+7cb82cd ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+2afeea5 ) &#x25BC</a>
     </div>
     
 
@@ -343,9 +343,9 @@
 
 
 <span class="k">class</span> <span class="nc">FlowDataset</span><span class="p">(</span><span class="n">ABC</span><span class="p">,</span> <span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="c1"># Some datasets like Kitti have a built-in valid mask, indicating which flow values are valid</span>
-    <span class="c1"># For those we return (img1, img2, flow, valid), and for the rest we return (img1, img2, flow),</span>
-    <span class="c1"># and it&#39;s up to whatever consumes the dataset to decide what `valid` should be.</span>
+    <span class="c1"># Some datasets like Kitti have a built-in valid_flow_mask, indicating which flow values are valid</span>
+    <span class="c1"># For those we return (img1, img2, flow, valid_flow_mask), and for the rest we return (img1, img2, flow),</span>
+    <span class="c1"># and it&#39;s up to whatever consumes the dataset to decide what valid_flow_mask should be.</span>
     <span class="n">_has_builtin_flow_mask</span> <span class="o">=</span> <span class="kc">False</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">root</span><span class="p">,</span> <span class="n">transforms</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -357,11 +357,14 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">=</span> <span class="p">[]</span>
 
     <span class="k">def</span> <span class="nf">_read_img</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+        <span class="n">img</span> <span class="o">=</span> <span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">img</span><span class="o">.</span><span class="n">mode</span> <span class="o">!=</span> <span class="s2">&quot;RGB&quot;</span><span class="p">:</span>
+            <span class="n">img</span> <span class="o">=</span> <span class="n">img</span><span class="o">.</span><span class="n">convert</span><span class="p">(</span><span class="s2">&quot;RGB&quot;</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">img</span>
 
     <span class="nd">@abstractmethod</span>
     <span class="k">def</span> <span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="c1"># Return the flow or a tuple with the flow and the valid mask if _has_builtin_flow_mask is True</span>
+        <span class="c1"># Return the flow or a tuple with the flow and the valid_flow_mask if _has_builtin_flow_mask is True</span>
         <span class="k">pass</span>
 
     <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
@@ -372,22 +375,26 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span><span class="p">:</span>  <span class="c1"># it will be empty for some dataset when split=&quot;test&quot;</span>
             <span class="n">flow</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
             <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_builtin_flow_mask</span><span class="p">:</span>
-                <span class="n">flow</span><span class="p">,</span> <span class="n">valid</span> <span class="o">=</span> <span class="n">flow</span>
+                <span class="n">flow</span><span class="p">,</span> <span class="n">valid_flow_mask</span> <span class="o">=</span> <span class="n">flow</span>
             <span class="k">else</span><span class="p">:</span>
-                <span class="n">valid</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">valid_flow_mask</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="n">flow</span> <span class="o">=</span> <span class="n">valid</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">flow</span> <span class="o">=</span> <span class="n">valid_flow_mask</span> <span class="o">=</span> <span class="kc">None</span>
 
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">valid</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">(</span><span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">valid</span><span class="p">)</span>
+            <span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">valid_flow_mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">(</span><span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">valid_flow_mask</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_builtin_flow_mask</span><span class="p">:</span>
-            <span class="k">return</span> <span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">valid</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_has_builtin_flow_mask</span> <span class="ow">or</span> <span class="n">valid_flow_mask</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># The `or valid_flow_mask is not None` part is here because the mask can be generated within a transform</span>
+            <span class="k">return</span> <span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">,</span> <span class="n">flow</span><span class="p">,</span> <span class="n">valid_flow_mask</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">img1</span><span class="p">,</span> <span class="n">img2</span><span class="p">,</span> <span class="n">flow</span>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="fm">__rmul__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">v</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">ConcatDataset</span><span class="p">([</span><span class="bp">self</span><span class="p">]</span> <span class="o">*</span> <span class="n">v</span><span class="p">)</span>
 
 
 <div class="viewcode-block" id="Sintel"><a class="viewcode-back" href="../../../generated/torchvision.datasets.Sintel.html#torchvision.datasets.Sintel">[docs]</a><span class="k">class</span> <span class="nc">Sintel</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
@@ -426,8 +433,8 @@
 <span class="sd">        pass_name (string, optional): The pass to use, either &quot;clean&quot; (default), &quot;final&quot;, or &quot;both&quot;. See link above for</span>
 <span class="sd">            details on the different passes.</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
-<span class="sd">            ``img1, img2, flow, valid`` and returns a transformed version.</span>
-<span class="sd">            ``valid`` is expected for consistency with other datasets which</span>
+<span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
+<span class="sd">            ``valid_flow_mask`` is expected for consistency with other datasets which</span>
 <span class="sd">            return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -459,9 +466,11 @@
 <span class="sd">            index(int): The index of the example to retrieve</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple: If ``split=&quot;train&quot;`` a 3-tuple with ``(img1, img2, flow)``.</span>
-<span class="sd">            The flow is a numpy array of shape (2, H, W) and the images are PIL images. If `split=&quot;test&quot;`, a</span>
-<span class="sd">            3-tuple with ``(img1, img2, None)`` is returned.</span>
+<span class="sd">            tuple: A 3-tuple with ``(img1, img2, flow)``.</span>
+<span class="sd">            The flow is a numpy array of shape (2, H, W) and the images are PIL images.</span>
+<span class="sd">            ``flow`` is None if ``split=&quot;test&quot;``.</span>
+<span class="sd">            If a valid flow mask is generated within the ``transforms`` parameter,</span>
+<span class="sd">            a 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` is returned.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
 
@@ -486,7 +495,7 @@
 <span class="sd">        root (string): Root directory of the KittiFlow Dataset.</span>
 <span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;test&quot;</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
-<span class="sd">            ``img1, img2, flow, valid`` and returns a transformed version.</span>
+<span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_has_builtin_flow_mask</span> <span class="o">=</span> <span class="kc">True</span>
@@ -518,11 +527,11 @@
 <span class="sd">            index(int): The index of the example to retrieve</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple: If ``split=&quot;train&quot;`` a 4-tuple with ``(img1, img2, flow,</span>
-<span class="sd">            valid)`` where ``valid`` is a numpy boolean mask of shape (H, W)</span>
+<span class="sd">            tuple: A 4-tuple with ``(img1, img2, flow, valid_flow_mask)``</span>
+<span class="sd">            where ``valid_flow_mask`` is a numpy boolean mask of shape (H, W)</span>
 <span class="sd">            indicating which flow values are valid. The flow is a numpy array of</span>
-<span class="sd">            shape (2, H, W) and the images are PIL images. If `split=&quot;test&quot;`, a</span>
-<span class="sd">            4-tuple with ``(img1, img2, None, None)`` is returned.</span>
+<span class="sd">            shape (2, H, W) and the images are PIL images. ``flow`` and ``valid_flow_mask`` are None if</span>
+<span class="sd">            ``split=&quot;test&quot;``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
@@ -551,8 +560,8 @@
 <span class="sd">        root (string): Root directory of the FlyingChairs Dataset.</span>
 <span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;val&quot;</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
-<span class="sd">            ``img1, img2, flow, valid`` and returns a transformed version.</span>
-<span class="sd">            ``valid`` is expected for consistency with other datasets which</span>
+<span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
+<span class="sd">            ``valid_flow_mask`` is expected for consistency with other datasets which</span>
 <span class="sd">            return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -588,6 +597,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: A 3-tuple with ``(img1, img2, flow)``.</span>
 <span class="sd">            The flow is a numpy array of shape (2, H, W) and the images are PIL images.</span>
+<span class="sd">            ``flow`` is None if ``split=&quot;val&quot;``.</span>
+<span class="sd">            If a valid flow mask is generated within the ``transforms`` parameter,</span>
+<span class="sd">            a 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` is returned.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
@@ -619,8 +631,8 @@
 <span class="sd">            details on the different passes.</span>
 <span class="sd">        camera (string, optional): Which camera to return images from. Can be either &quot;left&quot; (default) or &quot;right&quot; or &quot;both&quot;.</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
-<span class="sd">            ``img1, img2, flow, valid`` and returns a transformed version.</span>
-<span class="sd">            ``valid`` is expected for consistency with other datasets which</span>
+<span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
+<span class="sd">            ``valid_flow_mask`` is expected for consistency with other datasets which</span>
 <span class="sd">            return a built-in valid mask, such as :class:`~torchvision.datasets.KittiFlow`.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
@@ -676,6 +688,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple: A 3-tuple with ``(img1, img2, flow)``.</span>
 <span class="sd">            The flow is a numpy array of shape (2, H, W) and the images are PIL images.</span>
+<span class="sd">            ``flow`` is None if ``split=&quot;test&quot;``.</span>
+<span class="sd">            If a valid flow mask is generated within the ``transforms`` parameter,</span>
+<span class="sd">            a 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` is returned.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
@@ -701,7 +716,7 @@
 <span class="sd">        root (string): Root directory of the HD1K Dataset.</span>
 <span class="sd">        split (string, optional): The dataset split, either &quot;train&quot; (default) or &quot;test&quot;</span>
 <span class="sd">        transforms (callable, optional): A function/transform that takes in</span>
-<span class="sd">            ``img1, img2, flow, valid`` and returns a transformed version.</span>
+<span class="sd">            ``img1, img2, flow, valid_flow_mask`` and returns a transformed version.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">_has_builtin_flow_mask</span> <span class="o">=</span> <span class="kc">True</span>
@@ -741,11 +756,11 @@
 <span class="sd">            index(int): The index of the example to retrieve</span>
 
 <span class="sd">        Returns:</span>
-<span class="sd">            tuple: If ``split=&quot;train&quot;`` a 4-tuple with ``(img1, img2, flow,</span>
-<span class="sd">            valid)`` where ``valid`` is a numpy boolean mask of shape (H, W)</span>
+<span class="sd">            tuple: A 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` where ``valid_flow_mask``</span>
+<span class="sd">            is a numpy boolean mask of shape (H, W)</span>
 <span class="sd">            indicating which flow values are valid. The flow is a numpy array of</span>
-<span class="sd">            shape (2, H, W) and the images are PIL images. If `split=&quot;test&quot;`, a</span>
-<span class="sd">            4-tuple with ``(img1, img2, None, None)`` is returned.</span>
+<span class="sd">            shape (2, H, W) and the images are PIL images. ``flow`` and ``valid_flow_mask`` are None if</span>
+<span class="sd">            ``split=&quot;test&quot;``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
@@ -770,11 +785,12 @@
 <span class="k">def</span> <span class="nf">_read_16bits_png_with_flow_and_valid_mask</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
 
     <span class="n">flow_and_valid</span> <span class="o">=</span> <span class="n">_read_png_16</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
-    <span class="n">flow</span><span class="p">,</span> <span class="n">valid</span> <span class="o">=</span> <span class="n">flow_and_valid</span><span class="p">[:</span><span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">flow_and_valid</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+    <span class="n">flow</span><span class="p">,</span> <span class="n">valid_flow_mask</span> <span class="o">=</span> <span class="n">flow_and_valid</span><span class="p">[:</span><span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:],</span> <span class="n">flow_and_valid</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
     <span class="n">flow</span> <span class="o">=</span> <span class="p">(</span><span class="n">flow</span> <span class="o">-</span> <span class="mi">2</span> <span class="o">**</span> <span class="mi">15</span><span class="p">)</span> <span class="o">/</span> <span class="mi">64</span>  <span class="c1"># This conversion is explained somewhere on the kitti archive</span>
+    <span class="n">valid_flow_mask</span> <span class="o">=</span> <span class="n">valid_flow_mask</span><span class="o">.</span><span class="n">bool</span><span class="p">()</span>
 
     <span class="c1"># For consistency with other datasets, we convert to numpy</span>
-    <span class="k">return</span> <span class="n">flow</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">valid</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+    <span class="k">return</span> <span class="n">flow</span><span class="o">.</span><span class="n">numpy</span><span class="p">(),</span> <span class="n">valid_flow_mask</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
 
 
 <span class="k">def</span> <span class="nf">_read_pfm</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
