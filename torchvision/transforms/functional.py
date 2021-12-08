@@ -1097,9 +1097,9 @@ def rotate(
 def affine(
     img: Tensor,
     angle: Union[float, Tensor] = 0.0,
-    translate: Union[List[float], Tensor] = [0.0, 0.0],
+    translate: Union[List[float], Tensor] = None,
     scale: Union[float, Tensor] = 1.0,
-    shear: Union[List[float], Tensor] = [0.0, 0.0],
+    shear: Union[List[float], Tensor] = None,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
@@ -1135,6 +1135,12 @@ def affine(
     Returns:
         PIL Image or Tensor: Transformed image.
     """
+    if translate is None:
+        translate = [0.0, 0.0]
+
+    if shear is None:
+        shear = [0.0, 0.0]
+
     if resample is not None:
         warnings.warn(
             "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
