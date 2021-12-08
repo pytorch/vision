@@ -31,8 +31,8 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn",
-            "box_map": 37.9,
-            "mask_map": 34.6,
+            "map": 37.9,
+            "map_mask": 34.6,
         },
     )
     default = Coco_V1
