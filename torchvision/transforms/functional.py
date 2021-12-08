@@ -1203,7 +1203,9 @@ def affine(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
-    translate_f = translate if isinstance(translate, Tensor) else [1.0 * t for t in translate]
+    translate_f = translate
+    if isinstance(translate, list):
+        translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix_tensor([0.0, 0.0], angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
