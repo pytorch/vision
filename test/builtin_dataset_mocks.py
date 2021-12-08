@@ -29,6 +29,19 @@ __all__ = ["load"]
 DEFAULT_TEST_DECODER = object()
 
 
+class TestResource(datasets.utils.OnlineResource):
+    def __init__(self, *, dataset_name, dataset_config, **kwargs):
+        super().__init__(**kwargs)
+        self.dataset_name = dataset_name
+        self.dataset_config = dataset_config
+
+    def _download(self, _):
+        raise pytest.UsageError(
+            f"Dataset '{self.dataset_name}' requires the file '{self.file_name}' for {self.dataset_config}, "
+            f"but this file does not exist."
+        )
+
+
 class DatasetMocks:
     def __init__(self):
         self._mock_data_fns = {}
@@ -72,7 +85,7 @@ class DatasetMocks:
             )
         return mock_info
 
-    def _get(self, dataset, config):
+    def _get(self, dataset, config, root):
         name = dataset.info.name
         resources_and_mock_info = self._cache.get((name, config))
         if resources_and_mock_info:
@@ -87,19 +100,11 @@ class DatasetMocks:
                 f"Did you register the mock data function with `@DatasetMocks.register_mock_data_fn`?"
             )
 
-        root = self._tmp_home / name
-        root.mkdir(exist_ok=True)
+        mock_resources = [
+            TestResource(dataset_name=name, dataset_config=config, file_name=resource.file_name)
+            for resource in dataset.resources(config)
+        ]
         mock_info = self._parse_mock_info(fakedata_fn(dataset.info, root, config), name=name)
-
-        mock_resources = []
-        for resource in dataset.resources(config):
-            path = root / resource.file_name
-            if not path.exists() and path.is_file():
-                raise pytest.UsageError(
-                    f"Dataset '{name}' requires the file {path.name} for {config}, but this file does not exist."
-                )
-
-            mock_resources.append(datasets.utils.LocalResource(path))
 
         self._cache[(name, config)] = mock_resources, mock_info
         return mock_resources, mock_info
@@ -109,9 +114,13 @@ class DatasetMocks:
     ) -> Tuple[IterDataPipe, Dict[str, Any]]:
         dataset = find(name)
         config = dataset.info.make_config(split=split, **options)
-        resources, mock_info = self._get(dataset, config)
+
+        root = self._tmp_home / name
+        root.mkdir(exist_ok=True)
+        resources, mock_info = self._get(dataset, config, root)
+
         datapipe = dataset._make_datapipe(
-            [resource.to_datapipe() for resource in resources],
+            [resource.load(root) for resource in resources],
             config=config,
             decoder=DEFAULT_DECODER_MAP.get(dataset.info.type) if decoder is DEFAULT_DECODER else decoder,
         )
