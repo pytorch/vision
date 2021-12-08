@@ -345,7 +345,7 @@ setup_conda_cudatoolkit_plain_constraint() {
   else
     case "$CU_VERSION" in
       cu115)
-        export CONDA_CUDATOOLKIT_CONSTRAINT="cuda=11.5"
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.5"
         ;;
       cu113)
         export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.3"
