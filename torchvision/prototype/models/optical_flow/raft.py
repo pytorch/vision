@@ -97,7 +97,7 @@ class Raft_Small_Weights(WeightsEnum):
     )
     C_T_V2 = Weights(
         # Chairs + Things
-        url="https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
+        url="https://github.com/pytorch/vision/tree/main/references/optical_flow",
         transforms=RaftEval,
         meta={
             **_COMMON_META,
