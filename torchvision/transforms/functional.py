@@ -975,8 +975,8 @@ def _get_inverse_affine_matrix_tensor(
 
     # Inverted rotation matrix with scale and shear
     # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
-    zero = torch.zeros(1, device=a.device)
-    matrix = torch.cat([d, -b, zero, -c, a, zero]) / scale
+    zero = torch.zeros([], device=a.device)
+    matrix = torch.stack([d, -b, zero, -c, a, zero]) / scale
 
     # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
     # Apply center translation: C * RSS^-1 * C^-1 * T^-1
@@ -1167,9 +1167,11 @@ def affine(
     if isinstance(shear, tuple):
         shear = list(shear)
 
+    if isinstance(shear, Tensor):
+        shear = shear.flatten()
     if len(shear) == 1:
         if isinstance(shear, Tensor):
-            shear = shear.flatten().repeat(2)
+            shear = shear.repeat(2)
         else:
             shear = [shear[0], shear[0]]
 
