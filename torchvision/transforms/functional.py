@@ -975,7 +975,8 @@ def _get_inverse_affine_matrix_tensor(
 
     # Inverted rotation matrix with scale and shear
     # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
-    zero = torch.zeros([], device=a.device)
+    empty_list: List[int] = []
+    zero = torch.zeros(empty_list, device=a.device)
     matrix = torch.stack([d, -b, zero, -c, a, zero]) / scale
 
     # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
