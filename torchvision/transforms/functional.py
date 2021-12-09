@@ -962,7 +962,7 @@ def _get_inverse_affine_matrix_tensor(
     shear: Tensor,
 ) -> Tensor:
     rot = angle * torch.pi / 180.0
-    shear_rad = shear[0] * torch.pi / 180.0
+    shear_rad = shear * torch.pi / 180.0
     sx, sy = shear_rad[0], shear_rad[1]
     cx, cy = center[0], center[1]
     tx, ty = translate[0], translate[1]
