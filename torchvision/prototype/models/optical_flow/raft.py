@@ -79,18 +79,30 @@ class Raft_Large_Weights(WeightsEnum):
         },
     )
 
-    # C_T_SKHT_K_V1 = Weights(
-    #     # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning i.e.:
-    #     # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean) + Kitti
-    #     # Same as CT_SKHT with extra fine-tuning on Kitti
-    #     # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel and then on Kitti
-    #     url="",
-    #     transforms=RaftEval,
-    #     meta={
-    #         "recipe": "",
-    #         "epe": -1234,
-    #     },
-    # )
+    C_T_SKHT_K_V1 = Weights(
+        # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning, ported from the original repo (sintel-kitti.pth)
+        url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V1-4a6a5039.pth",
+        transforms=RaftEval,
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/princeton-vl/RAFT",
+            "kitti_train_f1-all": 5.10,
+        },
+    )
+
+    C_T_SKHT_K_V2 = Weights(
+        # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning i.e.:
+        # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean) + Kitti
+        # Same as CT_SKHT with extra fine-tuning on Kitti
+        # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel and then on Kitti
+        url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V2-b5c70766.pth",
+        transforms=RaftEval,
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
+            "kitti_train_f1-all": 5.19,
+        },
+    )
 
     default = C_T_V2
 
