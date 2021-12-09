@@ -1,7 +1,7 @@
 import argparse
 import warnings
-from pathlib import Path
 from math import ceil
+from pathlib import Path
 
 import torch
 import torchvision.models.optical_flow
