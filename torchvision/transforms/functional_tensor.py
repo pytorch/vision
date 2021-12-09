@@ -727,7 +727,7 @@ def _compute_output_size(matrix: Tensor, w: int, h: int) -> Tuple[int, int]:
             [-0.5 * w, 0.5 * h, 1.0],
             [0.5 * w, 0.5 * h, 1.0],
             [0.5 * w, -0.5 * h, 1.0],
-        ]
+        ], device=matrix.device
     )
     theta = matrix.reshape(1, 2, 3)
     new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
