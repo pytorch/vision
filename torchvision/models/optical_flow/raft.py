@@ -8,6 +8,8 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.ops import ConvNormActivation
 
+from ..._internally_replaced_utils import load_state_dict_from_url
+from ...utils import _log_api_usage_once
 from ._utils import grid_sample, make_coords_grid, upsample_flow
 
 
@@ -16,6 +18,12 @@ __all__ = (
     "raft_large",
     "raft_small",
 )
+
+
+_MODELS_URLS = {
+    "raft_large": "https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
+    "raft_small": "https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
+}
 
 
 class ResidualBlock(nn.Module):
@@ -432,6 +440,7 @@ class RAFT(nn.Module):
                 If ``None`` (default), the flow is upsampled using interpolation.
         """
         super().__init__()
+        _log_api_usage_once("models", self.__class__.__name__)
 
         self.feature_encoder = feature_encoder
         self.context_encoder = context_encoder
@@ -472,8 +481,8 @@ class RAFT(nn.Module):
         hidden_state = torch.tanh(hidden_state)
         context = F.relu(context)
 
-        coords0 = make_coords_grid(batch_size, h // 8, w // 8).cuda()
-        coords1 = make_coords_grid(batch_size, h // 8, w // 8).cuda()
+        coords0 = make_coords_grid(batch_size, h // 8, w // 8).to(fmap1.device)
+        coords1 = make_coords_grid(batch_size, h // 8, w // 8).to(fmap1.device)
 
         flow_predictions = []
         for _ in range(num_flow_updates):
@@ -494,6 +503,9 @@ class RAFT(nn.Module):
 
 def _raft(
     *,
+    arch=None,
+    pretrained=False,
+    progress=False,
     # Feature encoder
     feature_encoder_layers,
     feature_encoder_block,
@@ -558,7 +570,7 @@ def _raft(
             multiplier=0.25,  # See comment in MaskPredictor about this
         )
 
-    return RAFT(
+    model = RAFT(
         feature_encoder=feature_encoder,
         context_encoder=context_encoder,
         corr_block=corr_block,
@@ -566,6 +578,11 @@ def _raft(
         mask_predictor=mask_predictor,
         **kwargs,  # not really needed, all params should be consumed by now
     )
+    if pretrained:
+        state_dict = load_state_dict_from_url(_MODELS_URLS[arch], progress=progress)
+        model.load_state_dict(state_dict)
+
+    return model
 
 
 def raft_large(*, pretrained=False, progress=True, **kwargs):
@@ -573,7 +590,7 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Args:
-        pretrained (bool): TODO not implemented yet
+        pretrained (bool): Whether to use pretrained weights.
         progress (bool): If True, displays a progress bar of the download to stderr
         kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
             to override any default.
@@ -582,10 +599,10 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
         nn.Module: The model.
     """
 
-    if pretrained:
-        raise ValueError("Pretrained weights aren't available yet")
-
     return _raft(
+        arch="raft_large",
+        pretrained=pretrained,
+        progress=progress,
         # Feature encoder
         feature_encoder_layers=(64, 64, 96, 128, 256),
         feature_encoder_block=ResidualBlock,
@@ -618,7 +635,7 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Args:
-        pretrained (bool): TODO not implemented yet
+        pretrained (bool): Whether to use pretrained weights.
         progress (bool): If True, displays a progress bar of the download to stderr
         kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
             to override any default.
@@ -628,10 +645,10 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
 
     """
 
-    if pretrained:
-        raise ValueError("Pretrained weights aren't available yet")
-
     return _raft(
+        arch="raft_small",
+        pretrained=pretrained,
+        progress=progress,
         # Feature encoder
         feature_encoder_layers=(32, 32, 64, 96, 128),
         feature_encoder_block=BottleneckBlock,
