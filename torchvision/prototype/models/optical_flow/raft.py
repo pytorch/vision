@@ -49,17 +49,29 @@ class Raft_Large_Weights(WeightsEnum):
         },
     )
 
-    # C_T_SKHT_V1 = Weights(
-    #     # Chairs + Things + Sintel fine-tuning, i.e.:
-    #     # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean)
-    #     # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel
-    #     url="",
-    #     transforms=RaftEval,
-    #     meta={
-    #         "recipe": "",
-    #         "epe": -1234,
-    #     },
-    # )
+    C_T_SKHT_V1 = Weights(
+        # Chairs + Things + Sintel fine-tuning, ported from original paper repo (raft-sintel.pth)
+        url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth",
+        transforms=RaftEval,
+        meta={
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
+            "sintel_test_cleanpass_epe": 1.94,
+            "sintel_test_finalpass_epe": 3.18,
+        },
+    )
+
+    C_T_SKHT_V2 = Weights(
+        # Chairs + Things + Sintel fine-tuning, i.e.:
+        # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean)
+        # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel
+        url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
+        transforms=RaftEval,
+        meta={
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
+            "sintel_test_cleanpass_epe": 1.819,
+            "sintel_test_finalpass_epe": 3.067,
+        },
+    )
 
     # C_T_SKHT_K_V1 = Weights(
     #     # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning i.e.:

@@ -210,7 +210,8 @@ def main(args):
 
     if args.resume is not None:
         d = torch.load(args.resume, map_location="cpu")
-        model.load_state_dict(d, strict=True)
+        # model.load_state_dict(d, strict=True)
+        model.module.load_state_dict(d, strict=True)
 
     if args.train_dataset is None:
         # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
