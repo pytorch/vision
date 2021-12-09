@@ -1066,7 +1066,7 @@ def rotate(
     # we need to set -angle.
     angle = -torch.as_tensor(angle, dtype=torch.float, device=img.device)
     translate = torch.zeros(2, dtype=torch.float, device=img.device)
-    scale = torch.zeros(1, dtype=torch.float, device=img.device)
+    scale = torch.ones(1, dtype=torch.float, device=img.device)
     shear = torch.zeros(2, dtype=torch.float, device=img.device)
     matrix = _get_inverse_affine_matrix_tensor(center_t, angle, translate, scale, shear)
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
