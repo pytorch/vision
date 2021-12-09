@@ -58,7 +58,8 @@ class Raft_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth",
         transforms=RaftEval,
         meta={
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
+            **_COMMON_META,
+            "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_test_cleanpass_epe": 1.94,
             "sintel_test_finalpass_epe": 3.18,
         },
@@ -71,6 +72,7 @@ class Raft_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
         transforms=RaftEval,
         meta={
+            **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_test_cleanpass_epe": 1.819,
             "sintel_test_finalpass_epe": 3.067,
