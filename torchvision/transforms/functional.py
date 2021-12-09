@@ -1056,11 +1056,10 @@ def rotate(
 
     center_t = torch.zeros(2, device=img.device)
     if center is not None:
-        img_size = get_image_size(img)
+        img_size = torch.as_tensor(get_image_size(img), device=img.device)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         center_org = torch.as_tensor(center, device=img.device)
-        img_size_t = torch.as_tensor(img_size, device=img.device)
-        center_t = 1.0 * (center_org - img_size_t * 0.5)
+        center_t = 1.0 * (center_org - img_size * 0.5)
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
@@ -1074,10 +1073,10 @@ def rotate(
 
 def affine(
     img: Tensor,
-    angle: float = 0.0,
-    translate: Optional[List[float]] = None,
-    scale: float = 1.0,
-    shear: Optional[List[float]] = None,
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
@@ -1113,11 +1112,6 @@ def affine(
     Returns:
         PIL Image or Tensor: Transformed image.
     """
-    if translate is None:
-        translate = [0.0, 0.0]
-
-    if shear is None:
-        shear = [0.0, 0.0]
 
     if resample is not None:
         warnings.warn(
