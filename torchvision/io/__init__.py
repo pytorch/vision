@@ -107,7 +107,7 @@ class VideoReader:
     """
 
     def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
-        _log_api_usage_once(self)
+        _log_api_usage_once("io", self.__class__.__name__)
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
