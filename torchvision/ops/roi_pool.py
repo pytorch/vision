@@ -39,7 +39,7 @@ def roi_pool(
     Returns:
         Tensor[K, C, output_size[0], output_size[1]]: The pooled RoIs.
     """
-    _log_api_usage_once("torchvision.ops.roi_pool")
+    _log_api_usage_once("ops", "roi_pool")
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
