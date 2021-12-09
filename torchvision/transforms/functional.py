@@ -993,7 +993,7 @@ def rotate(
     angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
-    center: Optional[List[float]] = None,
+    center: Optional[List[int]] = None,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
 ) -> Tensor:
@@ -1074,7 +1074,7 @@ def rotate(
 def affine(
     img: Tensor,
     angle: float,
-    translate: List[float],
+    translate: List[int],
     scale: float,
     shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
