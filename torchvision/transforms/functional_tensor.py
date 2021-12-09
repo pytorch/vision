@@ -16,7 +16,7 @@ def _assert_image_tensor(img: Tensor) -> None:
         raise TypeError("Tensor is not a torch image.")
 
 
-def _assert_threshold(img: Tensor, threshold: Tensor) -> None:
+def _assert_threshold(img: Tensor, threshold: float) -> None:
     bound = 1 if img.is_floating_point() else 255
     if threshold > bound:
         raise TypeError("Threshold should be less than bound of img.")
@@ -871,7 +871,7 @@ def invert(img: Tensor) -> Tensor:
     return bound - img
 
 
-def posterize(img: Tensor, bits: Tensor) -> Tensor:
+def posterize(img: Tensor, bits: int) -> Tensor:
 
     _assert_image_tensor(img)
 
@@ -885,7 +885,7 @@ def posterize(img: Tensor, bits: Tensor) -> Tensor:
     return img & mask
 
 
-def solarize(img: Tensor, threshold: Tensor) -> Tensor:
+def solarize(img: Tensor, threshold: float) -> Tensor:
 
     _assert_image_tensor(img)
 
@@ -943,8 +943,6 @@ def autocontrast(img: Tensor) -> Tensor:
 
     if img.ndim < 3:
         raise TypeError(f"Input image tensor should have at least 3 dimensions, but found {img.ndim}")
-    elif img.ndim == 3:
-        img = img.unsqueeze(0)
 
     _assert_channels(img, [1, 3])
 
