@@ -86,7 +86,7 @@ class Raft_Large_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/princeton-vl/RAFT",
-            "kitti_train_f1-all": 5.10,
+            "kitti_test_f1-all": 5.10,
         },
     )
 
@@ -100,7 +100,7 @@ class Raft_Large_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
-            "kitti_train_f1-all": 5.19,
+            "kitti_test_f1-all": 5.19,
         },
     )
 
