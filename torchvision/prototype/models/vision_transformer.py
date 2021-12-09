@@ -382,7 +382,11 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
 
 
 def interpolate_embeddings(
-    image_size: int, patch_size: int, model_state: "OrderedDict[str, torch.Tensor]", interpolation_mode: str = "bicubic", reset_heads: bool = False
+    image_size: int,
+    patch_size: int,
+    model_state: "OrderedDict[str, torch.Tensor]",
+    interpolation_mode: str = "bicubic",
+    reset_heads: bool = False,
 ) -> "OrderedDict[str, torch.Tensor]":
     """This function helps interpolating positional embeddings during checkpoint loading,
     especially when you want to apply a pre-trained model on images with different resolution.
@@ -391,7 +395,7 @@ def interpolate_embeddings(
         image_size (int): Image size of the new model.
         patch_size (int): Patch size of the new model.
         model_state (OrderedDict[str, torch.Tensor]): State dict of the pre-trained model.
-        interpolation_mode (str): The algorithm used for upsampling. Default: bicubic. 
+        interpolation_mode (str): The algorithm used for upsampling. Default: bicubic.
         reset_heads (bool): If true, not copying the state of heads. Default: False.
 
     Returns:
