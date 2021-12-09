@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+2afeea5 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+3227b2e ) &#x25BC</a>
     </div>
     
 
@@ -327,6 +327,7 @@
 <span class="kn">from</span> <span class="nn">torch.nn.modules.instancenorm</span> <span class="kn">import</span> <span class="n">InstanceNorm2d</span>
 <span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">ConvNormActivation</span>
 
+<span class="kn">from</span> <span class="nn">..._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 <span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">make_coords_grid</span><span class="p">,</span> <span class="n">upsample_flow</span>
 
@@ -336,6 +337,12 @@
     <span class="s2">&quot;raft_large&quot;</span><span class="p">,</span>
     <span class="s2">&quot;raft_small&quot;</span><span class="p">,</span>
 <span class="p">)</span>
+
+
+<span class="n">_MODELS_URLS</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;raft_large&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;raft_small&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth&quot;</span><span class="p">,</span>
+<span class="p">}</span>
 
 
 <span class="k">class</span> <span class="nc">ResidualBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -793,8 +800,8 @@
         <span class="n">hidden_state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tanh</span><span class="p">(</span><span class="n">hidden_state</span><span class="p">)</span>
         <span class="n">context</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">context</span><span class="p">)</span>
 
-        <span class="n">coords0</span> <span class="o">=</span> <span class="n">make_coords_grid</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
-        <span class="n">coords1</span> <span class="o">=</span> <span class="n">make_coords_grid</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">cuda</span><span class="p">()</span>
+        <span class="n">coords0</span> <span class="o">=</span> <span class="n">make_coords_grid</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">fmap1</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">coords1</span> <span class="o">=</span> <span class="n">make_coords_grid</span><span class="p">(</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">h</span> <span class="o">//</span> <span class="mi">8</span><span class="p">,</span> <span class="n">w</span> <span class="o">//</span> <span class="mi">8</span><span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">fmap1</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
 
         <span class="n">flow_predictions</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_flow_updates</span><span class="p">):</span>
@@ -815,6 +822,9 @@
 
 <span class="k">def</span> <span class="nf">_raft</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
+    <span class="n">arch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+    <span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="c1"># Feature encoder</span>
     <span class="n">feature_encoder_layers</span><span class="p">,</span>
     <span class="n">feature_encoder_block</span><span class="p">,</span>
@@ -879,7 +889,7 @@
             <span class="n">multiplier</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span>  <span class="c1"># See comment in MaskPredictor about this</span>
         <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">RAFT</span><span class="p">(</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">RAFT</span><span class="p">(</span>
         <span class="n">feature_encoder</span><span class="o">=</span><span class="n">feature_encoder</span><span class="p">,</span>
         <span class="n">context_encoder</span><span class="o">=</span><span class="n">context_encoder</span><span class="p">,</span>
         <span class="n">corr_block</span><span class="o">=</span><span class="n">corr_block</span><span class="p">,</span>
@@ -887,6 +897,11 @@
         <span class="n">mask_predictor</span><span class="o">=</span><span class="n">mask_predictor</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>  <span class="c1"># not really needed, all params should be consumed by now</span>
     <span class="p">)</span>
+    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
+        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">_MODELS_URLS</span><span class="p">[</span><span class="n">arch</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+
+    <span class="k">return</span> <span class="n">model</span>
 
 
 <div class="viewcode-block" id="raft_large"><a class="viewcode-back" href="../../../../generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.raft_large">[docs]</a><span class="k">def</span> <span class="nf">raft_large</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
@@ -894,7 +909,7 @@
 <span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): TODO not implemented yet</span>
+<span class="sd">        pretrained (bool): Whether to use pretrained weights.</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class</span>
 <span class="sd">            to override any default.</span>
@@ -903,10 +918,10 @@
 <span class="sd">        nn.Module: The model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pretrained weights aren&#39;t available yet&quot;</span><span class="p">)</span>
-
     <span class="k">return</span> <span class="n">_raft</span><span class="p">(</span>
+        <span class="n">arch</span><span class="o">=</span><span class="s2">&quot;raft_large&quot;</span><span class="p">,</span>
+        <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
         <span class="c1"># Feature encoder</span>
         <span class="n">feature_encoder_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
         <span class="n">feature_encoder_block</span><span class="o">=</span><span class="n">ResidualBlock</span><span class="p">,</span>
@@ -939,7 +954,7 @@
 <span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): TODO not implemented yet</span>
+<span class="sd">        pretrained (bool): Whether to use pretrained weights.</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class</span>
 <span class="sd">            to override any default.</span>
@@ -949,10 +964,10 @@
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;Pretrained weights aren&#39;t available yet&quot;</span><span class="p">)</span>
-
     <span class="k">return</span> <span class="n">_raft</span><span class="p">(</span>
+        <span class="n">arch</span><span class="o">=</span><span class="s2">&quot;raft_small&quot;</span><span class="p">,</span>
+        <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
         <span class="c1"># Feature encoder</span>
         <span class="n">feature_encoder_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>
         <span class="n">feature_encoder_block</span><span class="o">=</span><span class="n">BottleneckBlock</span><span class="p">,</span>
