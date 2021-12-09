@@ -421,20 +421,21 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
     )
     backbone = _mobilenet_extractor(backbone, True, trainable_backbone_layers)
 
-    anchor_sizes = (
-        (
-            32,
-            64,
-            128,
-            256,
-            512,
-        ),
-    ) * 3
-    aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+    if kwargs.get('rpn_anchor_generator') is None:
 
-    model = FasterRCNN(
-        backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios), **kwargs
-    )
+        anchor_sizes = (
+            (
+                32,
+                64,
+                128,
+                256,
+                512,
+            ),
+        ) * 3
+        aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+        kwargs['rpn_anchor_generator'] = AnchorGenerator(anchor_sizes, aspect_ratios)
+
+    model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
         if model_urls.get(weights_name, None) is None:
             raise ValueError(f"No checkpoint is available for model {weights_name}")
