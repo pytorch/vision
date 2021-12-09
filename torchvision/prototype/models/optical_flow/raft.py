@@ -34,6 +34,8 @@ class Raft_Large_Weights(WeightsEnum):
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_train_cleanpass_epe": 1.4411,
             "sintel_train_finalpass_epe": 2.7894,
+            "kitti_train_per_image_epe": 5.0172,
+            "kitti_train_f1-all": 17.4506,
         },
     )
 
@@ -46,6 +48,8 @@ class Raft_Large_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_train_cleanpass_epe": 1.3822,
             "sintel_train_finalpass_epe": 2.7161,
+            "kitti_train_per_image_epe": 4.5118,
+            "kitti_train_f1-all": 16.0679,
         },
     )
 
@@ -99,10 +103,25 @@ class Raft_Small_Weights(WeightsEnum):
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_train_cleanpass_epe": 2.1231,
             "sintel_train_finalpass_epe": 3.2790,
+            "kitti_train_per_image_epe": 7.6557,
+            "kitti_train_f1-all": 25.2801,
+        },
+    )
+    C_T_V2 = Weights(
+        # Chairs + Things
+        url="https://github.com/pytorch/vision/tree/main/references/optical_flow",
+        transforms=RaftEval,
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/princeton-vl/RAFT",
+            "sintel_train_cleanpass_epe": 1.9901,
+            "sintel_train_finalpass_epe": 3.2831,
+            "kitti_train_per_image_epe": 7.5978,
+            "kitti_train_f1-all": 25.2369,
         },
     )
 
-    default = C_T_V1  # TODO: Change to V2 once we upload our own weights
+    default = C_T_V2
 
 
 @handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_V2))
@@ -155,14 +174,13 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
     return model
 
 
-# TODO: change to V2 once we upload our own weights
-@handle_legacy_interface(weights=("pretrained", Raft_Small_Weights.C_T_V1))
+@handle_legacy_interface(weights=("pretrained", Raft_Small_Weights.C_T_V2))
 def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs):
     """RAFT "small" model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Args:
-        weights(Raft_Small_weights, optinal): TODO not implemented yet
+        weights(Raft_Small_weights, optional): pretrained weights to use.
         progress (bool): If True, displays a progress bar of the download to stderr
         kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
             to override any default.
