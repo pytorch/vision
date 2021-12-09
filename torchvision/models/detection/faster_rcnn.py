@@ -421,7 +421,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
     )
     backbone = _mobilenet_extractor(backbone, True, trainable_backbone_layers)
 
-    if kwargs.get('rpn_anchor_generator') is None:
+    if kwargs.get("rpn_anchor_generator") is None:
 
         anchor_sizes = (
             (
@@ -433,7 +433,7 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
             ),
         ) * 3
         aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
-        kwargs['rpn_anchor_generator'] = AnchorGenerator(anchor_sizes, aspect_ratios)
+        kwargs["rpn_anchor_generator"] = AnchorGenerator(anchor_sizes, aspect_ratios)
 
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
