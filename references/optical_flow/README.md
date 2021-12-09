@@ -48,10 +48,18 @@ torchrun --nproc_per_node 1 --nnodes 1 train.py --val-dataset sintel --batch-siz
 ```
 
 This should give an epe of about 1.3822 on the clean pass and 2.7161 on the
-final pass of Sintel. Results may vary slightly depending on the batch size and
-the number of GPUs. For the most accurate resuts use 1 GPU and `--batch-size 1`:
+final pass of Sintel-train. Results may vary slightly depending on the batch
+size and the number of GPUs. For the most accurate resuts use 1 GPU and
+`--batch-size 1`:
 
 ```
 Sintel val clean epe: 1.3822	1px: 0.9028	3px: 0.9573	5px: 0.9697	per_image_epe: 1.3822	f1: 4.0248
 Sintel val final epe: 2.7161	1px: 0.8528	3px: 0.9204	5px: 0.9392	per_image_epe: 2.7161	f1: 7.5964
+```
+
+You can also evaluate on Kitti train:
+
+```
+torchrun --nproc_per_node 1 --nnodes 1 train.py --val-dataset kitti --batch-size 1 --dataset-root $dataset_root --model raft_large --pretrained
+Kitti val epe: 4.7968	1px: 0.6388	3px: 0.8197	5px: 0.8661	per_image_epe: 4.5118	f1: 16.0679
 ```

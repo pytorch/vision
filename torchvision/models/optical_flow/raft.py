@@ -20,7 +20,10 @@ __all__ = (
 )
 
 
-_MODELS_URLS = {"raft_large": "https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth"}
+_MODELS_URLS = {
+    "raft_large": "https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
+    "raft_small": "https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
+}
 
 
 class ResidualBlock(nn.Module):
@@ -587,7 +590,7 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Args:
-        pretrained (bool): TODO not implemented yet
+        pretrained (bool): Whether to use pretrained weights.
         progress (bool): If True, displays a progress bar of the download to stderr
         kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
             to override any default.
@@ -632,7 +635,7 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Args:
-        pretrained (bool): TODO not implemented yet
+        pretrained (bool): Whether to use pretrained weights.
         progress (bool): If True, displays a progress bar of the download to stderr
         kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
             to override any default.
@@ -641,8 +644,6 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
         nn.Module: The model.
 
     """
-    if pretrained:
-        raise ValueError("No checkpoint is available for raft_small")
 
     return _raft(
         arch="raft_small",
