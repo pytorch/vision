@@ -33,7 +33,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
                 "linux": ["cpu", "cu102", "cu111", "cu113", "rocm4.2", "rocm4.3.1"],
-                "win": ["cpu", "cu111", "cu113"],
+                "win": ["cpu", "cu102", "cu111", "cu113"],
                 "macos": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
@@ -50,7 +50,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                             and filter_branch is None
                             and (
                                 python_version != python_versions[-1]
-                                or (cu_version not in [cu_versions[0], cu_versions[-1]])
+                                or cu_version != "cu102"
                             )
                         ):
                             fb = "main"
