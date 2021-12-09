@@ -12,7 +12,7 @@ from ....models.detection.ssd import (
 )
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
+from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..vgg import VGG16_Weights, vgg16
 
 
@@ -33,11 +33,16 @@ class SSD300_VGG16_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
             "map": 25.1,
         },
-        default=True,
     )
+    default = Coco_V1
 
 
+@handle_legacy_interface(
+    weights=("pretrained", SSD300_VGG16_Weights.Coco_V1),
+    weights_backbone=("pretrained_backbone", VGG16_Weights.ImageNet1K_Features),
+)
 def ssd300_vgg16(
+    *,
     weights: Optional[SSD300_VGG16_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
@@ -45,17 +50,7 @@ def ssd300_vgg16(
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> SSD:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", SSD300_VGG16_Weights.Coco_V1)
     weights = SSD300_VGG16_Weights.verify(weights)
-    if type(weights_backbone) == bool and weights_backbone:
-        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
-    if "pretrained_backbone" in kwargs:
-        weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", VGG16_Weights.ImageNet1K_Features
-        )
     weights_backbone = VGG16_Weights.verify(weights_backbone)
 
     if "size" in kwargs:
