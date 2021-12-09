@@ -3,7 +3,7 @@ import importlib
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu, run_on_env_var
+from common_utils import cpu_and_gpu, run_on_env_var, needs_cuda
 from torchvision.prototype import models
 from torchvision.prototype.models._api import WeightsEnum, Weights
 from torchvision.prototype.models._utils import handle_legacy_interface
@@ -75,10 +75,12 @@ def test_get_weight(name, weight):
     + TM.get_models_from_module(models.detection)
     + TM.get_models_from_module(models.quantization)
     + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video),
+    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(models.optical_flow),
 )
 def test_naming_conventions(model_fn):
     weights_enum = _get_model_weights(model_fn)
+    print(weights_enum)
     assert weights_enum is not None
     assert len(weights_enum) == 0 or hasattr(weights_enum, "default")
 
@@ -89,7 +91,8 @@ def test_naming_conventions(model_fn):
     + TM.get_models_from_module(models.detection)
     + TM.get_models_from_module(models.quantization)
     + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video),
+    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(models.optical_flow),
 )
 def test_schema_meta_validation(model_fn):
     classification_fields = ["size", "categories", "acc@1", "acc@5"]
@@ -100,6 +103,7 @@ def test_schema_meta_validation(model_fn):
         "quantization": classification_fields + ["backend", "quantization", "unquantized"],
         "segmentation": ["categories", "mIoU", "acc"],
         "video": classification_fields,
+        "optical_flow": [],
     }
     module_name = model_fn.__module__.split(".")[-2]
     fields = set(defaults["all"] + defaults[module_name])
@@ -149,13 +153,22 @@ def test_video_model(model_fn, dev):
     TM.test_video_model(model_fn, dev)
 
 
+@needs_cuda
+@pytest.mark.parametrize("model_builder", TM.get_models_from_module(models.optical_flow))
+@pytest.mark.parametrize("scripted", (False, True))
+@run_if_test_with_prototype
+def test_raft(model_builder, scripted):
+    TM.test_raft(model_builder, scripted)
+
+
 @pytest.mark.parametrize(
     "model_fn",
     TM.get_models_from_module(models)
     + TM.get_models_from_module(models.detection)
     + TM.get_models_from_module(models.quantization)
     + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video),
+    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(models.optical_flow),
 )
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
@@ -177,6 +190,9 @@ def test_old_vs_new_factory(model_fn, dev):
         "video": {
             "input_shape": (1, 3, 4, 112, 112),
         },
+        "optical_flow": {
+            "input_shape": (1, 3, 128, 128),
+        },
     }
     model_name = model_fn.__name__
     module_name = model_fn.__module__.split(".")[-2]
@@ -187,13 +203,18 @@ def test_old_vs_new_factory(model_fn, dev):
     if module_name == "detection":
         x = [x]
 
+    if module_name == "optical_flow":
+        args = [x, x]  # RAFT model requires img1, img2 as input
+    else:
+        args = [x]
+
     # compare with new model builder parameterized in the old fashion way
     try:
         model_old = _build_model(_get_original_model(model_fn), **kwargs).to(device=dev)
         model_new = _build_model(model_fn, **kwargs).to(device=dev)
     except ModuleNotFoundError:
         pytest.skip(f"Model '{model_name}' not available in both modules.")
-    torch.testing.assert_close(model_new(x), model_old(x), rtol=0.0, atol=0.0, check_dtype=False)
+    torch.testing.assert_close(model_new(*args), model_old(*args), rtol=0.0, atol=0.0, check_dtype=False)
 
 
 def test_smoke():

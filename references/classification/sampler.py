@@ -15,7 +15,7 @@ class RASampler(torch.utils.data.Sampler):
     https://github.com/facebookresearch/deit/blob/main/samplers.py
     """
 
-    def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True):
+    def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, seed=0):
         if num_replicas is None:
             if not dist.is_available():
                 raise RuntimeError("Requires distributed package to be available!")
@@ -32,11 +32,12 @@ class RASampler(torch.utils.data.Sampler):
         self.total_size = self.num_samples * self.num_replicas
         self.num_selected_samples = int(math.floor(len(self.dataset) // 256 * 256 / self.num_replicas))
         self.shuffle = shuffle
+        self.seed = seed
 
     def __iter__(self):
         # Deterministically shuffle based on epoch
         g = torch.Generator()
-        g.manual_seed(self.epoch)
+        g.manual_seed(self.seed + self.epoch)
         if self.shuffle:
             indices = torch.randperm(len(self.dataset), generator=g).tolist()
         else:
