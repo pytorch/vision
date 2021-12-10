@@ -301,7 +301,7 @@ def get_args_parser(add_help=True):
     )
     parser.add_argument("--val-dataset", type=str, nargs="+", help="The dataset(s) to use for validation.")
     parser.add_argument("--val-freq", type=int, default=2, help="Validate every X epochs")
-    parser.add_argument("--epochs", type=int, default=50, help="The total number of epochs to train.")
+    parser.add_argument("--epochs", type=int, default=20, help="The total number of epochs to train.")
     parser.add_argument("--batch-size", type=int, default=2)
 
     parser.add_argument("--lr", type=float, default=0.00002, help="Learning rate for AdamW optimizer")
