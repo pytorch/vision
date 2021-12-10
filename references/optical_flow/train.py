@@ -237,7 +237,7 @@ def main(args):
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer=optimizer,
         max_lr=args.lr,
-        epochs=args.epochs + 1,
+        epochs=args.epochs,
         steps_per_epoch=ceil(len(train_dataset) / (args.world_size * args.batch_size)),
         pct_start=0.05,
         cycle_momentum=False,
