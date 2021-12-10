@@ -88,7 +88,7 @@ class Compose:
     """
 
     def __init__(self, transforms):
-        _log_api_usage_once("transforms", self.__class__.__name__)
+        _log_api_usage_once("transforms", "Compose")
         self.transforms = transforms
 
     def __call__(self, img):
