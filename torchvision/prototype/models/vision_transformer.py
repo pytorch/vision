@@ -10,11 +10,13 @@ from typing import Any, Callable, Optional
 import torch
 import torch.nn as nn
 from torch import Tensor
+from torchvision.prototype.transforms import ImageNetEval
+from torchvision.transforms.functional import InterpolationMode
 
 from ...utils import _log_api_usage_once
-from ._api import WeightsEnum
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface
-
 
 __all__ = [
     "VisionTransformer",
@@ -233,14 +235,33 @@ class VisionTransformer(nn.Module):
         return x
 
 
+_COMMON_META = {
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
+
+
 class ViT_B_16_Weights(WeightsEnum):
-    # If a default model is added here the corresponding changes need to be done in vit_b_16
-    pass
+    ImageNet1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16-0413b9bf.pth",
+        transforms=partial(ImageNetEval, crop_size=224),
+        meta={**_COMMON_META, "size": (224, 224), "acc@1": 80.004, "acc@5": 94.642},
+    )
+    default = ImageNet1K_V1
 
 
 class ViT_B_32_Weights(WeightsEnum):
-    # If a default model is added here the corresponding changes need to be done in vit_b_32
-    pass
+    ImageNet1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_32-65f3bea4.pth",
+        transforms=partial(ImageNetEval, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "size": (224, 224),
+            "acc@1": 75.622,
+            "acc@5": 92.19,
+        },
+    )
+    default = ImageNet1K_V1
 
 
 class ViT_L_16_Weights(WeightsEnum):
@@ -249,8 +270,17 @@ class ViT_L_16_Weights(WeightsEnum):
 
 
 class ViT_L_32_Weights(WeightsEnum):
-    # If a default model is added here the corresponding changes need to be done in vit_l_32
-    pass
+    ImageNet1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_32-cd2ba208.pth",
+        transforms=partial(ImageNetEval, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "size": (224, 224),
+            "acc@1": 74.268,
+            "acc@5": 90.890,
+        },
+    )
+    default = ImageNet1K_V1
 
 
 def _vision_transformer(
