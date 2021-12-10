@@ -8,11 +8,10 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    TarArchiveReader,
     Shuffler,
     Filter,
     Demultiplexer,
-    KeyZipper,
+    IterKeyZipper,
     LineReader,
 )
 from torchvision.datasets import VOCDetection
@@ -119,7 +118,6 @@ class VOC(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        archive_dp = TarArchiveReader(archive_dp)
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
             3,
@@ -135,7 +133,7 @@ class VOC(Dataset):
 
         dp = split_dp
         for level, data_dp in enumerate((images_dp, anns_dp)):
-            dp = KeyZipper(
+            dp = IterKeyZipper(
                 dp,
                 data_dp,
                 key_fn=getitem(*[0] * level, 1),

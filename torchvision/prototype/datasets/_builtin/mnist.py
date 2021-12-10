@@ -1,19 +1,16 @@
 import abc
-import codecs
 import functools
 import io
 import operator
 import pathlib
 import string
-import sys
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO
 
 import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Demultiplexer,
     Mapper,
-    ZipArchiveReader,
     Zipper,
     Shuffler,
 )
@@ -30,7 +27,9 @@ from torchvision.prototype.datasets.utils._internal import (
     image_buffer_from_array,
     Decompressor,
     INFINITE_BUFFER_SIZE,
+    fromfile,
 )
+from torchvision.prototype.features import Image, Label
 
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
@@ -49,43 +48,33 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
     }
 
     def __init__(
-        self, datapipe: IterDataPipe[Tuple[Any, io.IOBase]], *, start: Optional[int], stop: Optional[int]
+        self, datapipe: IterDataPipe[Tuple[Any, BinaryIO]], *, start: Optional[int], stop: Optional[int]
     ) -> None:
         self.datapipe = datapipe
         self.start = start
         self.stop = stop
 
-    @staticmethod
-    def _decode(bytes: bytes) -> int:
-        return int(codecs.encode(bytes, "hex"), 16)
-
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
-            magic = self._decode(file.read(4))
+            read = functools.partial(fromfile, file, byte_order="big")
+
+            magic = int(read(dtype=torch.int32, count=1))
             dtype = self._DTYPE_MAP[magic // 256]
             ndim = magic % 256 - 1
 
-            num_samples = self._decode(file.read(4))
-            shape = [self._decode(file.read(4)) for _ in range(ndim)]
-
-            num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
-            # The MNIST format uses the big endian byte order. If the system uses little endian byte order by default,
-            # we need to reverse the bytes before we can read them with torch.frombuffer().
-            needs_byte_reversal = sys.byteorder == "little" and num_bytes_per_value > 1
-            chunk_size = (cast(int, prod(shape)) if shape else 1) * num_bytes_per_value
+            num_samples = int(read(dtype=torch.int32, count=1))
+            shape = cast(List[int], read(dtype=torch.int32, count=ndim).tolist()) if ndim else []
+            count = prod(shape) if shape else 1
 
             start = self.start or 0
-            stop = self.stop or num_samples
+            stop = min(self.stop, num_samples) if self.stop else num_samples
 
-            file.seek(start * chunk_size, 1)
+            if start:
+                num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
+                file.seek(num_bytes_per_value * count * start, 1)
+
             for _ in range(stop - start):
-                chunk = file.read(chunk_size)
-                if not needs_byte_reversal:
-                    yield torch.frombuffer(chunk, dtype=dtype).reshape(shape)
-
-                chunk = bytearray(chunk)
-                chunk.reverse()
-                yield torch.frombuffer(chunk, dtype=dtype).flip(0).reshape(shape)
+                yield read(dtype=dtype, count=count).reshape(shape)
 
 
 class _MNISTBase(Dataset):
@@ -119,15 +108,14 @@ class _MNISTBase(Dataset):
         image, label = data
 
         if decoder is raw:
-            image = image.unsqueeze(0)
+            image = Image(image)
         else:
             image_buffer = image_buffer_from_array(image.numpy())
             image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        category = self.info.categories[int(label)]
-        label = label.to(torch.int64)
+        label = Label(label, dtype=torch.int64, category=self.info.categories[int(label)])
 
-        return dict(image=image, category=category, label=label)
+        return dict(image=image, label=label)
 
     def _make_datapipe(
         self,
@@ -308,7 +296,9 @@ class EMNIST(_MNISTBase):
         # index 39 (10 digits + 26 uppercase letters + 4th lower case letter - 1 for zero indexing)
         # in self.categories. Thus, we need to add 1 to the label to correct this.
         if config.image_set in ("Balanced", "By_Merge"):
-            data[1] += self._LABEL_OFFSETS.get(int(data[1]), 0)
+            image, label = data
+            label += self._LABEL_OFFSETS.get(int(label), 0)
+            data = (image, label)
         return super()._collate_and_decode(data, config=config, decoder=decoder)
 
     def _make_datapipe(
@@ -319,7 +309,6 @@ class EMNIST(_MNISTBase):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        archive_dp = ZipArchiveReader(archive_dp)
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,

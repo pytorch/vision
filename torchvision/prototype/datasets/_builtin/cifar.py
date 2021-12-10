@@ -11,7 +11,6 @@ from torchdata.datapipes.iter import (
     IterDataPipe,
     Filter,
     Mapper,
-    TarArchiveReader,
     Shuffler,
 )
 from torchvision.prototype.datasets.decoder import raw
@@ -28,6 +27,7 @@ from torchvision.prototype.datasets.utils._internal import (
     image_buffer_from_array,
     path_comparator,
 )
+from torchvision.prototype.features import Label, Image
 
 __all__ = ["Cifar10", "Cifar100"]
 
@@ -65,17 +65,16 @@ class _CifarBase(Dataset):
     ) -> Dict[str, Any]:
         image_array, category_idx = data
 
-        category = self.categories[category_idx]
-        label = torch.tensor(category_idx)
-
-        image: Union[torch.Tensor, io.BytesIO]
+        image: Union[Image, io.BytesIO]
         if decoder is raw:
-            image = torch.from_numpy(image_array)
+            image = Image(image_array)
         else:
             image_buffer = image_buffer_from_array(image_array.transpose((1, 2, 0)))
-            image = decoder(image_buffer) if decoder else image_buffer
+            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        return dict(label=label, category=category, image=image)
+        label = Label(category_idx, category=self.categories[category_idx])
+
+        return dict(image=image, label=label)
 
     def _make_datapipe(
         self,
@@ -85,7 +84,6 @@ class _CifarBase(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
-        dp = TarArchiveReader(dp)
         dp = Filter(dp, functools.partial(self._is_data_file, config=config))
         dp = Mapper(dp, self._unpickle)
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
@@ -93,8 +91,7 @@ class _CifarBase(Dataset):
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
-        dp = TarArchiveReader(dp)
+        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
         dp = Filter(dp, path_comparator("name", self._META_FILE_NAME))
         dp = Mapper(dp, self._unpickle)
         return cast(List[str], next(iter(dp))[self._CATEGORIES_KEY])

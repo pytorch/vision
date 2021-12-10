@@ -120,7 +120,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         min_depth: int = 16,
     ):
         super().__init__()
-        _log_api_usage_once(self)
+        _log_api_usage_once("models", self.__class__.__name__)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
@@ -208,7 +208,8 @@ def ssdlite320_mobilenet_v3_large(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable.
+            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 6.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
     """
     if "size" in kwargs:

@@ -12,6 +12,7 @@ from .efficientnet import *
 from .regnet import *
 from . import detection
 from . import feature_extraction
+from . import optical_flow
 from . import quantization
 from . import segmentation
 from . import video

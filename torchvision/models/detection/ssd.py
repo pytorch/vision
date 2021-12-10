@@ -182,7 +182,7 @@ class SSD(nn.Module):
         positive_fraction: float = 0.25,
     ):
         super().__init__()
-        _log_api_usage_once(self)
+        _log_api_usage_once("models", self.__class__.__name__)
 
         self.backbone = backbone
 
@@ -587,7 +587,8 @@ def ssd300_vgg16(
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
         trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 4.
     """
     if "size" in kwargs:
         warnings.warn("The size of the model is already fixed; ignoring the argument.")

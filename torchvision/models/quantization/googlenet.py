@@ -19,13 +19,96 @@ quant_model_urls = {
 }
 
 
+class QuantizableBasicConv2d(BasicConv2d):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.relu = nn.ReLU()
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.conv(x)
+        x = self.bn(x)
+        x = self.relu(x)
+        return x
+
+    def fuse_model(self) -> None:
+        torch.ao.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+
+
+class QuantizableInception(Inception):
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        self.cat = nn.quantized.FloatFunctional()
+
+    def forward(self, x: Tensor) -> Tensor:
+        outputs = self._forward(x)
+        return self.cat.cat(outputs, 1)
+
+
+class QuantizableInceptionAux(InceptionAux):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
+        self.relu = nn.ReLU()
+
+    def forward(self, x: Tensor) -> Tensor:
+        # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
+        x = F.adaptive_avg_pool2d(x, (4, 4))
+        # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
+        x = self.conv(x)
+        # N x 128 x 4 x 4
+        x = torch.flatten(x, 1)
+        # N x 2048
+        x = self.relu(self.fc1(x))
+        # N x 1024
+        x = self.dropout(x)
+        # N x 1024
+        x = self.fc2(x)
+        # N x 1000 (num_classes)
+
+        return x
+
+
+class QuantizableGoogLeNet(GoogLeNet):
+    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        super().__init__(  # type: ignore[misc]
+            blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux], *args, **kwargs
+        )
+        self.quant = torch.ao.quantization.QuantStub()
+        self.dequant = torch.ao.quantization.DeQuantStub()
+
+    def forward(self, x: Tensor) -> GoogLeNetOutputs:
+        x = self._transform_input(x)
+        x = self.quant(x)
+        x, aux1, aux2 = self._forward(x)
+        x = self.dequant(x)
+        aux_defined = self.training and self.aux_logits
+        if torch.jit.is_scripting():
+            if not aux_defined:
+                warnings.warn("Scripted QuantizableGoogleNet always returns GoogleNetOutputs Tuple")
+            return GoogLeNetOutputs(x, aux2, aux1)
+        else:
+            return self.eager_outputs(x, aux2, aux1)
+
+    def fuse_model(self) -> None:
+        r"""Fuse conv/bn/relu modules in googlenet model
+
+        Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
+        Model is modified in place.  Note that this operation does not change numerics
+        and the model after modification is in floating point
+        """
+
+        for m in self.modules():
+            if type(m) is QuantizableBasicConv2d:
+                m.fuse_model()
+
+
 def googlenet(
     pretrained: bool = False,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
-) -> "QuantizableGoogLeNet":
-
+) -> QuantizableGoogLeNet:
     r"""GoogLeNet (Inception v1) model architecture from
     `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
 
@@ -80,87 +163,3 @@ def googlenet(
             model.aux1 = None  # type: ignore[assignment]
             model.aux2 = None  # type: ignore[assignment]
     return model
-
-
-class QuantizableBasicConv2d(BasicConv2d):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(*args, **kwargs)
-        self.relu = nn.ReLU()
-
-    def forward(self, x: Tensor) -> Tensor:
-        x = self.conv(x)
-        x = self.bn(x)
-        x = self.relu(x)
-        return x
-
-    def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
-
-
-class QuantizableInception(Inception):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
-        self.cat = nn.quantized.FloatFunctional()
-
-    def forward(self, x: Tensor) -> Tensor:
-        outputs = self._forward(x)
-        return self.cat.cat(outputs, 1)
-
-
-class QuantizableInceptionAux(InceptionAux):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(conv_block=QuantizableBasicConv2d, *args, **kwargs)  # type: ignore[misc]
-        self.relu = nn.ReLU()
-
-    def forward(self, x: Tensor) -> Tensor:
-        # aux1: N x 512 x 14 x 14, aux2: N x 528 x 14 x 14
-        x = F.adaptive_avg_pool2d(x, (4, 4))
-        # aux1: N x 512 x 4 x 4, aux2: N x 528 x 4 x 4
-        x = self.conv(x)
-        # N x 128 x 4 x 4
-        x = torch.flatten(x, 1)
-        # N x 2048
-        x = self.relu(self.fc1(x))
-        # N x 1024
-        x = self.dropout(x)
-        # N x 1024
-        x = self.fc2(x)
-        # N x 1000 (num_classes)
-
-        return x
-
-
-class QuantizableGoogLeNet(GoogLeNet):
-    # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        super().__init__(  # type: ignore[misc]
-            blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux], *args, **kwargs
-        )
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
-
-    def forward(self, x: Tensor) -> GoogLeNetOutputs:
-        x = self._transform_input(x)
-        x = self.quant(x)
-        x, aux1, aux2 = self._forward(x)
-        x = self.dequant(x)
-        aux_defined = self.training and self.aux_logits
-        if torch.jit.is_scripting():
-            if not aux_defined:
-                warnings.warn("Scripted QuantizableGoogleNet always returns GoogleNetOutputs Tuple")
-            return GoogLeNetOutputs(x, aux2, aux1)
-        else:
-            return self.eager_outputs(x, aux2, aux1)
-
-    def fuse_model(self) -> None:
-        r"""Fuse conv/bn/relu modules in googlenet model
-
-        Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
-        Model is modified in place.  Note that this operation does not change numerics
-        and the model after modification is in floating point
-        """
-
-        for m in self.modules():
-            if type(m) is QuantizableBasicConv2d:
-                m.fuse_model()

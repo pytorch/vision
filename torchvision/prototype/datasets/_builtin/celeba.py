@@ -8,9 +8,8 @@ from torchdata.datapipes.iter import (
     Mapper,
     Shuffler,
     Filter,
-    ZipArchiveReader,
     Zipper,
-    KeyZipper,
+    IterKeyZipper,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -154,8 +153,6 @@ class CelebA(Dataset):
         splits_dp = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
         splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
-        images_dp = ZipArchiveReader(images_dp)
-
         anns_dp = Zipper(
             *[
                 CelebACSVParser(dp, fieldnames=fieldnames)
@@ -169,7 +166,7 @@ class CelebA(Dataset):
         )
         anns_dp = Mapper(anns_dp, self._collate_anns)
 
-        dp = KeyZipper(
+        dp = IterKeyZipper(
             splits_dp,
             images_dp,
             key_fn=getitem(0),
@@ -177,5 +174,5 @@ class CelebA(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )
-        dp = KeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
+        dp = IterKeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))

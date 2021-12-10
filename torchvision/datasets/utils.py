@@ -15,6 +15,7 @@ import zipfile
 from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
 from urllib.parse import urlparse
 
+import requests
 import torch
 from torch.utils.model_zoo import tqdm
 
@@ -183,7 +184,7 @@ def list_files(root: str, suffix: str, prefix: bool = False) -> List[str]:
     return files
 
 
-def _quota_exceeded(first_chunk: bytes) -> bool:  # type: ignore[name-defined]
+def _quota_exceeded(first_chunk: bytes) -> bool:
     try:
         return "Google Drive - Quota exceeded" in first_chunk.decode()
     except UnicodeDecodeError:
@@ -200,7 +201,6 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         md5 (str, optional): MD5 checksum of the download. If None, do not check
     """
     # Based on https://stackoverflow.com/questions/38511444/python-download-files-from-google-drive-using-url
-    import requests
 
     url = "https://docs.google.com/uc?export=download"
 
@@ -244,7 +244,7 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         response.close()
 
 
-def _get_confirm_token(response: "requests.models.Response") -> Optional[str]:  # type: ignore[name-defined]
+def _get_confirm_token(response: requests.models.Response) -> Optional[str]:
     for key, value in response.cookies.items():
         if key.startswith("download_warning"):
             return value
@@ -254,7 +254,7 @@ def _get_confirm_token(response: "requests.models.Response") -> Optional[str]:  
 
 def _save_response_content(
     response_gen: Iterator[bytes],
-    destination: str,  # type: ignore[name-defined]
+    destination: str,
 ) -> None:
     with open(destination, "wb") as f:
         pbar = tqdm(total=None)
@@ -407,6 +407,8 @@ def extract_archive(from_path: str, to_path: Optional[str] = None, remove_finish
     extractor = _ARCHIVE_EXTRACTORS[archive_type]
 
     extractor(from_path, to_path, compression)
+    if remove_finished:
+        os.remove(from_path)
 
     return to_path
 

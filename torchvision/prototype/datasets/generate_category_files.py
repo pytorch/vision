@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import pathlib
 import sys
 
 from torchvision.prototype import datasets
@@ -10,7 +11,7 @@ from torchvision.prototype.datasets.utils._internal import BUILTIN_DIR
 
 
 def main(*names, force=False):
-    root = datasets.home()
+    root = pathlib.Path(datasets.home())
 
     for name in names:
         path = BUILTIN_DIR / f"{name}.categories"
@@ -24,7 +25,8 @@ def main(*names, force=False):
             continue
 
         with open(path, "w", newline="") as file:
-            csv.writer(file).writerows(categories)
+            for category in categories:
+                csv.writer(file).writerow((category,) if isinstance(category, str) else category)
 
 
 def parse_args(argv=None):
@@ -52,7 +54,7 @@ def parse_args(argv=None):
 
 
 if __name__ == "__main__":
-    args = parse_args(["-f", "sbd"])
+    args = parse_args()
 
     try:
         main(*args.names, force=args.force)

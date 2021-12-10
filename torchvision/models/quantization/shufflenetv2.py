@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -12,15 +12,11 @@ __all__ = [
     "QuantizableShuffleNetV2",
     "shufflenet_v2_x0_5",
     "shufflenet_v2_x1_0",
-    "shufflenet_v2_x1_5",
-    "shufflenet_v2_x2_0",
 ]
 
 quant_model_urls = {
-    "shufflenetv2_x0.5_fbgemm": None,
+    "shufflenetv2_x0.5_fbgemm": "https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
     "shufflenetv2_x1.0_fbgemm": "https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
-    "shufflenetv2_x1.5_fbgemm": None,
-    "shufflenetv2_x2.0_fbgemm": None,
 }
 
 
@@ -45,8 +41,8 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)  # type: ignore[misc]
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = torch.ao.quantization.QuantStub()
+        self.dequant = torch.ao.quantization.DeQuantStub()
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.quant(x)
@@ -64,12 +60,12 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
 
         for name, m in self._modules.items():
             if name in ["conv1", "conv5"]:
-                torch.quantization.fuse_modules(m, [["0", "1", "2"]], inplace=True)
+                torch.ao.quantization.fuse_modules(m, [["0", "1", "2"]], inplace=True)
         for m in self.modules():
             if type(m) is QuantizableInvertedResidual:
                 if len(m.branch1._modules.items()) > 0:
-                    torch.quantization.fuse_modules(m.branch1, [["0", "1"], ["2", "3", "4"]], inplace=True)
-                torch.quantization.fuse_modules(
+                    torch.ao.quantization.fuse_modules(m.branch1, [["0", "1"], ["2", "3", "4"]], inplace=True)
+                torch.ao.quantization.fuse_modules(
                     m.branch2,
                     [["0", "1", "2"], ["3", "4"], ["5", "6", "7"]],
                     inplace=True,
@@ -96,6 +92,7 @@ def _shufflenetv2(
         assert pretrained in [True, False]
 
     if pretrained:
+        model_url: Optional[str] = None
         if quantize:
             model_url = quant_model_urls[arch + "_" + backend]
         else:
@@ -146,46 +143,4 @@ def shufflenet_v2_x1_0(
     """
     return _shufflenetv2(
         "shufflenetv2_x1.0", pretrained, progress, quantize, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs
-    )
-
-
-def shufflenet_v2_x1_5(
-    pretrained: bool = False,
-    progress: bool = True,
-    quantize: bool = False,
-    **kwargs: Any,
-) -> QuantizableShuffleNetV2:
-    """
-    Constructs a ShuffleNetV2 with 1.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
-    """
-    return _shufflenetv2(
-        "shufflenetv2_x1.5", pretrained, progress, quantize, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs
-    )
-
-
-def shufflenet_v2_x2_0(
-    pretrained: bool = False,
-    progress: bool = True,
-    quantize: bool = False,
-    **kwargs: Any,
-) -> QuantizableShuffleNetV2:
-    """
-    Constructs a ShuffleNetV2 with 2.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
-
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
-    """
-    return _shufflenetv2(
-        "shufflenetv2_x2.0", pretrained, progress, quantize, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs
     )

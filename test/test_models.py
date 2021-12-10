@@ -1,7 +1,10 @@
+import contextlib
 import functools
 import io
 import operator
 import os
+import pkgutil
+import sys
 import traceback
 import warnings
 from collections import OrderedDict
@@ -14,13 +17,61 @@ from _utils_internal import get_relative_path
 from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_seed, cpu_and_gpu, needs_cuda
 from torchvision import models
 
-
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 
 
 def get_models_from_module(module):
     # TODO add a registration mechanism to torchvision.models
-    return [v for k, v in module.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+    return [
+        v
+        for k, v in module.__dict__.items()
+        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
+    ]
+
+
+@pytest.fixture
+def disable_weight_loading(mocker):
+    """When testing models, the two slowest operations are the downloading of the weights to a file and loading them
+    into the model. Unless, you want to test against specific weights, these steps can be disabled without any
+    drawbacks.
+
+    Including this fixture into the signature of your test, i.e. `test_foo(disable_weight_loading)`, will recurse
+    through all models in `torchvision.models` and will patch all occurrences of the function
+    `download_state_dict_from_url` as well as the method `load_state_dict` on all subclasses of `nn.Module` to be
+    no-ops.
+
+    .. warning:
+
+        Loaded models are still executable as normal, but will always have random weights. Make sure to not use this
+        fixture if you want to compare the model output against reference values.
+
+    """
+    starting_point = models
+    function_name = "load_state_dict_from_url"
+    method_name = "load_state_dict"
+
+    module_names = {info.name for info in pkgutil.walk_packages(starting_point.__path__, f"{starting_point.__name__}.")}
+    targets = {f"torchvision._internally_replaced_utils.{function_name}", f"torch.nn.Module.{method_name}"}
+    for name in module_names:
+        module = sys.modules.get(name)
+        if not module:
+            continue
+
+        if function_name in module.__dict__:
+            targets.add(f"{module.__name__}.{function_name}")
+
+        targets.update(
+            {
+                f"{module.__name__}.{obj.__name__}.{method_name}"
+                for obj in module.__dict__.values()
+                if isinstance(obj, type) and issubclass(obj, nn.Module) and method_name in obj.__dict__
+            }
+        )
+
+    for target in targets:
+        # See https://github.com/pytorch/vision/pull/4867#discussion_r743677802 for details
+        with contextlib.suppress(AttributeError):
+            mocker.patch(target)
 
 
 def _get_expected_file(name=None):
@@ -42,7 +93,7 @@ def _get_expected_file(name=None):
     return expected_file
 
 
-def _assert_expected(output, name, prec):
+def _assert_expected(output, name, prec=None, atol=None, rtol=None):
     """Test that a python value matches the recorded contents of a file
     based on a "check" name. The value must be
     pickable with `torch.save`. This file
@@ -59,10 +110,11 @@ def _assert_expected(output, name, prec):
         MAX_PICKLE_SIZE = 50 * 1000  # 50 KB
         binary_size = os.path.getsize(expected_file)
         if binary_size > MAX_PICKLE_SIZE:
-            raise RuntimeError(f"The output for {filename}, is larger than 50kb")
+            raise RuntimeError(f"The output for {filename}, is larger than 50kb - got {binary_size}kb")
     else:
         expected = torch.load(expected_file)
-        rtol = atol = prec
+        rtol = rtol or prec  # keeping prec param for legacy reason, but could be removed ideally
+        atol = atol or prec
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
 
@@ -86,14 +138,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
         with freeze_rng_state():
             results_from_imported = m_import(*args)
         tol = 3e-4
-        try:
-            torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
-        except ValueError:
-            # custom check for the models that return named tuples:
-            # we compare field by field while ignoring None as assert_close can't handle None
-            for a, b in zip(results, results_from_imported):
-                if a is not None:
-                    torch.testing.assert_close(a, b, atol=tol, rtol=tol)
+        torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
 
     TEST_WITH_SLOW = os.getenv("PYTORCH_TEST_WITH_SLOW", "0") == "1"
     if not TEST_WITH_SLOW or skip:
@@ -467,6 +512,7 @@ def test_classification_model(model_fn, dev):
     }
     model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
+    num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
 
     model = model_fn(**kwargs)
@@ -475,7 +521,7 @@ def test_classification_model(model_fn, dev):
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
-    assert out.shape[-1] == 50
+    assert out.shape[-1] == num_classes
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
     _check_fx_compatible(model, x)
 
@@ -740,19 +786,19 @@ def test_quantized_classification_model(model_fn):
         model = model_fn(**kwargs)
         if eval_mode:
             model.eval()
-            model.qconfig = torch.quantization.default_qconfig
+            model.qconfig = torch.ao.quantization.default_qconfig
         else:
             model.train()
-            model.qconfig = torch.quantization.default_qat_qconfig
+            model.qconfig = torch.ao.quantization.default_qat_qconfig
 
         model.fuse_model()
         if eval_mode:
-            torch.quantization.prepare(model, inplace=True)
+            torch.ao.quantization.prepare(model, inplace=True)
         else:
-            torch.quantization.prepare_qat(model, inplace=True)
+            torch.ao.quantization.prepare_qat(model, inplace=True)
             model.eval()
 
-        torch.quantization.convert(model, inplace=True)
+        torch.ao.quantization.convert(model, inplace=True)
 
     try:
         torch.jit.script(model)
@@ -762,7 +808,7 @@ def test_quantized_classification_model(model_fn):
 
 
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
-def test_detection_model_trainable_backbone_layers(model_fn):
+def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_loading):
     model_name = model_fn.__name__
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
@@ -771,6 +817,34 @@ def test_detection_model_trainable_backbone_layers(model_fn):
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
+
+
+@needs_cuda
+@pytest.mark.parametrize("model_builder", (models.optical_flow.raft_large, models.optical_flow.raft_small))
+@pytest.mark.parametrize("scripted", (False, True))
+def test_raft(model_builder, scripted):
+
+    torch.manual_seed(0)
+
+    # We need very small images, otherwise the pickle size would exceed the 50KB
+    # As a resut we need to override the correlation pyramid to not downsample
+    # too much, otherwise we would get nan values (effective H and W would be
+    # reduced to 1)
+    corr_block = models.optical_flow.raft.CorrBlock(num_levels=2, radius=2)
+
+    model = model_builder(corr_block=corr_block).eval().to("cuda")
+    if scripted:
+        model = torch.jit.script(model)
+
+    bs = 1
+    img1 = torch.rand(bs, 3, 80, 72).cuda()
+    img2 = torch.rand(bs, 3, 80, 72).cuda()
+
+    preds = model(img1, img2)
+    flow_pred = preds[-1]
+    # Tolerance is fairly high, but there are 2 * H * W outputs to check
+    # The .pkl were generated on the AWS cluter, on the CI it looks like the resuts are slightly different
+    _assert_expected(flow_pred, name=model_builder.__name__, atol=1e-2, rtol=1)
 
 
 if __name__ == "__main__":

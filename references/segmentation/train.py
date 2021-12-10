@@ -11,6 +11,12 @@ from coco_utils import get_coco
 from torch import nn
 
 
+try:
+    from torchvision.prototype import models as PM
+except ImportError:
+    PM = None
+
+
 def get_dataset(dir_path, name, image_set, transform):
     def sbd(*args, **kwargs):
         return torchvision.datasets.SBDataset(*args, mode="segmentation", **kwargs)
@@ -26,11 +32,14 @@ def get_dataset(dir_path, name, image_set, transform):
     return ds, num_classes
 
 
-def get_transform(train):
-    base_size = 520
-    crop_size = 480
-
-    return presets.SegmentationPresetTrain(base_size, crop_size) if train else presets.SegmentationPresetEval(base_size)
+def get_transform(train, args):
+    if train:
+        return presets.SegmentationPresetTrain(base_size=520, crop_size=480)
+    elif not args.weights:
+        return presets.SegmentationPresetEval(base_size=520)
+    else:
+        weights = PM.get_weight(args.weights)
+        return weights.transforms()
 
 
 def criterion(inputs, target):
@@ -62,19 +71,25 @@ def evaluate(model, data_loader, device, num_classes):
     return confmat
 
 
-def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, print_freq):
+def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, print_freq, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
     metric_logger.add_meter("lr", utils.SmoothedValue(window_size=1, fmt="{value}"))
     header = f"Epoch: [{epoch}]"
     for image, target in metric_logger.log_every(data_loader, print_freq, header):
         image, target = image.to(device), target.to(device)
-        output = model(image)
-        loss = criterion(output, target)
+        with torch.cuda.amp.autocast(enabled=scaler is not None):
+            output = model(image)
+            loss = criterion(output, target)
 
         optimizer.zero_grad()
-        loss.backward()
-        optimizer.step()
+        if scaler is not None:
+            scaler.scale(loss).backward()
+            scaler.step(optimizer)
+            scaler.update()
+        else:
+            loss.backward()
+            optimizer.step()
 
         lr_scheduler.step()
 
@@ -82,6 +97,8 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 
 def main(args):
+    if args.weights and PM is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -90,8 +107,8 @@ def main(args):
 
     device = torch.device(args.device)
 
-    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(train=True))
-    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(train=False))
+    dataset, num_classes = get_dataset(args.data_path, args.dataset, "train", get_transform(True, args))
+    dataset_test, _ = get_dataset(args.data_path, args.dataset, "val", get_transform(False, args))
 
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
@@ -113,9 +130,16 @@ def main(args):
         dataset_test, batch_size=1, sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
     )
 
-    model = torchvision.models.segmentation.__dict__[args.model](
-        num_classes=num_classes, aux_loss=args.aux_loss, pretrained=args.pretrained
-    )
+    if not args.weights:
+        model = torchvision.models.segmentation.__dict__[args.model](
+            pretrained=args.pretrained,
+            num_classes=num_classes,
+            aux_loss=args.aux_loss,
+        )
+    else:
+        model = PM.segmentation.__dict__[args.model](
+            weights=args.weights, num_classes=num_classes, aux_loss=args.aux_loss
+        )
     model.to(device)
     if args.distributed:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -133,6 +157,8 @@ def main(args):
         params = [p for p in model_without_ddp.aux_classifier.parameters() if p.requires_grad]
         params_to_optimize.append({"params": params, "lr": args.lr * 10})
     optimizer = torch.optim.SGD(params_to_optimize, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+
+    scaler = torch.cuda.amp.GradScaler() if args.amp else None
 
     iters_per_epoch = len(data_loader)
     main_lr_scheduler = torch.optim.lr_scheduler.LambdaLR(
@@ -167,6 +193,8 @@ def main(args):
             optimizer.load_state_dict(checkpoint["optimizer"])
             lr_scheduler.load_state_dict(checkpoint["lr_scheduler"])
             args.start_epoch = checkpoint["epoch"] + 1
+            if args.amp:
+                scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
         confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
@@ -177,7 +205,7 @@ def main(args):
     for epoch in range(args.start_epoch, args.epochs):
         if args.distributed:
             train_sampler.set_epoch(epoch)
-        train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq)
+        train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, device, epoch, args.print_freq, scaler)
         confmat = evaluate(model, data_loader_test, device=device, num_classes=num_classes)
         print(confmat)
         checkpoint = {
@@ -187,6 +215,8 @@ def main(args):
             "epoch": epoch,
             "args": args,
         }
+        if args.amp:
+            checkpoint["scaler"] = scaler.state_dict()
         utils.save_on_master(checkpoint, os.path.join(args.output_dir, f"model_{epoch}.pth"))
         utils.save_on_master(checkpoint, os.path.join(args.output_dir, "checkpoint.pth"))
 
@@ -246,6 +276,12 @@ def get_args_parser(add_help=True):
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
+
+    # Prototype models only
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+
+    # Mixed precision training parameters
+    parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     return parser
 

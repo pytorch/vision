@@ -573,6 +573,15 @@ def test_randomness(fn, trans, kwargs, seed, p):
     trans(**kwargs).__repr__()
 
 
+def test_autocontrast_equal_minmax():
+    img_tensor = torch.tensor([[[10]], [[128]], [[245]]], dtype=torch.uint8).expand(3, 32, 32)
+    img_pil = F.to_pil_image(img_tensor)
+
+    img_tensor = F.autocontrast(img_tensor)
+    img_pil = F.autocontrast(img_pil)
+    torch.testing.assert_close(img_tensor, F.pil_to_tensor(img_pil))
+
+
 class TestToPil:
     def _get_1_channel_tensor_various_types():
         img_data_float = torch.Tensor(1, 4, 4).uniform_()
@@ -1364,7 +1373,7 @@ def test_to_grayscale():
 @pytest.mark.parametrize("p", (0, 1))
 def test_random_apply(p, seed):
     torch.manual_seed(seed)
-    random_apply_transform = transforms.RandomApply([transforms.RandomRotation((1, 45))], p=p)
+    random_apply_transform = transforms.RandomApply([transforms.RandomRotation((45, 50))], p=p)
     img = transforms.ToPILImage()(torch.rand(3, 30, 40))
     out = random_apply_transform(img)
     if p == 0:
@@ -1384,7 +1393,7 @@ def test_random_choice(proba_passthrough, seed):
     random_choice_transform = transforms.RandomChoice(
         [
             lambda x: x,  # passthrough
-            transforms.RandomRotation((1, 45)),
+            transforms.RandomRotation((45, 50)),
         ],
         p=[proba_passthrough, 1 - proba_passthrough],
     )
