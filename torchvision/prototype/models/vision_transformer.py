@@ -245,7 +245,13 @@ class ViT_B_16_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_16-0413b9bf.pth",
         transforms=partial(ImageNetEval, crop_size=224),
-        meta={**_COMMON_META, "size": (224, 224), "acc@1": 80.004, "acc@5": 94.642},
+        meta={
+            **_COMMON_META,
+            "size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#base-models",
+            "acc@1": 80.004,
+            "acc@5": 94.642,
+        },
     )
     default = ImageNet1K_V1
 
@@ -257,6 +263,7 @@ class ViT_B_32_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#base-models",
             "acc@1": 75.622,
             "acc@5": 92.19,
         },
@@ -276,8 +283,9 @@ class ViT_L_32_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models-1",
             "acc@1": 74.268,
-            "acc@5": 90.890,
+            "acc@5": 90.89,
         },
     )
     default = ImageNet1K_V1
