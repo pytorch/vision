@@ -11,5 +11,11 @@ setup_conda_pytorch_constraint
 setup_conda_cudatoolkit_constraint
 setup_visual_studio_constraint
 setup_junit_results_folder
-# nvidia channel included for cudatoolkit >= 11
-conda build -c defaults -c nvidia $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
+
+# nvidia channel included for cudatoolkit >= 11 however for 11.5 we use conda-forge
+export CUDATOOLKIT_CHANNEL="nvidia"
+if [[ "$CU_VERSION" == cu115 ]]; then
+    export CUDATOOLKIT_CHANNEL="conda-forge"
+fi
+
+conda build -c defaults -c $CUDATOOLKIT_CHANNEL $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision

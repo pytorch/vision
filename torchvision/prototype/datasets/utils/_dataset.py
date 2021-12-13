@@ -172,12 +172,13 @@ class Dataset(abc.ABC):
     def supports_sharded(self) -> bool:
         return False
 
-    def to_datapipe(
+    def load(
         self,
         root: Union[str, pathlib.Path],
         *,
         config: Optional[DatasetConfig] = None,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
+        skip_integrity_check: bool = False,
     ) -> IterDataPipe[Dict[str, Any]]:
         if not config:
             config = self.info.default_config
@@ -188,7 +189,9 @@ class Dataset(abc.ABC):
             return _make_sharded_datapipe(root, dataset_size)
 
         self.info.check_dependencies()
-        resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
+        resource_dps = [
+            resource.load(root, skip_integrity_check=skip_integrity_check) for resource in self.resources(config)
+        ]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
 
     def _generate_categories(self, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:
