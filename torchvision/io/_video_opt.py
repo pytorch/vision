@@ -8,12 +8,11 @@ from typing import List, Tuple
 import numpy as np
 import torch
 
-from .._internally_replaced_utils import _get_extension_path
+from ..extension import _load_library
 
 
 try:
-    lib_path = _get_extension_path('video_reader')
-    torch.ops.load_library(lib_path)
+    _load_library("video_reader")
     _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
     _HAS_VIDEO_OPT = False

@@ -1,14 +1,14 @@
 import torch
 from enum import Enum
+from warnings import warn
 
-from .._internally_replaced_utils import _get_extension_path
+from ..extension import _load_library
 
 
 try:
-    lib_path = _get_extension_path('image')
-    torch.ops.load_library(lib_path)
-except (ImportError, OSError):
-    pass
+    _load_library("image")
+except (ImportError, OSError) as e:
+    warn(f"Failed to load image Python extension: {e}")
 
 
 class ImageReadMode(Enum):
