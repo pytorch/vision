@@ -95,17 +95,17 @@ class EfficientNet_B1_Weights(WeightsEnum):
         },
     )
     ImageNet1K_V2 = Weights(
-        url="https://download.pytorch.org/models/efficientnet_b1-c2e40cbf.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=232, interpolation=InterpolationMode.BILINEAR),
+        url="https://download.pytorch.org/models/efficientnet_b1-c27df63c.pth",
+        transforms=partial(ImageNetEval, crop_size=240, resize_size=255, interpolation=InterpolationMode.BILINEAR),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning",
-            "acc@1": 79.226,
-            "acc@5": 94.740,
+            "interpolation": InterpolationMode.BILINEAR,
+            "size": (240, 240),
+            "acc@1": 79.838,
+            "acc@5": 94.934,
         },
     )
-    default = ImageNet1K_V2
-
 
 class EfficientNet_B2_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
