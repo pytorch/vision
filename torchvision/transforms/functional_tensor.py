@@ -987,7 +987,7 @@ def equalize(img: Tensor) -> Tensor:
     return torch.stack([_equalize_single_image(x) for x in img])
 
 
-def elastic_deformation(
+def elastic_transform(
     img: Tensor,
     alpha: List[float],
     sigma: List[float],
@@ -998,36 +998,36 @@ def elastic_deformation(
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
-    if isinstance(alpha, float) or isinstance(alpha, int):
+    if isinstance(alpha, (float, int)):
         alpha = [
             alpha,
         ] * 2
 
-    if isinstance(sigma, float) or isinstance(sigma, int):
+    if isinstance(sigma, (float, int)):
         sigma = [
             sigma,
         ] * 2
 
     shape = list(img.shape[-2:])
 
-    dx = (
-        gaussian_blur(
-            torch.rand([1, 1] + shape, device=img.device) * 2 - 1,
+    dx = torch.rand([1, 1] + shape, device=img.device) * 2 - 1
+    if sigma[0] > 0.0:
+        dx = gaussian_blur(
+            dx,
             [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
             sigma,
         )
-        * alpha[0]
-        / shape[0]
-    )
-    dy = (
-        gaussian_blur(
-            torch.rand(*shape).unsqueeze(0).unsqueeze(0).to(img.device) * 2 - 1,
+    dx = dx * alpha[0] / shape[0]
+    dy = torch.rand([1, 1] + shape, device=img.device) * 2 - 1
+
+    if sigma[1] > 0.0:
+        dy = gaussian_blur(
+            dy,
             [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
             sigma,
         )
-        * alpha[1]
-        / shape[1]
-    )
+    dy = dy * alpha[1] / shape[1]
+
     displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
 
     hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in shape]

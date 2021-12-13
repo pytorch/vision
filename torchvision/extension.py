@@ -18,7 +18,6 @@ try:
     def _has_ops():  # noqa: F811
         return True
 
-
 except (ImportError, OSError):
     pass
 

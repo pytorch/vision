@@ -6,6 +6,7 @@ from collections.abc import Sequence
 from typing import Tuple, List, Optional
 
 import torch
+from numpy import not_equal
 from torch import Tensor
 
 try:
@@ -2016,9 +2017,8 @@ class RandomEqualize(torch.nn.Module):
         return self.__class__.__name__ + f"(p={self.p})"
 
 
-class ElasticDeformation(torch.nn.Module):
-    """Transform a tensor image with elastic deformations.
-    This transform does not support PIL Image.
+class ElasticTransform(torch.nn.Module):
+    """Transform a tensor image with elastic transformations.
     Given alpha and sigma, it will generate displacement
     vectors for all pixels based on random offsets. Alpha controls the strength
     and sigma controls the smoothness of the displacements.
@@ -2030,21 +2030,40 @@ class ElasticDeformation(torch.nn.Module):
     Args:
         alpha: List [alpha H, alpha W] or (float), defines the magnitude of displacements.
         sigma: List [sigma H, sigma W] or (float) defining the smoothness of displacements.
-        interpolation: str saying either NEAREST, BILINEAR or BICUBIC. Defining the interpolation used in grid_sample.
-        fill: Pixel fill value for the area outside the transformed image. Default is 0.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        fill (sequence or number): Pixel fill value for the area outside the transformed
+            image. Default is ``0``. If given a number, the value is used for all bands respectively.
+
     """
 
-    def __init__(self, alpha, sigma, interpolation="bilinear", fill=0):
+    def __init__(self, alpha, sigma, interpolation=InterpolationMode.BILINEAR, fill=0):
         super().__init__()
-        if isinstance(alpha, list) and len(alpha) != 2:
-            raise ValueError("alpha should be a scalar or a list of two. Got a list of" f"{len(alpha)}.")
-
-        if isinstance(sigma, list) and len(sigma) != 2:
-            raise ValueError("sigma should be a scalar or a list of two. Got a list of" f"{len(sigma)}.")
-
+        if not isinstance(alpha, (int, float, list, tuple)):
+            raise TypeError(f"alpha should be int, float or a sequence int or float. Got {type(alpha)}")
+        if isinstance(alpha, (list, tuple)) and len(alpha) != 2:
+            raise ValueError(f"If alpha is a sequence its length should be 2. Got {len(alpha)}")
         self.alpha = alpha
+
+        if not isinstance(sigma, (int, float, list, tuple)):
+            raise TypeError(f"alpha should be int, float or a sequence int or float. Got {type(sigma)}")
+        if isinstance(sigma, (list, tuple)) and len(sigma) != 2:
+            raise ValueError(f"If sigma is a sequence its length should be 2. Got {len(sigma)}")
         self.sigma = sigma
+
+        # Backward compatibility with integer value
+        if isinstance(interpolation, int):
+            warnings.warn(
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
+            )
+            interpolation = _interpolation_modes_from_int(interpolation)
         self.interpolation = interpolation
+
+        if not isinstance(fill, (int, float)):
+            raise TypeError(f"fill should be int or float. Got {type(fill)}")
         self.fill = fill
 
     def forward(self, tensor: Tensor) -> Tensor:
@@ -2055,10 +2074,10 @@ class ElasticDeformation(torch.nn.Module):
         Returns:
             Tensor: Transformed image.
         """
-        return elastic_deformation(tensor, self.control_point_spacing, self.sigma, self.interpolation, self.fill)
+        return F.elastic_transform(tensor, self.alpha, self.sigma, self.interpolation, self.fill)
 
     def __repr__(self):
-        format_string = self.__class__.__name__ + "(control_point_spacing="
-        format_string += str(self.control_point_spacing) + ")"
+        format_string = self.__class__.__name__ + "(alpha="
+        format_string += str(self.alpha) + ")"
         format_string += ", (sigma=" + str(self.sigma) + ")"
         return format_string

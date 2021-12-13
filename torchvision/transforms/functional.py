@@ -1390,3 +1390,40 @@ def equalize(img: Tensor) -> Tensor:
         return F_pil.equalize(img)
 
     return F_t.equalize(img)
+
+
+def elastic_transform(
+    img: Tensor,
+    alpha: List[float],
+    sigma: List[float],
+    interpolation: str = "bilinear",
+    fill: Optional[List[float]] = None,
+) -> Tensor:
+    """Transform a tensor image with elastic transformations.
+    Given alpha and sigma, it will generate displacement
+    vectors for all pixels based on random offsets. Alpha controls the strength
+    and sigma controls the smoothness of the displacements.
+    The displacements are added to an identity grid and the resulting grid is
+    used to grid_sample from the image.
+    Applications:
+        Randomly transforms the morphology of objects in images and produces a
+        see-through-water-like effect.
+    Args:
+        alpha: List [alpha H, alpha W] or (float), defines the magnitude of displacements.
+        sigma: List [sigma H, sigma W] or (float) defining the smoothness of displacements.
+        interpolation: str saying either NEAREST, BILINEAR or BICUBIC. Defining the interpolation used in grid_sample.
+        fill: Pixel fill value for the area outside the transformed image. Default is 0.
+    """
+
+    t_img = img
+    if not isinstance(img, torch.Tensor):
+        if not F_pil._is_pil_image(img):
+            raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
+
+        t_img = to_tensor(img)
+
+    output = F_t.elastic_transform(t_img, alpha, sigma, interpolation, fill)
+
+    if not isinstance(img, torch.Tensor):
+        output = to_pil_image(output)
+    return output

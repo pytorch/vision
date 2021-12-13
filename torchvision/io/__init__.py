@@ -38,7 +38,6 @@ if _HAS_VIDEO_OPT:
     def _has_video_opt() -> bool:
         return True
 
-
 else:
 
     def _has_video_opt() -> bool:
