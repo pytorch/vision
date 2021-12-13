@@ -15,8 +15,8 @@ recipe from https://github.com/princeton-vl/RAFT. The original recipe trains for
 epochs on Chairs and Things respectively:
 
 ```
-num_epochs = ceil(num_steps / number_of_steps_per_epoch) =
-num_epochs = ceil(num_steps / (num_samples / effective_batch_size))
+num_epochs = ceil(num_steps / number_of_steps_per_epoch)
+           = ceil(num_steps / (num_samples / effective_batch_size))
 ```
 
 ```
