@@ -61,7 +61,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
             warnings.warn("`n` argument is deprecated and has been renamed `num_features`", DeprecationWarning)
             num_features = n
         super().__init__()
-        _log_api_usage_once(self)
+        _log_api_usage_once("ops", self.__class__.__name__)
         self.eps = eps
         self.register_buffer("weight", torch.ones(num_features))
         self.register_buffer("bias", torch.zeros(num_features))
@@ -116,6 +116,7 @@ class ConvNormActivation(torch.nn.Sequential):
         activation_layer (Callable[..., torch.nn.Module], optinal): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
         dilation (int): Spacing between kernel elements. Default: 1
         inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``
+        bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.
 
     """
 
@@ -131,9 +132,12 @@ class ConvNormActivation(torch.nn.Sequential):
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         dilation: int = 1,
         inplace: bool = True,
+        bias: Optional[bool] = None,
     ) -> None:
         if padding is None:
             padding = (kernel_size - 1) // 2 * dilation
+        if bias is None:
+            bias = norm_layer is None
         layers = [
             torch.nn.Conv2d(
                 in_channels,
@@ -143,7 +147,7 @@ class ConvNormActivation(torch.nn.Sequential):
                 padding,
                 dilation=dilation,
                 groups=groups,
-                bias=norm_layer is None,
+                bias=bias,
             )
         ]
         if norm_layer is not None:
@@ -151,7 +155,7 @@ class ConvNormActivation(torch.nn.Sequential):
         if activation_layer is not None:
             layers.append(activation_layer(inplace=inplace))
         super().__init__(*layers)
-        _log_api_usage_once(self)
+        _log_api_usage_once("ops", self.__class__.__name__)
         self.out_channels = out_channels
 
 
@@ -175,7 +179,7 @@ class SqueezeExcitation(torch.nn.Module):
         scale_activation: Callable[..., torch.nn.Module] = torch.nn.Sigmoid,
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self)
+        _log_api_usage_once("ops", self.__class__.__name__)
         self.avgpool = torch.nn.AdaptiveAvgPool2d(1)
         self.fc1 = torch.nn.Conv2d(input_channels, squeeze_channels, 1)
         self.fc2 = torch.nn.Conv2d(squeeze_channels, input_channels, 1)

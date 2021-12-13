@@ -8,7 +8,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    TarArchiveReader,
     Shuffler,
     Filter,
     Demultiplexer,
@@ -119,7 +118,6 @@ class VOC(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        archive_dp = TarArchiveReader(archive_dp)
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
             3,

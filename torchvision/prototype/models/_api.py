@@ -1,17 +1,19 @@
+import importlib
+import inspect
+import sys
 from collections import OrderedDict
 from dataclasses import dataclass, fields
 from enum import Enum
-from inspect import signature
 from typing import Any, Callable, Dict
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 
 
-__all__ = ["Weights", "WeightEntry", "get_weight"]
+__all__ = ["WeightsEnum", "Weights", "get_weight"]
 
 
 @dataclass
-class WeightEntry:
+class Weights:
     """
     This class is used to group important attributes associated with the pre-trained weights.
 
@@ -32,24 +34,24 @@ class WeightEntry:
     meta: Dict[str, Any]
 
 
-class Weights(Enum):
+class WeightsEnum(Enum):
     """
     This class is the parent class of all model weights. Each model building method receives an optional `weights`
     parameter with its associated pre-trained weights. It inherits from `Enum` and its values should be of type
-    `WeightEntry`.
+    `Weights`.
 
     Args:
-        value (WeightEntry): The data class entry with the weight information.
+        value (Weights): The data class entry with the weight information.
     """
 
-    def __init__(self, value: WeightEntry):
+    def __init__(self, value: Weights):
         self._value_ = value
 
     @classmethod
     def verify(cls, obj: Any) -> Any:
         if obj is not None:
             if type(obj) is str:
-                obj = cls.from_str(obj)
+                obj = cls.from_str(obj.replace(cls.__name__ + ".", ""))
             elif not isinstance(obj, cls):
                 raise TypeError(
                     f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
@@ -57,9 +59,9 @@ class Weights(Enum):
         return obj
 
     @classmethod
-    def from_str(cls, value: str) -> "Weights":
-        for v in cls:
-            if v._name_ == value:
+    def from_str(cls, value: str) -> "WeightsEnum":
+        for k, v in cls.__members__.items():
+            if k == value:
                 return v
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
@@ -70,48 +72,42 @@ class Weights(Enum):
         return f"{self.__class__.__name__}.{self._name_}"
 
     def __getattr__(self, name):
-        # Be able to fetch WeightEntry attributes directly
-        for f in fields(WeightEntry):
+        # Be able to fetch Weights attributes directly
+        for f in fields(Weights):
             if f.name == name:
                 return object.__getattribute__(self.value, name)
         return super().__getattr__(name)
 
 
-def get_weight(fn: Callable, weight_name: str) -> Weights:
+def get_weight(name: str) -> WeightsEnum:
     """
-    Gets the weight enum of a specific model builder method and weight name combination.
+    Gets the weight enum value by its full name. Example: "ResNet50_Weights.ImageNet1K_V1"
 
     Args:
-        fn (Callable): The builder method used to create the model.
-        weight_name (str): The name of the weight enum entry of the specific model.
+        name (str): The name of the weight enum entry.
 
     Returns:
-        Weights: The requested weight enum.
+        WeightsEnum: The requested weight enum.
     """
-    sig = signature(fn)
-    if "weights" not in sig.parameters:
-        raise ValueError("The method is missing the 'weights' parameter.")
+    try:
+        enum_name, value_name = name.split(".")
+    except ValueError:
+        raise ValueError(f"Invalid weight name provided: '{name}'.")
 
-    ann = signature(fn).parameters["weights"].annotation
-    weights_class = None
-    if isinstance(ann, type) and issubclass(ann, Weights):
-        weights_class = ann
-    else:
-        # handle cases like Union[Optional, T]
-        # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
-        for t in ann.__args__:  # type: ignore[union-attr]
-            if isinstance(t, type) and issubclass(t, Weights):
-                # ensure the name exists. handles builders with multiple types of weights like in quantization
-                try:
-                    t.from_str(weight_name)
-                except ValueError:
-                    continue
-                weights_class = t
-                break
+    base_module_name = ".".join(sys.modules[__name__].__name__.split(".")[:-1])
+    base_module = importlib.import_module(base_module_name)
+    model_modules = [base_module] + [
+        x[1] for x in inspect.getmembers(base_module, inspect.ismodule) if x[1].__file__.endswith("__init__.py")
+    ]
 
-    if weights_class is None:
-        raise ValueError(
-            "The weight class for the specific method couldn't be retrieved. Make sure the typing info is correct."
-        )
+    weights_enum = None
+    for m in model_modules:
+        potential_class = m.__dict__.get(enum_name, None)
+        if potential_class is not None and issubclass(potential_class, WeightsEnum):
+            weights_enum = potential_class
+            break
 
-    return weights_class.from_str(weight_name)
+    if weights_enum is None:
+        raise ValueError(f"The weight enum '{enum_name}' for the specific method couldn't be retrieved.")
+
+    return weights_enum.from_str(value_name)
