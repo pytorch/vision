@@ -72,7 +72,7 @@ def _check_cuda_version():
     return _version
 
 
-def _load_library(lib_name: str) -> None:
+def _load_library(lib_name):
     lib_path = _get_extension_path(lib_name)
     # On Windows Python-3.8+ has `os.add_dll_directory` call,
     # which is called from _get_extension_path to configure dll search path
