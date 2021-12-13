@@ -68,7 +68,7 @@ void Decoder::release() const
   cuCtxPopCurrent(NULL);
 }
 
-torch::Tensor Decoder::Decode(const uint8_t *data, int64_t size, int64_t flags, int64_t pts)
+int Decoder::Decode(const uint8_t *data, int64_t size, int64_t flags, int64_t pts)
 {
   numDecodedFrames = 0;
   CUVIDSOURCEDATAPACKET pkt = {
@@ -84,7 +84,17 @@ torch::Tensor Decoder::Decode(const uint8_t *data, int64_t size, int64_t flags, 
     cuvidParseVideoData(parser, &pkt),
     __LINE__);
   cuvidStream = 0;
-  return frameTensor;
+  return numDecodedFrames;
+}
+
+uint8_t * Decoder::FetchFrame()
+{
+  if (decodedFrames.empty()) {
+    return nullptr;
+  }
+  uint8_t *frame = decodedFrames.front();
+  decodedFrames.pop();
+  return frame;
 }
 
 int Decoder::HandlePictureDecode(CUVIDPICPARAMS *picParams)
@@ -143,11 +153,8 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *dispInfo)
     uint8_t *decodedFrame = nullptr;
     if (useDeviceFrame) {
       cuMemAlloc((CUdeviceptr *)&decodedFrame, GetFrameSize());
-    }
-    else {
-      frameTensor = torch::empty({GetFrameSize()},
-          torch::dtype(torch::kU8).device(torch::kCPU));
-      decodedFrame = frameTensor.data_ptr<uint8_t>();
+    } else {
+      decodedFrame = (uint8_t *)malloc(GetFrameSize() * sizeof(uint8_t));
     }
 
     numDecodedFrames++;
@@ -186,11 +193,7 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *dispInfo)
     CheckForCudaErrors(
       cuStreamSynchronize(cuvidStream),
       __LINE__);
-    if (useDeviceFrame) {
-      auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
-      frameTensor = torch::from_blob(
-        decodedFrame, {GetFrameSize()}, [](auto p) { cuMemFree((CUdeviceptr)p); }, options);
-    }
+    decodedFrames.push(decodedFrame);
     CheckForCudaErrors(
       cuCtxPopCurrent(NULL),
       __LINE__);

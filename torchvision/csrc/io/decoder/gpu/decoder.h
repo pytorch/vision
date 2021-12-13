@@ -1,15 +1,15 @@
 #include <cuviddec.h>
 #include <nvcuvid.h>
 #include <cstdint>
+#include <queue>
 #include <cuda_runtime_api.h>
 #include <cuda.h>
-#include <torch/torch.h>
 
 static auto CheckForCudaErrors = [](CUresult result, int lineNum)
 {
   if (CUDA_SUCCESS != result) {
     std::stringstream errorStream;
-    const char *errorName = nullptr, *errorDesc = nullptr;
+    const char *errorName = nullptr;
 
     errorStream << __FILE__ << ":" << lineNum << std::endl;
     if (CUDA_SUCCESS != cuGetErrorName(result, &errorName)) {
@@ -34,10 +34,15 @@ class Decoder {
     Decoder() {}
     ~Decoder();
     void init(CUcontext, cudaVideoCodec, bool, const Rect * = NULL, const Dim * = NULL, int64_t = 1000, bool = false, bool = false, int64_t = 0, int64_t = 0);
-    torch::Tensor Decode(const uint8_t *, int64_t, int64_t = 0, int64_t = 0);
+    int Decode(const uint8_t *, int64_t, int64_t = 0, int64_t = 0);
     cudaVideoSurfaceFormat GetOutputFormat() const { return videoOutputFormat; }
     void release() const;
-    int64_t GetNumDecodedFrames() const { return numDecodedFrames; }
+    bool UseDeviceFrame() const { return useDeviceFrame; }
+    int GetFrameSize() const
+    {
+      return GetWidth() * (lumaHeight + (chromaHeight * numChromaPlanes)) * bytesPerPixel;
+    }
+    uint8_t * FetchFrame();
 
   private:
     CUcontext cuContext = NULL;
@@ -49,7 +54,6 @@ class Decoder {
     CUstream cuvidStream = 0;
     int numDecodedFrames = 0;
     unsigned int numChromaPlanes = 0;
-    torch::Tensor frameTensor;
     // dimension of the output
     unsigned int width = 0, lumaHeight = 0, chromaHeight = 0;
     cudaVideoCodec videoCodec = cudaVideoCodec_NumCodecs;
@@ -73,6 +77,7 @@ class Decoder {
     size_t deviceFramePitch = 0;
     bool m_bDeviceFramePitched = false;
     int m_nFrameAlloc = 0;
+    std::queue<uint8_t *> decodedFrames;
 
     static int CUDAAPI HandleVideoSequenceProc(void *pUserData, CUVIDEOFORMAT *pVideoFormat) { return ((Decoder *)pUserData)->HandleVideoSequence(pVideoFormat); }
     static int CUDAAPI HandlePictureDecodeProc(void *pUserData, CUVIDPICPARAMS *pPicParams) { return ((Decoder *)pUserData)->HandlePictureDecode(pPicParams); }
@@ -86,16 +91,10 @@ class Decoder {
   int HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo);
   int GetOperatingPoint(CUVIDOPERATINGPOINTINFO *pOPInfo);
 
-  int GetWidth()
+  int GetWidth() const
   {
-    assert(width);
     return (videoOutputFormat == cudaVideoSurfaceFormat_NV12 || videoOutputFormat == cudaVideoSurfaceFormat_P016) ? (width + 1) & ~1 : width;
   }
 
-  int GetFrameSize()
-  {
-    assert(width);
-    return GetWidth() * (lumaHeight + (chromaHeight * numChromaPlanes)) * bytesPerPixel;
-  }
 };
 

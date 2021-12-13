@@ -1,4 +1,5 @@
 #include <time.h>
+#include <torch/torch.h>
 #include "gpu_decoder.h"
 
 GPUDecoder::GPUDecoder(std::string src_file, bool useDevFrame, int64_t dev) : demuxer(src_file.c_str()), device(dev)
@@ -30,22 +31,40 @@ GPUDecoder::~GPUDecoder()
 torch::Tensor GPUDecoder::decode()
 {
   uint8_t *video;
-  torch::Tensor framesReturned;
+  torch::Tensor frameTensor;
   int64_t numFrames;
   clock_t start, end;
-  double cpu_time_used;
-  start = clock();
-  demuxer.Demux(&video, &videoBytes);
-  end = clock();
-  cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-  demux_time += cpu_time_used;
-  framesReturned = dec.Decode(video, videoBytes);
-  numFrames = dec.GetNumDecodedFrames();
-  end = clock();
-  cpu_time_used = ((double) (end - start)) / CLOCKS_PER_SEC;
-  decode_time += cpu_time_used;
+  double cpu_time_used1, cpu_time_used2;
+  uint8_t *frame = nullptr;
+  do
+  {
+    start = clock();
+    demuxer.Demux(&video, &videoBytes);
+    end = clock();
+    cpu_time_used1 = ((double) (end - start)) / CLOCKS_PER_SEC;
+    start = clock();
+    numFrames = dec.Decode(video, videoBytes);
+    end = clock();
+    frame = dec.FetchFrame();
+    cpu_time_used2 = ((double) (end - start)) / CLOCKS_PER_SEC;
+  } while (frame == nullptr && videoBytes > 0);
+  demux_time += cpu_time_used1;
+  decode_time += cpu_time_used2;
   totalFrames += numFrames;
-  return framesReturned;
+  if (frame == nullptr) {
+    auto options = torch::TensorOptions().dtype(torch::kU8).device(dec.UseDeviceFrame() ? torch::kCUDA : torch::kCPU);
+    return torch::zeros({0}, options);
+  }
+  if (dec.UseDeviceFrame()) {
+      auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
+      frameTensor = torch::from_blob(
+        frame, {dec.GetFrameSize()}, [](auto p) { cuMemFree((CUdeviceptr)p); }, options);
+  } else {
+      auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCPU);
+      frameTensor = torch::from_blob(
+        frame, {dec.GetFrameSize()}, [](auto p) { free(p); }, options);
+  }
+  return frameTensor;
 }
 
 int64_t GPUDecoder::getDemuxedBytes()
