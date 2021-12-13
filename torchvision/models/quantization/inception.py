@@ -36,7 +36,7 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
         return x
 
     def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+        torch.ao.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
 
 
 class QuantizableInceptionA(inception_module.InceptionA):
@@ -144,8 +144,8 @@ class QuantizableInception3(inception_module.Inception3):
                 QuantizableInceptionAux,
             ],
         )
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = torch.ao.quantization.QuantStub()
+        self.dequant = torch.ao.quantization.DeQuantStub()
 
     def forward(self, x: Tensor) -> InceptionOutputs:
         x = self._transform_input(x)
@@ -197,7 +197,7 @@ def inception_v3(
         aux_logits (bool): If True, add an auxiliary branch that can improve training.
             Default: *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *False*
+            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
     """
     if pretrained:
         if "transform_input" not in kwargs:

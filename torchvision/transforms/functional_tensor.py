@@ -16,6 +16,12 @@ def _assert_image_tensor(img: Tensor) -> None:
         raise TypeError("Tensor is not a torch image.")
 
 
+def _assert_threshold(img: Tensor, threshold: float) -> None:
+    bound = 1 if img.is_floating_point() else 255
+    if threshold > bound:
+        raise TypeError("Threshold should be less than bound of img.")
+
+
 def get_image_size(img: Tensor) -> List[int]:
     # Returns (w, h) of tensor image
     _assert_image_tensor(img)
@@ -882,6 +888,8 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
+    _assert_threshold(img, threshold)
+
     inverted_img = invert(img)
     return torch.where(img >= threshold, inverted_img, img)
 
@@ -937,10 +945,10 @@ def autocontrast(img: Tensor) -> Tensor:
 
     minimum = img.amin(dim=(-2, -1), keepdim=True).to(dtype)
     maximum = img.amax(dim=(-2, -1), keepdim=True).to(dtype)
-    eq_idxs = torch.where(minimum == maximum)[0]
-    minimum[eq_idxs] = 0
-    maximum[eq_idxs] = bound
     scale = bound / (maximum - minimum)
+    eq_idxs = torch.isfinite(scale).logical_not()
+    minimum[eq_idxs] = 0
+    scale[eq_idxs] = 1
 
     return ((img - minimum) * scale).clamp(0, bound).to(img.dtype)
 

@@ -31,7 +31,7 @@ class QuantizableBasicConv2d(BasicConv2d):
         return x
 
     def fuse_model(self) -> None:
-        torch.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+        torch.ao.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
 
 
 class QuantizableInception(Inception):
@@ -74,8 +74,8 @@ class QuantizableGoogLeNet(GoogLeNet):
         super().__init__(  # type: ignore[misc]
             blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux], *args, **kwargs
         )
-        self.quant = torch.quantization.QuantStub()
-        self.dequant = torch.quantization.DeQuantStub()
+        self.quant = torch.ao.quantization.QuantStub()
+        self.dequant = torch.ao.quantization.DeQuantStub()
 
     def forward(self, x: Tensor) -> GoogLeNetOutputs:
         x = self._transform_input(x)
@@ -123,7 +123,7 @@ def googlenet(
         aux_logits (bool): If True, adds two auxiliary branches that can improve training.
             Default: *False* when pretrained is True otherwise *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *False*
+            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
     """
     if pretrained:
         if "transform_input" not in kwargs:
