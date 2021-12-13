@@ -106,6 +106,8 @@ class EfficientNet_B1_Weights(WeightsEnum):
             "acc@5": 94.934,
         },
     )
+    default = ImageNet1K_V2
+
 
 class EfficientNet_B2_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
