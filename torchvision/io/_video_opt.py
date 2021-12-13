@@ -5,7 +5,7 @@ from typing import List, Tuple, Dict, Optional, Union
 
 import torch
 
-from .._internally_replaced_utils import _load_library
+from ..extension import _load_library
 
 
 try:

@@ -1,18 +1,15 @@
-import ctypes
-import os
-import sys
 from enum import Enum
 from warnings import warn
 
 import torch
 
-from .._internally_replaced_utils import _load_library
+from ..extension import _load_library
 
 
 try:
     _load_library("image")
 except (ImportError, OSError) as e:
-    warn(f"Failed to load {globals().get('lib_path','image.pyd')}: {e}")
+    warn(f"Failed to load image Python extension: {e}")
 
 
 class ImageReadMode(Enum):
