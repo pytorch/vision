@@ -8,6 +8,7 @@ from typing import Union, Tuple, List, Dict, Any
 import torch
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Shuffler, Filter
+from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchvision.prototype.datasets.decoder import pil
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 
@@ -51,6 +52,7 @@ def from_data_folder(
     masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
     dp = FileLister(str(root), recursive=recursive, masks=masks)
     dp: IterDataPipe = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
+    dp = ShardingFilter(dp)
     dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
     dp = FileLoader(dp)
     return (

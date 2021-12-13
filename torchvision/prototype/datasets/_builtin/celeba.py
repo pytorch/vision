@@ -3,6 +3,7 @@ import io
 from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence
 
 import torch
+from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -151,6 +152,7 @@ class CelebA(Dataset):
 
         splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))
         splits_dp = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
+        splits_dp = ShardingFilter(splits_dp)
         splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         anns_dp = Zipper(

@@ -5,6 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 import torch
+from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -139,6 +140,7 @@ class SBD(Dataset):
         if config.split == "train_noval":
             split_dp = extra_split_dp
         split_dp = LineReader(split_dp, decode=True)
+        split_dp = ShardingFilter(split_dp)
         split_dp = Shuffler(split_dp)
 
         dp = split_dp

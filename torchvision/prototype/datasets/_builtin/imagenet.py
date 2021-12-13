@@ -4,6 +4,7 @@ import re
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import torch
+from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, TarArchiveReader, Filter, Shuffler
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -147,6 +148,7 @@ class ImageNet(Dataset):
         if config.split == "train":
             # the train archive is a tar of tars
             dp = TarArchiveReader(images_dp)
+            dp = ShardingFilter(dp)
             dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_train_data)
         elif config.split == "val":
@@ -154,6 +156,7 @@ class ImageNet(Dataset):
             devkit_dp = LineReader(devkit_dp, return_path=False)
             devkit_dp = Mapper(devkit_dp, int)
             devkit_dp = Enumerator(devkit_dp, 1)
+            devkit_dp = ShardingFilter(devkit_dp)
             devkit_dp = Shuffler(devkit_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
             dp = IterKeyZipper(
@@ -165,7 +168,8 @@ class ImageNet(Dataset):
             )
             dp = Mapper(dp, self._collate_val_data)
         else:  # config.split == "test"
-            dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
+            dp = ShardingFilter(images_dp)
+            dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_test_data)
 
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))

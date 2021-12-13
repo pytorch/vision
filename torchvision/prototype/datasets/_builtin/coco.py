@@ -5,6 +5,7 @@ from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import torch
+from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -180,7 +181,8 @@ class Coco(Dataset):
         images_dp, meta_dp = resource_dps
 
         if config.annotations is None:
-            dp = Shuffler(images_dp)
+            dp = ShardingFilter(images_dp)
+            dp = Shuffler(dp)
             return Mapper(dp, self._collate_and_decode_image, fn_kwargs=dict(decoder=decoder))
 
         meta_dp = Filter(
@@ -214,6 +216,7 @@ class Coco(Dataset):
             ref_key_fn=getitem("id"),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
+        anns_dp = ShardingFilter(anns_dp)
 
         dp = IterKeyZipper(
             anns_dp,

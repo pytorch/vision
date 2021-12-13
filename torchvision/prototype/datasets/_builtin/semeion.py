@@ -2,6 +2,7 @@ import io
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
+from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -64,6 +65,7 @@ class SEMEION(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = CSVParser(dp, delimiter=" ")
+        dp = ShardingFilter(dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         dp = Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
         return dp

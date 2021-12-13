@@ -7,6 +7,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Iterator, 
 
 import numpy as np
 import torch
+from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Filter,
@@ -87,6 +88,7 @@ class _CifarBase(Dataset):
         dp = Filter(dp, functools.partial(self._is_data_file, config=config))
         dp = Mapper(dp, self._unpickle)
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
+        dp = ShardingFilter(dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
