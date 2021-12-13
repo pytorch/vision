@@ -10,7 +10,14 @@ training and evaluation scripts to quickly bootstrap research.
 The RAFT large model was trained on Flying Chairs and then on Flying Things.
 Both used 8 A100 GPUs and a batch size of 2 (so effective batch size is 16). The
 rest of the hyper-parameters are exactly the same as the original RAFT training
-recipe from https://github.com/princeton-vl/RAFT.
+recipe from https://github.com/princeton-vl/RAFT. The original recipe trains for
+100000 updates (or steps) on each dataset - this corresponds to about 72 and 20
+epochs on Chairs and Things respectively:
+
+```
+num_epochs = ceil(num_steps / number_of_steps_per_epoch)
+           = ceil(num_steps / (num_samples / effective_batch_size))
+```
 
 ```
 torchrun --nproc_per_node 8 --nnodes 1 train.py \
@@ -21,7 +28,7 @@ torchrun --nproc_per_node 8 --nnodes 1 train.py \
     --batch-size 2 \
     --lr 0.0004 \
     --weight-decay 0.0001 \
-    --num-steps 100000 \
+    --epochs 72 \
     --output-dir $chairs_dir
 ```
 
@@ -34,7 +41,7 @@ torchrun --nproc_per_node 8 --nnodes 1 train.py \
     --batch-size 2 \
     --lr 0.000125 \
     --weight-decay 0.0001 \
-    --num-steps 100000 \
+    --epochs 20 \
     --freeze-batch-norm \
     --output-dir $things_dir\
     --resume $chairs_dir/$name_chairs.pth
