@@ -1409,6 +1409,10 @@ def elastic_transform(
         Randomly transforms the morphology of objects in images and produces a
         see-through-water-like effect.
     Args:
+        img (PIL Image or Tensor): Image on which elastic_transform is applied.
+        If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+        where ... means it can have an arbitrary number of leading dimensions.
+        If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
         alpha: List [alpha H, alpha W] or (float), defines the magnitude of displacements.
         sigma: List [sigma H, sigma W] or (float) defining the smoothness of displacements.
         interpolation: str saying either NEAREST, BILINEAR or BICUBIC. Defining the interpolation used in grid_sample.
