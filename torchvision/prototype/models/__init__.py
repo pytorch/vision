@@ -12,6 +12,8 @@ from .squeezenet import *
 from .vgg import *
 from .vision_transformer import *
 from . import detection
+from . import optical_flow
 from . import quantization
 from . import segmentation
 from . import video
+from ._api import get_weight

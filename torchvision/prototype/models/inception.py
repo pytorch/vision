@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.inception import Inception3, InceptionOutputs, _InceptionOutputs
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "Inception_V3_Weights", "inception_v3"]
@@ -25,15 +25,12 @@ class Inception_V3_Weights(WeightsEnum):
             "acc@1": 77.294,
             "acc@5": 93.450,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
-def inception_v3(weights: Optional[Inception_V3_Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", Inception_V3_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", Inception_V3_Weights.ImageNet1K_V1))
+def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
     weights = Inception_V3_Weights.verify(weights)
 
     original_aux_logits = kwargs.get("aux_logits", True)

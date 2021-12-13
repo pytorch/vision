@@ -11,7 +11,6 @@ from torchdata.datapipes.iter import (
     IterDataPipe,
     Demultiplexer,
     Mapper,
-    ZipArchiveReader,
     Zipper,
     Shuffler,
 )
@@ -310,7 +309,6 @@ class EMNIST(_MNISTBase):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        archive_dp = ZipArchiveReader(archive_dp)
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,

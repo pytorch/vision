@@ -8,7 +8,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.efficientnet import EfficientNet, MBConvConfig
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [
@@ -79,8 +79,8 @@ class EfficientNet_B0_Weights(WeightsEnum):
             "acc@1": 77.692,
             "acc@5": 93.532,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B1_Weights(WeightsEnum):
@@ -93,8 +93,8 @@ class EfficientNet_B1_Weights(WeightsEnum):
             "acc@1": 78.642,
             "acc@5": 94.186,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B2_Weights(WeightsEnum):
@@ -107,8 +107,8 @@ class EfficientNet_B2_Weights(WeightsEnum):
             "acc@1": 80.608,
             "acc@5": 95.310,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B3_Weights(WeightsEnum):
@@ -121,8 +121,8 @@ class EfficientNet_B3_Weights(WeightsEnum):
             "acc@1": 82.008,
             "acc@5": 96.054,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B4_Weights(WeightsEnum):
@@ -135,8 +135,8 @@ class EfficientNet_B4_Weights(WeightsEnum):
             "acc@1": 83.384,
             "acc@5": 96.594,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B5_Weights(WeightsEnum):
@@ -149,8 +149,8 @@ class EfficientNet_B5_Weights(WeightsEnum):
             "acc@1": 83.444,
             "acc@5": 96.628,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B6_Weights(WeightsEnum):
@@ -163,8 +163,8 @@ class EfficientNet_B6_Weights(WeightsEnum):
             "acc@1": 84.008,
             "acc@5": 96.916,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
 class EfficientNet_B7_Weights(WeightsEnum):
@@ -177,77 +177,59 @@ class EfficientNet_B7_Weights(WeightsEnum):
             "acc@1": 84.122,
             "acc@5": 96.908,
         },
-        default=True,
     )
+    default = ImageNet1K_V1
 
 
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B0_Weights.ImageNet1K_V1))
 def efficientnet_b0(
-    weights: Optional[EfficientNet_B0_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[EfficientNet_B0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNet_B0_Weights.ImageNet1K_V1)
     weights = EfficientNet_B0_Weights.verify(weights)
 
     return _efficientnet(width_mult=1.0, depth_mult=1.0, dropout=0.2, weights=weights, progress=progress, **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B1_Weights.ImageNet1K_V1))
 def efficientnet_b1(
-    weights: Optional[EfficientNet_B1_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[EfficientNet_B1_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNet_B1_Weights.ImageNet1K_V1)
     weights = EfficientNet_B1_Weights.verify(weights)
 
     return _efficientnet(width_mult=1.0, depth_mult=1.1, dropout=0.2, weights=weights, progress=progress, **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B2_Weights.ImageNet1K_V1))
 def efficientnet_b2(
-    weights: Optional[EfficientNet_B2_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[EfficientNet_B2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNet_B2_Weights.ImageNet1K_V1)
     weights = EfficientNet_B2_Weights.verify(weights)
 
     return _efficientnet(width_mult=1.1, depth_mult=1.2, dropout=0.3, weights=weights, progress=progress, **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B3_Weights.ImageNet1K_V1))
 def efficientnet_b3(
-    weights: Optional[EfficientNet_B3_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[EfficientNet_B3_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNet_B3_Weights.ImageNet1K_V1)
     weights = EfficientNet_B3_Weights.verify(weights)
 
     return _efficientnet(width_mult=1.2, depth_mult=1.4, dropout=0.3, weights=weights, progress=progress, **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B4_Weights.ImageNet1K_V1))
 def efficientnet_b4(
-    weights: Optional[EfficientNet_B4_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[EfficientNet_B4_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNet_B4_Weights.ImageNet1K_V1)
     weights = EfficientNet_B4_Weights.verify(weights)
 
     return _efficientnet(width_mult=1.4, depth_mult=1.8, dropout=0.4, weights=weights, progress=progress, **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B5_Weights.ImageNet1K_V1))
 def efficientnet_b5(
-    weights: Optional[EfficientNet_B5_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[EfficientNet_B5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNet_B5_Weights.ImageNet1K_V1)
     weights = EfficientNet_B5_Weights.verify(weights)
 
     return _efficientnet(
@@ -261,13 +243,10 @@ def efficientnet_b5(
     )
 
 
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B6_Weights.ImageNet1K_V1))
 def efficientnet_b6(
-    weights: Optional[EfficientNet_B6_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[EfficientNet_B6_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNet_B6_Weights.ImageNet1K_V1)
     weights = EfficientNet_B6_Weights.verify(weights)
 
     return _efficientnet(
@@ -281,13 +260,10 @@ def efficientnet_b6(
     )
 
 
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B7_Weights.ImageNet1K_V1))
 def efficientnet_b7(
-    weights: Optional[EfficientNet_B7_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[EfficientNet_B7_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", EfficientNet_B7_Weights.ImageNet1K_V1)
     weights = EfficientNet_B7_Weights.verify(weights)
 
     return _efficientnet(
