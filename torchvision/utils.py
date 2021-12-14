@@ -1,7 +1,7 @@
 import math
 import pathlib
 import warnings
-from typing import Union, Optional, List, Tuple, BinaryIO, no_type_check
+from typing import Union, Optional, List, Tuple, BinaryIO
 
 import numpy as np
 import torch
@@ -42,6 +42,7 @@ def make_grid(
     Returns:
         grid (Tensor): the tensor containing grid of images.
     """
+    _log_api_usage_once("utils", "make_grid")
     if not (torch.is_tensor(tensor) or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
         raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
@@ -130,6 +131,7 @@ def save_image(
         **kwargs: Other arguments are documented in ``make_grid``.
     """
 
+    _log_api_usage_once("utils", "save_image")
     grid = make_grid(tensor, **kwargs)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
@@ -174,6 +176,7 @@ def draw_bounding_boxes(
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
     """
 
+    _log_api_usage_once("utils", "draw_bounding_boxes")
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
     elif image.dtype != torch.uint8:
@@ -252,6 +255,7 @@ def draw_segmentation_masks(
         img (Tensor[C, H, W]): Image Tensor, with segmentation masks drawn on top.
     """
 
+    _log_api_usage_once("utils", "draw_segmentation_masks")
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
     elif image.dtype != torch.uint8:
@@ -329,6 +333,7 @@ def draw_keypoints(
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
     """
 
+    _log_api_usage_once("utils", "draw_keypoints")
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
     elif image.dtype != torch.uint8:
@@ -375,13 +380,7 @@ def _generate_color_palette(num_masks: int):
     return [tuple((i * palette) % 255) for i in range(num_masks)]
 
 
-@no_type_check
-def _log_api_usage_once(obj: str) -> None:  # type: ignore
+def _log_api_usage_once(module: str, name: str) -> None:
     if torch.jit.is_scripting() or torch.jit.is_tracing():
         return
-    # NOTE: obj can be an object as well, but mocking it here to be
-    # only a string to appease torchscript
-    if isinstance(obj, str):
-        torch._C._log_api_usage_once(obj)
-    else:
-        torch._C._log_api_usage_once(f"{obj.__module__}.{obj.__class__.__name__}")
+    torch._C._log_api_usage_once(f"torchvision.{module}.{name}")
