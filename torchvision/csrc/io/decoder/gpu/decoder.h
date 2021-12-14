@@ -36,7 +36,7 @@ class Decoder {
     void init(CUcontext, cudaVideoCodec, bool, const Rect * = NULL, const Dim * = NULL, int64_t = 1000, bool = false, bool = false, int64_t = 0, int64_t = 0);
     int Decode(const uint8_t *, int64_t, int64_t = 0, int64_t = 0);
     cudaVideoSurfaceFormat GetOutputFormat() const { return videoOutputFormat; }
-    void release() const;
+    void release();
     bool UseDeviceFrame() const { return useDeviceFrame; }
     int GetFrameSize() const
     {

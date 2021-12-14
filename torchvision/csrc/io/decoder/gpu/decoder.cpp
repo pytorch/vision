@@ -59,11 +59,20 @@ Decoder::~Decoder()
   cuvidCtxLockDestroy(ctxLock);
 }
 
-void Decoder::release() const
+void Decoder::release()
 {
   cuCtxPushCurrent(cuContext);
   if (decoder) {
     cuvidDestroyDecoder(decoder);
+  }
+  while (!decodedFrames.empty()) {
+    uint8_t *frame = decodedFrames.front();
+    decodedFrames.pop();
+    if (useDeviceFrame) {
+      cuMemFree((CUdeviceptr)frame);
+    } else {
+      free(frame);
+    }
   }
   cuCtxPopCurrent(NULL);
 }
