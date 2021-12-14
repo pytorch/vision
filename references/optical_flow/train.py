@@ -1,5 +1,6 @@
 import argparse
 import warnings
+from math import ceil
 from pathlib import Path
 
 import torch
@@ -168,7 +169,7 @@ def validate(model, args):
             warnings.warn(f"Can't validate on {val_dataset}, skipping.")
 
 
-def train_one_epoch(model, optimizer, scheduler, train_loader, logger, current_step, args):
+def train_one_epoch(model, optimizer, scheduler, train_loader, logger, args):
     for data_blob in logger.log_every(train_loader):
 
         optimizer.zero_grad()
@@ -188,13 +189,6 @@ def train_one_epoch(model, optimizer, scheduler, train_loader, logger, current_s
 
         optimizer.step()
         scheduler.step()
-
-        current_step += 1
-
-        if current_step == args.num_steps:
-            return True, current_step
-
-    return False, current_step
 
 
 def main(args):
@@ -243,7 +237,8 @@ def main(args):
     scheduler = torch.optim.lr_scheduler.OneCycleLR(
         optimizer=optimizer,
         max_lr=args.lr,
-        total_steps=args.num_steps + 100,
+        epochs=args.epochs,
+        steps_per_epoch=ceil(len(train_dataset) / (args.world_size * args.batch_size)),
         pct_start=0.05,
         cycle_momentum=False,
         anneal_strategy="linear",
@@ -252,25 +247,21 @@ def main(args):
     logger = utils.MetricLogger()
 
     done = False
-    current_epoch = current_step = 0
-    while not done:
+    for current_epoch in range(args.epochs):
         print(f"EPOCH {current_epoch}")
 
         sampler.set_epoch(current_epoch)  # needed, otherwise the data loading order would be the same for all epochs
-        done, current_step = train_one_epoch(
+        train_one_epoch(
             model=model,
             optimizer=optimizer,
             scheduler=scheduler,
             train_loader=train_loader,
             logger=logger,
-            current_step=current_step,
             args=args,
         )
 
         # Note: we don't sync the SmoothedValues across processes, so the printed metrics are just those of rank 0
         print(f"Epoch {current_epoch} done. ", logger)
-
-        current_epoch += 1
 
         if args.rank == 0:
             # TODO: Also save the optimizer and scheduler
@@ -310,10 +301,8 @@ def get_args_parser(add_help=True):
     )
     parser.add_argument("--val-dataset", type=str, nargs="+", help="The dataset(s) to use for validation.")
     parser.add_argument("--val-freq", type=int, default=2, help="Validate every X epochs")
-    # TODO: eventually, it might be preferable to support epochs instead of num_steps.
-    # Keeping it this way for now to reproduce results more easily.
-    parser.add_argument("--num-steps", type=int, default=100000, help="The total number of steps (updates) to train.")
-    parser.add_argument("--batch-size", type=int, default=6)
+    parser.add_argument("--epochs", type=int, default=20, help="The total number of epochs to train.")
+    parser.add_argument("--batch-size", type=int, default=2)
 
     parser.add_argument("--lr", type=float, default=0.00002, help="Learning rate for AdamW optimizer")
     parser.add_argument("--weight-decay", type=float, default=0.00005, help="Weight decay for AdamW optimizer")
