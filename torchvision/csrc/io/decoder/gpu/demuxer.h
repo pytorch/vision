@@ -4,9 +4,9 @@ extern "C" {
 #include <libavformat/avformat.h>
 #include <libavformat/avio.h>
 }
-#include <torch/custom_class.h>
 
-inline bool check(int ret, int line) {
+inline bool check(int ret, int line)
+{
   if (ret < 0) {
     printf("Error %d at line %d in file %s.\n", ret, line);
     return false;
@@ -175,7 +175,8 @@ class Demuxer {
     }
 };
 
-inline cudaVideoCodec FFmpeg2NvCodecId(AVCodecID id) {
+inline cudaVideoCodec FFmpeg2NvCodecId(AVCodecID id)
+{
     switch (id) {
       case AV_CODEC_ID_MPEG1VIDEO : return cudaVideoCodec_MPEG1;
       case AV_CODEC_ID_MPEG2VIDEO : return cudaVideoCodec_MPEG2;

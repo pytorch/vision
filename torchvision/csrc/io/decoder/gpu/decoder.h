@@ -35,14 +35,19 @@ class Decoder {
     ~Decoder();
     void init(CUcontext, cudaVideoCodec, bool, const Rect * = NULL, const Dim * = NULL, int64_t = 1000, bool = false, bool = false, int64_t = 0, int64_t = 0);
     int Decode(const uint8_t *, int64_t, int64_t = 0, int64_t = 0);
-    cudaVideoSurfaceFormat GetOutputFormat() const { return videoOutputFormat; }
     void release();
+    uint8_t * FetchFrame();
     bool UseDeviceFrame() const { return useDeviceFrame; }
+    cudaVideoSurfaceFormat GetOutputFormat() const { return videoOutputFormat; }
     int GetFrameSize() const
     {
       return GetWidth() * (lumaHeight + (chromaHeight * numChromaPlanes)) * bytesPerPixel;
     }
-    uint8_t * FetchFrame();
+    int GetWidth() const
+    {
+      return (videoOutputFormat == cudaVideoSurfaceFormat_NV12 || videoOutputFormat == cudaVideoSurfaceFormat_P016) ? (width + 1) & ~1 : width;
+    }
+    int GetHeight() const { return lumaHeight; }
 
   private:
     CUcontext cuContext = NULL;
@@ -72,11 +77,9 @@ class Decoder {
     unsigned int operatingPoint = 0;
     bool dispAllLayers = false;
     int decodePicCount = 0, picNumInDecodeOrder[32];
-    bool m_bReconfigExternal = false;
-    bool m_bReconfigExtPPChange = false;
+    bool reconfigExternal = false;
+    bool reconfigExtPPChange = false;
     size_t deviceFramePitch = 0;
-    bool m_bDeviceFramePitched = false;
-    int m_nFrameAlloc = 0;
     std::queue<uint8_t *> decodedFrames;
 
     static int CUDAAPI HandleVideoSequenceProc(void *pUserData, CUVIDEOFORMAT *pVideoFormat) { return ((Decoder *)pUserData)->HandleVideoSequence(pVideoFormat); }
@@ -90,11 +93,5 @@ class Decoder {
   int HandlePictureDecode(CUVIDPICPARAMS *pPicParams);
   int HandlePictureDisplay(CUVIDPARSERDISPINFO *pDispInfo);
   int GetOperatingPoint(CUVIDOPERATINGPOINTINFO *pOPInfo);
-
-  int GetWidth() const
-  {
-    return (videoOutputFormat == cudaVideoSurfaceFormat_NV12 || videoOutputFormat == cudaVideoSurfaceFormat_P016) ? (width + 1) & ~1 : width;
-  }
-
 };
 

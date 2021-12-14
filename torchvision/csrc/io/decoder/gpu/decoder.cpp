@@ -386,13 +386,13 @@ int Decoder::ReconfigureDecoder(CUVIDEOFORMAT *vidFormat)
 
     if ((vidFormat->coded_width > nMaxWidth) || (vidFormat->coded_height > nMaxHeight)) {
         // For VP9, let driver  handle the change if new width/height > maxwidth/maxheight
-        if ((videoCodec != cudaVideoCodec_VP9) || m_bReconfigExternal) {
+        if ((videoCodec != cudaVideoCodec_VP9) || reconfigExternal) {
             throw std::runtime_error("Reconfigure Not supported when width/height > maxwidth/maxheight");
         }
         return 1;
     }
 
-    if (!bDecodeResChange && !m_bReconfigExtPPChange) {
+    if (!bDecodeResChange && !reconfigExtPPChange) {
         // if the coded_width/coded_height hasn't changed but display resolution has changed, then need to update width/height for
         // correct output without cropping. Example : 1920x1080 vs 1920x1088
         if (bDisplayRectChange) {
@@ -421,10 +421,10 @@ int Decoder::ReconfigureDecoder(CUVIDEOFORMAT *vidFormat)
 
     // If external reconfigure is called along with resolution change even if post processing params is not changed,
     // do full reconfigure params update
-    if ((m_bReconfigExternal && bDecodeResChange) || m_bReconfigExtPPChange) {
+    if ((reconfigExternal && bDecodeResChange) || reconfigExtPPChange) {
         // update display rect and target resolution if requested explicitely
-        m_bReconfigExternal = false;
-        m_bReconfigExtPPChange = false;
+        reconfigExternal = false;
+        reconfigExtPPChange = false;
         videoFormat = *vidFormat;
         if (!(cropRect.right && cropRect.bottom) && !(resizeDim.width && resizeDim.height)) {
             width = vidFormat->display_area.right - vidFormat->display_area.left;

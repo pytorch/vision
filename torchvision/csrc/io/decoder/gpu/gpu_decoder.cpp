@@ -2,7 +2,7 @@
 #include <torch/torch.h>
 #include "gpu_decoder.h"
 
-GPUDecoder::GPUDecoder(std::string src_file, bool useDevFrame, int64_t dev) : demuxer(src_file.c_str()), device(dev)
+GPUDecoder::GPUDecoder(std::string src_file, bool useDevFrame, int64_t dev, std::string out_format) : demuxer(src_file.c_str()), device(dev), output_format(out_format)
 {
   if (cudaSuccess != cudaSetDevice(device)) {
    printf("Error setting device\n");
@@ -60,6 +60,9 @@ torch::Tensor GPUDecoder::decode()
       frameTensor = torch::from_blob(
         frame, {dec.GetFrameSize()}, [](auto p) { cuMemFree((CUdeviceptr)p); }, options);
   } else {
+      if (output_format == "yuv420") {
+        NV12ToYUV420(frame, dec.GetWidth(), dec.GetHeight());
+      }
       auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCPU);
       frameTensor = torch::from_blob(
         frame, {dec.GetFrameSize()}, [](auto p) { free(p); }, options);
@@ -89,7 +92,7 @@ int64_t GPUDecoder::getTotalFramesDecoded()
 
 TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
-    .def(torch::init<std::string, bool, int64_t>())
+    .def(torch::init<std::string, bool, int64_t, std::string>())
     .def("decode", &GPUDecoder::decode)
     .def("getDecodeTime", &GPUDecoder::getDecodeTime)
     .def("getDemuxTime", &GPUDecoder::getDemuxTime)
