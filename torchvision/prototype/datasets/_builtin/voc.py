@@ -28,10 +28,10 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     INFINITE_BUFFER_SIZE,
     path_comparator,
+    hint_sharding,
 )
 
 HERE = pathlib.Path(__file__).parent
-from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 
 
 class VOC(Dataset):
@@ -130,7 +130,7 @@ class VOC(Dataset):
         split_dp = Filter(split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task]))
         split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
-        split_dp = ShardingFilter(split_dp)
+        split_dp = hint_sharding(split_dp)
         split_dp = Shuffler(split_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         dp = split_dp

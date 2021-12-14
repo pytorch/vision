@@ -7,7 +7,6 @@ import string
 from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO
 
 import torch
-from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Demultiplexer,
@@ -29,6 +28,7 @@ from torchvision.prototype.datasets.utils._internal import (
     Decompressor,
     INFINITE_BUFFER_SIZE,
     fromfile,
+    hint_sharding,
 )
 from torchvision.prototype.features import Image, Label
 
@@ -134,7 +134,7 @@ class _MNISTBase(Dataset):
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
         dp = Zipper(images_dp, labels_dp)
-        dp = ShardingFilter(dp)
+        dp = hint_sharding(dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
 

@@ -5,7 +5,6 @@ from collections import OrderedDict
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import torch
-from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -31,6 +30,7 @@ from torchvision.prototype.datasets.utils._internal import (
     BUILTIN_DIR,
     getitem,
     path_accessor,
+    hint_sharding,
 )
 from torchvision.prototype.features import BoundingBox, Label, Feature
 from torchvision.prototype.utils._internal import FrozenMapping
@@ -181,7 +181,7 @@ class Coco(Dataset):
         images_dp, meta_dp = resource_dps
 
         if config.annotations is None:
-            dp = ShardingFilter(images_dp)
+            dp = hint_sharding(images_dp)
             dp = Shuffler(dp)
             return Mapper(dp, self._collate_and_decode_image, fn_kwargs=dict(decoder=decoder))
 
@@ -216,7 +216,7 @@ class Coco(Dataset):
             ref_key_fn=getitem("id"),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        anns_dp = ShardingFilter(anns_dp)
+        anns_dp = hint_sharding(anns_dp)
 
         dp = IterKeyZipper(
             anns_dp,
