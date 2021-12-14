@@ -30,9 +30,7 @@ import PIL.Image
 import torch
 import torch.distributed as dist
 import torch.utils.data
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader, IterDataPipe, ShardingFilter
 from torchdata.datapipes.utils import StreamWrapper
 
 
