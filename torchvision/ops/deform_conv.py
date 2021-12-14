@@ -61,7 +61,7 @@ def deform_conv2d(
         >>>  torch.Size([4, 5, 8, 8])
     """
 
-    _log_api_usage_once("ops", "deform_conv2d")
+    _log_api_usage_once(deform_conv2d.__module__, "deform_conv2d")
     _assert_has_ops()
     out_channels = weight.shape[0]
 
