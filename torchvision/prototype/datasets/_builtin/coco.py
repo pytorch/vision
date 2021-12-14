@@ -8,7 +8,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Filter,
     Demultiplexer,
     Grouper,
@@ -30,6 +29,7 @@ from torchvision.prototype.datasets.utils._internal import (
     BUILTIN_DIR,
     getitem,
     path_accessor,
+    hint_shuffling,
 )
 from torchvision.prototype.features import BoundingBox, Label, Feature
 from torchvision.prototype.utils._internal import FrozenMapping
@@ -180,7 +180,7 @@ class Coco(Dataset):
         images_dp, meta_dp = resource_dps
 
         if config.annotations is None:
-            dp = Shuffler(images_dp)
+            dp = hint_shuffling(images_dp)
             return Mapper(dp, self._collate_and_decode_image, fn_kwargs=dict(decoder=decoder))
 
         meta_dp = Filter(
@@ -201,7 +201,7 @@ class Coco(Dataset):
 
         images_meta_dp = Mapper(images_meta_dp, getitem(1))
         images_meta_dp = UnBatcher(images_meta_dp)
-        images_meta_dp = Shuffler(images_meta_dp)
+        images_meta_dp = hint_shuffling(images_meta_dp)
 
         anns_meta_dp = Mapper(anns_meta_dp, getitem(1))
         anns_meta_dp = UnBatcher(anns_meta_dp)

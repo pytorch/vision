@@ -31,7 +31,7 @@ import torch
 import torch.distributed as dist
 import torch.utils.data
 from torch.utils.data import IterDataPipe
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 
 
@@ -49,6 +49,7 @@ __all__ = [
     "Decompressor",
     "fromfile",
     "read_flo",
+    "hint_shuffling",
 ]
 
 K = TypeVar("K")
@@ -331,3 +332,7 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
     width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
     flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
     return flow.reshape((height, width, 2)).permute((2, 0, 1))
+
+
+def hint_shuffling(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+    return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)
