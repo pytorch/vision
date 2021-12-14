@@ -9,8 +9,8 @@ from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    HttpResource,
     OnlineResource,
+    ManualDownloadResource,
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
@@ -21,20 +21,13 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     read_mat,
 )
-from torchvision.prototype.features import Label, DEFAULT
+from torchvision.prototype.features import Label
 from torchvision.prototype.utils._internal import FrozenMapping
 
 
-class ImageNetLabel(Label):
-    wnid: Optional[str]
-
-    @classmethod
-    def _parse_meta_data(
-        cls,
-        category: Optional[str] = DEFAULT,  # type: ignore[assignment]
-        wnid: Optional[str] = DEFAULT,  # type: ignore[assignment]
-    ) -> Dict[str, Tuple[Any, Any]]:
-        return dict(category=(category, None), wnid=(wnid, None))
+class ImageNetResource(ManualDownloadResource):
+    def __init__(self, **kwargs: Any) -> None:
+        super().__init__("Register on https://image-net.org/ and follow the instructions there.", **kwargs)
 
 
 class ImageNet(Dataset):
@@ -45,6 +38,7 @@ class ImageNet(Dataset):
         return DatasetInfo(
             name,
             type=DatasetType.IMAGE,
+            dependencies=("scipy",),
             categories=categories,
             homepage="https://www.image-net.org/",
             valid_options=dict(split=("train", "val", "test")),
@@ -80,10 +74,10 @@ class ImageNet(Dataset):
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         name = "test_v10102019" if config.split == "test" else config.split
-        images = HttpResource(f"ILSVRC2012_img_{name}.tar", sha256=self._IMAGES_CHECKSUMS[name])
+        images = ImageNetResource(file_name=f"ILSVRC2012_img_{name}.tar", sha256=self._IMAGES_CHECKSUMS[name])
 
-        devkit = HttpResource(
-            "ILSVRC2012_devkit_t12.tar.gz",
+        devkit = ImageNetResource(
+            file_name="ILSVRC2012_devkit_t12.tar.gz",
             sha256="b59243268c0d266621fd587d2018f69e906fb22875aca0e295b48cafaa927953",
         )
 
@@ -91,12 +85,12 @@ class ImageNet(Dataset):
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[ImageNetLabel, Tuple[str, io.IOBase]]:
+    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[Label, str, str], Tuple[str, io.IOBase]]:
         path = pathlib.Path(data[0])
         wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("wnid")  # type: ignore[union-attr]
         category = self.wnid_to_category[wnid]
-        label = ImageNetLabel(self.categories.index(category), category=category, wnid=wnid)
-        return label, data
+        label_data = (Label(self.categories.index(category)), category, wnid)
+        return label_data, data
 
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
@@ -106,28 +100,32 @@ class ImageNet(Dataset):
 
     def _collate_val_data(
         self, data: Tuple[Tuple[int, int], Tuple[str, io.IOBase]]
-    ) -> Tuple[ImageNetLabel, Tuple[str, io.IOBase]]:
+    ) -> Tuple[Tuple[Label, str, str], Tuple[str, io.IOBase]]:
         label_data, image_data = data
         _, label = label_data
         category = self.categories[label]
         wnid = self.category_to_wnid[category]
-        return ImageNetLabel(label, category=category, wnid=wnid), image_data
+        return (Label(label), category, wnid), image_data
 
     def _collate_test_data(self, data: Tuple[str, io.IOBase]) -> Tuple[None, Tuple[str, io.IOBase]]:
         return None, data
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Optional[ImageNetLabel], Tuple[str, io.IOBase]],
+        data: Tuple[Optional[Tuple[Label, str, str]], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
-        label, (path, buffer) = data
-        return dict(
+        label_data, (path, buffer) = data
+
+        sample = dict(
             path=path,
             image=decoder(buffer) if decoder else buffer,
-            label=label,
         )
+        if label_data:
+            sample.update(dict(zip(("label", "category", "wnid"), label_data)))
+
+        return sample
 
     def _make_datapipe(
         self,
@@ -138,15 +136,12 @@ class ImageNet(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, devkit_dp = resource_dps
 
-        images_dp = TarArchiveReader(images_dp)
-
         if config.split == "train":
             # the train archive is a tar of tars
             dp = TarArchiveReader(images_dp)
             dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_train_data)
         elif config.split == "val":
-            devkit_dp = TarArchiveReader(devkit_dp)
             devkit_dp = Filter(devkit_dp, path_comparator("name", "ILSVRC2012_validation_ground_truth.txt"))
             devkit_dp = LineReader(devkit_dp, return_path=False)
             devkit_dp = Mapper(devkit_dp, int)
@@ -176,8 +171,7 @@ class ImageNet(Dataset):
 
     def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
         resources = self.resources(self.default_config)
-        devkit_dp = resources[1].to_datapipe(root / self.name)
-        devkit_dp = TarArchiveReader(devkit_dp)
+        devkit_dp = resources[1].load(root / self.name)
         devkit_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
 
         meta = next(iter(devkit_dp))[1]

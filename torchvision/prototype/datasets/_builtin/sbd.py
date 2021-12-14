@@ -8,7 +8,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    TarArchiveReader,
     Shuffler,
     Demultiplexer,
     Filter,
@@ -37,6 +36,7 @@ class SBD(Dataset):
         return DatasetInfo(
             "sbd",
             type=DatasetType.IMAGE,
+            dependencies=("scipy",),
             homepage="http://home.bharathh.info/pubs/codes/SBD/download.html",
             valid_options=dict(
                 split=("train", "val", "train_noval"),
@@ -128,7 +128,6 @@ class SBD(Dataset):
         archive_dp, extra_split_dp = resource_dps
 
         archive_dp = resource_dps[0]
-        archive_dp = TarArchiveReader(archive_dp)
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
             3,
@@ -154,8 +153,7 @@ class SBD(Dataset):
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(config=config, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
-        dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
-        dp = TarArchiveReader(dp)
+        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
         dp = Filter(dp, path_comparator("name", "category_names.m"))
         dp = LineReader(dp)
         dp = Mapper(dp, bytes.decode, input_col=1)

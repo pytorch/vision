@@ -2,17 +2,27 @@ import io
 
 import builtin_dataset_mocks
 import pytest
+import torch
+from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe
-from torchvision.prototype import datasets, features
+from torchvision.prototype import datasets, transforms
 from torchvision.prototype.datasets._api import DEFAULT_DECODER
 from torchvision.prototype.utils._internal import sequence_to_str
 
 
 def to_bytes(file):
-    try:
-        return file.read()
-    finally:
-        file.close()
+    return file.read()
+
+
+def config_id(name, config):
+    parts = [name]
+    for name, value in config.items():
+        if isinstance(value, bool):
+            part = ("" if value else "no_") + name
+        else:
+            part = str(value)
+        parts.append(part)
+    return "-".join(parts)
 
 
 def dataset_parametrization(*names, decoder=to_bytes):
@@ -29,16 +39,17 @@ def dataset_parametrization(*names, decoder=to_bytes):
             "caltech256",
             "caltech101",
             "imagenet",
+            "coco",
         )
 
-    params = []
-    for name in names:
-        for config in datasets.info(name)._configs:
-            id = f"{name}-{'-'.join([str(value) for value in config.values()])}"
-            dataset, mock_info = builtin_dataset_mocks.load(name, decoder=decoder, **config)
-            params.append(pytest.param(dataset, mock_info, id=id))
-
-    return pytest.mark.parametrize(("dataset", "mock_info"), params)
+    return pytest.mark.parametrize(
+        ("dataset", "mock_info"),
+        [
+            pytest.param(*builtin_dataset_mocks.load(name, decoder=decoder, **config), id=config_id(name, config))
+            for name in names
+            for config in datasets.info(name)._configs
+        ],
+    )
 
 
 class TestCommon:
@@ -78,10 +89,21 @@ class TestCommon:
             )
 
     @dataset_parametrization(decoder=DEFAULT_DECODER)
-    def test_at_least_one_feature(self, dataset, mock_info):
-        sample = next(iter(dataset))
-        if not any(isinstance(value, features.Feature) for value in sample.values()):
-            raise AssertionError("The sample contained no feature.")
+    def test_no_vanilla_tensors(self, dataset, mock_info):
+        vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
+        if vanilla_tensors:
+            raise AssertionError(
+                f"The values of key(s) "
+                f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
+            )
+
+    @dataset_parametrization()
+    def test_transformable(self, dataset, mock_info):
+        next(iter(dataset.map(transforms.Identity())))
+
+    @dataset_parametrization()
+    def test_traversable(self, dataset, mock_info):
+        traverse(dataset)
 
 
 class TestQMNIST:

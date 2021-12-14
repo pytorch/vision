@@ -1,11 +1,14 @@
+import inspect
+import math
 import re
 import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
-from typing import Dict, Callable, List, Union, Optional, Tuple
+from typing import Dict, Callable, List, Union, Optional, Tuple, Any
 
 import torch
+import torchvision
 from torch import fx
 from torch import nn
 from torch.fx.graph_module import _copy_attr
@@ -172,8 +175,19 @@ def _warn_graph_differences(train_tracer: NodePathTracer, eval_tracer: NodePathT
     warnings.warn(msg + suggestion_msg)
 
 
+def _get_leaf_modules_for_ops() -> List[type]:
+    members = inspect.getmembers(torchvision.ops)
+    result = []
+    for _, obj in members:
+        if inspect.isclass(obj) and issubclass(obj, torch.nn.Module):
+            result.append(obj)
+    return result
+
+
 def get_graph_node_names(
-    model: nn.Module, tracer_kwargs: Dict = {}, suppress_diff_warning: bool = False
+    model: nn.Module,
+    tracer_kwargs: Optional[Dict[str, Any]] = None,
+    suppress_diff_warning: bool = False,
 ) -> Tuple[List[str], List[str]]:
     """
     Dev utility to return node names in order of execution. See note on node
@@ -198,6 +212,7 @@ def get_graph_node_names(
         tracer_kwargs (dict, optional): a dictionary of keywork arguments for
             ``NodePathTracer`` (they are eventually passed onto
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
+            By default it will be set to wrap and make leaf nodes all torchvision ops.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -211,6 +226,14 @@ def get_graph_node_names(
         >>> model = torchvision.models.resnet18()
         >>> train_nodes, eval_nodes = get_graph_node_names(model)
     """
+    if tracer_kwargs is None:
+        tracer_kwargs = {
+            "autowrap_modules": (
+                math,
+                torchvision.ops,
+            ),
+            "leaf_modules": _get_leaf_modules_for_ops(),
+        }
     is_training = model.training
     train_tracer = NodePathTracer(**tracer_kwargs)
     train_tracer.trace(model.train())
@@ -294,7 +317,7 @@ def create_feature_extractor(
     return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     train_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
     eval_return_nodes: Optional[Union[List[str], Dict[str, str]]] = None,
-    tracer_kwargs: Dict = {},
+    tracer_kwargs: Optional[Dict[str, Any]] = None,
     suppress_diff_warning: bool = False,
 ) -> fx.GraphModule:
     """
@@ -353,6 +376,7 @@ def create_feature_extractor(
         tracer_kwargs (dict, optional): a dictionary of keywork arguments for
             ``NodePathTracer`` (which passes them onto it's parent class
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
+            By default it will be set to wrap and make leaf nodes all torchvision ops.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
@@ -397,6 +421,14 @@ def create_feature_extractor(
         >>>                    'autowrap_functions': [leaf_function]})
 
     """
+    if tracer_kwargs is None:
+        tracer_kwargs = {
+            "autowrap_modules": (
+                math,
+                torchvision.ops,
+            ),
+            "leaf_modules": _get_leaf_modules_for_ops(),
+        }
     is_training = model.training
 
     assert any(

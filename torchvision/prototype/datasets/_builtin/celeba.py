@@ -8,7 +8,6 @@ from torchdata.datapipes.iter import (
     Mapper,
     Shuffler,
     Filter,
-    ZipArchiveReader,
     Zipper,
     IterKeyZipper,
 )
@@ -153,8 +152,6 @@ class CelebA(Dataset):
         splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))
         splits_dp = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
         splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
-
-        images_dp = ZipArchiveReader(images_dp)
 
         anns_dp = Zipper(
             *[

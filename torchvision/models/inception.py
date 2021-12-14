@@ -37,7 +37,7 @@ class Inception3(nn.Module):
         dropout: float = 0.5,
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self)
+        _log_api_usage_once("models", self.__class__.__name__)
         if inception_blocks is None:
             inception_blocks = [BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, InceptionAux]
         if init_weights is None:
@@ -422,7 +422,7 @@ def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any)
         aux_logits (bool): If True, add an auxiliary branch that can improve training.
             Default: *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: *False*
+            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
     """
     if pretrained:
         if "transform_input" not in kwargs:

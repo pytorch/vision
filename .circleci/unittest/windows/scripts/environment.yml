@@ -9,9 +9,11 @@ dependencies:
   - libpng
   - jpeg
   - ca-certificates
+  # TODO: remove this after https://github.com/pytorch/pytorch/issues/69905 is resolved
+  - pyyaml
   - pip:
     - future
-    - pillow >=5.3.0, !=8.3.0
+    - pillow >=5.3.0, !=8.3.*
     - scipy
     - av
     - dataclasses
