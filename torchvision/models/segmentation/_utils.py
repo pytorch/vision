@@ -13,7 +13,7 @@ class _SimpleSegmentationModel(nn.Module):
 
     def __init__(self, backbone: nn.Module, classifier: nn.Module, aux_classifier: Optional[nn.Module] = None) -> None:
         super().__init__()
-        _log_api_usage_once(self.__module__, self.__class__.__name__)
+        _log_api_usage_once(self.__class__.__qualname__)
         self.backbone = backbone
         self.classifier = classifier
         self.aux_classifier = aux_classifier

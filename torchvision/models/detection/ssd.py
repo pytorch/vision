@@ -182,7 +182,7 @@ class SSD(nn.Module):
         positive_fraction: float = 0.25,
     ):
         super().__init__()
-        _log_api_usage_once(self.__module__, self.__class__.__name__)
+        _log_api_usage_once(self.__class__.__qualname__)
 
         self.backbone = backbone
 

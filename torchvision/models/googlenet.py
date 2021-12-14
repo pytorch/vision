@@ -39,7 +39,7 @@ class GoogLeNet(nn.Module):
         dropout_aux: float = 0.7,
     ) -> None:
         super().__init__()
-        _log_api_usage_once(self.__module__, self.__class__.__name__)
+        _log_api_usage_once(self.__class__.__qualname__)
         if blocks is None:
             blocks = [BasicConv2d, Inception, InceptionAux]
         if init_weights is None:
