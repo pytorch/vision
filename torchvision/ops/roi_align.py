@@ -76,6 +76,7 @@ class RoIAlign(nn.Module):
         aligned: bool = False,
     ):
         super().__init__()
+        _log_api_usage_once(self)
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio

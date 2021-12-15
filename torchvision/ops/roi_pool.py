@@ -58,6 +58,7 @@ class RoIPool(nn.Module):
 
     def __init__(self, output_size: BroadcastingList2[int], spatial_scale: float):
         super().__init__()
+        _log_api_usage_once(self)
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 

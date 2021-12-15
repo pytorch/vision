@@ -56,6 +56,7 @@ class PSRoIPool(nn.Module):
 
     def __init__(self, output_size: int, spatial_scale: float):
         super().__init__()
+        _log_api_usage_once(self)
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 

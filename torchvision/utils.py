@@ -1,7 +1,7 @@
 import math
 import pathlib
 import warnings
-from typing import Union, Optional, List, Tuple, BinaryIO, no_type_check
+from typing import Any, Union, Optional, List, Tuple, BinaryIO
 
 import numpy as np
 import torch
@@ -385,8 +385,7 @@ def _generate_color_palette(num_masks: int):
     return [tuple((i * palette) % 255) for i in range(num_masks)]
 
 
-@no_type_check
-def _log_api_usage_once(obj) -> None:  # type: ignore
+def _log_api_usage_once(obj: Any) -> None:
     if not obj.__module__.startswith("torchvision"):
         return
     name = obj.__class__.__name__

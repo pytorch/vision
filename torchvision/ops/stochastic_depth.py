@@ -54,6 +54,7 @@ class StochasticDepth(nn.Module):
 
     def __init__(self, p: float, mode: str) -> None:
         super().__init__()
+        _log_api_usage_once(self)
         self.p = p
         self.mode = mode
 
