@@ -1,3 +1,8 @@
+import ctypes
+import os
+import sys
+from warnings import warn
+
 import torch
 
 from ._internally_replaced_utils import _get_extension_path
@@ -64,6 +69,24 @@ def _check_cuda_version():
                 "Please reinstall the torchvision that matches your PyTorch install."
             )
     return _version
+
+
+def _load_library(lib_name):
+    lib_path = _get_extension_path(lib_name)
+    # On Windows Python-3.8+ has `os.add_dll_directory` call,
+    # which is called from _get_extension_path to configure dll search path
+    # Condition below adds a workaround for older versions by
+    # explicitly calling `LoadLibraryExW` with the following flags:
+    #  - LOAD_LIBRARY_SEARCH_DEFAULT_DIRS (0x1000)
+    #  - LOAD_LIBRARY_SEARCH_DLL_LOAD_DIR (0x100)
+    if os.name == "nt" and sys.version_info < (3, 8):
+        _kernel32 = ctypes.WinDLL("kernel32.dll", use_last_error=True)
+        if hasattr(_kernel32, "LoadLibraryExW"):
+            _kernel32.LoadLibraryExW(lib_path, None, 0x00001100)
+        else:
+            warn("LoadLibraryExW is missing in kernel32.dll")
+
+    torch.ops.load_library(lib_path)
 
 
 _check_cuda_version()
