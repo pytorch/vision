@@ -89,6 +89,7 @@ def make_grid(
         else:
             norm_range(tensor, value_range)
 
+    assert isinstance(tensor, torch.Tensor)
     if tensor.size(0) == 1:
         return tensor.squeeze(0)
 
