@@ -16,6 +16,7 @@ at::Tensor roi_align(
     bool aligned) // The flag for pixel shift
 // along each axis.
 {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.roi_align.roi_align");
   static auto op = c10::Dispatcher::singleton()
                        .findSchemaOrThrow("torchvision::roi_align", "")
                        .typed<decltype(roi_align)>();

@@ -12,6 +12,7 @@ std::tuple<at::Tensor, at::Tensor> ps_roi_align(
     int64_t pooled_height,
     int64_t pooled_width,
     int64_t sampling_ratio) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.ps_roi_align.ps_roi_align");
   static auto op = c10::Dispatcher::singleton()
                        .findSchemaOrThrow("torchvision::ps_roi_align", "")
                        .typed<decltype(ps_roi_align)>();
