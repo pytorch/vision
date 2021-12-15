@@ -6,6 +6,7 @@ from ._video_opt import (
     Timebase,
     VideoMetaData,
     _HAS_VIDEO_OPT,
+    _HAS_VIDEO_DECODER,
     _probe_video_from_file,
     _probe_video_from_memory,
     _read_video_from_file,
@@ -32,10 +33,6 @@ from .video import (
     write_video,
 )
 
-from .gpu_decoder import (
-    GPUDecoder
-)
-
 
 if _HAS_VIDEO_OPT:
 
@@ -46,6 +43,18 @@ if _HAS_VIDEO_OPT:
 else:
 
     def _has_video_opt() -> bool:
+        return False
+
+
+if _HAS_VIDEO_DECODER:
+
+    def _has_video_decoder() -> bool:
+        return True
+
+
+else:
+
+    def _has_video_decoder() -> bool:
         return False
 
 
@@ -107,9 +116,44 @@ class VideoReader:
         num_threads (int, optional): number of threads used by the codec to decode video.
             Default value (0) enables multithreading with codec-dependent heuristic. The performance
             will depend on the version of FFMPEG codecs supported.
+
+        device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
+
+        output_format (str, optional): Format of the output frames. Defaults to ``"rgb"``.
+
+        use_device_frame (bool, optional): Whether to get back device frames(gpu tensors)
+            or host frames(cpu tensors) after GPU decoding. Defaults to ``True``.
+
+        Currently supported values of (use_device_frame, output_format):
+            (True, "nv12"), (False, "nv12"), (False, "yuv420").
+
     """
 
-    def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
+    def __init__(self, path: str, stream: str = "video", num_threads: int = 0,
+                 device: str = "cpu", output_format: str = "rgb", use_device_frame: bool = True) -> None:
+        self.is_cuda = False
+        device = torch.device(device)
+        if device.type == "cuda":
+            supported_formats = [
+                "nv12",
+                "yuv420",
+            ]
+            if not _has_video_decoder():
+                raise RuntimeError("Not compiled with GPU decoder support.")
+            self.is_cuda = True
+            if device.index is None:
+                raise RuntimeError("Invalid cuda device!")
+            if output_format not in supported_formats:
+                raise RuntimeError(
+                    f"{output_format} output format not supported with GPU decoding, "
+                    "please use one of {', '.join(supported_formats)}.")
+            if output_format == "yuv420" and use_device_frame:
+                raise RuntimeError(
+                    "yuv420 output not yet supported with GPU decoding when use_device_frame=True, "
+                    "please use either nv12 or use_device_frame=False.")
+            self._c = torch.classes.torchvision.GPUDecoder(
+                path, use_device_frame, device.index, output_format)
+            return
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
@@ -117,6 +161,9 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and "
                 + "build torchvision from source."
             )
+        if output_format != "rgb":
+            raise RuntimeError("Only rgb output is supported with video_reader.")
+
         self._c = torch.classes.torchvision.Video(path, stream, num_threads)
 
     def __next__(self) -> Dict[str, Any]:
@@ -131,6 +178,11 @@ class VideoReader:
             and corresponding timestamp (``pts``) in seconds
 
         """
+        if self.is_cuda:
+            frame = self._c.next()
+            if frame.numel() == 0:
+                raise StopIteration
+            return {"data": frame}
         frame, pts = self._c.next()
         if frame.numel() == 0:
             raise StopIteration
@@ -152,6 +204,8 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
+        if self.is_cuda:
+            raise RuntimeError("seek() not yet supported with GPU decoding.")
         self._c.seek(time_s, keyframes_only)
         return self
 
@@ -161,6 +215,8 @@ class VideoReader:
         Returns:
             (dict): dictionary containing duration and frame rate for every stream
         """
+        if self.is_cuda:
+            raise RuntimeError("get_metadata() not yet supported with GPU decoding.")
         return self._c.get_metadata()
 
     def set_current_stream(self, stream: str) -> bool:
@@ -180,6 +236,8 @@ class VideoReader:
         Returns:
             (bool): True on succes, False otherwise
         """
+        if self.is_cuda:
+            print("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
 
 
@@ -194,6 +252,7 @@ __all__ = [
     "_read_video_timestamps_from_memory",
     "_probe_video_from_memory",
     "_HAS_VIDEO_OPT",
+    "_HAS_VIDEO_DECODER",
     "_read_video_clip_from_memory",
     "_read_video_meta_data",
     "VideoMetaData",

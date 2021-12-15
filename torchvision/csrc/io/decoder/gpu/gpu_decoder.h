@@ -7,17 +7,13 @@ class GPUDecoder : public torch::CustomClassHolder {
     GPUDecoder(std::string, bool, int64_t, std::string);
     ~GPUDecoder();
     torch::Tensor decode();
-    double getDecodeTime();
-    double getDemuxTime();
-    int64_t getDemuxedBytes();
-    int64_t getTotalFramesDecoded();
 
   private:
     Demuxer demuxer;
     CUcontext ctx;
     Decoder dec;
     double demux_time, decode_time;
-    int64_t totalFrames, videoBytes, device;
+    int64_t device;
     bool initialised = false;
     std::string output_format;
 

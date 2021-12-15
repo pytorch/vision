@@ -117,12 +117,12 @@ class Demuxer {
         return eVideoCodec;
     }
 
-    bool Demux(uint8_t **ppVideo, int64_t *pnVideoBytes, int64_t *pts = NULL)
+    bool Demux(uint8_t **video, int64_t *videoBytes)
     {
         if (!fmtCtx) {
             return false;
         }
-        *pnVideoBytes = 0;
+        *videoBytes = 0;
 
         if (pkt.data) {
             av_packet_unref(&pkt);
@@ -141,11 +141,8 @@ class Demuxer {
             }
             check_for_errors(av_bsf_send_packet(bsfCtx, &pkt));
             check_for_errors(av_bsf_receive_packet(bsfCtx, &pktFiltered));
-            *ppVideo = pktFiltered.data;
-            *pnVideoBytes = pktFiltered.size;
-            if (pts) {
-                *pts = (int64_t) (pktFiltered.pts * userTimeScale * timeBase);
-            }
+            *video = pktFiltered.data;
+            *videoBytes = pktFiltered.size;
         } else {
             if (bMp4MPEG4 && (frameCount == 0)) {
                 int extraDataSize = fmtCtx->streams[iVideoStream]->codecpar->extradata_size;
@@ -158,16 +155,12 @@ class Demuxer {
                     }
                     memcpy(pDataWithHeader, fmtCtx->streams[iVideoStream]->codecpar->extradata, extraDataSize);
                     memcpy(pDataWithHeader+extraDataSize, pkt.data+3, pkt.size - 3 * sizeof(uint8_t));
-                    *ppVideo = pDataWithHeader;
-                    *pnVideoBytes = extraDataSize + pkt.size - 3 * sizeof(uint8_t);
+                    *video = pDataWithHeader;
+                    *videoBytes = extraDataSize + pkt.size - 3 * sizeof(uint8_t);
                 }
             } else {
-                *ppVideo = pkt.data;
-                *pnVideoBytes = pkt.size;
-            }
-
-            if (pts) {
-                *pts = (int64_t)(pkt.pts * userTimeScale * timeBase);
+                *video = pkt.data;
+                *videoBytes = pkt.size;
             }
         }
         frameCount++;
