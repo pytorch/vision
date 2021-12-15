@@ -2157,5 +2157,37 @@ def test_random_affine():
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
+def test_elastic_transformation():
+    with pytest.raises(TypeError):
+        transforms.ElasticTransform(alpha=True, sigma=2)
+    with pytest.raises(TypeError):
+        transforms.ElasticTransform(alpha=[1, True], sigma=2)
+    with pytest.raises(ValueError):
+        transforms.ElasticTransform(alpha=[1, 0, 1], sigma=2)
+
+    with pytest.raises(TypeError):
+        transforms.ElasticTransform(alpha=2, sigma=True)
+    with pytest.raises(TypeError):
+        transforms.ElasticTransform(alpha=2, sigma=[1, True])
+    with pytest.raises(ValueError):
+        transforms.ElasticTransform(alpha=2, sigma=[1, 0, 1])
+
+    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        t = transforms.transforms.ElasticTransform(alpha=2, sigma=2, interpolation=2)
+        assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
+    with pytest.raises(TypeError):
+        transforms.ElasticTransform(alpha=1, sigma=1, fill={})
+
+    x = np.zeros((100, 100, 3), dtype=np.uint8)
+    img = F.to_pil_image(x)
+    t = transforms.ElasticTransform(alpha=0, sigma=0)
+    transformed_img = t(img)
+    assert transformed_img == img
+
+    # Checking if ElasticTransform can be printed as string
+    t.__repr__()
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

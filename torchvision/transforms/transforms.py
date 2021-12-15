@@ -2045,12 +2045,20 @@ class ElasticTransform(torch.nn.Module):
             raise TypeError(f"alpha should be int, float or a sequence int or float. Got {type(alpha)}")
         if isinstance(alpha, (list, tuple)) and len(alpha) != 2:
             raise ValueError(f"If alpha is a sequence its length should be 2. Got {len(alpha)}")
+        if isinstance(alpha, (list, tuple)):
+            for element in alpha:
+                if not isinstance(element, (int, float)):
+                    raise TypeError(f"alpha should be int or float. Got {type(element)}")
         self.alpha = alpha
 
         if not isinstance(sigma, (int, float, list, tuple)):
             raise TypeError(f"alpha should be int, float or a sequence int or float. Got {type(sigma)}")
         if isinstance(sigma, (list, tuple)) and len(sigma) != 2:
             raise ValueError(f"If sigma is a sequence its length should be 2. Got {len(sigma)}")
+        if isinstance(sigma, (list, tuple)):
+            for element in sigma:
+                if not isinstance(element, (int, float)):
+                    raise TypeError(f"sigma should be int or float. Got {type(element)}")
         self.sigma = sigma
 
         # Backward compatibility with integer value
@@ -2080,4 +2088,6 @@ class ElasticTransform(torch.nn.Module):
         format_string = self.__class__.__name__ + "(alpha="
         format_string += str(self.alpha) + ")"
         format_string += ", (sigma=" + str(self.sigma) + ")"
+        format_string += ", interpolation={self.interpolation}"
+        format_string += ", fill={self.fill})"
         return format_string
