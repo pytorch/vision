@@ -385,7 +385,8 @@ def get_extensions():
                 print(f"{library} header files were not found, disabling ffmpeg support")
                 has_ffmpeg = False
 
-    if has_ffmpeg:
+    #if has_ffmpeg:
+    if False:
         print(f"ffmpeg include path: {ffmpeg_include_dir}")
         print(f"ffmpeg library_dir: {ffmpeg_library_dir}")
 
@@ -438,15 +439,14 @@ def get_extensions():
 
     print(f"video codec found: {video_codec_found}")
 
-    gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
-    print(f"DECODER PATH {gpu_decoder_path}")
-    gpu_decoder_src = (
-        glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
-    )
-    cuda_libs = os.path.join(CUDA_HOME, 'lib64')
-    cuda_inc = os.path.join(CUDA_HOME, 'include')
-
     if video_codec_found and has_ffmpeg:
+        gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
+        gpu_decoder_src = (
+            glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
+        )
+        cuda_libs = os.path.join(CUDA_HOME, 'lib64')
+        cuda_inc = os.path.join(CUDA_HOME, 'include')
+
         ext_modules.append(
             extension(
                 "torchvision.Decoder",
