@@ -26,6 +26,7 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     image_buffer_from_array,
     path_comparator,
+    hint_sharding,
 )
 from torchvision.prototype.features import Label, Image
 
@@ -87,6 +88,7 @@ class _CifarBase(Dataset):
         dp = Filter(dp, functools.partial(self._is_data_file, config=config))
         dp = Mapper(dp, self._unpickle)
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
+        dp = hint_sharding(dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
