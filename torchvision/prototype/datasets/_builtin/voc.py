@@ -28,6 +28,7 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     path_comparator,
     hint_sharding,
+    hint_shuffling,
 )
 
 HERE = pathlib.Path(__file__).parent
@@ -130,7 +131,7 @@ class VOC(Dataset):
         split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
         split_dp = hint_sharding(split_dp)
-        split_dp = Shuffler(split_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        split_dp = hint_shuffling(split_dp)
 
         dp = split_dp
         for level, data_dp in enumerate((images_dp, anns_dp)):

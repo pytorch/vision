@@ -88,7 +88,7 @@ class _CifarBase(Dataset):
         dp = Mapper(dp, self._unpickle)
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
         dp = hint_sharding(dp)
-        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
+        dp = hint_shuffling(dp)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
