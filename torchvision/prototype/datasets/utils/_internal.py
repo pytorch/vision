@@ -8,6 +8,7 @@ import os
 import os.path
 import pathlib
 import pickle
+import platform
 from typing import BinaryIO
 from typing import (
     Sequence,
@@ -29,8 +30,7 @@ import PIL.Image
 import torch
 import torch.distributed as dist
 import torch.utils.data
-from torch.utils.data import IterDataPipe
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader, IterDataPipe, ShardingFilter
 from torchdata.datapipes.utils import StreamWrapper
 
 
@@ -49,6 +49,7 @@ __all__ = [
     "RarArchiveReader",
     "fromfile",
     "read_flo",
+    "hint_sharding",
 ]
 
 K = TypeVar("K")
@@ -96,7 +97,7 @@ class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
 
     def __iter__(self) -> Iterator[Union[Tuple[K, D], D]]:
         for mapping in self.datapipe:
-            yield from iter(mapping.values() if self.drop_key else mapping.items())  # type: ignore[call-overload]
+            yield from iter(mapping.values() if self.drop_key else mapping.items())
 
 
 class Enumerator(IterDataPipe[Tuple[int, D]]):
@@ -281,7 +282,7 @@ class TakerDataPipe(IterDataPipe):
         return num_take
 
 
-def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
+def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[str, Any]]:
     dp = IoPathFileLister(root=root)
     dp = SharderDataPipe(dp)
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
@@ -290,6 +291,11 @@ def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
     # dp = dp.cycle(2)
     dp = TakerDataPipe(dp, dataset_size)
     return dp
+
+
+def _read_mutable_buffer_fallback(file: BinaryIO, count: int, item_size: int) -> bytearray:
+    # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
+    return bytearray(file.read(-1 if count == -1 else count * item_size))
 
 
 def fromfile(
@@ -325,20 +331,24 @@ def fromfile(
     item_size = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
     np_dtype = byte_order + char + str(item_size)
 
-    # PyTorch does not support tensors with underlying read-only memory. In case
-    # - the file has a .fileno(),
-    # - the file was opened for updating, i.e. 'r+b' or 'w+b',
-    # - the file is seekable
-    # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it to
-    # a mutable location afterwards.
     buffer: Union[memoryview, bytearray]
-    try:
-        buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
-        # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
-        file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
-    except (PermissionError, io.UnsupportedOperation):
-        # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
-        buffer = bytearray(file.read(-1 if count == -1 else count * item_size))
+    if platform.system() != "Windows":
+        # PyTorch does not support tensors with underlying read-only memory. In case
+        # - the file has a .fileno(),
+        # - the file was opened for updating, i.e. 'r+b' or 'w+b',
+        # - the file is seekable
+        # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it
+        # to a mutable location afterwards.
+        try:
+            buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
+            # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
+            file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
+        except (PermissionError, io.UnsupportedOperation):
+            buffer = _read_mutable_buffer_fallback(file, count, item_size)
+    else:
+        # On Windows just trying to call mmap.mmap() on a file that does not support it, may corrupt the internal state
+        # so no data can be read afterwards. Thus, we simply ignore the possible speed-up.
+        buffer = _read_mutable_buffer_fallback(file, count, item_size)
 
     # We cannot use torch.frombuffer() directly, since it only supports the native byte order of the system. Thus, we
     # read the data with np.frombuffer() with the correct byte order and convert it to the native one with the
@@ -353,3 +363,7 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
     width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
     flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
     return flow.reshape((height, width, 2)).permute((2, 0, 1))
+
+
+def hint_sharding(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+    return ShardingFilter(datapipe)
