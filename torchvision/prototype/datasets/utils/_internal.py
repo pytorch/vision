@@ -96,7 +96,7 @@ class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
 
     def __iter__(self) -> Iterator[Union[Tuple[K, D], D]]:
         for mapping in self.datapipe:
-            yield from iter(mapping.values() if self.drop_key else mapping.items())  # type: ignore[call-overload]
+            yield from iter(mapping.values() if self.drop_key else mapping.items())
 
 
 class Enumerator(IterDataPipe[Tuple[int, D]]):
@@ -250,7 +250,7 @@ class TakerDataPipe(IterDataPipe):
         return num_take
 
 
-def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
+def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[str, Any]]:
     dp = IoPathFileLister(root=root)
     dp = SharderDataPipe(dp)
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)

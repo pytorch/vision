@@ -192,7 +192,7 @@ class Coco(Dataset):
         )
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
-        meta_dp = MappingIterator(meta_dp)
+        meta_dp: IterDataPipe[Dict[str, Dict[str, Any]]] = MappingIterator(meta_dp)
         images_meta_dp, anns_meta_dp = Demultiplexer(
             meta_dp,
             2,
