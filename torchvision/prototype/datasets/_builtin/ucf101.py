@@ -1,3 +1,4 @@
+import csv
 import io
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -25,6 +26,8 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
 )
 from torchvision.prototype.features import Label
+
+csv.register_dialect("ucf101", delimiter=" ")
 
 
 class UCF101(Dataset):
@@ -62,13 +65,14 @@ class UCF101(Dataset):
 
     def _collate_and_decode(
         self,
-        data: Tuple[Tuple[str, int], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[str, str], Tuple[str, io.IOBase]],
         *,
         decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = None,
     ) -> Dict[str, Any]:
         split_data, image_data = data
         _, label_idx = split_data
         path, buffer = image_data
+        label_idx = int(label_idx)
         return dict(
             label=Label(label_idx, category=self.categories[label_idx]),
             path=path,
@@ -85,14 +89,16 @@ class UCF101(Dataset):
         splits_dp, images_dp = resource_dps
 
         splits_dp = Filter(splits_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt"))
-        splits_dp = CSVParser(splits_dp, delimiter=" ")
+        splits_dp = CSVParser(splits_dp, dialect="ucf101")
         splits_dp = hint_sharding(splits_dp)
         splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         dp = IterKeyZipper(splits_dp, images_dp, path_accessor("name"))
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
 
-    def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        dp = self.resources(self.default_config)[1].load(pathlib.Path(root) / self.name)
-        dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
-        return [name.split(".")[1] for name in sorted(dir_names)]
+    def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
+        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
+        dp = Filter(dp, path_comparator("name", "classInd.txt"))
+        dp = CSVParser(dp, dialect="ucf101")
+        _, categories = zip(*dp)
+        return categories

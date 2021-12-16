@@ -6,4 +6,5 @@ from .imagenet import ImageNet
 from .mnist import MNIST, FashionMNIST, KMNIST, EMNIST, QMNIST
 from .sbd import SBD
 from .semeion import SEMEION
+from .ucf101 import UCF101
 from .voc import VOC
