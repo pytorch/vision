@@ -1,4 +1,4 @@
-torchvision2
+torchvision3
 ============
 
 .. image:: https://pepy.tech/badge/torchvision
