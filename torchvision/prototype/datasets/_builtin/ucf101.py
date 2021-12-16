@@ -1,7 +1,7 @@
 import csv
 import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import torch
 from torch.utils.data import IterDataPipe
@@ -88,7 +88,9 @@ class UCF101(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         splits_dp, images_dp = resource_dps
 
-        splits_dp = Filter(splits_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt"))
+        splits_dp: IterDataPipe[Tuple[str, io.IOBase]] = Filter(
+            splits_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt")
+        )
         splits_dp = CSVParser(splits_dp, dialect="ucf101")
         splits_dp = hint_sharding(splits_dp)
         splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
@@ -98,7 +100,7 @@ class UCF101(Dataset):
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
-        dp = Filter(dp, path_comparator("name", "classInd.txt"))
+        dp: IterDataPipe[Tuple[str, io.IOBase]] = Filter(dp, path_comparator("name", "classInd.txt"))
         dp = CSVParser(dp, dialect="ucf101")
         _, categories = zip(*dp)
-        return categories
+        return cast(Tuple[str, ...], categories)
