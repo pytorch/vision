@@ -3,33 +3,27 @@ import functools
 import io
 import pathlib
 import pickle
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Iterator, cast
+from typing import Any, Dict, List, Optional, Tuple, Iterator, cast, BinaryIO
 
 import numpy as np
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Filter,
     Mapper,
     Shuffler,
 )
-from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
-    image_buffer_from_array,
     path_comparator,
 )
 from torchvision.prototype.features import Label, Image
-
-__all__ = ["Cifar10", "Cifar100"]
 
 
 class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):
@@ -50,45 +44,29 @@ class _CifarBase(Dataset):
     _CATEGORIES_KEY: str
 
     @abc.abstractmethod
-    def _is_data_file(self, data: Tuple[str, io.IOBase], *, config: DatasetConfig) -> Optional[int]:
+    def _is_data_file(self, data: Tuple[str, BinaryIO], *, config: DatasetConfig) -> Optional[int]:
         pass
 
     def _unpickle(self, data: Tuple[str, io.BytesIO]) -> Dict[str, Any]:
         _, file = data
         return cast(Dict[str, Any], pickle.load(file, encoding="latin1"))
 
-    def _collate_and_decode(
-        self,
-        data: Tuple[np.ndarray, int],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[np.ndarray, int]) -> Dict[str, Any]:
         image_array, category_idx = data
-
-        image: Union[Image, io.BytesIO]
-        if decoder is raw:
-            image = Image(image_array)
-        else:
-            image_buffer = image_buffer_from_array(image_array.transpose((1, 2, 0)))
-            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
-
-        label = Label(category_idx, category=self.categories[category_idx])
-
-        return dict(image=image, label=label)
+        return dict(image=Image(image_array), label=Label(category_idx, category=self.categories[category_idx]))
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, functools.partial(self._is_data_file, config=config))
         dp = Mapper(dp, self._unpickle)
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
@@ -109,7 +87,6 @@ class Cifar10(_CifarBase):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "cifar10",
-            type=DatasetType.RAW,
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
         )
 
@@ -134,7 +111,6 @@ class Cifar100(_CifarBase):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "cifar100",
-            type=DatasetType.RAW,
             homepage="https://www.cs.toronto.edu/~kriz/cifar.html",
             valid_options=dict(
                 split=("train", "test"),

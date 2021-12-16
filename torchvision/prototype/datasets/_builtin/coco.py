@@ -1,8 +1,7 @@
-import io
 import pathlib
 import re
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast, BinaryIO
 
 import torch
 from torchdata.datapipes.iter import (
@@ -22,7 +21,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
+    DecodeableImageStreamWrapper,
 )
 from torchvision.prototype.datasets.utils._internal import (
     MappingIterator,
@@ -42,7 +41,6 @@ class Coco(Dataset):
 
         return DatasetInfo(
             name,
-            type=DatasetType.IMAGE,
             dependencies=("pycocotools",),
             categories=categories,
             homepage="https://cocodataset.org/",
@@ -106,7 +104,7 @@ class Coco(Dataset):
                 )
             ),
             areas=Feature([ann["area"] for ann in anns]),
-            crowds=Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            crowds=Feature([ann["crowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",
@@ -148,26 +146,21 @@ class Coco(Dataset):
         else:
             return None
 
-    def _collate_and_decode_image(
-        self, data: Tuple[str, io.IOBase], *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
-    ) -> Dict[str, Any]:
+    def _prepare_image(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         path, buffer = data
-        return dict(path=path, image=decoder(buffer) if decoder else buffer)
+        return dict(path=path, image=DecodeableImageStreamWrapper(buffer))
 
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self,
-        data: Tuple[Tuple[List[Dict[str, Any]], Dict[str, Any]], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[List[Dict[str, Any]], Dict[str, Any]], Tuple[str, BinaryIO]],
         *,
-        annotations: Optional[str],
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        annotations: str,
     ) -> Dict[str, Any]:
         ann_data, image_data = data
         anns, image_meta = ann_data
 
-        sample = self._collate_and_decode_image(image_data, decoder=decoder)
-        if annotations:
-            sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
-
+        sample = self._prepare_image(image_data)
+        sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
         return sample
 
     def _make_datapipe(
@@ -175,13 +168,12 @@ class Coco(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, meta_dp = resource_dps
 
         if config.annotations is None:
             dp = Shuffler(images_dp)
-            return Mapper(dp, self._collate_and_decode_image, fn_kwargs=dict(decoder=decoder))
+            return Mapper(dp, self._prepare_image)
 
         meta_dp = Filter(
             meta_dp,
@@ -222,9 +214,7 @@ class Coco(Dataset):
             ref_key_fn=path_accessor("name"),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(
-            dp, self._collate_and_decode_sample, fn_kwargs=dict(annotations=config.annotations, decoder=decoder)
-        )
+        return Mapper(dp, self._prepare_sample, fn_kwargs=dict(annotations=config.annotations))
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[Tuple[str, str]]:
         config = self.default_config

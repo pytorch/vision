@@ -1,10 +1,9 @@
 import abc
 import functools
-import io
 import operator
 import pathlib
 import string
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO
+from typing import Any, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO
 
 import torch
 from torchdata.datapipes.iter import (
@@ -14,17 +13,14 @@ from torchdata.datapipes.iter import (
     Zipper,
     Shuffler,
 )
-from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
-    DatasetType,
     DatasetConfig,
     DatasetInfo,
     HttpResource,
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    image_buffer_from_array,
     Decompressor,
     INFINITE_BUFFER_SIZE,
     fromfile,
@@ -98,31 +94,15 @@ class _MNISTBase(Dataset):
     def start_and_stop(self, config: DatasetConfig) -> Tuple[Optional[int], Optional[int]]:
         return None, None
 
-    def _collate_and_decode(
-        self,
-        data: Tuple[torch.Tensor, torch.Tensor],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor], *, config: DatasetConfig) -> Dict[str, Any]:
         image, label = data
-
-        if decoder is raw:
-            image = Image(image)
-        else:
-            image_buffer = image_buffer_from_array(image.numpy())
-            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
-
-        label = Label(label, dtype=torch.int64, category=self.info.categories[int(label)])
-
-        return dict(image=image, label=label)
+        return dict(
+            image=Image(image),
+            label=Label(label, dtype=torch.int64, category=self.info.categories[int(label)]),
+        )
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, labels_dp = resource_dps
         start, stop = self.start_and_stop(config)
@@ -135,14 +115,13 @@ class _MNISTBase(Dataset):
 
         dp = Zipper(images_dp, labels_dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
+        return Mapper(dp, self._prepare_sample, fn_kwargs=dict(config=config))
 
 
 class MNIST(_MNISTBase):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "mnist",
-            type=DatasetType.RAW,
             categories=10,
             homepage="http://yann.lecun.com/exdb/mnist",
             valid_options=dict(
@@ -172,7 +151,6 @@ class FashionMNIST(MNIST):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "fashionmnist",
-            type=DatasetType.RAW,
             categories=(
                 "T-shirt/top",
                 "Trouser",
@@ -204,7 +182,6 @@ class KMNIST(MNIST):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "kmnist",
-            type=DatasetType.RAW,
             categories=["o", "ki", "su", "tsu", "na", "ha", "ma", "ya", "re", "wo"],
             homepage="http://codh.rois.ac.jp/kmnist/index.html.en",
             valid_options=dict(
@@ -225,7 +202,6 @@ class EMNIST(_MNISTBase):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "emnist",
-            type=DatasetType.RAW,
             categories=list(string.digits + string.ascii_uppercase + string.ascii_lowercase),
             homepage="https://www.westernsydney.edu.au/icns/reproducible_research/publication_support_materials/emnist",
             valid_options=dict(
@@ -280,13 +256,7 @@ class EMNIST(_MNISTBase):
         46: 9,
     }
 
-    def _collate_and_decode(
-        self,
-        data: Tuple[torch.Tensor, torch.Tensor],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor], *, config: DatasetConfig) -> Dict[str, Any]:
         # In these two splits, some lowercase letters are merged into their uppercase ones (see Fig 2. in the paper).
         # That means for example that there is 'D', 'd', and 'C', but not 'c'. Since the labels are nevertheless dense,
         # i.e. no gaps between 0 and 46 for 47 total classes, we need to add an offset to create this gaps. For example,
@@ -299,14 +269,10 @@ class EMNIST(_MNISTBase):
             image, label = data
             label += self._LABEL_OFFSETS.get(int(label), 0)
             data = (image, label)
-        return super()._collate_and_decode(data, config=config, decoder=decoder)
+        return super()._prepare_sample(data, config=config)
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         images_dp, labels_dp = Demultiplexer(
@@ -316,14 +282,13 @@ class EMNIST(_MNISTBase):
             drop_none=True,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return super()._make_datapipe([images_dp, labels_dp], config=config, decoder=decoder)
+        return super()._make_datapipe([images_dp, labels_dp], config=config)
 
 
 class QMNIST(_MNISTBase):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "qmnist",
-            type=DatasetType.RAW,
             categories=10,
             homepage="https://github.com/facebookresearch/qmnist",
             valid_options=dict(
@@ -365,16 +330,10 @@ class QMNIST(_MNISTBase):
 
         return start, stop
 
-    def _collate_and_decode(
-        self,
-        data: Tuple[torch.Tensor, torch.Tensor],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor], *, config: DatasetConfig) -> Dict[str, Any]:
         image, ann = data
         label, *extra_anns = ann
-        sample = super()._collate_and_decode((image, label), config=config, decoder=decoder)
+        sample = super()._prepare_sample((image, label), config=config)
 
         sample.update(
             dict(

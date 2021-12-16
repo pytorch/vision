@@ -1,9 +1,7 @@
-import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast, BinaryIO
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, TarArchiveReader, Filter, Shuffler
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -11,7 +9,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     OnlineResource,
     ManualDownloadResource,
-    DatasetType,
+    DecodeableImageStreamWrapper,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -37,7 +35,6 @@ class ImageNet(Dataset):
 
         return DatasetInfo(
             name,
-            type=DatasetType.IMAGE,
             dependencies=("scipy",),
             categories=categories,
             homepage="https://www.image-net.org/",
@@ -85,7 +82,7 @@ class ImageNet(Dataset):
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[Label, str, str], Tuple[str, io.IOBase]]:
+    def _collate_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str, str], Tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
         wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("wnid")  # type: ignore[union-attr]
         category = self.wnid_to_category[wnid]
@@ -99,40 +96,30 @@ class ImageNet(Dataset):
         return int(self._VAL_TEST_IMAGE_NAME_PATTERN.match(path.name).group("id"))  # type: ignore[union-attr]
 
     def _collate_val_data(
-        self, data: Tuple[Tuple[int, int], Tuple[str, io.IOBase]]
-    ) -> Tuple[Tuple[Label, str, str], Tuple[str, io.IOBase]]:
+        self, data: Tuple[Tuple[int, int], Tuple[str, BinaryIO]]
+    ) -> Tuple[Tuple[Label, str, str], Tuple[str, BinaryIO]]:
         label_data, image_data = data
         _, label = label_data
         category = self.categories[label]
         wnid = self.category_to_wnid[category]
         return (Label(label), category, wnid), image_data
 
-    def _collate_test_data(self, data: Tuple[str, io.IOBase]) -> Tuple[None, Tuple[str, io.IOBase]]:
+    def _collate_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
         return None, data
 
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self,
-        data: Tuple[Optional[Tuple[Label, str, str]], Tuple[str, io.IOBase]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        data: Tuple[Optional[Tuple[Label, str, str]], Tuple[str, BinaryIO]],
     ) -> Dict[str, Any]:
         label_data, (path, buffer) = data
 
-        sample = dict(
-            path=path,
-            image=decoder(buffer) if decoder else buffer,
-        )
+        sample = dict(path=path, image=DecodeableImageStreamWrapper(buffer))
         if label_data:
             sample.update(dict(zip(("label", "category", "wnid"), label_data)))
-
         return sample
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, devkit_dp = resource_dps
 
@@ -160,7 +147,7 @@ class ImageNet(Dataset):
             dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
             dp = Mapper(dp, self._collate_test_data)
 
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
     # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
