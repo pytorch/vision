@@ -95,7 +95,6 @@ class Caltech101(Dataset):
         ann_path, ann_buffer = ann_data
 
         return dict(
-            category=category,
             label=Label(self.info.categories.index(category), category=category),
             image_path=image_path,
             image=DecodeableImageStreamWrapper(image_buffer),
