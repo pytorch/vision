@@ -1,6 +1,7 @@
 import math
 import pathlib
 import warnings
+from types import FunctionType
 from typing import Any, Union, Optional, List, Tuple, BinaryIO
 
 import numpy as np
@@ -390,6 +391,6 @@ def _log_api_usage_once(obj: Any) -> None:
     if not obj.__module__.startswith("torchvision"):
         return
     name = obj.__class__.__name__
-    if name == "function":
+    if isinstance(obj, FunctionType):
         name = obj.__name__
     torch._C._log_api_usage_once(f"{obj.__module__}.{name}")
