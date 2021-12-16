@@ -27,10 +27,9 @@ from torchvision.prototype.datasets.utils._internal import (
     Decompressor,
     INFINITE_BUFFER_SIZE,
     fromfile,
-    hint_shuffling,
+    hint_sharding,
 )
 from torchvision.prototype.features import Image, Label
-
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 
@@ -134,7 +133,8 @@ class _MNISTBase(Dataset):
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
         dp = Zipper(images_dp, labels_dp)
-        dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
+        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
 
 

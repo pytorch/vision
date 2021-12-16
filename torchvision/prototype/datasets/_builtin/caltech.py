@@ -19,7 +19,7 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat, hint_shuffling
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat, hint_sharding
 from torchvision.prototype.features import Label, BoundingBox, Feature
 
 
@@ -119,7 +119,8 @@ class Caltech101(Dataset):
         images_dp, anns_dp = resource_dps
 
         images_dp = Filter(images_dp, self._is_not_background_image)
-        images_dp = hint_shuffling(images_dp)
+        images_dp = hint_sharding(images_dp)
+        images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         anns_dp = Filter(anns_dp, self._is_ann)
 
@@ -182,7 +183,8 @@ class Caltech256(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, self._is_not_rogue_file)
-        dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
+        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
