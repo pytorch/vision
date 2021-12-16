@@ -150,32 +150,33 @@ class Coco(Dataset):
             return None
 
     def _collate_and_decode_image(
-        self, data: Tuple[str, io.IOBase], *, decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]]
+        self, data: Tuple[str, io.IOBase], *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
     ) -> Dict[str, Any]:
         path, buffer = data
-        return dict(image=decoder(buffer) if decoder else dict(buffer=buffer), path=path)
+        return dict(path=path, image=decoder(buffer) if decoder else buffer)
 
     def _collate_and_decode_sample(
         self,
         data: Tuple[Tuple[List[Dict[str, Any]], Dict[str, Any]], Tuple[str, io.IOBase]],
         *,
-        annotations: str,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        annotations: Optional[str],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         ann_data, image_data = data
         anns, image_meta = ann_data
 
-        return {
-            **self._collate_and_decode_image(image_data, decoder=decoder),
-            **self._ANN_DECODERS[annotations](self, anns, image_meta),
-        }
+        sample = self._collate_and_decode_image(image_data, decoder=decoder)
+        if annotations:
+            sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
+
+        return sample
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, meta_dp = resource_dps
 

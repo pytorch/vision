@@ -95,12 +95,14 @@ class SBD(Dataset):
         data: Tuple[Tuple[Any, Tuple[str, io.IOBase]], Tuple[str, io.IOBase]],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
+
+        image = decoder(image_buffer) if decoder else image_buffer
 
         if config.boundaries or config.segmentation:
             boundaries, segmentation = self._decode_ann(
@@ -110,8 +112,8 @@ class SBD(Dataset):
             boundaries = segmentation = None
 
         return dict(
-            decoder(image_buffer) if decoder else dict(image_buffer=image_buffer),
             image_path=image_path,
+            image=image,
             ann_path=ann_path,
             boundaries=boundaries,
             segmentation=segmentation,
@@ -122,7 +124,7 @@ class SBD(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp, extra_split_dp = resource_dps
 

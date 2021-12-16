@@ -3,9 +3,10 @@ import functools
 import io
 import pathlib
 import pickle
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, cast
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Iterator, cast
 
 import numpy as np
+import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Filter,
@@ -61,26 +62,27 @@ class _CifarBase(Dataset):
         self,
         data: Tuple[np.ndarray, int],
         *,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         image_array, category_idx = data
 
-        sample: Dict[str, Any] = dict(label=Label(category_idx, category=self.categories[category_idx]))
-
+        image: Union[Image, io.BytesIO]
         if decoder is raw:
-            sample["image"] = Image(image_array)
+            image = Image(image_array)
         else:
             image_buffer = image_buffer_from_array(image_array.transpose((1, 2, 0)))
-            sample.update(decoder(image_buffer) if decoder else dict(buffer=image_buffer))
+            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        return sample
+        label = Label(category_idx, category=self.categories[category_idx])
+
+        return dict(image=image, label=label)
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, functools.partial(self._is_data_file, config=config))

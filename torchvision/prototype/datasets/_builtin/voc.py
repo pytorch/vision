@@ -95,32 +95,28 @@ class VOC(Dataset):
         data: Tuple[Tuple[Tuple[str, str], Tuple[str, io.IOBase]], Tuple[str, io.IOBase]],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        sample = dict(
-            decoder(image_buffer) if decoder else dict(image_buffer=image_buffer),
-            image_path=image_path,
-            ann_path=ann_path,
-        )
+        image = decoder(image_buffer) if decoder else image_buffer
 
         if config.task == "detection":
-            sample["bounding_boxes"] = self._decode_detection_ann(ann_buffer)
+            ann = self._decode_detection_ann(ann_buffer)
         else:  # config.task == "segmentation":
-            sample.update(decoder(ann_buffer) if decoder else dict(ann_buffer=ann_buffer))
+            ann = decoder(ann_buffer) if decoder else ann_buffer  # type: ignore[assignment]
 
-        return sample
+        return dict(image_path=image_path, image=image, ann_path=ann_path, ann=ann)
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         split_dp, images_dp, anns_dp = Demultiplexer(

@@ -25,13 +25,13 @@ def _collate_and_decode_data(
     *,
     root: pathlib.Path,
     categories: List[str],
-    decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+    decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
 ) -> Dict[str, Any]:
     path, buffer = data
+    data = decoder(buffer) if decoder else buffer
     category = pathlib.Path(path).relative_to(root).parts[0]
     label = torch.tensor(categories.index(category))
     return dict(
-        decoder(buffer) if decoder else dict(buffer=buffer),
         path=path,
         data=data,
         label=label,
@@ -42,7 +42,7 @@ def _collate_and_decode_data(
 def from_data_folder(
     root: Union[str, pathlib.Path],
     *,
-    decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = None,
+    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
     valid_extensions: Optional[Collection[str]] = None,
     recursive: bool = True,
 ) -> Tuple[IterDataPipe, List[str]]:
@@ -60,18 +60,18 @@ def from_data_folder(
     )
 
 
+def _data_to_image_key(sample: Dict[str, Any]) -> Dict[str, Any]:
+    sample["image"] = sample.pop("data")
+    return sample
+
+
 def from_image_folder(
     root: Union[str, pathlib.Path],
     *,
-    decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]] = pil,
+    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = pil,
     valid_extensions: Collection[str] = ("jpg", "jpeg", "png", "ppm", "bmp", "pgm", "tif", "tiff", "webp"),
     **kwargs: Any,
 ) -> Tuple[IterDataPipe, List[str]]:
-    return from_data_folder(
-        root,
-        decoder=decoder,
-        valid_extensions=[
-            valid_extension for ext in valid_extensions for valid_extension in (ext.lower(), ext.upper())
-        ],
-        **kwargs,
-    )
+    valid_extensions = [valid_extension for ext in valid_extensions for valid_extension in (ext.lower(), ext.upper())]
+    dp, categories = from_data_folder(root, decoder=decoder, valid_extensions=valid_extensions, **kwargs)
+    return Mapper(dp, _data_to_image_key), categories

@@ -85,7 +85,7 @@ class Caltech101(Dataset):
         self,
         data: Tuple[Tuple[str, str], Tuple[Tuple[str, io.IOBase], Tuple[str, io.IOBase]]],
         *,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         key, (image_data, ann_data) = data
         category, _ = key
@@ -94,14 +94,16 @@ class Caltech101(Dataset):
 
         label = self.info.categories.index(category)
 
+        image = decoder(image_buffer) if decoder else image_buffer
+
         ann = read_mat(ann_buffer)
         bbox = BoundingBox(ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy")
         contour = Feature(ann["obj_contour"].T)
 
         return dict(
-            decoder(image_buffer) if decoder else dict(buffer=image_buffer),
             category=category,
             label=label,
+            image=image,
             image_path=image_path,
             bbox=bbox,
             contour=contour,
@@ -113,7 +115,7 @@ class Caltech101(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
@@ -163,7 +165,7 @@ class Caltech256(Dataset):
         self,
         data: Tuple[str, io.IOBase],
         *,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         path, buffer = data
 
@@ -171,14 +173,14 @@ class Caltech256(Dataset):
         label_str, category = dir_name.split(".")
         label = Label(int(label_str), category=category)
 
-        return dict(decoder(buffer) if decoder else dict(buffer=buffer), label=label)
+        return dict(label=label, image=decoder(buffer) if decoder else buffer)
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, self._is_not_rogue_file)

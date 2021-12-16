@@ -103,26 +103,26 @@ class _MNISTBase(Dataset):
         data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         image, label = data
 
-        sample: Dict[str, Any] = dict(label=Label(label, dtype=torch.int64, category=self.info.categories[int(label)]))
-
         if decoder is raw:
-            sample["image"] = Image(image)
+            image = Image(image)
         else:
             image_buffer = image_buffer_from_array(image.numpy())
-            sample.update(decoder(image_buffer) if decoder else dict(buffer=image_buffer))
+            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        return sample
+        label = Label(label, dtype=torch.int64, category=self.info.categories[int(label)])
+
+        return dict(image=image, label=label)
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, labels_dp = resource_dps
         start, stop = self.start_and_stop(config)
@@ -286,7 +286,7 @@ class EMNIST(_MNISTBase):
         data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         # In these two splits, some lowercase letters are merged into their uppercase ones (see Fig 2. in the paper).
         # That means for example that there is 'D', 'd', and 'C', but not 'c'. Since the labels are nevertheless dense,
@@ -307,7 +307,7 @@ class EMNIST(_MNISTBase):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         images_dp, labels_dp = Demultiplexer(
@@ -371,7 +371,7 @@ class QMNIST(_MNISTBase):
         data: Tuple[torch.Tensor, torch.Tensor],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         image, ann = data
         label, *extra_anns = ann

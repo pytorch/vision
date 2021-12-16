@@ -3,6 +3,7 @@ import pathlib
 import re
 from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
+import torch
 from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, TarArchiveReader, Filter, Shuffler
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -114,7 +115,7 @@ class ImageNet(Dataset):
         self,
         data: Tuple[Optional[Tuple[Label, str, str]], Tuple[str, io.IOBase]],
         *,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         label_data, (path, buffer) = data
 
@@ -132,7 +133,7 @@ class ImageNet(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, devkit_dp = resource_dps
 

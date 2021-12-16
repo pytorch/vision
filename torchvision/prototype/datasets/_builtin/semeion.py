@@ -40,28 +40,27 @@ class SEMEION(Dataset):
         self,
         data: Tuple[str, ...],
         *,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         image_data = torch.tensor([float(pixel) for pixel in data[:256]], dtype=torch.uint8).reshape(16, 16)
         label_data = [int(label) for label in data[256:] if label]
 
-        category_idx = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
-        sample: Dict[str, Any] = dict(label=Label(category_idx, category=self.info.categories[category_idx]))
-
         if decoder is raw:
-            sample["image"] = Image(image_data)
+            image = image_data.unsqueeze(0)
         else:
-            buffer = image_buffer_from_array(image_data.numpy())
-            sample.update(decoder(buffer) if decoder else dict(buffer=buffer))
+            image_buffer = image_buffer_from_array(image_data.numpy())
+            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        return sample
+        label = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
+        category = self.info.categories[label]
+        return dict(image=image, label=label, category=category)
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], Dict[str, Any]]],
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = CSVParser(dp, delimiter=" ")
