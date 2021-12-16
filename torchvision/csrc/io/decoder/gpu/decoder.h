@@ -33,11 +33,10 @@ class Decoder {
   public:
     Decoder() {}
     ~Decoder();
-    void init(CUcontext, cudaVideoCodec, bool, const Rect * = NULL, const Dim * = NULL, int64_t = 1000, bool = false, bool = false, int64_t = 0, int64_t = 0);
+    void init(CUcontext, cudaVideoCodec, const Rect * = NULL, const Dim * = NULL, bool = false, bool = false, int64_t = 0, int64_t = 0);
     int Decode(const uint8_t *, int64_t, int64_t = 0, int64_t = 0);
     void release();
     uint8_t * FetchFrame();
-    bool UseDeviceFrame() const { return useDeviceFrame; }
     cudaVideoSurfaceFormat GetOutputFormat() const { return videoOutputFormat; }
     int GetFrameSize() const
     {
@@ -55,7 +54,6 @@ class Decoder {
     CUvideoparser parser = NULL;
     CUvideodecoder decoder = NULL;
     bool forceZeroLatency = false;
-    bool useDeviceFrame;
     CUstream cuvidStream = 0;
     int numDecodedFrames = 0;
     unsigned int numChromaPlanes = 0;

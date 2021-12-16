@@ -15,8 +15,7 @@ except (ImportError, OSError):
     _HAS_VIDEO_OPT = False
 
 try:
-    #_load_library("Decoder")
-    torch.ops.load_library("build/lib.linux-x86_64-3.8/torchvision/Decoder.so")
+    _load_library("Decoder")
     _HAS_VIDEO_DECODER = True
 except (ImportError, OSError):
     _HAS_VIDEO_DECODER = False

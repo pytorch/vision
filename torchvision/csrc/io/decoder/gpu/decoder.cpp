@@ -15,13 +15,12 @@ static int GetChromaPlaneCount(cudaVideoSurfaceFormat surfaceFormat)
     return (surfaceFormat == cudaVideoSurfaceFormat_YUV444 || surfaceFormat == cudaVideoSurfaceFormat_YUV444_16Bit) ? 2 : 1;
 }
 
-void Decoder::init(CUcontext context, cudaVideoCodec codec, bool useDevFrame, const Rect *rect,
-                 const Dim *dim, int64_t clockRate, bool lowLatency,
+void Decoder::init(CUcontext context, cudaVideoCodec codec, const Rect *rect,
+                 const Dim *dim, bool lowLatency,
                  bool forceZeroLat, int64_t maxWidth, int64_t maxHeight)
 {
   cuContext = context;
   forceZeroLatency = forceZeroLat;
-  useDeviceFrame = useDevFrame;
   videoCodec = codec;
   nMaxHeight = maxHeight;
   nMaxWidth = maxWidth;
@@ -38,7 +37,7 @@ void Decoder::init(CUcontext context, cudaVideoCodec codec, bool useDevFrame, co
   CUVIDPARSERPARAMS parserParams = {
     .CodecType = codec,
     .ulMaxNumDecodeSurfaces = 1,
-    .ulClockRate = clockRate,
+    .ulClockRate = 1000,
     .ulMaxDisplayDelay = lowLatency ? 0u : 1u,
     .pUserData = this,
     .pfnSequenceCallback = HandleVideoSequenceProc,
@@ -68,11 +67,7 @@ void Decoder::release()
   while (!decodedFrames.empty()) {
     uint8_t *frame = decodedFrames.front();
     decodedFrames.pop();
-    if (useDeviceFrame) {
-      cuMemFree((CUdeviceptr)frame);
-    } else {
-      free(frame);
-    }
+    cuMemFree((CUdeviceptr)frame);
   }
   cuCtxPopCurrent(NULL);
 }
@@ -160,11 +155,7 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *dispInfo)
     }
 
     uint8_t *decodedFrame = nullptr;
-    if (useDeviceFrame) {
-      cuMemAlloc((CUdeviceptr *)&decodedFrame, GetFrameSize());
-    } else {
-      decodedFrame = (uint8_t *)malloc(GetFrameSize() * sizeof(uint8_t));
-    }
+    cuMemAlloc((CUdeviceptr *)&decodedFrame, GetFrameSize());
 
     numDecodedFrames++;
 
@@ -173,7 +164,7 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *dispInfo)
     m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
     m.srcDevice = dpSrcFrame;
     m.srcPitch = nSrcPitch;
-    m.dstMemoryType = useDeviceFrame ? CU_MEMORYTYPE_DEVICE : CU_MEMORYTYPE_HOST;
+    m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
     m.dstDevice = (CUdeviceptr)(m.dstHost = decodedFrame);
     m.dstPitch = deviceFramePitch ? deviceFramePitch : GetWidth() * bytesPerPixel;
     m.WidthInBytes = GetWidth() * bytesPerPixel;

@@ -119,40 +119,18 @@ class VideoReader:
 
         device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
 
-        output_format (str, optional): Format of the output frames. Defaults to ``"rgb"``.
-
-        use_device_frame (bool, optional): Whether to get back device frames(gpu tensors)
-            or host frames(cpu tensors) after GPU decoding. Defaults to ``True``.
-
-        Currently supported values of (use_device_frame, output_format):
-            (True, "nv12"), (False, "nv12"), (False, "yuv420").
-
     """
 
-    def __init__(self, path: str, stream: str = "video", num_threads: int = 0,
-                 device: str = "cpu", output_format: str = "rgb", use_device_frame: bool = True) -> None:
+    def __init__(self, path: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
         self.is_cuda = False
         device = torch.device(device)
         if device.type == "cuda":
-            supported_formats = [
-                "nv12",
-                "yuv420",
-            ]
             if not _has_video_decoder():
                 raise RuntimeError("Not compiled with GPU decoder support.")
             self.is_cuda = True
             if device.index is None:
                 raise RuntimeError("Invalid cuda device!")
-            if output_format not in supported_formats:
-                raise RuntimeError(
-                    f"{output_format} output format not supported with GPU decoding, "
-                    "please use one of {', '.join(supported_formats)}.")
-            if output_format == "yuv420" and use_device_frame:
-                raise RuntimeError(
-                    "yuv420 output not yet supported with GPU decoding when use_device_frame=True, "
-                    "please use either nv12 or use_device_frame=False.")
-            self._c = torch.classes.torchvision.GPUDecoder(
-                path, use_device_frame, device.index, output_format)
+            self._c = torch.classes.torchvision.GPUDecoder(path, device.index)
             return
         if not _has_video_opt():
             raise RuntimeError(
@@ -161,8 +139,6 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and "
                 + "build torchvision from source."
             )
-        if output_format != "rgb":
-            raise RuntimeError("Only rgb output is supported with video_reader.")
 
         self._c = torch.classes.torchvision.Video(path, stream, num_threads)
 
@@ -239,6 +215,17 @@ class VideoReader:
         if self.is_cuda:
             print("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
+
+    def reformat(self, tensor, format: str = "yuv420"):
+        supported_formats = [
+            "yuv420",
+        ]
+        if format not in supported_formats:
+            raise RuntimeError(f"{format} not supported, please use one of {', '.join(supported_formats)}")
+        if not isinstance(tensor, torch.Tensor):
+            raise RuntimeError("Expected tensor as input parameter!")
+        return self._c.reformat(tensor.cpu())
+
 
 
 __all__ = [
