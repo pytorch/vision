@@ -1396,7 +1396,7 @@ def elastic_transform(
     img: Tensor,
     alpha: List[float],
     sigma: List[float],
-    interpolation: str = "bilinear",
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[List[float]] = None,
 ) -> Tensor:
     """Transform a tensor image with elastic transformations.
@@ -1405,19 +1405,45 @@ def elastic_transform(
     and sigma controls the smoothness of the displacements.
     The displacements are added to an identity grid and the resulting grid is
     used to grid_sample from the image.
+
     Applications:
         Randomly transforms the morphology of objects in images and produces a
         see-through-water-like effect.
+
     Args:
         img (PIL Image or Tensor): Image on which elastic_transform is applied.
-        If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
-        where ... means it can have an arbitrary number of leading dimensions.
-        If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
-        alpha: List [alpha H, alpha W] or (float), defines the magnitude of displacements.
-        sigma: List [sigma H, sigma W] or (float) defining the smoothness of displacements.
-        interpolation: str saying either NEAREST, BILINEAR or BICUBIC. Defining the interpolation used in grid_sample.
-        fill: Pixel fill value for the area outside the transformed image. Default is 0.
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
+            where ... means it can have an arbitrary number of leading dimensions.
+            If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
+        alpha (float or sequence of floats): Magnitude of displacements.
+        sigma (float or sequence of floats): Smoothness of displacements.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`.
+            Default is ``InterpolationMode.BILINEAR``.
+            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
+            If a tuple of length 3, it is used to fill R, G, B channels respectively.
+            This value is only used when the padding_mode is constant.
+            Only number is supported for torch Tensor.
+            Only int or str or tuple value is supported for PIL Image.
     """
+    # Backward compatibility with integer value
+    if isinstance(interpolation, int):
+        warnings.warn(
+            "Argument interpolation should be of type InterpolationMode instead of int. "
+            "Please, use InterpolationMode enum."
+        )
+        interpolation = _interpolation_modes_from_int(interpolation)
+
+    if isinstance(alpha, float):
+        alpha = [float(alpha), float(alpha)]
+    if isinstance(alpha, (list, tuple)) and len(alpha) == 1:
+        alpha = [alpha[0], alpha[0]]
+
+    if isinstance(sigma, float):
+        sigma = [float(sigma), float(sigma)]
+    if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
+        sigma = [sigma[0], sigma[0]]
 
     t_img = img
     if not isinstance(img, torch.Tensor):
@@ -1426,7 +1452,7 @@ def elastic_transform(
 
         t_img = to_tensor(img)
 
-    output = F_t.elastic_transform(t_img, alpha, sigma, interpolation, fill)
+    output = F_t.elastic_transform(t_img, alpha, sigma, interpolation=interpolation.value, fill=fill)
 
     if not isinstance(img, torch.Tensor):
         output = to_pil_image(output)

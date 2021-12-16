@@ -6,7 +6,6 @@ from collections.abc import Sequence
 from typing import Tuple, List, Optional
 
 import torch
-from numpy import not_equal
 from torch import Tensor
 
 try:
@@ -28,6 +27,7 @@ __all__ = [
     "Resize",
     "Scale",
     "CenterCrop",
+    "ElasticTransform",
     "Pad",
     "Lambda",
     "RandomApply",
@@ -2024,12 +2024,14 @@ class ElasticTransform(torch.nn.Module):
     and sigma controls the smoothness of the displacements.
     The displacements are added to an identity grid and the resulting grid is
     used to grid_sample from the image.
+
     Applications:
         Randomly transforms the morphology of objects in images and produces a
         see-through-water-like effect.
+
     Args:
-        alpha: List [alpha H, alpha W] or (float), defines the magnitude of displacements.
-        sigma: List [sigma H, sigma W] or (float) defining the smoothness of displacements.
+        alpha (float or sequence of floats): Magnitude of displacements.
+        sigma (float or sequence of floats): Smoothness of displacements.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -2041,24 +2043,24 @@ class ElasticTransform(torch.nn.Module):
 
     def __init__(self, alpha, sigma, interpolation=InterpolationMode.BILINEAR, fill=0):
         super().__init__()
-        if not isinstance(alpha, (int, float, list, tuple)):
-            raise TypeError(f"alpha should be int, float or a sequence int or float. Got {type(alpha)}")
-        if isinstance(alpha, (list, tuple)) and len(alpha) != 2:
+        if not isinstance(alpha, (float, Sequence)):
+            raise TypeError(f"alpha should be float or a sequence of floats. Got {type(alpha)}")
+        if isinstance(alpha, Sequence) and len(alpha) != 2:
             raise ValueError(f"If alpha is a sequence its length should be 2. Got {len(alpha)}")
-        if isinstance(alpha, (list, tuple)):
+        if isinstance(alpha, Sequence):
             for element in alpha:
-                if not isinstance(element, (int, float)):
-                    raise TypeError(f"alpha should be int or float. Got {type(element)}")
+                if not isinstance(element, float):
+                    raise TypeError(f"alpha should be a sequence of floats. Got {type(element)}")
         self.alpha = alpha
 
-        if not isinstance(sigma, (int, float, list, tuple)):
-            raise TypeError(f"alpha should be int, float or a sequence int or float. Got {type(sigma)}")
-        if isinstance(sigma, (list, tuple)) and len(sigma) != 2:
+        if not isinstance(sigma, (float, Sequence)):
+            raise TypeError(f"sigma should be float or a sequence of floats. Got {type(sigma)}")
+        if isinstance(sigma, Sequence) and len(sigma) != 2:
             raise ValueError(f"If sigma is a sequence its length should be 2. Got {len(sigma)}")
-        if isinstance(sigma, (list, tuple)):
+        if isinstance(sigma, Sequence):
             for element in sigma:
-                if not isinstance(element, (int, float)):
-                    raise TypeError(f"sigma should be int or float. Got {type(element)}")
+                if not isinstance(element, float):
+                    raise TypeError(f"sigma should be a sequence of floats. Got {type(element)}")
         self.sigma = sigma
 
         # Backward compatibility with integer value

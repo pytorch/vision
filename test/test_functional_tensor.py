@@ -1349,5 +1349,42 @@ def test_ten_crop(device):
         assert_equal(transformed_batch, s_transformed_batch)
 
 
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR, BICUBIC])
+# @pytest.mark.parametrize("dt", [None, torch.float32, torch.float64, torch.float16])
+@pytest.mark.parametrize(
+    "fill",
+    [
+        None,
+        [255, 255, 255],
+        (2.0,),
+    ],
+)
+def test_elastic_transform_consistency(device, interpolation, fill):
+    script_elastic_transform = torch.jit.script(F.elastic_transform)
+    img_tensor, pil_img = _create_data(32, 34, device=device)
+
+    kwargs = dict(alpha=[0.0, ], sigma=[0.0, ], interpolation=interpolation, fill=fill)
+    if interpolation in (NEAREST, ):
+        kwargs["alpha"] = [1.0, ]
+        kwargs["sigma"] = [2.0, ]
+
+    # we need to set manual seed to ensure same result on internal gaussian blur
+    torch.manual_seed(12)
+    out_pil_image = F.elastic_transform(pil_img, **kwargs)
+
+    torch.manual_seed(12)
+    out_tensor = F.elastic_transform(img_tensor, **kwargs)
+    _assert_approx_equal_tensor_to_pil(out_tensor, out_pil_image, agg_method="max", tol=1.0 + 1e-5)
+
+    torch.manual_seed(12)
+    out_tensor = script_elastic_transform(img_tensor, **kwargs)
+    _assert_approx_equal_tensor_to_pil(out_tensor, out_pil_image, agg_method="max", tol=1.0 + 1e-5)
+
+    kwargs["alpha"] = [0.0, ]
+    kwargs["sigma"] = [0.0, ]
+    batch_tensors = _create_data_batch(16, 18, num_samples=4, device=device)
+    _test_fn_on_batch(batch_tensors, F.elastic_transform, **kwargs)
+
 if __name__ == "__main__":
     pytest.main([__file__])

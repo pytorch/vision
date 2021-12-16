@@ -1006,27 +1006,17 @@ def elastic_transform(
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
-    if isinstance(alpha, (float, int)):
-        alpha = [
-            alpha,
-        ] * 2
+    size = list(img.shape[-2:])
 
-    if isinstance(sigma, (float, int)):
-        sigma = [
-            sigma,
-        ] * 2
-
-    shape = list(img.shape[-2:])
-
-    dx = torch.rand([1, 1] + shape, device=img.device) * 2 - 1
+    dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
     if sigma[0] > 0.0:
         dx = gaussian_blur(
             dx,
             [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
             sigma,
         )
-    dx = dx * alpha[0] / shape[0]
-    dy = torch.rand([1, 1] + shape, device=img.device) * 2 - 1
+    dx = dx * alpha[0] / size[0]
+    dy = torch.rand([1, 1] + size, device=img.device) * 2 - 1
 
     if sigma[1] > 0.0:
         dy = gaussian_blur(
@@ -1034,11 +1024,11 @@ def elastic_transform(
             [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
             sigma,
         )
-    dy = dy * alpha[1] / shape[1]
+    dy = dy * alpha[1] / size[1]
 
     displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
 
-    hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in shape]
+    hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
     grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
     identity_grid = torch.stack([grid_x, grid_y], -1).unsqueeze(0)  # 1 x H x W x 2
     grid = identity_grid.to(img.device) + displacement
