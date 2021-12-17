@@ -20,7 +20,11 @@ __all__ = (
 )
 
 
-_MODELS_URLS = {"raft_large": "https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth"}
+_MODELS_URLS = {
+    "raft_large": "https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
+    # TODO: change to V2 once we upload our own weights
+    "raft_small": "https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth",
+}
 
 
 class ResidualBlock(nn.Module):
@@ -641,8 +645,6 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
         nn.Module: The model.
 
     """
-    if pretrained:
-        raise ValueError("No checkpoint is available for raft_small")
 
     return _raft(
         arch="raft_small",
