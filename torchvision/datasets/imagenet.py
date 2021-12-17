@@ -13,7 +13,7 @@ from .utils import check_integrity, extract_archive, verify_str_arg
 ARCHIVE_META = {
     "train": ("ILSVRC2012_img_train.tar", "1d675b47d978889d74fa0da5fadfb00e"),
     "val": ("ILSVRC2012_img_val.tar", "29b22e2961454d5413ddabcf34fc5622"),
-    "devkit": ("ILSVRC2012_devkit_t12.tar.gz", "fa75699e90414af021442c21a62c3abf"),
+    "devkit": ("ILSVRC2012_devkit_t12.tar", None),
 }
 
 META_FILE = "meta.bin"
@@ -115,7 +115,7 @@ def parse_devkit_archive(root: str, file: Optional[str] = None) -> None:
     Args:
         root (str): Root directory containing the devkit archive
         file (str, optional): Name of devkit archive. Defaults to
-            'ILSVRC2012_devkit_t12.tar.gz'
+            'ILSVRC2012_devkit_t12.tar'
     """
     import scipy.io as sio
 
