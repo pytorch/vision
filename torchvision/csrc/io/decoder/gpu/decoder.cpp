@@ -61,14 +61,14 @@ void Decoder::release()
   cuCtxPopCurrent(NULL);
 }
 
-int Decoder::Decode(const uint8_t *data, int64_t size, int64_t flags, int64_t pts)
+unsigned long Decoder::Decode(const uint8_t *data, unsigned long size)
 {
   numDecodedFrames = 0;
   CUVIDSOURCEDATAPACKET pkt = {
-    .flags = flags | CUVID_PKT_TIMESTAMP,
+    .flags = CUVID_PKT_TIMESTAMP,
     .payload_size = size,
     .payload = data,
-    .timestamp = pts
+    .timestamp = 0
   };
   if (!data || size == 0) {
     pkt.flags |= CUVID_PKT_ENDOFSTREAM;
@@ -147,7 +147,7 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO *dispInfo)
     m.srcPitch = nSrcPitch;
     m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
     m.dstDevice = (CUdeviceptr)(m.dstHost = decodedFrame);
-    m.dstPitch = deviceFramePitch ? deviceFramePitch : GetWidth() * bytesPerPixel;
+    m.dstPitch = GetWidth() * bytesPerPixel;
     m.WidthInBytes = GetWidth() * bytesPerPixel;
     m.Height = lumaHeight;
     CheckForCudaErrors(
@@ -262,7 +262,7 @@ int Decoder::HandleVideoSequence(CUVIDEOFORMAT *vidFormat)
     }
 
     videoFormat = *vidFormat;
-    int nDecodeSurface = vidFormat->min_num_decode_surfaces;
+    unsigned long nDecodeSurface = vidFormat->min_num_decode_surfaces;
     cudaVideoDeinterlaceMode deinterlaceMode = cudaVideoDeinterlaceMode_Adaptive;
     if (vidFormat->progressive_sequence) {
         deinterlaceMode = cudaVideoDeinterlaceMode_Weave;
@@ -288,10 +288,10 @@ int Decoder::HandleVideoSequence(CUVIDEOFORMAT *vidFormat)
       maxWidth = vidFormatEx->av1.max_width;
       maxHeight = vidFormatEx->av1.max_height;
     }
-    if (maxWidth < (int)vidFormat->coded_width) {
+    if (maxWidth < vidFormat->coded_width) {
       maxWidth = vidFormat->coded_width;
     }
-    if (maxHeight < (int)vidFormat->coded_height) {
+    if (maxHeight < vidFormat->coded_height) {
       maxHeight = vidFormat->coded_height;
     }
     videoDecodeCreateInfo.ulMaxWidth = maxWidth;

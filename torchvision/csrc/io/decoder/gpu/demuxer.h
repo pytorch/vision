@@ -8,7 +8,7 @@ extern "C" {
 inline bool check(int ret, int line)
 {
   if (ret < 0) {
-    printf("Error %d at line %d in file %s.\n", ret, line);
+    printf("Error %d at line %d in demuxer.h.\n", ret, line);
     return false;
   }
   return true;
@@ -117,7 +117,7 @@ class Demuxer {
         return eVideoCodec;
     }
 
-    bool Demux(uint8_t **video, int64_t *videoBytes)
+    bool Demux(uint8_t **video, unsigned long *videoBytes)
     {
         if (!fmtCtx) {
             return false;

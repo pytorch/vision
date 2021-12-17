@@ -30,7 +30,7 @@ class Decoder {
     Decoder() {}
     ~Decoder();
     void init(CUcontext, cudaVideoCodec);
-    int Decode(const uint8_t *, int64_t, int64_t = 0, int64_t = 0);
+    unsigned long Decode(const uint8_t *, unsigned long);
     void release();
     uint8_t * FetchFrame();
     cudaVideoSurfaceFormat GetOutputFormat() const { return videoOutputFormat; }
@@ -70,7 +70,6 @@ class Decoder {
     int decodePicCount = 0, picNumInDecodeOrder[32];
     bool reconfigExternal = false;
     bool reconfigExtPPChange = false;
-    size_t deviceFramePitch = 0;
     std::queue<uint8_t *> decodedFrames;
 
     static int CUDAAPI HandleVideoSequenceProc(void *pUserData, CUVIDEOFORMAT *pVideoFormat) { return ((Decoder *)pUserData)->HandleVideoSequence(pVideoFormat); }

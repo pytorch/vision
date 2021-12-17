@@ -26,12 +26,12 @@ GPUDecoder::~GPUDecoder()
 torch::Tensor GPUDecoder::decode()
 {
   torch::Tensor frameTensor;
-  int64_t videoBytes, numFrames;
+  unsigned long videoBytes = 0;
   uint8_t *frame = nullptr, *video = nullptr;
   do
   {
     demuxer.Demux(&video, &videoBytes);
-    numFrames = dec.Decode(video, videoBytes);
+    dec.Decode(video, videoBytes);
     frame = dec.FetchFrame();
   } while (frame == nullptr && videoBytes > 0);
   if (frame == nullptr) {
