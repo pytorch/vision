@@ -42,7 +42,7 @@ model_urls = {
     "regnet_y_1_6gf": "https://download.pytorch.org/models/regnet_y_1_6gf-0d7bc02a.pth",
     "regnet_y_3_2gf": "https://download.pytorch.org/models/regnet_y_3_2gf-9180c971.pth",
     "regnet_y_8gf": "https://download.pytorch.org/models/regnet_y_8gf-dc2b1b54.pth",
-    "regnet_y_16gf": "https://download.pytorch.org/models/regnet_y_16gf-e8e16dbd.pth",
+    "regnet_y_16gf": "https://download.pytorch.org/models/regnet_y_16gf-3e4a00f9.pth",
     "regnet_y_32gf": "https://download.pytorch.org/models/regnet_y_32gf-8db6d4b5.pth",
     "regnet_x_400mf": "https://download.pytorch.org/models/regnet_x_400mf-62229a5f.pth",
     "regnet_x_800mf": "https://download.pytorch.org/models/regnet_x_800mf-94a99ebd.pth",

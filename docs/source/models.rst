@@ -219,20 +219,20 @@ EfficientNet-B4                   83.384          96.594
 EfficientNet-B5                   83.444          96.628
 EfficientNet-B6                   84.008          96.916
 EfficientNet-B7                   84.122          96.908
-regnet_x_400mf                    74.870          92.326
-regnet_x_800mf                    77.516          93.830
-regnet_x_1_6gf                    79.676          94.922
-regnet_x_3_2gf                    81.200          95.426
-regnet_x_8gf                      81.688          95.678
-regnet_x_16gf                     82.712          96.194
-regnet_x_32gf                     83.016          96.288
-regnet_y_400mf                    75.810          92.734
-regnet_y_800mf                    78.836          94.502
-regnet_y_1_6gf                    80.880          95.448
-regnet_y_3_2gf                    81.986          95.974
+regnet_x_400mf                    74.864          92.322
+regnet_x_800mf                    77.522          93.826
+regnet_x_1_6gf                    79.668          94.922
+regnet_x_3_2gf                    81.196          95.430
+regnet_x_8gf                      81.682          95.678
+regnet_x_16gf                     82.716          96.196
+regnet_x_32gf                     83.014          96.288
+regnet_y_400mf                    75.804          92.742
+regnet_y_800mf                    78.828          94.502
+regnet_y_1_6gf                    80.876          95.444
+regnet_y_3_2gf                    81.982          95.972
 regnet_y_8gf                      82.828          96.330
-regnet_y_16gf                     82.890          96.324
-regnet_y_32gf                     83.346          96.522
+regnet_y_16gf                     82.890          96.326
+regnet_y_32gf                     83.368          96.498
 ================================  =============   =============
 
 
