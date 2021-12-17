@@ -39,22 +39,9 @@ if _HAS_VIDEO_OPT:
     def _has_video_opt() -> bool:
         return True
 
-
 else:
 
     def _has_video_opt() -> bool:
-        return False
-
-
-if _HAS_VIDEO_DECODER:
-
-    def _has_video_decoder() -> bool:
-        return True
-
-
-else:
-
-    def _has_video_decoder() -> bool:
         return False
 
 
@@ -125,7 +112,7 @@ class VideoReader:
         self.is_cuda = False
         device = torch.device(device)
         if device.type == "cuda":
-            if not _has_video_decoder():
+            if not _HAS_VIDEO_DECODER:
                 raise RuntimeError("Not compiled with GPU decoder support.")
             self.is_cuda = True
             if device.index is None:
@@ -225,7 +212,6 @@ class VideoReader:
         if not isinstance(tensor, torch.Tensor):
             raise RuntimeError("Expected tensor as input parameter!")
         return self._c.reformat(tensor.cpu())
-
 
 
 __all__ = [
