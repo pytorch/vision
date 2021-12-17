@@ -77,7 +77,7 @@ class FeaturePyramidNetwork(nn.Module):
         extra_blocks: Optional[ExtraFPNBlock] = None,
     ):
         super().__init__()
-        _log_api_usage_once("ops", self.__class__.__name__)
+        _log_api_usage_once(self)
         self.inner_blocks = nn.ModuleList()
         self.layer_blocks = nn.ModuleList()
         for in_channels in in_channels_list:
