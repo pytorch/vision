@@ -2,9 +2,11 @@ import io
 
 import builtin_dataset_mocks
 import pytest
+import torch
+from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
-from torchdata.datapipes.iter import IterDataPipe
-from torchvision.prototype import datasets, features
+from torchdata.datapipes.iter import IterDataPipe, Shuffler
+from torchvision.prototype import datasets, transforms
 from torchvision.prototype.datasets._api import DEFAULT_DECODER
 from torchvision.prototype.utils._internal import sequence_to_str
 
@@ -88,14 +90,35 @@ class TestCommon:
             )
 
     @dataset_parametrization(decoder=DEFAULT_DECODER)
-    def test_at_least_one_feature(self, dataset, mock_info):
-        sample = next(iter(dataset))
-        if not any(isinstance(value, features.Feature) for value in sample.values()):
-            raise AssertionError("The sample contained no feature.")
+    def test_no_vanilla_tensors(self, dataset, mock_info):
+        vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
+        if vanilla_tensors:
+            raise AssertionError(
+                f"The values of key(s) "
+                f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
+            )
+
+    @dataset_parametrization()
+    def test_transformable(self, dataset, mock_info):
+        next(iter(dataset.map(transforms.Identity())))
 
     @dataset_parametrization()
     def test_traversable(self, dataset, mock_info):
         traverse(dataset)
+
+    @dataset_parametrization()
+    @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter), ids=lambda type: type.__name__)
+    def test_has_annotations(self, dataset, mock_info, annotation_dp_type):
+        def scan(graph):
+            for node, sub_graph in graph.items():
+                yield node
+                yield from scan(sub_graph)
+
+        for dp in scan(traverse(dataset)):
+            if type(dp) is annotation_dp_type:
+                break
+        else:
+            raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
 
 
 class TestQMNIST:

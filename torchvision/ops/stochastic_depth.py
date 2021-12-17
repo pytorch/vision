@@ -23,7 +23,8 @@ def stochastic_depth(input: Tensor, p: float, mode: str, training: bool = True) 
     Returns:
         Tensor[N, ...]: The randomly zeroed tensor.
     """
-    _log_api_usage_once("ops", "stochastic_depth")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(stochastic_depth)
     if p < 0.0 or p > 1.0:
         raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
     if mode not in ["batch", "row"]:
@@ -53,6 +54,7 @@ class StochasticDepth(nn.Module):
 
     def __init__(self, p: float, mode: str) -> None:
         super().__init__()
+        _log_api_usage_once(self)
         self.p = p
         self.mode = mode
 

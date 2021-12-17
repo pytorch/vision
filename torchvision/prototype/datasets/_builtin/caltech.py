@@ -20,8 +20,8 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat
-from torchvision.prototype.features import Label, BoundingBox
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat, hint_sharding
+from torchvision.prototype.features import Label, BoundingBox, Feature
 
 
 class Caltech101(Dataset):
@@ -98,7 +98,7 @@ class Caltech101(Dataset):
 
         ann = read_mat(ann_buffer)
         bbox = BoundingBox(ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy")
-        contour = torch.tensor(ann["obj_contour"].T)
+        contour = Feature(ann["obj_contour"].T)
 
         return dict(
             category=category,
@@ -120,6 +120,7 @@ class Caltech101(Dataset):
         images_dp, anns_dp = resource_dps
 
         images_dp = Filter(images_dp, self._is_not_background_image)
+        images_dp = hint_sharding(images_dp)
         images_dp = Shuffler(images_dp, buffer_size=INFINITE_BUFFER_SIZE)
 
         anns_dp = Filter(anns_dp, self._is_ann)
@@ -183,6 +184,7 @@ class Caltech256(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, self._is_not_rogue_file)
+        dp = hint_sharding(dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
