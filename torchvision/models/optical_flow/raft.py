@@ -22,8 +22,7 @@ __all__ = (
 
 _MODELS_URLS = {
     "raft_large": "https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
-    # TODO: change to V2 once we upload our own weights
-    "raft_small": "https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth",
+    "raft_small": "https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
 }
 
 
@@ -591,7 +590,7 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Args:
-        pretrained (bool): TODO not implemented yet
+        pretrained (bool): Whether to use pretrained weights.
         progress (bool): If True, displays a progress bar of the download to stderr
         kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
             to override any default.
@@ -636,7 +635,7 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Args:
-        pretrained (bool): TODO not implemented yet
+        pretrained (bool): Whether to use pretrained weights.
         progress (bool): If True, displays a progress bar of the download to stderr
         kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
             to override any default.
