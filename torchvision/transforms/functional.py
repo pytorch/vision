@@ -900,6 +900,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 def _get_inverse_affine_matrix(
     center: List[float], angle: float, translate: List[float], scale: float, shear: List[float]
 ) -> List[float]:
+    # TODO: REMOVE THIS METHOD IN FAVOR OF _get_inverse_affine_matrix_tensor
     # Helper method to compute inverse matrix for affine transformation
 
     # As it is explained in PIL.Image.rotate
@@ -1056,28 +1057,38 @@ def rotate(
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.rotate(img, angle=angle, interpolation=pil_interpolation, expand=expand, center=center, fill=fill)
 
-    if isinstance(angle, torch.Tensor) and angle.requires_grad:
-        # assert img.dtype is float
-        pass
+    # TODO: This is a rather generic check for input dtype if args are learnable
+    # We can refactor that later
+    if not torch.jit.is_scripting():
+        # torch.jit.script crashes with Segmentation fault (core dumped) on the following
+        # without if not torch.jit.is_scripting()
+        if (isinstance(angle, torch.Tensor) and angle.requires_grad) or (
+            isinstance(center, torch.Tensor) and center.requires_grad
+        ):
+            if not img.is_floating_point():
+                raise ValueError("If angle is tensor that requires grad, image should be float")
 
-    center_t = torch.tensor([0.0, 0.0])
-    if center is not None:
-        # ct = torch.tensor([float(c) for c in list(center)]) if not isinstance(center, Tensor) else center
-        # THIS DOES NOT PASS JIT as we mix list/tuple of ints but list/tuple of floats are required
-        ct = torch.tensor(center) if not isinstance(center, Tensor) else center
-        img_size = torch.tensor(get_image_size(img))
+    do_recenter = True
+    if center is None:
+        center = torch.tensor([0.0, 0.0])
+        do_recenter = False
+
+    if isinstance(center, tuple):
+        center = list(center)
+
+    if isinstance(center, list):
+        center = torch.tensor([float(center[0]), float(center[1])])
+
+    if do_recenter:
+        img_size = torch.tensor(get_image_size(img), dtype=torch.float)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_t = 1.0 * (ct - img_size * 0.5)
+        center = center - img_size * 0.5
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
-    angle_t = torch.tensor(float(angle)) if not isinstance(angle, Tensor) else angle
+    angle = torch.tensor(float(angle)) if not isinstance(angle, Tensor) else angle
     matrix = _get_inverse_affine_matrix_tensor(
-        center_t,
-        -angle_t,
-        torch.tensor([0.0, 0.0]),
-        torch.tensor(1.0),
-        torch.tensor([0.0, 0.0])
+        center, -angle, torch.tensor([0.0, 0.0]), torch.tensor(1.0), torch.tensor([0.0, 0.0])
     )
     return F_t.rotate(img, matrix=matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
