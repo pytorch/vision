@@ -440,18 +440,16 @@ def get_extensions():
 
     if video_codec_found and has_ffmpeg:
         gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
-        gpu_decoder_src = (
-            glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
-        )
-        cuda_libs = os.path.join(CUDA_HOME, 'lib64')
-        cuda_inc = os.path.join(CUDA_HOME, 'include')
+        gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
+        cuda_libs = os.path.join(CUDA_HOME, "lib64")
+        cuda_inc = os.path.join(CUDA_HOME, "include")
 
         ext_modules.append(
             extension(
                 "torchvision.Decoder",
                 gpu_decoder_src,
                 include_dirs=include_dirs + [gpu_decoder_path] + [cuda_inc],
-                library_dirs=ffmpeg_library_dir + library_dirs + [cuda_libs] + ['/usr/local/lib'],
+                library_dirs=ffmpeg_library_dir + library_dirs + [cuda_libs] + ["/usr/local/lib"],
                 libraries=[
                     "avcodec",
                     "avformat",
