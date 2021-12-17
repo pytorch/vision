@@ -15,21 +15,10 @@ static int GetChromaPlaneCount(cudaVideoSurfaceFormat surfaceFormat)
     return (surfaceFormat == cudaVideoSurfaceFormat_YUV444 || surfaceFormat == cudaVideoSurfaceFormat_YUV444_16Bit) ? 2 : 1;
 }
 
-void Decoder::init(CUcontext context, cudaVideoCodec codec, const Rect *rect,
-                 const Dim *dim, bool lowLatency,
-                 bool forceZeroLat, int64_t maxWidth, int64_t maxHeight)
+void Decoder::init(CUcontext context, cudaVideoCodec codec)
 {
   cuContext = context;
-  forceZeroLatency = forceZeroLat;
   videoCodec = codec;
-  nMaxHeight = maxHeight;
-  nMaxWidth = maxWidth;
-  if (rect) {
-    cropRect = *rect;
-  }
-  if (dim) {
-    resizeDim = *dim;
-  }
   CheckForCudaErrors(
     cuvidCtxLockCreate(&ctxLock, cuContext),
     __LINE__);
@@ -38,11 +27,11 @@ void Decoder::init(CUcontext context, cudaVideoCodec codec, const Rect *rect,
     .CodecType = codec,
     .ulMaxNumDecodeSurfaces = 1,
     .ulClockRate = 1000,
-    .ulMaxDisplayDelay = lowLatency ? 0u : 1u,
+    .ulMaxDisplayDelay = 0u,
     .pUserData = this,
     .pfnSequenceCallback = HandleVideoSequenceProc,
     .pfnDecodePicture = HandlePictureDecodeProc,
-    .pfnDisplayPicture = forceZeroLatency ? NULL : HandlePictureDisplayProc,
+    .pfnDisplayPicture = HandlePictureDisplayProc,
     .pfnGetOperatingPoint = HandleOperatingPointProc,
   };
   CheckForCudaErrors(
@@ -113,14 +102,6 @@ int Decoder::HandlePictureDecode(CUVIDPICPARAMS *picParams)
     CheckForCudaErrors(
       cuvidDecodePicture(decoder, picParams),
       __LINE__);
-    if (forceZeroLatency && ((!picParams->field_pic_flag) || (picParams->second_field))) {
-        CUVIDPARSERDISPINFO dispInfo {
-          .picture_index = picParams->CurrPicIdx,
-          .progressive_frame = !picParams->field_pic_flag,
-          .top_field_first = picParams->bottom_field_flag ^ 1,
-        };
-        HandlePictureDisplay(&dispInfo);
-    }
     CheckForCudaErrors(
       cuCtxPopCurrent(NULL),
       __LINE__);
@@ -303,47 +284,22 @@ int Decoder::HandleVideoSequence(CUVIDEOFORMAT *vidFormat)
     };
     // AV1 has max width/height of sequence in sequence header
     if (vidFormat->codec == cudaVideoCodec_AV1 && vidFormat->seqhdr_data_length > 0) {
-        // don't overwrite if it is already set from cmdline or reconfig.txt
-        if (!(nMaxWidth > vidFormat->coded_width || nMaxHeight > vidFormat->coded_height)) {
-            CUVIDEOFORMATEX *vidFormatEx = (CUVIDEOFORMATEX *)vidFormat;
-            nMaxWidth = vidFormatEx->av1.max_width;
-            nMaxHeight = vidFormatEx->av1.max_height;
-        }
+      CUVIDEOFORMATEX *vidFormatEx = (CUVIDEOFORMATEX *)vidFormat;
+      maxWidth = vidFormatEx->av1.max_width;
+      maxHeight = vidFormatEx->av1.max_height;
     }
-    if (nMaxWidth < (int)vidFormat->coded_width)
-        nMaxWidth = vidFormat->coded_width;
-    if (nMaxHeight < (int)vidFormat->coded_height)
-        nMaxHeight = vidFormat->coded_height;
-    videoDecodeCreateInfo.ulMaxWidth = nMaxWidth;
-    videoDecodeCreateInfo.ulMaxHeight = nMaxHeight;
-
-    if (!(cropRect.right && cropRect.bottom) && !(resizeDim.width && resizeDim.height)) {
-        width = vidFormat->display_area.right - vidFormat->display_area.left;
-        lumaHeight = vidFormat->display_area.bottom - vidFormat->display_area.top;
-        videoDecodeCreateInfo.ulTargetWidth = vidFormat->coded_width;
-        videoDecodeCreateInfo.ulTargetHeight = vidFormat->coded_height;
-    } else {
-        if (resizeDim.width && resizeDim.height) {
-            videoDecodeCreateInfo.display_area.left = vidFormat->display_area.left;
-            videoDecodeCreateInfo.display_area.top = vidFormat->display_area.top;
-            videoDecodeCreateInfo.display_area.right = vidFormat->display_area.right;
-            videoDecodeCreateInfo.display_area.bottom = vidFormat->display_area.bottom;
-            width = resizeDim.width;
-            lumaHeight = resizeDim.height;
-        }
-
-        if (cropRect.right && cropRect.bottom) {
-            videoDecodeCreateInfo.display_area.left = cropRect.left;
-            videoDecodeCreateInfo.display_area.top = cropRect.top;
-            videoDecodeCreateInfo.display_area.right = cropRect.right;
-            videoDecodeCreateInfo.display_area.bottom = cropRect.bottom;
-            width = cropRect.right - cropRect.left;
-            lumaHeight = cropRect.bottom - cropRect.top;
-        }
-        videoDecodeCreateInfo.ulTargetWidth = width;
-        videoDecodeCreateInfo.ulTargetHeight = lumaHeight;
+    if (maxWidth < (int)vidFormat->coded_width) {
+      maxWidth = vidFormat->coded_width;
     }
-
+    if (maxHeight < (int)vidFormat->coded_height) {
+      maxHeight = vidFormat->coded_height;
+    }
+    videoDecodeCreateInfo.ulMaxWidth = maxWidth;
+    videoDecodeCreateInfo.ulMaxHeight = maxHeight;
+    width = vidFormat->display_area.right - vidFormat->display_area.left;
+    lumaHeight = vidFormat->display_area.bottom - vidFormat->display_area.top;
+    videoDecodeCreateInfo.ulTargetWidth = vidFormat->coded_width;
+    videoDecodeCreateInfo.ulTargetHeight = vidFormat->coded_height;
     chromaHeight = (int)(ceil(lumaHeight * GetChromaHeightFactor(videoOutputFormat)));
     numChromaPlanes = GetChromaPlaneCount(videoOutputFormat);
     surfaceHeight = videoDecodeCreateInfo.ulTargetHeight;
@@ -352,7 +308,6 @@ int Decoder::HandleVideoSequence(CUVIDEOFORMAT *vidFormat)
     displayRect.top = videoDecodeCreateInfo.display_area.top;
     displayRect.left = videoDecodeCreateInfo.display_area.left;
     displayRect.right = videoDecodeCreateInfo.display_area.right;
-
 
     CheckForCudaErrors(cuCtxPushCurrent(cuContext), __LINE__);
     CheckForCudaErrors(cuvidCreateDecoder(&decoder, &videoDecodeCreateInfo), __LINE__);
@@ -375,7 +330,7 @@ int Decoder::ReconfigureDecoder(CUVIDEOFORMAT *vidFormat)
 
     int nDecodeSurface = vidFormat->min_num_decode_surfaces;
 
-    if ((vidFormat->coded_width > nMaxWidth) || (vidFormat->coded_height > nMaxHeight)) {
+    if ((vidFormat->coded_width > maxWidth) || (vidFormat->coded_height > maxHeight)) {
         // For VP9, let driver  handle the change if new width/height > maxwidth/maxheight
         if ((videoCodec != cudaVideoCodec_VP9) || reconfigExternal) {
             throw std::runtime_error("Reconfigure Not supported when width/height > maxwidth/maxheight");
@@ -417,34 +372,10 @@ int Decoder::ReconfigureDecoder(CUVIDEOFORMAT *vidFormat)
         reconfigExternal = false;
         reconfigExtPPChange = false;
         videoFormat = *vidFormat;
-        if (!(cropRect.right && cropRect.bottom) && !(resizeDim.width && resizeDim.height)) {
-            width = vidFormat->display_area.right - vidFormat->display_area.left;
-            lumaHeight = vidFormat->display_area.bottom - vidFormat->display_area.top;
-            reconfigParams.ulTargetWidth = vidFormat->coded_width;
-            reconfigParams.ulTargetHeight = vidFormat->coded_height;
-        }
-        else {
-            if (resizeDim.width && resizeDim.height) {
-                reconfigParams.display_area.left = vidFormat->display_area.left;
-                reconfigParams.display_area.top = vidFormat->display_area.top;
-                reconfigParams.display_area.right = vidFormat->display_area.right;
-                reconfigParams.display_area.bottom = vidFormat->display_area.bottom;
-                width = resizeDim.width;
-                lumaHeight = resizeDim.height;
-            }
-
-            if (cropRect.right && cropRect.bottom) {
-                reconfigParams.display_area.left = cropRect.left;
-                reconfigParams.display_area.top = cropRect.top;
-                reconfigParams.display_area.right = cropRect.right;
-                reconfigParams.display_area.bottom = cropRect.bottom;
-                width = cropRect.right - cropRect.left;
-                lumaHeight = cropRect.bottom - cropRect.top;
-            }
-            reconfigParams.ulTargetWidth = width;
-            reconfigParams.ulTargetHeight = lumaHeight;
-        }
-
+        width = vidFormat->display_area.right - vidFormat->display_area.left;
+        lumaHeight = vidFormat->display_area.bottom - vidFormat->display_area.top;
+        reconfigParams.ulTargetWidth = vidFormat->coded_width;
+        reconfigParams.ulTargetHeight = vidFormat->coded_height;
         chromaHeight = (int)ceil(lumaHeight * GetChromaHeightFactor(videoOutputFormat));
         numChromaPlanes = GetChromaPlaneCount(videoOutputFormat);
         surfaceHeight = reconfigParams.ulTargetHeight;
@@ -454,7 +385,6 @@ int Decoder::ReconfigureDecoder(CUVIDEOFORMAT *vidFormat)
         displayRect.left = reconfigParams.display_area.left;
         displayRect.right = reconfigParams.display_area.right;
     }
-
     reconfigParams.ulNumDecodeSurfaces = nDecodeSurface;
 
     CheckForCudaErrors(cuCtxPushCurrent(cuContext), __LINE__);

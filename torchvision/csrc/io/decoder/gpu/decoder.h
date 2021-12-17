@@ -25,15 +25,11 @@ struct Rect {
   int left, top, right, bottom;
 };
 
-struct Dim {
-  int width, height;
-};
-
 class Decoder {
   public:
     Decoder() {}
     ~Decoder();
-    void init(CUcontext, cudaVideoCodec, const Rect * = NULL, const Dim * = NULL, bool = false, bool = false, int64_t = 0, int64_t = 0);
+    void init(CUcontext, cudaVideoCodec);
     int Decode(const uint8_t *, int64_t, int64_t = 0, int64_t = 0);
     void release();
     uint8_t * FetchFrame();
@@ -53,7 +49,6 @@ class Decoder {
     CUvideoctxlock ctxLock;
     CUvideoparser parser = NULL;
     CUvideodecoder decoder = NULL;
-    bool forceZeroLatency = false;
     CUstream cuvidStream = 0;
     int numDecodedFrames = 0;
     unsigned int numChromaPlanes = 0;
@@ -65,9 +60,7 @@ class Decoder {
     int bitDepthMinus8 = 0;
     int bytesPerPixel = 1;
     CUVIDEOFORMAT videoFormat = {};
-    unsigned int nMaxWidth = 0, nMaxHeight = 0;
-    Rect cropRect = {};
-    Dim resizeDim = {};
+    unsigned int maxWidth = 0, maxHeight = 0;
     // height of the mapped surface
     int surfaceHeight = 0;
     int surfaceWidth = 0;
