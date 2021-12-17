@@ -37,7 +37,7 @@ class Inception3(nn.Module):
         dropout: float = 0.5,
     ) -> None:
         super().__init__()
-        _log_api_usage_once("models", self.__class__.__name__)
+        _log_api_usage_once(self)
         if inception_blocks is None:
             inception_blocks = [BasicConv2d, InceptionA, InceptionB, InceptionC, InceptionD, InceptionE, InceptionAux]
         if init_weights is None:

@@ -11,6 +11,7 @@ std::tuple<at::Tensor, at::Tensor> roi_pool(
     double spatial_scale,
     int64_t pooled_height,
     int64_t pooled_width) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.roi_pool.roi_pool");
   static auto op = c10::Dispatcher::singleton()
                        .findSchemaOrThrow("torchvision::roi_pool", "")
                        .typed<decltype(roi_pool)>();

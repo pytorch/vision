@@ -100,7 +100,7 @@ class ShuffleNetV2(nn.Module):
         inverted_residual: Callable[..., nn.Module] = InvertedResidual,
     ) -> None:
         super().__init__()
-        _log_api_usage_once("models", self.__class__.__name__)
+        _log_api_usage_once(self)
 
         if len(stages_repeats) != 3:
             raise ValueError("expected stages_repeats as list of 3 positive ints")

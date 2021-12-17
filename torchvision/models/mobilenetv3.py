@@ -151,7 +151,7 @@ class MobileNetV3(nn.Module):
             dropout (float): The droupout probability
         """
         super().__init__()
-        _log_api_usage_once("models", self.__class__.__name__)
+        _log_api_usage_once(self)
 
         if not inverted_residual_setting:
             raise ValueError("The inverted_residual_setting should not be empty")
