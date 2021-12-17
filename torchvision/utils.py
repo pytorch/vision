@@ -1,7 +1,8 @@
 import math
 import pathlib
 import warnings
-from typing import Union, Optional, List, Tuple, BinaryIO, no_type_check
+from types import FunctionType
+from typing import Any, Union, Optional, List, Tuple, BinaryIO
 
 import numpy as np
 import torch
@@ -42,6 +43,8 @@ def make_grid(
     Returns:
         grid (Tensor): the tensor containing grid of images.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(make_grid)
     if not (torch.is_tensor(tensor) or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
         raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
@@ -87,6 +90,7 @@ def make_grid(
         else:
             norm_range(tensor, value_range)
 
+    assert isinstance(tensor, torch.Tensor)
     if tensor.size(0) == 1:
         return tensor.squeeze(0)
 
@@ -130,6 +134,8 @@ def save_image(
         **kwargs: Other arguments are documented in ``make_grid``.
     """
 
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(save_image)
     grid = make_grid(tensor, **kwargs)
     # Add 0.5 after unnormalizing to [0, 255] to round to nearest integer
     ndarr = grid.mul(255).add_(0.5).clamp_(0, 255).permute(1, 2, 0).to("cpu", torch.uint8).numpy()
@@ -174,6 +180,8 @@ def draw_bounding_boxes(
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with bounding boxes plotted.
     """
 
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(draw_bounding_boxes)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"Tensor expected, got {type(image)}")
     elif image.dtype != torch.uint8:
@@ -186,7 +194,7 @@ def draw_bounding_boxes(
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
 
-    ndarr = image.permute(1, 2, 0).numpy()
+    ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
 
     img_boxes = boxes.to(torch.int64).tolist()
@@ -252,6 +260,8 @@ def draw_segmentation_masks(
         img (Tensor[C, H, W]): Image Tensor, with segmentation masks drawn on top.
     """
 
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(draw_segmentation_masks)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
     elif image.dtype != torch.uint8:
@@ -329,6 +339,8 @@ def draw_keypoints(
         img (Tensor[C, H, W]): Image Tensor of dtype uint8 with keypoints drawn.
     """
 
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(draw_keypoints)
     if not isinstance(image, torch.Tensor):
         raise TypeError(f"The image must be a tensor, got {type(image)}")
     elif image.dtype != torch.uint8:
@@ -341,7 +353,7 @@ def draw_keypoints(
     if keypoints.ndim != 3:
         raise ValueError("keypoints must be of shape (num_instances, K, 2)")
 
-    ndarr = image.permute(1, 2, 0).numpy()
+    ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
     draw = ImageDraw.Draw(img_to_draw)
     img_kpts = keypoints.to(torch.int64).tolist()
@@ -375,13 +387,10 @@ def _generate_color_palette(num_masks: int):
     return [tuple((i * palette) % 255) for i in range(num_masks)]
 
 
-@no_type_check
-def _log_api_usage_once(obj: str) -> None:  # type: ignore
-    if torch.jit.is_scripting() or torch.jit.is_tracing():
+def _log_api_usage_once(obj: Any) -> None:
+    if not obj.__module__.startswith("torchvision"):
         return
-    # NOTE: obj can be an object as well, but mocking it here to be
-    # only a string to appease torchscript
-    if isinstance(obj, str):
-        torch._C._log_api_usage_once(obj)
-    else:
-        torch._C._log_api_usage_once(f"{obj.__module__}.{obj.__class__.__name__}")
+    name = obj.__class__.__name__
+    if isinstance(obj, FunctionType):
+        name = obj.__name__
+    torch._C._log_api_usage_once(f"{obj.__module__}.{name}")

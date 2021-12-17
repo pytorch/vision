@@ -11,7 +11,6 @@ from torchdata.datapipes.iter import (
     IterDataPipe,
     Demultiplexer,
     Mapper,
-    ZipArchiveReader,
     Zipper,
     Shuffler,
 )
@@ -29,9 +28,9 @@ from torchvision.prototype.datasets.utils._internal import (
     Decompressor,
     INFINITE_BUFFER_SIZE,
     fromfile,
+    hint_sharding,
 )
 from torchvision.prototype.features import Image, Label
-
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 
@@ -135,6 +134,7 @@ class _MNISTBase(Dataset):
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
         dp = Zipper(images_dp, labels_dp)
+        dp = hint_sharding(dp)
         dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
 
@@ -310,7 +310,6 @@ class EMNIST(_MNISTBase):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        archive_dp = ZipArchiveReader(archive_dp)
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,
