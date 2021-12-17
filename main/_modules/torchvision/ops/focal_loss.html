@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+ea6bcc2 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+d100828 ) &#x25BC</a>
     </div>
     
 
@@ -351,7 +351,8 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        Loss tensor with the reduction option applied.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="s2">&quot;ops&quot;</span><span class="p">,</span> <span class="s2">&quot;sigmoid_focal_loss&quot;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
+        <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">sigmoid_focal_loss</span><span class="p">)</span>
     <span class="n">p</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sigmoid</span><span class="p">(</span><span class="n">inputs</span><span class="p">)</span>
     <span class="n">ce_loss</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">binary_cross_entropy_with_logits</span><span class="p">(</span><span class="n">inputs</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span> <span class="n">reduction</span><span class="o">=</span><span class="s2">&quot;none&quot;</span><span class="p">)</span>
     <span class="n">p_t</span> <span class="o">=</span> <span class="n">p</span> <span class="o">*</span> <span class="n">targets</span> <span class="o">+</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">p</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">targets</span><span class="p">)</span>
