@@ -8,7 +8,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Demultiplexer,
     Filter,
     IterKeyZipper,
@@ -29,6 +28,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     path_comparator,
     hint_sharding,
+    hint_shuffling,
 )
 
 
@@ -141,7 +141,7 @@ class SBD(Dataset):
             split_dp = extra_split_dp
         split_dp = LineReader(split_dp, decode=True)
         split_dp = hint_sharding(split_dp)
-        split_dp = Shuffler(split_dp)
+        split_dp = hint_shuffling(split_dp)
 
         dp = split_dp
         for level, data_dp in enumerate((images_dp, anns_dp)):
