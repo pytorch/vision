@@ -5,11 +5,7 @@ from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import torch
 from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import (
-    Filter,
-    Mapper,
-    Shuffler,
-)
+from torch.utils.data.datapipes.iter import Filter, Mapper
 from torchdata.datapipes.iter import CSVParser, IterKeyZipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -20,10 +16,10 @@ from torchvision.prototype.datasets.utils import (
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
     path_accessor,
     path_comparator,
     hint_sharding,
+    hint_shuffling,
 )
 from torchvision.prototype.features import Label
 
@@ -93,7 +89,7 @@ class UCF101(Dataset):
         )
         splits_dp = CSVParser(splits_dp, dialect="ucf101")
         splits_dp = hint_sharding(splits_dp)
-        splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        splits_dp = hint_shuffling(splits_dp)
 
         dp = IterKeyZipper(splits_dp, images_dp, path_accessor("name"))
         return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
