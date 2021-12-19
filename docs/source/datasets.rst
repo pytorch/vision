@@ -39,6 +39,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     CocoCaptions
     CocoDetection
     EMNIST
+    EuroSAT
     FakeData
     FashionMNIST
     Flickr8k
