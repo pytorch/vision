@@ -1,5 +1,7 @@
 #include "gpu_decoder.h"
 
+/* Set cuda device, create cuda context and initialise the demuxer and decoder.
+ */
 GPUDecoder::GPUDecoder(std::string src_file, int64_t dev)
     : demuxer(src_file.c_str()), device(dev) {
   if (cudaSuccess != cudaSetDevice(device)) {
@@ -18,6 +20,8 @@ GPUDecoder::~GPUDecoder() {
   }
 }
 
+/* Fetch a decoded frame tensor after demuxing and decoding.
+ */
 torch::Tensor GPUDecoder::decode() {
   torch::Tensor frameTensor;
   unsigned long videoBytes = 0;
@@ -41,6 +45,9 @@ torch::Tensor GPUDecoder::decode() {
   return frameTensor;
 }
 
+/* Convert a tensor with data in NV12 format to a tensor with data in YUV420
+ * format in-place.
+ */
 torch::Tensor GPUDecoder::nv12_to_yuv420(torch::Tensor frameTensor) {
   int width = decoder.get_width(), height = decoder.get_height();
   int pitch = width;

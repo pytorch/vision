@@ -18,6 +18,9 @@ static int chroma_plane_count(cudaVideoSurfaceFormat surfaceFormat) {
       : 1;
 }
 
+/* Initialise cuContext and videoCodec, create context lock and create parser
+ * object.
+ */
 void Decoder::init(CUcontext context, cudaVideoCodec codec) {
   cuContext = context;
   videoCodec = codec;
@@ -38,6 +41,8 @@ void Decoder::init(CUcontext context, cudaVideoCodec codec) {
       cuvidCreateVideoParser(&parser, &parserParams), __LINE__);
 }
 
+/* Destroy parser object and context lock.
+ */
 Decoder::~Decoder() {
   if (parser) {
     cuvidDestroyVideoParser(parser);
@@ -45,6 +50,8 @@ Decoder::~Decoder() {
   cuvidCtxLockDestroy(ctxLock);
 }
 
+/* Destroy CUvideodecoder object and free up all the unreturned decoded frames.
+ */
 void Decoder::release() {
   cuCtxPushCurrent(cuContext);
   if (decoder) {
@@ -58,6 +65,8 @@ void Decoder::release() {
   cuCtxPopCurrent(NULL);
 }
 
+/* Trigger video decoding.
+ */
 unsigned long Decoder::decode(const uint8_t* data, unsigned long size) {
   numDecodedFrames = 0;
   CUVIDSOURCEDATAPACKET pkt = {
@@ -73,6 +82,8 @@ unsigned long Decoder::decode(const uint8_t* data, unsigned long size) {
   return numDecodedFrames;
 }
 
+/* Fetch a decoded frame and remove it from the queue.
+ */
 uint8_t* Decoder::fetch_frame() {
   if (decodedFrames.empty()) {
     return nullptr;
@@ -82,6 +93,8 @@ uint8_t* Decoder::fetch_frame() {
   return frame;
 }
 
+/* Called when a picture is ready to be decoded.
+ */
 int Decoder::handle_picture_decode(CUVIDPICPARAMS* picParams) {
   if (!decoder) {
     throw std::runtime_error("Uninitialised decoder.");
@@ -93,6 +106,8 @@ int Decoder::handle_picture_decode(CUVIDPICPARAMS* picParams) {
   return 1;
 }
 
+/* Process the decoded data and copy it to a cuda memory location.
+ */
 int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
   CUVIDPROCPARAMS procParams = {
       .progressive_frame = dispInfo->progressive_frame,
@@ -169,6 +184,9 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
   return 1;
 }
 
+/* Query the capabilities of the underlying hardware video decoder and
+ * verify if the hardware supports decoding the passed video.
+ */
 void Decoder::query_hardware(CUVIDEOFORMAT* videoFormat) {
   CUVIDDECODECAPS decodeCaps = {
       .eCodecType = videoFormat->codec,
@@ -228,6 +246,9 @@ void Decoder::query_hardware(CUVIDEOFORMAT* videoFormat) {
   }
 }
 
+/* Called before decoding frames and/or whenever there is a configuration
+ * change.
+ */
 int Decoder::handle_video_sequence(CUVIDEOFORMAT* vidFormat) {
   // videoCodec has been set in the constructor (for parser). Here it's set
   // again for potential correction
@@ -413,6 +434,8 @@ int Decoder::reconfigure_decoder(CUVIDEOFORMAT* vidFormat) {
   return nDecodeSurface;
 }
 
+/* Called from AV1 sequence header to get operating point of a AV1 bitstream.
+ */
 int Decoder::get_operating_point(CUVIDOPERATINGPOINTINFO* operPointInfo) {
   if (operPointInfo->codec == cudaVideoCodec_AV1) {
     if (operPointInfo->av1.operating_points_cnt > 1) {
