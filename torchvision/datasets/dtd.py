@@ -31,7 +31,7 @@ class DTD(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
-        super().__init__(root, transform, target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
         self._fold = verify_str_arg(str(fold), "fold", [str(i) for i in range(1, 11)])
 
@@ -42,19 +42,23 @@ class DTD(VisionDataset):
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         image_files = []
-        categories = []
+        classes = []
         with open(os.path.join(self._meta_folder, f"{self._split}{self._fold}.txt")) as file:
             for line in file:
-                category, name = line.strip().split("/")
-                image_files.append(os.path.join(self._images_folder, category, name))
-                categories.append(category)
-        self._image_files, self._categories = image_files, categories
+                cls, name = line.strip().split("/")
+                image_files.append(os.path.join(self._images_folder, cls, name))
+                classes.append(cls)
+        self._image_files = image_files
+
+        self.classes = sorted(set(classes))
+        self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
+        self._labels = [self.class_to_idx[cls] for cls in classes]
 
     def __len__(self) -> int:
         return len(self._image_files)
 
     def __getitem__(self, idx):
-        image_file, label = self._image_files[idx], self._categories[idx]
+        image_file, label = self._image_files[idx], self._labels[idx]
         image = PIL.Image.open(image_file).convert("RGB")
 
         if self.transform:
@@ -90,5 +94,4 @@ class DTD(VisionDataset):
     def _download(self) -> None:
         if self._check_exists():
             return
-
         download_and_extract_archive(self._URL, download_root=self._base_folder, md5=self._MD5)

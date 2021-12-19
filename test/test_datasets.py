@@ -2168,5 +2168,41 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
+class DTDTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.DTD
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test", "val"),
+        # There is no need to test the whole matrix here, since each fold is treated exactly the same
+        fold=(5,),
+    )
+
+    def inject_fake_data(self, tmpdir: str, config):
+        data_folder = os.path.join(tmpdir, "dtd", "dtd")
+        os.makedirs(data_folder)
+
+        num_images_per_class = 3
+        image_folder = os.path.join(data_folder, "images")
+        image_files = []
+        for cls in ("banded", "marbled", "zigzagged"):
+            image_files.extend(
+                datasets_utils.create_image_folder(
+                    image_folder,
+                    cls,
+                    file_name_fn=lambda idx: f"{cls}_{idx:04d}.jpg",
+                    num_examples=num_images_per_class,
+                )
+            )
+
+        meta_folder = os.path.join(data_folder, "labels")
+        os.makedirs(meta_folder)
+        image_files_in_config = random.choices(image_files, k=len(image_files) // 2)
+        with open(os.path.join(meta_folder, f"{config['split']}{config['fold']}.txt"), "w") as file:
+            file.write("\n".join(str(path.relative_to(path.parents[1])) for path in image_files_in_config) + "\n")
+
+        return len(image_files_in_config)
+
+
 if __name__ == "__main__":
     unittest.main()
