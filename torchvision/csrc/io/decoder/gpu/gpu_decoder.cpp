@@ -6,15 +6,15 @@ GPUDecoder::GPUDecoder(std::string src_file, int64_t dev)
     printf("Error setting device\n");
     return;
   }
-  CheckForCudaErrors(cuDevicePrimaryCtxRetain(&ctx, device), __LINE__);
-  dec.init(ctx, FFmpeg2NvCodecId(demuxer.GetVideoCodec()));
+  check_for_cuda_errors(cuDevicePrimaryCtxRetain(&ctx, device), __LINE__);
+  decoder.init(ctx, ffmpeg_to_codec(demuxer.get_video_codec()));
   initialised = true;
 }
 
 GPUDecoder::~GPUDecoder() {
-  dec.release();
+  decoder.release();
   if (initialised) {
-    CheckForCudaErrors(cuDevicePrimaryCtxRelease(device), __LINE__);
+    check_for_cuda_errors(cuDevicePrimaryCtxRelease(device), __LINE__);
   }
 }
 
@@ -23,9 +23,9 @@ torch::Tensor GPUDecoder::decode() {
   unsigned long videoBytes = 0;
   uint8_t *frame = nullptr, *video = nullptr;
   do {
-    demuxer.Demux(&video, &videoBytes);
-    dec.Decode(video, videoBytes);
-    frame = dec.FetchFrame();
+    demuxer.demux(&video, &videoBytes);
+    decoder.decode(video, videoBytes);
+    frame = decoder.fetch_frame();
   } while (frame == nullptr && videoBytes > 0);
   if (frame == nullptr) {
     auto options =
@@ -35,14 +35,14 @@ torch::Tensor GPUDecoder::decode() {
   auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
   frameTensor = torch::from_blob(
       frame,
-      {dec.GetFrameSize()},
+      {decoder.get_frame_size()},
       [](auto p) { cuMemFree((CUdeviceptr)p); },
       options);
   return frameTensor;
 }
 
-torch::Tensor GPUDecoder::NV12ToYUV420(torch::Tensor frameTensor) {
-  int width = dec.GetWidth(), height = dec.GetHeight();
+torch::Tensor GPUDecoder::nv12_to_yuv420(torch::Tensor frameTensor) {
+  int width = decoder.get_width(), height = decoder.get_height();
   int pitch = width;
   uint8_t* frame = frameTensor.data_ptr<uint8_t>();
   uint8_t* ptr = new uint8_t[((width + 1) / 2) * ((height + 1) / 2)];
@@ -81,5 +81,5 @@ TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
       .def(torch::init<std::string, int64_t>())
       .def("next", &GPUDecoder::decode)
-      .def("reformat", &GPUDecoder::NV12ToYUV420);
+      .def("reformat", &GPUDecoder::nv12_to_yuv420);
 }

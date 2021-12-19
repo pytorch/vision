@@ -113,11 +113,11 @@ class Demuxer {
     }
   }
 
-  AVCodecID GetVideoCodec() {
+  AVCodecID get_video_codec() {
     return eVideoCodec;
   }
 
-  bool Demux(uint8_t** video, unsigned long* videoBytes) {
+  bool demux(uint8_t** video, unsigned long* videoBytes) {
     if (!fmtCtx) {
       return false;
     }
@@ -176,7 +176,7 @@ class Demuxer {
   }
 };
 
-inline cudaVideoCodec FFmpeg2NvCodecId(AVCodecID id) {
+inline cudaVideoCodec ffmpeg_to_codec(AVCodecID id) {
   switch (id) {
     case AV_CODEC_ID_MPEG1VIDEO:
       return cudaVideoCodec_MPEG1;

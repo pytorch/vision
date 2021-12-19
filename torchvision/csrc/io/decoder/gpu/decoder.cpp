@@ -2,17 +2,16 @@
 #include <cassert>
 #include <cmath>
 #include <cstring>
-#include <sstream>
 #include <unordered_map>
 
-static float GetChromaHeightFactor(cudaVideoSurfaceFormat surfaceFormat) {
+static float chroma_height_factor(cudaVideoSurfaceFormat surfaceFormat) {
   return (surfaceFormat == cudaVideoSurfaceFormat_YUV444 ||
           surfaceFormat == cudaVideoSurfaceFormat_YUV444_16Bit)
       ? 1.0
       : 0.5;
 }
 
-static int GetChromaPlaneCount(cudaVideoSurfaceFormat surfaceFormat) {
+static int chroma_plane_count(cudaVideoSurfaceFormat surfaceFormat) {
   return (surfaceFormat == cudaVideoSurfaceFormat_YUV444 ||
           surfaceFormat == cudaVideoSurfaceFormat_YUV444_16Bit)
       ? 2
@@ -22,7 +21,7 @@ static int GetChromaPlaneCount(cudaVideoSurfaceFormat surfaceFormat) {
 void Decoder::init(CUcontext context, cudaVideoCodec codec) {
   cuContext = context;
   videoCodec = codec;
-  CheckForCudaErrors(cuvidCtxLockCreate(&ctxLock, cuContext), __LINE__);
+  check_for_cuda_errors(cuvidCtxLockCreate(&ctxLock, cuContext), __LINE__);
 
   CUVIDPARSERPARAMS parserParams = {
       .CodecType = codec,
@@ -30,12 +29,13 @@ void Decoder::init(CUcontext context, cudaVideoCodec codec) {
       .ulClockRate = 1000,
       .ulMaxDisplayDelay = 0u,
       .pUserData = this,
-      .pfnSequenceCallback = HandleVideoSequenceProc,
-      .pfnDecodePicture = HandlePictureDecodeProc,
-      .pfnDisplayPicture = HandlePictureDisplayProc,
-      .pfnGetOperatingPoint = HandleOperatingPointProc,
+      .pfnSequenceCallback = video_sequence_handler,
+      .pfnDecodePicture = picture_decode_handler,
+      .pfnDisplayPicture = picture_display_handler,
+      .pfnGetOperatingPoint = operating_point_handler,
   };
-  CheckForCudaErrors(cuvidCreateVideoParser(&parser, &parserParams), __LINE__);
+  check_for_cuda_errors(
+      cuvidCreateVideoParser(&parser, &parserParams), __LINE__);
 }
 
 Decoder::~Decoder() {
@@ -58,7 +58,7 @@ void Decoder::release() {
   cuCtxPopCurrent(NULL);
 }
 
-unsigned long Decoder::Decode(const uint8_t* data, unsigned long size) {
+unsigned long Decoder::decode(const uint8_t* data, unsigned long size) {
   numDecodedFrames = 0;
   CUVIDSOURCEDATAPACKET pkt = {
       .flags = CUVID_PKT_TIMESTAMP,
@@ -68,12 +68,12 @@ unsigned long Decoder::Decode(const uint8_t* data, unsigned long size) {
   if (!data || size == 0) {
     pkt.flags |= CUVID_PKT_ENDOFSTREAM;
   }
-  CheckForCudaErrors(cuvidParseVideoData(parser, &pkt), __LINE__);
+  check_for_cuda_errors(cuvidParseVideoData(parser, &pkt), __LINE__);
   cuvidStream = 0;
   return numDecodedFrames;
 }
 
-uint8_t* Decoder::FetchFrame() {
+uint8_t* Decoder::fetch_frame() {
   if (decodedFrames.empty()) {
     return nullptr;
   }
@@ -82,18 +82,18 @@ uint8_t* Decoder::FetchFrame() {
   return frame;
 }
 
-int Decoder::HandlePictureDecode(CUVIDPICPARAMS* picParams) {
+int Decoder::handle_picture_decode(CUVIDPICPARAMS* picParams) {
   if (!decoder) {
     throw std::runtime_error("Uninitialised decoder.");
   }
   picNumInDecodeOrder[picParams->CurrPicIdx] = decodePicCount++;
-  CheckForCudaErrors(cuCtxPushCurrent(cuContext), __LINE__);
-  CheckForCudaErrors(cuvidDecodePicture(decoder, picParams), __LINE__);
-  CheckForCudaErrors(cuCtxPopCurrent(NULL), __LINE__);
+  check_for_cuda_errors(cuCtxPushCurrent(cuContext), __LINE__);
+  check_for_cuda_errors(cuvidDecodePicture(decoder, picParams), __LINE__);
+  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__);
   return 1;
 }
 
-int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* dispInfo) {
+int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
   CUVIDPROCPARAMS procParams = {
       .progressive_frame = dispInfo->progressive_frame,
       .second_field = dispInfo->repeat_first_field + 1,
@@ -104,8 +104,8 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* dispInfo) {
 
   CUdeviceptr dpSrcFrame = 0;
   unsigned int nSrcPitch = 0;
-  CheckForCudaErrors(cuCtxPushCurrent(cuContext), __LINE__);
-  CheckForCudaErrors(
+  check_for_cuda_errors(cuCtxPushCurrent(cuContext), __LINE__);
+  check_for_cuda_errors(
       cuvidMapVideoFrame(
           decoder,
           dispInfo->picture_index,
@@ -127,7 +127,7 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* dispInfo) {
   }
 
   uint8_t* decodedFrame = nullptr;
-  cuMemAlloc((CUdeviceptr*)&decodedFrame, GetFrameSize());
+  cuMemAlloc((CUdeviceptr*)&decodedFrame, get_frame_size());
 
   numDecodedFrames++;
 
@@ -138,10 +138,10 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* dispInfo) {
   m.srcPitch = nSrcPitch;
   m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
   m.dstDevice = (CUdeviceptr)(m.dstHost = decodedFrame);
-  m.dstPitch = GetWidth() * bytesPerPixel;
-  m.WidthInBytes = GetWidth() * bytesPerPixel;
+  m.dstPitch = get_width() * bytesPerPixel;
+  m.WidthInBytes = get_width() * bytesPerPixel;
   m.Height = lumaHeight;
-  CheckForCudaErrors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__);
+  check_for_cuda_errors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__);
 
   // Copy chroma plane
   // NVDEC output has luma height aligned by 2. Adjust chroma offset by aligning
@@ -151,7 +151,7 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* dispInfo) {
   m.dstDevice =
       (CUdeviceptr)(m.dstHost = decodedFrame + m.dstPitch * lumaHeight);
   m.Height = chromaHeight;
-  CheckForCudaErrors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__);
+  check_for_cuda_errors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__);
 
   if (numChromaPlanes == 2) {
     m.srcDevice =
@@ -159,25 +159,25 @@ int Decoder::HandlePictureDisplay(CUVIDPARSERDISPINFO* dispInfo) {
     m.dstDevice =
         (CUdeviceptr)(m.dstHost = decodedFrame + m.dstPitch * lumaHeight * 2);
     m.Height = chromaHeight;
-    CheckForCudaErrors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__);
+    check_for_cuda_errors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__);
   }
-  CheckForCudaErrors(cuStreamSynchronize(cuvidStream), __LINE__);
+  check_for_cuda_errors(cuStreamSynchronize(cuvidStream), __LINE__);
   decodedFrames.push(decodedFrame);
-  CheckForCudaErrors(cuCtxPopCurrent(NULL), __LINE__);
+  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__);
 
-  CheckForCudaErrors(cuvidUnmapVideoFrame(decoder, dpSrcFrame), __LINE__);
+  check_for_cuda_errors(cuvidUnmapVideoFrame(decoder, dpSrcFrame), __LINE__);
   return 1;
 }
 
-void Decoder::queryHardware(CUVIDEOFORMAT* videoFormat) {
+void Decoder::query_hardware(CUVIDEOFORMAT* videoFormat) {
   CUVIDDECODECAPS decodeCaps = {
       .eCodecType = videoFormat->codec,
       .eChromaFormat = videoFormat->chroma_format,
       .nBitDepthMinus8 = videoFormat->bit_depth_luma_minus8,
   };
-  CheckForCudaErrors(cuCtxPushCurrent(cuContext), __LINE__);
-  CheckForCudaErrors(cuvidGetDecoderCaps(&decodeCaps), __LINE__);
-  CheckForCudaErrors(cuCtxPopCurrent(NULL), __LINE__);
+  check_for_cuda_errors(cuCtxPushCurrent(cuContext), __LINE__);
+  check_for_cuda_errors(cuvidGetDecoderCaps(&decodeCaps), __LINE__);
+  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__);
 
   if (!decodeCaps.bIsSupported) {
     throw std::runtime_error("Codec not supported on this GPU");
@@ -228,7 +228,7 @@ void Decoder::queryHardware(CUVIDEOFORMAT* videoFormat) {
   }
 }
 
-int Decoder::HandleVideoSequence(CUVIDEOFORMAT* vidFormat) {
+int Decoder::handle_video_sequence(CUVIDEOFORMAT* vidFormat) {
   // videoCodec has been set in the constructor (for parser). Here it's set
   // again for potential correction
   videoCodec = vidFormat->codec;
@@ -254,11 +254,11 @@ int Decoder::HandleVideoSequence(CUVIDEOFORMAT* vidFormat) {
                                        // so make 420 default
   }
 
-  queryHardware(vidFormat);
+  query_hardware(vidFormat);
   if (width && lumaHeight && chromaHeight) {
     // cuvidCreateDecoder() has been called before, and now there's possible
     // config change
-    return ReconfigureDecoder(vidFormat);
+    return reconfigure_decoder(vidFormat);
   }
 
   videoFormat = *vidFormat;
@@ -303,8 +303,8 @@ int Decoder::HandleVideoSequence(CUVIDEOFORMAT* vidFormat) {
   videoDecodeCreateInfo.ulTargetWidth = vidFormat->coded_width;
   videoDecodeCreateInfo.ulTargetHeight = vidFormat->coded_height;
   chromaHeight =
-      (int)(ceil(lumaHeight * GetChromaHeightFactor(videoOutputFormat)));
-  numChromaPlanes = GetChromaPlaneCount(videoOutputFormat);
+      (int)(ceil(lumaHeight * chroma_height_factor(videoOutputFormat)));
+  numChromaPlanes = chroma_plane_count(videoOutputFormat);
   surfaceHeight = videoDecodeCreateInfo.ulTargetHeight;
   surfaceWidth = videoDecodeCreateInfo.ulTargetWidth;
   displayRect.bottom = videoDecodeCreateInfo.display_area.bottom;
@@ -312,14 +312,14 @@ int Decoder::HandleVideoSequence(CUVIDEOFORMAT* vidFormat) {
   displayRect.left = videoDecodeCreateInfo.display_area.left;
   displayRect.right = videoDecodeCreateInfo.display_area.right;
 
-  CheckForCudaErrors(cuCtxPushCurrent(cuContext), __LINE__);
-  CheckForCudaErrors(
+  check_for_cuda_errors(cuCtxPushCurrent(cuContext), __LINE__);
+  check_for_cuda_errors(
       cuvidCreateDecoder(&decoder, &videoDecodeCreateInfo), __LINE__);
-  CheckForCudaErrors(cuCtxPopCurrent(NULL), __LINE__);
+  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__);
   return nDecodeSurface;
 }
 
-int Decoder::ReconfigureDecoder(CUVIDEOFORMAT* vidFormat) {
+int Decoder::reconfigure_decoder(CUVIDEOFORMAT* vidFormat) {
   if (vidFormat->bit_depth_luma_minus8 != videoFormat.bit_depth_luma_minus8 ||
       vidFormat->bit_depth_chroma_minus8 !=
           videoFormat.bit_depth_chroma_minus8) {
@@ -360,8 +360,8 @@ int Decoder::ReconfigureDecoder(CUVIDEOFORMAT* vidFormat) {
       width = vidFormat->display_area.right - vidFormat->display_area.left;
       lumaHeight = vidFormat->display_area.bottom - vidFormat->display_area.top;
       chromaHeight =
-          (int)ceil(lumaHeight * GetChromaHeightFactor(videoOutputFormat));
-      numChromaPlanes = GetChromaPlaneCount(videoOutputFormat);
+          (int)ceil(lumaHeight * chroma_height_factor(videoOutputFormat));
+      numChromaPlanes = chroma_plane_count(videoOutputFormat);
     }
 
     // no need for reconfigureDecoder(). Just return
@@ -394,8 +394,8 @@ int Decoder::ReconfigureDecoder(CUVIDEOFORMAT* vidFormat) {
     reconfigParams.ulTargetWidth = vidFormat->coded_width;
     reconfigParams.ulTargetHeight = vidFormat->coded_height;
     chromaHeight =
-        (int)ceil(lumaHeight * GetChromaHeightFactor(videoOutputFormat));
-    numChromaPlanes = GetChromaPlaneCount(videoOutputFormat);
+        (int)ceil(lumaHeight * chroma_height_factor(videoOutputFormat));
+    numChromaPlanes = chroma_plane_count(videoOutputFormat);
     surfaceHeight = reconfigParams.ulTargetHeight;
     surfaceWidth = reconfigParams.ulTargetWidth;
     displayRect.bottom = reconfigParams.display_area.bottom;
@@ -405,15 +405,15 @@ int Decoder::ReconfigureDecoder(CUVIDEOFORMAT* vidFormat) {
   }
   reconfigParams.ulNumDecodeSurfaces = nDecodeSurface;
 
-  CheckForCudaErrors(cuCtxPushCurrent(cuContext), __LINE__);
-  CheckForCudaErrors(
+  check_for_cuda_errors(cuCtxPushCurrent(cuContext), __LINE__);
+  check_for_cuda_errors(
       cuvidReconfigureDecoder(decoder, &reconfigParams), __LINE__);
-  CheckForCudaErrors(cuCtxPopCurrent(NULL), __LINE__);
+  check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__);
 
   return nDecodeSurface;
 }
 
-int Decoder::GetOperatingPoint(CUVIDOPERATINGPOINTINFO* operPointInfo) {
+int Decoder::get_operating_point(CUVIDOPERATINGPOINTINFO* operPointInfo) {
   if (operPointInfo->codec == cudaVideoCodec_AV1) {
     if (operPointInfo->av1.operating_points_cnt > 1) {
       // clip has SVC enabled

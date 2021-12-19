@@ -6,7 +6,7 @@
 #include <queue>
 #include <sstream>
 
-static auto CheckForCudaErrors = [](CUresult result, int lineNum) {
+static auto check_for_cuda_errors = [](CUresult result, int lineNum) {
   if (CUDA_SUCCESS != result) {
     std::stringstream errorStream;
     const char* errorName = nullptr;
@@ -30,23 +30,20 @@ class Decoder {
   Decoder() {}
   ~Decoder();
   void init(CUcontext, cudaVideoCodec);
-  unsigned long Decode(const uint8_t*, unsigned long);
+  unsigned long decode(const uint8_t*, unsigned long);
   void release();
-  uint8_t* FetchFrame();
-  cudaVideoSurfaceFormat GetOutputFormat() const {
-    return videoOutputFormat;
-  }
-  int GetFrameSize() const {
-    return GetWidth() * (lumaHeight + (chromaHeight * numChromaPlanes)) *
+  uint8_t* fetch_frame();
+  int get_frame_size() const {
+    return get_width() * (lumaHeight + (chromaHeight * numChromaPlanes)) *
         bytesPerPixel;
   }
-  int GetWidth() const {
+  int get_width() const {
     return (videoOutputFormat == cudaVideoSurfaceFormat_NV12 ||
             videoOutputFormat == cudaVideoSurfaceFormat_P016)
         ? (width + 1) & ~1
         : width;
   }
-  int GetHeight() const {
+  int get_height() const {
     return lumaHeight;
   }
 
@@ -78,27 +75,31 @@ class Decoder {
   bool reconfigExtPPChange = false;
   std::queue<uint8_t*> decodedFrames;
 
-  static int CUDAAPI
-  HandleVideoSequenceProc(void* pUserData, CUVIDEOFORMAT* pVideoFormat) {
-    return ((Decoder*)pUserData)->HandleVideoSequence(pVideoFormat);
+  static int video_sequence_handler(
+      void* pUserData,
+      CUVIDEOFORMAT* pVideoFormat) {
+    return ((Decoder*)pUserData)->handle_video_sequence(pVideoFormat);
   }
-  static int CUDAAPI
-  HandlePictureDecodeProc(void* pUserData, CUVIDPICPARAMS* pPicParams) {
-    return ((Decoder*)pUserData)->HandlePictureDecode(pPicParams);
+  static int picture_decode_handler(
+      void* pUserData,
+      CUVIDPICPARAMS* pPicParams) {
+    return ((Decoder*)pUserData)->handle_picture_decode(pPicParams);
   }
-  static int CUDAAPI
-  HandlePictureDisplayProc(void* pUserData, CUVIDPARSERDISPINFO* pDispInfo) {
-    return ((Decoder*)pUserData)->HandlePictureDisplay(pDispInfo);
+  static int picture_display_handler(
+      void* pUserData,
+      CUVIDPARSERDISPINFO* pDispInfo) {
+    return ((Decoder*)pUserData)->handle_picture_display(pDispInfo);
   }
-  static int CUDAAPI
-  HandleOperatingPointProc(void* pUserData, CUVIDOPERATINGPOINTINFO* pOPInfo) {
-    return ((Decoder*)pUserData)->GetOperatingPoint(pOPInfo);
+  static int operating_point_handler(
+      void* pUserData,
+      CUVIDOPERATINGPOINTINFO* pOPInfo) {
+    return ((Decoder*)pUserData)->get_operating_point(pOPInfo);
   }
 
-  void queryHardware(CUVIDEOFORMAT* videoFormat);
-  int ReconfigureDecoder(CUVIDEOFORMAT* pVideoFormat);
-  int HandleVideoSequence(CUVIDEOFORMAT* pVideoFormat);
-  int HandlePictureDecode(CUVIDPICPARAMS* pPicParams);
-  int HandlePictureDisplay(CUVIDPARSERDISPINFO* pDispInfo);
-  int GetOperatingPoint(CUVIDOPERATINGPOINTINFO* pOPInfo);
+  void query_hardware(CUVIDEOFORMAT* videoFormat);
+  int reconfigure_decoder(CUVIDEOFORMAT* pVideoFormat);
+  int handle_video_sequence(CUVIDEOFORMAT* pVideoFormat);
+  int handle_picture_decode(CUVIDPICPARAMS* pPicParams);
+  int handle_picture_display(CUVIDPARSERDISPINFO* pDispInfo);
+  int get_operating_point(CUVIDOPERATINGPOINTINFO* pOPInfo);
 };
