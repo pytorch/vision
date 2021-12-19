@@ -44,14 +44,12 @@ class EuroSAT(ImageFolder):
     ) -> None:
         self.root = os.path.expanduser(root)
 
-        # Download the dataset
         if download:
             self.download()
 
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        # ImageFolder
         super().__init__(os.path.join(self.data_folder, "2750"), **kwargs)
         self.classes = self._classes
         self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)}
@@ -67,7 +65,6 @@ class EuroSAT(ImageFolder):
         return check_integrity(os.path.join(self.data_folder, self.filename))
 
     def download(self) -> None:
-        """Download the EuroSAT data if it doesn't exist already."""
 
         if self._check_exists():
             return
