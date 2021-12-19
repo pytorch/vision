@@ -4,6 +4,7 @@ from .celeba import CelebA
 from .cifar import CIFAR10, CIFAR100
 from .cityscapes import Cityscapes
 from .coco import CocoCaptions, CocoDetection
+from .dtd import DTD
 from .fakedata import FakeData
 from .flickr import Flickr8k, Flickr30k
 from .folder import ImageFolder, DatasetFolder
@@ -77,4 +78,5 @@ __all__ = (
     "FlyingChairs",
     "FlyingThings3D",
     "HD1K",
+    "DTD",
 )
