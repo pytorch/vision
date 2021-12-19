@@ -33,7 +33,7 @@ class TestVideoGPUDecoder:
                 for av_frame in container.decode(container.streams.video[0]):
                     av_frames = torch.tensor(av_frame.to_ndarray().flatten())
                     vision_frames = next(decoder)["data"]
-                    mean_delta = torch.mean(torch.abs(av_frames.float() - decoder.reformat(vision_frames).float()))
+                    mean_delta = torch.mean(torch.abs(av_frames.float() - decoder._reformat(vision_frames).float()))
                     assert mean_delta < 0.1
 
 

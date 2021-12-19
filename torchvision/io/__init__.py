@@ -5,8 +5,8 @@ import torch
 from ._video_opt import (
     Timebase,
     VideoMetaData,
-    _HAS_VIDEO_OPT,
     _HAS_VIDEO_DECODER,
+    _HAS_VIDEO_OPT,
     _probe_video_from_file,
     _probe_video_from_memory,
     _read_video_from_file,
@@ -203,12 +203,12 @@ class VideoReader:
             print("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
 
-    def reformat(self, tensor, format: str = "yuv420"):
+    def _reformat(self, tensor, output_format: str = "yuv420"):
         supported_formats = [
             "yuv420",
         ]
-        if format not in supported_formats:
-            raise RuntimeError(f"{format} not supported, please use one of {', '.join(supported_formats)}")
+        if output_format not in supported_formats:
+            raise RuntimeError(f"{output_format} not supported, please use one of {', '.join(supported_formats)}")
         if not isinstance(tensor, torch.Tensor):
             raise RuntimeError("Expected tensor as input parameter!")
         return self._c.reformat(tensor.cpu())
