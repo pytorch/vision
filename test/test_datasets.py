@@ -2174,12 +2174,12 @@ class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
     def inject_fake_data(self, tmpdir, config):
         tmpdir = pathlib.Path(tmpdir)
 
-        wnid = "AnnualCrop"
+        category = "AnnualCrop"
         num_examples = 3
         datasets_utils.create_image_folder(
             root=tmpdir,
-            name=tmpdir / wnid / wnid,
-            file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
+            name=tmpdir / "2750" / category,
+            file_name_fn=lambda image_idx: f"{category}_{image_idx}.JPEG",
             num_examples=num_examples,
         )
 
