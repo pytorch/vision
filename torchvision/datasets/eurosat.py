@@ -6,7 +6,7 @@ from .utils import download_and_extract_archive, check_integrity
 
 
 class EuroSAT(ImageFolder):
-    """`EuroSAT <https://arxiv.org/pdf/1709.00029.pdf>`_ Dataset.
+    """RGB version of the `EuroSAT <https://arxiv.org/pdf/1709.00029.pdf>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where ``EuroSAT.zip`` exists.
@@ -44,9 +44,10 @@ class EuroSAT(ImageFolder):
     ) -> None:
         self.root = os.path.expanduser(root)
 
-        # Download
+        # Download the dataset
         if download:
             self.download()
+
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
