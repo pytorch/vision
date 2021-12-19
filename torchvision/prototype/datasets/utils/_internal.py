@@ -30,7 +30,7 @@ import PIL.Image
 import torch
 import torch.distributed as dist
 import torch.utils.data
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader, IterDataPipe, ShardingFilter
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 
 
@@ -335,3 +335,7 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
 
 def hint_sharding(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
     return ShardingFilter(datapipe)
+
+
+def hint_shuffling(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+    return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)
