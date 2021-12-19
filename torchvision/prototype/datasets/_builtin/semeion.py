@@ -1,3 +1,4 @@
+import functools
 import io
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -65,5 +66,5 @@ class SEMEION(Dataset):
         dp = CSVParser(dp, delimiter=" ")
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        dp = Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        dp = Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
         return dp
