@@ -188,8 +188,12 @@ class Coco(Dataset):
 
         meta_dp = Filter(
             meta_dp,
-            self._filter_meta_files,
-            fn_kwargs=dict(split=config.split, year=config.year, annotations=config.annotations),
+            functools.partial(
+                self._filter_meta_files,
+                split=config.split,
+                year=config.year,
+                annotations=config.annotations,
+            ),
         )
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
@@ -236,7 +240,8 @@ class Coco(Dataset):
 
         dp = resources[1].load(pathlib.Path(root) / self.name)
         dp = Filter(
-            dp, self._filter_meta_files, fn_kwargs=dict(split=config.split, year=config.year, annotations="instances")
+            dp,
+            functools.partial(self._filter_meta_files, split=config.split, year=config.year, annotations="instances"),
         )
         dp = JsonParser(dp)
 
