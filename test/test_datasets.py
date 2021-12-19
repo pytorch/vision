@@ -2168,5 +2168,23 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
+class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.EuroSAT
+
+    def inject_fake_data(self, tmpdir, config):
+        tmpdir = pathlib.Path(tmpdir)
+
+        wnid = "AnnualCrop"
+        num_examples = 3
+        datasets_utils.create_image_folder(
+            root=tmpdir,
+            name=tmpdir / wnid / wnid,
+            file_name_fn=lambda image_idx: f"{wnid}_{image_idx}.JPEG",
+            num_examples=num_examples,
+        )
+
+        return num_examples
+
+
 if __name__ == "__main__":
     unittest.main()
