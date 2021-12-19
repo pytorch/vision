@@ -53,13 +53,14 @@ class EuroSAT(ImageFolder):
         super().__init__(os.path.join(self.data_folder, "2750"), **kwargs)
         self.classes = self._classes
         self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)}
+        self.root = os.path.expanduser(root)
 
     def __len__(self) -> int:
         return len(self.data)
 
     @property
     def data_folder(self) -> str:
-        return os.path.join(self.root, self.__class__.__name__)
+        return os.path.join(self.root, self.__class__.__name__.lower())
 
     def _check_exists(self) -> bool:
         return check_integrity(os.path.join(self.data_folder, self.filename))
