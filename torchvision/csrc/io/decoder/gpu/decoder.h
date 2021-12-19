@@ -76,30 +76,30 @@ class Decoder {
   std::queue<uint8_t*> decodedFrames;
 
   static int video_sequence_handler(
-      void* pUserData,
-      CUVIDEOFORMAT* pVideoFormat) {
-    return ((Decoder*)pUserData)->handle_video_sequence(pVideoFormat);
+      void* user_data,
+      CUVIDEOFORMAT* video_format) {
+    return ((Decoder*)user_data)->handle_video_sequence(video_format);
   }
   static int picture_decode_handler(
-      void* pUserData,
-      CUVIDPICPARAMS* pPicParams) {
-    return ((Decoder*)pUserData)->handle_picture_decode(pPicParams);
+      void* user_data,
+      CUVIDPICPARAMS* pic_params) {
+    return ((Decoder*)user_data)->handle_picture_decode(pic_params);
   }
   static int picture_display_handler(
-      void* pUserData,
-      CUVIDPARSERDISPINFO* pDispInfo) {
-    return ((Decoder*)pUserData)->handle_picture_display(pDispInfo);
+      void* user_data,
+      CUVIDPARSERDISPINFO* disp_info) {
+    return ((Decoder*)user_data)->handle_picture_display(disp_info);
   }
   static int operating_point_handler(
-      void* pUserData,
-      CUVIDOPERATINGPOINTINFO* pOPInfo) {
-    return ((Decoder*)pUserData)->get_operating_point(pOPInfo);
+      void* user_data,
+      CUVIDOPERATINGPOINTINFO* operating_info) {
+    return ((Decoder*)user_data)->get_operating_point(operating_info);
   }
 
-  void query_hardware(CUVIDEOFORMAT* videoFormat);
-  int reconfigure_decoder(CUVIDEOFORMAT* pVideoFormat);
-  int handle_video_sequence(CUVIDEOFORMAT* pVideoFormat);
-  int handle_picture_decode(CUVIDPICPARAMS* pPicParams);
-  int handle_picture_display(CUVIDPARSERDISPINFO* pDispInfo);
-  int get_operating_point(CUVIDOPERATINGPOINTINFO* pOPInfo);
+  void query_hardware(CUVIDEOFORMAT*);
+  int reconfigure_decoder(CUVIDEOFORMAT*);
+  int handle_video_sequence(CUVIDEOFORMAT*);
+  int handle_picture_decode(CUVIDPICPARAMS*);
+  int handle_picture_display(CUVIDPARSERDISPINFO*);
+  int get_operating_point(CUVIDOPERATINGPOINTINFO*);
 };

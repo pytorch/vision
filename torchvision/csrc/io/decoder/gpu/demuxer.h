@@ -21,7 +21,7 @@ class Demuxer {
   AVBSFContext* bsfCtx = NULL;
   AVPacket pkt, pktFiltered;
   AVCodecID eVideoCodec;
-  uint8_t* pDataWithHeader = NULL;
+  uint8_t* dataWithHeader = NULL;
   bool bMp4H264, bMp4HEVC, bMp4MPEG4;
   unsigned int frameCount = 0;
   int iVideoStream;
@@ -108,8 +108,8 @@ class Demuxer {
       av_bsf_free(&bsfCtx);
     }
     avformat_close_input(&fmtCtx);
-    if (pDataWithHeader) {
-      av_free(pDataWithHeader);
+    if (dataWithHeader) {
+      av_free(dataWithHeader);
     }
   }
 
@@ -149,21 +149,21 @@ class Demuxer {
             fmtCtx->streams[iVideoStream]->codecpar->extradata_size;
 
         if (extraDataSize > 0) {
-          pDataWithHeader = (uint8_t*)av_malloc(
+          dataWithHeader = (uint8_t*)av_malloc(
               extraDataSize + pkt.size - 3 * sizeof(uint8_t));
-          if (!pDataWithHeader) {
+          if (!dataWithHeader) {
             printf("FFmpeg error: %d\n", __LINE__);
             return false;
           }
           memcpy(
-              pDataWithHeader,
+              dataWithHeader,
               fmtCtx->streams[iVideoStream]->codecpar->extradata,
               extraDataSize);
           memcpy(
-              pDataWithHeader + extraDataSize,
+              dataWithHeader + extraDataSize,
               pkt.data + 3,
               pkt.size - 3 * sizeof(uint8_t));
-          *video = pDataWithHeader;
+          *video = dataWithHeader;
           *videoBytes = extraDataSize + pkt.size - 3 * sizeof(uint8_t);
         }
       } else {
