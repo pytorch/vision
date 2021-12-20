@@ -56,7 +56,7 @@ class EuroSAT(ImageFolder):
         self.root = os.path.expanduser(root)
 
     def __len__(self) -> int:
-        return len(self.data)
+        return len(self.samples)
 
     @property
     def data_folder(self) -> str:
