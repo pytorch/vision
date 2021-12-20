@@ -88,7 +88,8 @@ class Compose:
     """
 
     def __init__(self, transforms):
-        _log_api_usage_once(self)
+        if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+            _log_api_usage_once(self)
         self.transforms = transforms
 
     def __call__(self, img):
