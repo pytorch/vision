@@ -21,18 +21,13 @@ class EuroSAT(ImageFolder):
 
     url = "https://madm.dfki.de/files/sentinel/EuroSAT.zip"
     md5 = "c8fa014336c82ac7804f0398fcb19387"
-    filename = "EuroSAT.zip"
 
     _class_map = {
         "AnnualCrop": "Annual Crop",
-        "Forest": "Forest",
         "HerbaceousVegetation": "Herbaceous Vegetation",
-        "Highway": "Highway",
         "Industrial": "Industrial Buildings",
-        "Pasture": "Pasture",
         "PermanentCrop": "Permanent Crop",
         "Residential": "Residential Buildings",
-        "River": "River",
         "SeaLake": "Sea & Lake",
     }
 
@@ -50,25 +45,28 @@ class EuroSAT(ImageFolder):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        super().__init__(os.path.join(self.data_folder, "2750"), **kwargs)
-        self.classes = [self._class_map[cls] for cls in self.classes]
+        super().__init__(self._data_folder, **kwargs)
+        self.classes = [self._class_map.get(cls, cls) for cls in self.classes]
         self.root = os.path.expanduser(root)
 
     def __len__(self) -> int:
         return len(self.samples)
 
     @property
-    def data_folder(self) -> str:
+    def _base_folder(self) -> str:
         return os.path.join(self.root, self.__class__.__name__.lower())
 
+    @property
+    def _data_folder(self) -> str:
+        return os.path.join(self._base_folder, "2750")
+
     def _check_exists(self) -> bool:
-        return check_integrity(os.path.join(self.data_folder, self.filename))
+        return os.path.exists(self._data_folder)
 
     def download(self) -> None:
 
         if self._check_exists():
             return
 
-        os.makedirs(self.data_folder, exist_ok=True)
-        print(f"Downloading {self.url}")
-        download_and_extract_archive(self.url, download_root=self.data_folder, filename=self.filename, md5=self.md5)
+        os.makedirs(self._base_folder, exist_ok=True)
+        download_and_extract_archive(self.url, download_root=self._base_folder, md5=self.md5)
