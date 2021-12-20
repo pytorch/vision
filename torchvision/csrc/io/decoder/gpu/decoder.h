@@ -30,8 +30,8 @@ class Decoder {
   Decoder() {}
   ~Decoder();
   void init(CUcontext, cudaVideoCodec);
-  unsigned long decode(const uint8_t*, unsigned long);
   void release();
+  void decode(const uint8_t*, unsigned long);
   uint8_t* fetch_frame();
   int get_frame_size() const {
     return get_width() * (lumaHeight + (chromaHeight * numChromaPlanes)) *
@@ -48,27 +48,24 @@ class Decoder {
   }
 
  private:
+  bool dispAllLayers = false;
+  unsigned int width = 0, lumaHeight = 0, chromaHeight = 0;
+  unsigned int surfaceHeight = 0, surfaceWidth = 0;
+  unsigned int maxWidth = 0, maxHeight = 0;
+  unsigned int operatingPoint = 0, numChromaPlanes = 0;
+  int bitDepthMinus8 = 0, bytesPerPixel = 1;
+  int decodePicCount = 0, picNumInDecodeOrder[32];
+  std::queue<uint8_t*> decodedFrames;
   CUcontext cuContext = NULL;
   CUvideoctxlock ctxLock;
   CUvideoparser parser = NULL;
   CUvideodecoder decoder = NULL;
   CUstream cuvidStream = 0;
-  int numDecodedFrames = 0;
-  unsigned int numChromaPlanes = 0;
-  // dimension of the output
-  bool dispAllLayers = false;
-  unsigned int width = 0, lumaHeight = 0, chromaHeight = 0;
-  unsigned int surfaceHeight = 0, surfaceWidth = 0;
-  unsigned int maxWidth = 0, maxHeight = 0;
-  unsigned int operatingPoint = 0;
-  int bitDepthMinus8 = 0, bytesPerPixel = 1;
-  int decodePicCount = 0, picNumInDecodeOrder[32];
   cudaVideoCodec videoCodec = cudaVideoCodec_NumCodecs;
   cudaVideoChromaFormat videoChromaFormat = cudaVideoChromaFormat_420;
   cudaVideoSurfaceFormat videoOutputFormat = cudaVideoSurfaceFormat_NV12;
   CUVIDEOFORMAT videoFormat = {};
   Rect displayRect = {};
-  std::queue<uint8_t*> decodedFrames;
 
   static int video_sequence_handler(
       void* user_data,

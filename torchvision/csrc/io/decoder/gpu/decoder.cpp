@@ -67,8 +67,7 @@ void Decoder::release() {
 
 /* Trigger video decoding.
  */
-unsigned long Decoder::decode(const uint8_t* data, unsigned long size) {
-  numDecodedFrames = 0;
+void Decoder::decode(const uint8_t* data, unsigned long size) {
   CUVIDSOURCEDATAPACKET pkt = {
       .flags = CUVID_PKT_TIMESTAMP,
       .payload_size = size,
@@ -79,7 +78,6 @@ unsigned long Decoder::decode(const uint8_t* data, unsigned long size) {
   }
   check_for_cuda_errors(cuvidParseVideoData(parser, &pkt), __LINE__);
   cuvidStream = 0;
-  return numDecodedFrames;
 }
 
 /* Fetch a decoded frame and remove it from the queue.
@@ -143,8 +141,6 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
 
   uint8_t* decodedFrame = nullptr;
   cuMemAlloc((CUdeviceptr*)&decodedFrame, get_frame_size());
-
-  numDecodedFrames++;
 
   // Copy luma plane
   CUDA_MEMCPY2D m = {0};
