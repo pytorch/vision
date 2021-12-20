@@ -136,7 +136,7 @@ class _MNISTBase(Dataset):
         dp = Zipper(images_dp, labels_dp)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode, config=config, decoder=decoder))
 
 
 class MNIST(_MNISTBase):

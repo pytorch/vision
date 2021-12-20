@@ -1,3 +1,4 @@
+import functools
 import io
 import pathlib
 import re
@@ -132,7 +133,7 @@ class Caltech101(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
@@ -185,7 +186,7 @@ class Caltech256(Dataset):
         dp = Filter(dp, self._is_not_rogue_file)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)

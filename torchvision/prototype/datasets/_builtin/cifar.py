@@ -89,7 +89,7 @@ class _CifarBase(Dataset):
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)

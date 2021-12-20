@@ -1,3 +1,4 @@
+import functools
 import io
 import pathlib
 import re
@@ -183,12 +184,16 @@ class Coco(Dataset):
         if config.annotations is None:
             dp = hint_sharding(images_dp)
             dp = hint_shuffling(dp)
-            return Mapper(dp, self._collate_and_decode_image, fn_kwargs=dict(decoder=decoder))
+            return Mapper(dp, functools.partial(self._collate_and_decode_image, decoder=decoder))
 
         meta_dp = Filter(
             meta_dp,
-            self._filter_meta_files,
-            fn_kwargs=dict(split=config.split, year=config.year, annotations=config.annotations),
+            functools.partial(
+                self._filter_meta_files,
+                split=config.split,
+                year=config.year,
+                annotations=config.annotations,
+            ),
         )
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
@@ -226,7 +231,7 @@ class Coco(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(
-            dp, self._collate_and_decode_sample, fn_kwargs=dict(annotations=config.annotations, decoder=decoder)
+            dp, functools.partial(self._collate_and_decode_sample, annotations=config.annotations, decoder=decoder)
         )
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[Tuple[str, str]]:
@@ -235,7 +240,8 @@ class Coco(Dataset):
 
         dp = resources[1].load(pathlib.Path(root) / self.name)
         dp = Filter(
-            dp, self._filter_meta_files, fn_kwargs=dict(split=config.split, year=config.year, annotations="instances")
+            dp,
+            functools.partial(self._filter_meta_files, split=config.split, year=config.year, annotations="instances"),
         )
         dp = JsonParser(dp)
 
