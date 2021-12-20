@@ -2170,20 +2170,23 @@ class HD1KTestCase(KittiFlowTestCase):
 
 class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.EuroSAT
+    FEATURE_TYPES = (PIL.Image.Image, int)
 
     def inject_fake_data(self, tmpdir, config):
-        tmpdir = pathlib.Path(tmpdir)
+        img_folder = os.path.join(tmpdir, "eurosat", "2750")
+        os.makedirs(img_folder)
 
-        category = "AnnualCrop"
-        num_examples = 3
-        datasets_utils.create_image_folder(
-            root=tmpdir,
-            name=tmpdir / "2750" / category,
-            file_name_fn=lambda image_idx: f"{category}_{image_idx}.JPEG",
-            num_examples=num_examples,
-        )
+        num_examples_per_class = 3
+        classes = ("AnnualCrop", "Forest")
+        for cls in classes:
+            datasets_utils.create_image_folder(
+                root=img_folder,
+                name=cls,
+                file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+                num_examples=num_examples_per_class,
+            )
 
-        return num_examples
+        return len(classes) * num_examples_per_class
 
 
 if __name__ == "__main__":
