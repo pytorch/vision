@@ -120,7 +120,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         min_depth: int = 16,
     ):
         super().__init__()
-        _log_api_usage_once("models", self.__class__.__name__)
+        _log_api_usage_once(self)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(

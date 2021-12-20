@@ -32,7 +32,8 @@ def sigmoid_focal_loss(
     Returns:
         Loss tensor with the reduction option applied.
     """
-    _log_api_usage_once("ops", "sigmoid_focal_loss")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(sigmoid_focal_loss)
     p = torch.sigmoid(inputs)
     ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction="none")
     p_t = p * targets + (1 - p) * (1 - targets)
