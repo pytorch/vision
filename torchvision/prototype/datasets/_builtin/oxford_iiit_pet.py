@@ -145,6 +145,6 @@ class OxfordIITPet(Dataset):
         dp = CSVDictParser(dp, fieldnames=("image_id", "label"), delimiter=" ")
         raw_categories_and_labels = {(data["image_id"].rsplit("_", 1)[0], data["label"]) for data in dp}
         raw_categories, _ = zip(
-            *sorted(raw_categories_and_labels, key=lambda raw_category_and_label: raw_category_and_label[1])
+            *sorted(raw_categories_and_labels, key=lambda raw_category_and_label: int(raw_category_and_label[1]))
         )
         return [" ".join(part.title() for part in raw_category.split("_")) for raw_category in raw_categories]
