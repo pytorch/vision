@@ -7,6 +7,7 @@ from .coco import CocoCaptions, CocoDetection
 from .fakedata import FakeData
 from .flickr import Flickr8k, Flickr30k
 from .folder import ImageFolder, DatasetFolder
+from .gtsrb import GTSRB
 from .hmdb51 import HMDB51
 from .imagenet import ImageNet
 from .inaturalist import INaturalist
@@ -77,4 +78,5 @@ __all__ = (
     "FlyingChairs",
     "FlyingThings3D",
     "HD1K",
+    "GTSRB",
 )
