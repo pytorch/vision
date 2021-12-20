@@ -23,18 +23,18 @@ class EuroSAT(ImageFolder):
     md5 = "c8fa014336c82ac7804f0398fcb19387"
     filename = "EuroSAT.zip"
 
-    _classes = [
-        "Annual Crop",
-        "Forest",
-        "Herbaceous Vegetation",
-        "Highway",
-        "Industrial Buildings",
-        "Pasture",
-        "Permanent Crop",
-        "Residential Buildings",
-        "River",
-        "Sea & Lake",
-    ]
+    _class_map = {
+        "AnnualCrop": "Annual Crop",
+        "Forest": "Forest",
+        "HerbaceousVegetation": "Herbaceous Vegetation",
+        "Highway": "Highway",
+        "Industrial": "Industrial Buildings",
+        "Pasture": "Pasture",
+        "PermanentCrop": "Permanent Crop",
+        "Residential": "Residential Buildings",
+        "River": "River",
+        "SeaLake": "Sea & Lake",
+    }
 
     def __init__(
         self,
@@ -51,8 +51,7 @@ class EuroSAT(ImageFolder):
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         super().__init__(os.path.join(self.data_folder, "2750"), **kwargs)
-        self.classes = self._classes
-        self.class_to_idx = {_class: i for i, _class in enumerate(self.classes)}
+        self.classes = [self._class_map[cls] for cls in self.classes]
         self.root = os.path.expanduser(root)
 
     def __len__(self) -> int:
