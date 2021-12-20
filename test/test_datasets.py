@@ -2197,11 +2197,12 @@ class DTDTestCase(datasets_utils.ImageDatasetTestCase):
 
         meta_folder = os.path.join(data_folder, "labels")
         os.makedirs(meta_folder)
-        image_files_in_config = random.choices(image_files, k=len(image_files) // 2)
+        image_ids = [str(path.relative_to(path.parents[1])).replace(os.sep, "/") for path in image_files]
+        image_ids_in_config = random.choices(image_ids, k=len(image_files) // 2)
         with open(os.path.join(meta_folder, f"{config['split']}{config['fold']}.txt"), "w") as file:
-            file.write("\n".join(str(path.relative_to(path.parents[1])) for path in image_files_in_config) + "\n")
+            file.write("\n".join(image_ids_in_config) + "\n")
 
-        return len(image_files_in_config)
+        return len(image_ids_in_config)
 
 
 if __name__ == "__main__":
