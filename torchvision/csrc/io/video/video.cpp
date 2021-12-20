@@ -188,7 +188,7 @@ Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
   c10::Dict<std::string, std::vector<double>> ccMetadata;
   c10::Dict<std::string, std::vector<double>> subsMetadata;
 
-  // calback and metadata defined in struct
+  // callback and metadata defined in struct
   succeeded = decoder.init(params, std::move(callback), &metadata);
   if (succeeded) {
     for (const auto& header : metadata) {
@@ -254,7 +254,7 @@ bool Video::setCurrentStream(std::string stream = "video") {
       numThreads_ // global number of threads
   );
 
-  // calback and metadata defined in Video.h
+  // callback and metadata defined in Video.h
   return (decoder.init(params, std::move(callback), &metadata));
 }
 
@@ -280,7 +280,7 @@ void Video::Seek(double ts, bool fastSeek = false) {
       numThreads_ // global number of threads
   );
 
-  // calback and metadata defined in Video.h
+  // callback and metadata defined in Video.h
   succeeded = decoder.init(params, std::move(callback), &metadata);
   LOG(INFO) << "Decoder init at seek " << succeeded << "\n";
 }

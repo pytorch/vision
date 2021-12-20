@@ -186,7 +186,7 @@ class Dataset(abc.ABC):
         if use_sharded_dataset() and self.supports_sharded():
             root = os.path.join(root, *config.values())
             dataset_size = self.info.extra["sizes"][config]
-            return _make_sharded_datapipe(root, dataset_size)
+            return _make_sharded_datapipe(root, dataset_size)  # type: ignore[no-any-return]
 
         self.info.check_dependencies()
         resource_dps = [

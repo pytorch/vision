@@ -11,7 +11,6 @@ from torchdata.datapipes.iter import (
     IterDataPipe,
     Filter,
     Mapper,
-    Shuffler,
 )
 from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
@@ -23,9 +22,10 @@ from torchvision.prototype.datasets.utils import (
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
+    hint_shuffling,
     image_buffer_from_array,
     path_comparator,
+    hint_sharding,
 )
 from torchvision.prototype.features import Label, Image
 
@@ -87,8 +87,9 @@ class _CifarBase(Dataset):
         dp = Filter(dp, functools.partial(self._is_data_file, config=config))
         dp = Mapper(dp, self._unpickle)
         dp = CifarFileReader(dp, labels_key=self._LABELS_KEY)
-        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(decoder=decoder))
+        dp = hint_sharding(dp)
+        dp = hint_shuffling(dp)
+        return Mapper(dp, functools.partial(self._collate_and_decode, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
