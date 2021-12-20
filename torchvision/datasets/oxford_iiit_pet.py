@@ -85,7 +85,7 @@ class OxfordIIITPet(VisionDataset):
 
     @property
     def _base_folder(self):
-        return os.path.join(self.root, type(self).__name__.lower())
+        return os.path.join(self.root, "oxford-iiit-pet")
 
     @property
     def _images_folder(self) -> str:
