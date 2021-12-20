@@ -71,6 +71,7 @@ class OxfordIIITPet(VisionDataset):
             else:  # t == "segmentation"
                 target.append(Image.open(self._segmentations[idx]))
 
+        target: Any
         if not target:
             target = None
         elif len(target) == 1:
