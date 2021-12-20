@@ -56,23 +56,18 @@ class Decoder {
   int numDecodedFrames = 0;
   unsigned int numChromaPlanes = 0;
   // dimension of the output
+  bool dispAllLayers = false;
   unsigned int width = 0, lumaHeight = 0, chromaHeight = 0;
+  unsigned int surfaceHeight = 0, surfaceWidth = 0;
+  unsigned int maxWidth = 0, maxHeight = 0;
+  unsigned int operatingPoint = 0;
+  int bitDepthMinus8 = 0, bytesPerPixel = 1;
+  int decodePicCount = 0, picNumInDecodeOrder[32];
   cudaVideoCodec videoCodec = cudaVideoCodec_NumCodecs;
   cudaVideoChromaFormat videoChromaFormat = cudaVideoChromaFormat_420;
   cudaVideoSurfaceFormat videoOutputFormat = cudaVideoSurfaceFormat_NV12;
-  int bitDepthMinus8 = 0;
-  int bytesPerPixel = 1;
   CUVIDEOFORMAT videoFormat = {};
-  unsigned int maxWidth = 0, maxHeight = 0;
-  // height of the mapped surface
-  int surfaceHeight = 0;
-  int surfaceWidth = 0;
   Rect displayRect = {};
-  unsigned int operatingPoint = 0;
-  bool dispAllLayers = false;
-  int decodePicCount = 0, picNumInDecodeOrder[32];
-  bool reconfigExternal = false;
-  bool reconfigExtPPChange = false;
   std::queue<uint8_t*> decodedFrames;
 
   static int video_sequence_handler(
