@@ -174,7 +174,7 @@ def load_data(traindir, valdir, args):
     print("Creating data loaders")
     if args.distributed:
         if args.ra_sampler:
-            train_sampler = RASampler(dataset, shuffle=True)
+            train_sampler = RASampler(dataset, shuffle=True, repetitions=args.ra_reps)
         else:
             train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
         test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False)
@@ -485,7 +485,10 @@ def get_args_parser(add_help=True):
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
     parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
-    parser.add_argument("--ra-sampler", action="store_true", help="whether to use ra_sampler in training")
+    parser.add_argument("--ra-sampler", action="store_true", help="whether to use Repeated Augmentation in training")
+    parser.add_argument(
+        "--ra-reps", default=3, type=int, help="number of repetitions for Repeated Augmentation (default: 3)"
+    )
 
     # Prototype models only
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
