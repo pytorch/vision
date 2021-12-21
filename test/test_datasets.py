@@ -2169,7 +2169,7 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
-class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
+class OxfordIIITPetTestCase(datasets_utils.DatasetTestCase):
     DATASET_CLASS = datasets.OxfordIIITPet
     FEATURE_TYPES = (PIL.Image.Image, (int, PIL.Image.Image, tuple, type(None)))
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
@@ -2216,9 +2216,12 @@ class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
         return len(split_and_classification_anns_in_split)
 
     def _meta_to_split_and_classification_ann(self, meta, idx):
-        image_id = [
-            "_".join((str.upper if meta["species"] == "cat" else str.lower)(part) for part in meta["cls"].split())
-        ]
+        image_id = "_".join(
+            [
+                *[(str.title if meta["species"] == "cat" else str.lower)(part) for part in meta["cls"].split()],
+                str(idx),
+            ]
+        )
         class_id = str(meta["label"] + 1)
         species = "1" if meta["species"] == "cat" else "2"
         breed_id = "-1"
