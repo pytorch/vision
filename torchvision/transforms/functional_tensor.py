@@ -568,7 +568,7 @@ def resize(
 
 def _assert_grid_transform_inputs(
     img: Tensor,
-    matrix: Optional[List[float]],
+    matrix: Optional[Tensor],
     interpolation: str,
     fill: Optional[List[float]],
     supported_interpolation_modes: List[str],
@@ -580,17 +580,11 @@ def _assert_grid_transform_inputs(
 
     _assert_image_tensor(img)
 
-    if matrix is not None and not isinstance(matrix, list):
-        raise TypeError("Argument matrix should be a list")
+    if matrix is not None and not isinstance(matrix, Tensor):
+        raise TypeError("Argument matrix should be a Tensor")
 
-    if matrix is not None and len(matrix) != 6:
-        raise ValueError("Argument matrix should have 6 float values")
-
-    # if matrix is not None and not isinstance(matrix, Tensor):
-    #     raise TypeError("Argument matrix should be a Tensor")
-
-    # if matrix is not None and list(matrix.shape) != [2, 3]:
-    #     raise ValueError("Argument matrix should have shape [2, 3]")
+    if matrix is not None and list(matrix.shape) != [2, 3]:
+        raise ValueError("Argument matrix should have shape [2, 3]")
 
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
@@ -704,7 +698,7 @@ def _gen_affine_grid(
 
 
 def affine(img: Tensor, matrix: Tensor, interpolation: str = "nearest", fill: Optional[List[float]] = None) -> Tensor:
-    # _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
+    _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
     matrix = matrix.unsqueeze(0)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     theta = matrix.to(dtype=dtype, device=img.device)
@@ -747,7 +741,7 @@ def rotate(
     expand: bool = False,
     fill: Optional[List[float]] = None,
 ) -> Tensor:
-    # _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
+    _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
     matrix = matrix.unsqueeze(0)
     w, h = img.shape[-1], img.shape[-2]
     ow, oh = _compute_output_size(matrix.detach(), w, h) if expand else (w, h)
