@@ -28,6 +28,7 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     path_accessor,
     path_comparator,
+    hint_sharding,
 )
 
 
@@ -139,6 +140,7 @@ class SBD(Dataset):
         if config.split == "train_noval":
             split_dp = extra_split_dp
         split_dp = LineReader(split_dp, decode=True)
+        split_dp = hint_sharding(split_dp)
         split_dp = Shuffler(split_dp)
 
         dp = split_dp
