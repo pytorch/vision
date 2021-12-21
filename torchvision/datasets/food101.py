@@ -50,7 +50,7 @@ class Food101(VisionDataset):
 
         self._labels = []
         self._image_files = []
-        with open(Path(self._meta_folder) / f"{split}.json", "r") as f:
+        with open(self._meta_folder / f"{split}.json", "r") as f:
             metadata = json.loads(f.read())
 
         self.classes = sorted(set(metadata.keys()))
@@ -92,12 +92,12 @@ class Food101(VisionDataset):
 
     def _check_exists(self) -> bool:
         return (
-            Path(self._base_folder).exists()
-            and Path(self._base_folder).is_dir()
-            and Path(self._meta_folder).exists()
-            and Path(self._meta_folder).is_dir()
-            and Path(self._images_folder).exists()
-            and Path(self._images_folder).is_dir()
+            self._base_folder.exists()
+            and self._base_folder.is_dir()
+            and self._meta_folder.exists()
+            and self._meta_folder.is_dir()
+            and self._images_folder.exists()
+            and self._images_folder.is_dir()
         )
 
     def _download(self) -> None:
