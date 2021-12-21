@@ -10,6 +10,3 @@ from ._decoder import (
 )
 from ._query import SampleQuery
 from ._resource import OnlineResource, HttpResource, GDriveResource, ManualDownloadResource
-
-DecodeableImageStreamWrapper = None
-DecodeableStreamWrapper = None

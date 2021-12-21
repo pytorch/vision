@@ -2,20 +2,16 @@ import functools
 import os
 import os.path
 import pathlib
-from typing import BinaryIO, Callable, Optional, Collection, Union, Tuple, List, Dict, Any
+from typing import BinaryIO, Optional, Collection, Union, Tuple, List, Dict, Any
 
 from torch.utils.data import IterDataPipe
 from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Filter
-from torchvision.prototype.datasets.utils import DecodeableStreamWrapper, decode_image_with_pil
+from torchvision.prototype.datasets.utils import RawData, RawImage
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Label
 
 
 __all__ = ["from_data_folder", "from_image_folder"]
-
-
-def _read_bytes(buffer: BinaryIO) -> Dict[str, Any]:
-    return dict(data=buffer.read())
 
 
 def _is_not_top_level_file(path: str, *, root: pathlib.Path) -> bool:
@@ -28,13 +24,12 @@ def _prepare_sample(
     *,
     root: pathlib.Path,
     categories: List[str],
-    decoder: Callable[[BinaryIO], Dict[str, Any]],
 ) -> Dict[str, Any]:
     path, buffer = data
     category = pathlib.Path(path).relative_to(root).parts[0]
     return dict(
         path=path,
-        data=DecodeableStreamWrapper(buffer, decoder),
+        data=RawData.fromfile(buffer),
         label=Label(categories.index(category), category=category),
     )
 
@@ -42,7 +37,6 @@ def _prepare_sample(
 def from_data_folder(
     root: Union[str, pathlib.Path],
     *,
-    decoder: Callable[[BinaryIO], Dict[str, Any]] = _read_bytes,
     valid_extensions: Optional[Collection[str]] = None,
     recursive: bool = True,
 ) -> Tuple[IterDataPipe, List[str]]:
@@ -54,21 +48,20 @@ def from_data_folder(
     dp = hint_sharding(dp)
     dp = hint_shuffling(dp)
     dp = FileLoader(dp)
-    return Mapper(dp, functools.partial(_prepare_sample, root=root, categories=categories, decoder=decoder)), categories
+    return Mapper(dp, functools.partial(_prepare_sample, root=root, categories=categories)), categories
 
 
 def _data_to_image_key(sample: Dict[str, Any]) -> Dict[str, Any]:
-    sample["image"] = sample.pop("data")
+    sample["image"] = RawImage(sample.pop("data").data)
     return sample
 
 
 def from_image_folder(
     root: Union[str, pathlib.Path],
     *,
-    decoder: Callable[[BinaryIO], Dict[str, Any]] = decode_image_with_pil,
     valid_extensions: Collection[str] = ("jpg", "jpeg", "png", "ppm", "bmp", "pgm", "tif", "tiff", "webp"),
     **kwargs: Any,
 ) -> Tuple[IterDataPipe, List[str]]:
     valid_extensions = [valid_extension for ext in valid_extensions for valid_extension in (ext.lower(), ext.upper())]
-    dp, categories = from_data_folder(root, decoder=decoder, valid_extensions=valid_extensions, **kwargs)
+    dp, categories = from_data_folder(root, valid_extensions=valid_extensions, **kwargs)
     return Mapper(dp, _data_to_image_key), categories

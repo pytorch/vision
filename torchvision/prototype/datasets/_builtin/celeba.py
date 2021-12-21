@@ -127,7 +127,7 @@ class CelebA(Dataset):
             },
         )
 
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self, data: Tuple[Tuple[str, Tuple[str, List[str]], Tuple[str, BinaryIO]], Tuple[str, Dict[str, Any]]]
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
@@ -176,4 +176,4 @@ class CelebA(Dataset):
             keep_key=True,
         )
         dp = IterKeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode_sample)
+        return Mapper(dp, self._prepare_sample)

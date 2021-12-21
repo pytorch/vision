@@ -11,18 +11,23 @@ from torchvision.transforms.functional import pil_to_tensor
 
 from ._internal import ReadOnlyTensorBuffer, fromfile
 
+D = TypeVar("D", bound="RawData")
+
 
 class RawData(torch.Tensor):
     def __new__(cls, data: torch.Tensor) -> "RawData":
         # TODO: warn / bail out if we encounter a tensor with shape other than (N,) or with dtype other than uint8?
-        return torch.Tensor._make_subclass(
-            cast(_TensorBase, cls),
-            data,
-            False,  # requires_grad
+        return cast(
+            RawData,
+            torch.Tensor._make_subclass(
+                cast(_TensorBase, cls),
+                data,
+                False,  # requires_grad
+            ),
         )
 
     @classmethod
-    def fromfile(cls, file: BinaryIO):
+    def fromfile(cls: Type[D], file: BinaryIO) -> D:
         return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder))
 
 
@@ -32,9 +37,6 @@ class RawImage(RawData):
 
 def decode_image_with_pil(raw_image: RawImage) -> Dict[str, Any]:
     return dict(image=features.Image(pil_to_tensor(PIL.Image.open(ReadOnlyTensorBuffer(raw_image)))))
-
-
-D = TypeVar("D", bound=RawData)
 
 
 def decode_sample(
@@ -59,12 +61,12 @@ def decode_sample(
             return sample
 
         try:
-            return decoder_map[sample_type](cast(D, sample))
+            return decoder_map[cast(Type[D], sample_type)](cast(D, sample))
         except KeyError as error:
             raise TypeError(f"Unknown type {sample_type}") from error
 
 
-def decode_images(sample: Any, *, inline_decoded=True) -> Any:
+def decode_images(sample: Any, *, inline_decoded: bool = True) -> Any:
     return decode_sample(
         sample,
         decoder_map={

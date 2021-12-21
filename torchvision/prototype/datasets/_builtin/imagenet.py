@@ -84,7 +84,7 @@ class ImageNet(Dataset):
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _collate_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str, str], Tuple[str, BinaryIO]]:
+    def _prepare_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str, str], Tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
         wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("wnid")  # type: ignore[union-attr]
         category = self.wnid_to_category[wnid]
@@ -97,7 +97,7 @@ class ImageNet(Dataset):
         path = pathlib.Path(data[0])
         return int(self._VAL_TEST_IMAGE_NAME_PATTERN.match(path.name).group("id"))  # type: ignore[union-attr]
 
-    def _collate_val_data(
+    def _prepare_val_data(
         self, data: Tuple[Tuple[int, int], Tuple[str, BinaryIO]]
     ) -> Tuple[Tuple[Label, str, str], Tuple[str, BinaryIO]]:
         label_data, image_data = data
@@ -106,7 +106,7 @@ class ImageNet(Dataset):
         wnid = self.category_to_wnid[category]
         return (Label(label), category, wnid), image_data
 
-    def _collate_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
+    def _prepare_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
         return None, data
 
     def _prepare_sample(
@@ -133,7 +133,7 @@ class ImageNet(Dataset):
             dp = TarArchiveReader(images_dp)
             dp = hint_sharding(dp)
             dp = hint_shuffling(dp)
-            dp = Mapper(dp, self._collate_train_data)
+            dp = Mapper(dp, self._prepare_train_data)
         elif config.split == "val":
             devkit_dp = Filter(devkit_dp, path_comparator("name", "ILSVRC2012_validation_ground_truth.txt"))
             devkit_dp = LineReader(devkit_dp, return_path=False)
@@ -149,11 +149,11 @@ class ImageNet(Dataset):
                 ref_key_fn=self._val_test_image_key,
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-            dp = Mapper(dp, self._collate_val_data)
+            dp = Mapper(dp, self._prepare_val_data)
         else:  # config.split == "test"
             dp = hint_sharding(images_dp)
             dp = hint_shuffling(dp)
-            dp = Mapper(dp, self._collate_test_data)
+            dp = Mapper(dp, self._prepare_test_data)
         return Mapper(dp, self._prepare_sample)
 
     # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849

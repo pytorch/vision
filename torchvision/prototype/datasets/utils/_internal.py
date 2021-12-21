@@ -356,7 +356,7 @@ class ReadOnlyTensorBuffer:
             )
         return self.tell()
 
-    def read(self, size=-1):
+    def read(self, size: int = -1) -> bytes:
         cursor = self.tell()
         offset, whence = (0, io.SEEK_END) if size == -1 else (size, io.SEEK_CUR)
         return self._memory[slice(cursor, self.seek(offset, whence))].tobytes()
