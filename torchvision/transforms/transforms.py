@@ -123,6 +123,9 @@ class ToTensor:
     .. _references: https://github.com/pytorch/vision/tree/main/references/segmentation
     """
 
+    def __init__(self) -> None:
+        _log_api_usage_once(self)
+
     def __call__(self, pic):
         """
         Args:
@@ -131,7 +134,6 @@ class ToTensor:
         Returns:
             Tensor: Converted image.
         """
-        _log_api_usage_once(self)
         return F.to_tensor(pic)
 
     def __repr__(self):
@@ -143,6 +145,9 @@ class PILToTensor:
 
     Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).
     """
+
+    def __init__(self) -> None:
+        _log_api_usage_once(self)
 
     def __call__(self, pic):
         """
@@ -156,7 +161,6 @@ class PILToTensor:
         Returns:
             Tensor: Converted image.
         """
-        _log_api_usage_once(self)
         return F.pil_to_tensor(pic)
 
     def __repr__(self):
