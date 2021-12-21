@@ -2015,7 +2015,13 @@ class TestAffine:
         true_matrix = np.matmul(T, np.matmul(C, np.matmul(RSS, Cinv)))
 
         result_matrix = self._to_3x3_inv(
-            F._get_inverse_affine_matrix(center=cnt, angle=angle, translate=translate, scale=scale, shear=shear)
+            F._get_inverse_affine_matrix_tensor(
+                center=torch.tensor(cnt, dtype=torch.float64),  # using double to match true_matrix precision
+                angle=torch.tensor(angle, dtype=torch.float64),
+                translate=torch.tensor(translate, dtype=torch.float64),
+                scale=torch.tensor(scale, dtype=torch.float64),
+                shear=torch.tensor(shear, dtype=torch.float64),
+            )
         )
         assert np.sum(np.abs(true_matrix - result_matrix)) < 1e-10
         # 2) Perform inverse mapping:

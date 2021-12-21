@@ -897,73 +897,21 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     return F_t.adjust_gamma(img, gamma, gain)
 
 
-def _get_inverse_affine_matrix(
-    center: List[float], angle: float, translate: List[float], scale: float, shear: List[float]
-) -> List[float]:
-    # TODO: REMOVE THIS METHOD IN FAVOR OF _get_inverse_affine_matrix_tensor
-    # Helper method to compute inverse matrix for affine transformation
-
-    # As it is explained in PIL.Image.rotate
-    # We need compute INVERSE of affine transformation matrix: M = T * C * RSS * C^-1
-    # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
-    #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
-    #       RSS is rotation with scale and shear matrix
-    #       RSS(a, s, (sx, sy)) =
-    #       = R(a) * S(s) * SHy(sy) * SHx(sx)
-    #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(x)/cos(y) - sin(a)), 0 ]
-    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(x)/cos(y) + cos(a)), 0 ]
-    #         [ 0                    , 0                                      , 1 ]
-    #
-    # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
-    # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
-    #          [0, 1      ]              [-tan(s), 1]
-    #
-    # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
-
-    rot = math.radians(angle)
-    sx = math.radians(shear[0])
-    sy = math.radians(shear[1])
-
-    cx, cy = center
-    tx, ty = translate
-
-    # RSS without scaling
-    a = math.cos(rot - sy) / math.cos(sy)
-    b = -math.cos(rot - sy) * math.tan(sx) / math.cos(sy) - math.sin(rot)
-    c = math.sin(rot - sy) / math.cos(sy)
-    d = -math.sin(rot - sy) * math.tan(sx) / math.cos(sy) + math.cos(rot)
-
-    # Inverted rotation matrix with scale and shear
-    # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
-    matrix = [d, -b, 0.0, -c, a, 0.0]
-    matrix = [x / scale for x in matrix]
-
-    # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
-    matrix[2] += matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
-    matrix[5] += matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
-
-    # Apply center translation: C * RSS^-1 * C^-1 * T^-1
-    matrix[2] += cx
-    matrix[5] += cy
-
-    return matrix
-
-
 def _get_inverse_affine_matrix_tensor(
     center: Tensor, angle: Tensor, translate: Tensor, scale: Tensor, shear: Tensor
 ) -> Tensor:
-    output = torch.zeros(3, 3)
+    output = torch.zeros(3, 3, dtype=angle.dtype)
 
     rot = angle * torch.pi / 180.0
     shear_rad = shear * torch.pi / 180.0
 
-    m_center = torch.eye(3, 3)
+    m_center = torch.eye(3, 3, dtype=angle.dtype)
     m_center[:2, 2] = center
 
-    i_m_center = torch.eye(3, 3)
+    i_m_center = torch.eye(3, 3, dtype=angle.dtype)
     i_m_center[:2, 2] = -center
 
-    i_m_translate = torch.eye(3, 3)
+    i_m_translate = torch.eye(3, 3, dtype=angle.dtype)
     i_m_translate[:2, 2] = -translate
 
     # RSS without scaling
@@ -980,9 +928,108 @@ def _get_inverse_affine_matrix_tensor(
     output = output / scale
     output[2, 2] = 1.0
 
-    output = torch.chain_matmul(m_center, output, i_m_center, i_m_translate)
+    output = torch.linalg.multi_dot([m_center, output, i_m_center, i_m_translate])
     output = output[:2, :]
     return output
+
+
+def _from_arg_scalar_or_tensor(arg: Union[float, int, Tensor], name: str) -> Tensor:
+    if not isinstance(arg, (int, float, Tensor)):
+        raise TypeError(f"Argument {name} should be int or float or a tensor")
+
+    if isinstance(arg, Tensor):
+        return arg
+
+    if isinstance(arg, int):
+        arg = float(arg)
+
+    return torch.tensor(arg)
+
+
+def _from_arg_seq_or_tensor(arg: Union[List[float], Tuple[float, float], Tensor], name: str) -> Tensor:
+    if not isinstance(arg, (list, tuple, Tensor)):
+        raise TypeError(f"Argument {name} should be a sequence of two values or a tensor")
+
+    if isinstance(arg, Tensor):
+        if arg.numel() != 2:
+            raise ValueError(f"Tensor should have 2 values, got {arg.numel()}")
+        return arg
+
+    # https://github.com/pytorch/pytorch/issues/70240
+    # if len(arg) != 2:
+    #     raise ValueError(f"Argument {name} should be a sequence of length 2, got {len(arg)}, {arg}")
+
+    if isinstance(arg, tuple):
+        arg = list(arg)
+
+    return torch.tensor([float(arg[0]), float(arg[1])])
+
+
+def _from_arg_intseq_or_tensor(arg: Union[List[int], Tuple[int, int], Tensor], name: str) -> Tensor:
+    if not isinstance(arg, (list, tuple, Tensor)):
+        raise TypeError(f"Argument {name} should be a sequence of two values or a tensor")
+
+    if isinstance(arg, Tensor):
+        if arg.numel() != 2:
+            raise ValueError(f"Tensor should have 2 values, got {arg.numel()}")
+        return arg
+
+    # https://github.com/pytorch/pytorch/issues/70240
+    # if len(arg) != 2:
+    #     raise ValueError(f"Argument {name} should be a sequence of length 2, got {len(arg)}, {arg}")
+
+    if isinstance(arg, tuple):
+        arg = list(arg)
+
+    return torch.tensor([float(arg[0]), float(arg[1])])
+
+
+def _from_arg_scalar_or_seq_or_tensor(
+    arg: Union[int, float, List[float], Tuple[float, float], Tensor], name: str
+) -> Tensor:
+    # Assumption is that len(arg) == 2
+    if not isinstance(arg, (int, float, list, tuple, Tensor)):
+        raise TypeError(f"Argument {name} should be a single value or a sequence of two values or a tensor")
+
+    if isinstance(arg, Tensor):
+        if arg.numel() != 2:
+            raise ValueError(f"Tensor should have 2 values, got {arg.numel()}")
+        return arg
+
+    if isinstance(arg, (int, float)):
+        return torch.tensor([float(arg), 0.0])
+
+    if isinstance(arg, tuple):
+        arg = list(arg)
+
+    if isinstance(arg, list) and len(arg) == 1:
+        return torch.tensor([float(arg[0]), float(arg[0])])
+
+    return _from_arg_seq_or_tensor(arg, name)
+
+
+def _from_arg_scalar_or_intseq_or_tensor(
+    arg: Union[int, float, List[int], Tuple[int, int], Tensor], name: str
+) -> Tensor:
+    # Assumption is that len(arg) == 2
+    if not isinstance(arg, (int, float, list, tuple, Tensor)):
+        raise TypeError(f"Argument {name} should be a single value or a sequence of two values or a tensor")
+
+    if isinstance(arg, Tensor):
+        if arg.numel() != 2:
+            raise ValueError(f"Tensor should have 2 values, got {arg.numel()}")
+        return arg
+
+    if isinstance(arg, (int, float)):
+        return torch.tensor([float(arg), 0.0])
+
+    if isinstance(arg, tuple):
+        arg = list(arg)
+
+    if isinstance(arg, list) and len(arg) == 1:
+        return torch.tensor([float(arg[0]), float(arg[0])])
+
+    return _from_arg_intseq_or_tensor(arg, name)
 
 
 def rotate(
@@ -1037,25 +1084,19 @@ def rotate(
             "Please, use InterpolationMode enum."
         )
         interpolation = _interpolation_modes_from_int(interpolation)
-
-    if not isinstance(angle, (int, float, Tensor)):
-        raise TypeError("Argument angle should be int or float or Tensor")
-
-    if center is not None and not isinstance(center, (list, tuple, Tensor)):
-        raise TypeError("Argument center should be a sequence or a Tensor")
-
     if not isinstance(interpolation, InterpolationMode):
         raise TypeError("Argument interpolation should be a InterpolationMode")
 
-    if not isinstance(img, torch.Tensor):
-        if not isinstance(angle, (int, float)):
-            raise TypeError("Argument angle should be int or float")
+    angle = _from_arg_scalar_or_tensor(angle, "angle")
 
+    if not isinstance(img, torch.Tensor):
         if center is not None and not isinstance(center, (list, tuple)):
             raise TypeError("Argument center should be a sequence")
 
         pil_interpolation = pil_modes_mapping[interpolation]
-        return F_pil.rotate(img, angle=angle, interpolation=pil_interpolation, expand=expand, center=center, fill=fill)
+        return F_pil.rotate(
+            img, angle=angle.item(), interpolation=pil_interpolation, expand=expand, center=center, fill=fill
+        )
 
     # TODO: This is a rather generic check for input dtype if args are learnable
     # We can refactor that later
@@ -1072,12 +1113,8 @@ def rotate(
     if center is None:
         center = torch.tensor([0.0, 0.0])
         do_recenter = False
-
-    if isinstance(center, tuple):
-        center = list(center)
-
-    if isinstance(center, list):
-        center = torch.tensor([float(center[0]), float(center[1])])
+    else:
+        center = _from_arg_intseq_or_tensor(center, "center")
 
     if do_recenter:
         img_size = torch.tensor(get_image_size(img), dtype=torch.float)
@@ -1086,7 +1123,6 @@ def rotate(
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
-    angle = torch.tensor(float(angle)) if not isinstance(angle, Tensor) else angle
     matrix = _get_inverse_affine_matrix_tensor(
         center, -angle, torch.tensor([0.0, 0.0]), torch.tensor(1.0), torch.tensor([0.0, 0.0])
     )
@@ -1095,10 +1131,10 @@ def rotate(
 
 def affine(
     img: Tensor,
-    angle: float,
-    translate: List[int],
-    scale: float,
-    shear: List[float],
+    angle: Union[float, int, Tensor],
+    translate: Union[List[int], Tuple[int, int], Tensor],
+    scale: Union[float, Tensor],
+    shear: Union[List[float], Tuple[float, float], Tensor],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
@@ -1110,10 +1146,10 @@ def affine(
 
     Args:
         img (PIL Image or Tensor): image to transform.
-        angle (number): rotation angle in degrees between -180 and 180, clockwise direction.
-        translate (sequence of integers): horizontal and vertical translations (post-rotation translation)
-        scale (float): overall scale
-        shear (float or sequence): shear angle value in degrees between -180 to 180, clockwise direction.
+        angle (number or Tensor): rotation angle in degrees between -180 and 180, clockwise direction.
+        translate (sequence of integers or Tensor): horizontal and vertical translations (post-rotation translation)
+        scale (float or Tensor): overall scale
+        shear (float or sequence or Tensor): shear angle value in degrees between -180 to 180, clockwise direction.
             If a sequence is specified, the first value corresponds to a shear parallel to the x axis, while
             the second value corresponds to a shear parallel to the y axis.
         interpolation (InterpolationMode): Desired interpolation enum defined by
@@ -1148,58 +1184,32 @@ def affine(
         )
         interpolation = _interpolation_modes_from_int(interpolation)
 
+    if not isinstance(interpolation, InterpolationMode):
+        raise TypeError("Argument interpolation should be a InterpolationMode")
+
     if fillcolor is not None:
         warnings.warn("Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead")
         fill = fillcolor
 
-    if not isinstance(angle, (int, float)):
-        raise TypeError("Argument angle should be int or float")
-
-    if not isinstance(translate, (list, tuple)):
-        raise TypeError("Argument translate should be a sequence")
-
-    if len(translate) != 2:
-        raise ValueError("Argument translate should be a sequence of length 2")
-
+    angle = _from_arg_scalar_or_tensor(angle, "angle")
+    translate = _from_arg_intseq_or_tensor(translate, "translate")
+    scale = _from_arg_scalar_or_tensor(scale, "scale")
     if scale <= 0.0:
         raise ValueError("Argument scale should be positive")
+    shear = _from_arg_scalar_or_seq_or_tensor(shear, "shear")
 
-    if not isinstance(shear, (numbers.Number, (list, tuple))):
-        raise TypeError("Shear should be either a single value or a sequence of two values")
-
-    if not isinstance(interpolation, InterpolationMode):
-        raise TypeError("Argument interpolation should be a InterpolationMode")
-
-    if isinstance(angle, int):
-        angle = float(angle)
-
-    if isinstance(translate, tuple):
-        translate = list(translate)
-
-    if isinstance(shear, numbers.Number):
-        shear = [shear, 0.0]
-
-    if isinstance(shear, tuple):
-        shear = list(shear)
-
-    if len(shear) == 1:
-        shear = [shear[0], shear[0]]
-
-    if len(shear) != 2:
-        raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
-
-    img_size = get_image_size(img)
     if not isinstance(img, torch.Tensor):
+        img_size = get_image_size(img)
         # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
         # it is visually better to estimate the center without 0.5 offset
         # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
-        center = [img_size[0] * 0.5, img_size[1] * 0.5]
-        matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
+        center = torch.tensor([img_size[0] * 0.5, img_size[1] * 0.5])
+        matrix = _get_inverse_affine_matrix_tensor(center, angle, translate, scale, shear)
         pil_interpolation = pil_modes_mapping[interpolation]
-        return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
+        return F_pil.affine(img, matrix=matrix.view(-1).tolist(), interpolation=pil_interpolation, fill=fill)
 
-    translate_f = [1.0 * t for t in translate]
-    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
+    center = torch.tensor([0.0, 0.0])
+    matrix = _get_inverse_affine_matrix_tensor(center, angle, translate, scale, shear)
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
 

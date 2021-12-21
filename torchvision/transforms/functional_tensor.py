@@ -703,13 +703,11 @@ def _gen_affine_grid(
     return output_grid.view(1, oh, ow, 2)
 
 
-def affine(
-    img: Tensor, matrix: List[float], interpolation: str = "nearest", fill: Optional[List[float]] = None
-) -> Tensor:
-    _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
-
+def affine(img: Tensor, matrix: Tensor, interpolation: str = "nearest", fill: Optional[List[float]] = None) -> Tensor:
+    # _assert_grid_transform_inputs(img, matrix, interpolation, fill, ["nearest", "bilinear"])
+    matrix = matrix.unsqueeze(0)
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
-    theta = torch.tensor(matrix, dtype=dtype, device=img.device).reshape(1, 2, 3)
+    theta = matrix.to(dtype=dtype, device=img.device)
     shape = img.shape
     # grid will be generated on the same device as theta and img
     grid = _gen_affine_grid(theta, w=shape[-1], h=shape[-2], ow=shape[-1], oh=shape[-2])

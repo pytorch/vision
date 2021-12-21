@@ -159,6 +159,7 @@ class TestRotate:
     def test_differentiable_rotate(self, fn, center):
         alpha = torch.tensor(1.0, requires_grad=True)
         x = torch.zeros(1, 3, 10, 10)
+        x[0, :, 2:5, 2:5] = 1.0
 
         y = fn(x, alpha, interpolation=BILINEAR, center=center)
         assert y.requires_grad
@@ -391,6 +392,26 @@ class TestAffine:
             res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
             # we convert the PIL images to numpy as assert_equal doesn't work on PIL images.
             assert_equal(np.asarray(res1), np.asarray(res2))
+
+    @pytest.mark.parametrize("fn", [F.affine, scripted_affine])
+    @pytest.mark.parametrize("translate", [[0, 0], torch.tensor([1.0, 2.0], requires_grad=True)])
+    @pytest.mark.parametrize("scale", [1.0, torch.tensor(1.0, requires_grad=True)])
+    @pytest.mark.parametrize("shear", [[1.0, 1.0], torch.tensor([1.0, 1.0], requires_grad=True)])
+    def test_differentiable_affine(self, fn, translate, scale, shear):
+        alpha = torch.tensor(1.0, requires_grad=True)
+        x = torch.zeros(1, 3, 10, 10)
+        x[0, :, 2:5, 2:5] = 1.0
+
+        y = fn(x, alpha, translate, scale, shear, interpolation=BILINEAR)
+        assert y.requires_grad
+        y.mean().backward()
+        assert alpha.grad is not None
+        if isinstance(translate, torch.Tensor):
+            assert translate.grad is not None
+        if isinstance(scale, torch.Tensor):
+            assert scale.grad is not None
+        if isinstance(shear, torch.Tensor):
+            assert shear.grad is not None
 
 
 def _get_data_dims_and_points_for_perspective():
