@@ -1,3 +1,4 @@
+import functools
 import io
 import pathlib
 import re
@@ -165,7 +166,7 @@ class ImageNet(Dataset):
             dp = hint_shuffling(dp)
             dp = Mapper(dp, self._collate_test_data)
 
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
     # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment

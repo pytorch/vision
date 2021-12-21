@@ -127,7 +127,7 @@ class VOC(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
-        split_dp = Filter(split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task]))
+        split_dp = Filter(split_dp, functools.partial(self._is_in_folder, name=self._SPLIT_FOLDER[config.task]))
         split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
         split_dp = hint_sharding(split_dp)
@@ -142,4 +142,4 @@ class VOC(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(config=config, decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))

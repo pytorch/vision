@@ -1,3 +1,4 @@
+import functools
 import io
 import pathlib
 import re
@@ -152,7 +153,7 @@ class SBD(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(config=config, decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
