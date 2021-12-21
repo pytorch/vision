@@ -43,7 +43,8 @@ def ps_roi_align(
     Returns:
         Tensor[K, C / (output_size[0] * output_size[1]), output_size[0], output_size[1]]: The pooled RoIs
     """
-    _log_api_usage_once("ops", "ps_roi_align")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(ps_roi_align)
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
@@ -68,6 +69,7 @@ class PSRoIAlign(nn.Module):
         sampling_ratio: int,
     ):
         super().__init__()
+        _log_api_usage_once(self)
         self.output_size = output_size
         self.spatial_scale = spatial_scale
         self.sampling_ratio = sampling_ratio

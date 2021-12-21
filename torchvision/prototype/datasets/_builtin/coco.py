@@ -1,3 +1,4 @@
+import functools
 import pathlib
 import re
 from collections import OrderedDict
@@ -7,7 +8,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Filter,
     Demultiplexer,
     Grouper,
@@ -29,6 +29,8 @@ from torchvision.prototype.datasets.utils._internal import (
     BUILTIN_DIR,
     getitem,
     path_accessor,
+    hint_sharding,
+    hint_shuffling,
 )
 from torchvision.prototype.features import BoundingBox, Label, Feature
 from torchvision.prototype.utils._internal import FrozenMapping
@@ -175,17 +177,22 @@ class Coco(Dataset):
         images_dp, meta_dp = resource_dps
 
         if config.annotations is None:
-            dp = Shuffler(images_dp)
+            dp = hint_sharding(images_dp)
+            dp = hint_shuffling(dp)
             return Mapper(dp, self._prepare_image)
 
         meta_dp = Filter(
             meta_dp,
-            self._filter_meta_files,
-            fn_kwargs=dict(split=config.split, year=config.year, annotations=config.annotations),
+            functools.partial(
+                self._filter_meta_files,
+                split=config.split,
+                year=config.year,
+                annotations=config.annotations,
+            ),
         )
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
-        meta_dp = MappingIterator(meta_dp)
+        meta_dp: IterDataPipe[Dict[str, Dict[str, Any]]] = MappingIterator(meta_dp)
         images_meta_dp, anns_meta_dp = Demultiplexer(
             meta_dp,
             2,
@@ -196,11 +203,12 @@ class Coco(Dataset):
 
         images_meta_dp = Mapper(images_meta_dp, getitem(1))
         images_meta_dp = UnBatcher(images_meta_dp)
-        images_meta_dp = Shuffler(images_meta_dp)
 
         anns_meta_dp = Mapper(anns_meta_dp, getitem(1))
         anns_meta_dp = UnBatcher(anns_meta_dp)
         anns_meta_dp = Grouper(anns_meta_dp, group_key_fn=getitem("image_id"), buffer_size=INFINITE_BUFFER_SIZE)
+        anns_meta_dp = hint_sharding(anns_meta_dp)
+        anns_meta_dp = hint_shuffling(anns_meta_dp)
 
         anns_dp = IterKeyZipper(
             anns_meta_dp,
@@ -217,7 +225,8 @@ class Coco(Dataset):
             ref_key_fn=path_accessor("name"),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(dp, self._prepare_sample, fn_kwargs=dict(annotations=config.annotations))
+
+        return Mapper(dp, functools.partial(self._prepare_sample, annotations=config.annotations))
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[Tuple[str, str]]:
         config = self.default_config
@@ -225,7 +234,8 @@ class Coco(Dataset):
 
         dp = resources[1].load(pathlib.Path(root) / self.name)
         dp = Filter(
-            dp, self._filter_meta_files, fn_kwargs=dict(split=config.split, year=config.year, annotations="instances")
+            dp,
+            functools.partial(self._filter_meta_files, split=config.split, year=config.year, annotations="instances"),
         )
         dp = JsonParser(dp)
 

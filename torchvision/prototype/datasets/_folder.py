@@ -1,11 +1,13 @@
+import functools
 import os
 import os.path
 import pathlib
 from typing import BinaryIO, Callable, Optional, Collection, Union, Tuple, List, Dict, Any
 
-from torchdata.datapipes.iter import IterDataPipe, FileLister, FileLoader, Mapper, Shuffler, Filter
+from torch.utils.data import IterDataPipe
+from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Filter
 from torchvision.prototype.datasets.utils import DecodeableStreamWrapper, decode_image_with_pil
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Label
 
 
@@ -48,13 +50,11 @@ def from_data_folder(
     categories = sorted(entry.name for entry in os.scandir(root) if entry.is_dir())
     masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
     dp = FileLister(str(root), recursive=recursive, masks=masks)
-    dp: IterDataPipe = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
-    dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
+    dp: IterDataPipe = Filter(dp, functools.partial(_is_not_top_level_file, root=root))
+    dp = hint_sharding(dp)
+    dp = hint_shuffling(dp)
     dp = FileLoader(dp)
-    return (
-        Mapper(dp, _prepare_sample, fn_kwargs=dict(root=root, categories=categories, decoder=decoder)),
-        categories,
-    )
+    return Mapper(dp, functools.partial(_prepare_sample, root=root, categories=categories, decoder=decoder)), categories
 
 
 def _data_to_image_key(sample: Dict[str, Any]) -> Dict[str, Any]:

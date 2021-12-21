@@ -4,7 +4,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     CSVParser,
 )
 from torchvision.prototype.datasets.utils import (
@@ -14,7 +13,7 @@ from torchvision.prototype.datasets.utils import (
     HttpResource,
     OnlineResource,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Image, Label
 
 
@@ -54,6 +53,6 @@ class SEMEION(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = CSVParser(dp, delimiter=" ")
-        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        dp = Mapper(dp, self._prepare_sample)
-        return dp
+        dp = hint_sharding(dp)
+        dp = hint_shuffling(dp)
+        return Mapper(dp, self._prepare_sample)

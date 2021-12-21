@@ -6,7 +6,6 @@ from xml.etree import ElementTree
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Filter,
     Demultiplexer,
     IterKeyZipper,
@@ -26,6 +25,8 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     INFINITE_BUFFER_SIZE,
     path_comparator,
+    hint_sharding,
+    hint_shuffling,
 )
 from torchvision.prototype.features import BoundingBox, Label
 
@@ -133,10 +134,11 @@ class VOC(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
-        split_dp = Filter(split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task]))
+        split_dp = Filter(split_dp, functools.partial(self._is_in_folder, name=self._SPLIT_FOLDER[config.task]))
         split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
-        split_dp = Shuffler(split_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        split_dp = hint_sharding(split_dp)
+        split_dp = hint_shuffling(split_dp)
 
         dp = split_dp
         for level, data_dp in enumerate((images_dp, anns_dp)):
@@ -147,7 +149,7 @@ class VOC(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, self._prepare_sample, fn_kwargs=dict(config=config))
+        return Mapper(dp, functools.partial(self._prepare_sample, config=config))
 
     def _filter_detection_anns(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
         return self._classify_archive(data, config=config) == 2
