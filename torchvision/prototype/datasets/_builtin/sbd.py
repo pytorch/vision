@@ -18,8 +18,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DecodeableStreamWrapper,
-    DecodeableImageStreamWrapper,
+    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -84,10 +83,10 @@ class SBD(Dataset):
         ann_path, ann_buffer = ann_data
 
         return dict(
+            self._decode_ann(ann_buffer),
             image_path=image_path,
-            image=DecodeableImageStreamWrapper(image_buffer),
+            image=RawImage.fromfile(image_buffer),
             ann_path=ann_path,
-            ann=DecodeableStreamWrapper(ann_buffer, self._decode_ann),
         )
 
     def _make_datapipe(

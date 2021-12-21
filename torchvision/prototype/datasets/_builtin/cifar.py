@@ -53,7 +53,10 @@ class _CifarBase(Dataset):
 
     def _prepare_sample(self, data: Tuple[np.ndarray, int]) -> Dict[str, Any]:
         image_array, category_idx = data
-        return dict(image=Image(image_array), label=Label(category_idx, category=self.categories[category_idx]))
+        return dict(
+            image=Image(image_array),
+            label=Label(category_idx, category=self.categories[category_idx]),
+        )
 
     def _make_datapipe(
         self,

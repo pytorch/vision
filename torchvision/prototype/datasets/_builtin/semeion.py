@@ -39,7 +39,11 @@ class SEMEION(Dataset):
 
         label_idx = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
         return dict(
-            image=Image(image_data.unsqueeze(0)), label=Label(label_idx, category=self.info.categories[label_idx])
+            image=Image(image_data.unsqueeze(0)),
+            label=Label(
+                label_idx,
+                category=self.info.categories[label_idx],
+            ),
         )
 
     def _make_datapipe(

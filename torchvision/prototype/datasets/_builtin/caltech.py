@@ -16,8 +16,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DecodeableImageStreamWrapper,
-    DecodeableStreamWrapper,
+    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat
 from torchvision.prototype.features import Label, BoundingBox, Feature
@@ -95,11 +94,11 @@ class Caltech101(Dataset):
         ann_path, ann_buffer = ann_data
 
         return dict(
+            self._decode_ann(ann_buffer),
             label=Label(self.info.categories.index(category), category=category),
             image_path=image_path,
-            image=DecodeableImageStreamWrapper(image_buffer),
+            image=RawImage.fromfile(image_buffer),
             ann_path=ann_path,
-            ann=DecodeableStreamWrapper(ann_buffer, self._decode_ann),
         )
 
     def _make_datapipe(
@@ -157,7 +156,7 @@ class Caltech256(Dataset):
         label_str, category = dir_name.split(".")
         return dict(
             path=path,
-            image=DecodeableImageStreamWrapper(buffer),
+            image=RawImage.fromfile(buffer),
             label=Label(int(label_str), category=category),
         )
 

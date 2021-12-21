@@ -21,7 +21,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DecodeableImageStreamWrapper,
+    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     MappingIterator,
@@ -148,7 +148,10 @@ class Coco(Dataset):
 
     def _prepare_image(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         path, buffer = data
-        return dict(path=path, image=DecodeableImageStreamWrapper(buffer))
+        return dict(
+            path=path,
+            image=RawImage.fromfile(buffer),
+        )
 
     def _prepare_sample(
         self,

@@ -9,7 +9,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     OnlineResource,
     ManualDownloadResource,
-    DecodeableImageStreamWrapper,
+    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -113,7 +113,10 @@ class ImageNet(Dataset):
     ) -> Dict[str, Any]:
         label_data, (path, buffer) = data
 
-        sample = dict(path=path, image=DecodeableImageStreamWrapper(buffer))
+        sample = dict(
+            path=path,
+            image=RawImage.fromfile(buffer),
+        )
         if label_data:
             sample.update(dict(zip(("label", "category", "wnid"), label_data)))
         return sample

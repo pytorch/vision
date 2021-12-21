@@ -1,47 +1,74 @@
+import collections.abc
+import sys
 from typing import Any, Dict, Callable
-from typing import BinaryIO
+from typing import Type, TypeVar, cast, BinaryIO
 
 import PIL.Image
-from torchdata.datapipes import functional_datapipe
-from torchdata.datapipes.iter import Mapper, IterDataPipe
+import torch
+from torch._C import _TensorBase
 from torchvision.prototype import features
 from torchvision.transforms.functional import pil_to_tensor
 
-
-def decode_image_with_pil(buffer: BinaryIO) -> Dict[str, Any]:
-    return dict(image=features.Image(pil_to_tensor(PIL.Image.open(buffer))))
+from ._internal import ReadOnlyTensorBuffer, fromfile
 
 
-class DecodeableStreamWrapper:
-    def __init__(self, stream: BinaryIO, decoder: Callable[[BinaryIO], Dict[str, Any]]) -> None:
-        self.__stream__ = stream
-        self.__decoder__ = decoder
+class RawData(torch.Tensor):
+    def __new__(cls, data: torch.Tensor) -> "RawData":
+        # TODO: warn / bail out if we encounter a tensor with shape other than (N,) or with dtype other than uint8?
+        return torch.Tensor._make_subclass(
+            cast(_TensorBase, cls),
+            data,
+            False,  # requires_grad
+        )
 
-    # TODO: dispatch attribute access besides `decode` to `__stream__`
-
-    def decode(self) -> Dict[str, Any]:
-        return self.__decoder__(self.__stream__)
-
-    def unwrap(self) -> BinaryIO:
-        return self.__stream__
-
-
-class DecodeableImageStreamWrapper(DecodeableStreamWrapper):
-    def __init__(self, stream: BinaryIO, decoder: Callable[[BinaryIO], Dict[str, Any]] = decode_image_with_pil) -> None:
-        super().__init__(stream, decoder)
+    @classmethod
+    def fromfile(cls, file: BinaryIO):
+        return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder))
 
 
-def decode_sample(sample: Dict[str, Any]) -> Dict[str, Any]:
-    decoded_sample = dict()
-    for name, obj in sample.items():
-        if isinstance(obj, DecodeableStreamWrapper):
-            decoded_sample.update(obj.decode())
-        else:
-            decoded_sample[name] = obj
-    return decoded_sample
+class RawImage(RawData):
+    pass
 
 
-@functional_datapipe("decode_samples")
-class SampleDecoder(Mapper[Dict[str, Any]]):
-    def __init__(self, datapipe: IterDataPipe[Dict[str, Any]]) -> None:
-        super().__init__(datapipe, decode_sample)
+def decode_image_with_pil(raw_image: RawImage) -> Dict[str, Any]:
+    return dict(image=features.Image(pil_to_tensor(PIL.Image.open(ReadOnlyTensorBuffer(raw_image)))))
+
+
+D = TypeVar("D", bound=RawData)
+
+
+def decode_sample(
+    sample: Any, *, decoder_map: Dict[Type[D], Callable[[D], Dict[str, Any]]], inline_decoded: bool = True
+) -> Any:
+    # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
+    # "a" == "a"[0][0]...
+    if isinstance(sample, collections.abc.Sequence) and not isinstance(sample, str):
+        return [decode_sample(item, decoder_map=decoder_map, inline_decoded=inline_decoded) for item in sample]
+    elif isinstance(sample, collections.abc.Mapping):
+        decoded_sample = {}
+        for name, item in sample.items():
+            decoded_item = decode_sample(item, decoder_map=decoder_map, inline_decoded=inline_decoded)
+            if inline_decoded and isinstance(item, RawData):
+                decoded_sample.update(decoded_item)
+            else:
+                decoded_sample[name] = decoded_item
+        return decoded_sample
+    else:
+        sample_type = type(sample)
+        if not issubclass(sample_type, RawData):
+            return sample
+
+        try:
+            return decoder_map[sample_type](cast(D, sample))
+        except KeyError as error:
+            raise TypeError(f"Unknown type {sample_type}") from error
+
+
+def decode_images(sample: Any, *, inline_decoded=True) -> Any:
+    return decode_sample(
+        sample,
+        decoder_map={
+            RawImage: decode_image_with_pil,
+        },
+        inline_decoded=inline_decoded,
+    )

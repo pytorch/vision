@@ -15,7 +15,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     GDriveResource,
     OnlineResource,
-    DecodeableImageStreamWrapper,
+    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, getitem, path_accessor
 from torchvision.prototype.features import BoundingBox, Feature, Label
@@ -132,7 +132,7 @@ class CelebA(Dataset):
         return dict(
             anns,
             path=path,
-            image=DecodeableImageStreamWrapper(buffer),
+            image=RawImage.fromfile(buffer),
         )
 
     def _make_datapipe(

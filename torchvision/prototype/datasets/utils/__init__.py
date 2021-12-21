@@ -1,11 +1,15 @@
-from . import _internal
+from . import _internal  # usort: skip
 from ._dataset import DatasetConfig, DatasetInfo, Dataset
 from ._decoder import (
-    DecodeableStreamWrapper,
-    DecodeableImageStreamWrapper,
+    decode_images,
     decode_sample,
-    SampleDecoder,
     decode_image_with_pil,
+    RawImage,
+    RawData,
+    ReadOnlyTensorBuffer,
 )
 from ._query import SampleQuery
 from ._resource import OnlineResource, HttpResource, GDriveResource, ManualDownloadResource
+
+DecodeableImageStreamWrapper = None
+DecodeableStreamWrapper = None

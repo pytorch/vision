@@ -47,6 +47,7 @@ __all__ = [
     "Decompressor",
     "fromfile",
     "read_flo",
+    "ReadOnlyTensorBuffer",
 ]
 
 K = TypeVar("K")
@@ -301,7 +302,7 @@ def fromfile(
             buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
             # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
             file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
-        except (PermissionError, io.UnsupportedOperation):
+        except (AttributeError, PermissionError, io.UnsupportedOperation):
             buffer = _read_mutable_buffer_fallback(file, count, item_size)
     else:
         # On Windows just trying to call mmap.mmap() on a file that does not support it, may corrupt the internal state
@@ -321,3 +322,32 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
     width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
     flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
     return flow.reshape((height, width, 2)).permute((2, 0, 1))
+
+
+class ReadOnlyTensorBuffer:
+    def __init__(self, tensor: torch.Tensor) -> None:
+        self._memory = memoryview(tensor.numpy())
+        self._cursor: int = 0
+
+    def tell(self) -> int:
+        return self._cursor
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        if whence == io.SEEK_SET:
+            self._cursor = offset
+        elif whence == io.SEEK_CUR:
+            self._cursor += offset
+            pass
+        elif whence == io.SEEK_END:
+            self._cursor = len(self._memory) + offset
+        else:
+            raise ValueError(
+                f"'whence' should be ``{io.SEEK_SET}``, ``{io.SEEK_CUR}``, or ``{io.SEEK_END}``, "
+                f"but got {repr(whence)} instead"
+            )
+        return self.tell()
+
+    def read(self, size=-1):
+        cursor = self.tell()
+        offset, whence = (0, io.SEEK_END) if size == -1 else (size, io.SEEK_CUR)
+        return self._memory[slice(cursor, self.seek(offset, whence))].tobytes()

@@ -19,8 +19,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DecodeableImageStreamWrapper,
-    DecodeableStreamWrapper,
+    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
@@ -111,12 +110,12 @@ class VOC(Dataset):
         ann_path, ann_buffer = ann_data
 
         return dict(
-            image_path=image_path,
-            image=DecodeableImageStreamWrapper(image_buffer),
-            ann_path=ann_path,
-            ann=DecodeableStreamWrapper(ann_buffer, self._decode_detection_ann)
+            self._decode_detection_ann(ann_buffer)
             if config.task == "detection"
-            else DecodeableImageStreamWrapper(ann_buffer),
+            else dict(segmentation=RawImage.fromfile(ann_buffer)),
+            image_path=image_path,
+            image=RawImage.fromfile(image_buffer),
+            ann_path=ann_path,
         )
 
     def _make_datapipe(
