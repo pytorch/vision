@@ -1,6 +1,7 @@
 #include "image.h"
 
 #include <Python.h>
+#include <torch/library.h>
 
 // If we are in a Windows environment, we need to define
 // initialization functions for the _custom_ops extension
