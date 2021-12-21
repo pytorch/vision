@@ -157,6 +157,7 @@ void Video::_getDecoderParams(
 } // _get decoder params
 
 Video::Video(std::string videoPath, std::string stream, int64_t numThreads) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.video.video.Video");
   // set number of threads global
   numThreads_ = numThreads;
   // parse stream information
