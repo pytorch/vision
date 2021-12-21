@@ -1,6 +1,6 @@
 import json
 from pathlib import Path
-from typing import Callable, Optional
+from typing import Any, Tuple, Callable, Optional
 
 import PIL.Image
 
@@ -63,7 +63,7 @@ class Food101(VisionDataset):
     def __len__(self) -> int:
         return len(self._image_files)
 
-    def __getitem__(self, idx) -> Tuple[PIL.Image.Image, int]:
+    def __getitem__(self, idx) -> Tuple[Any, Any]:
         image_file, label = self._image_files[idx], self._labels[idx]
         image = PIL.Image.open(image_file).convert("RGB")
 
@@ -103,4 +103,4 @@ class Food101(VisionDataset):
     def _download(self) -> None:
         if self._check_exists():
             return
-        download_and_extract_archive(self._URL, download_root=self._base_folder, md5=self._MD5)
+        download_and_extract_archive(self._URL, download_root=str(self._base_folder), md5=self._MD5)
