@@ -50,7 +50,7 @@ class Food101(VisionDataset):
 
         self._labels = []
         self._image_files = []
-        with open(Path(self._meta_folder) / f"{split}.json", "r") as f:
+        with open(self._meta_folder / f"{split}.json", "r") as f:
             metadata = json.loads(f.read())
 
         self.classes = sorted(set(metadata.keys()))
@@ -63,7 +63,7 @@ class Food101(VisionDataset):
     def __len__(self) -> int:
         return len(self._image_files)
 
-    def __getitem__(self, idx):
+    def __getitem__(self, idx) -> Tuple[PIL.Image.Image, int]:
         image_file, label = self._image_files[idx], self._labels[idx]
         image = PIL.Image.open(image_file).convert("RGB")
 
@@ -79,25 +79,25 @@ class Food101(VisionDataset):
         return f"split={self._split}"
 
     @property
-    def _base_folder(self):
+    def _base_folder(self) -> Path:
         return self._root_path / "food-101"
 
     @property
-    def _meta_folder(self) -> str:
+    def _meta_folder(self) -> Path:
         return self._base_folder / "meta"
 
     @property
-    def _images_folder(self) -> str:
+    def _images_folder(self) -> Path:
         return self._base_folder / "images"
 
     def _check_exists(self) -> bool:
         return (
-            Path(self._base_folder).exists()
-            and Path(self._base_folder).is_dir()
-            and Path(self._meta_folder).exists()
-            and Path(self._meta_folder).is_dir()
-            and Path(self._images_folder).exists()
-            and Path(self._images_folder).is_dir()
+            self._base_folder.exists()
+            and self._base_folder.is_dir()
+            and self._meta_folder.exists()
+            and self._meta_folder.is_dir()
+            and self._images_folder.exists()
+            and self._images_folder.is_dir()
         )
 
     def _download(self) -> None:
