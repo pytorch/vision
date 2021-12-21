@@ -2173,14 +2173,14 @@ class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, int)
 
     def inject_fake_data(self, tmpdir, config):
-        img_folder = os.path.join(tmpdir, "eurosat", "2750")
-        os.makedirs(img_folder)
+        data_folder = os.path.join(tmpdir, "eurosat", "2750")
+        os.makedirs(data_folder)
 
         num_examples_per_class = 3
         classes = ("AnnualCrop", "Forest")
         for cls in classes:
             datasets_utils.create_image_folder(
-                root=img_folder,
+                root=data_folder,
                 name=cls,
                 file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
                 num_examples=num_examples_per_class,

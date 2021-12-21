@@ -2,7 +2,7 @@ import os
 from typing import Any
 
 from .folder import ImageFolder
-from .utils import download_and_extract_archive, check_integrity
+from .utils import download_and_extract_archive
 
 
 class EuroSAT(ImageFolder):
