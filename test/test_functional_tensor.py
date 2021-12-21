@@ -168,6 +168,15 @@ class TestRotate:
         if center is not None:
             assert center.grad is not None
 
+    @pytest.mark.parametrize("center", [None, torch.tensor([0.1, 0.2], requires_grad=True)])
+    def test_differentiable_rotate_nonfloat(self, center):
+        alpha = torch.tensor(1.0, requires_grad=True)
+        x = torch.zeros(1, 3, 10, 10, dtype=torch.long)
+        x[0, :, 2:5, 2:5] = 1
+
+        with pytest.raises(ValueError, match=r"input should be float tensor"):
+            F.rotate(x, alpha, interpolation=BILINEAR, center=center)
+
 
 class TestAffine:
 
@@ -412,6 +421,17 @@ class TestAffine:
             assert scale.grad is not None
         if isinstance(shear, torch.Tensor):
             assert shear.grad is not None
+
+    @pytest.mark.parametrize("translate", [[0, 0], torch.tensor([1.0, 2.0], requires_grad=True)])
+    @pytest.mark.parametrize("scale", [1.0, torch.tensor(1.0, requires_grad=True)])
+    @pytest.mark.parametrize("shear", [[1.0, 1.0], torch.tensor([1.0, 1.0], requires_grad=True)])
+    def test_differentiable_affine_nonfloat(self, translate, scale, shear):
+        alpha = torch.tensor(1.0, requires_grad=True)
+        x = torch.zeros(1, 3, 10, 10, dtype=torch.long)
+        x[0, :, 2:5, 2:5] = 1
+
+        with pytest.raises(ValueError, match=r"input should be float tensor"):
+            F.affine(x, alpha, translate, scale, shear, interpolation=BILINEAR)
 
 
 def _get_data_dims_and_points_for_perspective():

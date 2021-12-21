@@ -1008,28 +1008,10 @@ def _from_arg_scalar_or_seq_or_tensor(
     return _from_arg_seq_or_tensor(arg, name)
 
 
-def _from_arg_scalar_or_intseq_or_tensor(
-    arg: Union[int, float, List[int], Tuple[int, int], Tensor], name: str
-) -> Tensor:
-    # Assumption is that len(arg) == 2
-    if not isinstance(arg, (int, float, list, tuple, Tensor)):
-        raise TypeError(f"Argument {name} should be a single value or a sequence of two values or a tensor")
-
-    if isinstance(arg, Tensor):
-        if arg.numel() != 2:
-            raise ValueError(f"Tensor should have 2 values, got {arg.numel()}")
-        return arg
-
-    if isinstance(arg, (int, float)):
-        return torch.tensor([float(arg), 0.0])
-
-    if isinstance(arg, tuple):
-        arg = list(arg)
-
-    if isinstance(arg, list) and len(arg) == 1:
-        return torch.tensor([float(arg[0]), float(arg[0])])
-
-    return _from_arg_intseq_or_tensor(arg, name)
+def _ensure_float_input_for_learnable_params(inpt: Tensor, params: List[Tensor]) -> None:
+    if any([isinstance(p, torch.Tensor) and p.requires_grad for p in params]):
+        if not inpt.is_floating_point():
+            raise ValueError("If any parameter is a tensor that requires grad, then input should be float tensor")
 
 
 def rotate(
@@ -1098,16 +1080,10 @@ def rotate(
             img, angle=angle.item(), interpolation=pil_interpolation, expand=expand, center=center, fill=fill
         )
 
-    # TODO: This is a rather generic check for input dtype if args are learnable
-    # We can refactor that later
     if not torch.jit.is_scripting():
         # torch.jit.script crashes with Segmentation fault (core dumped) on the following
         # without if not torch.jit.is_scripting()
-        if (isinstance(angle, torch.Tensor) and angle.requires_grad) or (
-            isinstance(center, torch.Tensor) and center.requires_grad
-        ):
-            if not img.is_floating_point():
-                raise ValueError("If angle is tensor that requires grad, image should be float")
+        _ensure_float_input_for_learnable_params(img, [angle, center])
 
     do_recenter = True
     if center is None:
@@ -1207,6 +1183,11 @@ def affine(
         matrix = _get_inverse_affine_matrix_tensor(center, angle, translate, scale, shear)
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix.view(-1).tolist(), interpolation=pil_interpolation, fill=fill)
+
+    if not torch.jit.is_scripting():
+        # torch.jit.script crashes with Segmentation fault (core dumped) on the following
+        # without if not torch.jit.is_scripting()
+        _ensure_float_input_for_learnable_params(img, [angle, translate, scale, shear])
 
     center = torch.tensor([0.0, 0.0])
     matrix = _get_inverse_affine_matrix_tensor(center, angle, translate, scale, shear)
