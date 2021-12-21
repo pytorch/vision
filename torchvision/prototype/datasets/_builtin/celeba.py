@@ -110,16 +110,25 @@ class CelebA(Dataset):
     def _filter_split(self, data: Tuple[str, Dict[str, str]], *, split: str) -> bool:
         return self._SPLIT_ID_TO_NAME[data[1]["split_id"]] == split
 
-    def _prepare_anns(self, data: Tuple[Tuple[str, Dict[str, str]], ...]) -> Tuple[str, Dict[str, Any]]:
-        (image_id, identity), (_, attributes), (_, bounding_box), (_, landmarks) = data
-        return image_id, dict(
+    def _decode_anns(
+        self,
+        data: Tuple[
+            Tuple[str, Dict[str, str]],
+            Tuple[str, Dict[str, str]],
+            Tuple[str, Dict[str, str]],
+            Tuple[str, Dict[str, str]],
+        ],
+        *,
+        image_size: Tuple[int, int],
+    ) -> Dict[str, Any]:
+        (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = data
+        return dict(
             identity=Label(int(identity["identity"])),
             attributes={attr: value == "1" for attr, value in attributes.items()},
-            # FIXME: probe image_size from file
             bounding_box=BoundingBox(
                 [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
                 format="xywh",
-                image_size=(-1, -1),
+                image_size=image_size,
             ),
             landmarks={
                 landmark: Feature((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
@@ -128,17 +137,27 @@ class CelebA(Dataset):
         )
 
     def _prepare_sample(
-        self, data: Tuple[Tuple[str, Tuple[str, List[str]], Tuple[str, BinaryIO]], Tuple[str, Dict[str, Any]]]
+        self,
+        data: Tuple[
+            Tuple[str, Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]],
+            Tuple[
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+            ],
+        ],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
-        _, _, image_data = split_and_image_data
+        _, (_, image_data) = split_and_image_data
         path, buffer = image_data
-        _, anns = ann_data
+
+        image = RawImage.fromfile(buffer)
 
         return dict(
-            anns,
+            self._decode_anns(ann_data, image_size=image.probe_image_size()),
             path=path,
-            image=RawImage.fromfile(buffer),
+            image=image,
         )
 
     def _make_datapipe(
@@ -165,7 +184,6 @@ class CelebA(Dataset):
                 )
             ]
         )
-        anns_dp = Mapper(anns_dp, self._prepare_anns)
 
         dp = IterKeyZipper(
             splits_dp,
@@ -175,5 +193,11 @@ class CelebA(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )
-        dp = IterKeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
+        dp = IterKeyZipper(
+            dp,
+            anns_dp,
+            key_fn=getitem(0),
+            ref_key_fn=getitem(0, 0),
+            buffer_size=INFINITE_BUFFER_SIZE,
+        )
         return Mapper(dp, self._prepare_sample)

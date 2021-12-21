@@ -1,7 +1,6 @@
 import collections.abc
 import sys
-from typing import Any, Dict, Callable
-from typing import Type, TypeVar, cast, BinaryIO
+from typing import Any, Dict, Callable, Type, TypeVar, cast, BinaryIO, Tuple
 
 import PIL.Image
 import torch
@@ -32,7 +31,12 @@ class RawData(torch.Tensor):
 
 
 class RawImage(RawData):
-    pass
+    def probe_image_size(self) -> Tuple[int, int]:
+        if not hasattr(self, "_image_size"):
+            image = PIL.Image.open(ReadOnlyTensorBuffer(self))
+            self._image_size = image.height, image.width
+
+        return self._image_size
 
 
 def decode_image_with_pil(raw_image: RawImage) -> Dict[str, Any]:
