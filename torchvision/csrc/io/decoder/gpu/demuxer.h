@@ -1,3 +1,4 @@
+#include <stdexcept>
 extern "C" {
 #include <libavcodec/avcodec.h>
 #include <libavcodec/bsf.h>
@@ -5,12 +6,12 @@ extern "C" {
 #include <libavformat/avio.h>
 }
 
-inline bool check(int ret, int line) {
+inline void check(int ret, int line) {
   if (ret < 0) {
-    printf("Error %d at line %d in demuxer.h.\n", ret, line);
-    return false;
+    std::ostringstream error_string;
+    error_string << "Error " << ret << " at line " << line << " in demuxer.h\n";
+    throw std::runtime_error(error_string.str());
   }
-  return true;
 }
 
 #define check_for_errors(call) check(call, __LINE__)
@@ -33,17 +34,17 @@ class Demuxer {
     avformat_network_init();
     check_for_errors(avformat_open_input(&fmtCtx, filePath, NULL, NULL));
     if (!fmtCtx) {
-      printf("No AVFormatContext provided.\n");
-      return;
+      throw std::runtime_error("No AVFormatContext provided.\n");
     }
 
     check_for_errors(avformat_find_stream_info(fmtCtx, NULL));
     iVideoStream =
         av_find_best_stream(fmtCtx, AVMEDIA_TYPE_VIDEO, -1, -1, NULL, 0);
     if (iVideoStream < 0) {
-      printf(
-          "FFmpeg error: %d, could not find stream in input file\n", __LINE__);
-      return;
+      std::ostringstream error_string;
+      error_string << "FFmpeg error at line: " << __LINE__
+                   << " in demuxer.h. Could not find stream in input file.\n";
+      throw std::runtime_error(error_string.str());
     }
 
     eVideoCodec = fmtCtx->streams[iVideoStream]->codecpar->codec_id;
@@ -74,8 +75,10 @@ class Demuxer {
     if (bMp4H264) {
       const AVBitStreamFilter* bsf = av_bsf_get_by_name("h264_mp4toannexb");
       if (!bsf) {
-        printf("FFmpeg error: %d, av_bsf_get_by_name() failed\n", __LINE__);
-        return;
+        std::ostringstream error_string;
+        error_string << "FFmpeg error at line: " << __LINE__
+                     << " in demuxer.h. av_bsf_get_by_name() failed\n";
+        throw std::runtime_error(error_string.str());
       }
       check_for_errors(av_bsf_alloc(bsf, &bsfCtx));
       avcodec_parameters_copy(
@@ -85,8 +88,10 @@ class Demuxer {
     if (bMp4HEVC) {
       const AVBitStreamFilter* bsf = av_bsf_get_by_name("hevc_mp4toannexb");
       if (!bsf) {
-        printf("FFmpeg error: %d, av_bsf_get_by_name() failed\n", __LINE__);
-        return;
+        std::ostringstream error_string;
+        error_string << "FFmpeg error at line: " << __LINE__
+                     << " in demuxer.h. av_bsf_get_by_name() failed\n";
+        throw std::runtime_error(error_string.str());
       }
       check_for_errors(av_bsf_alloc(bsf, &bsfCtx));
       avcodec_parameters_copy(
@@ -152,8 +157,10 @@ class Demuxer {
           dataWithHeader = (uint8_t*)av_malloc(
               extraDataSize + pkt.size - 3 * sizeof(uint8_t));
           if (!dataWithHeader) {
-            printf("FFmpeg error: %d\n", __LINE__);
-            return false;
+            std::ostringstream error_string;
+            error_string << "FFmpeg error at line: " << __LINE__
+                         << " in demuxer.h.\n";
+            throw std::runtime_error(error_string.str());
           }
           memcpy(
               dataWithHeader,
