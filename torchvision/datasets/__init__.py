@@ -5,6 +5,7 @@ from .cifar import CIFAR10, CIFAR100
 from .cityscapes import Cityscapes
 from .coco import CocoCaptions, CocoDetection
 from .fakedata import FakeData
+from .fer2013 import FER2013
 from .flickr import Flickr8k, Flickr30k
 from .folder import ImageFolder, DatasetFolder
 from .hmdb51 import HMDB51
@@ -77,4 +78,5 @@ __all__ = (
     "FlyingChairs",
     "FlyingThings3D",
     "HD1K",
+    "FER2013",
 )
