@@ -2,6 +2,7 @@ from typing import Any, Dict, Iterator
 
 import torch
 
+from ..utils import _log_api_usage_once
 from ._video_opt import (
     Timebase,
     VideoMetaData,
@@ -106,6 +107,7 @@ class VideoReader:
     """
 
     def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
+        _log_api_usage_once(self)
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
