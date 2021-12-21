@@ -163,7 +163,7 @@ class DenseNet(nn.Module):
     ) -> None:
 
         super().__init__()
-        _log_api_usage_once("models", self.__class__.__name__)
+        _log_api_usage_once(self)
 
         # First convolution
         self.features = nn.Sequential(
