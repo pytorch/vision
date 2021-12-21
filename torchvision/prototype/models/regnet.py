@@ -75,7 +75,17 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
             "acc@5": 91.716,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_400mf-e6988f5f.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 75.804,
+            "acc@5": 92.742,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_800MF_Weights(WeightsEnum):
@@ -89,7 +99,17 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
             "acc@5": 93.136,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_800mf-58fc7688.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 78.828,
+            "acc@5": 94.502,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_1_6GF_Weights(WeightsEnum):
@@ -103,7 +123,17 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
             "acc@5": 93.966,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_1_6gf-0d7bc02a.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 80.876,
+            "acc@5": 95.444,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_3_2GF_Weights(WeightsEnum):
@@ -117,7 +147,17 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
             "acc@5": 94.576,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_3_2gf-9180c971.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 81.982,
+            "acc@5": 95.972,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_8GF_Weights(WeightsEnum):
@@ -131,7 +171,17 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
             "acc@5": 95.048,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_8gf-dc2b1b54.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 82.828,
+            "acc@5": 96.330,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_16GF_Weights(WeightsEnum):
@@ -145,7 +195,17 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "acc@5": 95.240,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_16gf-3e4a00f9.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 82.886,
+            "acc@5": 96.328,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_32GF_Weights(WeightsEnum):
@@ -159,7 +219,17 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "acc@5": 95.340,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_32gf-8db6d4b5.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 83.368,
+            "acc@5": 96.498,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_400MF_Weights(WeightsEnum):
@@ -173,7 +243,17 @@ class RegNet_X_400MF_Weights(WeightsEnum):
             "acc@5": 90.950,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_400mf-62229a5f.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
+            "acc@1": 74.864,
+            "acc@5": 92.322,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_800MF_Weights(WeightsEnum):
@@ -187,7 +267,17 @@ class RegNet_X_800MF_Weights(WeightsEnum):
             "acc@5": 92.348,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_800mf-94a99ebd.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
+            "acc@1": 77.522,
+            "acc@5": 93.826,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_1_6GF_Weights(WeightsEnum):
@@ -201,7 +291,17 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
             "acc@5": 93.440,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_1_6gf-a12f2b72.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
+            "acc@1": 79.668,
+            "acc@5": 94.922,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_3_2GF_Weights(WeightsEnum):
@@ -215,7 +315,17 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
             "acc@5": 93.992,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_3_2gf-7071aa85.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 81.196,
+            "acc@5": 95.430,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_8GF_Weights(WeightsEnum):
@@ -229,7 +339,17 @@ class RegNet_X_8GF_Weights(WeightsEnum):
             "acc@5": 94.686,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_8gf-2b70d774.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 81.682,
+            "acc@5": 95.678,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_16GF_Weights(WeightsEnum):
@@ -243,7 +363,17 @@ class RegNet_X_16GF_Weights(WeightsEnum):
             "acc@5": 94.944,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_16gf-ba3796d7.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 82.716,
+            "acc@5": 96.196,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_32GF_Weights(WeightsEnum):
@@ -257,7 +387,17 @@ class RegNet_X_32GF_Weights(WeightsEnum):
             "acc@5": 95.248,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_32gf-6eb8fdc6.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 83.014,
+            "acc@5": 96.288,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 @handle_legacy_interface(weights=("pretrained", RegNet_Y_400MF_Weights.ImageNet1K_V1))
