@@ -1,4 +1,5 @@
 #include "decoder.h"
+#include <c10/util/Logging.h>
 #include <cassert>
 #include <cmath>
 #include <cstring>
@@ -134,9 +135,8 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
   if (result == CUDA_SUCCESS &&
       (decodeStatus.decodeStatus == cuvidDecodeStatus_Error ||
        decodeStatus.decodeStatus == cuvidDecodeStatus_Error_Concealed)) {
-    printf(
-        "Decode Error occurred for picture %d\n",
-        picNumInDecodeOrder[dispInfo->picture_index]);
+    VLOG(1) << "Decode Error occurred for picture "
+            << picNumInDecodeOrder[dispInfo->picture_index];
   }
 
   uint8_t* decodedFrame = nullptr;
@@ -410,17 +410,9 @@ int Decoder::get_operating_point(CUVIDOPERATINGPOINTINFO* operPointInfo) {
   if (operPointInfo->codec == cudaVideoCodec_AV1) {
     if (operPointInfo->av1.operating_points_cnt > 1) {
       // clip has SVC enabled
-      if (operatingPoint >= operPointInfo->av1.operating_points_cnt)
+      if (operatingPoint >= operPointInfo->av1.operating_points_cnt) {
         operatingPoint = 0;
-
-      printf(
-          "AV1 SVC clip: operating point count %d  ",
-          operPointInfo->av1.operating_points_cnt);
-      printf(
-          "Selected operating point: %d, IDC 0x%x bOutputAllLayers %d\n",
-          operatingPoint,
-          operPointInfo->av1.operating_points_idc[operatingPoint],
-          dispAllLayers);
+      }
       return (operatingPoint | (dispAllLayers << 10));
     }
   }
