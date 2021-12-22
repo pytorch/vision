@@ -12,6 +12,7 @@ from torchvision.prototype import datasets, transforms
 from torchvision.prototype.utils._internal import sequence_to_str
 
 
+# TODO: remove this patch after https://github.com/pytorch/pytorch/pull/70304 is merged
 def patch(fn):
     def wrapper(*args, **kwargs):
         try:
