@@ -39,8 +39,7 @@ class Food101(VisionDataset):
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "test"))
-        self._root_path = Path(self.root)
-        self._base_folder = self._root_path / "food-101"
+        self._base_folder = Path(self._root_path) / "food-101"
         self._meta_folder = self._base_folder / "meta"
         self._images_folder = self._base_folder / "images"
 
@@ -61,7 +60,7 @@ class Food101(VisionDataset):
         for class_label, im_rel_paths in metadata.items():
             self._labels += [self.class_to_idx[class_label]] * len(im_rel_paths)
             self._image_files += [
-                self._images_folder.joinpath(*f"{im_rel_path}".split("/")) for im_rel_path in im_rel_paths
+                self._images_folder.joinpath(*f"{im_rel_path}.jpg".split("/")) for im_rel_path in im_rel_paths
             ]
 
     def __len__(self) -> int:
@@ -88,4 +87,4 @@ class Food101(VisionDataset):
     def _download(self) -> None:
         if self._check_exists():
             return
-        download_and_extract_archive(self._URL, download_root=str(self.root), md5=self._MD5)
+        download_and_extract_archive(self._URL, download_root=self.root, md5=self._MD5)
