@@ -1,5 +1,6 @@
 import os
 import os.path
+import pathlib
 from typing import Any, Callable, Optional, Union, Tuple
 from typing import Sequence
 
@@ -26,11 +27,16 @@ class OxfordIIITPet(VisionDataset):
         target_transform: Optional[Callable] = None,
         download: bool = True,
     ):
-        super().__init__(root, transforms=transforms, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("trainval", "test"))
         if isinstance(target_type, str):
             target_type = [target_type]
         self._target_type = [verify_str_arg(t, "target_type", self._TARGET_TYPES) for t in target_type]
+
+        super().__init__(root, transforms=transforms, transform=transform, target_transform=target_transform)
+        self._base_folder = pathlib.Path(self.root) / "oxford-iiit-pet"
+        self._images_folder = self._base_folder / "images"
+        self._anns_folder = self._base_folder / "annotations"
+        self._segs_folder = self._anns_folder / "trimaps"
 
         if download:
             self._download()
@@ -40,7 +46,7 @@ class OxfordIIITPet(VisionDataset):
 
         image_ids = []
         self._labels = []
-        with open(os.path.join(self._anns_folder, f"{self._split}.txt")) as file:
+        with open(self._anns_folder / f"{self._split}.txt") as file:
             for line in file:
                 image_id, label, *_ = line.strip().split()
                 image_ids.append(image_id)
@@ -55,8 +61,8 @@ class OxfordIIITPet(VisionDataset):
         ]
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
 
-        self._images = [os.path.join(self._images_folder, f"{image_id}.jpg") for image_id in image_ids]
-        self._segmentations = [os.path.join(self._segmentations_folder, f"{image_id}.png") for image_id in image_ids]
+        self._images = [self._images_folder / f"{image_id}.jpg" for image_id in image_ids]
+        self._segs = [self._segs_folder / f"{image_id}.png" for image_id in image_ids]
 
     def __len__(self) -> int:
         return len(self._images)
@@ -69,7 +75,7 @@ class OxfordIIITPet(VisionDataset):
             if t == "category":
                 target.append(self._labels[idx])
             else:  # t == "segmentation"
-                target.append(Image.open(self._segmentations[idx]))
+                target.append(Image.open(self._segs[idx]))
 
         target: Any
         if not target:
@@ -84,22 +90,6 @@ class OxfordIIITPet(VisionDataset):
 
         return image, target
 
-    @property
-    def _base_folder(self):
-        return os.path.join(self.root, "oxford-iiit-pet")
-
-    @property
-    def _images_folder(self) -> str:
-        return os.path.join(self._base_folder, "images")
-
-    @property
-    def _anns_folder(self) -> str:
-        return os.path.join(self._base_folder, "annotations")
-
-    @property
-    def _segmentations_folder(self) -> str:
-        return os.path.join(self._anns_folder, "trimaps")
-
     def _check_exists(self) -> bool:
         for folder in (self._images_folder, self._anns_folder):
             if not (os.path.exists(folder) and os.path.isdir(folder)):
@@ -112,4 +102,4 @@ class OxfordIIITPet(VisionDataset):
             return
 
         for url, md5 in self._RESOURCES:
-            download_and_extract_archive(url, download_root=self._base_folder, md5=md5)
+            download_and_extract_archive(url, download_root=str(self._base_folder), md5=md5)
