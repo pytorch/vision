@@ -35,7 +35,7 @@ class GTSRB(VisionDataset):
         "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB-Training_fixed.zip",
     )
 
-    md5 = ("c7e4e6327067d32654124b0fe9e82185", "513f3c79a4c5141765e10e952eaa2478")
+    md5s = ("c7e4e6327067d32654124b0fe9e82185", "513f3c79a4c5141765e10e952eaa2478")
 
     extension = (".ppm",)
 
@@ -54,7 +54,7 @@ class GTSRB(VisionDataset):
 
         self.train = train
         self.url = self.urls[self.train]
-        self.md5 = self.md5[self.train]
+        self.md5 = self.md5s[self.train]
 
         if download:
             self.download()
@@ -66,9 +66,10 @@ class GTSRB(VisionDataset):
             samples = make_dataset(self._target_folder, extensions=self.extension)
         else:
             with open(os.path.join(self._base_folder, self.gt_csv)) as csv_file:
-                data = list(csv.reader(csv_file, delimiter=";", skipinitialspace=True))
-            data = data[1:]
-            samples = [(os.path.join(self._target_folder, row[0]), int(row[-1])) for row in data]
+                samples = [
+                    (os.path.join(self._target_folder, row["Filename"]), int(row["ClassId"]))
+                    for row in csv.DictReader(csv_file, delimiter=";", skipinitialspace=True)
+                ]
 
         self.samples = samples
         self.transform = transform
