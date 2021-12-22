@@ -1,19 +1,18 @@
 #include "gpu_decoder.h"
+#include <c10/cuda/CUDAGuard.h>
 
 /* Set cuda device, create cuda context and initialise the demuxer and decoder.
  */
 GPUDecoder::GPUDecoder(std::string src_file, int64_t dev)
     : demuxer(src_file.c_str()), device(dev) {
-  if (cudaSuccess != cudaSetDevice(device)) {
-    printf("Error setting device\n");
-    return;
-  }
+  at::cuda::CUDAGuard device_guard(device);
   check_for_cuda_errors(cuDevicePrimaryCtxRetain(&ctx, device), __LINE__);
   decoder.init(ctx, ffmpeg_to_codec(demuxer.get_video_codec()));
   initialised = true;
 }
 
 GPUDecoder::~GPUDecoder() {
+  at::cuda::CUDAGuard device_guard(device);
   decoder.release();
   if (initialised) {
     check_for_cuda_errors(cuDevicePrimaryCtxRelease(device), __LINE__);
@@ -26,6 +25,7 @@ torch::Tensor GPUDecoder::decode() {
   torch::Tensor frameTensor;
   unsigned long videoBytes = 0;
   uint8_t *frame = nullptr, *video = nullptr;
+  at::cuda::CUDAGuard device_guard(device);
   do {
     demuxer.demux(&video, &videoBytes);
     decoder.decode(video, videoBytes);
