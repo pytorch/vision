@@ -58,9 +58,11 @@ class Food101(VisionDataset):
         self.classes = sorted(metadata.keys())
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
 
-        for class_label, im_ids in metadata.items():
-            self._labels += [self.class_to_idx[class_label]] * len(im_ids)
-            self._image_files += [self._images_folder.joinpath(*f"{im_id}.jpg".split("/")) for im_id in im_ids]
+        for class_label, im_rel_paths in metadata.items():
+            self._labels += [self.class_to_idx[class_label]] * len(im_rel_paths)
+            self._image_files += [
+                self._images_folder.joinpath(*f"{im_rel_path}".split("/")) for im_rel_path in im_rel_paths
+            ]
 
     def __len__(self) -> int:
         return len(self._image_files)

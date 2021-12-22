@@ -2194,11 +2194,13 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
                 file_name_fn=lambda idx: f"{idx}.jpg",
                 num_examples=num_images_per_class,
             )
-            metadata[cls] = [str(fname) for fname in random.choices(im_fnames, k=n_samples_per_class)]
+            metadata[cls] = [
+                fname.parent.name + "/" + fname.name for fname in random.choices(im_fnames, k=n_samples_per_class)
+            ]
 
         with open(meta_folder / f"{config['split']}.json", "w") as file:
             file.write(json.dumps(metadata))
-
+        print(metadata)
         return len(sampled_classes * n_samples_per_class)
 
 
