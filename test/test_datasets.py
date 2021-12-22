@@ -2180,7 +2180,7 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
         meta_folder = root_folder / "meta"
 
         image_folder.mkdir(parents=True)
-        meta_folder.mkdir(parents=True)
+        meta_folder.mkdir()
 
         num_images_per_class = 5
 

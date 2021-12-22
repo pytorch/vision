@@ -21,7 +21,6 @@ class Food101(VisionDataset):
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
-
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
@@ -41,6 +40,9 @@ class Food101(VisionDataset):
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "test"))
         self._root_path = Path(self.root)
+        self._base_folder = self._root_path / "food-101"
+        self._meta_folder = self._base_folder / "meta"
+        self._images_folder = self._base_folder / "images"
 
         if download:
             self._download()
@@ -53,12 +55,12 @@ class Food101(VisionDataset):
         with open(self._meta_folder / f"{split}.json", "r") as f:
             metadata = json.loads(f.read())
 
-        self.classes = sorted(set(metadata.keys()))
+        self.classes = sorted(metadata.keys())
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
 
-        for class_label, im_paths in metadata.items():
-            self._labels += [self.class_to_idx[class_label]] * len(im_paths)
-            self._image_files += im_paths
+        for class_label, im_ids in metadata.items():
+            self._labels += [self.class_to_idx[class_label]] * len(im_ids)
+            self._image_files += [self._images_folder.joinpath(*f"{im_id}.jpg".split("/")) for im_id in im_ids]
 
     def __len__(self) -> int:
         return len(self._image_files)
@@ -78,29 +80,10 @@ class Food101(VisionDataset):
     def extra_repr(self) -> str:
         return f"split={self._split}"
 
-    @property
-    def _base_folder(self) -> Path:
-        return self._root_path / "food-101"
-
-    @property
-    def _meta_folder(self) -> Path:
-        return self._base_folder / "meta"
-
-    @property
-    def _images_folder(self) -> Path:
-        return self._base_folder / "images"
-
     def _check_exists(self) -> bool:
-        return (
-            self._base_folder.exists()
-            and self._base_folder.is_dir()
-            and self._meta_folder.exists()
-            and self._meta_folder.is_dir()
-            and self._images_folder.exists()
-            and self._images_folder.is_dir()
-        )
+        return all(folder.exists() and folder.is_dir() for folder in (self._meta_folder, self._images_folder))
 
     def _download(self) -> None:
         if self._check_exists():
             return
-        download_and_extract_archive(self._URL, download_root=str(self._base_folder), md5=self._MD5)
+        download_and_extract_archive(self._URL, download_root=str(self.root), md5=self._MD5)
