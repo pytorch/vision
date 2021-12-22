@@ -106,7 +106,7 @@ class Coco(Dataset):
                 )
             ),
             areas=Feature([ann["area"] for ann in anns]),
-            crowds=Feature([ann["crowd"] for ann in anns], dtype=torch.bool),
+            crowds=Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",

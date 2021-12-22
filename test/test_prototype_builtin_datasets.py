@@ -1,18 +1,36 @@
+import functools
 import io
 
 import builtin_dataset_mocks
 import pytest
 import torch
+from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair, UnsupportedInputs, ErrorMeta
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
 from torchvision.prototype import datasets, transforms
-from torchvision.prototype.datasets._api import DEFAULT_DECODER
 from torchvision.prototype.utils._internal import sequence_to_str
 
 
-def to_bytes(file):
-    return file.read()
+def patch(fn):
+    def wrapper(*args, **kwargs):
+        try:
+            return fn(*args, **kwargs)
+        except ErrorMeta as error:
+            if error.type is not ValueError:
+                raise error
+
+            raise UnsupportedInputs()
+
+    return wrapper
+
+
+TensorLikePair._to_tensor = patch(TensorLikePair._to_tensor)
+
+
+assert_samples_equal = functools.partial(
+    assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
+)
 
 
 def config_id(name, config):
@@ -26,7 +44,7 @@ def config_id(name, config):
     return "-".join(parts)
 
 
-def dataset_parametrization(*names, decoder=to_bytes):
+def dataset_parametrization(*names):
     if not names:
         # TODO: Replace this with torchvision.prototype.datasets.list() as soon as all builtin datasets are supported
         names = (
@@ -46,7 +64,7 @@ def dataset_parametrization(*names, decoder=to_bytes):
     return pytest.mark.parametrize(
         ("dataset", "mock_info"),
         [
-            pytest.param(*builtin_dataset_mocks.load(name, decoder=decoder, **config), id=config_id(name, config))
+            pytest.param(*builtin_dataset_mocks.load(name, **config), id=config_id(name, config))
             for name in names
             for config in datasets.info(name)._configs
         ],
@@ -89,7 +107,7 @@ class TestCommon:
                 f"{sequence_to_str(sorted(undecoded_features), separate_last='and ')} were not decoded."
             )
 
-    @dataset_parametrization(decoder=DEFAULT_DECODER)
+    @dataset_parametrization()
     def test_no_vanilla_tensors(self, dataset, mock_info):
         vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
         if vanilla_tensors:
@@ -119,6 +137,15 @@ class TestCommon:
                 break
         else:
             raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
+
+    @dataset_parametrization()
+    def test_save_load(self, dataset, mock_info):
+        sample = next(iter(dataset))
+
+        with io.BytesIO() as buffer:
+            torch.save(sample, buffer)
+            buffer.seek(0)
+            assert_samples_equal(torch.load(buffer), sample)
 
 
 class TestQMNIST:

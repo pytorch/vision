@@ -16,7 +16,6 @@ from datasets_utils import create_image_folder, make_tar, make_zip
 from torch.testing import make_tensor as _make_tensor
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype import datasets
-from torchvision.prototype.datasets._api import DEFAULT_DECODER_MAP, DEFAULT_DECODER
 from torchvision.prototype.datasets._api import find
 from torchvision.prototype.utils._internal import add_suggestion
 
@@ -109,21 +108,15 @@ class DatasetMocks:
         self._cache[(name, config)] = mock_resources, mock_info
         return mock_resources, mock_info
 
-    def load(
-        self, name: str, decoder=DEFAULT_DECODER, split="train", **options: Any
-    ) -> Tuple[IterDataPipe, Dict[str, Any]]:
+    def load(self, name: str, **options: Any) -> Tuple[IterDataPipe, Dict[str, Any]]:
         dataset = find(name)
-        config = dataset.info.make_config(split=split, **options)
+        config = dataset.info.make_config(**options)
 
         root = self._tmp_home / name
         root.mkdir(exist_ok=True)
         resources, mock_info = self._get(dataset, config, root)
 
-        datapipe = dataset._make_datapipe(
-            [resource.load(root) for resource in resources],
-            config=config,
-            decoder=DEFAULT_DECODER_MAP.get(dataset.info.type) if decoder is DEFAULT_DECODER else decoder,
-        )
+        datapipe = dataset._make_datapipe([resource.load(root) for resource in resources], config=config)
         return datapipe, mock_info
 
 
