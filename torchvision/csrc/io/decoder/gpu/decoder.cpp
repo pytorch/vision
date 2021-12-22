@@ -58,11 +58,6 @@ void Decoder::release() {
   if (decoder) {
     cuvidDestroyDecoder(decoder);
   }
-  while (!decodedFrames.empty()) {
-    uint8_t* frame = decodedFrames.front();
-    decodedFrames.pop();
-    cuMemFree((CUdeviceptr)frame);
-  }
   cuCtxPopCurrent(NULL);
 }
 
@@ -83,12 +78,14 @@ void Decoder::decode(const uint8_t* data, unsigned long size) {
 
 /* Fetch a decoded frame and remove it from the queue.
  */
-uint8_t* Decoder::fetch_frame() {
-  if (decodedFrames.empty()) {
-    return nullptr;
+torch::Tensor Decoder::fetch_frame() {
+  if (decoded_frames.empty()) {
+    auto options =
+        torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
+    return torch::zeros({0}, options);
   }
-  uint8_t* frame = decodedFrames.front();
-  decodedFrames.pop();
+  torch::Tensor frame = decoded_frames.front();
+  decoded_frames.pop();
   return frame;
 }
 
@@ -139,8 +136,9 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
             << picNumInDecodeOrder[dispInfo->picture_index];
   }
 
-  uint8_t* decodedFrame = nullptr;
-  cuMemAlloc((CUdeviceptr*)&decodedFrame, get_frame_size());
+  auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
+  torch::Tensor decoded_frame = torch::empty({get_frame_size()}, options);
+  uint8_t* frame_ptr = decoded_frame.data_ptr<uint8_t>();
 
   // Copy luma plane
   CUDA_MEMCPY2D m = {0};
@@ -148,7 +146,7 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
   m.srcDevice = dpSrcFrame;
   m.srcPitch = nSrcPitch;
   m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.dstDevice = (CUdeviceptr)(m.dstHost = decodedFrame);
+  m.dstDevice = (CUdeviceptr)(m.dstHost = frame_ptr);
   m.dstPitch = get_width() * bytesPerPixel;
   m.WidthInBytes = get_width() * bytesPerPixel;
   m.Height = lumaHeight;
@@ -159,8 +157,7 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
   // height
   m.srcDevice =
       (CUdeviceptr)((uint8_t*)dpSrcFrame + m.srcPitch * ((surfaceHeight + 1) & ~1));
-  m.dstDevice =
-      (CUdeviceptr)(m.dstHost = decodedFrame + m.dstPitch * lumaHeight);
+  m.dstDevice = (CUdeviceptr)(m.dstHost = frame_ptr + m.dstPitch * lumaHeight);
   m.Height = chromaHeight;
   check_for_cuda_errors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__);
 
@@ -168,12 +165,12 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* dispInfo) {
     m.srcDevice =
         (CUdeviceptr)((uint8_t*)dpSrcFrame + m.srcPitch * ((surfaceHeight + 1) & ~1) * 2);
     m.dstDevice =
-        (CUdeviceptr)(m.dstHost = decodedFrame + m.dstPitch * lumaHeight * 2);
+        (CUdeviceptr)(m.dstHost = frame_ptr + m.dstPitch * lumaHeight * 2);
     m.Height = chromaHeight;
     check_for_cuda_errors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__);
   }
   check_for_cuda_errors(cuStreamSynchronize(cuvidStream), __LINE__);
-  decodedFrames.push(decodedFrame);
+  decoded_frames.push(decoded_frame);
   check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__);
 
   check_for_cuda_errors(cuvidUnmapVideoFrame(decoder, dpSrcFrame), __LINE__);

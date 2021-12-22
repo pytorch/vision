@@ -2,6 +2,7 @@
 #include <cuda_runtime_api.h>
 #include <cuviddec.h>
 #include <nvcuvid.h>
+#include <torch/torch.h>
 #include <cstdint>
 #include <queue>
 #include <sstream>
@@ -32,7 +33,7 @@ class Decoder {
   void init(CUcontext, cudaVideoCodec);
   void release();
   void decode(const uint8_t*, unsigned long);
-  uint8_t* fetch_frame();
+  torch::Tensor fetch_frame();
   int get_frame_size() const {
     return get_width() * (lumaHeight + (chromaHeight * numChromaPlanes)) *
         bytesPerPixel;
@@ -55,7 +56,7 @@ class Decoder {
   unsigned int operatingPoint = 0, numChromaPlanes = 0;
   int bitDepthMinus8 = 0, bytesPerPixel = 1;
   int decodePicCount = 0, picNumInDecodeOrder[32];
-  std::queue<uint8_t*> decodedFrames;
+  std::queue<torch::Tensor> decoded_frames;
   CUcontext cuContext = NULL;
   CUvideoctxlock ctxLock;
   CUvideoparser parser = NULL;

@@ -24,25 +24,16 @@ GPUDecoder::~GPUDecoder() {
 torch::Tensor GPUDecoder::decode() {
   torch::Tensor frameTensor;
   unsigned long videoBytes = 0;
-  uint8_t *frame = nullptr, *video = nullptr;
+  uint8_t* video = nullptr;
   at::cuda::CUDAGuard device_guard(device);
+  auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
+  torch::Tensor frame = torch::zeros({0}, options);
   do {
     demuxer.demux(&video, &videoBytes);
     decoder.decode(video, videoBytes);
     frame = decoder.fetch_frame();
-  } while (frame == nullptr && videoBytes > 0);
-  if (frame == nullptr) {
-    auto options =
-        torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
-    return torch::zeros({0}, options);
-  }
-  auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
-  frameTensor = torch::from_blob(
-      frame,
-      {decoder.get_frame_size()},
-      [](auto p) { cuMemFree((CUdeviceptr)p); },
-      options);
-  return frameTensor;
+  } while (frame.numel() == 0 && videoBytes > 0);
+  return frame;
 }
 
 /* Convert a tensor with data in NV12 format to a tensor with data in YUV420
