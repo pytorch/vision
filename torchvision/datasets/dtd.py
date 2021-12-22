@@ -1,4 +1,5 @@
 import os
+import pathlib
 from typing import Optional, Callable, Union
 
 import PIL.Image
@@ -31,9 +32,14 @@ class DTD(VisionDataset):
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
-        super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
         self._fold = verify_str_arg(str(fold), "fold", [str(i) for i in range(1, 11)])
+
+        super().__init__(root, transform=transform, target_transform=target_transform)
+        self._base_folder = pathlib.Path(self.root) / type(self).__name__.lower()
+        self._data_folder = self._base_folder / "dtd"
+        self._meta_folder = self._data_folder / "labels"
+        self._images_folder = self._data_folder / "images"
 
         if download:
             self._download()
@@ -41,14 +47,13 @@ class DTD(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        image_files = []
+        self._image_files = []
         classes = []
-        with open(os.path.join(self._meta_folder, f"{self._split}{self._fold}.txt")) as file:
+        with open(self._meta_folder / f"{self._split}{self._fold}.txt") as file:
             for line in file:
                 cls, name = line.strip().split("/")
-                image_files.append(os.path.join(self._images_folder, cls, name))
+                self._image_files.append(self._images_folder.joinpath(cls, name))
                 classes.append(cls)
-        self._image_files = image_files
 
         self.classes = sorted(set(classes))
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
@@ -72,26 +77,10 @@ class DTD(VisionDataset):
     def extra_repr(self) -> str:
         return f"split={self._split}, fold={self._fold}"
 
-    @property
-    def _base_folder(self):
-        return os.path.join(self.root, type(self).__name__.lower())
-
-    @property
-    def _data_folder(self) -> str:
-        return os.path.join(self._base_folder, "dtd")
-
-    @property
-    def _meta_folder(self) -> str:
-        return os.path.join(self._data_folder, "labels")
-
-    @property
-    def _images_folder(self) -> str:
-        return os.path.join(self._data_folder, "images")
-
     def _check_exists(self) -> bool:
         return os.path.exists(self._data_folder) and os.path.isdir(self._data_folder)
 
     def _download(self) -> None:
         if self._check_exists():
             return
-        download_and_extract_archive(self._URL, download_root=self._base_folder, md5=self._MD5)
+        download_and_extract_archive(self._URL, download_root=str(self._base_folder), md5=self._MD5)
