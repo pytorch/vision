@@ -428,12 +428,15 @@ def get_extensions():
         )
 
     # Locating video codec
-    # Should be included in CUDA_HOME for CUDA >= 10.1, which is the minimum version we have in the CI
+    # CUDA_HOME should be set to the cuda root directory.
+    # TORCHVISION_INCLUDE and TORCHVISION_LIBRARY should include the location to
+    # video codec header files and libraries respectively.
     video_codec_found = (
         extension is CUDAExtension
         and CUDA_HOME is not None
-        and os.path.exists("/usr/local/include/cuviddec.h")
-        and os.path.exists("/usr/local/include/nvcuvid.h")
+        and any([os.path.exists(os.path.join(folder, 'cuviddec.h')) for folder in vision_include])
+        and any([os.path.exists(os.path.join(folder, 'nvcuvid.h')) for folder in vision_include])
+        and any([os.path.exists(os.path.join(folder, 'libnvcuvid.so')) for folder in library_dirs])
     )
 
     print(f"video codec found: {video_codec_found}")
@@ -449,7 +452,7 @@ def get_extensions():
                 "torchvision.Decoder",
                 gpu_decoder_src,
                 include_dirs=include_dirs + [gpu_decoder_path] + [cuda_inc],
-                library_dirs=ffmpeg_library_dir + library_dirs + [cuda_libs] + ["/usr/local/lib"],
+                library_dirs=ffmpeg_library_dir + library_dirs + [cuda_libs],
                 libraries=[
                     "avcodec",
                     "avformat",
