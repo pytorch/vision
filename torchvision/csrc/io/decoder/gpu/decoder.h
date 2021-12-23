@@ -5,22 +5,24 @@
 #include <torch/torch.h>
 #include <cstdint>
 #include <queue>
-#include <sstream>
 
-static auto check_for_cuda_errors = [](CUresult result, int lineNum) {
-  if (CUDA_SUCCESS != result) {
-    std::stringstream errorStream;
-    const char* errorName = nullptr;
+static auto check_for_cuda_errors =
+    [](CUresult result, int line_num, std::string file_name) {
+      if (CUDA_SUCCESS != result) {
+        const char* error_name = nullptr;
 
-    errorStream << __FILE__ << ":" << lineNum << std::endl;
-    if (CUDA_SUCCESS != cuGetErrorName(result, &errorName)) {
-      errorStream << "CUDA error with code " << result << std::endl;
-    } else {
-      errorStream << "CUDA error: " << errorName << std::endl;
-    }
-    throw std::runtime_error(errorStream.str());
-  }
-};
+        TORCH_CHECK(
+            CUDA_SUCCESS != cuGetErrorName(result, &error_name),
+            "CUDA error: ",
+            error_name,
+            " in ",
+            file_name,
+            " at line ",
+            line_num)
+        TORCH_CHECK(
+            false, "Error: ", result, " in ", file_name, " at line ", line_num);
+      }
+    };
 
 struct Rect {
   int left, top, right, bottom;

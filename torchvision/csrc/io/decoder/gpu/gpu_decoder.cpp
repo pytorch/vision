@@ -6,7 +6,8 @@
 GPUDecoder::GPUDecoder(std::string src_file, int64_t dev)
     : demuxer(src_file.c_str()), device(dev) {
   at::cuda::CUDAGuard device_guard(device);
-  check_for_cuda_errors(cuDevicePrimaryCtxRetain(&ctx, device), __LINE__);
+  check_for_cuda_errors(
+      cuDevicePrimaryCtxRetain(&ctx, device), __LINE__, __FILE__);
   decoder.init(ctx, ffmpeg_to_codec(demuxer.get_video_codec()));
   initialised = true;
 }
@@ -15,7 +16,8 @@ GPUDecoder::~GPUDecoder() {
   at::cuda::CUDAGuard device_guard(device);
   decoder.release();
   if (initialised) {
-    check_for_cuda_errors(cuDevicePrimaryCtxRelease(device), __LINE__);
+    check_for_cuda_errors(
+        cuDevicePrimaryCtxRelease(device), __LINE__, __FILE__);
   }
 }
 
