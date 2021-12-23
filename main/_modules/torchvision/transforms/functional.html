@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+ee77f98 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+72b8344 ) &#x25BC</a>
     </div>
     
 
@@ -1084,7 +1084,7 @@
     <span class="k">return</span> <span class="n">tl</span><span class="p">,</span> <span class="n">tr</span><span class="p">,</span> <span class="n">bl</span><span class="p">,</span> <span class="n">br</span><span class="p">,</span> <span class="n">center</span>
 
 
-<span class="k">def</span> <span class="nf">ten_crop</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
+<div class="viewcode-block" id="ten_crop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.functional.ten_crop.html#torchvision.transforms.functional.ten_crop">[docs]</a><span class="k">def</span> <span class="nf">ten_crop</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">size</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span> <span class="n">vertical_flip</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]:</span>
     <span class="sd">&quot;&quot;&quot;Generate ten cropped images from the given image.</span>
 <span class="sd">    Crop the given image into four corners and the central crop plus the</span>
 <span class="sd">    flipped version of these (horizontal flipping is used by default).</span>
@@ -1125,7 +1125,7 @@
         <span class="n">img</span> <span class="o">=</span> <span class="n">hflip</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 
     <span class="n">second_five</span> <span class="o">=</span> <span class="n">five_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">size</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">first_five</span> <span class="o">+</span> <span class="n">second_five</span>
+    <span class="k">return</span> <span class="n">first_five</span> <span class="o">+</span> <span class="n">second_five</span></div>
 
 
 <span class="k">def</span> <span class="nf">adjust_brightness</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">brightness_factor</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
