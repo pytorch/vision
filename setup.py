@@ -451,7 +451,7 @@ def get_extensions():
             extension(
                 "torchvision.Decoder",
                 gpu_decoder_src,
-                include_dirs=include_dirs + [gpu_decoder_path] + [cuda_inc] + ffmpeg_include_dir ,
+                include_dirs=include_dirs + [gpu_decoder_path] + [cuda_inc] + ffmpeg_include_dir,
                 library_dirs=ffmpeg_library_dir + library_dirs + [cuda_libs],
                 libraries=[
                     "avcodec",
