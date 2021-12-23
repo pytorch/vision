@@ -93,7 +93,7 @@ torch::Tensor Decoder::fetch_frame() {
  */
 int Decoder::handle_picture_decode(CUVIDPICPARAMS* picParams) {
   if (!decoder) {
-    throw std::runtime_error("Uninitialised decoder.");
+    TORCH_CHECK(false, "Uninitialised decoder");
   }
   picNumInDecodeOrder[picParams->CurrPicIdx] = decodePicCount++;
   check_for_cuda_errors(cuCtxPushCurrent(cuContext), __LINE__, __FILE__);
@@ -194,51 +194,49 @@ void Decoder::query_hardware(CUVIDEOFORMAT* videoFormat) {
   check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__, __FILE__);
 
   if (!decodeCaps.bIsSupported) {
-    throw std::runtime_error("Codec not supported on this GPU");
+    TORCH_CHECK(false, "Codec not supported on this GPU");
   }
   if ((videoFormat->coded_width > decodeCaps.nMaxWidth) ||
       (videoFormat->coded_height > decodeCaps.nMaxHeight)) {
-    std::ostringstream errorString;
-    errorString << std::endl
-                << "Resolution          : " << videoFormat->coded_width << "x"
-                << videoFormat->coded_height << std::endl
-                << "Max Supported (wxh) : " << decodeCaps.nMaxWidth << "x"
-                << decodeCaps.nMaxHeight << std::endl
-                << "Resolution not supported on this GPU";
-
-    const std::string cErr = errorString.str();
-    throw std::runtime_error(cErr);
+    TORCH_CHECK(
+        false,
+        "Resolution          : ",
+        videoFormat->coded_width,
+        "x",
+        videoFormat->coded_height,
+        "\nMax Supported (wxh) : ",
+        decodeCaps.nMaxWidth,
+        "x",
+        decodeCaps.nMaxHeight,
+        "\nResolution not supported on this GPU");
   }
   if ((videoFormat->coded_width >> 4) * (videoFormat->coded_height >> 4) >
       decodeCaps.nMaxMBCount) {
-    std::ostringstream errorString;
-    errorString << std::endl
-                << "MBCount             : "
-                << (videoFormat->coded_width >> 4) *
-            (videoFormat->coded_height >> 4)
-                << std::endl
-                << "Max Supported mbcnt : " << decodeCaps.nMaxMBCount
-                << std::endl
-                << "MBCount not supported on this GPU";
-
-    const std::string cErr = errorString.str();
-    throw std::runtime_error(cErr);
+    TORCH_CHECK(
+        false,
+        "MBCount             : ",
+        (videoFormat->coded_width >> 4) * (videoFormat->coded_height >> 4),
+        "\nMax Supported mbcnt : ",
+        decodeCaps.nMaxMBCount,
+        "\nMBCount not supported on this GPU");
   }
   // Check if output format supported. If not, check fallback options
   if (!(decodeCaps.nOutputFormatMask & (1 << videoOutputFormat))) {
-    if (decodeCaps.nOutputFormatMask & (1 << cudaVideoSurfaceFormat_NV12))
+    if (decodeCaps.nOutputFormatMask & (1 << cudaVideoSurfaceFormat_NV12)) {
       videoOutputFormat = cudaVideoSurfaceFormat_NV12;
-    else if (decodeCaps.nOutputFormatMask & (1 << cudaVideoSurfaceFormat_P016))
+    } else if (
+        decodeCaps.nOutputFormatMask & (1 << cudaVideoSurfaceFormat_P016)) {
       videoOutputFormat = cudaVideoSurfaceFormat_P016;
-    else if (
-        decodeCaps.nOutputFormatMask & (1 << cudaVideoSurfaceFormat_YUV444))
+    } else if (
+        decodeCaps.nOutputFormatMask & (1 << cudaVideoSurfaceFormat_YUV444)) {
       videoOutputFormat = cudaVideoSurfaceFormat_YUV444;
-    else if (
+    } else if (
         decodeCaps.nOutputFormatMask &
-        (1 << cudaVideoSurfaceFormat_YUV444_16Bit))
+        (1 << cudaVideoSurfaceFormat_YUV444_16Bit)) {
       videoOutputFormat = cudaVideoSurfaceFormat_YUV444_16Bit;
-    else
-      throw std::runtime_error("No supported output format found");
+    } else {
+      TORCH_CHECK(false, "No supported output format found");
+    }
   }
 }
 
@@ -340,11 +338,10 @@ int Decoder::reconfigure_decoder(CUVIDEOFORMAT* vidFormat) {
   if (vidFormat->bit_depth_luma_minus8 != videoFormat.bit_depth_luma_minus8 ||
       vidFormat->bit_depth_chroma_minus8 !=
           videoFormat.bit_depth_chroma_minus8) {
-    throw std::runtime_error("Reconfigure Not supported for bit depth change");
+    TORCH_CHECK(false, "Reconfigure not supported for bit depth change");
   }
   if (vidFormat->chroma_format != videoFormat.chroma_format) {
-    throw std::runtime_error(
-        "Reconfigure Not supported for chroma format change");
+    TORCH_CHECK(false, "Reconfigure not supported for chroma format change");
   }
 
   bool decodeResChange =
@@ -363,8 +360,9 @@ int Decoder::reconfigure_decoder(CUVIDEOFORMAT* vidFormat) {
     // For VP9, let driver  handle the change if new width/height >
     // maxwidth/maxheight
     if (videoCodec != cudaVideoCodec_VP9) {
-      throw std::runtime_error(
-          "Reconfigure Not supported when width/height > maxwidth/maxheight");
+      TORCH_CHECK(
+          false,
+          "Reconfigure not supported when width/height > maxwidth/maxheight");
     }
     return 1;
   }
