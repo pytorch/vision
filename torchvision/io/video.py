@@ -9,6 +9,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 import numpy as np
 import torch
 
+from ..utils import _log_api_usage_once
 from . import _video_opt
 
 
@@ -77,6 +78,8 @@ def write_video(
         audio_codec (str): the name of the audio codec, i.e. "mp3", "aac", etc.
         audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_video)
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
 
@@ -256,6 +259,8 @@ def read_video(
         aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels and `L` is the number of points
         info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_video)
 
     from torchvision import get_video_backend
 
@@ -374,6 +379,8 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
         video_fps (float, optional): the frame rate for the video
 
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_video_timestamps)
     from torchvision import get_video_backend
 
     if get_video_backend() != "pyav":

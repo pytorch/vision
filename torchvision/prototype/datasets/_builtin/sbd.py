@@ -1,3 +1,4 @@
+import functools
 import io
 import pathlib
 import re
@@ -8,7 +9,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Demultiplexer,
     Filter,
     IterKeyZipper,
@@ -28,6 +28,8 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     path_accessor,
     path_comparator,
+    hint_sharding,
+    hint_shuffling,
 )
 
 
@@ -139,7 +141,8 @@ class SBD(Dataset):
         if config.split == "train_noval":
             split_dp = extra_split_dp
         split_dp = LineReader(split_dp, decode=True)
-        split_dp = Shuffler(split_dp)
+        split_dp = hint_sharding(split_dp)
+        split_dp = hint_shuffling(split_dp)
 
         dp = split_dp
         for level, data_dp in enumerate((images_dp, anns_dp)):
@@ -150,7 +153,7 @@ class SBD(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(config=config, decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)

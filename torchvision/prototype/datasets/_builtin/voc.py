@@ -8,7 +8,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Filter,
     Demultiplexer,
     IterKeyZipper,
@@ -28,6 +27,8 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     INFINITE_BUFFER_SIZE,
     path_comparator,
+    hint_sharding,
+    hint_shuffling,
 )
 
 HERE = pathlib.Path(__file__).parent
@@ -126,10 +127,11 @@ class VOC(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
-        split_dp = Filter(split_dp, self._is_in_folder, fn_kwargs=dict(name=self._SPLIT_FOLDER[config.task]))
+        split_dp = Filter(split_dp, functools.partial(self._is_in_folder, name=self._SPLIT_FOLDER[config.task]))
         split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
-        split_dp = Shuffler(split_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        split_dp = hint_sharding(split_dp)
+        split_dp = hint_shuffling(split_dp)
 
         dp = split_dp
         for level, data_dp in enumerate((images_dp, anns_dp)):
@@ -140,4 +142,4 @@ class VOC(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(config=config, decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))

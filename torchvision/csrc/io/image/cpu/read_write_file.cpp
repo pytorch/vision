@@ -33,6 +33,8 @@ std::wstring utf8_decode(const std::string& str) {
 #endif
 
 torch::Tensor read_file(const std::string& filename) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.image.cpu.read_write_file.read_file");
 #ifdef _WIN32
   // According to
   // https://docs.microsoft.com/en-us/cpp/c-runtime-library/reference/stat-functions?view=vs-2019,
@@ -76,6 +78,8 @@ torch::Tensor read_file(const std::string& filename) {
 }
 
 void write_file(const std::string& filename, torch::Tensor& data) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.image.cpu.read_write_file.write_file");
   // Check that the input tensor is on CPU
   TORCH_CHECK(data.device() == torch::kCPU, "Input tensor should be on CPU");
 
