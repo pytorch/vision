@@ -434,12 +434,20 @@ def get_extensions():
     video_codec_found = (
         extension is CUDAExtension
         and CUDA_HOME is not None
-        and any([os.path.exists(os.path.join(folder, 'cuviddec.h')) for folder in vision_include])
-        and any([os.path.exists(os.path.join(folder, 'nvcuvid.h')) for folder in vision_include])
-        and any([os.path.exists(os.path.join(folder, 'libnvcuvid.so')) for folder in library_dirs])
+        and any([os.path.exists(os.path.join(folder, "cuviddec.h")) for folder in vision_include])
+        and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in vision_include])
+        and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in library_dirs])
     )
 
     print(f"video codec found: {video_codec_found}")
+
+    if not any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir]):
+        print(
+            "The installed version of ffmpeg is missing the header file 'bsf.h' which is "
+            "required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
+            " `conda install -c conda-forge ffmpeg`."
+        )
+        has_ffmpeg = False
 
     if video_codec_found and has_ffmpeg:
         gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
