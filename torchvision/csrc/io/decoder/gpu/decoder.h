@@ -51,11 +51,10 @@ class Decoder {
   }
 
  private:
-  bool dispAllLayers = false;
   unsigned int width = 0, lumaHeight = 0, chromaHeight = 0;
   unsigned int surfaceHeight = 0, surfaceWidth = 0;
   unsigned int maxWidth = 0, maxHeight = 0;
-  unsigned int operatingPoint = 0, numChromaPlanes = 0;
+  unsigned int numChromaPlanes = 0;
   int bitDepthMinus8 = 0, bytesPerPixel = 1;
   int decodePicCount = 0, picNumInDecodeOrder[32];
   std::queue<torch::Tensor> decoded_frames;

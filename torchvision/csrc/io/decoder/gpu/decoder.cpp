@@ -402,17 +402,11 @@ int Decoder::reconfigure_decoder(CUVIDEOFORMAT* vidFormat) {
   return decodeSurface;
 }
 
-/* Called from AV1 sequence header to get operating point of a AV1 bitstream.
+/* Called from AV1 sequence header to get operating point of an AV1 bitstream.
  */
 int Decoder::get_operating_point(CUVIDOPERATINGPOINTINFO* operPointInfo) {
-  if (operPointInfo->codec == cudaVideoCodec_AV1) {
-    if (operPointInfo->av1.operating_points_cnt > 1) {
-      // clip has SVC enabled
-      if (operatingPoint >= operPointInfo->av1.operating_points_cnt) {
-        operatingPoint = 0;
-      }
-      return (operatingPoint | (dispAllLayers << 10));
-    }
-  }
-  return -1;
+  return operPointInfo->codec == cudaVideoCodec_AV1 &&
+          operPointInfo->av1.operating_points_cnt > 1
+      ? 0
+      : -1;
 }
