@@ -441,15 +441,11 @@ def get_extensions():
 
     print(f"video codec found: {video_codec_found}")
 
-    if not any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir]):
-        print(
-            "The installed version of ffmpeg is missing the header file 'bsf.h' which is "
-            "required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
-            " `conda install -c conda-forge ffmpeg`."
-        )
-        has_ffmpeg = False
-
-    if video_codec_found and has_ffmpeg:
+    if (
+        video_codec_found
+        and has_ffmpeg
+        and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
+    ):
         gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
         gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
         cuda_libs = os.path.join(CUDA_HOME, "lib64")
@@ -476,6 +472,12 @@ def get_extensions():
                 ],
                 extra_compile_args=extra_compile_args,
             )
+        )
+    else:
+        print(
+            "The installed version of ffmpeg is missing the header file 'bsf.h' which is "
+            "required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
+            " `conda install -c conda-forge ffmpeg`."
         )
 
     return ext_modules
