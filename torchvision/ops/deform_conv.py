@@ -60,8 +60,8 @@ def deform_conv2d(
         >>> # returns
         >>>  torch.Size([4, 5, 8, 8])
     """
-
-    _log_api_usage_once("ops", "deform_conv2d")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(deform_conv2d)
     _assert_has_ops()
     out_channels = weight.shape[0]
 
@@ -124,6 +124,7 @@ class DeformConv2d(nn.Module):
         bias: bool = True,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         if in_channels % groups != 0:
             raise ValueError("in_channels must be divisible by groups")

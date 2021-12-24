@@ -2,6 +2,7 @@ from typing import Any, Dict, Iterator
 
 import torch
 
+from ..utils import _log_api_usage_once
 from ._video_opt import (
     Timebase,
     VideoMetaData,
@@ -109,6 +110,7 @@ class VideoReader:
     """
 
     def __init__(self, path: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
+        _log_api_usage_once(self)
         self.is_cuda = False
         device = torch.device(device)
         if device.type == "cuda":

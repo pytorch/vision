@@ -1,5 +1,7 @@
 #include "deform_conv2d.h"
 
+#include <ATen/core/dispatch/Dispatcher.h>
+#include <torch/library.h>
 #include <torch/types.h>
 
 namespace vision {
@@ -20,6 +22,7 @@ at::Tensor deform_conv2d(
     int64_t groups,
     int64_t offset_groups,
     bool use_mask) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.deform_conv2d.deform_conv2d");
   static auto op = c10::Dispatcher::singleton()
                        .findSchemaOrThrow("torchvision::deform_conv2d", "")
                        .typed<decltype(deform_conv2d)>();

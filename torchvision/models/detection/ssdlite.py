@@ -120,7 +120,7 @@ class SSDLiteFeatureExtractorMobileNet(nn.Module):
         min_depth: int = 16,
     ):
         super().__init__()
-        _log_api_usage_once("models", self.__class__.__name__)
+        _log_api_usage_once(self)
 
         assert not backbone[c4_pos].use_res_connect
         self.features = nn.Sequential(
@@ -252,7 +252,7 @@ def ssdlite320_mobilenet_v3_large(
         "detections_per_img": 300,
         "topk_candidates": 300,
         # Rescale the input in a way compatible to the backbone:
-        # The following mean/std rescale the data from [0, 1] to [-1, -1]
+        # The following mean/std rescale the data from [0, 1] to [-1, 1]
         "image_mean": [0.5, 0.5, 0.5],
         "image_std": [0.5, 0.5, 0.5],
     }
