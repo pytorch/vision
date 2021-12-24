@@ -37,37 +37,37 @@ class Decoder {
   void decode(const uint8_t*, unsigned long);
   torch::Tensor fetch_frame();
   int get_frame_size() const {
-    return get_width() * (lumaHeight + (chromaHeight * numChromaPlanes)) *
-        bytesPerPixel;
+    return get_width() * (luma_height + (chroma_height * num_chroma_planes)) *
+        bytes_per_pixel;
   }
   int get_width() const {
-    return (videoOutputFormat == cudaVideoSurfaceFormat_NV12 ||
-            videoOutputFormat == cudaVideoSurfaceFormat_P016)
+    return (video_output_format == cudaVideoSurfaceFormat_NV12 ||
+            video_output_format == cudaVideoSurfaceFormat_P016)
         ? (width + 1) & ~1
         : width;
   }
   int get_height() const {
-    return lumaHeight;
+    return luma_height;
   }
 
  private:
-  unsigned int width = 0, lumaHeight = 0, chromaHeight = 0;
-  unsigned int surfaceHeight = 0, surfaceWidth = 0;
-  unsigned int maxWidth = 0, maxHeight = 0;
-  unsigned int numChromaPlanes = 0;
-  int bitDepthMinus8 = 0, bytesPerPixel = 1;
-  int decodePicCount = 0, picNumInDecodeOrder[32];
+  unsigned int width = 0, luma_height = 0, chroma_height = 0;
+  unsigned int surface_height = 0, surface_width = 0;
+  unsigned int max_width = 0, max_height = 0;
+  unsigned int num_chroma_planes = 0;
+  int bit_depth_minus8 = 0, bytes_per_pixel = 1;
+  int decode_pic_count = 0, pic_num_in_decode_order[32];
   std::queue<torch::Tensor> decoded_frames;
-  CUcontext cuContext = NULL;
-  CUvideoctxlock ctxLock;
+  CUcontext cu_context = NULL;
+  CUvideoctxlock ctx_lock;
   CUvideoparser parser = NULL;
   CUvideodecoder decoder = NULL;
   CUstream cuvidStream = 0;
-  cudaVideoCodec videoCodec = cudaVideoCodec_NumCodecs;
-  cudaVideoChromaFormat videoChromaFormat = cudaVideoChromaFormat_420;
-  cudaVideoSurfaceFormat videoOutputFormat = cudaVideoSurfaceFormat_NV12;
-  CUVIDEOFORMAT videoFormat = {};
-  Rect displayRect = {};
+  cudaVideoCodec video_codec = cudaVideoCodec_NumCodecs;
+  cudaVideoChromaFormat video_chroma_format = cudaVideoChromaFormat_420;
+  cudaVideoSurfaceFormat video_output_format = cudaVideoSurfaceFormat_NV12;
+  CUVIDEOFORMAT cu_video_format = {};
+  Rect display_rect = {};
 
   static int video_sequence_handler(
       void* user_data,
