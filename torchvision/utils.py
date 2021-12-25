@@ -400,10 +400,10 @@ def _generate_random_color() -> List[int]:
     Returns:
         color(int, int, int): A List containing Random RGB Color.
     """
-    return torch.randperm(255)[:3].tolist()
+    return torch.randperm(256)[:3].tolist()
 
 
-def _generate_random_color_palette(num_colors) -> List[List[int]]:
+def _generate_random_color_palette(num_colors: int) -> List[List[int]]:
     """
     Args:
         num_colors (int): Integer denoting number of random RGB colors to generate
