@@ -192,22 +192,20 @@ def draw_bounding_boxes(
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
-
     if labels:
         if len(labels) != boxes.size(0):
-            raise ValueError("Specify labels for each box")
+            raise ValueError("Length of boxes and labels mismatch. Please specify labels for each box.")
 
+    # Handle Grayscale images
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
-
     img_boxes = boxes.to(torch.int64).tolist()
 
     if fill:
         draw = ImageDraw.Draw(img_to_draw, "RGBA")
-
     else:
         draw = ImageDraw.Draw(img_to_draw)
 
