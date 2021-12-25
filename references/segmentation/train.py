@@ -38,8 +38,7 @@ def get_transform(train, args):
     elif not args.weights:
         return presets.SegmentationPresetEval(base_size=520)
     else:
-        fn = PM.segmentation.__dict__[args.model]
-        weights = PM._api.get_weight(fn, args.weights)
+        weights = PM.get_weight(args.weights)
         return weights.transforms()
 
 

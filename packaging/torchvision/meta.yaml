@@ -24,6 +24,7 @@ requirements:
   run:
     - python
     - defaults::numpy >=1.11
+    - requests
     - libpng
     - ffmpeg >=4.2  # [not win]
     - jpeg
