@@ -169,6 +169,8 @@ def draw_bounding_boxes(
         colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
+            By default, random colors are generated for boxes.
+            If labels are provided, boxes with same labels have same color.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
@@ -191,6 +193,10 @@ def draw_bounding_boxes(
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
 
+    if labels:
+        if len(labels) != boxes.size(0):
+            raise ValueError("Specify labels for each box")
+
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
 
@@ -207,10 +213,13 @@ def draw_bounding_boxes(
 
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
+    if colors is None:
+        colors = _generate_random_color_palette(len(img_boxes))
+        label_color_map = dict(zip(labels, colors))
+        colors = [label_color_map[label] for label in labels]
+
     for i, bbox in enumerate(img_boxes):
-        if colors is None:
-            color = None
-        elif isinstance(colors, list):
+        if isinstance(colors, list):
             color = colors[i]
         else:
             color = colors
@@ -385,6 +394,26 @@ def draw_keypoints(
 def _generate_color_palette(num_masks: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_masks)]
+
+
+def _generate_random_color() -> List[int]:
+    """
+    Generates a random RGB Color.
+    Returns:
+        color(int, int, int): A List containing Random RGB Color.
+    """
+    return torch.randperm(255)[:3].tolist()
+
+
+def _generate_random_color_palette(num_colors) -> List[List[int]]:
+    """
+    Args:
+        num_colors (int): Integer denoting number of random RGB colors to generate
+
+    Returns:
+        colors(List[color]): A list each containing random RGB color. Each color is List containing RGB values.
+    """
+    return [_generate_random_color() for i in range(num_colors)]
 
 
 def _log_api_usage_once(obj: Any) -> None:
