@@ -394,22 +394,22 @@ def _generate_color_palette(num_masks: int):
     return [tuple((i * palette) % 255) for i in range(num_masks)]
 
 
-def _generate_random_color() -> List[int]:
+def _generate_random_color() -> Tuple[int, int, int]:
     """
     Generates a random RGB Color.
     Returns:
-        color(int, int, int): A List containing Random RGB Color.
+        color Tuple(int, int, int): A Tuple containing Random RGB Color.
     """
-    return torch.randperm(256)[:3].tolist()
+    return tuple(torch.randperm(256)[:3].tolist())
 
 
-def _generate_random_color_palette(num_colors: int) -> List[List[int]]:
+def _generate_random_color_palette(num_colors) -> List[Tuple[int, int, int]]:
     """
     Args:
         num_colors (int): Integer denoting number of random RGB colors to generate
 
     Returns:
-        colors(List[color]): A list each containing random RGB color. Each color is List containing RGB values.
+        colors(List[color]): A List each containing random RGB color. Each color is Tuple containing RGB values.
     """
     return [_generate_random_color() for i in range(num_colors)]
 
