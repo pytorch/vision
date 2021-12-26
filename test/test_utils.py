@@ -152,6 +152,8 @@ def test_draw_invalid_boxes():
     img_correct = torch.zeros((3, 10, 10), dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
     labels_wrong = ["one", "two"]
+    colors_wrong = ["pink", "blue"]
+
     with pytest.raises(TypeError, match="Tensor expected"):
         utils.draw_bounding_boxes(img_tp, boxes)
     with pytest.raises(ValueError, match="Tensor uint8 expected"):
@@ -160,8 +162,10 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_wrong2, boxes)
     with pytest.raises(ValueError, match="Only grayscale and RGB images are supported"):
         utils.draw_bounding_boxes(img_wrong2[0][:2], boxes)
-    with pytest.raises(ValueError, match="Length of boxes and labels mismatch."):
+    with pytest.raises(ValueError, match="Number of boxes and labels mismatch."):
         utils.draw_bounding_boxes(img_correct, boxes, labels_wrong)
+    with pytest.raises(ValueError, match="Number of colors should be greater or equal to the number of boxes."):
+        utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
 
 
 @pytest.mark.parametrize(

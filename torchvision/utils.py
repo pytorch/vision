@@ -192,9 +192,16 @@ def draw_bounding_boxes(
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
+
     if labels:
         if len(labels) != boxes.size(0):
-            raise ValueError("Length of boxes and labels mismatch. Please specify labels for each box.")
+            raise ValueError("Number of boxes and labels mismatch. Please specify labels for each box.")
+
+    # List of colors should have minimum colors.
+    if colors:
+        if isinstance(colors, list):
+            if len(colors) < boxes.size(0):
+                raise ValueError("Number of colors should be greater or equal to the number of boxes.")
 
     # Handle Grayscale images
     if image.size(0) == 1:
@@ -213,8 +220,9 @@ def draw_bounding_boxes(
 
     if colors is None:
         colors = _generate_random_color_palette(len(img_boxes))
-        label_color_map = dict(zip(labels, colors))
-        colors = [label_color_map[label] for label in labels]
+        if labels is not None:
+            label_color_map = dict(zip(labels, colors))
+            colors = [label_color_map[label] for label in labels]
 
     for i, bbox in enumerate(img_boxes):
         if isinstance(colors, list):
@@ -223,9 +231,7 @@ def draw_bounding_boxes(
             color = colors
 
         if fill:
-            if color is None:
-                fill_color = (255, 255, 255, 100)
-            elif isinstance(color, str):
+            if isinstance(color, str):
                 # This will automatically raise Error if rgb cannot be parsed.
                 fill_color = ImageColor.getrgb(color) + (100,)
             elif isinstance(color, tuple):
@@ -397,19 +403,23 @@ def _generate_color_palette(num_masks: int):
 def _generate_random_color() -> Tuple[int, int, int]:
     """
     Generates a random RGB Color.
+
     Returns:
         color Tuple(int, int, int): A Tuple containing Random RGB Color.
     """
     return tuple(torch.randperm(256)[:3].tolist())
 
 
-def _generate_random_color_palette(num_colors) -> List[Tuple[int, int, int]]:
+def _generate_random_color_palette(num_colors: int) -> List[Tuple[int, int, int]]:
     """
+    Generates a random RGB Color palette.
+
     Args:
         num_colors (int): Integer denoting number of random RGB colors to generate
 
     Returns:
-        colors(List[color]): A List each containing random RGB color. Each color is Tuple containing RGB values.
+        colors(List[Tuple[int, int, int]): A List of Tuples each containing random RGB color.
+            Each color is Tuple containing RGB values.
     """
     return [_generate_random_color() for i in range(num_colors)]
 
