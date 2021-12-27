@@ -397,7 +397,21 @@ def flow_to_image(
     Returns:
         img (Tensor[3, H, W]): Image Tensor with flow drawn.
     """
-    pass
+
+    if flow_uv.size(0) != 2:
+        raise ValueError("Input flow should have shape [2, H, W]")
+    if flow_uv.ndim != 3:
+        raise ValueError("Input flow should have 3 dimensions [2, H, W]")
+
+    u = flow_uv[0, :, :]
+    v = flow_uv[1, :, :]
+    rad = torch.sqrt(torch.square(u) + torch.square(v))
+    rad_max = torch.max(rad)
+    epslion = 1e-5
+    u = u / (rad_max + epslion)
+    v = v / (rad_max + epslion)
+
+    return _flow_uv_to_colors(u, v)
 
 
 @torch.no_grad()
@@ -409,13 +423,15 @@ def _flow_uv_to_colors(
     Applies the flow color wheel to (possibly clipped) flow components u and v.
 
     Args:
-        u (torch.Tensor): Input horizontal flow of shape [H,W]
+        u (torch.Tensor): Input horizontal flow of shape [H, W]
         v (torch.Tensor): Input vertical flow of shape [H, W]
 
     Returns:
        img (Tensor[3, H, W]): Flow visualization image.
     """
-    pass
+    flow_image = torch.zeros(3, (u.shape[0], u.shape[1]), torch.uint8)
+
+    return flow_image
 
 
 def _generate_color_palette(num_masks: int):
