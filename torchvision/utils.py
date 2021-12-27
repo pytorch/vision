@@ -382,6 +382,42 @@ def draw_keypoints(
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
+@torch.no_grad()
+def flow_to_image(
+    flow_uv: torch.Tensor,
+    clip_flow: Optional[float] = None,
+) -> torch.Tensor:
+    """
+    Converts the two dimensional flow of image to a RGB Image.
+
+    Args:
+        flow_uv (Tensor): Flow UV image of shape [2, H, W]
+        clip_flow (float, optional): Clip maximum of flow values. Defaults to None.
+
+    Returns:
+        img (Tensor[3, H, W]): Image Tensor with flow drawn.
+    """
+    pass
+
+
+@torch.no_grad()
+def _flow_uv_to_colors(
+    u: torch.Tensor,
+    v: torch.Tensor,
+) -> torch.Tensor:
+    """
+    Applies the flow color wheel to (possibly clipped) flow components u and v.
+
+    Args:
+        u (torch.Tensor): Input horizontal flow of shape [H,W]
+        v (torch.Tensor): Input vertical flow of shape [H, W]
+
+    Returns:
+       img (Tensor[3, H, W]): Flow visualization image.
+    """
+    pass
+
+
 def _generate_color_palette(num_masks: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_masks)]
