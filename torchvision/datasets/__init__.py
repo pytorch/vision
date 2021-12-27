@@ -23,6 +23,7 @@ from .sbd import SBDataset
 from .sbu import SBU
 from .semeion import SEMEION
 from .stl10 import STL10
+from .sun397 import SUN397
 from .svhn import SVHN
 from .ucf101 import UCF101
 from .usps import USPS
@@ -46,6 +47,7 @@ __all__ = (
     "MNIST",
     "KMNIST",
     "STL10",
+    "SUN397",
     "SVHN",
     "PhotoTour",
     "SEMEION",
