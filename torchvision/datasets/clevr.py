@@ -1,6 +1,6 @@
 import json
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, List
 from urllib.parse import urlparse
 
 from PIL import Image
@@ -49,6 +49,7 @@ class CLEVRClassification(VisionDataset):
 
         self._image_files = sorted(self._data_folder.joinpath("images", self._split).glob("*"))
 
+        self._labels: List[Optional[int]]
         if self._split != "test":
             with open(self._data_folder / "scenes" / f"CLEVR_{self._split}_scenes.json") as file:
                 content = json.load(file)
