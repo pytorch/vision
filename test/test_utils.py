@@ -317,5 +317,15 @@ def test_draw_keypoints_errors():
         utils.draw_keypoints(image=img, keypoints=invalid_keypoints)
 
 
+def test_flow_to_image_errors():
+    wrong_flow1 = torch.full((3, 10, 10), 0)
+    wrong_flow2 = torch.full((2, 10), 0)
+
+    with pytest.raises(ValueError, match="Input flow should have shape"):
+        utils.flow_to_image(flow_uv=wrong_flow1)
+    with pytest.raises(ValueError, match="Input flow should have 3 dimensions"):
+        utils.flow_to_image(flow_uv=wrong_flow2)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])

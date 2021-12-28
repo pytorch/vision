@@ -407,10 +407,10 @@ def flow_to_image(
         img (Tensor[3, H, W]): Image Tensor with flow drawn.
     """
 
-    if flow_uv.size(0) != 2:
-        raise ValueError("Input flow should have shape [2, H, W]")
     if flow_uv.ndim != 3:
         raise ValueError("Input flow should have 3 dimensions [2, H, W]")
+    if flow_uv.size(0) != 2:
+        raise ValueError("Input flow should have shape [2, H, W]")
 
     if clip_flow is not None:
         flow_uv = torch.clip(flow_uv, 0, clip_flow)
