@@ -158,7 +158,10 @@ class MNIST(_MNISTBase):
             ),
         )
 
-    _URL_BASE = ("http://yann.lecun.com/exdb/mnist", "https://ossci-datasets.s3.amazonaws.com/mnist/")
+    _URL_BASE: Union[str, Sequence[str]] = (
+        "http://yann.lecun.com/exdb/mnist",
+        "https://ossci-datasets.s3.amazonaws.com/mnist/",
+    )
     _CHECKSUMS = {
         "train-images-idx3-ubyte.gz": "440fcabf73cc546fa21475e81ea370265605f56be210a4024d2ca8f203523609",
         "train-labels-idx1-ubyte.gz": "3552534a0a558bbed6aed32b30c495cca23d567ec52cac8be1a0730e8010255c",

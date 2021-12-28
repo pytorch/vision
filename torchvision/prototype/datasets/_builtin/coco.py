@@ -234,7 +234,6 @@ class Coco(Dataset):
             dp, functools.partial(self._collate_and_decode_sample, annotations=config.annotations, decoder=decoder)
         )
 
-    # TODO: change this to root / name
     def _generate_categories(self, root: pathlib.Path) -> Tuple[Tuple[str, str]]:
         config = self.default_config
         resources = self.resources(config)
