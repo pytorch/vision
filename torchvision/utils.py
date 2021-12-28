@@ -450,7 +450,7 @@ def _flow_uv_to_colors(
 
     a = torch.atan2(-v, -u) / torch.pi
     fk = (a + 1) / 2 * (ncols - 1)
-    k0 = torch.floor(fk).to(torch.int32)
+    k0 = torch.floor(fk).to(torch.long)
     k1 = k0 + 1
     k1[k1 == ncols] = 0
     f = fk - k0
@@ -468,14 +468,14 @@ def _flow_uv_to_colors(
     return flow_image
 
 
-def _make_colorwheel():
+def _make_colorwheel() -> torch.Tensor:
     """
     Generates a color wheel for optical flow visualization as presented in:
     Baker et al. "A Database and Evaluation Methodology for Optical Flow" (ICCV, 2007)
     URL: http://vision.middlebury.edu/flow/flowEval-iccv07.pdf.
 
     Returns:
-        np.ndarray: Color wheel
+        colorwheel (Tensor[255, 3]): Colorwheel Tensor.
     """
 
     RY = 15
@@ -486,31 +486,31 @@ def _make_colorwheel():
     MR = 6
 
     ncols = RY + YG + GC + CB + BM + MR
-    colorwheel = np.zeros((ncols, 3))
+    colorwheel = torch.zeros((ncols, 3))
     col = 0
 
     # RY
     colorwheel[0:RY, 0] = 255
-    colorwheel[0:RY, 1] = np.floor(255 * np.arange(0, RY) / RY)
+    colorwheel[0:RY, 1] = torch.floor(255 * torch.arange(0, RY) / RY)
     col = col + RY
     # YG
-    colorwheel[col : col + YG, 0] = 255 - np.floor(255 * np.arange(0, YG) / YG)
+    colorwheel[col : col + YG, 0] = 255 - torch.floor(255 * torch.arange(0, YG) / YG)
     colorwheel[col : col + YG, 1] = 255
     col = col + YG
     # GC
     colorwheel[col : col + GC, 1] = 255
-    colorwheel[col : col + GC, 2] = np.floor(255 * np.arange(0, GC) / GC)
+    colorwheel[col : col + GC, 2] = torch.floor(255 * torch.arange(0, GC) / GC)
     col = col + GC
     # CB
-    colorwheel[col : col + CB, 1] = 255 - np.floor(255 * np.arange(CB) / CB)
+    colorwheel[col : col + CB, 1] = 255 - torch.floor(255 * torch.arange(CB) / CB)
     colorwheel[col : col + CB, 2] = 255
     col = col + CB
     # BM
     colorwheel[col : col + BM, 2] = 255
-    colorwheel[col : col + BM, 0] = np.floor(255 * np.arange(0, BM) / BM)
+    colorwheel[col : col + BM, 0] = torch.floor(255 * torch.arange(0, BM) / BM)
     col = col + BM
     # MR
-    colorwheel[col : col + MR, 2] = 255 - np.floor(255 * np.arange(MR) / MR)
+    colorwheel[col : col + MR, 2] = 255 - np.floor(255 * torch.arange(MR) / MR)
     colorwheel[col : col + MR, 0] = 255
     return colorwheel
 
