@@ -338,10 +338,10 @@ class FlyingThings3D(FlowDataset):
         directions = ("into_future", "into_past")
         for pass_name, camera, direction in itertools.product(passes, cameras, directions):
             image_dirs = sorted(glob(str(root / pass_name / split / "*/*")))
-            image_dirs = sorted([Path(image_dir) / camera for image_dir in image_dirs])
+            image_dirs = sorted(Path(image_dir) / camera for image_dir in image_dirs)
 
             flow_dirs = sorted(glob(str(root / "optical_flow" / split / "*/*")))
-            flow_dirs = sorted([Path(flow_dir) / direction / camera for flow_dir in flow_dirs])
+            flow_dirs = sorted(Path(flow_dir) / direction / camera for flow_dir in flow_dirs)
 
             if not image_dirs or not flow_dirs:
                 raise FileNotFoundError(
