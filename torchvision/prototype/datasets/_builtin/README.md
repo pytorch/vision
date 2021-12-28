@@ -39,12 +39,12 @@ class MyDataset(Dataset):
 
 The `DatasetInfo` carries static information about the dataset. There are two required fields:
 - `name`: Name of the dataset. This will be used to load the dataset with `datasets.load(name)`. Should only contain lower characters.
-- `type`: Field of the `datasets.utils.DatasetType` enum. This is used to select the default decoder in case the user doesn't pass one. There are currently only two options: `IMAGE` and `RAW` ([see below](### What is the `DatasetType.RAW` and when do I use it?) for details).
+- `type`: Field of the `datasets.utils.DatasetType` enum. This is used to select the default decoder in case the user doesn't pass one. There are currently only two options: `IMAGE` and `RAW` ([see below](what-is-the-datasettyperaw-and-when-do-i-use-it) for details).
 
 There are more optional parameters that can be passed:
 
 - `dependencies`: Collection of third-party dependencies that are needed to load the dataset, e.g. `("scipy",)`. Their availability will be automatically checked if a user tries to load the dataset. Within the implementation, import these packages lazily to avoid missing dependencies at import time.
-- `categories`: Sequence of human-readable category names for each label. The index of each category has to match the corresponding label returned in the dataset samples. [See below](### How do I handle a dataset that defines many categories?) how to handle cases with many categories.
+- `categories`: Sequence of human-readable category names for each label. The index of each category has to match the corresponding label returned in the dataset samples. [See below](#how-do-i-handle-a-dataset-that-defines-many-categories) how to handle cases with many categories.
 - `valid_options`: Configures valid options that can be passed to the dataset. It should be `Dict[str, Sequence[str]]`. The options are accessible through the `config` namespace in the other two functions. First value of the sequence is taken as default if the user passes no option to `torchvision.prototype.datasets.load()`.
 
 ## `resources(self, config)`
