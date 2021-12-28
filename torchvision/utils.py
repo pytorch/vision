@@ -510,7 +510,7 @@ def _make_colorwheel() -> torch.Tensor:
     colorwheel[col : col + BM, 0] = torch.floor(255 * torch.arange(0, BM) / BM)
     col = col + BM
     # MR
-    colorwheel[col : col + MR, 2] = 255 - np.floor(255 * torch.arange(MR) / MR)
+    colorwheel[col : col + MR, 2] = 255 - torch.floor(255 * torch.arange(MR) / MR)
     colorwheel[col : col + MR, 0] = 255
     return colorwheel
 
