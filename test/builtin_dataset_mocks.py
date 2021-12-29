@@ -115,11 +115,6 @@ class DatasetMock:
         return self._cache[config]
 
     def load(self, config, *, decoder=DEFAULT_DECODER):
-        try:
-            self.info.check_dependencies()
-        except ModuleNotFoundError as error:
-            pytest.skip(str(error))
-
         mock_resources, mock_info = self._load_mock(config)
         datapipe = self.dataset._make_datapipe(
             [resource.load(self.root) for resource in mock_resources],
