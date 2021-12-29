@@ -2168,5 +2168,42 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
+class Food101TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Food101
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    def inject_fake_data(self, tmpdir: str, config):
+        root_folder = pathlib.Path(tmpdir) / "food-101"
+        image_folder = root_folder / "images"
+        meta_folder = root_folder / "meta"
+
+        image_folder.mkdir(parents=True)
+        meta_folder.mkdir()
+
+        num_images_per_class = 5
+
+        metadata = {}
+        n_samples_per_class = 3 if config["split"] == "train" else 2
+        sampled_classes = ("apple_pie", "crab_cakes", "gyoza")
+        for cls in sampled_classes:
+            im_fnames = datasets_utils.create_image_folder(
+                image_folder,
+                cls,
+                file_name_fn=lambda idx: f"{idx}.jpg",
+                num_examples=num_images_per_class,
+            )
+            metadata[cls] = [
+                "/".join(fname.relative_to(image_folder).with_suffix("").parts)
+                for fname in random.choices(im_fnames, k=n_samples_per_class)
+            ]
+
+        with open(meta_folder / f"{config['split']}.json", "w") as file:
+            file.write(json.dumps(metadata))
+
+        return len(sampled_classes * n_samples_per_class)
+
+
 if __name__ == "__main__":
     unittest.main()
