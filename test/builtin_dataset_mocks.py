@@ -628,3 +628,78 @@ def coco(info, root, config):
             itertools.repeat(CocoMockData.generate(root, year=config.year, num_samples=5)),
         )
     )
+
+
+class SBDMockData:
+    _NUM_CATEGORIES = 20
+
+    @classmethod
+    def _make_split_files(cls, root_map):
+        ids_map = {
+            split: [f"2008_{idx:06d}" for idx in idcs]
+            for split, idcs in (
+                ("train", [0, 1, 2]),
+                ("train_noval", [0, 2]),
+                ("val", [3]),
+            )
+        }
+
+        for split, ids in ids_map.items():
+            with open(root_map[split] / f"{split}.txt", "w") as fh:
+                fh.writelines(f"{id}\n" for id in ids)
+
+        return sorted(set(itertools.chain(*ids_map.values()))), {split: len(ids) for split, ids in ids_map.items()}
+
+    @classmethod
+    def _make_anns_folder(cls, root, name, ids):
+        from scipy.io import savemat
+
+        anns_folder = root / name
+        anns_folder.mkdir()
+
+        sizes = torch.randint(1, 9, size=(len(ids), 2)).tolist()
+        for id, size in zip(ids, sizes):
+            savemat(
+                anns_folder / f"{id}.mat",
+                {
+                    "GTcls": {
+                        "Boundaries": cls._make_boundaries(size),
+                        "Segmentation": cls._make_segmentation(size),
+                    }
+                },
+            )
+        return sizes
+
+    @classmethod
+    def _make_boundaries(cls, size):
+        from scipy.sparse import csc_matrix
+
+        return [
+            [csc_matrix(torch.randint(0, 2, size=size, dtype=torch.uint8).numpy())] for _ in range(cls._NUM_CATEGORIES)
+        ]
+
+    @classmethod
+    def _make_segmentation(cls, size):
+        return torch.randint(0, cls._NUM_CATEGORIES + 1, size=size, dtype=torch.uint8).numpy()
+
+    @classmethod
+    def generate(cls, root):
+        archive_folder = root / "benchmark_RELEASE"
+        dataset_folder = archive_folder / "dataset"
+        dataset_folder.mkdir(parents=True, exist_ok=True)
+
+        ids, num_samples_map = cls._make_split_files(defaultdict(lambda: dataset_folder, {"train_noval": root}))
+        sizes = cls._make_anns_folder(dataset_folder, "cls", ids)
+        create_image_folder(
+            dataset_folder, "img", lambda idx: f"{ids[idx]}.jpg", num_examples=len(ids), size=lambda idx: sizes[idx]
+        )
+
+        make_tar(root, "benchmark.tgz", archive_folder, compression="gz")
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.append_named_callable
+def sbd(info, root, _):
+    num_samples_map = SBDMockData.generate(root)
+    return {config: num_samples_map[config.split] for config in info._configs}
