@@ -14,6 +14,7 @@ import PIL.Image
 import pytest
 import torch
 from datasets_utils import make_zip, make_tar, create_image_folder
+from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype import datasets
 from torchvision.prototype.datasets._api import DEFAULT_DECODER_MAP, DEFAULT_DECODER, find
@@ -703,3 +704,18 @@ class SBDMockData:
 def sbd(info, root, _):
     num_samples_map = SBDMockData.generate(root)
     return {config: num_samples_map[config.split] for config in info._configs}
+
+
+@DATASET_MOCKS.append_named_callable
+def semeion(info, root, config):
+    num_samples = 3
+
+    images = torch.rand(num_samples, 256)
+    labels = one_hot(torch.randint(len(info.categories), size=(num_samples,)))
+    with open(root / "semeion.data", "w") as fh:
+        for image, one_hot_label in zip(images, labels):
+            image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
+            labels_columns = " ".join([str(label.item()) for label in one_hot_label])
+            fh.write(f"{image_columns} {labels_columns}\n")
+
+    return num_samples
