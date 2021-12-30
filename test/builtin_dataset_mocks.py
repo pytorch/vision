@@ -7,6 +7,7 @@ import lzma
 import pathlib
 import pickle
 import tempfile
+import xml.etree.ElementTree as ET
 from collections import defaultdict, UserList
 
 import numpy as np
@@ -719,3 +720,110 @@ def semeion(info, root, config):
             fh.write(f"{image_columns} {labels_columns}\n")
 
     return num_samples
+
+
+class VOCMockData:
+    _TRAIN_VAL_FILE_NAMES = {
+        "2007": "VOCtrainval_06-Nov-2007.tar",
+        "2008": "VOCtrainval_14-Jul-2008.tar",
+        "2009": "VOCtrainval_11-May-2009.tar",
+        "2010": "VOCtrainval_03-May-2010.tar",
+        "2011": "VOCtrainval_25-May-2011.tar",
+        "2012": "VOCtrainval_11-May-2012.tar",
+    }
+    _TEST_FILE_NAMES = {
+        "2007": "VOCtest_06-Nov-2007.tar",
+    }
+
+    @classmethod
+    def _make_split_files(cls, root, *, year, trainval):
+        split_folder = root / "ImageSets"
+
+        if trainval:
+            idcs_map = {
+                "train": [0, 1, 2],
+                "val": [3, 4],
+            }
+            idcs_map["trainval"] = [*idcs_map["train"], *idcs_map["val"]]
+        else:
+            idcs_map = {
+                "test": [5],
+            }
+        ids_map = {split: [f"{year}_{idx:06d}" for idx in idcs] for split, idcs in idcs_map.items()}
+
+        for task_sub_folder in ("Main", "Segmentation"):
+            task_folder = split_folder / task_sub_folder
+            task_folder.mkdir(parents=True, exist_ok=True)
+            for split, ids in ids_map.items():
+                with open(task_folder / f"{split}.txt", "w") as fh:
+                    fh.writelines(f"{id}\n" for id in ids)
+
+        return sorted(set(itertools.chain(*ids_map.values()))), {split: len(ids) for split, ids in ids_map.items()}
+
+    @classmethod
+    def _make_detection_anns_folder(cls, root, name, *, file_name_fn, num_examples):
+        folder = root / name
+        folder.mkdir(parents=True, exist_ok=True)
+
+        for idx in range(num_examples):
+            cls._make_detection_ann_file(folder, file_name_fn(idx))
+
+    @classmethod
+    def _make_detection_ann_file(cls, root, name):
+        def add_child(parent, name, text=None):
+            child = ET.SubElement(parent, name)
+            child.text = text
+            return child
+
+        def add_name(obj, name="dog"):
+            add_child(obj, "name", name)
+            return name
+
+        def add_bndbox(obj, bndbox=None):
+            if bndbox is None:
+                bndbox = {"xmin": "1", "xmax": "2", "ymin": "3", "ymax": "4"}
+
+            obj = add_child(obj, "bndbox")
+            for name, text in bndbox.items():
+                add_child(obj, name, text)
+
+            return bndbox
+
+        annotation = ET.Element("annotation")
+        obj = add_child(annotation, "object")
+        data = dict(name=add_name(obj), bndbox=add_bndbox(obj))
+
+        with open(root / name, "wb") as fh:
+            fh.write(ET.tostring(annotation))
+
+        return data
+
+    @classmethod
+    def generate(cls, root, *, year, trainval):
+        archive_folder = root
+        if year == "2011":
+            archive_folder /= "TrainVal"
+        data_folder = archive_folder / "VOCdevkit" / f"VOC{year}"
+        data_folder.mkdir(parents=True, exist_ok=True)
+
+        ids, num_samples_map = cls._make_split_files(data_folder, year=year, trainval=trainval)
+        for make_folder_fn, name, suffix in [
+            (create_image_folder, "JPEGImages", ".jpg"),
+            (create_image_folder, "SegmentationClass", ".png"),
+            (cls._make_detection_anns_folder, "Annotations", ".xml"),
+        ]:
+            make_folder_fn(data_folder, name, file_name_fn=lambda idx: ids[idx] + suffix, num_examples=len(ids))
+        make_tar(root, (cls._TRAIN_VAL_FILE_NAMES if trainval else cls._TEST_FILE_NAMES)[year], data_folder)
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.append_named_callable
+def voc(info, root, config):
+    trainval = config.split != "test"
+    num_samples_map = VOCMockData.generate(root, year=config.year, trainval=trainval)
+    return {
+        config_: num_samples_map[config_.split]
+        for config_ in info._configs
+        if config_.year == config.year and ((config_.split == "test") ^ trainval)
+    }
