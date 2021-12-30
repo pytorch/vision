@@ -29,6 +29,7 @@ from .usps import USPS
 from .vision import VisionDataset
 from .voc import VOCSegmentation, VOCDetection
 from .widerface import WIDERFace
+from .country211 import Country211
 
 __all__ = (
     "LSUN",
@@ -79,4 +80,5 @@ __all__ = (
     "FlyingThings3D",
     "HD1K",
     "Food101",
+    "Country211",
 )
