@@ -129,10 +129,31 @@ class DatasetMock:
         return datapipe, mock_info
 
 
+def config_id(name, config):
+    parts = [name]
+    for name, value in config.items():
+        if isinstance(value, bool):
+            part = ("" if value else "no_") + name
+        else:
+            part = str(value)
+        parts.append(part)
+    return "-".join(parts)
+
+
+def parametrize_dataset_mocks(datasets_mocks):
+    return pytest.mark.parametrize(
+        ("dataset_mock", "config"),
+        [
+            pytest.param(dataset_mock, config, id=config_id(dataset_mock.name, config))
+            for dataset_mock in datasets_mocks
+            for config in dataset_mock.configs
+        ],
+    )
+
+
 class DatasetMocks(UserList):
     def append_named_callable(self, fn):
-        mock_data_fn = fn.__func__ if isinstance(fn, classmethod) else fn
-        self.data.append(DatasetMock(mock_data_fn.__name__, mock_data_fn))
+        self.data.append(DatasetMock(fn.__name__, fn))
         return fn
 
 
@@ -606,26 +627,4 @@ def coco(info, root, config):
             [config_ for config_ in info._configs if config_.year == config.year],
             itertools.repeat(CocoMockData.generate(root, year=config.year, num_samples=5)),
         )
-    )
-
-
-def config_id(name, config):
-    parts = [name]
-    for name, value in config.items():
-        if isinstance(value, bool):
-            part = ("" if value else "no_") + name
-        else:
-            part = str(value)
-        parts.append(part)
-    return "-".join(parts)
-
-
-def parametrize_dataset_mocks(datasets_mocks):
-    return pytest.mark.parametrize(
-        ("dataset_mock", "config"),
-        [
-            pytest.param(dataset_mock, config, id=config_id(dataset_mock.name, config))
-            for dataset_mock in datasets_mocks
-            for config in dataset_mock.configs
-        ],
     )
