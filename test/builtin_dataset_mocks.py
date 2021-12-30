@@ -827,3 +827,97 @@ def voc(info, root, config):
         for config_ in info._configs
         if config_.year == config.year and ((config_.split == "test") ^ trainval)
     }
+
+
+class CelebAMockData:
+    @classmethod
+    def _make_ann_file(cls, root, name, data, *, field_names=None):
+        with open(root / name, "w") as file:
+            if field_names:
+                file.write(f"{len(data)}\r\n")
+                file.write(" ".join(field_names) + "\r\n")
+            file.writelines(" ".join(str(item) for item in row) + "\r\n" for row in data)
+
+    _SPLIT_TO_IDX = {
+        "train": 0,
+        "val": 1,
+        "test": 2,
+    }
+
+    @classmethod
+    def _make_split_file(cls, root):
+        num_samples_map = {"train": 4, "val": 3, "test": 2}
+
+        data = [
+            (f"{idx:06d}.jpg", cls._SPLIT_TO_IDX[split])
+            for split, num_samples in num_samples_map.items()
+            for idx in range(num_samples)
+        ]
+        cls._make_ann_file(root, "list_eval_partition.txt", data)
+
+        image_file_names, _ = zip(*data)
+        return image_file_names, num_samples_map
+
+    @classmethod
+    def _make_identity_file(cls, root, image_file_names):
+        cls._make_ann_file(
+            root, "identity_CelebA.txt", [(name, int(make_scalar(low=1, dtype=torch.int))) for name in image_file_names]
+        )
+
+    @classmethod
+    def _make_attributes_file(cls, root, image_file_names):
+        field_names = ("5_o_Clock_Shadow", "Young")
+        data = [
+            [name, *[" 1" if attr else "-1" for attr in make_tensor((len(field_names),), dtype=torch.bool)]]
+            for name in image_file_names
+        ]
+        cls._make_ann_file(root, "list_attr_celeba.txt", data, field_names=(*field_names, ""))
+
+    @classmethod
+    def _make_bounding_boxes_file(cls, root, image_file_names):
+        field_names = ("image_id", "x_1", "y_1", "width", "height")
+        data = [
+            [f"{name}  ", *[f"{coord:3d}" for coord in make_tensor((4,), low=0, dtype=torch.int).tolist()]]
+            for name in image_file_names
+        ]
+        cls._make_ann_file(root, "list_bbox_celeba.txt", data, field_names=field_names)
+
+    @classmethod
+    def _make_landmarks_file(cls, root, image_file_names):
+        field_names = ("lefteye_x", "lefteye_y", "rightmouth_x", "rightmouth_y")
+        data = [
+            [
+                name,
+                *[
+                    f"{coord:4d}" if idx else coord
+                    for idx, coord in enumerate(make_tensor((len(field_names),), low=0, dtype=torch.int).tolist())
+                ],
+            ]
+            for name in image_file_names
+        ]
+        cls._make_ann_file(root, "list_landmarks_align_celeba.txt", data, field_names=field_names)
+
+    @classmethod
+    def generate(cls, root):
+        image_file_names, num_samples_map = cls._make_split_file(root)
+
+        image_files = create_image_folder(
+            root, "img_align_celeba", file_name_fn=lambda idx: image_file_names[idx], num_examples=len(image_file_names)
+        )
+        make_zip(root, image_files[0].parent.with_suffix(".zip").name)
+
+        for make_ann_file_fn in (
+            cls._make_identity_file,
+            cls._make_attributes_file,
+            cls._make_bounding_boxes_file,
+            cls._make_landmarks_file,
+        ):
+            make_ann_file_fn(root, image_file_names)
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.append_named_callable
+def celeba(info, root, _):
+    num_samples_map = CelebAMockData.generate(root)
+    return {config: num_samples_map[config.split] for config in info._configs}
