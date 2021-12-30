@@ -3,6 +3,8 @@
 #include <cmath>
 #include <cstring>
 #include <unordered_map>
+#include <nppi_color_conversion.h>
+
 
 static float chroma_height_factor(cudaVideoSurfaceFormat surface_format) {
   return (surface_format == cudaVideoSurfaceFormat_YUV444 ||
@@ -138,38 +140,20 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* disp_info) {
   }
 
   auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
-  torch::Tensor decoded_frame = torch::empty({get_frame_size()}, options);
+  torch::Tensor decoded_frame = torch::empty({get_height(), width, 3}, options);
   uint8_t* frame_ptr = decoded_frame.data_ptr<uint8_t>();
 
-  // Copy luma plane
-  CUDA_MEMCPY2D m = {0};
-  m.srcMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.srcDevice = source_frame;
-  m.srcPitch = source_pitch;
-  m.dstMemoryType = CU_MEMORYTYPE_DEVICE;
-  m.dstDevice = (CUdeviceptr)(m.dstHost = frame_ptr);
-  m.dstPitch = get_width() * bytes_per_pixel;
-  m.WidthInBytes = get_width() * bytes_per_pixel;
-  m.Height = luma_height;
-  check_for_cuda_errors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__, __FILE__);
+  // TODO: check the surface_height condition in here
+  const uint8_t *const pSrc[] = {(const uint8_t *const)source_frame,
+                                 (const uint8_t *const)(source_frame + source_pitch * ((surface_height + 1) & ~1))};
 
-  // Copy chroma plane
-  // NVDEC output has luma height aligned by 2. Adjust chroma offset by aligning
-  // height
-  m.srcDevice =
-      (CUdeviceptr)((uint8_t*)source_frame + m.srcPitch * ((surface_height + 1) & ~1));
-  m.dstDevice = (CUdeviceptr)(m.dstHost = frame_ptr + m.dstPitch * luma_height);
-  m.Height = chroma_height;
-  check_for_cuda_errors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__, __FILE__);
 
-  if (num_chroma_planes == 2) {
-    m.srcDevice =
-        (CUdeviceptr)((uint8_t*)source_frame + m.srcPitch * ((surface_height + 1) & ~1) * 2);
-    m.dstDevice =
-        (CUdeviceptr)(m.dstHost = frame_ptr + m.dstPitch * luma_height * 2);
-    m.Height = chroma_height;
-    check_for_cuda_errors(cuMemcpy2DAsync(&m, cuvidStream), __LINE__, __FILE__);
-  }
+  // TODO: create and reuse NppStreamContext, and thus need to use nppiNV12ToRGB_709CSC_8u_P2C3R_Ctx instead
+  auto err = nppiNV12ToRGB_709CSC_8u_P2C3R(pSrc, source_pitch, frame_ptr,
+                               width * 3, {(int)decoded_frame.size(1), (int)decoded_frame.size(0)});
+
+  TORCH_CHECK(err == NPP_NO_ERROR, "Failed to convert from NV12 to RGB. Error code:", err);
+
   check_for_cuda_errors(cuStreamSynchronize(cuvidStream), __LINE__, __FILE__);
   decoded_frames.push(decoded_frame);
   check_for_cuda_errors(cuCtxPopCurrent(NULL), __LINE__, __FILE__);
