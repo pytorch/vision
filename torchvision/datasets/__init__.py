@@ -4,6 +4,7 @@ from .celeba import CelebA
 from .cifar import CIFAR10, CIFAR100
 from .cityscapes import Cityscapes
 from .coco import CocoCaptions, CocoDetection
+from .country211 import Country211
 from .fakedata import FakeData
 from .flickr import Flickr8k, Flickr30k
 from .folder import ImageFolder, DatasetFolder
@@ -29,7 +30,6 @@ from .usps import USPS
 from .vision import VisionDataset
 from .voc import VOCSegmentation, VOCDetection
 from .widerface import WIDERFace
-from .country211 import Country211
 
 __all__ = (
     "LSUN",

@@ -4,15 +4,16 @@ from typing import Any, Tuple, Callable, Optional
 
 import PIL.Image
 
+from .folder import find_classes, make_dataset
 from .utils import verify_str_arg, download_and_extract_archive
 from .vision import VisionDataset
-from .folder import find_classes, make_dataset
+
 
 class Country211(VisionDataset):
     """`The Country211 Data Set <https://github.com/openai/CLIP/blob/main/data/country211.md>`_.
 
-    filtered the YFCC100m dataset that have GPS coordinate corresponding to a ISO-3166 country code 
-    and created a balanced dataset by sampling 150 train images, 50 validation images, 
+    filtered the YFCC100m dataset that have GPS coordinate corresponding to a ISO-3166 country code
+    and created a balanced dataset by sampling 150 train images, 50 validation images,
     and 100 test images images for each country.
 
 
@@ -44,7 +45,7 @@ class Country211(VisionDataset):
 
         self._labels = []
         self._image_files = []
-        
+
         self.split_folder = self._base_folder / self._split
 
         self.classes, class_to_idx = find_classes(self.split_folder)
@@ -66,7 +67,9 @@ class Country211(VisionDataset):
         return image, label
 
     def _check_exists(self) -> bool:
-        return all(folder.exists() and folder.is_dir() for folder in (Path(self.root), self._base_folder, self._images_folder))
+        return all(
+            folder.exists() and folder.is_dir() for folder in (Path(self.root), self._base_folder, self._images_folder)
+        )
 
     def _download(self) -> None:
         if self._check_exists():
