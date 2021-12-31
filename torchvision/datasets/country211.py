@@ -42,13 +42,10 @@ class Country211(VisionDataset):
         if download:
             self._download()
 
-        self._labels = []
-        self._image_files = []
-
         self.split_folder = self._base_folder / self._split
 
-        self.classes, class_to_idx = find_classes(self.split_folder)
-        self.samples = make_dataset(self.split_folder, class_to_idx, extensions, is_valid_file=None)
+        self.classes, class_to_idx = find_classes(str(self.split_folder))
+        self.samples = make_dataset(str(self.split_folder), class_to_idx, extensions, is_valid_file=None)
 
     def __len__(self) -> int:
         return len(self._image_files)
