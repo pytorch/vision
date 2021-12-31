@@ -51,7 +51,7 @@ class Food101(VisionDataset):
 
         self._labels = []
         self._image_files = []
-        with open(self._meta_folder / f"{split}.json", "r") as f:
+        with open(self._meta_folder / f"{split}.json") as f:
             metadata = json.loads(f.read())
 
         self.classes = sorted(metadata.keys())
