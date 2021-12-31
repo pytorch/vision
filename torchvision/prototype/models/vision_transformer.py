@@ -243,14 +243,14 @@ _COMMON_META = {
 
 class ViT_B_16_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
-        url="https://download.pytorch.org/models/vit_b_16-0413b9bf.pth",
+        url="https://download.pytorch.org/models/vit_b_16-c867db91.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
             "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#base-models",
-            "acc@1": 80.004,
-            "acc@5": 94.642,
+            "acc@1": 81.072,
+            "acc@5": 95.318,
         },
     )
     default = ImageNet1K_V1
@@ -258,34 +258,44 @@ class ViT_B_16_Weights(WeightsEnum):
 
 class ViT_B_32_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
-        url="https://download.pytorch.org/models/vit_b_32-65f3bea4.pth",
+        url="https://download.pytorch.org/models/vit_b_32-d86f8d99.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
             "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#base-models",
-            "acc@1": 75.622,
-            "acc@5": 92.19,
+            "acc@1": 75.912,
+            "acc@5": 92.466,
         },
     )
     default = ImageNet1K_V1
 
 
 class ViT_L_16_Weights(WeightsEnum):
-    # If a default model is added here the corresponding changes need to be done in vit_l_16
-    pass
+    ImageNet1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_16-852ce7e3.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=242),
+        meta={
+            **_COMMON_META,
+            "size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models-1",
+            "acc@1": 79.662,
+            "acc@5": 94.638,
+        },
+    )
+    default = ImageNet1K_V1
 
 
 class ViT_L_32_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
-        url="https://download.pytorch.org/models/vit_l_32-cd2ba208.pth",
+        url="https://download.pytorch.org/models/vit_l_32-c7638314.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
             "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models-1",
-            "acc@1": 74.268,
-            "acc@5": 90.89,
+            "acc@1": 76.972,
+            "acc@5": 93.07,
         },
     )
     default = ImageNet1K_V1
