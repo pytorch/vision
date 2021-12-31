@@ -1,19 +1,19 @@
 import os
 from pathlib import Path
-from typing import Any, Tuple, Callable, Optional, Union
+from typing import Any, Tuple, Callable, Optional
 
 import PIL.Image
 
-from .utils import verify_str_arg, download_and_extract_archive, check_integrity
+from .utils import verify_str_arg, download_and_extract_archive
 from .vision import VisionDataset
 
 
 class SUN397(VisionDataset):
     """`The SUN397 Data Set <https://vision.princeton.edu/projects/2010/SUN/>`_.
     The SUN397 is a dataset for scene recognition consisting of 397 categories with 108'754 images.
-    The dataset also provides 10 paritions for training and testing, with each partition 
-    consisting of 50 images per class. 
-    
+    The dataset also provides 10 paritions for training and testing, with each partition
+    consisting of 50 images per class.
+
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
@@ -34,57 +34,51 @@ class SUN397(VisionDataset):
         self,
         root: str,
         split: str = "train",
-        partition: Union[int,str] = 1,
+        partition: Optional[int] = 1,
         download: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
-        self.split = split
+        self.split = verify_str_arg(split, "split", ("train", "test"))
         self.partition = partition
         self.data_dir = Path(self.root) / "SUN397"
+
+        if self.partition is not None:
+            if self.partition < 0 or self.partition > 10:
+                raise RuntimeError("Enter a valid integer partition from 1 to 10 or None, for entire dataset")
 
         if download:
             self._download()
 
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
-        
+
+        with open(self.data_dir / "ClassName.txt", "r") as f:
+            self.classes = [c[3:].strip() for c in f]
+
+        self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
+
         self._labels = []
         self._image_files = []
-        with open(self.data_dir / f"ClassName.txt", "r") as f:
-            classes = f.read().splitlines()
-            
-        for idx,c in enumerate(classes):
-            classes[idx] = c[3:]
+        if self.partition is not None:
+            with open(self.data_dir / f"{self.split.title()}ing_{self.partition:02d}.txt", "r") as f:
+                self._image_files, self._labels = zip(
+                    *(
+                        (
+                            self.data_dir.joinpath(*posix_rel_path.split("/")),
+                            self.class_to_idx["/".join(Path(posix_rel_path).parts[1:-1])],
+                        )
+                        for posix_rel_path in (line.strip()[1:] for line in f)
+                    )
+                )
 
-        self.classes = classes
-        self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
-        
-        if isinstance(self.partition,int):
-            if self.partition<0 or self.partition>10:
-                raise RuntimeError("Enter a valid integer partition from 1 to 10 or \"all\" ")
-            
-            splitname = "Training" if self.split is "train" else "Testing"
-            zero = "0" if self.partition<10 else ""
-            
-            with open(self.data_dir / f"{splitname}_{zero}{self.partition}.txt", "r") as f:
-                pathlist = f.read().splitlines()
-                
-            for p in pathlist:
-                self._labels.append(self.class_to_idx[p[3:-25]])
-                self._image_files.append(self.data_dir.joinpath(*p.split("/")))
-            
         else:
-            if self.partition is not "all":
-                raise RuntimeError("Enter a valid integer partition from 1 to 10 or \"all\" ")
-            else:
-                for path, _, files in os.walk(self.data_dir):
-                    for file in files:
-                        if(file[:3]=="sun"):
-                            self._image_files.append(Path(path)/file)
-                            self._labels.append(Path(path).relative_to(self.data_dir).as_posix()[2:])
-                
+            for path, _, files in os.walk(self.data_dir):
+                for file in files:
+                    if file[:3] == "sun":
+                        self._image_files.append(Path(path) / file)
+                        self._labels.append(Path(path).relative_to(self.data_dir).as_posix()[2:])
 
     def __len__(self) -> int:
         return len(self._image_files)
@@ -102,21 +96,13 @@ class SUN397(VisionDataset):
         return image, label
 
     def _check_exists(self) -> bool:
-        file = Path(self.root) / self._FILENAME
-        if not check_integrity(file, self._MD5):
-            return False
-        elif self._PARTITIONS_FILENAME not in os.listdir(self.data_dir):
-            return False
-        else:
-            return True
-    
+        return self.data_dir.exists() and self.data_dir.is_dir()
+
     def extra_repr(self) -> str:
         return "Split: {split}".format(**self.__dict__)
 
     def _download(self) -> None:
-        file = Path(self.root) / self._FILENAME
-        if self._FILENAME not in os.listdir(self.data_dir) or not check_integrity(file, self._MD5):
-            download_and_extract_archive(self._URL, download_root=self.root, md5=self._MD5)
-            
-        if self._PARTITIONS_FILENAME not in os.listdir(self.data_dir):
-            download_and_extract_archive(self._PARTITIONS_URL, download_root=self.data_dir)
+        if self._check_exists:
+            return
+        download_and_extract_archive(self._URL, download_root=self.root, md5=self._MD5)
+        download_and_extract_archive(self._PARTITIONS_URL, download_root=self.data_dir)
