@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+70ddc6c ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+6c4df0f ) &#x25BC</a>
     </div>
     
 
@@ -478,7 +478,7 @@
         <span class="k">return</span> <span class="n">_read_flo</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="KittiFlow"><a class="viewcode-back" href="../../../generated/torchvision.datasets.KittiFlow.html#torchvision.datasets.KittiFlow">[docs]</a><span class="k">class</span> <span class="nc">KittiFlow</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">KittiFlow</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;`KITTI &lt;http://www.cvlibs.net/datasets/kitti/eval_scene_flow.php?benchmark=flow&gt;`__ dataset for optical flow (2015).</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
@@ -520,7 +520,7 @@
         <span class="k">if</span> <span class="n">split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">glob</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">root</span> <span class="o">/</span> <span class="s2">&quot;flow_occ&quot;</span> <span class="o">/</span> <span class="s2">&quot;*_10.png&quot;</span><span class="p">)))</span>
 
-<div class="viewcode-block" id="KittiFlow.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.KittiFlow.html#torchvision.datasets.KittiFlow.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return example at given index.</span>
 
 <span class="sd">        Args:</span>
@@ -533,13 +533,13 @@
 <span class="sd">            shape (2, H, W) and the images are PIL images. ``flow`` and ``valid_flow_mask`` are None if</span>
 <span class="sd">            ``split=&quot;test&quot;``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_read_16bits_png_with_flow_and_valid_mask</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">_read_16bits_png_with_flow_and_valid_mask</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">FlyingChairs</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
+<div class="viewcode-block" id="FlyingChairs"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FlyingChairs.html#torchvision.datasets.FlyingChairs">[docs]</a><span class="k">class</span> <span class="nc">FlyingChairs</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;`FlyingChairs &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/FlyingChairs.en.html#flyingchairs&gt;`_ Dataset for optical flow.</span>
 
 <span class="sd">    You will also need to download the FlyingChairs_train_val.txt file from the dataset page.</span>
@@ -588,7 +588,7 @@
                 <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">flows</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
                 <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">images</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span><span class="p">],</span> <span class="n">images</span><span class="p">[</span><span class="mi">2</span> <span class="o">*</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]]</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<div class="viewcode-block" id="FlyingChairs.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FlyingChairs.html#torchvision.datasets.FlyingChairs.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return example at given index.</span>
 
 <span class="sd">        Args:</span>
@@ -601,13 +601,13 @@
 <span class="sd">            If a valid flow mask is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` is returned.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_read_flo</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_read_flo</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">FlyingThings3D</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
+<div class="viewcode-block" id="FlyingThings3D"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FlyingThings3D.html#torchvision.datasets.FlyingThings3D">[docs]</a><span class="k">class</span> <span class="nc">FlyingThings3D</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;`FlyingThings3D &lt;https://lmb.informatik.uni-freiburg.de/resources/datasets/SceneFlowDatasets.en.html&gt;`_ dataset for optical flow.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
@@ -679,7 +679,7 @@
                         <span class="bp">self</span><span class="o">.</span><span class="n">_image_list</span> <span class="o">+=</span> <span class="p">[[</span><span class="n">images</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">],</span> <span class="n">images</span><span class="p">[</span><span class="n">i</span><span class="p">]]]</span>
                         <span class="bp">self</span><span class="o">.</span><span class="n">_flow_list</span> <span class="o">+=</span> <span class="p">[</span><span class="n">flows</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]]</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<div class="viewcode-block" id="FlyingThings3D.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FlyingThings3D.html#torchvision.datasets.FlyingThings3D.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return example at given index.</span>
 
 <span class="sd">        Args:</span>
@@ -692,13 +692,13 @@
 <span class="sd">            If a valid flow mask is generated within the ``transforms`` parameter,</span>
 <span class="sd">            a 4-tuple with ``(img1, img2, flow, valid_flow_mask)`` is returned.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">_read_pfm</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">_read_pfm</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">HD1K</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
+<div class="viewcode-block" id="HD1K"><a class="viewcode-back" href="../../../generated/torchvision.datasets.HD1K.html#torchvision.datasets.HD1K">[docs]</a><span class="k">class</span> <span class="nc">HD1K</span><span class="p">(</span><span class="n">FlowDataset</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;`HD1K &lt;http://hci-benchmark.iwr.uni-heidelberg.de/&gt;`__ dataset for optical flow.</span>
 
 <span class="sd">    The dataset is expected to have the following structure: ::</span>
@@ -749,7 +749,7 @@
     <span class="k">def</span> <span class="nf">_read_flow</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">file_name</span><span class="p">):</span>
         <span class="k">return</span> <span class="n">_read_16bits_png_with_flow_and_valid_mask</span><span class="p">(</span><span class="n">file_name</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<div class="viewcode-block" id="HD1K.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.HD1K.html#torchvision.datasets.HD1K.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;Return example at given index.</span>
 
 <span class="sd">        Args:</span>
@@ -762,7 +762,7 @@
 <span class="sd">            shape (2, H, W) and the images are PIL images. ``flow`` and ``valid_flow_mask`` are None if</span>
 <span class="sd">            ``split=&quot;test&quot;``.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+        <span class="k">return</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__getitem__</span><span class="p">(</span><span class="n">index</span><span class="p">)</span></div></div>
 
 
 <span class="k">def</span> <span class="nf">_read_flo</span><span class="p">(</span><span class="n">file_name</span><span class="p">):</span>
