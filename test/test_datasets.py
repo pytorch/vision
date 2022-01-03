@@ -2207,7 +2207,6 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
 
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SUN397
-    FEATURE_TYPES = (PIL.Image.Image, int)
 
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("train", "test"),
@@ -2216,15 +2215,15 @@ class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
 
     def inject_fake_data(self, tmpdir: str, config):
         data_dir = pathlib.Path(tmpdir) / "SUN397"
-
-        data_dir.mkdir(parents=True)
+        data_dir.mkdir()
 
         num_images_per_class = 5
         sampled_classes = ("abbey", "airplane_cabin", "airport_terminal")
         im_paths = []
+
         for cls in sampled_classes:
             image_folder = data_dir / cls[0]
-            im_paths.append(
+            im_paths.extend(
                 datasets_utils.create_image_folder(
                     image_folder,
                     image_folder / cls,
@@ -2233,16 +2232,23 @@ class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
                 )
             )
 
-            with open(data_dir / "ClassName.txt", "a") as file:
-                file.write("/" + cls[0] + "/" + cls + "\n")
+        with open(data_dir / "ClassName.txt", "w") as file:
+            file.writelines("\n".join(f"/{cls[0]}/{cls}" for cls in sampled_classes))
 
         if config["partition"] is not None:
-            with open(data_dir / f"{config['split'].title()}ing_{config['partition']:02d}.txt", "w") as file:
-                for f_pathlist in im_paths:
-                    for f_path in f_pathlist:
-                        file.write("/" + str(pathlib.Path(f_path).relative_to(data_dir).as_posix()) + "\n")
+            num_samples = max(len(im_paths) // (2 if config["split"] == "train" else 3), 1)
 
-        return len(sampled_classes * num_images_per_class)
+            with open(data_dir / f"{config['split'].title()}ing_{config['partition']:02d}.txt", "w") as file:
+                file.writelines(
+                    "\n".join(
+                        f"/{f_path.relative_to(data_dir).as_posix()}"
+                        for f_path in random.choices(im_paths, k=num_samples)
+                    )
+                )
+        else:
+            num_samples = len(im_paths)
+
+        return num_samples
 
 
 if __name__ == "__main__":

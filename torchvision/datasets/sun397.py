@@ -1,4 +1,3 @@
-import os
 from pathlib import Path
 from typing import Any, Tuple, Callable, Optional
 
@@ -10,25 +9,25 @@ from .vision import VisionDataset
 
 class SUN397(VisionDataset):
     """`The SUN397 Data Set <https://vision.princeton.edu/projects/2010/SUN/>`_.
-    The SUN397 is a dataset for scene recognition consisting of 397 categories with 108'754 images.
-    The dataset also provides 10 paritions for training and testing, with each partition
-    consisting of 50 images per class.
+
+    The SUN397 or Scene UNderstanding (SUN) is a dataset for scene recognition consisting of
+    397 categories with 108'754 images. The dataset also provides 10 partitions for training
+    and testing, with each partition consisting of 50 images per class.
 
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
-        parition (string, integer, optional): A valid partition can be an integer from 1 to 10 or ``"all"``
+        parition (integer, optional): A valid partition can be an integer from 1 to 10 or None,
             for the entire dataset.
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
     """
 
-    _URL = "http://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz"
-    _FILENAME = "SUN397.tar.gz"
-    _MD5 = "8ca2778205c41d23104230ba66911c7a"
+    _DATASET_URL = "http://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz"
+    _DATASET_MD5 = "8ca2778205c41d23104230ba66911c7a"
     _PARTITIONS_URL = "https://vision.princeton.edu/projects/2010/SUN/download/Partitions.zip"
-    _PARTITIONS_FILENAME = "Partitions.zip"
+    _PARTITIONS_MD5 = "29a205c0a0129d21f36cbecfefe81881"
 
     def __init__(
         self,
@@ -54,31 +53,19 @@ class SUN397(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        with open(self.data_dir / "ClassName.txt", "r") as f:
+        with open(self.data_dir / "ClassName.txt") as f:
             self.classes = [c[3:].strip() for c in f]
 
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
-
-        self._labels = []
-        self._image_files = []
         if self.partition is not None:
             with open(self.data_dir / f"{self.split.title()}ing_{self.partition:02d}.txt", "r") as f:
-                self._image_files, self._labels = zip(
-                    *(
-                        (
-                            self.data_dir.joinpath(*posix_rel_path.split("/")),
-                            self.class_to_idx["/".join(Path(posix_rel_path).parts[1:-1])],
-                        )
-                        for posix_rel_path in (line.strip()[1:] for line in f)
-                    )
-                )
-
+                self._image_files = [self.data_dir.joinpath(*line.strip()[1:].split("/")) for line in f]
         else:
-            for path, _, files in os.walk(self.data_dir):
-                for file in files:
-                    if file[:3] == "sun":
-                        self._image_files.append(Path(path) / file)
-                        self._labels.append(Path(path).relative_to(self.data_dir).as_posix()[2:])
+            self._image_files = list(self.data_dir.rglob("sun_*.jpg"))
+
+        self._labels = [
+            self.class_to_idx["/".join(path.relative_to(self.data_dir).parts[1:-1])] for path in self._image_files
+        ]
 
     def __len__(self) -> int:
         return len(self._image_files)
@@ -104,5 +91,5 @@ class SUN397(VisionDataset):
     def _download(self) -> None:
         if self._check_exists:
             return
-        download_and_extract_archive(self._URL, download_root=self.root, md5=self._MD5)
-        download_and_extract_archive(self._PARTITIONS_URL, download_root=self.data_dir)
+        download_and_extract_archive(self._DATASET_URL, download_root=self.root, md5=self._MD5)
+        download_and_extract_archive(self._PARTITIONS_URL, download_root=str(self.data_dir), md5=self._PARTITIONS_MD5)
