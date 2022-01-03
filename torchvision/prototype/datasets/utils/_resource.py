@@ -3,7 +3,7 @@ import hashlib
 import itertools
 import pathlib
 import warnings
-from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
+from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn, cast
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
@@ -175,7 +175,7 @@ class HttpResource(OnlineResource):
 
     def _download(self, root: pathlib.Path) -> None:
         if not self.resolved:
-            return self.resolve()._download(root)
+            return cast(OnlineResource, self.resolve())._download(root)
 
         for url in itertools.chain((self.url,), self.mirrors or ()):
             try:
