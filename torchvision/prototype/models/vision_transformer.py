@@ -248,7 +248,7 @@ class ViT_B_16_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#base-models",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
             "acc@1": 81.072,
             "acc@5": 95.318,
         },
@@ -263,7 +263,7 @@ class ViT_B_32_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#base-models",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32",
             "acc@1": 75.912,
             "acc@5": 92.466,
         },
@@ -278,7 +278,7 @@ class ViT_L_16_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models-1",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16",
             "acc@1": 79.662,
             "acc@5": 94.638,
         },
@@ -293,7 +293,7 @@ class ViT_L_32_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models-1",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32",
             "acc@1": 76.972,
             "acc@5": 93.07,
         },
@@ -329,7 +329,7 @@ def _vision_transformer(
     return model
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.ImageNet1K_V1))
 def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_16 architecture from
@@ -354,7 +354,7 @@ def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ViT_B_32_Weights.ImageNet1K_V1))
 def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_32 architecture from
@@ -379,7 +379,7 @@ def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ViT_L_16_Weights.ImageNet1K_V1))
 def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_16 architecture from
@@ -404,7 +404,7 @@ def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ViT_L_32_Weights.ImageNet1K_V1))
 def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_32 architecture from
