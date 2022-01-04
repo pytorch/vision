@@ -427,6 +427,59 @@ def get_extensions():
             )
         )
 
+    # Locating video codec
+    # CUDA_HOME should be set to the cuda root directory.
+    # TORCHVISION_INCLUDE and TORCHVISION_LIBRARY should include the location to
+    # video codec header files and libraries respectively.
+    video_codec_found = (
+        extension is CUDAExtension
+        and CUDA_HOME is not None
+        and any([os.path.exists(os.path.join(folder, "cuviddec.h")) for folder in vision_include])
+        and any([os.path.exists(os.path.join(folder, "nvcuvid.h")) for folder in vision_include])
+        and any([os.path.exists(os.path.join(folder, "libnvcuvid.so")) for folder in library_dirs])
+    )
+
+    print(f"video codec found: {video_codec_found}")
+
+    if (
+        video_codec_found
+        and has_ffmpeg
+        and any([os.path.exists(os.path.join(folder, "libavcodec", "bsf.h")) for folder in ffmpeg_include_dir])
+    ):
+        gpu_decoder_path = os.path.join(extensions_dir, "io", "decoder", "gpu")
+        gpu_decoder_src = glob.glob(os.path.join(gpu_decoder_path, "*.cpp"))
+        cuda_libs = os.path.join(CUDA_HOME, "lib64")
+        cuda_inc = os.path.join(CUDA_HOME, "include")
+
+        ext_modules.append(
+            extension(
+                "torchvision.Decoder",
+                gpu_decoder_src,
+                include_dirs=include_dirs + [gpu_decoder_path] + [cuda_inc] + ffmpeg_include_dir,
+                library_dirs=ffmpeg_library_dir + library_dirs + [cuda_libs],
+                libraries=[
+                    "avcodec",
+                    "avformat",
+                    "avutil",
+                    "swresample",
+                    "swscale",
+                    "nvcuvid",
+                    "cuda",
+                    "cudart",
+                    "z",
+                    "pthread",
+                    "dl",
+                ],
+                extra_compile_args=extra_compile_args,
+            )
+        )
+    else:
+        print(
+            "The installed version of ffmpeg is missing the header file 'bsf.h' which is "
+            "required for GPU video decoding. Please install the latest ffmpeg from conda-forge channel:"
+            " `conda install -c conda-forge ffmpeg`."
+        )
+
     return ext_modules
 
 

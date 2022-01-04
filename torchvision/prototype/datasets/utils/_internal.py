@@ -30,8 +30,7 @@ import PIL.Image
 import torch
 import torch.distributed as dist
 import torch.utils.data
-from torch.utils.data import IterDataPipe
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 
 
@@ -49,6 +48,7 @@ __all__ = [
     "Decompressor",
     "fromfile",
     "read_flo",
+    "hint_sharding",
 ]
 
 K = TypeVar("K")
@@ -96,7 +96,7 @@ class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
 
     def __iter__(self) -> Iterator[Union[Tuple[K, D], D]]:
         for mapping in self.datapipe:
-            yield from iter(mapping.values() if self.drop_key else mapping.items())  # type: ignore[call-overload]
+            yield from iter(mapping.values() if self.drop_key else mapping.items())
 
 
 class Enumerator(IterDataPipe[Tuple[int, D]]):
@@ -250,7 +250,7 @@ class TakerDataPipe(IterDataPipe):
         return num_take
 
 
-def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
+def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[str, Any]]:
     dp = IoPathFileLister(root=root)
     dp = SharderDataPipe(dp)
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
@@ -331,3 +331,11 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
     width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
     flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
     return flow.reshape((height, width, 2)).permute((2, 0, 1))
+
+
+def hint_sharding(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+    return ShardingFilter(datapipe)
+
+
+def hint_shuffling(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+    return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)

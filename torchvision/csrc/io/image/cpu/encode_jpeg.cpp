@@ -25,6 +25,8 @@ using JpegSizeType = size_t;
 using namespace detail;
 
 torch::Tensor encode_jpeg(const torch::Tensor& data, int64_t quality) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.image.cpu.encode_jpeg.encode_jpeg");
   // Define compression structures and error handling
   struct jpeg_compress_struct cinfo {};
   struct torch_jpeg_error_mgr jerr {};
