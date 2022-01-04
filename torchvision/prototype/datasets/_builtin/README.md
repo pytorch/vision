@@ -83,7 +83,7 @@ Of course, there are some common building blocks that should suffice in 95% of t
 
 All of them can be imported `from torchdata.datapipes.iter`. In addition, use `functools.partial` in case a callable needs extra arguments.  If the provided `IterDataPipe`'s are not sufficient for the use case, it is also not complicated to add one. See the MNIST or CelebA datasets for example.
 
-`make_datapipe()` gets passes `resource_dps`, which is a list of datapipes that has a 1-to-1 correspondence with the return value of `resources()`. In case of archives with regular extension, the datapipe will contain tuples comprised of the path and the handle for every file in the archive. Otherwise the datapipe will only contain one of such tuples for the file specified by the resource.
+`make_datapipe()` receives `resource_dps`, which is a list of datapipes that has a 1-to-1 correspondence with the return value of `resources()`. In case of archives with regular suffixes (`.tar`, `.zip`, ...), the datapipe will contain tuples comprised of the path and the handle for every file in the archive. Otherwise the datapipe will only contain one of such tuples for the file specified by the resource.
 
 Since the datapipes are iterable in nature, some datapipes feature an in-memory buffer, e.g. `IterKeyZipper` and `Grouper`. There are two issues with that:
 1. If not used carefully, this can easily overflow the host memory, since most datasets will not fit in completely.
