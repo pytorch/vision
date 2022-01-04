@@ -2,6 +2,7 @@ import distutils.command.clean
 import distutils.spawn
 import glob
 import os
+import re
 import shutil
 import subprocess
 import sys
@@ -293,6 +294,16 @@ def get_extensions():
     (jpeg_found, jpeg_conda, jpeg_include, jpeg_lib) = find_library("jpeglib", vision_include)
 
     print(f"JPEG found: {jpeg_found}")
+    if jpeg_found:
+        jpeg_version = {}
+        pattern = re.compile(r".*?JPEG_LIB_VERSION_(?P<part>(MAJOR|MINOR))\s*(?P<number>\d+)")
+        with open(os.path.join(jpeg_include, "jpeglib.h")) as file:
+            for line in file:
+                match = pattern.match(line)
+                if match:
+                    jpeg_version[match["part"].lower()] = match["number"]
+        print(f"jpeglib version: {'.'.join(jpeg_version.get(part, 'UNKONWN') for part in ('major', 'minor'))}")
+
     image_macros += [("PNG_FOUND", str(int(png_found)))]
     image_macros += [("JPEG_FOUND", str(int(jpeg_found)))]
     if jpeg_found:

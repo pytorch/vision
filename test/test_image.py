@@ -497,6 +497,7 @@ def test_encode_jpeg(img_path):
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
 
+# https://pillow.readthedocs.io/en/stable/releasenotes/9.0.0.html#switched-to-libjpeg-turbo-in-macos-and-linux-wheels
 @pytest.mark.skipif(IS_WINDOWS, reason=("this test fails on windows because PIL uses libjpeg-turbo on windows"))
 @pytest.mark.parametrize(
     "img_path",
