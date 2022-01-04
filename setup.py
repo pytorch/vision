@@ -294,8 +294,7 @@ def get_extensions():
     (jpeg_found, jpeg_conda, jpeg_include, jpeg_lib) = find_library("jpeglib", vision_include)
 
     print(f"JPEG found: {jpeg_found}")
-    print(jpeg_found, jpeg_conda, jpeg_include, jpeg_lib)
-    if jpeg_found:
+    if jpeg_found and jpeg_include is not None:
         jpeg_version = {}
         pattern = re.compile(r".*?JPEG_LIB_VERSION_(?P<part>(MAJOR|MINOR))\s*(?P<number>\d+)")
         with open(os.path.join(jpeg_include, "jpeglib.h")) as file:
