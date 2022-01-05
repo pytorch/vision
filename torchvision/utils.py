@@ -434,11 +434,11 @@ def _flow_to_colors(
     Applies the flow color wheel to (possibly clipped) flow components u and v.
 
     Args:
-        u (torch.Tensor): Input horizontal flow of shape [H, W]
-        v (torch.Tensor): Input vertical flow of shape [H, W]
+        u (torch.Tensor): Input horizontal flow of shape (H, W)
+        v (torch.Tensor): Input vertical flow of shape (H, W)
 
     Returns:
-       img (Tensor[3, H, W]): Flow visualization image.
+       img (Tensor(3, H, W)): Flow visualization image.
     """
 
     flow_image = torch.zeros((3, u.shape[0], u.shape[1]), dtype=torch.uint8)
@@ -473,7 +473,7 @@ def _make_colorwheel() -> torch.Tensor:
     URL: http://vision.middlebury.edu/flow/flowEval-iccv07.pdf.
 
     Returns:
-        colorwheel (Tensor[255, 3]): Colorwheel Tensor.
+        colorwheel (Tensor[55, 3]): Colorwheel Tensor.
     """
 
     RY = 15
