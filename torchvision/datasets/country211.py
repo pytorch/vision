@@ -18,13 +18,14 @@ class Country211(VisionDataset):
 
     Args:
         root (string): Root directory of the dataset.
-        split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
+        split (string, optional): The dataset split, supports ``"train"`` (default), ``"valid"`` and ``"test"``.
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
     """
 
     _URL = "https://openaipublic.azureedge.net/clip/data/country211.tgz"
+    _MD5 = "84988d7644798601126c29e9877aab6a"
 
     def __init__(
         self,
@@ -41,6 +42,9 @@ class Country211(VisionDataset):
 
         if download:
             self._download()
+
+        if not self._check_exists():
+            raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         self.split_folder = self._base_folder / self._split
 
@@ -70,4 +74,4 @@ class Country211(VisionDataset):
     def _download(self) -> None:
         if self._check_exists():
             return
-        download_and_extract_archive(self._URL, download_root=self.root, md5=None)
+        download_and_extract_archive(self._URL, download_root=self.root, md5=self._MD5)

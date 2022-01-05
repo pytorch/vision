@@ -2205,5 +2205,49 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
         return len(sampled_classes * n_samples_per_class)
 
 
+class Country211TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Country211
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "valid", "test"))
+
+    def inject_fake_data(self, tmpdir: str, config):
+        root_folder = pathlib.Path(tmpdir) / "country211"
+        root_folder.mkdir()
+
+        num_images_per_class = 5
+        sampled_classes = ("AD", "BS", "GR")
+        im_paths = []
+
+        for cls in sampled_classes:
+            image_folder = root_folder / cls
+            im_paths.extend(
+                datasets_utils.create_image_folder(
+                    image_folder,
+                    name = cls,
+                    file_name_fn=lambda idx: f"{cls}_{idx:05d}.jpg",
+                    num_examples=num_images_per_class,
+                )
+            )
+
+        with open(root_folder / "ClassName.txt", "w") as file:
+            file.writelines("\n".join(f"/{cls}" for cls in sampled_classes))
+
+        if config["partition"] is not None:
+            num_samples = max(len(im_paths) // (2 if config["split"] == "train" else 3), 1)
+
+            with open(root_folder / f"{config['split'].title()}ing_{config['partition']:02d}.txt", "w") as file:
+                file.writelines(
+                    "\n".join(
+                        f"/{f_path.relative_to(root_folder).as_posix()}"
+                        for f_path in random.choices(im_paths, k=num_samples)
+                    )
+                )
+        else:
+            num_samples = len(im_paths)
+
+        return num_samples
+
+
 if __name__ == "__main__":
     unittest.main()
