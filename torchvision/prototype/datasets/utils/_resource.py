@@ -136,14 +136,14 @@ class OnlineResource(abc.ABC):
 
 class HttpResource(OnlineResource):
     def __init__(
-        self, url: str, *, file_name: Optional[str] = None, mirrors: Optional[Sequence[str]] = None, **kwargs: Any
+        self, url: str, *, file_name: Optional[str] = None, mirrors: Sequence[str] = (), **kwargs: Any
     ) -> None:
         super().__init__(file_name=file_name or pathlib.Path(urlparse(url).path).name, **kwargs)
         self.url = url
         self.mirrors = mirrors
 
     def _download(self, root: pathlib.Path) -> None:
-        for url in itertools.chain((self.url,), self.mirrors or ()):
+        for url in itertools.chain((self.url,), self.mirrors):
             try:
                 download_url(url, str(root), filename=self.file_name, md5=None)
             # TODO: make this more precise
