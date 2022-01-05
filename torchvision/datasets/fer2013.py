@@ -16,7 +16,7 @@ class FER2013(VisionDataset):
 
     Args:
         root (string): Root directory of dataset where directory
-            ``caltech101`` exists or will be saved to if download is set to True.
+            ``root/fer2013`` exists.
         split (string, optional): The dataset split, supports ``"train"`` (default), or ``"test"``.
         transform (callable, optional): A function/transform that takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``
@@ -63,7 +63,7 @@ class FER2013(VisionDataset):
         return image, target
 
     def _verify_integrity(self):
-        base_folder = os.path.join(self.root, type(self).__name__.lower())
+        base_folder = os.path.join(self.root, "fer2013")
         file_name, md5 = self._RESOURCES[self._split]
         file = os.path.join(base_folder, file_name)
         if not check_integrity(file, md5=md5):
