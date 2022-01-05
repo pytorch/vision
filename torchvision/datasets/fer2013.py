@@ -1,6 +1,5 @@
 import csv
-import os
-import os.path
+import pathlib
 from typing import Any, Callable, Optional, Tuple
 
 import torch
@@ -38,7 +37,17 @@ class FER2013(VisionDataset):
         self._split = verify_str_arg(split, "split", self._RESOURCES.keys())
         super().__init__(root, transform=transform, target_transform=target_transform)
 
-        with open(self._verify_integrity(), "r", newline="") as file:
+        base_folder = pathlib.Path(self.root) / "fer2013"
+        file_name, md5 = self._RESOURCES[self._split]
+        data_file = base_folder / file_name
+        if not check_integrity(str(data_file), md5=md5):
+            raise RuntimeError(
+                f"{file_name} not found in {base_folder} or corrupted. "
+                f"You can download it from "
+                f"https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge"
+            )
+
+        with open(data_file, "r", newline="") as file:
             self._samples = [
                 (
                     torch.tensor([int(idx) for idx in row["pixels"].split()], dtype=torch.uint8).reshape(48, 48),
@@ -61,18 +70,6 @@ class FER2013(VisionDataset):
             target = self.target_transform(target)
 
         return image, target
-
-    def _verify_integrity(self):
-        base_folder = os.path.join(self.root, "fer2013")
-        file_name, md5 = self._RESOURCES[self._split]
-        file = os.path.join(base_folder, file_name)
-        if not check_integrity(file, md5=md5):
-            raise RuntimeError(
-                f"{file_name} not found in {base_folder} or corrupted. "
-                f"You can download it from "
-                f"https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge"
-            )
-        return file
 
     def extra_repr(self) -> str:
         return f"split={self._split}"
