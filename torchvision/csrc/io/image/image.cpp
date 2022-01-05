@@ -1,5 +1,6 @@
 #include "image.h"
 
+#include <ATen/core/op_registration/op_registration.h>
 #include <Python.h>
 
 // If we are in a Windows environment, we need to define
