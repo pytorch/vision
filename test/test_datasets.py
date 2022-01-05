@@ -2205,5 +2205,41 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
         return len(sampled_classes * n_samples_per_class)
 
 
+class DTDTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.DTD
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test", "val"),
+        # There is no need to test the whole matrix here, since each fold is treated exactly the same
+        partition=(1, 5, 10),
+    )
+
+    def inject_fake_data(self, tmpdir: str, config):
+        data_folder = pathlib.Path(tmpdir) / "dtd" / "dtd"
+
+        num_images_per_class = 3
+        image_folder = data_folder / "images"
+        image_files = []
+        for cls in ("banded", "marbled", "zigzagged"):
+            image_files.extend(
+                datasets_utils.create_image_folder(
+                    image_folder,
+                    cls,
+                    file_name_fn=lambda idx: f"{cls}_{idx:04d}.jpg",
+                    num_examples=num_images_per_class,
+                )
+            )
+
+        meta_folder = data_folder / "labels"
+        meta_folder.mkdir()
+        image_ids = [str(path.relative_to(path.parents[1])).replace(os.sep, "/") for path in image_files]
+        image_ids_in_config = random.choices(image_ids, k=len(image_files) // 2)
+        with open(meta_folder / f"{config['split']}{config['partition']}.txt", "w") as file:
+            file.write("\n".join(image_ids_in_config) + "\n")
+
+        return len(image_ids_in_config)
+
+
 if __name__ == "__main__":
     unittest.main()
