@@ -143,28 +143,6 @@ torchrun --nproc_per_node=8 train.py\
 ```
 Here `$MODEL` is one of `regnet_x_32gf`, `regnet_y_16gf` and `regnet_y_32gf`.
 
-### Vision Transformer
-
-#### Base models
-```
-torchrun --nproc_per_node=8 train.py\
-    --model $MODEL --epochs 300 --batch-size 64 --opt adamw --lr 0.003 --wd 0.3\
-    --lr-scheduler cosineannealinglr --lr-warmup-method linear --lr-warmup-epochs 30\
-    --lr-warmup-decay 0.033 --amp --label-smoothing 0.11 --mixup-alpha 0.2 --auto-augment ra\
-    --clip-grad-norm 1 --ra-sampler --cutmix-alpha 1.0 --model-ema
-```
-Here `$MODEL` is one of `vit_b_16` and `vit_b_32`.
-
-#### Large models
-```
-torchrun --nproc_per_node=8 train.py\
-    --model $MODEL --epochs 300 --batch-size 16 --opt adamw --lr 0.003 --wd 0.3\
-    --lr-scheduler cosineannealinglr --lr-warmup-method linear --lr-warmup-epochs 30\
-    --lr-warmup-decay 0.033 --amp --label-smoothing 0.11 --mixup-alpha 0.2 --auto-augment ra\
-    --clip-grad-norm 1 --ra-sampler --cutmix-alpha 1.0 --model-ema
-```
-Here `$MODEL` is one of `vit_l_16` and `vit_l_32`.
-
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).
 
