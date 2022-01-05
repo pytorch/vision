@@ -6,7 +6,7 @@ import io
 import itertools
 import os
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple, Collection
 
 import torch
 from torch.utils.data import IterDataPipe
@@ -33,7 +33,7 @@ class DatasetInfo:
         name: str,
         *,
         type: Union[str, DatasetType],
-        dependencies: Sequence[str] = (),
+        dependencies: Collection[str] = (),
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
