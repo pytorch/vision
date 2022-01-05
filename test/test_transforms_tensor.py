@@ -464,6 +464,7 @@ class TestResize:
 
 
 def _test_random_affine_helper(device, **kwargs):
+    torch.manual_seed(12)
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
     transform = T.RandomAffine(**kwargs)
@@ -482,7 +483,7 @@ def test_random_affine(device, tmpdir):
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("interpolation", [NEAREST, BILINEAR])
-@pytest.mark.parametrize("shear", [15, 10.0, (5.0, 10.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]])
+@pytest.mark.parametrize("shear", [15, 10.0, (5.0, 11.0), [-15, 15], [-10.0, 10.0, -11.0, 11.0]])
 def test_random_affine_shear(device, interpolation, shear):
     _test_random_affine_helper(device, degrees=0.0, interpolation=interpolation, shear=shear)
 
