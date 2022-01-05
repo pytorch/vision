@@ -1,7 +1,6 @@
 import functools
 import io
 import pathlib
-import re
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
@@ -19,7 +18,6 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
     path_comparator,
-    MappingIterator,
     path_accessor,
     getitem,
 )
@@ -50,12 +48,6 @@ class CLEVR(Dataset):
             return 1
         else:
             return None
-
-    _ANNS_NAME_PATTERN = re.compile(r"CLEVR_(?P<split>train|val)_scenes[.]json")
-
-    def _filter_scene_files(self, data: Tuple[str, Any], *, split: str) -> bool:
-        path = pathlib.Path(data[0])
-        return self._ANNS_NAME_PATTERN.match(path.name)["split"] == split  # type: ignore[index]
 
     def _filter_scene_anns(self, data: Tuple[str, Any]) -> bool:
         key, _ = data
@@ -100,12 +92,9 @@ class CLEVR(Dataset):
         images_dp = hint_shuffling(images_dp)
 
         if config.split != "test":
-            scenes_dp = Filter(scenes_dp, functools.partial(self._filter_scene_files, split=config.split))
+            scenes_dp = Filter(scenes_dp, path_comparator("name", f"CLEVR_{config.split}_scenes.json"))
             scenes_dp = JsonParser(scenes_dp)
-            scenes_dp = Mapper(scenes_dp, getitem(1))
-            scenes_dp = MappingIterator(scenes_dp)
-            scenes_dp = Filter(scenes_dp, self._filter_scene_anns)
-            scenes_dp = Mapper(scenes_dp, getitem(1))
+            scenes_dp = Mapper(scenes_dp, getitem(1, "scenes"))
             scenes_dp = UnBatcher(scenes_dp)
 
             dp = IterKeyZipper(
