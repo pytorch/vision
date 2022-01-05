@@ -72,14 +72,13 @@ class OxfordIIITPet(VisionDataset):
     def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         image = Image.open(self._images[idx]).convert("RGB")
 
-        target = []
+        target: Any = []
         for target_type in self._target_type:
             if target_type == "category":
                 target.append(self._labels[idx])
             else:  # t == "segmentation"
                 target.append(Image.open(self._segs[idx]))
 
-        target: Any
         if not target:
             target = None
         elif len(target) == 1:

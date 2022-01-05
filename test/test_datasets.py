@@ -2207,7 +2207,7 @@ class OxfordIIITPetTestCase(datasets_utils.DatasetTestCase):
             anns_folder, "trimaps", file_name_fn=lambda idx: f"{image_ids[idx]}.png", num_examples=len(image_ids)
         )
 
-        # The dataset has some rouge files
+        # The dataset has some rogue files
         for path in image_files[:2]:
             path.with_suffix(".mat").touch()
         for path in segmentation_files:
