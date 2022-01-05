@@ -322,9 +322,9 @@ def test_flow_to_image_errors():
     wrong_flow2 = torch.full((2, 10), 0)
 
     with pytest.raises(ValueError, match="Input flow should have shape"):
-        utils.flow_to_image(flow_uv=wrong_flow1)
-    with pytest.raises(ValueError, match="Input flow should have 3 dimensions"):
-        utils.flow_to_image(flow_uv=wrong_flow2)
+        utils.flow_to_image(flow=wrong_flow1)
+    with pytest.raises(ValueError, match="Input flow should have shape"):
+        utils.flow_to_image(flow=wrong_flow2)
 
 
 if __name__ == "__main__":

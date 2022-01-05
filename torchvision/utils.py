@@ -392,41 +392,40 @@ def draw_keypoints(
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
 @torch.no_grad()
 def flow_to_image(
-    flow_uv: torch.Tensor,
+    flow: torch.Tensor,
+    *,
     clip_flow: Optional[float] = None,
 ) -> torch.Tensor:
 
     """
-    Converts the two dimensional flow of image to a RGB Image.
+    Converts the two-dimensional flow to an RGB Image.
 
     Args:
-        flow_uv (Tensor): Flow UV image of shape [2, H, W]
+        flow (Tensor): Flow of shape (2, H, W)
         clip_flow (float, optional): Clip maximum of flow values. Defaults to None.
 
     Returns:
-        img (Tensor[3, H, W]): Image Tensor with flow drawn.
+        img (Tensor(3, H, W)): Image Tensor where each color corresponds to a given flow direction.
     """
 
-    if flow_uv.ndim != 3:
-        raise ValueError("Input flow should have 3 dimensions [2, H, W]")
-    if flow_uv.size(0) != 2:
-        raise ValueError("Input flow should have shape [2, H, W]")
+    if flow.ndim != 3 or flow.size(0) != 2:
+        raise ValueError(f"Input flow should have shape (2, H, W), got {flow.shape}.")
 
     if clip_flow is not None:
-        flow_uv = torch.clip(flow_uv, 0, clip_flow)
+        flow = torch.clip(flow, 0, clip_flow)
 
-    u = flow_uv[0, :, :]
-    v = flow_uv[1, :, :]
+    u = flow[0, :, :]
+    v = flow[1, :, :]
     rad = torch.sqrt(torch.square(u) + torch.square(v))
     rad_max = torch.max(rad)
     epslion = 1e-5
     u = u / (rad_max + epslion)
     v = v / (rad_max + epslion)
-    return _flow_uv_to_colors(u, v)
+    return _flow_to_colors(u, v)
 
 
 @torch.no_grad()
-def _flow_uv_to_colors(
+def _flow_to_colors(
     u: torch.Tensor,
     v: torch.Tensor,
 ) -> torch.Tensor:
@@ -443,16 +442,15 @@ def _flow_uv_to_colors(
     """
 
     flow_image = torch.zeros((3, u.shape[0], u.shape[1]), dtype=torch.uint8)
-    colorwheel = _make_colorwheel()
-    # shape [55x3]
-    ncols = colorwheel.shape[0]
+    colorwheel = _make_colorwheel()  # shape [55x3]
+    num_cols = colorwheel.shape[0]
     rad = torch.sqrt(torch.square(u) + torch.square(v))
 
     a = torch.atan2(-v, -u) / torch.pi
-    fk = (a + 1) / 2 * (ncols - 1)
+    fk = (a + 1) / 2 * (num_cols - 1)
     k0 = torch.floor(fk).to(torch.long)
     k1 = k0 + 1
-    k1[k1 == ncols] = 0
+    k1[k1 == num_cols] = 0
     f = fk - k0
 
     for i in range(colorwheel.shape[1]):
