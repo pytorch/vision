@@ -15,22 +15,24 @@ class OxfordIIITPet(VisionDataset):
         ("https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz", "5c4f3ee8e5d25df40f4fd59a7f44e54c"),
         ("https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz", "95a8c909bbe2e81eed6a22bccdf3f68f"),
     )
-    _TARGET_TYPES = ("category", "segmentation")
+    _VALID_TARGET_TYPES = ("category", "segmentation")
 
     def __init__(
         self,
         root: str,
         split: str = "trainval",
-        target_type: Union[Sequence[str], str] = "category",
+        target_types: Union[Sequence[str], str] = "category",
         transforms: Optional[Callable] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = True,
     ):
         self._split = verify_str_arg(split, "split", ("trainval", "test"))
-        if isinstance(target_type, str):
-            target_type = [target_type]
-        self._target_type = [verify_str_arg(t, "target_type", self._TARGET_TYPES) for t in target_type]
+        if isinstance(target_types, str):
+            target_types = [target_types]
+        self._target_type = [
+            verify_str_arg(target_type, "target_types", self._VALID_TARGET_TYPES) for target_type in target_types
+        ]
 
         super().__init__(root, transforms=transforms, transform=transform, target_transform=target_transform)
         self._base_folder = pathlib.Path(self.root) / "oxford-iiit-pet"
@@ -71,8 +73,8 @@ class OxfordIIITPet(VisionDataset):
         image = Image.open(self._images[idx]).convert("RGB")
 
         target = []
-        for t in self._target_type:
-            if t == "category":
+        for target_type in self._target_type:
+            if target_type == "category":
                 target.append(self._labels[idx])
             else:  # t == "segmentation"
                 target.append(Image.open(self._segs[idx]))
