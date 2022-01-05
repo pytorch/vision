@@ -2212,7 +2212,7 @@ class DTDTestCase(datasets_utils.ImageDatasetTestCase):
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("train", "test", "val"),
         # There is no need to test the whole matrix here, since each fold is treated exactly the same
-        fold=(5,),
+        partition=(1, 5, 10),
     )
 
     def inject_fake_data(self, tmpdir: str, config):
@@ -2235,7 +2235,7 @@ class DTDTestCase(datasets_utils.ImageDatasetTestCase):
         meta_folder.mkdir()
         image_ids = [str(path.relative_to(path.parents[1])).replace(os.sep, "/") for path in image_files]
         image_ids_in_config = random.choices(image_ids, k=len(image_files) // 2)
-        with open(meta_folder / f"{config['split']}{config['fold']}.txt", "w") as file:
+        with open(meta_folder / f"{config['split']}{config['partition']}.txt", "w") as file:
             file.write("\n".join(image_ids_in_config) + "\n")
 
         return len(image_ids_in_config)

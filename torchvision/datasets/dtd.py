@@ -1,6 +1,6 @@
 import os
 import pathlib
-from typing import Optional, Callable, Union
+from typing import Optional, Callable
 
 import PIL.Image
 
@@ -14,7 +14,13 @@ class DTD(VisionDataset):
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.
-        fold (string or int, optional): The dataset fold. Should be ``1 <= fold <= 10``. Defaults to ``1``.
+        partition (int, optional): The dataset partition. Should be ``1 <= partition <= 10``. Defaults to ``1``.
+
+            .. note::
+
+                The partition only changes which split each image belongs to. Thus, regardless of the selected
+                partition, combining all splits will result in all images.
+
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
             downloaded again.
@@ -30,13 +36,18 @@ class DTD(VisionDataset):
         self,
         root: str,
         split: str = "train",
-        fold: Union[str, int] = 1,
+        partition: int = 1,
         download: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
-        self._fold = verify_str_arg(str(fold), "fold", [str(i) for i in range(1, 11)])
+        if not isinstance(partition, int) and not (1 <= partition <= 10):
+            raise ValueError(
+                f"Parameter 'partition' should be an integer with `1 <= partition <= 10`, "
+                f"but got {partition} instead"
+            )
+        self._partition = partition
 
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._base_folder = pathlib.Path(self.root) / type(self).__name__.lower()
@@ -52,7 +63,7 @@ class DTD(VisionDataset):
 
         self._image_files = []
         classes = []
-        with open(self._meta_folder / f"{self._split}{self._fold}.txt") as file:
+        with open(self._meta_folder / f"{self._split}{self._partition}.txt") as file:
             for line in file:
                 cls, name = line.strip().split("/")
                 self._image_files.append(self._images_folder.joinpath(cls, name))
@@ -78,7 +89,7 @@ class DTD(VisionDataset):
         return image, label
 
     def extra_repr(self) -> str:
-        return f"split={self._split}, fold={self._fold}"
+        return f"split={self._split}, partition={self._partition}"
 
     def _check_exists(self) -> bool:
         return os.path.exists(self._data_folder) and os.path.isdir(self._data_folder)
