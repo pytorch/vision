@@ -21,6 +21,9 @@ class Food101(VisionDataset):
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again. Default is False.
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
@@ -33,7 +36,7 @@ class Food101(VisionDataset):
         self,
         root: str,
         split: str = "train",
-        download: bool = True,
+        download: bool = False,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
     ) -> None:
