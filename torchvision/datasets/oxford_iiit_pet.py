@@ -11,6 +11,26 @@ from .vision import VisionDataset
 
 
 class OxfordIIITPet(VisionDataset):
+    """`Oxford-IIIT Pet Dataset   <https://www.robots.ox.ac.uk/~vgg/data/pets/>`_.
+
+    Args:
+        root (string): Root directory of the dataset.
+        split (string, optional): The dataset split, supports ``"trainval"`` (default) or ``"test"``.
+        target_types (string, sequence of strings, optional): Types of target to use. Can be ``category`` (default) or
+            ``segmentation``. Can also be a list to output a tuple with all specified target types. The types represent:
+
+                - ``category`` (int): Label for one of the 37 pet categories.
+                - ``segmentation`` (PIL image): Segmentation trimap of the image.
+
+            If empty, ``None`` will be returned as target.
+
+        transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
+            version. E.g, ``transforms.RandomCrop``.
+        target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and puts it into ``root/dtd``. If
+            dataset is already downloaded, it is not downloaded again.
+    """
+
     _RESOURCES = (
         ("https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz", "5c4f3ee8e5d25df40f4fd59a7f44e54c"),
         ("https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz", "95a8c909bbe2e81eed6a22bccdf3f68f"),
