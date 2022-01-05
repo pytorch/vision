@@ -1,5 +1,6 @@
 import bz2
 import contextlib
+import csv
 import io
 import itertools
 import json
@@ -2239,6 +2240,39 @@ class DTDTestCase(datasets_utils.ImageDatasetTestCase):
             file.write("\n".join(image_ids_in_config) + "\n")
 
         return len(image_ids_in_config)
+
+
+class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FER2013
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    FEATURE_TYPES = (PIL.Image.Image, (int, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        base_folder = os.path.join(tmpdir, "fer2013")
+        os.makedirs(base_folder)
+
+        num_samples = 5
+        with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
+            writer = csv.DictWriter(
+                file,
+                fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
+                quoting=csv.QUOTE_NONNUMERIC,
+                quotechar='"',
+            )
+            writer.writeheader()
+            for _ in range(num_samples):
+                row = dict(
+                    pixels=" ".join(
+                        str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                    )
+                )
+                if config["split"] == "train":
+                    row["emotion"] = str(int(torch.randint(0, 7, ())))
+
+                writer.writerow(row)
+
+        return num_samples
 
 
 if __name__ == "__main__":
