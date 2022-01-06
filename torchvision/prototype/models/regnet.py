@@ -49,7 +49,7 @@ _COMMON_META = {
     "publication_year": 2020,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR
+    "interpolation": InterpolationMode.BILINEAR,
 }
 
 

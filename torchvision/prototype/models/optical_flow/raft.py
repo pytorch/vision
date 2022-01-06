@@ -25,7 +25,7 @@ _COMMON_META = {
     "task": "optical_flow",
     "architecture": "RAFT",
     "publication_year": 2020,
-    "interpolation": InterpolationMode.BILINEAR
+    "interpolation": InterpolationMode.BILINEAR,
 }
 
 

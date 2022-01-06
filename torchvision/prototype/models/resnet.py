@@ -55,7 +55,7 @@ _COMMON_META = {
     "task": "image_classification",
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR
+    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
