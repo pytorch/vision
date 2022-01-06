@@ -54,6 +54,7 @@ def _resnet(
 
 
 _COMMON_META = {
+    "task": "image_classification",
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -69,6 +70,8 @@ class ResNet18_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "unquantized": ResNet18_Weights.ImageNet1K_V1,
             "acc@1": 69.494,
             "acc@5": 88.882,
@@ -83,6 +86,8 @@ class ResNet50_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "unquantized": ResNet50_Weights.ImageNet1K_V1,
             "acc@1": 75.920,
             "acc@5": 92.814,
@@ -93,6 +98,8 @@ class ResNet50_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "unquantized": ResNet50_Weights.ImageNet1K_V2,
             "acc@1": 80.282,
             "acc@5": 94.976,
@@ -107,6 +114,8 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
             "unquantized": ResNeXt101_32X8D_Weights.ImageNet1K_V1,
             "acc@1": 78.986,
             "acc@5": 94.480,
@@ -117,6 +126,8 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
             "unquantized": ResNeXt101_32X8D_Weights.ImageNet1K_V2,
             "acc@1": 82.574,
             "acc@5": 96.132,

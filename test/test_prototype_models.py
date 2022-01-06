@@ -97,7 +97,7 @@ def test_naming_conventions(model_fn):
 def test_schema_meta_validation(model_fn):
     classification_fields = ["size", "categories", "acc@1", "acc@5"]
     defaults = {
-        "all": ["interpolation", "recipe"],
+        "all": ["task", "architecture", "publication_year", "interpolation", "recipe"],
         "models": classification_fields,
         "detection": ["categories", "map"],
         "quantization": classification_fields + ["backend", "quantization", "unquantized"],

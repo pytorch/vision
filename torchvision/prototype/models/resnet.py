@@ -51,7 +51,12 @@ def _resnet(
     return model
 
 
-_COMMON_META = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_COMMON_META = {
+    "task": "image_classification",
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR
+}
 
 
 class ResNet18_Weights(WeightsEnum):
@@ -60,6 +65,8 @@ class ResNet18_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 69.758,
             "acc@5": 89.078,
@@ -74,6 +81,8 @@ class ResNet34_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 73.314,
             "acc@5": 91.420,
@@ -88,6 +97,8 @@ class ResNet50_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 76.130,
             "acc@5": 92.862,
@@ -98,6 +109,8 @@ class ResNet50_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 80.674,
             "acc@5": 95.166,
@@ -112,6 +125,8 @@ class ResNet101_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 77.374,
             "acc@5": 93.546,
@@ -122,6 +137,8 @@ class ResNet101_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 81.886,
             "acc@5": 95.780,
@@ -136,6 +153,8 @@ class ResNet152_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 78.312,
             "acc@5": 94.046,
@@ -146,6 +165,8 @@ class ResNet152_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 82.284,
             "acc@5": 96.002,
@@ -160,6 +181,8 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 77.618,
             "acc@5": 93.698,
@@ -170,6 +193,8 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 81.198,
             "acc@5": 95.340,
@@ -184,6 +209,8 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 79.312,
             "acc@5": 94.526,
@@ -194,6 +221,8 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 82.834,
             "acc@5": 96.228,
@@ -208,6 +237,8 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "WideResNet",
+            "publication_year": 2016,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "acc@1": 78.468,
             "acc@5": 94.086,
@@ -218,6 +249,8 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "WideResNet",
+            "publication_year": 2016,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 81.602,
             "acc@5": 95.758,
@@ -232,6 +265,8 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "WideResNet",
+            "publication_year": 2016,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "acc@1": 78.848,
             "acc@5": 94.284,
@@ -242,6 +277,8 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "WideResNet",
+            "publication_year": 2016,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 82.510,
             "acc@5": 96.020,

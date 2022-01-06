@@ -15,6 +15,9 @@ __all__ = ["FCN", "FCN_ResNet50_Weights", "FCN_ResNet101_Weights", "fcn_resnet50
 
 
 _COMMON_META = {
+    "task": "image_semantic_segmentation",
+    "architecture": "FCN",
+    "publication_year": 2014,
     "categories": _VOC_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }

@@ -25,6 +25,9 @@ __all__ = [
 
 
 _COMMON_META = {
+    "task": "image_semantic_segmentation",
+    "architecture": "DeepLabV3",
+    "publication_year": 2017,
     "categories": _VOC_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }

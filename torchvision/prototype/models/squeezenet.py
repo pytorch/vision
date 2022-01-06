@@ -14,6 +14,9 @@ __all__ = ["SqueezeNet", "SqueezeNet1_0_Weights", "SqueezeNet1_1_Weights", "sque
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "SqueezeNet",
+    "publication_year": 2016,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,

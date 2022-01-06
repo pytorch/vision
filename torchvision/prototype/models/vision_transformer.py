@@ -236,6 +236,9 @@ class VisionTransformer(nn.Module):
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ViT",
+    "publication_year": 2020,
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }

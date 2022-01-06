@@ -24,6 +24,9 @@ __all__ = [
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "MNASNet",
+    "publication_year": 2018,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,

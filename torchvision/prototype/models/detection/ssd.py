@@ -27,6 +27,9 @@ class SSD300_VGG16_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
         transforms=CocoEval,
         meta={
+            "task": "image_object_detection",
+            "architecture": "SSD",
+            "publication_year": 2015,
             "size": (300, 300),
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,

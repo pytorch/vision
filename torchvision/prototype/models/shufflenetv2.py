@@ -41,6 +41,9 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ShuffleNetV2",
+    "publication_year": 2018,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,

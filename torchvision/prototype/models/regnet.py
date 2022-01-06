@@ -43,7 +43,14 @@ __all__ = [
     "regnet_x_32gf",
 ]
 
-_COMMON_META = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_COMMON_META = {
+    "task": "image_classification",
+    "architecture": "RegNet",
+    "publication_year": 2020,
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR
+}
 
 
 def _regnet(

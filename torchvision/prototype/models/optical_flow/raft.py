@@ -21,7 +21,12 @@ __all__ = (
 )
 
 
-_COMMON_META = {"interpolation": InterpolationMode.BILINEAR}
+_COMMON_META = {
+    "task": "optical_flow",
+    "architecture": "RAFT",
+    "publication_year": 2020,
+    "interpolation": InterpolationMode.BILINEAR
+}
 
 
 class Raft_Large_Weights(WeightsEnum):

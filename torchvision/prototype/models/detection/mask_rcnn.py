@@ -28,6 +28,9 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
         transforms=CocoEval,
         meta={
+            "task": "image_object_detection",
+            "architecture": "FasterRCNN",
+            "publication_year": 2015,
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn",

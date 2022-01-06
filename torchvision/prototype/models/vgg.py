@@ -41,6 +41,9 @@ def _vgg(cfg: str, batch_norm: bool, weights: Optional[WeightsEnum], progress: b
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "VGG",
+    "publication_year": 2014,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -119,9 +122,8 @@ class VGG16_Weights(WeightsEnum):
             ImageNetEval, crop_size=224, mean=(0.48235, 0.45882, 0.40784), std=(1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0)
         ),
         meta={
-            "size": (224, 224),
+            **_COMMON_META,
             "categories": None,
-            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/amdegroot/ssd.pytorch#training-ssd",
             "acc@1": float("nan"),
             "acc@5": float("nan"),
