@@ -5,7 +5,7 @@ from typing import Callable, Optional
 import scipy.io as io
 from PIL import Image
 
-from .utils import download_and_extract_archive, verify_str_arg, download_url
+from .utils import download_and_extract_archive, download_url
 from .vision import VisionDataset
 
 
@@ -126,4 +126,3 @@ class StanfordCars(VisionDataset):
                 )
     def _check_exists(self) -> bool:
         return os.path.exists(os.path.join(self.root, f"cars_{'train' if self.train else 'test'}")) and os.path.isdir(os.path.join(self.root, f"cars_{'train' if self.train else 'test'}")) and os.path.exists(os.path.join(self.root,"devkit/cars_meta.mat"))
-
