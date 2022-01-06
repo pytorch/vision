@@ -19,6 +19,9 @@ class SUN397(VisionDataset):
         split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
         parition (integer, optional): A valid partition can be an integer from 1 to 10 or None,
             for the entire dataset.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
@@ -41,11 +44,11 @@ class SUN397(VisionDataset):
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = verify_str_arg(split, "split", ("train", "test"))
         self.partition = partition
-        self.data_dir = Path(self.root) / "SUN397"
+        self._data_dir = Path(self.root) / "SUN397"
 
         if self.partition is not None:
             if self.partition < 0 or self.partition > 10:
-                raise RuntimeError("Enter a valid integer partition from 1 to 10 or None, for entire dataset")
+                raise RuntimeError(f"The partition parameter should be an int in [1, 10] or None, got {partition}.")
 
         if download:
             self._download()
@@ -53,18 +56,18 @@ class SUN397(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        with open(self.data_dir / "ClassName.txt") as f:
+        with open(self._data_dir / "ClassName.txt") as f:
             self.classes = [c[3:].strip() for c in f]
 
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
         if self.partition is not None:
-            with open(self.data_dir / f"{self.split.title()}ing_{self.partition:02d}.txt", "r") as f:
-                self._image_files = [self.data_dir.joinpath(*line.strip()[1:].split("/")) for line in f]
+            with open(self._data_dir / f"{self.split.title()}ing_{self.partition:02d}.txt", "r") as f:
+                self._image_files = [self._data_dir.joinpath(*line.strip()[1:].split("/")) for line in f]
         else:
-            self._image_files = list(self.data_dir.rglob("sun_*.jpg"))
+            self._image_files = list(self._data_dir.rglob("sun_*.jpg"))
 
         self._labels = [
-            self.class_to_idx["/".join(path.relative_to(self.data_dir).parts[1:-1])] for path in self._image_files
+            self.class_to_idx["/".join(path.relative_to(self._data_dir).parts[1:-1])] for path in self._image_files
         ]
 
     def __len__(self) -> int:
@@ -83,13 +86,13 @@ class SUN397(VisionDataset):
         return image, label
 
     def _check_exists(self) -> bool:
-        return self.data_dir.exists() and self.data_dir.is_dir()
+        return self._data_dir.exists() and self._data_dir.is_dir()
 
     def extra_repr(self) -> str:
         return "Split: {split}".format(**self.__dict__)
 
     def _download(self) -> None:
-        if self._check_exists:
+        if self._check_exists():
             return
-        download_and_extract_archive(self._DATASET_URL, download_root=self.root, md5=self._MD5)
-        download_and_extract_archive(self._PARTITIONS_URL, download_root=str(self.data_dir), md5=self._PARTITIONS_MD5)
+        download_and_extract_archive(self._DATASET_URL, download_root=self.root, md5=self._DATASET_MD5)
+        download_and_extract_archive(self._PARTITIONS_URL, download_root=str(self._data_dir), md5=self._PARTITIONS_MD5)
