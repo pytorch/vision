@@ -31,6 +31,9 @@ __all__ = [
 
 
 _COMMON_META = {
+    "task": "image_object_detection",
+    "architecture": "FasterRCNN",
+    "publication_year": 2015,
     "categories": _COCO_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
@@ -42,6 +45,7 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
         transforms=CocoEval,
         meta={
             **_COMMON_META,
+            "num_params": 41755286,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn",
             "map": 37.0,
         },
@@ -55,6 +59,7 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
         transforms=CocoEval,
         meta={
             **_COMMON_META,
+            "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn",
             "map": 32.8,
         },
@@ -68,6 +73,7 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
         transforms=CocoEval,
         meta={
             **_COMMON_META,
+            "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn",
             "map": 22.8,
         },
