@@ -68,6 +68,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     SBU
     SEMEION
     Sintel
+    StanfordCars
     STL10
     SVHN
     UCF101

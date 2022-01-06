@@ -24,6 +24,7 @@ from .places365 import Places365
 from .sbd import SBDataset
 from .sbu import SBU
 from .semeion import SEMEION
+from .standford_cars import StanfordCars
 from .stl10 import STL10
 from .svhn import SVHN
 from .ucf101 import UCF101
@@ -47,6 +48,7 @@ __all__ = (
     "QMNIST",
     "MNIST",
     "KMNIST",
+    "StanfordCars",
     "STL10",
     "SVHN",
     "PhotoTour",
