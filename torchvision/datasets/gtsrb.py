@@ -25,19 +25,17 @@ class GTSRB(VisionDataset):
     """
 
     # Ground Truth for the test set
-    gt_url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_GT.zip"
-    gt_csv = "GT-final_test.csv"
-    gt_md5 = "fe31e9c9270bbcd7b84b7f21a9d9d9e5"
+    _gt_url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_GT.zip"
+    _gt_csv = "GT-final_test.csv"
+    _gt_md5 = "fe31e9c9270bbcd7b84b7f21a9d9d9e5"
 
     # URLs for the test and train set
-    urls = (
+    _urls = (
         "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_Images.zip",
         "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB-Training_fixed.zip",
     )
 
-    md5s = ("c7e4e6327067d32654124b0fe9e82185", "513f3c79a4c5141765e10e952eaa2478")
-
-    extension = (".ppm",)
+    _md5s = ("c7e4e6327067d32654124b0fe9e82185", "513f3c79a4c5141765e10e952eaa2478")
 
     def __init__(
         self,
@@ -53,8 +51,9 @@ class GTSRB(VisionDataset):
         self.root = os.path.expanduser(root)
 
         self.train = train
-        self.url = self.urls[self.train]
-        self.md5 = self.md5s[self.train]
+
+        self._base_folder = os.path.join(self.root, type(self).__name__)
+        self._target_folder = os.path.join(self._base_folder, "Training" if self.train else "Final_Test/Images")
 
         if download:
             self.download()
@@ -63,24 +62,24 @@ class GTSRB(VisionDataset):
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         if train:
-            samples = make_dataset(self._target_folder, extensions=self.extension)
+            samples = make_dataset(self._target_folder, extensions=(".ppm",))
         else:
-            with open(os.path.join(self._base_folder, self.gt_csv)) as csv_file:
+            with open(os.path.join(self._base_folder, self._gt_csv)) as csv_file:
                 samples = [
                     (os.path.join(self._target_folder, row["Filename"]), int(row["ClassId"]))
                     for row in csv.DictReader(csv_file, delimiter=";", skipinitialspace=True)
                 ]
 
-        self.samples = samples
+        self._samples = samples
         self.transform = transform
         self.target_transform = target_transform
 
     def __len__(self) -> int:
-        return len(self.samples)
+        return len(self._samples)
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
 
-        path, target = self.samples[index]
+        path, target = self._samples[index]
         sample = PIL.Image.open(path).convert("RGB")
 
         if self.transform is not None:
@@ -91,14 +90,6 @@ class GTSRB(VisionDataset):
 
         return sample, target
 
-    @property
-    def _base_folder(self) -> str:
-        return os.path.join(self.root, type(self).__name__)
-
-    @property
-    def _target_folder(self) -> str:
-        return os.path.join(self._base_folder, "Training" if self.train else "Final_Test/Images")
-
     def _check_exists(self) -> bool:
         return os.path.exists(self._target_folder) and os.path.isdir(self._target_folder)
 
@@ -106,10 +97,10 @@ class GTSRB(VisionDataset):
         if self._check_exists():
             return
 
-        download_and_extract_archive(self.url, download_root=self.root, md5=self.md5)
+        download_and_extract_archive(self._urls[self.train], download_root=self.root, md5=self._md5s[self.train])
 
         if not self.train:
             # Download Ground Truth for the test set
             download_and_extract_archive(
-                self.gt_url, download_root=self.root, extract_root=self._base_folder, md5=self.gt_md5
+                self._gt_url, download_root=self.root, extract_root=self._base_folder, md5=self._gt_md5
             )
