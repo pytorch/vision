@@ -236,6 +236,9 @@ class VisionTransformer(nn.Module):
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ViT",
+    "publication_year": 2020,
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
@@ -247,6 +250,7 @@ class ViT_B_16_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 86567656,
             "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
             "acc@1": 81.072,
@@ -262,6 +266,7 @@ class ViT_B_32_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 88224232,
             "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32",
             "acc@1": 75.912,
@@ -277,6 +282,7 @@ class ViT_L_16_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=242),
         meta={
             **_COMMON_META,
+            "num_params": 304326632,
             "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16",
             "acc@1": 79.662,
@@ -292,6 +298,7 @@ class ViT_L_32_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 306535400,
             "size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32",
             "acc@1": 76.972,
