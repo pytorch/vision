@@ -202,7 +202,7 @@ class VisionTransformer(nn.Module):
         nn.init.zeros_(self.heads.head.weight)
         nn.init.zeros_(self.heads.head.bias)
 
-    def forward(self, x: torch.Tensor):
+    def _process_input(self, x: torch.Tensor) -> torch.Tensor:
         n, c, h, w = x.shape
         p = self.patch_size
         torch._assert(h == self.image_size, "Wrong image height!")
@@ -221,7 +221,14 @@ class VisionTransformer(nn.Module):
         # embedding dimension
         x = x.permute(0, 2, 1)
 
-        # Expand the class token to the full batch.
+        return x
+
+    def forward(self, x: torch.Tensor):
+        # Reshaping and permuting the input tensor
+        x = self._process_input(x)
+        n = x.shape[0]
+
+        # Expand the class token to the full batch
         batch_class_token = self.class_token.expand(n, -1, -1)
         x = torch.cat([batch_class_token, x], dim=1)
 
