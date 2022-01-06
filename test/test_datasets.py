@@ -2169,12 +2169,13 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
-class OxfordIIITPetTestCase(datasets_utils.DatasetTestCase):
+class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.OxfordIIITPet
     FEATURE_TYPES = (PIL.Image.Image, (int, PIL.Image.Image, tuple, type(None)))
+
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("trainval", "test"),
-        target_type=("category", "segmentation", ("category", "segmentation")),
+        target_types=("category", "segmentation", ["category", "segmentation"], []),
     )
 
     def inject_fake_data(self, tmpdir, config):

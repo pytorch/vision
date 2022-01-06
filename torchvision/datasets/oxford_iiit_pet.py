@@ -50,7 +50,7 @@ class OxfordIIITPet(VisionDataset):
         self._split = verify_str_arg(split, "split", ("trainval", "test"))
         if isinstance(target_types, str):
             target_types = [target_types]
-        self._target_type = [
+        self._target_types = [
             verify_str_arg(target_type, "target_types", self._VALID_TARGET_TYPES) for target_type in target_types
         ]
 
@@ -93,10 +93,10 @@ class OxfordIIITPet(VisionDataset):
         image = Image.open(self._images[idx]).convert("RGB")
 
         target: Any = []
-        for target_type in self._target_type:
+        for target_type in self._target_types:
             if target_type == "category":
                 target.append(self._labels[idx])
-            else:  # t == "segmentation"
+            else:  # target_type == "segmentation"
                 target.append(Image.open(self._segs[idx]))
 
         if not target:
