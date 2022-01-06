@@ -156,9 +156,7 @@ class SBD(Dataset):
         return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
-        resources = self.resources(self.default_config)
-
-        dp = resources[0].load(root)
+        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
         dp = Filter(dp, path_comparator("name", "category_names.m"))
         dp = LineReader(dp)
         dp = Mapper(dp, bytes.decode, input_col=1)

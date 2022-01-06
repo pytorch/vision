@@ -136,11 +136,8 @@ class Caltech101(Dataset):
         return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        resources = self.resources(self.default_config)
-
-        dp = resources[0].load(root)
+        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
         dp = Filter(dp, self._is_not_background_image)
-
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
 
@@ -192,9 +189,6 @@ class Caltech256(Dataset):
         return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        resources = self.resources(self.default_config)
-
-        dp = resources[0].load(root)
+        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
         dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
-
         return [name.split(".")[1] for name in sorted(dir_names)]
