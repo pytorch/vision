@@ -4,7 +4,7 @@ import io
 import operator
 import pathlib
 import string
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO, Union, Sequence
 
 import torch
 from torchdata.datapipes.iter import (
@@ -78,7 +78,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
 
 
 class _MNISTBase(Dataset):
-    _URL_BASE: str
+    _URL_BASE: Union[str, Sequence[str]]
 
     @abc.abstractmethod
     def _files_and_checksums(self, config: DatasetConfig) -> Tuple[Tuple[str, str], Tuple[str, str]]:
@@ -90,8 +90,15 @@ class _MNISTBase(Dataset):
             labels_sha256,
         ) = self._files_and_checksums(config)
 
-        images = HttpResource(f"{self._URL_BASE}/{images_file}", sha256=images_sha256)
-        labels = HttpResource(f"{self._URL_BASE}/{labels_file}", sha256=labels_sha256)
+        url_bases = self._URL_BASE
+        if isinstance(url_bases, str):
+            url_bases = (url_bases,)
+
+        images_urls = [f"{url_base}/{images_file}" for url_base in url_bases]
+        images = HttpResource(images_urls[0], sha256=images_sha256, mirrors=images_urls[1:])
+
+        labels_urls = [f"{url_base}/{labels_file}" for url_base in url_bases]
+        labels = HttpResource(labels_urls[0], sha256=images_sha256, mirrors=labels_urls[1:])
 
         return [images, labels]
 
@@ -151,7 +158,10 @@ class MNIST(_MNISTBase):
             ),
         )
 
-    _URL_BASE = "http://yann.lecun.com/exdb/mnist"
+    _URL_BASE: Union[str, Sequence[str]] = (
+        "http://yann.lecun.com/exdb/mnist",
+        "https://ossci-datasets.s3.amazonaws.com/mnist/",
+    )
     _CHECKSUMS = {
         "train-images-idx3-ubyte.gz": "440fcabf73cc546fa21475e81ea370265605f56be210a4024d2ca8f203523609",
         "train-labels-idx1-ubyte.gz": "3552534a0a558bbed6aed32b30c495cca23d567ec52cac8be1a0730e8010255c",
