@@ -2224,7 +2224,7 @@ class Country211TestCase(datasets_utils.ImageDatasetTestCase):
             im_paths.extend(
                 datasets_utils.create_image_folder(
                     image_folder,
-                    name = cls,
+                    name=cls,
                     file_name_fn=lambda idx: f"{cls}_{idx:05d}.jpg",
                     num_examples=num_images_per_class,
                 )
