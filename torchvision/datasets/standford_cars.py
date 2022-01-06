@@ -63,7 +63,7 @@ class StanfordCars(VisionDataset):
         self.class_names = self._get_class_names()
         self.annotations = self._get_annotations()
 
-    def _get_class_names(self):
+    def _get_class_names(self) -> dict:
         """
         Returns Mapping of class ids to class names in form of Dictionary
         """
@@ -86,10 +86,10 @@ class StanfordCars(VisionDataset):
             annotations = io.loadmat(os.path.join(self.root, "cars_test_annos_withlabels.mat"))
         return annotations["annotations"][0]
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.annotations.shape[0]
 
-    def __getitem__(self, idx: int):
+    def __getitem__(self, idx: int) -> (Image,int):
         """Returns pil_image and class_id for given index"""
         target_id = self.annotations[idx][4][0, 0]
         image_name = self.annotations[idx][5][0]
