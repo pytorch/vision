@@ -6,13 +6,13 @@ from .utils import download_and_extract_archive
 
 
 class EuroSAT(ImageFolder):
-    """RGB version of the `EuroSAT <https://arxiv.org/pdf/1709.00029.pdf>`_ Dataset.
+    """RGB version of the `EuroSAT <https://github.com/phelber/eurosat>`_ Dataset.
 
     Args:
-        root (string): Root directory of dataset where ``EuroSAT.zip`` exists.
+        root (string): Root directory of dataset where ``root/eurosat`` exists.
         download (bool, optional): If True, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
+            downloaded again. Default is False.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
@@ -45,20 +45,14 @@ class EuroSAT(ImageFolder):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
+        self._base_folder = os.path.join(self.root, self.__class__.__name__.lower())
+        self._data_folder = os.path.join(self._base_folder, "2750")
         super().__init__(self._data_folder, **kwargs)
         self.classes = [self._class_map.get(cls, cls) for cls in self.classes]
         self.root = os.path.expanduser(root)
 
     def __len__(self) -> int:
         return len(self.samples)
-
-    @property
-    def _base_folder(self) -> str:
-        return os.path.join(self.root, self.__class__.__name__.lower())
-
-    @property
-    def _data_folder(self) -> str:
-        return os.path.join(self._base_folder, "2750")
 
     def _check_exists(self) -> bool:
         return os.path.exists(self._data_folder)
