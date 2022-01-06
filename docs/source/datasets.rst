@@ -46,6 +46,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     Flickr8k
     Flickr30k
     FlyingChairs
+    FlyingThings3D
     Food101
     GTSRB
     HD1K
