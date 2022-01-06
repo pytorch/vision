@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from torchdata.datapipes.iter import (
     IterableWrapper,
     FileLister,
-    FileLoader,
+    FileOpener,
     IterDataPipe,
     ZipArchiveReader,
     TarArchiveReader,
@@ -62,9 +62,9 @@ class OnlineResource(abc.ABC):
 
     def _default_loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
-            return FileLoader(FileLister(str(path), recursive=True))
+            return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
-        dp = FileLoader(IterableWrapper((str(path),)))
+        dp = FileOpener(IterableWrapper((str(path),)), mode="rb")
 
         archive_loader = self._guess_archive_loader(path)
         if archive_loader:
@@ -136,14 +136,14 @@ class OnlineResource(abc.ABC):
 
 class HttpResource(OnlineResource):
     def __init__(
-        self, url: str, *, file_name: Optional[str] = None, mirrors: Optional[Sequence[str]] = None, **kwargs: Any
+        self, url: str, *, file_name: Optional[str] = None, mirrors: Sequence[str] = (), **kwargs: Any
     ) -> None:
         super().__init__(file_name=file_name or pathlib.Path(urlparse(url).path).name, **kwargs)
         self.url = url
         self.mirrors = mirrors
 
     def _download(self, root: pathlib.Path) -> None:
-        for url in itertools.chain((self.url,), self.mirrors or ()):
+        for url in itertools.chain((self.url,), self.mirrors):
             try:
                 download_url(url, str(root), filename=self.file_name, md5=None)
             # TODO: make this more precise
@@ -176,3 +176,17 @@ class ManualDownloadResource(OnlineResource):
             f"Please follow the instructions below and place it in {root}\n\n"
             f"{self.instructions}"
         )
+
+
+class KaggleDownloadResource(ManualDownloadResource):
+    def __init__(self, challenge_url: str, *, file_name: str, **kwargs: Any) -> None:
+        instructions = "\n".join(
+            (
+                "1. Register and login at https://www.kaggle.com",
+                f"2. Navigate to {challenge_url}",
+                "3. Click 'Join Competition' and follow the instructions there",
+                "4. Navigate to the 'Data' tab",
+                f"5. Select {file_name} in the 'Data Explorer' and click the download button",
+            )
+        )
+        super().__init__(instructions, file_name=file_name, **kwargs)
