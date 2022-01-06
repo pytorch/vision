@@ -10,13 +10,11 @@ from typing import Any, Callable, Optional
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torchvision.prototype.transforms import ImageNetEval
-from torchvision.transforms.functional import InterpolationMode
 
 from ...utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
-from ._meta import _IMAGENET_CATEGORIES
+from ._api import WeightsEnum
 from ._utils import handle_legacy_interface
+
 
 __all__ = [
     "VisionTransformer",
@@ -235,70 +233,24 @@ class VisionTransformer(nn.Module):
         return x
 
 
-_COMMON_META = {
-    "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
-}
-
-
 class ViT_B_16_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
-        url="https://download.pytorch.org/models/vit_b_16-c867db91.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
-        meta={
-            **_COMMON_META,
-            "size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
-            "acc@1": 81.072,
-            "acc@5": 95.318,
-        },
-    )
-    default = ImageNet1K_V1
+    # If a default model is added here the corresponding changes need to be done in vit_b_16
+    pass
 
 
 class ViT_B_32_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
-        url="https://download.pytorch.org/models/vit_b_32-d86f8d99.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
-        meta={
-            **_COMMON_META,
-            "size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32",
-            "acc@1": 75.912,
-            "acc@5": 92.466,
-        },
-    )
-    default = ImageNet1K_V1
+    # If a default model is added here the corresponding changes need to be done in vit_b_32
+    pass
 
 
 class ViT_L_16_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
-        url="https://download.pytorch.org/models/vit_l_16-852ce7e3.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=242),
-        meta={
-            **_COMMON_META,
-            "size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16",
-            "acc@1": 79.662,
-            "acc@5": 94.638,
-        },
-    )
-    default = ImageNet1K_V1
+    # If a default model is added here the corresponding changes need to be done in vit_l_16
+    pass
 
 
 class ViT_L_32_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
-        url="https://download.pytorch.org/models/vit_l_32-c7638314.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
-        meta={
-            **_COMMON_META,
-            "size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32",
-            "acc@1": 76.972,
-            "acc@5": 93.07,
-        },
-    )
-    default = ImageNet1K_V1
+    # If a default model is added here the corresponding changes need to be done in vit_l_32
+    pass
 
 
 def _vision_transformer(
@@ -329,7 +281,7 @@ def _vision_transformer(
     return model
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", None))
 def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_16 architecture from
@@ -354,7 +306,7 @@ def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_B_32_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", None))
 def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_32 architecture from
@@ -379,7 +331,7 @@ def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_L_16_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", None))
 def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_16 architecture from
@@ -404,7 +356,7 @@ def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_L_32_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", None))
 def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_32 architecture from
