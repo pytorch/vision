@@ -38,6 +38,8 @@ class EuroSAT(ImageFolder):
         **kwargs: Any,
     ) -> None:
         self.root = os.path.expanduser(root)
+        self._base_folder = os.path.join(self.root, "eurosat")
+        self._data_folder = os.path.join(self._base_folder, "2750")
 
         if download:
             self.download()
@@ -45,8 +47,6 @@ class EuroSAT(ImageFolder):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self._base_folder = os.path.join(self.root, "eurosat")
-        self._data_folder = os.path.join(self._base_folder, "2750")
         super().__init__(self._data_folder, **kwargs)
         self.classes = [self._class_map.get(cls, cls) for cls in self.classes]
         self.root = os.path.expanduser(root)
