@@ -25,8 +25,8 @@ __all__ = [
 
 _COMMON_META = {
     "task": "image_object_detection",
-    "architecture": "FasterRCNN",
-    "publication_year": 2015,
+    "architecture": "KeypointRCNN",
+    "publication_year": 2017,
     "categories": _COCO_PERSON_CATEGORIES,
     "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES,
     "interpolation": InterpolationMode.BILINEAR,
