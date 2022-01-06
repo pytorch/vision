@@ -30,7 +30,7 @@ import PIL.Image
 import torch
 import torch.distributed as dist
 import torch.utils.data
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader, IterDataPipe, ShardingFilter, Shuffler
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 
 
@@ -260,7 +260,7 @@ def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[st
     dp = IoPathFileLister(root=root)
     dp = SharderDataPipe(dp)
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
-    dp = IoPathFileLoader(dp, mode="rb")
+    dp = IoPathFileOpener(dp, mode="rb")
     dp = PicklerDataPipe(dp)
     # dp = dp.cycle(2)
     dp = TakerDataPipe(dp, dataset_size)

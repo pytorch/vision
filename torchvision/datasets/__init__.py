@@ -11,6 +11,7 @@ from .fer2013 import FER2013
 from .flickr import Flickr8k, Flickr30k
 from .folder import ImageFolder, DatasetFolder
 from .food101 import Food101
+from .gtsrb import GTSRB
 from .hmdb51 import HMDB51
 from .imagenet import ImageNet
 from .inaturalist import INaturalist
@@ -84,5 +85,6 @@ __all__ = (
     "Food101",
     "DTD",
     "FER2013",
+    "GTSRB",
     "CLEVRClassification",
 )
