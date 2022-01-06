@@ -17,7 +17,7 @@ class SUN397(VisionDataset):
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
-        parition (integer, optional): A valid partition can be an integer from 1 to 10 or None,
+        partition (int, optional): A valid partition can be an integer from 1 to 10 or None,
             for the entire dataset.
         download (bool, optional): If true, downloads the dataset from the internet and
             puts it in root directory. If dataset is already downloaded, it is not
