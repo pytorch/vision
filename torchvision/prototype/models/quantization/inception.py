@@ -27,6 +27,10 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={
+            "task": "image_classification",
+            "architecture": "InceptionV3",
+            "publication_year": 2015,
+            "num_params": 27161264,
             "size": (299, 299),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,

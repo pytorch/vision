@@ -21,7 +21,12 @@ __all__ = (
 )
 
 
-_COMMON_META = {"interpolation": InterpolationMode.BILINEAR}
+_COMMON_META = {
+    "task": "optical_flow",
+    "architecture": "RAFT",
+    "publication_year": 2020,
+    "interpolation": InterpolationMode.BILINEAR,
+}
 
 
 class Raft_Large_Weights(WeightsEnum):
@@ -31,6 +36,7 @@ class Raft_Large_Weights(WeightsEnum):
         transforms=RaftEval,
         meta={
             **_COMMON_META,
+            "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_train_cleanpass_epe": 1.4411,
             "sintel_train_finalpass_epe": 2.7894,
@@ -45,6 +51,7 @@ class Raft_Large_Weights(WeightsEnum):
         transforms=RaftEval,
         meta={
             **_COMMON_META,
+            "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_train_cleanpass_epe": 1.3822,
             "sintel_train_finalpass_epe": 2.7161,
@@ -59,6 +66,7 @@ class Raft_Large_Weights(WeightsEnum):
         transforms=RaftEval,
         meta={
             **_COMMON_META,
+            "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_test_cleanpass_epe": 1.94,
             "sintel_test_finalpass_epe": 3.18,
@@ -73,6 +81,7 @@ class Raft_Large_Weights(WeightsEnum):
         transforms=RaftEval,
         meta={
             **_COMMON_META,
+            "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_test_cleanpass_epe": 1.819,
             "sintel_test_finalpass_epe": 3.067,
@@ -85,6 +94,7 @@ class Raft_Large_Weights(WeightsEnum):
         transforms=RaftEval,
         meta={
             **_COMMON_META,
+            "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "kitti_test_f1-all": 5.10,
         },
@@ -99,6 +109,7 @@ class Raft_Large_Weights(WeightsEnum):
         transforms=RaftEval,
         meta={
             **_COMMON_META,
+            "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "kitti_test_f1-all": 5.19,
         },
@@ -114,6 +125,7 @@ class Raft_Small_Weights(WeightsEnum):
         transforms=RaftEval,
         meta={
             **_COMMON_META,
+            "num_params": 990162,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_train_cleanpass_epe": 2.1231,
             "sintel_train_finalpass_epe": 3.2790,
@@ -127,6 +139,7 @@ class Raft_Small_Weights(WeightsEnum):
         transforms=RaftEval,
         meta={
             **_COMMON_META,
+            "num_params": 990162,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_train_cleanpass_epe": 1.9901,
             "sintel_train_finalpass_epe": 3.2831,
