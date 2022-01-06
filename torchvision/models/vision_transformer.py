@@ -218,7 +218,7 @@ class VisionTransformer(nn.Module):
         return x
 
     def forward(self, x: torch.Tensor):
-        # Reshaping and permuting the input tensor
+        # Reshape and permute the input tensor
         x = self._process_input(x)
         n = x.shape[0]
 
