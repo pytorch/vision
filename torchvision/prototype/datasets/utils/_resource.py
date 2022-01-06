@@ -9,7 +9,7 @@ from urllib.parse import urlparse
 from torchdata.datapipes.iter import (
     IterableWrapper,
     FileLister,
-    FileLoader,
+    FileOpener,
     IterDataPipe,
     ZipArchiveReader,
     TarArchiveReader,
@@ -62,9 +62,9 @@ class OnlineResource(abc.ABC):
 
     def _default_loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
-            return FileLoader(FileLister(str(path), recursive=True))
+            return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
-        dp = FileLoader(IterableWrapper((str(path),)))
+        dp = FileOpener(IterableWrapper((str(path),)), mode="rb")
 
         archive_loader = self._guess_archive_loader(path)
         if archive_loader:
