@@ -2296,5 +2296,87 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
         return num_samples
 
 
+class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.GTSRB
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    def inject_fake_data(self, tmpdir: str, config):
+        root_folder = os.path.join(tmpdir, "GTSRB")
+        os.makedirs(root_folder, exist_ok=True)
+
+        # Train data
+        train_folder = os.path.join(root_folder, "Training")
+        os.makedirs(train_folder, exist_ok=True)
+
+        num_examples = 3
+        classes = ("00000", "00042", "00012")
+        for class_idx in classes:
+            datasets_utils.create_image_folder(
+                train_folder,
+                name=class_idx,
+                file_name_fn=lambda image_idx: f"{class_idx}_{image_idx:05d}.ppm",
+                num_examples=num_examples,
+            )
+
+        total_number_of_examples = num_examples * len(classes)
+        # Test data
+        test_folder = os.path.join(root_folder, "Final_Test", "Images")
+        os.makedirs(test_folder, exist_ok=True)
+
+        with open(os.path.join(root_folder, "GT-final_test.csv"), "w") as csv_file:
+            csv_file.write("Filename;Width;Height;Roi.X1;Roi.Y1;Roi.X2;Roi.Y2;ClassId\n")
+
+            for _ in range(total_number_of_examples):
+                image_file = datasets_utils.create_random_string(5, string.digits) + ".ppm"
+                datasets_utils.create_image_file(test_folder, image_file)
+                row = [
+                    image_file,
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(0, 43, size=()).item(),
+                ]
+                csv_file.write(";".join(map(str, row)) + "\n")
+
+        return total_number_of_examples
+
+
+class CLEVRClassificationTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CLEVRClassification
+    FEATURE_TYPES = (PIL.Image.Image, (int, type(None)))
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
+
+    def inject_fake_data(self, tmpdir, config):
+        data_folder = pathlib.Path(tmpdir) / "clevr" / "CLEVR_v1.0"
+
+        images_folder = data_folder / "images"
+        image_files = datasets_utils.create_image_folder(
+            images_folder, config["split"], lambda idx: f"CLEVR_{config['split']}_{idx:06d}.png", num_examples=5
+        )
+
+        scenes_folder = data_folder / "scenes"
+        scenes_folder.mkdir()
+        if config["split"] != "test":
+            with open(scenes_folder / f"CLEVR_{config['split']}_scenes.json", "w") as file:
+                json.dump(
+                    dict(
+                        info=dict(),
+                        scenes=[
+                            dict(image_filename=image_file.name, objects=[dict()] * int(torch.randint(10, ())))
+                            for image_file in image_files
+                        ],
+                    ),
+                    file,
+                )
+
+        return len(image_files)
+
+
 if __name__ == "__main__":
     unittest.main()
