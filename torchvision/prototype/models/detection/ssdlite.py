@@ -35,6 +35,7 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
             "task": "image_object_detection",
             "architecture": "SSDLite",
             "publication_year": 2018,
+            "num_params": 3440060,
             "size": (320, 320),
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,

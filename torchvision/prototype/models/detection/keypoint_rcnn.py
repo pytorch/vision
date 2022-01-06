@@ -39,6 +39,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
         transforms=CocoEval,
         meta={
             **_COMMON_META,
+            "num_params": 59137258,
             "recipe": "https://github.com/pytorch/vision/issues/1606",
             "map": 50.6,
             "map_kp": 61.1,
@@ -49,6 +50,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
         transforms=CocoEval,
         meta={
             **_COMMON_META,
+            "num_params": 59137258,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn",
             "map": 54.6,
             "map_kp": 65.0,

@@ -21,6 +21,7 @@ class AlexNet_Weights(WeightsEnum):
             "task": "image_classification",
             "architecture": "AlexNet",
             "publication_year": 2012,
+            "num_params": 61100840,
             "size": (224, 224),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,

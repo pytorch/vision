@@ -30,6 +30,7 @@ class SSD300_VGG16_Weights(WeightsEnum):
             "task": "image_object_detection",
             "architecture": "SSD",
             "publication_year": 2015,
+            "num_params": 35641826,
             "size": (300, 300),
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,

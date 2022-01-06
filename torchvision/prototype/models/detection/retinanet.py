@@ -32,6 +32,7 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
             "task": "image_object_detection",
             "architecture": "RetinaNet",
             "publication_year": 2017,
+            "num_params": 34014999,
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",

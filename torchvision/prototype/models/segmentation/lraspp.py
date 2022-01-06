@@ -22,6 +22,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
             "task": "image_semantic_segmentation",
             "architecture": "LRASPP",
             "publication_year": 2019,
+            "num_params": 3221538,
             "categories": _VOC_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",

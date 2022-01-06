@@ -40,6 +40,7 @@ class MNASNet0_5_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 2218512,
             "acc@1": 67.734,
             "acc@5": 87.490,
         },
@@ -58,6 +59,7 @@ class MNASNet1_0_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 4383312,
             "acc@1": 73.456,
             "acc@5": 91.510,
         },

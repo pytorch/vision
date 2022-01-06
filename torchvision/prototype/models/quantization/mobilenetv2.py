@@ -31,6 +31,7 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
             "task": "image_classification",
             "architecture": "MobileNetV2",
             "publication_year": 2018,
+            "num_params": 3504872,
             "size": (224, 224),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,

@@ -53,6 +53,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 74.042,
             "acc@5": 91.340,
@@ -63,6 +64,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
             "acc@1": 75.274,
             "acc@5": 92.566,
@@ -77,6 +79,7 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 2542856,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 67.668,
             "acc@5": 87.402,

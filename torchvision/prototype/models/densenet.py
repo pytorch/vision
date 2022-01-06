@@ -80,6 +80,7 @@ class DenseNet121_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 7978856,
             "acc@1": 74.434,
             "acc@5": 91.972,
         },
@@ -93,6 +94,7 @@ class DenseNet161_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 28681000,
             "acc@1": 77.138,
             "acc@5": 93.560,
         },
@@ -106,6 +108,7 @@ class DenseNet169_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 14149480,
             "acc@1": 75.600,
             "acc@5": 92.806,
         },
@@ -119,6 +122,7 @@ class DenseNet201_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 20013928,
             "acc@1": 76.896,
             "acc@5": 93.370,
         },

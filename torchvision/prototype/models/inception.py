@@ -21,6 +21,7 @@ class Inception_V3_Weights(WeightsEnum):
             "task": "image_classification",
             "architecture": "InceptionV3",
             "publication_year": 2015,
+            "num_params": 27161264,
             "size": (299, 299),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,

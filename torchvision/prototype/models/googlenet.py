@@ -22,6 +22,7 @@ class GoogLeNet_Weights(WeightsEnum):
             "task": "image_classification",
             "architecture": "GoogLeNet",
             "publication_year": 2014,
+            "num_params": 6624904,
             "size": (224, 224),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
