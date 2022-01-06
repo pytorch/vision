@@ -2357,5 +2357,65 @@ class CLEVRClassificationTestCase(datasets_utils.ImageDatasetTestCase):
         return len(image_files)
 
 
+class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.OxfordIIITPet
+    FEATURE_TYPES = (PIL.Image.Image, (int, PIL.Image.Image, tuple, type(None)))
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("trainval", "test"),
+        target_types=("category", "segmentation", ["category", "segmentation"], []),
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        base_folder = os.path.join(tmpdir, "oxford-iiit-pet")
+
+        classification_anns_meta = (
+            dict(cls="Abyssinian", label=0, species="cat"),
+            dict(cls="Keeshond", label=18, species="dog"),
+            dict(cls="Yorkshire Terrier", label=37, species="dog"),
+        )
+        split_and_classification_anns = [
+            self._meta_to_split_and_classification_ann(meta, idx)
+            for meta, idx in itertools.product(classification_anns_meta, (1, 2, 10))
+        ]
+        image_ids, *_ = zip(*split_and_classification_anns)
+
+        image_files = datasets_utils.create_image_folder(
+            base_folder, "images", file_name_fn=lambda idx: f"{image_ids[idx]}.jpg", num_examples=len(image_ids)
+        )
+
+        anns_folder = os.path.join(base_folder, "annotations")
+        os.makedirs(anns_folder)
+        split_and_classification_anns_in_split = random.choices(split_and_classification_anns, k=len(image_ids) // 2)
+        with open(os.path.join(anns_folder, f"{config['split']}.txt"), "w", newline="") as file:
+            writer = csv.writer(file, delimiter=" ")
+            for split_and_classification_ann in split_and_classification_anns_in_split:
+                writer.writerow(split_and_classification_ann)
+
+        segmentation_files = datasets_utils.create_image_folder(
+            anns_folder, "trimaps", file_name_fn=lambda idx: f"{image_ids[idx]}.png", num_examples=len(image_ids)
+        )
+
+        # The dataset has some rogue files
+        for path in image_files[:2]:
+            path.with_suffix(".mat").touch()
+        for path in segmentation_files:
+            path.with_name(f".{path.name}").touch()
+
+        return len(split_and_classification_anns_in_split)
+
+    def _meta_to_split_and_classification_ann(self, meta, idx):
+        image_id = "_".join(
+            [
+                *[(str.title if meta["species"] == "cat" else str.lower)(part) for part in meta["cls"].split()],
+                str(idx),
+            ]
+        )
+        class_id = str(meta["label"] + 1)
+        species = "1" if meta["species"] == "cat" else "2"
+        breed_id = "-1"
+        return (image_id, class_id, species, breed_id)
+
+
 if __name__ == "__main__":
     unittest.main()

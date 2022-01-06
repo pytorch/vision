@@ -21,6 +21,7 @@ from .lfw import LFWPeople, LFWPairs
 from .lsun import LSUN, LSUNClass
 from .mnist import MNIST, EMNIST, FashionMNIST, KMNIST, QMNIST
 from .omniglot import Omniglot
+from .oxford_iiit_pet import OxfordIIITPet
 from .phototour import PhotoTour
 from .places365 import Places365
 from .sbd import SBDataset
@@ -87,4 +88,5 @@ __all__ = (
     "FER2013",
     "GTSRB",
     "CLEVRClassification",
+    "OxfordIIITPet",
 )
