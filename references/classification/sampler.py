@@ -15,7 +15,7 @@ class RASampler(torch.utils.data.Sampler):
     https://github.com/facebookresearch/deit/blob/main/samplers.py
     """
 
-    def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, seed=0):
+    def __init__(self, dataset, num_replicas=None, rank=None, shuffle=True, seed=0, repetitions=3):
         if num_replicas is None:
             if not dist.is_available():
                 raise RuntimeError("Requires distributed package to be available!")
@@ -28,23 +28,24 @@ class RASampler(torch.utils.data.Sampler):
         self.num_replicas = num_replicas
         self.rank = rank
         self.epoch = 0
-        self.num_samples = int(math.ceil(len(self.dataset) * 3.0 / self.num_replicas))
+        self.num_samples = int(math.ceil(len(self.dataset) * float(repetitions) / self.num_replicas))
         self.total_size = self.num_samples * self.num_replicas
         self.num_selected_samples = int(math.floor(len(self.dataset) // 256 * 256 / self.num_replicas))
         self.shuffle = shuffle
         self.seed = seed
+        self.repetitions = repetitions
 
     def __iter__(self):
-        # Deterministically shuffle based on epoch
-        g = torch.Generator()
-        g.manual_seed(self.seed + self.epoch)
         if self.shuffle:
+            # Deterministically shuffle based on epoch
+            g = torch.Generator()
+            g.manual_seed(self.seed + self.epoch)
             indices = torch.randperm(len(self.dataset), generator=g).tolist()
         else:
             indices = list(range(len(self.dataset)))
 
         # Add extra samples to make it evenly divisible
-        indices = [ele for ele in indices for i in range(3)]
+        indices = [ele for ele in indices for i in range(self.repetitions)]
         indices += indices[: (self.total_size - len(indices))]
         assert len(indices) == self.total_size
 

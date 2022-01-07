@@ -74,7 +74,7 @@ class BottleneckBlock(nn.Module):
     """Slightly modified BottleNeck block (extra relu and biases)"""
 
     def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
-        super(BottleneckBlock, self).__init__()
+        super().__init__()
 
         # See note in ResidualBlock for the reason behind bias=True
         self.convnormrelu1 = ConvNormActivation(

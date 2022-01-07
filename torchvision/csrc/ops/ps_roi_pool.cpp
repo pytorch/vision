@@ -1,5 +1,7 @@
 #include "ps_roi_pool.h"
 
+#include <ATen/core/dispatch/Dispatcher.h>
+#include <torch/library.h>
 #include <torch/types.h>
 
 namespace vision {

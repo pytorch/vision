@@ -1,3 +1,4 @@
+import functools
 import io
 import os
 import os.path
@@ -6,8 +7,7 @@ from typing import Callable, Optional, Collection
 from typing import Union, Tuple, List, Dict, Any
 
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Shuffler, Filter
+from torchdata.datapipes.iter import IterDataPipe, FileLister, FileOpener, Mapper, Shuffler, Filter
 from torchvision.prototype.datasets.decoder import pil
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, hint_sharding
 
@@ -50,12 +50,12 @@ def from_data_folder(
     categories = sorted(entry.name for entry in os.scandir(root) if entry.is_dir())
     masks: Union[List[str], str] = [f"*.{ext}" for ext in valid_extensions] if valid_extensions is not None else ""
     dp = FileLister(str(root), recursive=recursive, masks=masks)
-    dp: IterDataPipe = Filter(dp, _is_not_top_level_file, fn_kwargs=dict(root=root))
+    dp: IterDataPipe = Filter(dp, functools.partial(_is_not_top_level_file, root=root))
     dp = hint_sharding(dp)
     dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-    dp = FileLoader(dp)
+    dp = FileOpener(dp, mode="rb")
     return (
-        Mapper(dp, _collate_and_decode_data, fn_kwargs=dict(root=root, categories=categories, decoder=decoder)),
+        Mapper(dp, functools.partial(_collate_and_decode_data, root=root, categories=categories, decoder=decoder)),
         categories,
     )
 
