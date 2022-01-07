@@ -183,7 +183,7 @@ retry () {
 }
 
 # Inputs:
-#   PYTHON_VERSION (2.7, 3.5, 3.6, 3.7)
+#   PYTHON_VERSION (3.7, 3.8, 3.9)
 #   UNICODE_ABI (bool)
 #
 # Outputs:
@@ -202,15 +202,6 @@ setup_wheel_python() {
     # Install native CentOS libJPEG, freetype and GnuTLS
     yum install -y libjpeg-turbo-devel freetype gnutls
     case "$PYTHON_VERSION" in
-      2.7)
-        if [[ -n "$UNICODE_ABI" ]]; then
-          python_abi=cp27-cp27mu
-        else
-          python_abi=cp27-cp27m
-        fi
-        ;;
-      3.5) python_abi=cp35-cp35m ;;
-      3.6) python_abi=cp36-cp36m ;;
       3.7) python_abi=cp37-cp37m ;;
       3.8) python_abi=cp38-cp38 ;;
       3.9) python_abi=cp39-cp39 ;;
