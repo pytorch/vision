@@ -6,6 +6,7 @@ import json
 import lzma
 import pathlib
 import pickle
+import random
 import tempfile
 import xml.etree.ElementTree as ET
 from collections import defaultdict, UserList
@@ -921,3 +922,50 @@ class CelebAMockData:
 def celeba(info, root, _):
     num_samples_map = CelebAMockData.generate(root)
     return {config: num_samples_map[config.split] for config in info._configs}
+
+
+@DATASET_MOCKS.append_named_callable
+def dtd(info, root, _):
+    data_folder = root / "dtd"
+
+    num_images_per_class = 3
+    image_folder = data_folder / "images"
+    categories = {"banded", "marbled", "zigzagged"}
+    image_ids_per_category = {
+        category: [
+            str(path.relative_to(path.parents[1]).as_posix())
+            for path in create_image_folder(
+                image_folder,
+                category,
+                file_name_fn=lambda idx: f"{category}_{idx:04d}.jpg",
+                num_examples=num_images_per_class,
+            )
+        ]
+        for category in categories
+    }
+
+    meta_folder = data_folder / "labels"
+    meta_folder.mkdir()
+
+    with open(meta_folder / "labels_joint_anno.txt", "w") as file:
+        for cls, image_ids in image_ids_per_category.items():
+            for image_id in image_ids:
+                joint_categories = random.choices(
+                    list(categories - {cls}), k=int(torch.randint(len(categories) - 1, ()))
+                )
+                file.write(" ".join([image_id, *sorted([cls, *joint_categories])]) + "\n")
+
+    image_ids = list(itertools.chain(*image_ids_per_category.values()))
+    num_samples_map = {}
+    for fold in range(1, 11):
+        random.shuffle(image_ids)
+        for step, split in enumerate(["train", "val", "test"], 1):
+            image_ids_in_config = image_ids[::step]
+            with open(meta_folder / f"{split}{fold}.txt", "w") as file:
+                file.write("\n".join(image_ids_in_config) + "\n")
+
+            num_samples_map[info.make_config(split=split, fold=str(fold))] = len(image_ids_in_config)
+
+    make_tar(root, "dtd-r1.0.1.tar.gz", data_folder, compression="gz")
+
+    return num_samples_map
