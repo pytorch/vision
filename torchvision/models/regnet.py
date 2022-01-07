@@ -26,6 +26,7 @@ __all__ = [
     "regnet_y_8gf",
     "regnet_y_16gf",
     "regnet_y_32gf",
+    "regnet_y_128gf",
     "regnet_x_400mf",
     "regnet_x_800mf",
     "regnet_x_1_6gf",
@@ -503,6 +504,17 @@ def regnet_y_32gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
         depth=20, w_0=232, w_a=115.89, w_m=2.53, group_width=232, se_ratio=0.25, **kwargs
     )
     return _regnet("regnet_y_32gf", params, pretrained, progress, **kwargs)
+
+
+def regnet_y_128gf(**kwargs: Any) -> RegNet:
+    """
+    Constructs a RegNetY_128GF architecture from
+    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+
+    NOTE: Pretrained weights are not available for this model.
+    """
+    params = BlockParams.from_init_params(depth=27, w_0=456, w_a=160.83, w_m=2.52, group_width=264, se_ratio=0.25)
+    return _regnet("regnet_y_128gf", params, **kwargs)
 
 
 def regnet_x_400mf(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> RegNet:
