@@ -1,4 +1,5 @@
 import contextlib
+import csv
 import functools
 import gzip
 import itertools
@@ -969,3 +970,28 @@ def dtd(info, root, _):
     make_tar(root, "dtd-r1.0.1.tar.gz", data_folder, compression="gz")
 
     return num_samples_map
+
+
+@DATASET_MOCKS.append_named_callable
+def fer2013(info, root, config):
+    num_samples = 5 if config.split == "train" else 3
+
+    path = root / f"{config.split}.txt"
+    with open(path, "w", newline="") as file:
+        field_names = ["emotion"] if config.split == "train" else []
+        field_names.append("pixels")
+
+        file.write(",".join(field_names) + "\n")
+
+        writer = csv.DictWriter(file, fieldnames=field_names, quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+        for _ in range(num_samples):
+            rowdict = {
+                "pixels": " ".join([str(int(pixel)) for pixel in torch.randint(256, (48 * 48,), dtype=torch.uint8)])
+            }
+            if config.split == "train":
+                rowdict["emotion"] = int(torch.randint(7, ()))
+            writer.writerow(rowdict)
+
+    make_zip(root, f"{path.name}.zip", path)
+
+    return num_samples
