@@ -15,6 +15,9 @@ __all__ = ["FCN", "FCN_ResNet50_Weights", "FCN_ResNet101_Weights", "fcn_resnet50
 
 
 _COMMON_META = {
+    "task": "image_semantic_segmentation",
+    "architecture": "FCN",
+    "publication_year": 2014,
     "categories": _VOC_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
@@ -26,6 +29,7 @@ class FCN_ResNet50_Weights(WeightsEnum):
         transforms=partial(VocEval, resize_size=520),
         meta={
             **_COMMON_META,
+            "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
             "mIoU": 60.5,
             "acc": 91.4,
@@ -40,6 +44,7 @@ class FCN_ResNet101_Weights(WeightsEnum):
         transforms=partial(VocEval, resize_size=520),
         meta={
             **_COMMON_META,
+            "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
             "mIoU": 63.7,
             "acc": 91.9,

@@ -21,12 +21,14 @@ from .lfw import LFWPeople, LFWPairs
 from .lsun import LSUN, LSUNClass
 from .mnist import MNIST, EMNIST, FashionMNIST, KMNIST, QMNIST
 from .omniglot import Omniglot
+from .oxford_iiit_pet import OxfordIIITPet
 from .phototour import PhotoTour
 from .places365 import Places365
 from .sbd import SBDataset
 from .sbu import SBU
 from .semeion import SEMEION
 from .stl10 import STL10
+from .sun397 import SUN397
 from .svhn import SVHN
 from .ucf101 import UCF101
 from .usps import USPS
@@ -50,6 +52,7 @@ __all__ = (
     "MNIST",
     "KMNIST",
     "STL10",
+    "SUN397",
     "SVHN",
     "PhotoTour",
     "SEMEION",
@@ -87,4 +90,5 @@ __all__ = (
     "FER2013",
     "GTSRB",
     "CLEVRClassification",
+    "OxfordIIITPet",
 )

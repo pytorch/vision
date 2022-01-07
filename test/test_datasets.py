@@ -854,7 +854,7 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
 
     def _create_annotation_file(self, root, name, video_files):
         with open(pathlib.Path(root) / name, "w") as fh:
-            fh.writelines(f"{file}\n" for file in sorted(video_files))
+            fh.writelines(f"{str(file).replace(os.sep, '/')}\n" for file in sorted(video_files))
 
 
 class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
@@ -2206,6 +2206,52 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
         return len(sampled_classes * n_samples_per_class)
 
 
+class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SUN397
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test"),
+        partition=(1, 10, None),
+    )
+
+    def inject_fake_data(self, tmpdir: str, config):
+        data_dir = pathlib.Path(tmpdir) / "SUN397"
+        data_dir.mkdir()
+
+        num_images_per_class = 5
+        sampled_classes = ("abbey", "airplane_cabin", "airport_terminal")
+        im_paths = []
+
+        for cls in sampled_classes:
+            image_folder = data_dir / cls[0]
+            im_paths.extend(
+                datasets_utils.create_image_folder(
+                    image_folder,
+                    image_folder / cls,
+                    file_name_fn=lambda idx: f"sun_{idx}.jpg",
+                    num_examples=num_images_per_class,
+                )
+            )
+
+        with open(data_dir / "ClassName.txt", "w") as file:
+            file.writelines("\n".join(f"/{cls[0]}/{cls}" for cls in sampled_classes))
+
+        if config["partition"] is not None:
+            num_samples = max(len(im_paths) // (2 if config["split"] == "train" else 3), 1)
+
+            with open(data_dir / f"{config['split'].title()}ing_{config['partition']:02d}.txt", "w") as file:
+                file.writelines(
+                    "\n".join(
+                        f"/{f_path.relative_to(data_dir).as_posix()}"
+                        for f_path in random.choices(im_paths, k=num_samples)
+                    )
+                )
+        else:
+            num_samples = len(im_paths)
+
+        return num_samples
+
+
 class DTDTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.DTD
     FEATURE_TYPES = (PIL.Image.Image, int)
@@ -2355,6 +2401,66 @@ class CLEVRClassificationTestCase(datasets_utils.ImageDatasetTestCase):
                 )
 
         return len(image_files)
+
+
+class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.OxfordIIITPet
+    FEATURE_TYPES = (PIL.Image.Image, (int, PIL.Image.Image, tuple, type(None)))
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("trainval", "test"),
+        target_types=("category", "segmentation", ["category", "segmentation"], []),
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        base_folder = os.path.join(tmpdir, "oxford-iiit-pet")
+
+        classification_anns_meta = (
+            dict(cls="Abyssinian", label=0, species="cat"),
+            dict(cls="Keeshond", label=18, species="dog"),
+            dict(cls="Yorkshire Terrier", label=37, species="dog"),
+        )
+        split_and_classification_anns = [
+            self._meta_to_split_and_classification_ann(meta, idx)
+            for meta, idx in itertools.product(classification_anns_meta, (1, 2, 10))
+        ]
+        image_ids, *_ = zip(*split_and_classification_anns)
+
+        image_files = datasets_utils.create_image_folder(
+            base_folder, "images", file_name_fn=lambda idx: f"{image_ids[idx]}.jpg", num_examples=len(image_ids)
+        )
+
+        anns_folder = os.path.join(base_folder, "annotations")
+        os.makedirs(anns_folder)
+        split_and_classification_anns_in_split = random.choices(split_and_classification_anns, k=len(image_ids) // 2)
+        with open(os.path.join(anns_folder, f"{config['split']}.txt"), "w", newline="") as file:
+            writer = csv.writer(file, delimiter=" ")
+            for split_and_classification_ann in split_and_classification_anns_in_split:
+                writer.writerow(split_and_classification_ann)
+
+        segmentation_files = datasets_utils.create_image_folder(
+            anns_folder, "trimaps", file_name_fn=lambda idx: f"{image_ids[idx]}.png", num_examples=len(image_ids)
+        )
+
+        # The dataset has some rogue files
+        for path in image_files[:2]:
+            path.with_suffix(".mat").touch()
+        for path in segmentation_files:
+            path.with_name(f".{path.name}").touch()
+
+        return len(split_and_classification_anns_in_split)
+
+    def _meta_to_split_and_classification_ann(self, meta, idx):
+        image_id = "_".join(
+            [
+                *[(str.title if meta["species"] == "cat" else str.lower)(part) for part in meta["cls"].split()],
+                str(idx),
+            ]
+        )
+        class_id = str(meta["label"] + 1)
+        species = "1" if meta["species"] == "cat" else "2"
+        breed_id = "-1"
+        return (image_id, class_id, species, breed_id)
 
 
 if __name__ == "__main__":
