@@ -62,6 +62,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     LSUN
     MNIST
     Omniglot
+    OxfordIIITPet
     PhotoTour
     Places365
     QMNIST
@@ -70,6 +71,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     SEMEION
     Sintel
     STL10
+    SUN397
     SVHN
     UCF101
     USPS
