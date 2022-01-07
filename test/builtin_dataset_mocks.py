@@ -995,3 +995,48 @@ def fer2013(info, root, config):
     make_zip(root, f"{path.name}.zip", path)
 
     return num_samples
+
+
+@DATASET_MOCKS.append_named_callable
+def clevr(info, root, config):
+    data_folder = root / "CLEVR_v1.0"
+
+    num_samples_map = {
+        "train": 3,
+        "val": 2,
+        "test": 1,
+    }
+
+    images_folder = data_folder / "images"
+    image_files = {
+        split: create_image_folder(
+            images_folder,
+            split,
+            file_name_fn=lambda idx: f"CLEVR_{split}_{idx:06d}.jpg",
+            num_examples=num_samples,
+        )
+        for split, num_samples in num_samples_map.items()
+    }
+
+    scenes_folder = data_folder / "scenes"
+    scenes_folder.mkdir()
+    for split in ["train", "val"]:
+        with open(scenes_folder / f"CLEVR_{split}_scenes.json", "w") as file:
+            json.dump(
+                {
+                    "scenes": [
+                        {
+                            "image_filename": image_file.name,
+                            # We currently only return the number of objects in a scene.
+                            # Thus it is sufficient for now to mock the number of elements.
+                            "objects": [None] * int(torch.randint(1, 5, ())),
+                        }
+                        for image_file in image_files[split]
+                    ]
+                },
+                file,
+            )
+
+    make_zip(root, f"{data_folder.name}.zip")
+
+    return {config_: num_samples_map[config_.split] for config_ in info._configs}
