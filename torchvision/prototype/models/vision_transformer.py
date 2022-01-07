@@ -8,7 +8,7 @@ from typing import Any, Optional
 from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ...models.vision_transformer import VisionTransformer
+from ...models.vision_transformer import VisionTransformer, interpolate_embeddings
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface
@@ -129,15 +129,6 @@ def _vision_transformer(
 
 @handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.ImageNet1K_V1))
 def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
-    """
-    Constructs a vit_b_16 architecture from
-    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
-
-    Args:
-        weights (ViT_B_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
-            Default: None.
-        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
-    """
     weights = ViT_B_16_Weights.verify(weights)
 
     return _vision_transformer(
@@ -154,15 +145,6 @@ def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", ViT_B_32_Weights.ImageNet1K_V1))
 def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
-    """
-    Constructs a vit_b_32 architecture from
-    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
-
-    Args:
-        weights (ViT_B_32Weights, optional): If not None, returns a model pre-trained on ImageNet.
-            Default: None.
-        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
-    """
     weights = ViT_B_32_Weights.verify(weights)
 
     return _vision_transformer(
@@ -179,15 +161,6 @@ def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", ViT_L_16_Weights.ImageNet1K_V1))
 def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
-    """
-    Constructs a vit_l_16 architecture from
-    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
-
-    Args:
-        weights (ViT_L_16Weights, optional): If not None, returns a model pre-trained on ImageNet.
-            Default: None.
-        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
-    """
     weights = ViT_L_16_Weights.verify(weights)
 
     return _vision_transformer(
@@ -204,15 +177,6 @@ def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", ViT_L_32_Weights.ImageNet1K_V1))
 def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
-    """
-    Constructs a vit_l_32 architecture from
-    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
-
-    Args:
-        weights (ViT_L_32Weights, optional): If not None, returns a model pre-trained on ImageNet.
-            Default: None.
-        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default: True.
-    """
     weights = ViT_L_32_Weights.verify(weights)
 
     return _vision_transformer(
