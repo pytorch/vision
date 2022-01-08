@@ -1,6 +1,7 @@
 import os
 import os.path
 from typing import Callable, Optional
+
 from PIL import Image
 
 from .utils import download_and_extract_archive, download_url
@@ -16,7 +17,7 @@ class StanfordCars(VisionDataset):
 
     Args:
         root (string): Root directory of dataset
-        train (bool, optional):
+        train (bool, optional):If True, creates dataset from training set, otherwise creates from test set
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
@@ -28,26 +29,30 @@ class StanfordCars(VisionDataset):
     urls = (
         "https://ai.stanford.edu/~jkrause/car196/cars_test.tgz",
         "https://ai.stanford.edu/~jkrause/car196/cars_train.tgz",
-    )
+    )  # test and train image urls
 
-    md5s = ("4ce7ebf6a94d07f1952d94dd34c4d501", "065e5b463ae28d29e77c1b4b166cfe61")  # md5checksum for test and train
+    md5s = (
+        "4ce7ebf6a94d07f1952d94dd34c4d501",
+        "065e5b463ae28d29e77c1b4b166cfe61",
+    )  # md5checksum for test and train data
 
     annot_urls = (
         "https://ai.stanford.edu/~jkrause/car196/cars_test_annos_withlabels.mat",
         "https://ai.stanford.edu/~jkrause/cars/car_devkit.tgz",
-    )
+    )  # annotations and labels for test and train
+
     annot_md5s = (
         "b0a2b23655a3edd16d84508592a98d10",
         "c3b158d763b6e2245038c8ad08e45376",
-    )
+    )  # md5 checksum for annotations
 
     def __init__(
-            self,
-            root: str,
-            train: bool = True,
-            transform: Optional[Callable] = None,
-            target_transform: Optional[Callable] = None,
-            download: bool = False,
+        self,
+        root: str,
+        train: bool = True,
+        transform: Optional[Callable] = None,
+        target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
 
         try:
@@ -76,10 +81,7 @@ class StanfordCars(VisionDataset):
         """
         meta_data = self._loadmat(os.path.join(self.root, "devkit/cars_meta.mat"))
         class_names = meta_data["class_names"][0]
-        return {
-            class_name[0].replace(" ", "_").replace("/", "_"): i
-            for i, class_name in enumerate(class_names)
-        }
+        return {class_name[0].replace(" ", "_").replace("/", "_"): i for i, class_name in enumerate(class_names)}
 
     def _make_dataset(self):
         """
@@ -120,22 +122,24 @@ class StanfordCars(VisionDataset):
             return
         else:
             download_and_extract_archive(
-                url=self.urls[self.train],
-                download_root=self.root,
-                extract_root=self.root,
-                md5=self.md5s[self.train]
+                url=self.urls[self.train], download_root=self.root, extract_root=self.root, md5=self.md5s[self.train]
             )
             download_and_extract_archive(
-                url=self.annot_urls[1], download_root=self.root, extract_root=self.root,
-                md5=self.annot_md5s[1]
+                url=self.annot_urls[1], download_root=self.root, extract_root=self.root, md5=self.annot_md5s[1]
             )
             if not self.train:
                 download_url(
-                    url=self.annot_urls[0], filename="cars_test_annos_withlabels.mat", root=self.root,
-                    md5=self.annot_md5s[0]
+                    url=self.annot_urls[0],
+                    filename="cars_test_annos_withlabels.mat",
+                    root=self.root,
+                    md5=self.annot_md5s[0],
                 )
 
     def _check_exists(self) -> bool:
-        return os.path.exists(os.path.join(self.root, f"cars_{'train' if self.train else 'test'}")) and os.path.isdir(
-            os.path.join(self.root, f"cars_{'train' if self.train else 'test'}")) and os.path.exists(
-            os.path.join(self.root, "devkit/cars_meta.mat")) if self.train else os.path.exists(os.path.join(self.root,"cars_test_annos_withlabels.mat"))
+        return (
+            os.path.exists(os.path.join(self.root, f"cars_{'train' if self.train else 'test'}"))
+            and os.path.isdir(os.path.join(self.root, f"cars_{'train' if self.train else 'test'}"))
+            and os.path.exists(os.path.join(self.root, "devkit/cars_meta.mat"))
+            if self.train
+            else os.path.exists(os.path.join(self.root, "cars_test_annos_withlabels.mat"))
+        )
