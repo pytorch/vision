@@ -2489,7 +2489,7 @@ class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
 
         rec_array = fromarrays(
             [bbox_x1, bbox_y1, bbox_x2, bb1ox_y2, class_name, fname],
-            ["bbox_x1", "bbox_y1", "bbox_x2", "bbox_y2", "class", "fname"],
+            names=["bbox_x1", "bbox_y1", "bbox_x2", "bbox_y2", "class", "fname"],
         )
 
         if train:
