@@ -177,7 +177,8 @@ class ImageNet(Dataset):
 
     def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
         resources = self.resources(self.default_config)
-        devkit_dp = resources[1].load(root / self.name)
+
+        devkit_dp = resources[1].load(root)
         devkit_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
 
         meta = next(iter(devkit_dp))[1]
