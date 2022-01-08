@@ -1398,6 +1398,8 @@ def elastic_transform(
     sigma: List[float],
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[List[float]] = None,
+    displacement: Optional[Tensor] = None,
+    random_state: Optional[int] = None,
 ) -> Tensor:
     """Transform a tensor image with elastic transformations.
     Given alpha and sigma, it will generate displacement
@@ -1426,6 +1428,9 @@ def elastic_transform(
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
+        displacement (Tensor): The displacement field. If not given, it will be generated based on
+            alpha and sigma.
+        random_state (int): If random_state is provided, it will be used as the random seed.
     """
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
@@ -1452,7 +1457,15 @@ def elastic_transform(
 
         t_img = to_tensor(img)
 
-    output = F_t.elastic_transform(t_img, alpha, sigma, interpolation=interpolation.value, fill=fill)
+    output = F_t.elastic_transform(
+        t_img,
+        alpha,
+        sigma,
+        interpolation=interpolation.value,
+        fill=fill,
+        displacement=displacement,
+        random_state=random_state,
+    )
 
     if not isinstance(img, torch.Tensor):
         output = to_pil_image(output)
