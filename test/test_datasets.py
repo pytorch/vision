@@ -2274,6 +2274,13 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_samples
 
+class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StanfordCars
+    REQUIRED_PACKAGES = ("scipy",)
+    FEATURE_TYPES = (PIL.Image.Image, int)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True,False))
+
+
 
 if __name__ == "__main__":
     unittest.main()
