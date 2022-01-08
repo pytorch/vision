@@ -25,6 +25,9 @@ __all__ = [
 
 
 _COMMON_META = {
+    "task": "image_semantic_segmentation",
+    "architecture": "DeepLabV3",
+    "publication_year": 2017,
     "categories": _VOC_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
@@ -36,6 +39,7 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
         transforms=partial(VocEval, resize_size=520),
         meta={
             **_COMMON_META,
+            "num_params": 42004074,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50",
             "mIoU": 66.4,
             "acc": 92.4,
@@ -50,6 +54,7 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
         transforms=partial(VocEval, resize_size=520),
         meta={
             **_COMMON_META,
+            "num_params": 60996202,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101",
             "mIoU": 67.4,
             "acc": 92.4,
@@ -64,6 +69,7 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
         transforms=partial(VocEval, resize_size=520),
         meta={
             **_COMMON_META,
+            "num_params": 11029328,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large",
             "mIoU": 60.3,
             "acc": 91.2,
