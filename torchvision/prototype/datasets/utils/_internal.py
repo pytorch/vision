@@ -108,7 +108,7 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
         yield from enumerate(self.datapipe, self.start)
 
 
-def _getitem_closure(obj: Any, *, items: Tuple[Any, ...]) -> Any:
+def _getitem_closure(obj: Any, *, items: Sequence[Any]) -> Any:
     for item in items:
         obj = obj[item]
     return obj
@@ -118,8 +118,14 @@ def getitem(*items: Any) -> Callable[[Any], Any]:
     return functools.partial(_getitem_closure, items=items)
 
 
+def _getattr_closure(obj: Any, *, attrs: Sequence[str]) -> Any:
+    for attr in attrs:
+        obj = getattr(obj, attr)
+    return obj
+
+
 def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
-    return cast(D, getattr(path, name))
+    return cast(D, _getattr_closure(path, attrs=name.split(".")))
 
 
 def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:

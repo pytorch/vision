@@ -48,6 +48,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     FlyingChairs
     FlyingThings3D
     Food101
+    GTSRB
     HD1K
     HMDB51
     ImageNet
@@ -61,6 +62,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     LSUN
     MNIST
     Omniglot
+    OxfordIIITPet
     PhotoTour
     Places365
     QMNIST
@@ -70,6 +72,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     Sintel
     StanfordCars
     STL10
+    SUN397
     SVHN
     UCF101
     USPS
