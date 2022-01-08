@@ -854,7 +854,7 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
 
     def _create_annotation_file(self, root, name, video_files):
         with open(pathlib.Path(root) / name, "w") as fh:
-            fh.writelines(f"{file}\n" for file in sorted(video_files))
+            fh.writelines(f"{str(file).replace(os.sep, '/')}\n" for file in sorted(video_files))
 
 
 class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
