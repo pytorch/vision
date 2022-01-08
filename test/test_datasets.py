@@ -2325,5 +2325,37 @@ class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
         return total_number_of_examples
 
 
+class CLEVRClassificationTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CLEVRClassification
+    FEATURE_TYPES = (PIL.Image.Image, (int, type(None)))
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
+
+    def inject_fake_data(self, tmpdir, config):
+        data_folder = pathlib.Path(tmpdir) / "clevr" / "CLEVR_v1.0"
+
+        images_folder = data_folder / "images"
+        image_files = datasets_utils.create_image_folder(
+            images_folder, config["split"], lambda idx: f"CLEVR_{config['split']}_{idx:06d}.png", num_examples=5
+        )
+
+        scenes_folder = data_folder / "scenes"
+        scenes_folder.mkdir()
+        if config["split"] != "test":
+            with open(scenes_folder / f"CLEVR_{config['split']}_scenes.json", "w") as file:
+                json.dump(
+                    dict(
+                        info=dict(),
+                        scenes=[
+                            dict(image_filename=image_file.name, objects=[dict()] * int(torch.randint(10, ())))
+                            for image_file in image_files
+                        ],
+                    ),
+                    file,
+                )
+
+        return len(image_files)
+
+
 if __name__ == "__main__":
     unittest.main()
