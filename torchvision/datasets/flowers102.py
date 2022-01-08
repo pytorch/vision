@@ -41,6 +41,7 @@ class Flowers102(VisionDataset):
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "valid", "test"))
         self._base_folder = Path(self.root) / "flowers-102"
+        self._meta_folder = self._base_folder / "labels"
         self._images_folder = self._base_folder / "jpg"
 
         if download:
@@ -55,21 +56,21 @@ class Flowers102(VisionDataset):
         from scipy.io import loadmat
 
         # Read the label ids
-        label_mat = loadmat(self._base_folder / "imagelabels.mat")
+        label_mat = loadmat(self._meta_folder / "imagelabels.mat")
         labels = label_mat["labels"][0]
 
         self.classes = np.unique(labels).tolist()
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
 
         # Read the image ids
-        set_ids = loadmat(self._base_folder / "setid.mat")
+        set_ids = loadmat(self._meta_folder / "setid.mat")
         splits_map = {"train": "trnid", "valid": "valid", "test": "tstid"}
 
         image_ids = set_ids[splits_map[self._split]][0]
 
         for image_id in image_ids:
             self._labels.append(self.class_to_idx[labels[image_id - 1]])
-            self._image_files.append(self._images_folder / f"image_{image_id:>05}.jpg")
+            self._image_files.append(self._images_folder / f"image_{image_id:05d}.jpg")
 
     def __len__(self) -> int:
         return len(self._image_files)
@@ -90,7 +91,7 @@ class Flowers102(VisionDataset):
         return f"split={self._split}"
 
     def _check_exists(self) -> bool:
-        return self._images_folder.exists() and self._images_folder.is_dir()
+        return all(folder.exists() and folder.is_dir() for folder in (self._meta_folder, self._images_folder))
 
     def _download(self) -> None:
         if self._check_exists():
@@ -104,12 +105,12 @@ class Flowers102(VisionDataset):
 
         download_url(
             "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/setid.mat",
-            self._base_folder,
+            self._meta_folder,
             md5="a5357ecc9cb78c4bef273ce3793fc85c",
         )
 
         download_url(
             "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/imagelabels.mat",
-            self._base_folder,
+            self._meta_folder,
             md5="e0620be6f572b9609742df49c70aed4d",
         )
