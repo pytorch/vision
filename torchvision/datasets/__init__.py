@@ -6,6 +6,7 @@ from .cityscapes import Cityscapes
 from .coco import CocoCaptions, CocoDetection
 from .dtd import DTD
 from .fakedata import FakeData
+from .fer2013 import FER2013
 from .flickr import Flickr8k, Flickr30k
 from .folder import ImageFolder, DatasetFolder
 from .food101 import Food101
@@ -81,4 +82,5 @@ __all__ = (
     "HD1K",
     "Food101",
     "DTD",
+    "FER2013",
 )
