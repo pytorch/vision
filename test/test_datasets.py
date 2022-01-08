@@ -2320,42 +2320,6 @@ class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
 
         return num_samples
 
-class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.StanfordCars
-    REQUIRED_PACKAGES = ("scipy",)
-    FEATURE_TYPES = (PIL.Image.Image, int)
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True,False))
-
-    def _inject_fake_data(self, tmpdir, config):
-        root_folder = os.path.join(tmpdir, "stanforddcars")
-
-        os.makedirs(root_folder, exist_ok=True)
-
-        num_examples = 5
-        if config["train"]:
-            #if train = True
-            datasets_utils.create_image_folder(
-            root=root_folder,
-            name="cars_train",
-            file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
-            num_examples=num_examples,
-            )
-
-
-        else:
-            # test_folder i.e train = False
-            datasets_utils.create_image_folder(
-            root_folder,
-            "cars_test",
-            lambda image_index: f"{image_index:5d}.jpg",
-            num_examples
-            )
-
-            file = "cars_test_annos_withlabels.mat"
-
-
-
-
 
 class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.GTSRB
@@ -2499,54 +2463,60 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         return (image_id, class_id, species, breed_id)
 
 
-
 class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.StanfordCars
     REQUIRED_PACKAGES = ("scipy",)
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True,False))
-    FEATURE_TYPES = (PIL.Image.Image,int)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    FEATURE_TYPES = (PIL.Image.Image, int)
 
     def _inject_fake_data(self, tmpdir, config):
         import scipy.io as io
-        from numpy.core.records import fromarrays #to record arrays similar to matlab format
+        from numpy.core.records import fromarrays  # to record arrays similar to matlab format
+
         train = config["train"]
-        num_examples= 5
+        num_examples = 5
         root_folder = os.path.join(tmpdir, "stanforddcars")
         os.makedirs(root_folder, exist_ok=True)
 
-        #generate random data for labels
+        # generate random data for labels
         class_name = np.random.randint(0, 100, num_examples, dtype=np.uint8)
         bbox_x1 = np.random.randint(0, 100, num_examples, dtype=np.uint8)
         bbox_x2 = np.random.randint(0, 100, num_examples, dtype=np.uint8)
 
         bbox_y1 = np.random.randint(0, 100, num_examples, dtype=np.uint8)
-        bb1ox_y2= np.random.randint(0, 100, num_examples, dtype=np.uint8)
+        bb1ox_y2 = np.random.randint(0, 100, num_examples, dtype=np.uint8)
         fname = [f"{i:5d}.jpg" for i in range(num_examples)]
 
-        rec_array = fromarrays([bbox_x1,bbox_y1,bbox_x2,bb1ox_y2,class_name,fname], ["bbox_x1","bbox_y1","bbox_x2","bbox_y2","class","fname"])
+        rec_array = fromarrays(
+            [bbox_x1, bbox_y1, bbox_x2, bb1ox_y2, class_name, fname],
+            ["bbox_x1", "bbox_y1", "bbox_x2", "bbox_y2", "class", "fname"],
+        )
 
         if train:
-            #create training image folder
+            # create training image folder
             datasets_utils.create_image_folder(
-            root=root_folder,
-            name="cars_train",
-            file_name_fn=lambda  image_index : f"{image_index:5d}.jpg",
-            num_examples=num_examples,
+                root=root_folder,
+                name="cars_train",
+                file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+                num_examples=num_examples,
             )
-            devkit = os.path.join(root_folder,"devkit")
-            io.savemat(f'{devkit}/cars_train_annos.mat', {'annotations': rec_array}) #save the recorded array as matlab file
+            devkit = os.path.join(root_folder, "devkit")
+            io.savemat(
+                f"{devkit}/cars_train_annos.mat", {"annotations": rec_array}
+            )  # save the recorded array as matlab file
         else:
-            #create test image folder
+            # create test image folder
             datasets_utils.create_image_folder(
-            root=root_folder,
-            name="cars_test",
-            file_name_fn=lambda  image_index : f"{image_index:5d}.jpg",
-            num_examples=num_examples
+                root=root_folder,
+                name="cars_test",
+                file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+                num_examples=num_examples,
             )
-            io.savemat(f"{root_folder}/cars_test_annos_withlabels.mat", {"annotations":rec_array}) #save recorded array as matlab file
+            io.savemat(
+                f"{root_folder}/cars_test_annos_withlabels.mat", {"annotations": rec_array}
+            )  # save recorded array as matlab file
 
         return num_examples
-
 
 
 if __name__ == "__main__":
