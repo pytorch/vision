@@ -2326,6 +2326,35 @@ class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
     FEATURE_TYPES = (PIL.Image.Image, int)
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True,False))
 
+    def _inject_fake_data(self, tmpdir, config):
+        root_folder = os.path.join(tmpdir, "stanforddcars")
+
+        os.makedirs(root_folder, exist_ok=True)
+
+        num_examples = 5
+        if config["train"]:
+            #if train = True
+            datasets_utils.create_image_folder(
+            root=root_folder,
+            name="cars_train",
+            file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+            num_examples=num_examples,
+            )
+
+
+        else:
+            # test_folder i.e train = False
+            datasets_utils.create_image_folder(
+            root_folder,
+            "cars_test",
+            lambda image_index: f"{image_index:5d}.jpg",
+            num_examples
+            )
+
+            file = "cars_test_annos_withlabels.mat"
+
+
+
 
 
 class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
@@ -2469,6 +2498,18 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         breed_id = "-1"
         return (image_id, class_id, species, breed_id)
 
+class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StanfordCars
+    REQUIRED_PACKAGES = ("scipy",)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True,False))
+    FEATURE_TYPES = (PIL.Image.Image,int)
+
+    def _inject_fake_data(self, tmpdir, config):
+
+        import scipy.io as io
+        train = config["train"]
+        num_examples= 5
+        pass
 
 if __name__ == "__main__":
     unittest.main()

@@ -68,7 +68,7 @@ class StanfordCars(VisionDataset):
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         self._samples = self._make_dataset()
-        self.classes = self._get_class_names()  # class_id to class_name mapping
+        self.classes = self._get_classes_name()  # class_id to class_name mapping
 
     def _get_class_names(self) -> dict:
         """
@@ -95,6 +95,8 @@ class StanfordCars(VisionDataset):
         for index in range(len(annotations)):
             target = annotations[index][4][0, 0]
             image_file = annotations[index][5][0]
+            # Beware: Stanford cars targets starts at 1
+            target = target - 1
             samples.append((image_file, target))
         return samples
 
@@ -105,15 +107,13 @@ class StanfordCars(VisionDataset):
         """Returns pil_image and class_id for given index"""
         image_file, target = self._samples[idx]
         image_path = os.path.join(self.root, f"cars_{'train' if self.train else 'test'}", image_file)
-        # Beware: Stanford cars targets starts at 1
-        target_id = target - 1
         pil_image = Image.open(image_path).convert("RGB")
 
         if self.transform is not None:
             pil_image = self.transform(pil_image)
         if self.target_transform is not None:
-            pil_image = self.target_transform(pil_image)
-        return pil_image, target_id
+            target = self.target_transform(target)
+        return pil_image, target
 
     def download(self) -> None:
         if self._check_exists():
