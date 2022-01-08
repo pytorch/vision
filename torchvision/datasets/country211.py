@@ -52,7 +52,7 @@ class Country211(VisionDataset):
         self.samples = make_dataset(str(self.split_folder), class_to_idx, extensions, is_valid_file=None)
 
     def __len__(self) -> int:
-        return len(self._image_files)
+        return len(self.samples)
 
     def __getitem__(self, idx) -> Tuple[Any, Any]:
         image_file, label = self.samples[idx][0], self.samples[idx][1]
@@ -67,9 +67,7 @@ class Country211(VisionDataset):
         return image, label
 
     def _check_exists(self) -> bool:
-        return all(
-            folder.exists() and folder.is_dir() for folder in (Path(self.root), self._base_folder, self._images_folder)
-        )
+        return self._base_folder.exists() and self._base_folder.is_dir()
 
     def _download(self) -> None:
         if self._check_exists():

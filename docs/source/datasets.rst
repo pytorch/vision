@@ -38,6 +38,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     Cityscapes
     CocoCaptions
     CocoDetection
+    Country211
     EMNIST
     FakeData
     FashionMNIST
@@ -73,7 +74,6 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     VOCSegmentation
     VOCDetection
     WIDERFace
-    Country211
 
 .. _base_classes_datasets:
 
