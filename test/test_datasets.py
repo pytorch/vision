@@ -2463,5 +2463,44 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         return (image_id, class_id, species, breed_id)
 
 
+class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Flowers102
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "valid", "test"))
+    REQUIRED_PACKAGES = ("scipy",)
+
+    def inject_fake_data(self, tmpdir: str, config):
+        base_folder = pathlib.Path(tmpdir) / "flowers-102"
+
+        num_classes = 3
+        num_images_per_split = dict(train=3, valid=3, test=4)
+        num_images_total = sum(num_images_per_split.values())
+        datasets_utils.create_image_folder(
+            base_folder,
+            "jpg",
+            file_name_fn=lambda idx: f"image_{idx + 1:05d}.jpg",
+            num_examples=num_images_total,
+        )
+
+        meta_folder = base_folder / "labels"
+        meta_folder.mkdir()
+
+        label_dict = dict(
+            labels=np.random.randint(1, num_classes + 1, size=(1, num_images_total), dtype=np.uint8),
+        )
+        datasets_utils.lazy_importer.scipy.io.savemat(str(meta_folder / "imagelabels.mat"), label_dict)
+
+        setid_mat = np.arange(1, num_images_total + 1, dtype=np.uint16)
+        setid_dict = dict(
+            trnid=setid_mat[: num_images_per_split["train"]].reshape(1, -1),
+            valid=setid_mat[num_images_per_split["train"] : -num_images_per_split["test"]].reshape(1, -1),
+            tstid=setid_mat[-num_images_per_split["test"] :].reshape(1, -1),
+        )
+        datasets_utils.lazy_importer.scipy.io.savemat(str(meta_folder / "setid.mat"), setid_dict)
+
+        return num_images_per_split[config["split"]]
+
+
 if __name__ == "__main__":
     unittest.main()
