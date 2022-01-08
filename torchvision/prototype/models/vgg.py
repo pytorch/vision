@@ -41,6 +41,9 @@ def _vgg(cfg: str, batch_norm: bool, weights: Optional[WeightsEnum], progress: b
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "VGG",
+    "publication_year": 2014,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -54,6 +57,7 @@ class VGG11_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 132863336,
             "acc@1": 69.020,
             "acc@5": 88.628,
         },
@@ -67,6 +71,7 @@ class VGG11_BN_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 132868840,
             "acc@1": 70.370,
             "acc@5": 89.810,
         },
@@ -80,6 +85,7 @@ class VGG13_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 133047848,
             "acc@1": 69.928,
             "acc@5": 89.246,
         },
@@ -93,6 +99,7 @@ class VGG13_BN_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 133053736,
             "acc@1": 71.586,
             "acc@5": 90.374,
         },
@@ -106,6 +113,7 @@ class VGG16_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 138357544,
             "acc@1": 71.592,
             "acc@5": 90.382,
         },
@@ -119,9 +127,9 @@ class VGG16_Weights(WeightsEnum):
             ImageNetEval, crop_size=224, mean=(0.48235, 0.45882, 0.40784), std=(1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0)
         ),
         meta={
-            "size": (224, 224),
+            **_COMMON_META,
+            "num_params": 138357544,
             "categories": None,
-            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/amdegroot/ssd.pytorch#training-ssd",
             "acc@1": float("nan"),
             "acc@5": float("nan"),
@@ -136,6 +144,7 @@ class VGG16_BN_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 138365992,
             "acc@1": 73.360,
             "acc@5": 91.516,
         },
@@ -149,6 +158,7 @@ class VGG19_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 143667240,
             "acc@1": 72.376,
             "acc@5": 90.876,
         },
@@ -162,6 +172,7 @@ class VGG19_BN_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 143678248,
             "acc@1": 74.218,
             "acc@5": 91.842,
         },
