@@ -99,18 +99,18 @@ class Flowers102(VisionDataset):
 
         download_and_extract_archive(
             "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/102flowers.tgz",
-            download_root=self._base_folder,
+            download_root=str(self._base_folder),
             md5="52808999861908f626f3c1f4e79d11fa",
         )
 
         download_url(
             "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/setid.mat",
-            self._meta_folder,
+            str(self._meta_folder),
             md5="a5357ecc9cb78c4bef273ce3793fc85c",
         )
 
         download_url(
             "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/imagelabels.mat",
-            self._meta_folder,
+            str(self._meta_folder),
             md5="e0620be6f572b9609742df49c70aed4d",
         )
