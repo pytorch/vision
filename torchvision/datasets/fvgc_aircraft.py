@@ -3,7 +3,6 @@ import shutil
 from typing import Any, Callable, List, Optional, Tuple
 
 import PIL.Image
-import tqdm
 
 from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
