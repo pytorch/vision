@@ -36,10 +36,10 @@ class RASampler(torch.utils.data.Sampler):
         self.repetitions = repetitions
 
     def __iter__(self):
-        # Deterministically shuffle based on epoch
-        g = torch.Generator()
-        g.manual_seed(self.seed + self.epoch)
         if self.shuffle:
+            # Deterministically shuffle based on epoch
+            g = torch.Generator()
+            g.manual_seed(self.seed + self.epoch)
             indices = torch.randperm(len(self.dataset), generator=g).tolist()
         else:
             indices = list(range(len(self.dataset)))
