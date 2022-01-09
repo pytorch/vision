@@ -102,9 +102,9 @@ class FVGCAircraft(VisionDataset):
         with open(labels_path, "r") as labels_file:
             lines = [line.strip() for line in labels_file]
             for line in lines:
-                line = line.split(" ")
-                image_name = line[0]
-                label_name = self._parse_aircraft_name(" ".join(line[1:]))
+                line_list = line.split(" ")
+                image_name = line_list[0]
+                label_name = self._parse_aircraft_name(" ".join(line_list[1:]))
                 shutil.copy(
                     src=os.path.join(img_data_folder, f"{image_name}.jpg"),
                     dst=os.path.join(self._image_folder, label_name),

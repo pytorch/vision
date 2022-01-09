@@ -2205,7 +2205,7 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
 
         return len(sampled_classes * n_samples_per_class)
 
-      
+
 class FVGCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.FVGCAircraft
     FEATURE_TYPES = (PIL.Image.Image, int)
@@ -2251,7 +2251,7 @@ class FVGCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
 
         return len(variants * n_samples_per_class)
 
-      
+
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SUN397
 
@@ -2296,7 +2296,7 @@ class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
             num_samples = len(im_paths)
 
         return num_samples
-      
+
 
 class DTDTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.DTD
