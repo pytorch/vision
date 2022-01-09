@@ -258,10 +258,10 @@ class BoxLinearCoder:
 
         targets = torch.stack((target_l, target_t, target_r, target_b), dim=1)
         if self.normalize_by_size:
-            stride_w = reference_boxes[:, 2] - reference_boxes[:, 0]
-            stride_h = reference_boxes[:, 3] - reference_boxes[:, 1]
-            strides = torch.stack((stride_w, stride_h, stride_w, stride_h), dim=1)
-            targets = targets / strides
+            reference_boxes_w = reference_boxes[:, 2] - reference_boxes[:, 0]
+            reference_boxes_h = reference_boxes[:, 3] - reference_boxes[:, 1]
+            reference_boxes_size = torch.stack((reference_boxes_w, reference_boxes_h, reference_boxes_w, reference_boxes_h), dim=1)
+            targets = targets / reference_boxes_size
 
         return targets
 
@@ -295,10 +295,10 @@ class BoxLinearCoder:
         ctr_x = 0.5 * (boxes[:, 0] + boxes[:, 2])
         ctr_y = 0.5 * (boxes[:, 1] + boxes[:, 3])
         if self.normalize_by_size:
-            stride_w = boxes[:, 2] - boxes[:, 0]
-            stride_h = boxes[:, 3] - boxes[:, 1]
-            strides = torch.stack((stride_w, stride_h, stride_w, stride_h), dim=1)
-            rel_codes = rel_codes * strides
+            boxes_w = boxes[:, 2] - boxes[:, 0]
+            boxes_h = boxes[:, 3] - boxes[:, 1]
+            boxes_size = torch.stack((boxes_w, boxes_h, boxes_w, boxes_h), dim=1)
+            rel_codes = rel_codes * boxes_size
 
         pred_boxes1 = ctr_x - rel_codes[:, 0]
         pred_boxes2 = ctr_y - rel_codes[:, 1]
