@@ -19,7 +19,7 @@ def make_grid(
     normalize: bool = False,
     value_range: Optional[Tuple[int, int]] = None,
     scale_each: bool = False,
-    pad_value: int = 0,
+    pad_value: float = 0.0,
     **kwargs,
 ) -> torch.Tensor:
     """
