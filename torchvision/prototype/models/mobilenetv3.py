@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.mobilenetv3 import MobileNetV3, _mobilenet_v3_conf, InvertedResidualConfig
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [
@@ -38,6 +38,9 @@ def _mobilenet_v3(
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "MobileNetV3",
+    "publication_year": 2019,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -50,6 +53,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 74.042,
             "acc@5": 91.340,
@@ -60,6 +64,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
             "acc@1": 75.274,
             "acc@5": 92.566,
@@ -74,6 +79,7 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 2542856,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
             "acc@1": 67.668,
             "acc@5": 87.402,
@@ -82,26 +88,20 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
     default = ImageNet1K_V1
 
 
+@handle_legacy_interface(weights=("pretrained", MobileNet_V3_Large_Weights.ImageNet1K_V1))
 def mobilenet_v3_large(
-    weights: Optional[MobileNet_V3_Large_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[MobileNet_V3_Large_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNet_V3_Large_Weights.ImageNet1K_V1)
     weights = MobileNet_V3_Large_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", MobileNet_V3_Small_Weights.ImageNet1K_V1))
 def mobilenet_v3_small(
-    weights: Optional[MobileNet_V3_Small_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[MobileNet_V3_Small_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MobileNet_V3_Small_Weights.ImageNet1K_V1)
     weights = MobileNet_V3_Small_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)

@@ -11,7 +11,7 @@ from ....models.quantization.shufflenetv2 import (
 )
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights
 
 
@@ -27,6 +27,7 @@ __all__ = [
 def _shufflenetv2(
     stages_repeats: List[int],
     stages_out_channels: List[int],
+    *,
     weights: Optional[WeightsEnum],
     progress: bool,
     quantize: bool,
@@ -50,6 +51,9 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ShuffleNetV2",
+    "publication_year": 2018,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -65,6 +69,7 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 1366792,
             "unquantized": ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1,
             "acc@1": 57.972,
             "acc@5": 79.780,
@@ -79,6 +84,7 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 2278604,
             "unquantized": ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1,
             "acc@1": 68.360,
             "acc@5": 87.582,
@@ -87,47 +93,43 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
     default = ImageNet1K_FBGEMM_V1
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ShuffleNet_V2_X0_5_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1,
+    )
+)
 def shufflenet_v2_x0_5(
+    *,
     weights: Optional[Union[ShuffleNet_V2_X0_5_QuantizedWeights, ShuffleNet_V2_X0_5_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = (
-            ShuffleNet_V2_X0_5_QuantizedWeights.ImageNet1K_FBGEMM_V1
-            if quantize
-            else ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1
-        )
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = ShuffleNet_V2_X0_5_QuantizedWeights.verify(weights)
-    else:
-        weights = ShuffleNet_V2_X0_5_Weights.verify(weights)
-
-    return _shufflenetv2([4, 8, 4], [24, 48, 96, 192, 1024], weights, progress, quantize, **kwargs)
+    weights = (ShuffleNet_V2_X0_5_QuantizedWeights if quantize else ShuffleNet_V2_X0_5_Weights).verify(weights)
+    return _shufflenetv2(
+        [4, 8, 4], [24, 48, 96, 192, 1024], weights=weights, progress=progress, quantize=quantize, **kwargs
+    )
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ShuffleNet_V2_X1_0_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1,
+    )
+)
 def shufflenet_v2_x1_0(
+    *,
     weights: Optional[Union[ShuffleNet_V2_X1_0_QuantizedWeights, ShuffleNet_V2_X1_0_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableShuffleNetV2:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = (
-            ShuffleNet_V2_X1_0_QuantizedWeights.ImageNet1K_FBGEMM_V1
-            if quantize
-            else ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1
-        )
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = ShuffleNet_V2_X1_0_QuantizedWeights.verify(weights)
-    else:
-        weights = ShuffleNet_V2_X1_0_Weights.verify(weights)
-
-    return _shufflenetv2([4, 8, 4], [24, 116, 232, 464, 1024], weights, progress, quantize, **kwargs)
+    weights = (ShuffleNet_V2_X1_0_QuantizedWeights if quantize else ShuffleNet_V2_X1_0_Weights).verify(weights)
+    return _shufflenetv2(
+        [4, 8, 4], [24, 116, 232, 464, 1024], weights=weights, progress=progress, quantize=quantize, **kwargs
+    )

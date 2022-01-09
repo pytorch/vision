@@ -4,16 +4,14 @@ import io
 import operator
 import pathlib
 import string
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO
+from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO, Union, Sequence
 
 import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Demultiplexer,
     Mapper,
-    ZipArchiveReader,
     Zipper,
-    Shuffler,
 )
 from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
@@ -29,9 +27,10 @@ from torchvision.prototype.datasets.utils._internal import (
     Decompressor,
     INFINITE_BUFFER_SIZE,
     fromfile,
+    hint_sharding,
+    hint_shuffling,
 )
 from torchvision.prototype.features import Image, Label
-
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 
@@ -79,7 +78,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
 
 
 class _MNISTBase(Dataset):
-    _URL_BASE: str
+    _URL_BASE: Union[str, Sequence[str]]
 
     @abc.abstractmethod
     def _files_and_checksums(self, config: DatasetConfig) -> Tuple[Tuple[str, str], Tuple[str, str]]:
@@ -91,8 +90,15 @@ class _MNISTBase(Dataset):
             labels_sha256,
         ) = self._files_and_checksums(config)
 
-        images = HttpResource(f"{self._URL_BASE}/{images_file}", sha256=images_sha256)
-        labels = HttpResource(f"{self._URL_BASE}/{labels_file}", sha256=labels_sha256)
+        url_bases = self._URL_BASE
+        if isinstance(url_bases, str):
+            url_bases = (url_bases,)
+
+        images_urls = [f"{url_base}/{images_file}" for url_base in url_bases]
+        images = HttpResource(images_urls[0], sha256=images_sha256, mirrors=images_urls[1:])
+
+        labels_urls = [f"{url_base}/{labels_file}" for url_base in url_bases]
+        labels = HttpResource(labels_urls[0], sha256=images_sha256, mirrors=labels_urls[1:])
 
         return [images, labels]
 
@@ -135,8 +141,9 @@ class _MNISTBase(Dataset):
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
         dp = Zipper(images_dp, labels_dp)
-        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode, fn_kwargs=dict(config=config, decoder=decoder))
+        dp = hint_sharding(dp)
+        dp = hint_shuffling(dp)
+        return Mapper(dp, functools.partial(self._collate_and_decode, config=config, decoder=decoder))
 
 
 class MNIST(_MNISTBase):
@@ -151,7 +158,10 @@ class MNIST(_MNISTBase):
             ),
         )
 
-    _URL_BASE = "http://yann.lecun.com/exdb/mnist"
+    _URL_BASE: Union[str, Sequence[str]] = (
+        "http://yann.lecun.com/exdb/mnist",
+        "https://ossci-datasets.s3.amazonaws.com/mnist/",
+    )
     _CHECKSUMS = {
         "train-images-idx3-ubyte.gz": "440fcabf73cc546fa21475e81ea370265605f56be210a4024d2ca8f203523609",
         "train-labels-idx1-ubyte.gz": "3552534a0a558bbed6aed32b30c495cca23d567ec52cac8be1a0730e8010255c",
@@ -310,7 +320,6 @@ class EMNIST(_MNISTBase):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        archive_dp = ZipArchiveReader(archive_dp)
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,

@@ -8,7 +8,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.regnet import RegNet, BlockParams
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [
@@ -43,7 +43,14 @@ __all__ = [
     "regnet_x_32gf",
 ]
 
-_COMMON_META = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_COMMON_META = {
+    "task": "image_classification",
+    "architecture": "RegNet",
+    "publication_year": 2020,
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
 
 
 def _regnet(
@@ -70,12 +77,24 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 4344144,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 74.046,
             "acc@5": 91.716,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_400mf-e6988f5f.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 4344144,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 75.804,
+            "acc@5": 92.742,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_800MF_Weights(WeightsEnum):
@@ -84,12 +103,24 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 6432512,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 76.420,
             "acc@5": 93.136,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_800mf-58fc7688.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 6432512,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 78.828,
+            "acc@5": 94.502,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_1_6GF_Weights(WeightsEnum):
@@ -98,12 +129,24 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 11202430,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 77.950,
             "acc@5": 93.966,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_1_6gf-0d7bc02a.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 11202430,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 80.876,
+            "acc@5": 95.444,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_3_2GF_Weights(WeightsEnum):
@@ -112,12 +155,24 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 19436338,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 78.948,
             "acc@5": 94.576,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_3_2gf-9180c971.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 19436338,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 81.982,
+            "acc@5": 95.972,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_8GF_Weights(WeightsEnum):
@@ -126,12 +181,24 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 39381472,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 80.032,
             "acc@5": 95.048,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_8gf-dc2b1b54.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 39381472,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 82.828,
+            "acc@5": 96.330,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_16GF_Weights(WeightsEnum):
@@ -140,12 +207,24 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 83590140,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "acc@1": 80.424,
             "acc@5": 95.240,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_16gf-3e4a00f9.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 83590140,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 82.886,
+            "acc@5": 96.328,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_Y_32GF_Weights(WeightsEnum):
@@ -154,12 +233,24 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 145046770,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "acc@1": 80.878,
             "acc@5": 95.340,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_32gf-8db6d4b5.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 145046770,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 83.368,
+            "acc@5": 96.498,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_400MF_Weights(WeightsEnum):
@@ -168,12 +259,24 @@ class RegNet_X_400MF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 5495976,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 72.834,
             "acc@5": 90.950,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_400mf-62229a5f.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 5495976,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
+            "acc@1": 74.864,
+            "acc@5": 92.322,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_800MF_Weights(WeightsEnum):
@@ -182,12 +285,24 @@ class RegNet_X_800MF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 7259656,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 75.212,
             "acc@5": 92.348,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_800mf-94a99ebd.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 7259656,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
+            "acc@1": 77.522,
+            "acc@5": 93.826,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_1_6GF_Weights(WeightsEnum):
@@ -196,12 +311,24 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 9190136,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "acc@1": 77.040,
             "acc@5": 93.440,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_1_6gf-a12f2b72.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 9190136,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
+            "acc@1": 79.668,
+            "acc@5": 94.922,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_3_2GF_Weights(WeightsEnum):
@@ -210,12 +337,24 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 15296552,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 78.364,
             "acc@5": 93.992,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_3_2gf-7071aa85.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 15296552,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 81.196,
+            "acc@5": 95.430,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_8GF_Weights(WeightsEnum):
@@ -224,12 +363,24 @@ class RegNet_X_8GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 39572648,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 79.344,
             "acc@5": 94.686,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_8gf-2b70d774.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 39572648,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 81.682,
+            "acc@5": 95.678,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_16GF_Weights(WeightsEnum):
@@ -238,12 +389,24 @@ class RegNet_X_16GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 54278536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "acc@1": 80.058,
             "acc@5": 94.944,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_16gf-ba3796d7.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 54278536,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 82.716,
+            "acc@5": 96.196,
+        },
+    )
+    default = ImageNet1K_V2
 
 
 class RegNet_X_32GF_Weights(WeightsEnum):
@@ -252,41 +415,44 @@ class RegNet_X_32GF_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 107811560,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "acc@1": 80.622,
             "acc@5": 95.248,
         },
     )
-    default = ImageNet1K_V1
+    ImageNet1K_V2 = Weights(
+        url="https://download.pytorch.org/models/regnet_x_32gf-6eb8fdc6.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 107811560,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
+            "acc@1": 83.014,
+            "acc@5": 96.288,
+        },
+    )
+    default = ImageNet1K_V2
 
 
-def regnet_y_400mf(weights: Optional[RegNet_Y_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_Y_400MF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_400MF_Weights.ImageNet1K_V1))
+def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_400MF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=16, w_0=48, w_a=27.89, w_m=2.09, group_width=8, se_ratio=0.25, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_y_800mf(weights: Optional[RegNet_Y_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_Y_800MF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_800MF_Weights.ImageNet1K_V1))
+def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_800MF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=14, w_0=56, w_a=38.84, w_m=2.4, group_width=16, se_ratio=0.25, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_y_1_6gf(weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_Y_1_6GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_1_6GF_Weights.ImageNet1K_V1))
+def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_1_6GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -295,11 +461,8 @@ def regnet_y_1_6gf(weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress: b
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_y_3_2gf(weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_Y_3_2GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_3_2GF_Weights.ImageNet1K_V1))
+def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_3_2GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -308,11 +471,8 @@ def regnet_y_3_2gf(weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress: b
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_y_8gf(weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_Y_8GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_8GF_Weights.ImageNet1K_V1))
+def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_8GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -321,11 +481,8 @@ def regnet_y_8gf(weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bool 
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_y_16gf(weights: Optional[RegNet_Y_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_Y_16GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_16GF_Weights.ImageNet1K_V1))
+def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_16GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -334,11 +491,8 @@ def regnet_y_16gf(weights: Optional[RegNet_Y_16GF_Weights] = None, progress: boo
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_y_32gf(weights: Optional[RegNet_Y_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_Y_32GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_32GF_Weights.ImageNet1K_V1))
+def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_32GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(
@@ -347,77 +501,56 @@ def regnet_y_32gf(weights: Optional[RegNet_Y_32GF_Weights] = None, progress: boo
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_x_400mf(weights: Optional[RegNet_X_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_X_400MF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_X_400MF_Weights.ImageNet1K_V1))
+def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_400MF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=22, w_0=24, w_a=24.48, w_m=2.54, group_width=16, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_x_800mf(weights: Optional[RegNet_X_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_X_800MF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_X_800MF_Weights.ImageNet1K_V1))
+def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_800MF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=16, w_0=56, w_a=35.73, w_m=2.28, group_width=16, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_x_1_6gf(weights: Optional[RegNet_X_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_X_1_6GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_X_1_6GF_Weights.ImageNet1K_V1))
+def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_1_6GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=18, w_0=80, w_a=34.01, w_m=2.25, group_width=24, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_x_3_2gf(weights: Optional[RegNet_X_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_X_3_2GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_X_3_2GF_Weights.ImageNet1K_V1))
+def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_3_2GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=25, w_0=88, w_a=26.31, w_m=2.25, group_width=48, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_x_8gf(weights: Optional[RegNet_X_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_X_8GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_X_8GF_Weights.ImageNet1K_V1))
+def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_8GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=23, w_0=80, w_a=49.56, w_m=2.88, group_width=120, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_x_16gf(weights: Optional[RegNet_X_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_X_16GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_X_16GF_Weights.ImageNet1K_V1))
+def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_16GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=22, w_0=216, w_a=55.59, w_m=2.1, group_width=128, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
 
 
-def regnet_x_32gf(weights: Optional[RegNet_X_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", RegNet_X_32GF_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", RegNet_X_32GF_Weights.ImageNet1K_V1))
+def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_32GF_Weights.verify(weights)
 
     params = BlockParams.from_init_params(depth=23, w_0=320, w_a=69.86, w_m=2.0, group_width=168, **kwargs)

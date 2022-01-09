@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ....models.segmentation.fcn import FCN, _fcn_resnet
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_value_param
+from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..resnet import ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
 
 
@@ -15,6 +15,9 @@ __all__ = ["FCN", "FCN_ResNet50_Weights", "FCN_ResNet101_Weights", "fcn_resnet50
 
 
 _COMMON_META = {
+    "task": "image_semantic_segmentation",
+    "architecture": "FCN",
+    "publication_year": 2014,
     "categories": _VOC_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
@@ -26,6 +29,7 @@ class FCN_ResNet50_Weights(WeightsEnum):
         transforms=partial(VocEval, resize_size=520),
         meta={
             **_COMMON_META,
+            "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
             "mIoU": 60.5,
             "acc": 91.4,
@@ -40,6 +44,7 @@ class FCN_ResNet101_Weights(WeightsEnum):
         transforms=partial(VocEval, resize_size=520),
         meta={
             **_COMMON_META,
+            "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
             "mIoU": 63.7,
             "acc": 91.9,
@@ -48,7 +53,12 @@ class FCN_ResNet101_Weights(WeightsEnum):
     default = CocoWithVocLabels_V1
 
 
+@handle_legacy_interface(
+    weights=("pretrained", FCN_ResNet50_Weights.CocoWithVocLabels_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+)
 def fcn_resnet50(
+    *,
     weights: Optional[FCN_ResNet50_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
@@ -56,17 +66,7 @@ def fcn_resnet50(
     weights_backbone: Optional[ResNet50_Weights] = None,
     **kwargs: Any,
 ) -> FCN:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", FCN_ResNet50_Weights.CocoWithVocLabels_V1)
     weights = FCN_ResNet50_Weights.verify(weights)
-    if type(weights_backbone) == bool and weights_backbone:
-        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
-    if "pretrained_backbone" in kwargs:
-        weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet50_Weights.ImageNet1K_V1
-        )
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
     if weights is not None:
@@ -85,7 +85,12 @@ def fcn_resnet50(
     return model
 
 
+@handle_legacy_interface(
+    weights=("pretrained", FCN_ResNet101_Weights.CocoWithVocLabels_V1),
+    weights_backbone=("pretrained_backbone", ResNet101_Weights.ImageNet1K_V1),
+)
 def fcn_resnet101(
+    *,
     weights: Optional[FCN_ResNet101_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
@@ -93,17 +98,7 @@ def fcn_resnet101(
     weights_backbone: Optional[ResNet101_Weights] = None,
     **kwargs: Any,
 ) -> FCN:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", FCN_ResNet101_Weights.CocoWithVocLabels_V1)
     weights = FCN_ResNet101_Weights.verify(weights)
-    if type(weights_backbone) == bool and weights_backbone:
-        _deprecated_positional(kwargs, "pretrained_backbone", "weights_backbone", True)
-    if "pretrained_backbone" in kwargs:
-        weights_backbone = _deprecated_param(
-            kwargs, "pretrained_backbone", "weights_backbone", ResNet101_Weights.ImageNet1K_V1
-        )
     weights_backbone = ResNet101_Weights.verify(weights_backbone)
 
     if weights is not None:

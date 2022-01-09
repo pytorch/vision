@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.shufflenetv2 import ShuffleNetV2
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [
@@ -41,6 +41,9 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ShuffleNetV2",
+    "publication_year": 2018,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -54,6 +57,7 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 1366792,
             "acc@1": 69.362,
             "acc@5": 88.316,
         },
@@ -67,6 +71,7 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 2278604,
             "acc@1": 60.552,
             "acc@5": 81.746,
         },
@@ -82,49 +87,37 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
     pass
 
 
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1))
 def shufflenet_v2_x0_5(
-    weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1)
     weights = ShuffleNet_V2_X0_5_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1))
 def shufflenet_v2_x1_0(
-    weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1)
     weights = ShuffleNet_V2_X1_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", None))
 def shufflenet_v2_x1_5(
-    weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ShuffleNet_V2_X1_5_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", None))
 def shufflenet_v2_x2_0(
-    weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
     weights = ShuffleNet_V2_X2_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)

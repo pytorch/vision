@@ -13,7 +13,7 @@ from ....models.quantization.mobilenetv3 import (
 )
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..mobilenetv3 import MobileNet_V3_Large_Weights, _mobilenet_v3_conf
 
 
@@ -61,6 +61,10 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
+            "task": "image_classification",
+            "architecture": "MobileNetV3",
+            "publication_year": 2019,
+            "num_params": 5483032,
             "size": (224, 224),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
@@ -75,25 +79,22 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
     default = ImageNet1K_QNNPACK_V1
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: MobileNet_V3_Large_QuantizedWeights.ImageNet1K_QNNPACK_V1
+        if kwargs.get("quantize", False)
+        else MobileNet_V3_Large_Weights.ImageNet1K_V1,
+    )
+)
 def mobilenet_v3_large(
+    *,
     weights: Optional[Union[MobileNet_V3_Large_QuantizedWeights, MobileNet_V3_Large_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableMobileNetV3:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        default_value = (
-            MobileNet_V3_Large_QuantizedWeights.ImageNet1K_QNNPACK_V1
-            if quantize
-            else MobileNet_V3_Large_Weights.ImageNet1K_V1
-        )
-        weights = _deprecated_param(kwargs, "pretrained", "weights", default_value)  # type: ignore[assignment]
-    if quantize:
-        weights = MobileNet_V3_Large_QuantizedWeights.verify(weights)
-    else:
-        weights = MobileNet_V3_Large_Weights.verify(weights)
+    weights = (MobileNet_V3_Large_QuantizedWeights if quantize else MobileNet_V3_Large_Weights).verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
     return _mobilenet_v3_model(inverted_residual_setting, last_channel, weights, progress, quantize, **kwargs)

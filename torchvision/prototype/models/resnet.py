@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [
@@ -51,7 +51,12 @@ def _resnet(
     return model
 
 
-_COMMON_META = {"size": (224, 224), "categories": _IMAGENET_CATEGORIES, "interpolation": InterpolationMode.BILINEAR}
+_COMMON_META = {
+    "task": "image_classification",
+    "size": (224, 224),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
 
 
 class ResNet18_Weights(WeightsEnum):
@@ -60,6 +65,9 @@ class ResNet18_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
+            "num_params": 11689512,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 69.758,
             "acc@5": 89.078,
@@ -74,6 +82,9 @@ class ResNet34_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
+            "num_params": 21797672,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 73.314,
             "acc@5": 91.420,
@@ -88,6 +99,9 @@ class ResNet50_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
+            "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 76.130,
             "acc@5": 92.862,
@@ -98,6 +112,9 @@ class ResNet50_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
+            "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 80.674,
             "acc@5": 95.166,
@@ -112,6 +129,9 @@ class ResNet101_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
+            "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 77.374,
             "acc@5": 93.546,
@@ -122,6 +142,9 @@ class ResNet101_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
+            "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 81.886,
             "acc@5": 95.780,
@@ -136,6 +159,9 @@ class ResNet152_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
+            "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 78.312,
             "acc@5": 94.046,
@@ -146,6 +172,9 @@ class ResNet152_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNet",
+            "publication_year": 2015,
+            "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 82.284,
             "acc@5": 96.002,
@@ -160,6 +189,9 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
+            "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 77.618,
             "acc@5": 93.698,
@@ -170,6 +202,9 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
+            "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 81.198,
             "acc@5": 95.340,
@@ -184,6 +219,9 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
+            "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 79.312,
             "acc@5": 94.526,
@@ -194,6 +232,9 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "ResNeXt",
+            "publication_year": 2016,
+            "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 82.834,
             "acc@5": 96.228,
@@ -208,6 +249,9 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "WideResNet",
+            "publication_year": 2016,
+            "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "acc@1": 78.468,
             "acc@5": 94.086,
@@ -218,6 +262,9 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "WideResNet",
+            "publication_year": 2016,
+            "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 81.602,
             "acc@5": 95.758,
@@ -232,6 +279,9 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "architecture": "WideResNet",
+            "publication_year": 2016,
+            "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "acc@1": 78.848,
             "acc@5": 94.284,
@@ -242,6 +292,9 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
+            "architecture": "WideResNet",
+            "publication_year": 2016,
+            "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 82.510,
             "acc@5": 96.020,
@@ -250,61 +303,45 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
     default = ImageNet1K_V2
 
 
-def resnet18(weights: Optional[ResNet18_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet18_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", ResNet18_Weights.ImageNet1K_V1))
+def resnet18(*, weights: Optional[ResNet18_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     weights = ResNet18_Weights.verify(weights)
 
     return _resnet(BasicBlock, [2, 2, 2, 2], weights, progress, **kwargs)
 
 
-def resnet34(weights: Optional[ResNet34_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet34_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", ResNet34_Weights.ImageNet1K_V1))
+def resnet34(*, weights: Optional[ResNet34_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     weights = ResNet34_Weights.verify(weights)
 
     return _resnet(BasicBlock, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
-def resnet50(weights: Optional[ResNet50_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet50_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", ResNet50_Weights.ImageNet1K_V1))
+def resnet50(*, weights: Optional[ResNet50_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     weights = ResNet50_Weights.verify(weights)
 
     return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
-def resnet101(weights: Optional[ResNet101_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet101_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", ResNet101_Weights.ImageNet1K_V1))
+def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     weights = ResNet101_Weights.verify(weights)
 
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
-def resnet152(weights: Optional[ResNet152_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNet152_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", ResNet152_Weights.ImageNet1K_V1))
+def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     weights = ResNet152_Weights.verify(weights)
 
     return _resnet(Bottleneck, [3, 8, 36, 3], weights, progress, **kwargs)
 
 
-def resnext50_32x4d(weights: Optional[ResNeXt50_32X4D_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNeXt50_32X4D_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", ResNeXt50_32X4D_Weights.ImageNet1K_V1))
+def resnext50_32x4d(
+    *, weights: Optional[ResNeXt50_32X4D_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ResNet:
     weights = ResNeXt50_32X4D_Weights.verify(weights)
 
     _ovewrite_named_param(kwargs, "groups", 32)
@@ -312,13 +349,10 @@ def resnext50_32x4d(weights: Optional[ResNeXt50_32X4D_Weights] = None, progress:
     return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", ResNeXt101_32X8D_Weights.ImageNet1K_V1))
 def resnext101_32x8d(
-    weights: Optional[ResNeXt101_32X8D_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[ResNeXt101_32X8D_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", ResNeXt101_32X8D_Weights.ImageNet1K_V1)
     weights = ResNeXt101_32X8D_Weights.verify(weights)
 
     _ovewrite_named_param(kwargs, "groups", 32)
@@ -326,24 +360,20 @@ def resnext101_32x8d(
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
-def wide_resnet50_2(weights: Optional[Wide_ResNet50_2_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", Wide_ResNet50_2_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", Wide_ResNet50_2_Weights.ImageNet1K_V1))
+def wide_resnet50_2(
+    *, weights: Optional[Wide_ResNet50_2_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ResNet:
     weights = Wide_ResNet50_2_Weights.verify(weights)
 
     _ovewrite_named_param(kwargs, "width_per_group", 64 * 2)
     return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
+@handle_legacy_interface(weights=("pretrained", Wide_ResNet101_2_Weights.ImageNet1K_V1))
 def wide_resnet101_2(
-    weights: Optional[Wide_ResNet101_2_Weights] = None, progress: bool = True, **kwargs: Any
+    *, weights: Optional[Wide_ResNet101_2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", Wide_ResNet101_2_Weights.ImageNet1K_V1)
     weights = Wide_ResNet101_2_Weights.verify(weights)
 
     _ovewrite_named_param(kwargs, "width_per_group", 64 * 2)

@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.mnasnet import MNASNet
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _deprecated_param, _deprecated_positional, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [
@@ -24,6 +24,9 @@ __all__ = [
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "MNASNet",
+    "publication_year": 2018,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -37,6 +40,7 @@ class MNASNet0_5_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 2218512,
             "acc@1": 67.734,
             "acc@5": 87.490,
         },
@@ -55,6 +59,7 @@ class MNASNet1_0_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 4383312,
             "acc@1": 73.456,
             "acc@5": 91.510,
         },
@@ -79,41 +84,29 @@ def _mnasnet(alpha: float, weights: Optional[WeightsEnum], progress: bool, **kwa
     return model
 
 
-def mnasnet0_5(weights: Optional[MNASNet0_5_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet0_5_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", MNASNet0_5_Weights.ImageNet1K_V1))
+def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet0_5_Weights.verify(weights)
 
     return _mnasnet(0.5, weights, progress, **kwargs)
 
 
-def mnasnet0_75(weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
+@handle_legacy_interface(weights=("pretrained", None))
+def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet0_75_Weights.verify(weights)
 
     return _mnasnet(0.75, weights, progress, **kwargs)
 
 
-def mnasnet1_0(weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", MNASNet1_0_Weights.ImageNet1K_V1)
+@handle_legacy_interface(weights=("pretrained", MNASNet1_0_Weights.ImageNet1K_V1))
+def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet1_0_Weights.verify(weights)
 
     return _mnasnet(1.0, weights, progress, **kwargs)
 
 
-def mnasnet1_3(weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
-    if type(weights) == bool and weights:
-        _deprecated_positional(kwargs, "pretrained", "weights", True)
-    if "pretrained" in kwargs:
-        weights = _deprecated_param(kwargs, "pretrained", "weights", None)
+@handle_legacy_interface(weights=("pretrained", None))
+def mnasnet1_3(*, weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet1_3_Weights.verify(weights)
 
     return _mnasnet(1.3, weights, progress, **kwargs)

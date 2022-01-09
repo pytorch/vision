@@ -125,7 +125,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 Here `$MODEL` is one of `regnet_x_400mf`, `regnet_x_800mf`, `regnet_x_1_6gf`, `regnet_y_400mf`, `regnet_y_800mf` and `regnet_y_1_6gf`. Please note we used learning rate 0.4 for `regent_y_400mf` to get the same Acc@1 as [the paper)(https://arxiv.org/abs/2003.13678).
 
-### Medium models
+#### Medium models
 ```
 torchrun --nproc_per_node=8 train.py\
      --model $MODEL --epochs 100 --batch-size 64 --wd 0.00005 --lr=0.4\
@@ -134,7 +134,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 Here `$MODEL` is one of `regnet_x_3_2gf`, `regnet_x_8gf`, `regnet_x_16gf`, `regnet_y_3_2gf` and `regnet_y_8gf`.
 
-### Large models
+#### Large models
 ```
 torchrun --nproc_per_node=8 train.py\
      --model $MODEL --epochs 100 --batch-size 32 --wd 0.00005 --lr=0.2\
@@ -142,6 +142,60 @@ torchrun --nproc_per_node=8 train.py\
      --lr-warmup-epochs=5 --lr-warmup-decay=0.1
 ```
 Here `$MODEL` is one of `regnet_x_32gf`, `regnet_y_16gf` and `regnet_y_32gf`.
+
+### Vision Transformer
+
+#### vit_b_16
+```
+torchrun --nproc_per_node=8 train.py\
+    --model vit_b_16 --epochs 300 --batch-size 512 --opt adamw --lr 0.003 --wd 0.3\
+    --lr-scheduler cosineannealinglr --lr-warmup-method linear --lr-warmup-epochs 30\
+    --lr-warmup-decay 0.033 --amp --label-smoothing 0.11 --mixup-alpha 0.2 --auto-augment ra\
+    --clip-grad-norm 1 --ra-sampler --cutmix-alpha 1.0 --model-ema
+```
+
+Note that the above command corresponds to training on a single node with 8 GPUs.
+For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+and `--batch_size 64`.
+
+#### vit_b_32
+```
+torchrun --nproc_per_node=8 train.py\
+    --model vit_b_32 --epochs 300 --batch-size 512 --opt adamw --lr 0.003 --wd 0.3\
+    --lr-scheduler cosineannealinglr --lr-warmup-method linear --lr-warmup-epochs 30\
+    --lr-warmup-decay 0.033 --amp --label-smoothing 0.11 --mixup-alpha 0.2 --auto-augment imagenet\
+    --clip-grad-norm 1 --ra-sampler --cutmix-alpha 1.0 --model-ema
+```
+
+Note that the above command corresponds to training on a single node with 8 GPUs.
+For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+and `--batch_size 256`.
+
+#### vit_l_16
+```
+torchrun --nproc_per_node=8 train.py\
+    --model vit_l_16 --epochs 600 --batch-size 128 --lr 0.5 --lr-scheduler cosineannealinglr\
+    --lr-warmup-method linear --lr-warmup-epochs 5 --label-smoothing 0.1 --mixup-alpha 0.2\
+    --auto-augment ta_wide --random-erase 0.1 --weight-decay 0.00002 --norm-weight-decay 0.0\
+    --clip-grad-norm 1 --ra-sampler --cutmix-alpha 1.0 --model-ema --val-resize-size 232
+```
+
+Note that the above command corresponds to training on a single node with 8 GPUs.
+For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+and `--batch_size 64`.
+
+#### vit_l_32
+```
+torchrun --nproc_per_node=8 train.py\
+    --model vit_l_32 --epochs 300 --batch-size 512 --opt adamw --lr 0.003 --wd 0.3\
+    --lr-scheduler cosineannealinglr --lr-warmup-method linear --lr-warmup-epochs 30\
+    --lr-warmup-decay 0.033 --amp --label-smoothing 0.11 --mixup-alpha 0.2 --auto-augment ra\
+    --clip-grad-norm 1 --ra-sampler --cutmix-alpha 1.0 --model-ema
+```
+
+Note that the above command corresponds to training on a single node with 8 GPUs.
+For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+and `--batch_size 64`.
 
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).

@@ -30,8 +30,7 @@ import PIL.Image
 import torch
 import torch.distributed as dist
 import torch.utils.data
-from torch.utils.data import IterDataPipe
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 
 
@@ -49,6 +48,7 @@ __all__ = [
     "Decompressor",
     "fromfile",
     "read_flo",
+    "hint_sharding",
 ]
 
 K = TypeVar("K")
@@ -96,7 +96,7 @@ class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
 
     def __iter__(self) -> Iterator[Union[Tuple[K, D], D]]:
         for mapping in self.datapipe:
-            yield from iter(mapping.values() if self.drop_key else mapping.items())  # type: ignore[call-overload]
+            yield from iter(mapping.values() if self.drop_key else mapping.items())
 
 
 class Enumerator(IterDataPipe[Tuple[int, D]]):
@@ -108,7 +108,7 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
         yield from enumerate(self.datapipe, self.start)
 
 
-def _getitem_closure(obj: Any, *, items: Tuple[Any, ...]) -> Any:
+def _getitem_closure(obj: Any, *, items: Sequence[Any]) -> Any:
     for item in items:
         obj = obj[item]
     return obj
@@ -118,8 +118,14 @@ def getitem(*items: Any) -> Callable[[Any], Any]:
     return functools.partial(_getitem_closure, items=items)
 
 
+def _getattr_closure(obj: Any, *, attrs: Sequence[str]) -> Any:
+    for attr in attrs:
+        obj = getattr(obj, attr)
+    return obj
+
+
 def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
-    return cast(D, getattr(path, name))
+    return cast(D, _getattr_closure(path, attrs=name.split(".")))
 
 
 def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
@@ -250,11 +256,11 @@ class TakerDataPipe(IterDataPipe):
         return num_take
 
 
-def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe:
+def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[str, Any]]:
     dp = IoPathFileLister(root=root)
     dp = SharderDataPipe(dp)
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
-    dp = IoPathFileLoader(dp, mode="rb")
+    dp = IoPathFileOpener(dp, mode="rb")
     dp = PicklerDataPipe(dp)
     # dp = dp.cycle(2)
     dp = TakerDataPipe(dp, dataset_size)
@@ -331,3 +337,11 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
     width, height = fromfile(file, dtype=torch.int32, byte_order="little", count=2)
     flow = fromfile(file, dtype=torch.float32, byte_order="little", count=height * width * 2)
     return flow.reshape((height, width, 2)).permute((2, 0, 1))
+
+
+def hint_sharding(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+    return ShardingFilter(datapipe)
+
+
+def hint_shuffling(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+    return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)
