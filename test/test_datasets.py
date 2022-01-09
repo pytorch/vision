@@ -2492,6 +2492,7 @@ class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
         datasets_utils.lazy_importer.scipy.io.savemat(str(meta_folder / "imagelabels.mat"), label_dict)
 
         setid_mat = np.arange(1, num_images_total + 1, dtype=np.uint16)
+        np.random.shuffle(setid_mat)
         setid_dict = dict(
             trnid=setid_mat[: num_images_per_split["train"]].reshape(1, -1),
             valid=setid_mat[num_images_per_split["train"] : -num_images_per_split["test"]].reshape(1, -1),
