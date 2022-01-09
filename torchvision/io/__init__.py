@@ -3,10 +3,14 @@ from typing import Any, Dict, Iterator
 import torch
 
 from ..utils import _log_api_usage_once
+
+try:
+    from ._load_gpu_decoder import _HAS_VIDEO_DECODER
+except ModuleNotFoundError:
+    _HAS_VIDEO_DECODER = False
 from ._video_opt import (
     Timebase,
     VideoMetaData,
-    _HAS_VIDEO_DECODER,
     _HAS_VIDEO_OPT,
     _probe_video_from_file,
     _probe_video_from_memory,
