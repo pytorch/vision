@@ -407,7 +407,7 @@ def _generate_random_color() -> Tuple[int, int, int]:
     Returns:
         color Tuple(int, int, int): A Tuple containing Random RGB Color.
     """
-    return tuple(torch.randperm(256)[:3].tolist())
+    return tuple(torch.randint(256, (3,)).tolist())
 
 
 def _generate_random_color_palette(num_colors: int) -> List[Tuple[int, int, int]]:

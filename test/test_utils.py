@@ -325,5 +325,18 @@ def test_draw_keypoints_errors():
         utils.draw_keypoints(image=img, keypoints=invalid_keypoints)
 
 
+def test_random_colors():
+    color_t = utils._generate_random_color()
+    assert isinstance(color_t, tuple)
+    assert len(color_t) == 3
+    assert 256 not in color_t
+
+
+def test_random_color_palette():
+    color_plt = utils._generate_random_color_palette(5)
+    assert len(color_plt) == 5
+    assert isinstance(color_plt, list)
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
