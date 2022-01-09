@@ -74,7 +74,7 @@ class BottleneckBlock(nn.Module):
     """Slightly modified BottleNeck block (extra relu and biases)"""
 
     def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
-        super(BottleneckBlock, self).__init__()
+        super().__init__()
 
         # See note in ResidualBlock for the reason behind bias=True
         self.convnormrelu1 = ConvNormActivation(
@@ -440,7 +440,7 @@ class RAFT(nn.Module):
                 If ``None`` (default), the flow is upsampled using interpolation.
         """
         super().__init__()
-        _log_api_usage_once("models", self.__class__.__name__)
+        _log_api_usage_once(self)
 
         self.feature_encoder = feature_encoder
         self.context_encoder = context_encoder

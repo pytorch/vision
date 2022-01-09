@@ -61,6 +61,10 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
+            "task": "image_classification",
+            "architecture": "MobileNetV3",
+            "publication_year": 2019,
+            "num_params": 5483032,
             "size": (224, 224),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
