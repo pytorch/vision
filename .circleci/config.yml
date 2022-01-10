@@ -364,7 +364,6 @@ jobs:
       - image: circleci/python:3.7
     resource_class: medium
     steps:
-      - checkout
       - run:
           name: Install conda
           command: |
