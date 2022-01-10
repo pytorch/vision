@@ -359,6 +359,19 @@ jobs:
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
 
+  unittest_jpeg_reference:
+    docker:
+      - image: circleci/python:3.7
+    resource_class: medium
+    steps:
+      - checkout
+      - run:
+          name: Install conda
+          command: |
+            wget https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh -O miniconda.sh
+            chmod +x miniconda.sh
+            ./miniconda.sh -b
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
