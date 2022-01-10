@@ -2474,7 +2474,7 @@ class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
         base_folder = pathlib.Path(tmpdir) / "flowers-102"
 
         num_classes = 3
-        num_images_per_split = dict(train=3, valid=3, test=4)
+        num_images_per_split = dict(train=5, valid=4, test=3)
         num_images_total = sum(num_images_per_split.values())
         datasets_utils.create_image_folder(
             base_folder,
