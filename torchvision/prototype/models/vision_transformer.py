@@ -8,7 +8,7 @@ from typing import Any, Optional
 from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ...models.vision_transformer import VisionTransformer, interpolate_embeddings  # pylint: disable=unused-import
+from ...models.vision_transformer import VisionTransformer, interpolate_embeddings  # noqa: F401
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface
