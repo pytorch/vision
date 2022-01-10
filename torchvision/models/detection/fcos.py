@@ -53,9 +53,9 @@ class FCOSHead(nn.Module):
         matched_idxs: List[Tensor],
     ):
 
-        cls_logits = head_outputs["cls_logits"]  # [N, K, C]
-        bbox_regression = head_outputs["bbox_regression"]  # [N, K, 4]
-        bbox_ctrness = head_outputs["bbox_ctrness"]  # [N, K, 1]
+        cls_logits = head_outputs["cls_logits"]  # [N, HWA, C]
+        bbox_regression = head_outputs["bbox_regression"]  # [N, HWA, 4]
+        bbox_ctrness = head_outputs["bbox_ctrness"]  # [N, HWA, 1]
 
         all_gt_classes_targets = []
         all_gt_boxes_targets = []
