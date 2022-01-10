@@ -2465,7 +2465,6 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
 
 class Country211TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Country211
-    FEATURE_TYPES = (PIL.Image.Image, int)
 
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "valid", "test"))
 
