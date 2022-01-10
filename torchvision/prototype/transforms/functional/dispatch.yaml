@@ -1,0 +1,39 @@
+horizontal_flip:
+  Image:
+    kernel: horizontal_flip_image
+  BoundingBox:
+    kernel: horizontal_flip_bounding_box
+    meta_conversion:
+      format: BoundingBoxFormat.XYXY
+    kwargs_overwrite:
+      image_size: .image_size
+resize:
+  Image:
+    kernel: resize_image
+  BoundingBox:
+    kernel: resize_bounding_box
+    meta_conversion:
+      format: BoundingBoxFormat.XYXY
+    kwargs_overwrite:
+      old_image_size: .image_size
+      new_image_size: size
+    meta_overwrite:
+      image_size: size
+  SegmentationMask:
+    kernel: resize_segmentation_mask
+convert_format:
+  BoundingBox:
+    kernel: convert_format_bounding_box
+    kwargs_overwrite:
+      old_format: .format
+    meta_overwrite:
+      format: new_format
+convert_dtype:
+  Image:
+    kernel: convert_dtype_image
+    meta_overwrite:
+      dtype: new_dtype
+decode_image:
+  EncodedImage:
+    kernel: decode_image_with_pil
+    output_type: Image

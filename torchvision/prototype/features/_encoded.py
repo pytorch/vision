@@ -32,6 +32,6 @@ class EncodedImage(EncodedData):
 
     def decode(self) -> Image:
         # import at runtime to avoid cyclic imports
-        from torchvision.transforms.functional import decode_image
+        from torchvision.prototype.transforms.functional import decode_image
 
         return cast(Image, decode_image(self))
