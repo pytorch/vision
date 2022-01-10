@@ -384,8 +384,11 @@ jobs:
       - run:
           name: Install torchvision
           command: pip install -v --no-build-isolation --editable .
+      - run:
+          name: Enable JPEG ref tests
+          command: echo 'export PYTORCH_TEST_JPEG_REF=1' >> $BASH_ENV
       - run_tests_selective:
-          file_or_dir: test/test_image.py
+          file_or_dir: test/test_image.py::JPEGRefTests
 
   binary_linux_wheel:
     <<: *binary_common

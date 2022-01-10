@@ -9,6 +9,7 @@ import pytest
 import torch
 import torchvision.transforms.functional as F
 from common_utils import needs_cuda, assert_equal
+from common_utils import run_on_env_var
 from PIL import Image, __version__ as PILLOW_VERSION
 from torchvision.io.image import (
     decode_png,
@@ -478,50 +479,50 @@ def test_write_jpeg_reference(img_path, tmpdir):
     assert_equal(torch_bytes, pil_bytes)
 
 
-# TODO: Remove the skip. See https://github.com/pytorch/vision/issues/5162.
-@pytest.mark.skip("this test fails because PIL uses libjpeg-turbo")
+@run_on_env_var(
+    "PYTORCH_TEST_JPEG_REF",
+    skip_reason=(
+        "JPEG reference tests compare `torchvision` JPEG encoding against `Pillow`'s. "
+        "By default `torchvision` is build against `libjpeg` while `Pillow` builds against `libjpeg-turbo`. "
+        "Make sure to use the same underlying library and set PYTORCH_TEST_JPEG_REF=1 to run the tests."
+    ),
+)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
 )
-def test_encode_jpeg(img_path):
-    img = read_image(img_path)
+class TestJPEGRef:
+    def test_encode_jpeg(self, img_path):
+        img = read_image(img_path)
 
-    pil_img = F.to_pil_image(img)
-    buf = io.BytesIO()
-    pil_img.save(buf, format="JPEG", quality=75)
+        pil_img = F.to_pil_image(img)
+        buf = io.BytesIO()
+        pil_img.save(buf, format="JPEG", quality=75)
 
-    encoded_jpeg_pil = torch.frombuffer(buf.getvalue(), dtype=torch.uint8)
+        encoded_jpeg_pil = torch.frombuffer(buf.getvalue(), dtype=torch.uint8)
 
-    for src_img in [img, img.contiguous()]:
-        encoded_jpeg_torch = encode_jpeg(src_img, quality=75)
-        assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
+        for src_img in [img, img.contiguous()]:
+            encoded_jpeg_torch = encode_jpeg(src_img, quality=75)
+            assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
+    def test_write_jpeg(self, img_path, tmpdir):
+        tmpdir = Path(tmpdir)
+        img = read_image(img_path)
+        pil_img = F.to_pil_image(img)
 
-# TODO: Remove the skip. See https://github.com/pytorch/vision/issues/5162.
-@pytest.mark.skip("this test fails because PIL uses libjpeg-turbo")
-@pytest.mark.parametrize(
-    "img_path",
-    [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
-)
-def test_write_jpeg(img_path, tmpdir):
-    tmpdir = Path(tmpdir)
-    img = read_image(img_path)
-    pil_img = F.to_pil_image(img)
+        torch_jpeg = str(tmpdir / "torch.jpg")
+        pil_jpeg = str(tmpdir / "pil.jpg")
 
-    torch_jpeg = str(tmpdir / "torch.jpg")
-    pil_jpeg = str(tmpdir / "pil.jpg")
+        write_jpeg(img, torch_jpeg, quality=75)
+        pil_img.save(pil_jpeg, quality=75)
 
-    write_jpeg(img, torch_jpeg, quality=75)
-    pil_img.save(pil_jpeg, quality=75)
+        with open(torch_jpeg, "rb") as f:
+            torch_bytes = f.read()
 
-    with open(torch_jpeg, "rb") as f:
-        torch_bytes = f.read()
+        with open(pil_jpeg, "rb") as f:
+            pil_bytes = f.read()
 
-    with open(pil_jpeg, "rb") as f:
-        pil_bytes = f.read()
-
-    assert_equal(torch_bytes, pil_bytes)
+        assert_equal(torch_bytes, pil_bytes)
 
 
 if __name__ == "__main__":
