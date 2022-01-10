@@ -570,7 +570,6 @@ class FCOS(nn.Module):
         images, targets = self.transform(images, targets)
 
         # Check for degenerate boxes
-        # TODO: Move this to a function
         if targets is not None:
             for target_idx, target in enumerate(targets):
                 boxes = target["boxes"]
@@ -589,10 +588,9 @@ class FCOS(nn.Module):
         if isinstance(features, torch.Tensor):
             features = OrderedDict([("0", features)])
 
-        # TODO: Do we want a list or a dict?
         features = list(features.values())
 
-        # compute the retinanet heads outputs using the features
+        # compute the fcos heads outputs using the features
         head_outputs = self.head(features)
 
         # create the set of anchors
