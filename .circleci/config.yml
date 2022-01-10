@@ -359,7 +359,7 @@ jobs:
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
 
-  unittest_jpeg_reference:
+  unittest_jpeg_ref:
     docker:
       - image: circleci/python:3.7
     resource_class: medium
@@ -371,6 +371,14 @@ jobs:
             wget https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh -O miniconda.sh
             chmod +x miniconda.sh
             ./miniconda.sh -b
+            mv ~/.bashrc ~/._bashrc
+            ./miniconda3/bin/conda init bash
+            cat ~/.bashrc >> $BASH_ENV
+            mv ~/._bashrc ~/.bashrc
+      - run:
+          name: Create environment
+          command: |
+            conda create -n torchvision-jpeg-ref -c conda-forge jpeg pillow
 
   binary_linux_wheel:
     <<: *binary_common
@@ -1586,7 +1594,7 @@ workflows:
       - unittest_torchhub
       - unittest_onnx
       - unittest_prototype
-      - unittest_jpeg_reference
+      - unittest_jpeg_ref
       - unittest_linux_cpu:
           cu_version: cpu
           name: unittest_linux_cpu_py3.7
