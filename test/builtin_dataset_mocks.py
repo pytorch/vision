@@ -1096,6 +1096,9 @@ class OxfordIIITPetMockData:
         for path in segmentation_files:
             path.with_name(f".{path.name}").touch()
 
+        make_tar(root, "images.tar")
+        make_tar(root, anns_folder.with_suffix(".tar").name)
+
         return num_samples_map
 
 
