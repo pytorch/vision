@@ -361,25 +361,25 @@ jobs:
 
   unittest_jpeg_ref:
     docker:
-      - image: ubuntu
+      - image: mambaforge
     resource_class: medium
     steps:
-      - run:
-          name: Install conda
-          command: |
-            cd ~
-            wget https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh -O miniconda.sh
-            chmod +x miniconda.sh
-            ./miniconda.sh -b -p ~/miniconda
-            mv .bashrc ._bashrc
-            ./miniconda/bin/conda init bash
-            cat .bashrc >> $BASH_ENV
-            mv ._bashrc .bashrc
+#      - run:
+#          name: Install conda
+#          command: |
+#            cd ~
+#            wget https://repo.anaconda.com/miniconda/Miniconda3-py37_4.10.3-Linux-x86_64.sh -O miniconda.sh
+#            chmod +x miniconda.sh
+#            ./miniconda.sh -b -p ~/miniconda
+#            mv .bashrc ._bashrc
+#            ./miniconda/bin/conda init bash
+#            cat .bashrc >> $BASH_ENV
+#            mv ._bashrc .bashrc
       - checkout
       - run:
           name: Create environment
           command: |
-            conda env create -n jpeg-ref -f .circleci/unittest/jpeg-ref-env.yml
+            mamba env create -n jpeg-ref -f .circleci/unittest/jpeg-ref-env.yml
             echo 'conda activate jpeg-ref' >> $BASH_ENV
       - run:
           name: Install torchvision
