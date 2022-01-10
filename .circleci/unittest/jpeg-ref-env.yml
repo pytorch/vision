@@ -1,0 +1,11 @@
+channels:
+  - pytorch-nightly
+  - conda-forge
+dependencies:
+  - cpuonly
+  - torch
+  - numpy
+  - libpng
+  - jpeg
+  - pillow >=5.3.0, !=8.3.*
+  - pytest
