@@ -198,7 +198,6 @@ class KeypointRCNN(FasterRCNN):
         if num_keypoints is not None:
             if keypoint_predictor is not None:
                 raise ValueError("num_keypoints should be None when keypoint_predictor is specified")
-
         else:
             num_keypoints = 17
 
