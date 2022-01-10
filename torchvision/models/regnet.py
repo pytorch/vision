@@ -506,16 +506,16 @@ def regnet_y_32gf(pretrained: bool = False, progress: bool = True, **kwargs: Any
     return _regnet("regnet_y_32gf", params, pretrained, progress, **kwargs)
 
 
-def regnet_y_128gf(**kwargs: Any) -> RegNet:
+def regnet_y_128gf(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_128GF architecture from
     `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
     NOTE: Pretrained weights are not available for this model.
     """
-    if "pretrained" in kwargs and kwargs.pop("pretrained"):
-        raise ValueError("No pretrained weights available for regnet_y_128gf.")
-    params = BlockParams.from_init_params(depth=27, w_0=456, w_a=160.83, w_m=2.52, group_width=264, se_ratio=0.25)
-    return _regnet("regnet_y_128gf", params, pretrained=False, progress=False, **kwargs)
+    params = BlockParams.from_init_params(
+        depth=27, w_0=456, w_a=160.83, w_m=2.52, group_width=264, se_ratio=0.25, **kwargs
+    )
+    return _regnet("regnet_y_128gf", params, pretrained, progress, **kwargs)
 
 
 def regnet_x_400mf(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> RegNet:
