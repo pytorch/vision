@@ -6,8 +6,18 @@ from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
-from torchvision.prototype import transforms
+from torchvision.prototype import transforms, datasets
 from torchvision.prototype.utils._internal import sequence_to_str
+
+
+def test_coverage():
+    untested_datasets = set(datasets.list()) - set(dataset_mock.name for dataset_mock in DATASET_MOCKS)
+    if untested_datasets:
+        raise AssertionError(
+            f"The dataset(s) {sequence_to_str(sorted(untested_datasets), separate_last='and ')} "
+            f"are exposed through `torchvision.prototype.datasets.load()`, but are not tested. "
+            f"Please add mock data to `test/builtin_dataset_mocks.py`."
+        )
 
 
 @parametrize_dataset_mocks(DATASET_MOCKS)

@@ -31,7 +31,7 @@ class OxfordIITPet(Dataset):
             type=DatasetType.IMAGE,
             homepage="https://www.robots.ox.ac.uk/~vgg/data/pets/",
             valid_options=dict(
-                split=("trainval", "test"),
+                split=("trainval", "test", "train"),
             ),
         )
 
