@@ -157,7 +157,7 @@ def parametrize_dataset_mocks(datasets_mocks):
 
 class DatasetMocks(UserList):
     def append_named_callable(self, fn):
-        self.data.append(DatasetMock(fn.__name__, fn))
+        self.data.append(DatasetMock(fn.__name__.replace("_", "-"), fn))
         return fn
 
 
@@ -1028,7 +1028,7 @@ def clevr(info, root, config):
                         {
                             "image_filename": image_file.name,
                             # We currently only return the number of objects in a scene.
-                            # Thus it is sufficient for now to mock the number of elements.
+                            # Thus, it is sufficient for now to only mock the number of elements.
                             "objects": [None] * int(torch.randint(1, 5, ())),
                         }
                         for image_file in image_files[split]
@@ -1039,4 +1039,67 @@ def clevr(info, root, config):
 
     make_zip(root, f"{data_folder.name}.zip")
 
+    return {config_: num_samples_map[config_.split] for config_ in info._configs}
+
+
+class OxfordIIITPetMockData:
+    @classmethod
+    def _meta_to_split_and_classification_ann(cls, meta, idx):
+        image_id = "_".join(
+            [
+                *[(str.title if meta["species"] == "cat" else str.lower)(part) for part in meta["cls"].split()],
+                str(idx),
+            ]
+        )
+        class_id = str(meta["label"] + 1)
+        species = "1" if meta["species"] == "cat" else "2"
+        breed_id = "-1"
+        return (image_id, class_id, species, breed_id)
+
+    @classmethod
+    def generate(self, root):
+        classification_anns_meta = (
+            dict(cls="Abyssinian", label=0, species="cat"),
+            dict(cls="Keeshond", label=18, species="dog"),
+            dict(cls="Yorkshire Terrier", label=36, species="dog"),
+        )
+        split_and_classification_anns = [
+            self._meta_to_split_and_classification_ann(meta, idx)
+            for meta, idx in itertools.product(classification_anns_meta, (1, 2, 10))
+        ]
+        image_ids, *_ = zip(*split_and_classification_anns)
+
+        image_files = create_image_folder(
+            root, "images", file_name_fn=lambda idx: f"{image_ids[idx]}.jpg", num_examples=len(image_ids)
+        )
+
+        anns_folder = root / "annotations"
+        anns_folder.mkdir()
+        random.shuffle(split_and_classification_anns)
+        num_samples_map = {}
+        for step, split in enumerate(["trainval", "test"], 1):
+            split_and_classification_anns_in_split = split_and_classification_anns[::step]
+            with open(anns_folder / f"{split}.txt", "w") as file:
+                writer = csv.writer(file, delimiter=" ")
+                for split_and_classification_ann in split_and_classification_anns_in_split:
+                    writer.writerow(split_and_classification_ann)
+
+            num_samples_map[split] = len(split_and_classification_anns_in_split)
+
+        segmentation_files = create_image_folder(
+            anns_folder, "trimaps", file_name_fn=lambda idx: f"{image_ids[idx]}.png", num_examples=len(image_ids)
+        )
+
+        # The dataset has some rogue files
+        for path in image_files[:3]:
+            path.with_suffix(".mat").touch()
+        for path in segmentation_files:
+            path.with_name(f".{path.name}").touch()
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.append_named_callable
+def oxford_iiit_pet(info, root, config):
+    num_samples_map = OxfordIIITPetMockData.generate(root)
     return {config_: num_samples_map[config_.split] for config_ in info._configs}
