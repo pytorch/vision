@@ -3,7 +3,7 @@ channels:
   - conda-forge
 dependencies:
   - cpuonly
-  - torch
+  - pytorch
   - numpy
   - libpng
   - jpeg

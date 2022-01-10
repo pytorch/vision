@@ -379,8 +379,8 @@ jobs:
       - run:
           name: Create environment
           command: |
-            conda env create -n torchvision-jpeg-ref -f .circleci/unittest/jpeg-ref-env.yml
-            echo 'conda activate torchvision-jpeg-ref' >> $BASH_ENV
+            conda env create -n jpeg-ref -f .circleci/unittest/jpeg-ref-env.yml
+            echo 'conda activate jpeg-ref' >> $BASH_ENV
       - run:
           name: Install torchvision
           command: pip install --no-build-isolation --editable .
