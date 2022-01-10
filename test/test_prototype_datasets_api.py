@@ -126,21 +126,6 @@ class TestDatasetInfo:
         assert info.default_config == default_config
 
     @pytest.mark.parametrize(
-        "valid_options",
-        [
-            pytest.param(None, id="default"),
-            pytest.param(dict(option=("value",)), id="no_split"),
-        ],
-    )
-    def test_default_config_split_train(self, valid_options):
-        info = make_minimal_dataset_info(valid_options=valid_options)
-        assert info.default_config.split == "train"
-
-    def test_valid_options_split_but_no_train(self):
-        with pytest.raises(ValueError, match="'train' has to be a valid argument for option 'split'"):
-            make_minimal_dataset_info(valid_options=dict(split=("test",)))
-
-    @pytest.mark.parametrize(
         ("options", "expected_error_msg"),
         [
             pytest.param(dict(unknown_option=None), "Unknown option 'unknown_option'", id="unknown_option"),
