@@ -361,7 +361,7 @@ jobs:
 
   unittest_jpeg_ref:
     docker:
-      - image: mambaforge
+      - image: condaforge/mambaforge
     resource_class: medium
     steps:
 #      - run:
