@@ -1,14 +1,11 @@
 from pathlib import Path
-from typing import Any, Tuple, Callable, Optional
+from typing import Callable, Optional
 
-import PIL.Image
-
-from .folder import find_classes, make_dataset
+from .folder import ImageFolder
 from .utils import verify_str_arg, download_and_extract_archive
-from .vision import VisionDataset
 
 
-class Country211(VisionDataset):
+class Country211(ImageFolder):
     """`The Country211 Data Set <https://github.com/openai/CLIP/blob/main/data/country211.md>`_.
 
     filtered the YFCC100m dataset that have GPS coordinate corresponding to a ISO-3166 country code
@@ -31,14 +28,15 @@ class Country211(VisionDataset):
         self,
         root: str,
         split: str = "train",
-        download: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        extensions: Tuple[str, ...] = ("jpg", "png"),
+        download: bool = True,
     ) -> None:
-        super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "valid", "test"))
-        self._base_folder = Path(self.root) / "country211"
+
+        root = Path(root).expanduser()
+        self.root = str(root)
+        self._base_folder = root / "country211"
 
         if download:
             self._download()
@@ -46,25 +44,8 @@ class Country211(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self.split_folder = self._base_folder / self._split
-
-        self.classes, class_to_idx = find_classes(str(self.split_folder))
-        self.samples = make_dataset(str(self.split_folder), class_to_idx, extensions, is_valid_file=None)
-
-    def __len__(self) -> int:
-        return len(self.samples)
-
-    def __getitem__(self, idx) -> Tuple[Any, Any]:
-        image_file, label = self.samples[idx][0], self.samples[idx][1]
-        image = PIL.Image.open(image_file).convert("RGB")
-
-        if self.transform:
-            image = self.transform(image)
-
-        if self.target_transform:
-            label = self.target_transform(label)
-
-        return image, label
+        super().__init__(str(self._base_folder / self._split), transform=transform, target_transform=target_transform)
+        self.root = str(root)
 
     def _check_exists(self) -> bool:
         return self._base_folder.exists() and self._base_folder.is_dir()
