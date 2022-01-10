@@ -479,50 +479,60 @@ def test_write_jpeg_reference(img_path, tmpdir):
     assert_equal(torch_bytes, pil_bytes)
 
 
-@run_on_env_var(
+run_if_test_jpeg_ref = run_on_env_var(
     "PYTORCH_TEST_JPEG_REF",
     skip_reason=(
         "JPEG reference tests compare `torchvision` JPEG encoding against `Pillow`'s. "
-        "By default `torchvision` is build against `libjpeg` while `Pillow` on PyPI builds against `libjpeg-turbo` on all platform starting from PIL >= 9. Before PIL 9, only the windows PIL binary was built against libjpeg-turbo."
-        "Make sure to use the same underlying library (by running PIL < 9 or by installing PIL from conda-forge) and set PYTORCH_TEST_JPEG_REF=1 to run the tests."
+        "By default `torchvision` is build against `libjpeg` while `Pillow` on wheels are built against "
+        "`libjpeg-turbo` on all platform starting from `Pillow >= 9`. For `Pillow < 9`, only the windows wheel was "
+        "built against `libjpeg-turbo`. Make sure to use the same underlying library (by running `Pillow < 9` on Linux "
+        "or macOS or by installing `Pillow` from conda-forge) and set PYTORCH_TEST_JPEG_REF=1 to run the tests."
     ),
 )
+
+
+@run_if_test_jpeg_ref
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
 )
-class TestJPEGRef:
-    def test_encode_jpeg(self, img_path):
-        img = read_image(img_path)
+def test_encode_jpeg(img_path):
+    img = read_image(img_path)
 
-        pil_img = F.to_pil_image(img)
-        buf = io.BytesIO()
-        pil_img.save(buf, format="JPEG", quality=75)
+    pil_img = F.to_pil_image(img)
+    buf = io.BytesIO()
+    pil_img.save(buf, format="JPEG", quality=75)
 
-        encoded_jpeg_pil = torch.frombuffer(buf.getvalue(), dtype=torch.uint8)
+    encoded_jpeg_pil = torch.frombuffer(buf.getvalue(), dtype=torch.uint8)
 
-        for src_img in [img, img.contiguous()]:
-            encoded_jpeg_torch = encode_jpeg(src_img, quality=75)
-            assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
+    for src_img in [img, img.contiguous()]:
+        encoded_jpeg_torch = encode_jpeg(src_img, quality=75)
+        assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
-    def test_write_jpeg(self, img_path, tmpdir):
-        tmpdir = Path(tmpdir)
-        img = read_image(img_path)
-        pil_img = F.to_pil_image(img)
 
-        torch_jpeg = str(tmpdir / "torch.jpg")
-        pil_jpeg = str(tmpdir / "pil.jpg")
+@run_if_test_jpeg_ref
+@pytest.mark.parametrize(
+    "img_path",
+    [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
+)
+def test_write_jpeg(img_path, tmpdir):
+    tmpdir = Path(tmpdir)
+    img = read_image(img_path)
+    pil_img = F.to_pil_image(img)
 
-        write_jpeg(img, torch_jpeg, quality=75)
-        pil_img.save(pil_jpeg, quality=75)
+    torch_jpeg = str(tmpdir / "torch.jpg")
+    pil_jpeg = str(tmpdir / "pil.jpg")
 
-        with open(torch_jpeg, "rb") as f:
-            torch_bytes = f.read()
+    write_jpeg(img, torch_jpeg, quality=75)
+    pil_img.save(pil_jpeg, quality=75)
 
-        with open(pil_jpeg, "rb") as f:
-            pil_bytes = f.read()
+    with open(torch_jpeg, "rb") as f:
+        torch_bytes = f.read()
 
-        assert_equal(torch_bytes, pil_bytes)
+    with open(pil_jpeg, "rb") as f:
+        pil_bytes = f.read()
+
+    assert_equal(torch_bytes, pil_bytes)
 
 
 if __name__ == "__main__":
