@@ -199,7 +199,7 @@ class KeypointRCNN(FasterRCNN):
             if keypoint_predictor is not None:
                 raise ValueError("num_keypoints should be None when keypoint_predictor is specified")
 
-        if num_keypoints is None:
+        else:
             num_keypoints = 17
 
         out_channels = backbone.out_channels
