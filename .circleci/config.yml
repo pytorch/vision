@@ -383,7 +383,7 @@ jobs:
             echo 'conda activate jpeg-ref' >> $BASH_ENV
       - run:
           name: Install torchvision
-          command: pip install --no-build-isolation --editable .
+          command: pip install -v --no-build-isolation --editable .
       - run_tests_selective:
           file_or_dir: test/test_image.py
 
