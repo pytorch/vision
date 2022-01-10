@@ -18,6 +18,7 @@ from torchvision.models.inception import inception_v3
 from torchvision.models.mnasnet import mnasnet0_5, mnasnet0_75, mnasnet1_0, mnasnet1_3
 from torchvision.models.mobilenetv2 import mobilenet_v2
 from torchvision.models.mobilenetv3 import mobilenet_v3_large, mobilenet_v3_small
+from torchvision.models.optical_flow import raft_large, raft_small
 from torchvision.models.regnet import (
     regnet_y_400mf,
     regnet_y_800mf,

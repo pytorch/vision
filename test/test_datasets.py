@@ -2206,6 +2206,52 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
         return len(sampled_classes * n_samples_per_class)
 
 
+class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SUN397
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test"),
+        partition=(1, 10, None),
+    )
+
+    def inject_fake_data(self, tmpdir: str, config):
+        data_dir = pathlib.Path(tmpdir) / "SUN397"
+        data_dir.mkdir()
+
+        num_images_per_class = 5
+        sampled_classes = ("abbey", "airplane_cabin", "airport_terminal")
+        im_paths = []
+
+        for cls in sampled_classes:
+            image_folder = data_dir / cls[0]
+            im_paths.extend(
+                datasets_utils.create_image_folder(
+                    image_folder,
+                    image_folder / cls,
+                    file_name_fn=lambda idx: f"sun_{idx}.jpg",
+                    num_examples=num_images_per_class,
+                )
+            )
+
+        with open(data_dir / "ClassName.txt", "w") as file:
+            file.writelines("\n".join(f"/{cls[0]}/{cls}" for cls in sampled_classes))
+
+        if config["partition"] is not None:
+            num_samples = max(len(im_paths) // (2 if config["split"] == "train" else 3), 1)
+
+            with open(data_dir / f"{config['split'].title()}ing_{config['partition']:02d}.txt", "w") as file:
+                file.writelines(
+                    "\n".join(
+                        f"/{f_path.relative_to(data_dir).as_posix()}"
+                        for f_path in random.choices(im_paths, k=num_samples)
+                    )
+                )
+        else:
+            num_samples = len(im_paths)
+
+        return num_samples
+
+
 class DTDTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.DTD
     FEATURE_TYPES = (PIL.Image.Image, int)
@@ -2415,6 +2461,33 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         species = "1" if meta["species"] == "cat" else "2"
         breed_id = "-1"
         return (image_id, class_id, species, breed_id)
+
+
+class Country211TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Country211
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "valid", "test"))
+
+    def inject_fake_data(self, tmpdir: str, config):
+        split_folder = pathlib.Path(tmpdir) / "country211" / config["split"]
+        split_folder.mkdir(parents=True, exist_ok=True)
+
+        num_examples = {
+            "train": 3,
+            "valid": 4,
+            "test": 5,
+        }[config["split"]]
+
+        classes = ("AD", "BS", "GR")
+        for cls in classes:
+            datasets_utils.create_image_folder(
+                split_folder,
+                name=cls,
+                file_name_fn=lambda idx: f"{idx}.jpg",
+                num_examples=num_examples,
+            )
+
+        return num_examples * len(classes)
 
 
 if __name__ == "__main__":

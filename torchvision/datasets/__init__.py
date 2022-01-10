@@ -5,6 +5,7 @@ from .cifar import CIFAR10, CIFAR100
 from .cityscapes import Cityscapes
 from .clevr import CLEVRClassification
 from .coco import CocoCaptions, CocoDetection
+from .country211 import Country211
 from .dtd import DTD
 from .fakedata import FakeData
 from .fer2013 import FER2013
@@ -28,6 +29,7 @@ from .sbd import SBDataset
 from .sbu import SBU
 from .semeion import SEMEION
 from .stl10 import STL10
+from .sun397 import SUN397
 from .svhn import SVHN
 from .ucf101 import UCF101
 from .usps import USPS
@@ -51,6 +53,7 @@ __all__ = (
     "MNIST",
     "KMNIST",
     "STL10",
+    "SUN397",
     "SVHN",
     "PhotoTour",
     "SEMEION",
@@ -89,4 +92,5 @@ __all__ = (
     "GTSRB",
     "CLEVRClassification",
     "OxfordIIITPet",
+    "Country211",
 )

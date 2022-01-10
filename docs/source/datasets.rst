@@ -38,6 +38,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     Cityscapes
     CocoCaptions
     CocoDetection
+    Country211
     DTD
     EMNIST
     FakeData
@@ -71,6 +72,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     SEMEION
     Sintel
     STL10
+    SUN397
     SVHN
     UCF101
     USPS
