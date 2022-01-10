@@ -193,7 +193,7 @@ class TestDataset:
         ("config", "kwarg"),
         [
             pytest.param(*(datasets.utils.DatasetConfig(split="test"),) * 2, id="specific"),
-            pytest.param(make_minimal_dataset_info().default_config, None, id="default"),
+            pytest.param(datasets.utils.DatasetConfig(split="train"), None, id="default"),
         ],
     )
     def test_load_config(self, config, kwarg):
@@ -203,7 +203,7 @@ class TestDataset:
 
         dataset.resources.assert_called_with(config)
 
-        (_, call_kwargs) = dataset._make_datapipe.call_args
+        _, call_kwargs = dataset._make_datapipe.call_args
         assert call_kwargs["config"] == config
 
     def test_missing_dependencies(self):
