@@ -3,11 +3,18 @@ channels:
   - conda-forge
 dependencies:
   - python == 3.7.*
+  - setuptools
+  - compilers
+  - ninja
+  - cmake
+
   - cpuonly
   - pytorch
+
   - numpy
   - requests
   - libpng
   - jpeg
   - pillow >=5.3.0, !=8.3.*
+
   - pytest

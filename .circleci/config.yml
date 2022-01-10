@@ -362,7 +362,7 @@ jobs:
   unittest_jpeg_ref:
     docker:
       - image: condaforge/mambaforge
-    resource_class: medium
+    resource_class: xlarge
     steps:
       - run:
           name: Prepare mamba
