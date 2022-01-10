@@ -359,6 +359,10 @@ jobs:
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
 
+  # The JPEG reference tests will only pass if torchvision is built against the same JPEG library as Pillow. Starting
+  # from Pillow==9, the Pillow wheels are built against libjpeg-turbo on all platforms whereas torchvision is built
+  # against libjpeg. By installing Pillow from conda-forge, it uses whatever jpeg library is already present instead of
+  # packaging one.
   unittest_jpeg_ref:
     docker:
       - image: condaforge/mambaforge
