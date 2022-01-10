@@ -546,11 +546,9 @@ class FCOS(nn.Module):
                 During testing, it returns list[BoxList] contains additional fields
                 like `scores`, `labels` and `mask` (for Mask R-CNN models).
         """
-        if self.training and targets is None:
-            raise ValueError("In training mode, targets should be passed")
-
         if self.training:
-            assert targets is not None
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
