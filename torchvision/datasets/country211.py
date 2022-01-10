@@ -6,12 +6,12 @@ from .utils import verify_str_arg, download_and_extract_archive
 
 
 class Country211(ImageFolder):
-    """`The Country211 Data Set <https://github.com/openai/CLIP/blob/main/data/country211.md>`_.
+    """`The Country211 Data Set <https://github.com/openai/CLIP/blob/main/data/country211.md>`_ from OpenAI.
 
-    filtered the YFCC100m dataset that have GPS coordinate corresponding to a ISO-3166 country code
-    and created a balanced dataset by sampling 150 train images, 50 validation images,
-    and 100 test images images for each country.
-
+    This dataset was built by filtering the images from the YFCC100m dataset
+    that have GPS coordinate corresponding to a ISO-3166 country code. The
+    dataset is balanced by sampling 150 train images, 50 validation images, and
+    100 test images images for each country.
 
     Args:
         root (string): Root directory of the dataset.
@@ -19,6 +19,8 @@ class Country211(ImageFolder):
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and puts it into
+            ``root/country211/``. If dataset is already downloaded, it is not downloaded again.
     """
 
     _URL = "https://openaipublic.azureedge.net/clip/data/country211.tgz"

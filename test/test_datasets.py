@@ -2471,19 +2471,23 @@ class Country211TestCase(datasets_utils.ImageDatasetTestCase):
     def inject_fake_data(self, tmpdir: str, config):
         split_folder = pathlib.Path(tmpdir) / "country211" / config["split"]
         split_folder.mkdir(parents=True, exist_ok=True)
-        return sum(
-            [
-                len(
-                    datasets_utils.create_image_folder(
-                        split_folder,
-                        name=cls,
-                        file_name_fn=lambda idx: f"{idx}.jpg",
-                        num_examples=5,
-                    )
-                )
-                for cls in ("AD", "BS", "GR")
-            ]
-        )
+
+        num_examples = {
+            "train": 3,
+            "valid": 4,
+            "test": 5,
+        }[config["split"]]
+
+        classes = ("AD", "BS", "GR")
+        for cls in classes:
+            datasets_utils.create_image_folder(
+                split_folder,
+                name=cls,
+                file_name_fn=lambda idx: f"{idx}.jpg",
+                num_examples=num_examples,
+            )
+
+        return num_examples * len(classes)
 
 
 if __name__ == "__main__":
