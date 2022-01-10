@@ -4,7 +4,7 @@ import importlib
 import itertools
 import os
 import pathlib
-from typing import Any, Dict, List, Optional, Sequence, Union, Tuple
+from typing import Any, Dict, List, Optional, Sequence, Union, Tuple, Collection
 
 from torch.utils.data import IterDataPipe
 from torchvision.prototype.utils._internal import FrozenBunch, make_repr
@@ -24,7 +24,7 @@ class DatasetInfo:
         self,
         name: str,
         *,
-        dependencies: Sequence[str] = (),
+        dependencies: Collection[str] = (),
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,

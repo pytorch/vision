@@ -73,9 +73,12 @@ class _CifarBase(Dataset):
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
+        resources = self.resources(self.default_config)
+
+        dp = resources[0].load(root)
         dp = Filter(dp, path_comparator("name", self._META_FILE_NAME))
         dp = Mapper(dp, self._unpickle)
+
         return cast(List[str], next(iter(dp))[self._CATEGORIES_KEY])
 
 

@@ -29,7 +29,7 @@ import numpy as np
 import torch
 import torch.distributed as dist
 import torch.utils.data
-from torchdata.datapipes.iter import IoPathFileLister, IoPathFileLoader, IterDataPipe, ShardingFilter, Shuffler
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 
 
@@ -100,7 +100,7 @@ class Enumerator(IterDataPipe[Tuple[int, D]]):
         yield from enumerate(self.datapipe, self.start)
 
 
-def _getitem_closure(obj: Any, *, items: Tuple[Any, ...]) -> Any:
+def _getitem_closure(obj: Any, *, items: Sequence[Any]) -> Any:
     for item in items:
         obj = obj[item]
     return obj
@@ -110,8 +110,14 @@ def getitem(*items: Any) -> Callable[[Any], Any]:
     return functools.partial(_getitem_closure, items=items)
 
 
+def _getattr_closure(obj: Any, *, attrs: Sequence[str]) -> Any:
+    for attr in attrs:
+        obj = getattr(obj, attr)
+    return obj
+
+
 def _path_attribute_accessor(path: pathlib.Path, *, name: str) -> D:
-    return cast(D, getattr(path, name))
+    return cast(D, _getattr_closure(path, attrs=name.split(".")))
 
 
 def _path_accessor_closure(data: Tuple[str, Any], *, getter: Callable[[pathlib.Path], D]) -> D:
@@ -246,7 +252,7 @@ def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[st
     dp = IoPathFileLister(root=root)
     dp = SharderDataPipe(dp)
     dp = dp.shuffle(buffer_size=INFINITE_BUFFER_SIZE)
-    dp = IoPathFileLoader(dp, mode="rb")
+    dp = IoPathFileOpener(dp, mode="rb")
     dp = PicklerDataPipe(dp)
     # dp = dp.cycle(2)
     dp = TakerDataPipe(dp, dataset_size)

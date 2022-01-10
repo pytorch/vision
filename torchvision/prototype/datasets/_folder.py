@@ -4,8 +4,7 @@ import os.path
 import pathlib
 from typing import BinaryIO, Optional, Collection, Union, Tuple, List, Dict, Any
 
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Filter
+from torchdata.datapipes.iter import IterDataPipe, FileLister, Mapper, Filter, FileOpener
 from torchvision.prototype.datasets.utils import RawData, RawImage
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Label
@@ -47,7 +46,7 @@ def from_data_folder(
     dp: IterDataPipe = Filter(dp, functools.partial(_is_not_top_level_file, root=root))
     dp = hint_sharding(dp)
     dp = hint_shuffling(dp)
-    dp = FileLoader(dp)
+    dp = FileOpener(dp, mode="rb")
     return Mapper(dp, functools.partial(_prepare_sample, root=root, categories=categories)), categories
 
 

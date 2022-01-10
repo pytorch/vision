@@ -94,10 +94,11 @@ def test_naming_conventions(model_fn):
     + TM.get_models_from_module(models.video)
     + TM.get_models_from_module(models.optical_flow),
 )
+@run_if_test_with_prototype
 def test_schema_meta_validation(model_fn):
     classification_fields = ["size", "categories", "acc@1", "acc@5"]
     defaults = {
-        "all": ["interpolation", "recipe"],
+        "all": ["task", "architecture", "publication_year", "interpolation", "recipe", "num_params"],
         "models": classification_fields,
         "detection": ["categories", "map"],
         "quantization": classification_fields + ["backend", "quantization", "unquantized"],
@@ -105,18 +106,35 @@ def test_schema_meta_validation(model_fn):
         "video": classification_fields,
         "optical_flow": [],
     }
+    model_name = model_fn.__name__
     module_name = model_fn.__module__.split(".")[-2]
     fields = set(defaults["all"] + defaults[module_name])
 
     weights_enum = _get_model_weights(model_fn)
+    if len(weights_enum) == 0:
+        pytest.skip(f"Model '{model_name}' doesn't have any pre-trained weights.")
 
     problematic_weights = {}
+    incorrect_params = []
     for w in weights_enum:
         missing_fields = fields - set(w.meta.keys())
         if missing_fields:
             problematic_weights[w] = missing_fields
+        if w == weights_enum.default:
+            if module_name == "quantization":
+                # parametes() cound doesn't work well with quantization, so we check against the non-quantized
+                unquantized_w = w.meta.get("unquantized")
+                if unquantized_w is not None and w.meta.get("num_params") != unquantized_w.meta.get("num_params"):
+                    incorrect_params.append(w)
+            else:
+                if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
+                    incorrect_params.append(w)
+        else:
+            if w.meta.get("num_params") != weights_enum.default.meta.get("num_params"):
+                incorrect_params.append(w)
 
     assert not problematic_weights
+    assert not incorrect_params
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))

@@ -3,6 +3,11 @@ from typing import Any, Dict, Iterator
 import torch
 
 from ..utils import _log_api_usage_once
+
+try:
+    from ._load_gpu_decoder import _HAS_VIDEO_DECODER
+except ModuleNotFoundError:
+    _HAS_VIDEO_DECODER = False
 from ._video_opt import (
     Timebase,
     VideoMetaData,
@@ -104,10 +109,23 @@ class VideoReader:
         num_threads (int, optional): number of threads used by the codec to decode video.
             Default value (0) enables multithreading with codec-dependent heuristic. The performance
             will depend on the version of FFMPEG codecs supported.
+
+        device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
+
     """
 
-    def __init__(self, path: str, stream: str = "video", num_threads: int = 0) -> None:
+    def __init__(self, path: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
         _log_api_usage_once(self)
+        self.is_cuda = False
+        device = torch.device(device)
+        if device.type == "cuda":
+            if not _HAS_VIDEO_DECODER:
+                raise RuntimeError("Not compiled with GPU decoder support.")
+            self.is_cuda = True
+            if device.index is None:
+                raise RuntimeError("Invalid cuda device!")
+            self._c = torch.classes.torchvision.GPUDecoder(path, device.index)
+            return
         if not _has_video_opt():
             raise RuntimeError(
                 "Not compiled with video_reader support, "
@@ -115,6 +133,7 @@ class VideoReader:
                 + "ffmpeg (version 4.2 is currently supported) and "
                 + "build torchvision from source."
             )
+
         self._c = torch.classes.torchvision.Video(path, stream, num_threads)
 
     def __next__(self) -> Dict[str, Any]:
@@ -129,6 +148,11 @@ class VideoReader:
             and corresponding timestamp (``pts``) in seconds
 
         """
+        if self.is_cuda:
+            frame = self._c.next()
+            if frame.numel() == 0:
+                raise StopIteration
+            return {"data": frame}
         frame, pts = self._c.next()
         if frame.numel() == 0:
             raise StopIteration
@@ -150,6 +174,8 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
+        if self.is_cuda:
+            raise RuntimeError("seek() not yet supported with GPU decoding.")
         self._c.seek(time_s, keyframes_only)
         return self
 
@@ -159,6 +185,8 @@ class VideoReader:
         Returns:
             (dict): dictionary containing duration and frame rate for every stream
         """
+        if self.is_cuda:
+            raise RuntimeError("get_metadata() not yet supported with GPU decoding.")
         return self._c.get_metadata()
 
     def set_current_stream(self, stream: str) -> bool:
@@ -178,7 +206,19 @@ class VideoReader:
         Returns:
             (bool): True on succes, False otherwise
         """
+        if self.is_cuda:
+            print("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
+
+    def _reformat(self, tensor, output_format: str = "yuv420"):
+        supported_formats = [
+            "yuv420",
+        ]
+        if output_format not in supported_formats:
+            raise RuntimeError(f"{output_format} not supported, please use one of {', '.join(supported_formats)}")
+        if not isinstance(tensor, torch.Tensor):
+            raise RuntimeError("Expected tensor as input parameter!")
+        return self._c.reformat(tensor.cpu())
 
 
 __all__ = [
@@ -192,6 +232,7 @@ __all__ = [
     "_read_video_timestamps_from_memory",
     "_probe_video_from_memory",
     "_HAS_VIDEO_OPT",
+    "_HAS_VIDEO_DECODER",
     "_read_video_clip_from_memory",
     "_read_video_meta_data",
     "VideoMetaData",
