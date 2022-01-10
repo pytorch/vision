@@ -25,6 +25,9 @@ class Flowers102(VisionDataset):
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
         transform (callable, optional): A function/transform that takes in an PIL image and returns a
             transformed version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
@@ -50,17 +53,14 @@ class Flowers102(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self._labels = []
-        self._image_files = []
-
         from scipy.io import loadmat
 
         # Read the label ids
         label_mat = loadmat(self._meta_folder / "imagelabels.mat")
         labels = label_mat["labels"][0]
 
-        self.classes = np.unique(labels).tolist()
-        self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
+        self.labels = np.unique(labels).tolist()
+        self.label_to_idx = dict(zip(self.labels, range(len(self.labels))))
 
         # Read the image ids
         set_ids = loadmat(self._meta_folder / "setid.mat")
@@ -68,8 +68,11 @@ class Flowers102(VisionDataset):
 
         image_ids = set_ids[splits_map[self._split]][0]
 
+        self._labels = []
+        self._image_files = []
+
         for image_id in image_ids:
-            self._labels.append(self.class_to_idx[labels[image_id - 1]])
+            self._labels.append(self.label_to_idx[labels[image_id - 1]])
             self._image_files.append(self._images_folder / f"image_{image_id:05d}.jpg")
 
     def __len__(self) -> int:
