@@ -1,14 +1,16 @@
-from typing import Dict, Any, Optional, Tuple
+from typing import Dict, Any, Optional
 
-from ._feature import Feature, DEFAULT
+import torch
+
+from ._feature import Feature, _EMPTY
 
 
 class Label(Feature):
     category: Optional[str]
 
     @classmethod
-    def _parse_meta_data(
-        cls,
-        category: Optional[str] = DEFAULT,  # type: ignore[assignment]
-    ) -> Dict[str, Tuple[Any, Any]]:
-        return dict(category=(category, None))
+    def _prepare_meta_data(cls, data: torch.Tensor, meta_data: Dict[str, Any]) -> Dict[str, Any]:
+        if meta_data["category"] is _EMPTY:
+            meta_data["category"] = None
+
+        return meta_data

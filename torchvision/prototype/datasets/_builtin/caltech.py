@@ -77,10 +77,12 @@ class Caltech101(Dataset):
 
         return category, id
 
-    def _decode_ann(self, data: BinaryIO) -> Dict[str, Any]:
+    def _decode_ann(self, data: BinaryIO, image_size: Tuple[int, int]) -> Dict[str, Any]:
         ann = read_mat(data)
         return dict(
-            bounding_box=BoundingBox(ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy"),
+            bounding_box=BoundingBox(
+                ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy", image_size=image_size
+            ),
             contour=Feature(ann["obj_contour"].T),
         )
 
@@ -92,11 +94,13 @@ class Caltech101(Dataset):
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
+        image = RawImage.fromfile(image_buffer)
+
         return dict(
-            self._decode_ann(ann_buffer),
+            self._decode_ann(ann_buffer, image_size=image.probe_image_size()),
             label=Label(self.info.categories.index(category), category=category),
             image_path=image_path,
-            image=RawImage.fromfile(image_buffer),
+            image=image,
             ann_path=ann_path,
         )
 

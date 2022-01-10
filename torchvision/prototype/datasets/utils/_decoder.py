@@ -6,9 +6,8 @@ import PIL.Image
 import torch
 from torch._C import _TensorBase
 from torchvision.prototype import features
+from torchvision.prototype.utils._internal import ReadOnlyTensorBuffer, fromfile
 from torchvision.transforms.functional import pil_to_tensor
-
-from ._internal import ReadOnlyTensorBuffer, fromfile
 
 D = TypeVar("D", bound="RawData")
 

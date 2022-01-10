@@ -1,9 +1,10 @@
-from typing import Dict, Any, Union, Tuple
+import warnings
+from typing import Any, Dict
 
 import torch
 from torchvision.prototype.utils._internal import StrEnum
 
-from ._feature import Feature, DEFAULT
+from ._feature import _EMPTY, Feature
 
 
 class ColorSpace(StrEnum):
@@ -28,13 +29,21 @@ class Image(Feature):
         return tensor
 
     @classmethod
-    def _parse_meta_data(
+    def _prepare_meta_data(
         cls,
-        color_space: Union[str, ColorSpace] = DEFAULT,  # type: ignore[assignment]
-    ) -> Dict[str, Tuple[Any, Any]]:
-        if isinstance(color_space, str):
+        data: torch.Tensor,
+        meta_data: Dict[str, Any],
+    ) -> Dict[str, Any]:
+        color_space = meta_data["color_space"]
+        if color_space is _EMPTY:
+            color_space = cls.guess_color_space(data)
+            if color_space == ColorSpace.OTHER:
+                warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
+        elif not isinstance(color_space, ColorSpace):
             color_space = ColorSpace[color_space]
-        return dict(color_space=(color_space, cls.guess_color_space))
+        meta_data["color_space"] = color_space
+
+        return meta_data
 
     @staticmethod
     def guess_color_space(data: torch.Tensor) -> ColorSpace:

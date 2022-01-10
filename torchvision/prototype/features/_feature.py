@@ -1,4 +1,4 @@
-from typing import Tuple, cast, TypeVar, Set, Dict, Any, Callable, Optional, Mapping, Type, Sequence
+from typing import Any, Callable, cast, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
@@ -8,15 +8,16 @@ from torchvision.prototype.utils._internal import add_suggestion
 F = TypeVar("F", bound="Feature")
 
 
-DEFAULT = object()
+_EMPTY = object()
 
 
 class Feature(torch.Tensor):
     _META_ATTRS: Set[str] = set()
     _meta_data: Dict[str, Any]
+    _KERNELS: Dict[Callable, Callable] = {}
 
     def __init_subclass__(cls):
-        # In order to help static type checkers, we require subclasses of `Feature` add the meta data attributes
+        # In order to help static type checkers, we require subclasses of `Feature` to add the meta data attributes
         # as static class annotations:
         #
         # >>> class Foo(Feature):
@@ -38,8 +39,8 @@ class Feature(torch.Tensor):
             meta_attrs.update(super_cls._META_ATTRS)
 
         cls._META_ATTRS = meta_attrs
-        for attr in meta_attrs:
-            setattr(cls, attr, property(lambda self, attr=attr: self._meta_data[attr]))
+        for name in meta_attrs:
+            setattr(cls, name, property(lambda self, name=name: self._meta_data[name]))
 
     def __new__(cls, data, *, dtype=None, device=None, like=None, **kwargs):
         unknown_meta_attrs = kwargs.keys() - cls._META_ATTRS
@@ -60,15 +61,22 @@ class Feature(torch.Tensor):
         requires_grad = False
         self = torch.Tensor._make_subclass(cast(_TensorBase, cls), data, requires_grad)
 
-        meta_data = dict()
-        for attr, (explicit, fallback) in cls._parse_meta_data(**kwargs).items():
-            if explicit is not DEFAULT:
-                value = explicit
+        meta_data = {}
+        for name in cls._META_ATTRS:
+            if name in kwargs:
+                value = kwargs[name]
             elif like is not None:
-                value = getattr(like, attr)
+                value = getattr(like, name)
             else:
-                value = fallback(data) if callable(fallback) else fallback
-            meta_data[attr] = value
+                value = _EMPTY
+            meta_data[name] = value
+        meta_data = cls._prepare_meta_data(data, meta_data)
+        for key, value in meta_data.items():
+            if value is _EMPTY:
+                raise TypeError(
+                    f"{cls.__name__}() is missing a required argument: '{key}'. Either pass is explicitly, "
+                    f"or use the 'like' parameter to extract it from an object of the same type."
+                )
         self._meta_data = meta_data
 
         return self
@@ -78,8 +86,12 @@ class Feature(torch.Tensor):
         return torch.as_tensor(data, dtype=dtype, device=device)
 
     @classmethod
-    def _parse_meta_data(cls) -> Dict[str, Tuple[Any, Any]]:
-        return dict()
+    def _prepare_meta_data(cls, data: torch.Tensor, meta_data: Dict[str, Any]) -> Dict[str, Any]:
+        return meta_data
+
+    _TORCH_FUNCTION_ALLOW_LIST = {
+        torch.Tensor.clone,
+    }
 
     @classmethod
     def __torch_function__(
@@ -89,9 +101,14 @@ class Feature(torch.Tensor):
         args: Sequence[Any] = (),
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> torch.Tensor:
+        kwargs = kwargs or dict()
+        if func in cls._KERNELS:
+            return cls._KERNELS[func](*args, **kwargs)
+
         with DisableTorchFunction():
             output = func(*args, **(kwargs or dict()))
-        if func is not torch.Tensor.clone:
+
+        if func not in cls._TORCH_FUNCTION_ALLOW_LIST:
             return output
 
         return cls(output, like=args[0])

@@ -1,4 +1,6 @@
-from ._bounding_box import BoundingBoxFormat, BoundingBox
-from ._feature import Feature, DEFAULT
-from ._image import Image, ColorSpace
+from ._bounding_box import BoundingBox, BoundingBoxFormat
+from ._encoded import EncodedData, EncodedImage
+from ._feature import Feature
+from ._image import ColorSpace, Image
 from ._label import Label
+from ._segmentation_mask import SegmentationMask
