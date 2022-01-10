@@ -359,6 +359,33 @@ jobs:
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
 
+  unittest_jpeg_ref:
+    docker:
+      - image: condaforge/mambaforge
+    resource_class: xlarge
+    steps:
+      - run:
+          name: Prepare mamba
+          command: |
+            mv ~/.bashrc ~/._bashrc
+            conda init bash
+            cat ~/.bashrc >> $BASH_ENV
+            mv ~/._bashrc ~/.bashrc
+      - checkout
+      - run:
+          name: Create environment
+          command: |
+            mamba env create -n jpeg-ref -f .circleci/unittest/jpeg-ref-env.yml
+            echo 'conda activate jpeg-ref' >> $BASH_ENV
+      - run:
+          name: Install torchvision
+          command: pip install -v --no-build-isolation --editable .
+      - run:
+          name: Enable JPEG ref tests
+          command: echo 'export PYTORCH_TEST_JPEG_REF=1' >> $BASH_ENV
+      - run_tests_selective:
+          file_or_dir: test/test_image.py::TestJPEGRef
+
   binary_linux_wheel:
     <<: *binary_common
     docker:
@@ -1093,6 +1120,7 @@ workflows:
       - unittest_torchhub
       - unittest_onnx
       - unittest_prototype
+      - unittest_jpeg_ref
       {{ unittest_workflows() }}
 
   cmake:
