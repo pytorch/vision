@@ -52,7 +52,7 @@ class _CifarBase(Dataset):
     _CATEGORIES_KEY: str
 
     @abc.abstractmethod
-    def _is_data_file(self, data: Tuple[str, io.IOBase], *, config: DatasetConfig) -> Optional[int]:
+    def _is_data_file(self, data: Tuple[str, io.IOBase], *, split: str) -> Optional[int]:
         pass
 
     def _make_info(self) -> DatasetInfo:
