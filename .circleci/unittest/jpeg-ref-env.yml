@@ -2,6 +2,7 @@ channels:
   - pytorch-nightly
   - conda-forge
 dependencies:
+  - python == 3.7.*
   - cpuonly
   - pytorch
   - numpy
