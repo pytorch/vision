@@ -483,8 +483,8 @@ def test_write_jpeg_reference(img_path, tmpdir):
     "PYTORCH_TEST_JPEG_REF",
     skip_reason=(
         "JPEG reference tests compare `torchvision` JPEG encoding against `Pillow`'s. "
-        "By default `torchvision` is build against `libjpeg` while `Pillow` builds against `libjpeg-turbo`. "
-        "Make sure to use the same underlying library and set PYTORCH_TEST_JPEG_REF=1 to run the tests."
+        "By default `torchvision` is build against `libjpeg` while `Pillow` on PyPI builds against `libjpeg-turbo` on all platform starting from PIL >= 9. Before PIL 9, only the windows PIL binary was built against libjpeg-turbo."
+        "Make sure to use the same underlying library (by running PIL < 9 or by installing PIL from conda-forge) and set PYTORCH_TEST_JPEG_REF=1 to run the tests."
     ),
 )
 @pytest.mark.parametrize(
