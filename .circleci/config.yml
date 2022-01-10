@@ -384,7 +384,7 @@ jobs:
           name: Enable JPEG ref tests
           command: echo 'export PYTORCH_TEST_JPEG_REF=1' >> $BASH_ENV
       - run_tests_selective:
-          file_or_dir: test/test_image.py::JPEGRefTests
+          file_or_dir: test/test_image.py::TestJPEGRef
 
   binary_linux_wheel:
     <<: *binary_common
