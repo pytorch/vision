@@ -361,7 +361,7 @@ jobs:
 
   unittest_jpeg_ref:
     docker:
-      - image: circleci/python:3.7
+      - image: ubuntu
     resource_class: medium
     steps:
       - run:
