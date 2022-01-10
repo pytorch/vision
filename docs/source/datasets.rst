@@ -39,14 +39,17 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     CocoCaptions
     CocoDetection
     Country211
+    DTD
     EMNIST
     FakeData
     FashionMNIST
+    FER2013
     Flickr8k
     Flickr30k
     FlyingChairs
     FlyingThings3D
     Food101
+    GTSRB
     HD1K
     HMDB51
     ImageNet
@@ -60,6 +63,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     LSUN
     MNIST
     Omniglot
+    OxfordIIITPet
     PhotoTour
     Places365
     QMNIST
@@ -68,6 +72,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     SEMEION
     Sintel
     STL10
+    SUN397
     SVHN
     UCF101
     USPS

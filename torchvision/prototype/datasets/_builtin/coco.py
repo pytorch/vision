@@ -238,7 +238,7 @@ class Coco(Dataset):
         config = self.default_config
         resources = self.resources(config)
 
-        dp = resources[1].load(pathlib.Path(root) / self.name)
+        dp = resources[1].load(root)
         dp = Filter(
             dp,
             functools.partial(self._filter_meta_files, split=config.split, year=config.year, annotations="instances"),

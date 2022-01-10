@@ -14,6 +14,12 @@ try:
 except (ImportError, OSError):
     _HAS_VIDEO_OPT = False
 
+try:
+    _load_library("Decoder")
+    _HAS_VIDEO_DECODER = True
+except (ImportError, OSError):
+    _HAS_VIDEO_DECODER = False
+
 default_timebase = Fraction(0, 1)
 
 
@@ -71,7 +77,7 @@ def _validate_pts(pts_range: Tuple[int, int]) -> None:
         assert (
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
-            start pts: {0:d} and end pts: {1:d}""".format(
+            start pts: {:d} and end pts: {:d}""".format(
             pts_range[0],
             pts_range[1],
         )
