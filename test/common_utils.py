@@ -16,6 +16,17 @@ import __main__  # noqa: 401
 
 
 def get_bool_env_var(name, *, exist_ok=False, default=False):
+    """Gets the value of a boolean environment variable, by mapping common bool-ish
+    values to a :class:`bool`.
+
+    Args:
+        name: Name of the environment variable.
+        exist_ok: Returns ``True`` if the environment variable exists regardless of the
+            value it holds. This is useful for checking if an environment variable
+            exists even if it holds no value.
+        default: Value to return if the environment variable doesn't exist. Defaults to
+            ``False``.
+    """
     value = os.getenv(name)
     if value is None:
         return default
@@ -216,4 +227,16 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
 
 
 def run_on_env_var(name, *, skip_reason=None, exist_ok=False, default=False):
+    """Decorator for tests to only run them if an environment variable is ``True``-ish.
+
+    Args:
+        name: Name of the environment variable.
+        skip_reason: Reason to skip the test if environment variable is not ``True``-ish.
+        exist_ok: Returns ``True`` if the environment variable exists regardless of the
+            value it holds. This is useful for checking if an environment variable
+            exists even if it holds no value.
+        default: Value to return if the environment variable doesn't exist. Defaults to
+            ``False``.
+
+    """
     return pytest.mark.skipif(not get_bool_env_var(name, exist_ok=exist_ok, default=default), reason=skip_reason)
