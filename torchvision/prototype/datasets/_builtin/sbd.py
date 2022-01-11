@@ -1,3 +1,4 @@
+import enum
 import functools
 import io
 import pathlib
@@ -33,6 +34,12 @@ from torchvision.prototype.datasets.utils._internal import (
 )
 
 
+class SBDDemux(enum.IntEnum):
+    SPLIT = 0
+    IMAGES = 1
+    ANNS = 2
+
+
 class SBD(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -63,12 +70,12 @@ class SBD(Dataset):
         parent, grandparent, *_ = path.parents
 
         if parent.name == "dataset":
-            return 0
+            return SBDDemux.SPLIT
         elif grandparent.name == "dataset":
             if parent.name == "img":
-                return 1
+                return SBDDemux.IMAGES
             elif parent.name == "cls":
-                return 2
+                return SBDDemux.ANNS
             else:
                 return None
         else:

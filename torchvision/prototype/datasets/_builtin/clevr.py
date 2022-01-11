@@ -1,3 +1,4 @@
+import enum
 import functools
 import io
 import pathlib
@@ -24,6 +25,11 @@ from torchvision.prototype.datasets.utils._internal import (
 from torchvision.prototype.features import Label
 
 
+class CLEVRDemux(enum.IntEnum):
+    IMAGES = 0
+    SCENES = 1
+
+
 class CLEVR(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -43,9 +49,9 @@ class CLEVR(Dataset):
     def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
         path = pathlib.Path(data[0])
         if path.parents[1].name == "images":
-            return 0
+            return CLEVRDemux.IMAGES
         elif path.parent.name == "scenes":
-            return 1
+            return CLEVRDemux.SCENES
         else:
             return None
 

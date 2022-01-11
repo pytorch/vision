@@ -1,4 +1,5 @@
 import abc
+import enum
 import functools
 import io
 import operator
@@ -232,6 +233,11 @@ class KMNIST(MNIST):
     }
 
 
+class EMNISTDemux(enum.IntEnum):
+    IMAGES = 0
+    LABELS = 1
+
+
 class EMNIST(_MNISTBase):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -273,9 +279,9 @@ class EMNIST(_MNISTBase):
         path = pathlib.Path(data[0])
         (images_file, _), (labels_file, _) = self._files_and_checksums(config)
         if path.name == images_file:
-            return 0
+            return EMNISTDemux.IMAGES
         elif path.name == labels_file:
-            return 1
+            return EMNISTDemux.LABELS
         else:
             return None
 
@@ -320,6 +326,7 @@ class EMNIST(_MNISTBase):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
+
         images_dp, labels_dp = Demultiplexer(
             archive_dp,
             2,

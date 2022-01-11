@@ -1,3 +1,4 @@
+import enum
 import functools
 import io
 import pathlib
@@ -30,6 +31,13 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
+
+
+class VOCDemux(enum.IntEnum):
+    SPLIT = 0
+    IMAGES = 1
+    ANNS = 2
+
 
 HERE = pathlib.Path(__file__).parent
 
@@ -75,11 +83,11 @@ class VOC(Dataset):
 
     def _classify_archive(self, data: Tuple[str, Any], *, config: DatasetConfig) -> Optional[int]:
         if self._is_in_folder(data, name="ImageSets", depth=2):
-            return 0
+            return VOCDemux.SPLIT
         elif self._is_in_folder(data, name="JPEGImages"):
-            return 1
+            return VOCDemux.IMAGES
         elif self._is_in_folder(data, name=self._ANNS_FOLDER[config.task]):
-            return 2
+            return VOCDemux.ANNS
         else:
             return None
 
