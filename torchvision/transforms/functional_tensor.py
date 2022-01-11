@@ -1009,10 +1009,10 @@ def elastic_transform(
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
     size = list(img.shape[-2:])
-    if random_state:
+    if random_state is not None:
         torch.seed(random_state)
 
-    if displacement:
+    if displacement is not None:
         displacement = displacement.to(img.device)
     else:
         dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
