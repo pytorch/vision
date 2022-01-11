@@ -6,5 +6,5 @@ find_package(TorchVision REQUIRED)
 
 add_executable(test_frcnn_tracing test_frcnn_tracing.cpp)
 target_compile_features(test_frcnn_tracing PUBLIC cxx_range_for)
-target_link_libraries(test_frcnn_tracing ${TORCH_LIBRARIES} TorchVision::TorchVision Python3::Python)
+target_link_libraries(test_frcnn_tracing ${TORCH_LIBRARIES} TorchVision::TorchVision)
 set_property(TARGET test_frcnn_tracing PROPERTY CXX_STANDARD 14)
