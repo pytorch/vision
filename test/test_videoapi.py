@@ -72,7 +72,7 @@ class TestVideoApi:
                     # by decoding (around 1%)
                     # TODO: asses empirically how to set this? atm it's 1%
                     # averaged over all frames
-                    print(config)
+                    print(config, mean_delta.item())
                     assert mean_delta.item() < 2.55
 
             av_reader = av.open(full_path)
