@@ -2,7 +2,7 @@
 
 #ifndef MOBILE
 #ifdef USE_PYTHON
-#include <Python.h
+#include <Python.h>
 #endif
 #endif
 #include <torch/library.h>
