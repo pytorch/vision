@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+8337b9a ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+8d1aa8e ) &#x25BC</a>
     </div>
     
 
@@ -353,6 +353,7 @@ architectures for image classification:</p>
 <li><p><a class="reference external" href="https://arxiv.org/abs/1807.11626">MNASNet</a></p></li>
 <li><p><a class="reference external" href="https://arxiv.org/abs/1905.11946">EfficientNet</a></p></li>
 <li><p><a class="reference external" href="https://arxiv.org/abs/2003.13678">RegNet</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/2010.11929">VisionTransformer</a></p></li>
 </ul>
 <p>You can construct a model with random weights by calling its constructor:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision.models</span> <span class="k">as</span> <span class="nn">models</span>
@@ -392,6 +393,10 @@ architectures for image classification:</p>
 <span class="n">regnet_x_8gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_8gf</span><span class="p">()</span>
 <span class="n">regnet_x_16gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_16gf</span><span class="p">()</span>
 <span class="n">regnet_x_32gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_32gf</span><span class="p">()</span>
+<span class="n">vit_b_16</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vit_b_16</span><span class="p">()</span>
+<span class="n">vit_b_32</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vit_b_32</span><span class="p">()</span>
+<span class="n">vit_l_16</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vit_l_16</span><span class="p">()</span>
+<span class="n">vit_l_32</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vit_l_32</span><span class="p">()</span>
 </pre></div>
 </div>
 <p>We provide pre-trained models, using the PyTorch <a class="reference external" href="https://pytorch.org/docs/stable/model_zoo.html#module-torch.utils.model_zoo" title="(in PyTorch v1.10.1)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.utils.model_zoo</span></code></a>.
@@ -433,6 +438,10 @@ These can be constructed by passing <code class="docutils literal notranslate"><
 <span class="n">regnet_x_8gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_8gf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">regnet_x_16gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_16gf</span><span class="p">(</span><span class="n">pretrainedTrue</span><span class="p">)</span>
 <span class="n">regnet_x_32gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_32gf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">vit_b_16</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vit_b_16</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">vit_b_32</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vit_b_32</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">vit_l_16</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vit_l_16</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">vit_l_32</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">vit_l_32</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Instancing a pre-trained model will download its weights to a cache directory.
@@ -705,6 +714,22 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <tr class="row-even"><td><p>regnet_y_32gf</p></td>
 <td><p>80.878</p></td>
 <td><p>95.340</p></td>
+</tr>
+<tr class="row-odd"><td><p>vit_b_16</p></td>
+<td><p>81.072</p></td>
+<td><p>95.318</p></td>
+</tr>
+<tr class="row-even"><td><p>vit_b_32</p></td>
+<td><p>75.912</p></td>
+<td><p>92.466</p></td>
+</tr>
+<tr class="row-odd"><td><p>vit_l_16</p></td>
+<td><p>79.662</p></td>
+<td><p>94.638</p></td>
+</tr>
+<tr class="row-even"><td><p>vit_l_32</p></td>
+<td><p>76.972</p></td>
+<td><p>93.070</p></td>
 </tr>
 </tbody>
 </table>
@@ -1028,6 +1053,28 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_32gf.html#torchvision.models.regnet_x_32gf" title="torchvision.models.regnet_x_32gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_32gf</span></code></a>([pretrained, progress])</p></td>
 <td><p><p>Constructs a RegNetX_32GF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+</p></td>
+</tr>
+</tbody>
+</table>
+</div>
+<div class="section" id="id54">
+<h3>VisionTransformer<a class="headerlink" href="#id54" title="Permalink to this headline">¶</a></h3>
+<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.vit_b_16.html#torchvision.models.vit_b_16" title="torchvision.models.vit_b_16"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vit_b_16</span></code></a>([pretrained, progress])</p></td>
+<td><p>Constructs a vit_b_16 architecture from <a class="reference external" href="https://arxiv.org/abs/2010.11929">“An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale”</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.vit_b_32.html#torchvision.models.vit_b_32" title="torchvision.models.vit_b_32"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vit_b_32</span></code></a>([pretrained, progress])</p></td>
+<td><p><p>Constructs a vit_b_32 architecture from <a class="reference external" href="https://arxiv.org/abs/2010.11929">“An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale”</a>.</p>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.vit_l_16.html#torchvision.models.vit_l_16" title="torchvision.models.vit_l_16"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vit_l_16</span></code></a>([pretrained, progress])</p></td>
+<td><p><p>Constructs a vit_l_16 architecture from <a class="reference external" href="https://arxiv.org/abs/2010.11929">“An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale”</a>.</p>
+</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.vit_l_32.html#torchvision.models.vit_l_32" title="torchvision.models.vit_l_32"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vit_l_32</span></code></a>([pretrained, progress])</p></td>
+<td><p><p>Constructs a vit_l_32 architecture from <a class="reference external" href="https://arxiv.org/abs/2010.11929">“An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale”</a>.</p>
 </p></td>
 </tr>
 </tbody>
@@ -1441,8 +1488,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id54">
-<h3>Faster R-CNN<a class="headerlink" href="#id54" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id58">
+<h3>Faster R-CNN<a class="headerlink" href="#id58" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.fasterrcnn_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1457,8 +1504,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id55">
-<h3>RetinaNet<a class="headerlink" href="#id55" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id59">
+<h3>RetinaNet<a class="headerlink" href="#id59" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.retinanet_resnet50_fpn.html#torchvision.models.detection.retinanet_resnet50_fpn" title="torchvision.models.detection.retinanet_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.retinanet_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1467,8 +1514,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id56">
-<h3>SSD<a class="headerlink" href="#id56" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id60">
+<h3>SSD<a class="headerlink" href="#id60" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.ssd300_vgg16.html#torchvision.models.detection.ssd300_vgg16" title="torchvision.models.detection.ssd300_vgg16"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.ssd300_vgg16</span></code></a>([…])</p></td>
@@ -1477,8 +1524,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id57">
-<h3>SSDlite<a class="headerlink" href="#id57" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id61">
+<h3>SSDlite<a class="headerlink" href="#id61" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.html#torchvision.models.detection.ssdlite320_mobilenet_v3_large" title="torchvision.models.detection.ssdlite320_mobilenet_v3_large"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.ssdlite320_mobilenet_v3_large</span></code></a>([…])</p></td>
@@ -1488,8 +1535,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id60">
-<h3>Mask R-CNN<a class="headerlink" href="#id60" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id64">
+<h3>Mask R-CNN<a class="headerlink" href="#id64" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html#torchvision.models.detection.maskrcnn_resnet50_fpn" title="torchvision.models.detection.maskrcnn_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.maskrcnn_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1662,6 +1709,7 @@ images because it assumes the video is 4d.</p>
 <li><a class="reference internal" href="#id28">MNASNet</a></li>
 <li><a class="reference internal" href="#id32">EfficientNet</a></li>
 <li><a class="reference internal" href="#id40">RegNet</a></li>
+<li><a class="reference internal" href="#id54">VisionTransformer</a></li>
 <li><a class="reference internal" href="#quantized-models">Quantized Models</a></li>
 </ul>
 </li>
@@ -1673,11 +1721,11 @@ images because it assumes the video is 4d.</p>
 </li>
 <li><a class="reference internal" href="#object-detection-instance-segmentation-and-person-keypoint-detection">Object Detection, Instance Segmentation and Person Keypoint Detection</a><ul>
 <li><a class="reference internal" href="#runtime-characteristics">Runtime characteristics</a></li>
-<li><a class="reference internal" href="#id54">Faster R-CNN</a></li>
-<li><a class="reference internal" href="#id55">RetinaNet</a></li>
-<li><a class="reference internal" href="#id56">SSD</a></li>
-<li><a class="reference internal" href="#id57">SSDlite</a></li>
-<li><a class="reference internal" href="#id60">Mask R-CNN</a></li>
+<li><a class="reference internal" href="#id58">Faster R-CNN</a></li>
+<li><a class="reference internal" href="#id59">RetinaNet</a></li>
+<li><a class="reference internal" href="#id60">SSD</a></li>
+<li><a class="reference internal" href="#id61">SSDlite</a></li>
+<li><a class="reference internal" href="#id64">Mask R-CNN</a></li>
 <li><a class="reference internal" href="#keypoint-r-cnn">Keypoint R-CNN</a></li>
 </ul>
 </li>
