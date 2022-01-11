@@ -139,10 +139,13 @@ class OxfordIITPet(Dataset):
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         config = self.default_config
-        dp = self.resources(config)[1].load(pathlib.Path(root) / self.name)
+        resources = self.resources(config)
+
+        dp = resources[1].load(root)
         dp = Filter(dp, self._filter_split_and_classification_anns)
         dp = Filter(dp, path_comparator("name", f"{config.split}.txt"))
         dp = CSVDictParser(dp, fieldnames=("image_id", "label"), delimiter=" ")
+
         raw_categories_and_labels = {(data["image_id"].rsplit("_", 1)[0], data["label"]) for data in dp}
         raw_categories, _ = zip(
             *sorted(raw_categories_and_labels, key=lambda raw_category_and_label: int(raw_category_and_label[1]))
