@@ -22,6 +22,56 @@ test_videos = [
 ]
 
 
+def _yuv420_to_444(mat):
+    # logic taken from
+    # https://en.wikipedia.org/wiki/YUV#Y%E2%80%B2UV420p_(and_Y%E2%80%B2V12_or_YV12)_to_RGB888_conversion
+    width = mat.shape[-1]
+    height = mat.shape[0] * 2 // 3
+    luma = mat[:height]
+    uv = mat[height:].reshape(2, height // 2, width // 2)
+    uv2 = torch.nn.functional.interpolate(uv[None], scale_factor=2, mode="nearest")[0]
+    yuv2 = torch.cat([luma[None], uv2]).permute(1, 2, 0)
+    return yuv2
+
+
+def _yuv420_to_rgb(mat, limited_color_range=True, standard="bt709"):
+    # taken from https://en.wikipedia.org/wiki/YCbCr
+    if standard == "bt601":
+        # ITU-R BT.601, as used by decord
+        # taken from https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.601_conversion
+        m = torch.tensor(
+            [
+                [1.0000, 0.0000, 1.402],
+                [1.0000, -(1.772 * 0.114 / 0.587), -(1.402 * 0.299 / 0.587)],
+                [1.0000, 1.772, 0.0000],
+            ],
+            device=mat.device,
+        )
+    elif standard == "bt709":
+        # ITU-R BT.709
+        # taken from https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.709_conversion
+        m = torch.tensor(
+            [[1.0000, 0.0000, 1.5748], [1.0000, -0.1873, -0.4681], [1.0000, 1.8556, 0.0000]], device=mat.device
+        )
+    else:
+        raise ValueError(f"{standard} not supported")
+
+    if limited_color_range:
+        # also present in https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.601_conversion
+        # being mentioned as compensation for the footroom and headroom
+        m = m * torch.tensor([255 / 219, 255 / 224, 255 / 224], device=mat.device)
+
+    m = m.T
+
+    # TODO: maybe this needs to come together with limited_color_range
+    offset = torch.tensor([16.0, 128.0, 128.0], device=mat.device)
+
+    yuv2 = _yuv420_to_444(mat)
+
+    res = (yuv2 - offset) @ m
+    return res
+
+
 @pytest.mark.skipif(_HAS_VIDEO_DECODER is False, reason="Didn't compile with support for gpu decoder")
 class TestVideoGPUDecoder:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
@@ -31,10 +81,13 @@ class TestVideoGPUDecoder:
             decoder = VideoReader(full_path, device="cuda:0")
             with av.open(full_path) as container:
                 for av_frame in container.decode(container.streams.video[0]):
-                    av_frames = torch.tensor(av_frame.to_ndarray().flatten())
+                    av_frames_yuv = torch.tensor(av_frame.to_ndarray())
                     vision_frames = next(decoder)["data"]
-                    mean_delta = torch.mean(torch.abs(av_frames.float() - decoder._reformat(vision_frames).float()))
-                    assert mean_delta < 0.1
+                    av_frames = _yuv420_to_rgb(av_frames_yuv)
+                    av_frames.clamp_(min=0, max=255)
+                    av_frames = av_frames.round().to(torch.uint8)
+                    mean_delta = torch.mean(torch.abs(av_frames.float() - vision_frames.cpu().float()))
+                    assert mean_delta < 0.7
 
 
 if __name__ == "__main__":
