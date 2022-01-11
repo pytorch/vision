@@ -1,7 +1,9 @@
 #include "vision.h"
 
 #ifndef MOBILE
-#include <Python.h>
+#ifdef USE_PYTHON
+#include <Python.h
+#endif
 #endif
 #include <torch/library.h>
 

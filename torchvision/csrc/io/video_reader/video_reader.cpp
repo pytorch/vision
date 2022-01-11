@@ -1,6 +1,8 @@
 #include "video_reader.h"
 
+#ifdef USE_PYTHON
 #include <Python.h>
+#endif
 
 #include "../decoder/memory_buffer.h"
 #include "../decoder/sync_decoder.h"
