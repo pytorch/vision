@@ -2467,7 +2467,6 @@ class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.StanfordCars
     REQUIRED_PACKAGES = ("scipy",)
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
-    FEATURE_TYPES = (PIL.Image.Image, int)
 
     def _inject_fake_data(self, tmpdir, config):
         import scipy.io as io
@@ -2475,7 +2474,7 @@ class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
 
         train = config["train"]
         num_examples = 5
-        root_folder = os.path.join(tmpdir, "stanforddcars")
+        root_folder = os.path.join(tmpdir)
         os.makedirs(root_folder, exist_ok=True)
 
         # generate random data for labels
@@ -2501,6 +2500,7 @@ class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
                 num_examples=num_examples,
             )
             devkit = os.path.join(root_folder, "devkit")
+            os.makedirs(devkit)
             io.savemat(
                 f"{devkit}/cars_train_annos.mat", {"annotations": rec_array}
             )  # save the recorded array as matlab file

@@ -1,6 +1,6 @@
 import os
 import os.path
-from typing import Callable, Optional
+from typing import Callable, Optional, Any, Tuple
 
 from PIL import Image
 
@@ -56,9 +56,7 @@ class StanfordCars(VisionDataset):
     ) -> None:
 
         try:
-            from scipy.io import loadmat
-
-            self._loadmat = loadmat
+            import scipy.io as sio
         except ImportError:
             raise RuntimeError("Scipy is not found. This dataset needs to have scipy installed: pip install scipy")
 
@@ -72,43 +70,29 @@ class StanfordCars(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self._samples = self._make_dataset()
-        self.classes = self._get_classes_name()  # class_id to class_name mapping
+        self._samples = [
+            (
+                os.path.join(self.root, f"cars_{'train' if self.train else 'test'}", annotation["fname"]),
+                annotation["class"] - 1,  # Beware stanford cars target mapping  starts from 1
+            )
+            for annotation in sio.loadmat(
+                os.path.join(
+                    self.root,
+                    *["devkit", "cars_train_annos.mat"] if self.train else ["cars_test_annos_withlabels.mat"],
+                ),
+                squeeze_me=True,
+            )["annotations"]
+        ]
 
-    def _get_class_names(self) -> dict:
-        """
-        Returns Mapping of class ids to class names in form of Dictionary
-        """
-        meta_data = self._loadmat(os.path.join(self.root, "devkit/cars_meta.mat"))
-        class_names = meta_data["class_names"][0]
-        return {class_name[0].replace(" ", "_").replace("/", "_"): i for i, class_name in enumerate(class_names)}
-
-    def _make_dataset(self):
-        """
-        Returns Annotations for training data and testing data
-        """
-        annotations = None
-        if self.train:
-            annotations = self._loadmat(os.path.join(self.root, "devkit/cars_train_annos.mat"))
-        else:
-            annotations = self._loadmat(os.path.join(self.root, "cars_test_annos_withlabels.mat"))
-        samples = []
-        annotations = annotations["annotations"][0]
-        for index in range(len(annotations)):
-            target = annotations[index][4][0, 0]
-            image_file = annotations[index][5][0]
-            # Beware: Stanford cars targets starts at 1
-            target = target - 1
-            samples.append((image_file, target))
-        return samples
+        class_names = sio.loadmat(os.path.join(self.root, "devkit", "cars_meta.mat"))["class_names"][0]
+        self.classes = {class_name[0]: i for i, class_name in enumerate(class_names)}
 
     def __len__(self) -> int:
         return len(self._samples)
 
-    def __getitem__(self, idx: int) -> (Image, int):
+    def __getitem__(self, idx: int) -> Tuple[Any, Any]:
         """Returns pil_image and class_id for given index"""
-        image_file, target = self._samples[idx]
-        image_path = os.path.join(self.root, f"cars_{'train' if self.train else 'test'}", image_file)
+        image_path, target = self._samples[idx]
         pil_image = Image.open(image_path).convert("RGB")
 
         if self.transform is not None:
@@ -120,26 +104,21 @@ class StanfordCars(VisionDataset):
     def download(self) -> None:
         if self._check_exists():
             return
-        else:
-            download_and_extract_archive(
-                url=self.urls[self.train], download_root=self.root, extract_root=self.root, md5=self.md5s[self.train]
+
+        download_and_extract_archive(url=self.urls[self.train], download_root=self.root, md5=self.md5s[self.train])
+        download_and_extract_archive(url=self.annot_urls[1], download_root=self.root, md5=self.annot_md5s[1])
+        if not self.train:
+            download_url(
+                url=self.annot_urls[0],
+                root=self.root,
+                md5=self.annot_md5s[0],
             )
-            download_and_extract_archive(
-                url=self.annot_urls[1], download_root=self.root, extract_root=self.root, md5=self.annot_md5s[1]
-            )
-            if not self.train:
-                download_url(
-                    url=self.annot_urls[0],
-                    filename="cars_test_annos_withlabels.mat",
-                    root=self.root,
-                    md5=self.annot_md5s[0],
-                )
 
     def _check_exists(self) -> bool:
         return (
             os.path.exists(os.path.join(self.root, f"cars_{'train' if self.train else 'test'}"))
             and os.path.isdir(os.path.join(self.root, f"cars_{'train' if self.train else 'test'}"))
-            and os.path.exists(os.path.join(self.root, "devkit/cars_meta.mat"))
+            and os.path.exists(os.path.join(self.root, "devkit", "cars_meta.mat"))
             if self.train
             else os.path.exists(os.path.join(self.root, "cars_test_annos_withlabels.mat"))
         )
