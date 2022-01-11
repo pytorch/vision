@@ -1,4 +1,3 @@
-import enum
 import functools
 import io
 import pathlib
@@ -36,11 +35,6 @@ from torchvision.prototype.datasets.utils._internal import (
 )
 from torchvision.prototype.features import BoundingBox, Label, Feature
 from torchvision.prototype.utils._internal import FrozenMapping
-
-
-class CocoDemux(enum.IntEnum):
-    IMAGES_META = 0
-    ANNS_META = 1
 
 
 class Coco(Dataset):
@@ -150,9 +144,9 @@ class Coco(Dataset):
     def _classify_meta(self, data: Tuple[str, Any]) -> Optional[int]:
         key, _ = data
         if key == "images":
-            return CocoDemux.IMAGES_META
+            return 0
         elif key == "annotations":
-            return CocoDemux.ANNS_META
+            return 1
         else:
             return None
 
