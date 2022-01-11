@@ -557,7 +557,6 @@ class FCOS(nn.Module):
                 else:
                     raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
-        # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
