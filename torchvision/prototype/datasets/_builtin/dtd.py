@@ -129,7 +129,7 @@ class DTD(Dataset):
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
-        return self._classify_archive(data) == 2
+        return self._classify_archive(data) == DTDDemux.IMAGES
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)

@@ -141,7 +141,7 @@ class OxfordIITPet(Dataset):
         return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     def _filter_split_and_classification_anns(self, data: Tuple[str, Any]) -> bool:
-        return self._classify_anns(data) == 0
+        return self._classify_anns(data) == OxfordIITPetDemux.SPLIT_AND_CLASSIFICATION
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         config = self.default_config
