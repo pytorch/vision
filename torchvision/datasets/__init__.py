@@ -5,6 +5,7 @@ from .cifar import CIFAR10, CIFAR100
 from .cityscapes import Cityscapes
 from .clevr import CLEVRClassification
 from .coco import CocoCaptions, CocoDetection
+from .country211 import Country211
 from .dtd import DTD
 from .fakedata import FakeData
 from .fer2013 import FER2013
@@ -91,4 +92,5 @@ __all__ = (
     "GTSRB",
     "CLEVRClassification",
     "OxfordIIITPet",
+    "Country211",
 )
