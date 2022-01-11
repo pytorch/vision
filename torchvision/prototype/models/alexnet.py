@@ -18,6 +18,10 @@ class AlexNet_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/alexnet-owt-7be5be79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
+            "task": "image_classification",
+            "architecture": "AlexNet",
+            "publication_year": 2012,
+            "num_params": 61100840,
             "size": (224, 224),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,

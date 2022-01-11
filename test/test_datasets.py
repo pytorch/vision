@@ -1,5 +1,6 @@
 import bz2
 import contextlib
+import csv
 import io
 import itertools
 import json
@@ -853,7 +854,7 @@ class UCF101TestCase(datasets_utils.VideoDatasetTestCase):
 
     def _create_annotation_file(self, root, name, video_files):
         with open(pathlib.Path(root) / name, "w") as fh:
-            fh.writelines(f"{file}\n" for file in sorted(video_files))
+            fh.writelines(f"{str(file).replace(os.sep, '/')}\n" for file in sorted(video_files))
 
 
 class LSUNTestCase(datasets_utils.ImageDatasetTestCase):
@@ -2166,6 +2167,300 @@ class HD1KTestCase(KittiFlowTestCase):
 
         num_examples_per_sequence = num_examples_per_train_sequence if config["split"] == "train" else 2
         return num_sequences * (num_examples_per_sequence - 1)
+
+
+class Food101TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Food101
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    def inject_fake_data(self, tmpdir: str, config):
+        root_folder = pathlib.Path(tmpdir) / "food-101"
+        image_folder = root_folder / "images"
+        meta_folder = root_folder / "meta"
+
+        image_folder.mkdir(parents=True)
+        meta_folder.mkdir()
+
+        num_images_per_class = 5
+
+        metadata = {}
+        n_samples_per_class = 3 if config["split"] == "train" else 2
+        sampled_classes = ("apple_pie", "crab_cakes", "gyoza")
+        for cls in sampled_classes:
+            im_fnames = datasets_utils.create_image_folder(
+                image_folder,
+                cls,
+                file_name_fn=lambda idx: f"{idx}.jpg",
+                num_examples=num_images_per_class,
+            )
+            metadata[cls] = [
+                "/".join(fname.relative_to(image_folder).with_suffix("").parts)
+                for fname in random.choices(im_fnames, k=n_samples_per_class)
+            ]
+
+        with open(meta_folder / f"{config['split']}.json", "w") as file:
+            file.write(json.dumps(metadata))
+
+        return len(sampled_classes * n_samples_per_class)
+
+
+class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.SUN397
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test"),
+        partition=(1, 10, None),
+    )
+
+    def inject_fake_data(self, tmpdir: str, config):
+        data_dir = pathlib.Path(tmpdir) / "SUN397"
+        data_dir.mkdir()
+
+        num_images_per_class = 5
+        sampled_classes = ("abbey", "airplane_cabin", "airport_terminal")
+        im_paths = []
+
+        for cls in sampled_classes:
+            image_folder = data_dir / cls[0]
+            im_paths.extend(
+                datasets_utils.create_image_folder(
+                    image_folder,
+                    image_folder / cls,
+                    file_name_fn=lambda idx: f"sun_{idx}.jpg",
+                    num_examples=num_images_per_class,
+                )
+            )
+
+        with open(data_dir / "ClassName.txt", "w") as file:
+            file.writelines("\n".join(f"/{cls[0]}/{cls}" for cls in sampled_classes))
+
+        if config["partition"] is not None:
+            num_samples = max(len(im_paths) // (2 if config["split"] == "train" else 3), 1)
+
+            with open(data_dir / f"{config['split'].title()}ing_{config['partition']:02d}.txt", "w") as file:
+                file.writelines(
+                    "\n".join(
+                        f"/{f_path.relative_to(data_dir).as_posix()}"
+                        for f_path in random.choices(im_paths, k=num_samples)
+                    )
+                )
+        else:
+            num_samples = len(im_paths)
+
+        return num_samples
+
+
+class DTDTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.DTD
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "test", "val"),
+        # There is no need to test the whole matrix here, since each fold is treated exactly the same
+        partition=(1, 5, 10),
+    )
+
+    def inject_fake_data(self, tmpdir: str, config):
+        data_folder = pathlib.Path(tmpdir) / "dtd" / "dtd"
+
+        num_images_per_class = 3
+        image_folder = data_folder / "images"
+        image_files = []
+        for cls in ("banded", "marbled", "zigzagged"):
+            image_files.extend(
+                datasets_utils.create_image_folder(
+                    image_folder,
+                    cls,
+                    file_name_fn=lambda idx: f"{cls}_{idx:04d}.jpg",
+                    num_examples=num_images_per_class,
+                )
+            )
+
+        meta_folder = data_folder / "labels"
+        meta_folder.mkdir()
+        image_ids = [str(path.relative_to(path.parents[1])).replace(os.sep, "/") for path in image_files]
+        image_ids_in_config = random.choices(image_ids, k=len(image_files) // 2)
+        with open(meta_folder / f"{config['split']}{config['partition']}.txt", "w") as file:
+            file.write("\n".join(image_ids_in_config) + "\n")
+
+        return len(image_ids_in_config)
+
+
+class FER2013TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FER2013
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    FEATURE_TYPES = (PIL.Image.Image, (int, type(None)))
+
+    def inject_fake_data(self, tmpdir, config):
+        base_folder = os.path.join(tmpdir, "fer2013")
+        os.makedirs(base_folder)
+
+        num_samples = 5
+        with open(os.path.join(base_folder, f"{config['split']}.csv"), "w", newline="") as file:
+            writer = csv.DictWriter(
+                file,
+                fieldnames=("emotion", "pixels") if config["split"] == "train" else ("pixels",),
+                quoting=csv.QUOTE_NONNUMERIC,
+                quotechar='"',
+            )
+            writer.writeheader()
+            for _ in range(num_samples):
+                row = dict(
+                    pixels=" ".join(
+                        str(pixel) for pixel in datasets_utils.create_image_or_video_tensor((48, 48)).view(-1).tolist()
+                    )
+                )
+                if config["split"] == "train":
+                    row["emotion"] = str(int(torch.randint(0, 7, ())))
+
+                writer.writerow(row)
+
+        return num_samples
+
+
+class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.GTSRB
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+
+    def inject_fake_data(self, tmpdir: str, config):
+        root_folder = os.path.join(tmpdir, "GTSRB")
+        os.makedirs(root_folder, exist_ok=True)
+
+        # Train data
+        train_folder = os.path.join(root_folder, "Training")
+        os.makedirs(train_folder, exist_ok=True)
+
+        num_examples = 3
+        classes = ("00000", "00042", "00012")
+        for class_idx in classes:
+            datasets_utils.create_image_folder(
+                train_folder,
+                name=class_idx,
+                file_name_fn=lambda image_idx: f"{class_idx}_{image_idx:05d}.ppm",
+                num_examples=num_examples,
+            )
+
+        total_number_of_examples = num_examples * len(classes)
+        # Test data
+        test_folder = os.path.join(root_folder, "Final_Test", "Images")
+        os.makedirs(test_folder, exist_ok=True)
+
+        with open(os.path.join(root_folder, "GT-final_test.csv"), "w") as csv_file:
+            csv_file.write("Filename;Width;Height;Roi.X1;Roi.Y1;Roi.X2;Roi.Y2;ClassId\n")
+
+            for _ in range(total_number_of_examples):
+                image_file = datasets_utils.create_random_string(5, string.digits) + ".ppm"
+                datasets_utils.create_image_file(test_folder, image_file)
+                row = [
+                    image_file,
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(1, 100, size=()).item(),
+                    torch.randint(0, 43, size=()).item(),
+                ]
+                csv_file.write(";".join(map(str, row)) + "\n")
+
+        return total_number_of_examples
+
+
+class CLEVRClassificationTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.CLEVRClassification
+    FEATURE_TYPES = (PIL.Image.Image, (int, type(None)))
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
+
+    def inject_fake_data(self, tmpdir, config):
+        data_folder = pathlib.Path(tmpdir) / "clevr" / "CLEVR_v1.0"
+
+        images_folder = data_folder / "images"
+        image_files = datasets_utils.create_image_folder(
+            images_folder, config["split"], lambda idx: f"CLEVR_{config['split']}_{idx:06d}.png", num_examples=5
+        )
+
+        scenes_folder = data_folder / "scenes"
+        scenes_folder.mkdir()
+        if config["split"] != "test":
+            with open(scenes_folder / f"CLEVR_{config['split']}_scenes.json", "w") as file:
+                json.dump(
+                    dict(
+                        info=dict(),
+                        scenes=[
+                            dict(image_filename=image_file.name, objects=[dict()] * int(torch.randint(10, ())))
+                            for image_file in image_files
+                        ],
+                    ),
+                    file,
+                )
+
+        return len(image_files)
+
+
+class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.OxfordIIITPet
+    FEATURE_TYPES = (PIL.Image.Image, (int, PIL.Image.Image, tuple, type(None)))
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("trainval", "test"),
+        target_types=("category", "segmentation", ["category", "segmentation"], []),
+    )
+
+    def inject_fake_data(self, tmpdir, config):
+        base_folder = os.path.join(tmpdir, "oxford-iiit-pet")
+
+        classification_anns_meta = (
+            dict(cls="Abyssinian", label=0, species="cat"),
+            dict(cls="Keeshond", label=18, species="dog"),
+            dict(cls="Yorkshire Terrier", label=37, species="dog"),
+        )
+        split_and_classification_anns = [
+            self._meta_to_split_and_classification_ann(meta, idx)
+            for meta, idx in itertools.product(classification_anns_meta, (1, 2, 10))
+        ]
+        image_ids, *_ = zip(*split_and_classification_anns)
+
+        image_files = datasets_utils.create_image_folder(
+            base_folder, "images", file_name_fn=lambda idx: f"{image_ids[idx]}.jpg", num_examples=len(image_ids)
+        )
+
+        anns_folder = os.path.join(base_folder, "annotations")
+        os.makedirs(anns_folder)
+        split_and_classification_anns_in_split = random.choices(split_and_classification_anns, k=len(image_ids) // 2)
+        with open(os.path.join(anns_folder, f"{config['split']}.txt"), "w", newline="") as file:
+            writer = csv.writer(file, delimiter=" ")
+            for split_and_classification_ann in split_and_classification_anns_in_split:
+                writer.writerow(split_and_classification_ann)
+
+        segmentation_files = datasets_utils.create_image_folder(
+            anns_folder, "trimaps", file_name_fn=lambda idx: f"{image_ids[idx]}.png", num_examples=len(image_ids)
+        )
+
+        # The dataset has some rogue files
+        for path in image_files[:2]:
+            path.with_suffix(".mat").touch()
+        for path in segmentation_files:
+            path.with_name(f".{path.name}").touch()
+
+        return len(split_and_classification_anns_in_split)
+
+    def _meta_to_split_and_classification_ann(self, meta, idx):
+        image_id = "_".join(
+            [
+                *[(str.title if meta["species"] == "cat" else str.lower)(part) for part in meta["cls"].split()],
+                str(idx),
+            ]
+        )
+        class_id = str(meta["label"] + 1)
+        species = "1" if meta["species"] == "cat" else "2"
+        breed_id = "-1"
+        return (image_id, class_id, species, breed_id)
 
 
 if __name__ == "__main__":
