@@ -254,6 +254,9 @@ def get_extensions():
     image_library = []
     image_link_flags = []
 
+    if sys.platform == "win32":
+        image_macros += [("USE_PYTHON", None)]
+
     # Locating libPNG
     libpng = distutils.spawn.find_executable("libpng-config")
     pngfix = distutils.spawn.find_executable("pngfix")
