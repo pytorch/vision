@@ -230,13 +230,6 @@ class BoxLinearCoder:
         """
         self.normalize_by_size = normalize_by_size
 
-    def encode(self, reference_boxes: List[Tensor], proposals: List[Tensor]) -> List[Tensor]:
-        boxes_per_image = [len(b) for b in reference_boxes]
-        reference_boxes = torch.cat(reference_boxes, dim=0)
-        proposals = torch.cat(proposals, dim=0)
-        targets = self.encode_single(reference_boxes, proposals)
-        return targets.split(boxes_per_image, 0)
-
     def encode_single(self, reference_boxes: Tensor, proposals: Tensor) -> Tensor:
         """
         Encode a set of proposals with respect to some
@@ -260,25 +253,11 @@ class BoxLinearCoder:
         if self.normalize_by_size:
             reference_boxes_w = reference_boxes[:, 2] - reference_boxes[:, 0]
             reference_boxes_h = reference_boxes[:, 3] - reference_boxes[:, 1]
-            reference_boxes_size = torch.stack((reference_boxes_w, reference_boxes_h, reference_boxes_w, reference_boxes_h), dim=1)
+            reference_boxes_size = torch.stack((reference_boxes_w, reference_boxes_h,
+                reference_boxes_w, reference_boxes_h), dim=1)
             targets = targets / reference_boxes_size
 
         return targets
-
-    def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
-        assert isinstance(boxes, (list, tuple))
-        assert isinstance(rel_codes, torch.Tensor)
-        boxes_per_image = [b.size(0) for b in boxes]
-        concat_boxes = torch.cat(boxes, dim=0)
-        box_sum = 0
-        for val in boxes_per_image:
-            box_sum += val
-        if box_sum > 0:
-            rel_codes = rel_codes.reshape(box_sum, -1)
-        pred_boxes = self.decode_single(rel_codes, concat_boxes)
-        if box_sum > 0:
-            pred_boxes = pred_boxes.reshape(box_sum, -1, 4)
-        return pred_boxes
 
     def decode_single(self, rel_codes: Tensor, boxes: Tensor) -> Tensor:
         """
