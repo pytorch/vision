@@ -114,5 +114,6 @@ class Flowers102(VisionDataset):
             str(self._base_folder),
             md5=self.file_dict["image"][1],
         )
-        download_url(f"{self.download_url_prefix}{self.file_dict['label'][0]}", str(self._base_folder))
-        download_url(f"{self.download_url_prefix}{self.file_dict['setid'][0]}", str(self._base_folder))
+        for id in ["label", "setid"]:
+            filename, md5 = self.file_dict[id]
+            download_url(self.download_url_prefix + filename, str(self._base_folder), md5=md5)
