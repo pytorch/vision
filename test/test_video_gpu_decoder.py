@@ -34,38 +34,15 @@ def _yuv420_to_444(mat):
     return yuv2
 
 
-def _yuv420_to_rgb(mat, limited_color_range=True, standard="bt709"):
-    # taken from https://en.wikipedia.org/wiki/YCbCr
-    if standard == "bt601":
-        # ITU-R BT.601, as used by decord
-        # taken from https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.601_conversion
-        m = torch.tensor(
-            [
-                [1.0000, 0.0000, 1.402],
-                [1.0000, -(1.772 * 0.114 / 0.587), -(1.402 * 0.299 / 0.587)],
-                [1.0000, 1.772, 0.0000],
-            ],
-            device=mat.device,
-        )
-    elif standard == "bt709":
-        # ITU-R BT.709
-        # taken from https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.709_conversion
-        m = torch.tensor(
-            [[1.0000, 0.0000, 1.5748], [1.0000, -0.1873, -0.4681], [1.0000, 1.8556, 0.0000]], device=mat.device
-        )
-    else:
-        raise ValueError(f"{standard} not supported")
-
-    if limited_color_range:
-        # also present in https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.601_conversion
-        # being mentioned as compensation for the footroom and headroom
-        m = m * torch.tensor([255 / 219, 255 / 224, 255 / 224], device=mat.device)
-
+def _yuv420_to_rgb(mat):
+    # ITU-R BT.709
+    # taken from https://en.wikipedia.org/wiki/YCbCr#ITU-R_BT.709_conversion
+    m = torch.tensor(
+        [[1.0000, 0.0000, 1.5748], [1.0000, -0.1873, -0.4681], [1.0000, 1.8556, 0.0000]], device=mat.device
+    )
+    m = m * torch.tensor([255 / 219, 255 / 224, 255 / 224], device=mat.device)
     m = m.T
-
-    # TODO: maybe this needs to come together with limited_color_range
     offset = torch.tensor([16.0, 128.0, 128.0], device=mat.device)
-
     yuv2 = _yuv420_to_444(mat)
     res = (yuv2 - offset) @ m
     res.clamp_(min=0, max=255)
