@@ -2492,7 +2492,6 @@ class Country211TestCase(datasets_utils.ImageDatasetTestCase):
 
 class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Flowers102
-    FEATURE_TYPES = (PIL.Image.Image, int)
 
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
     REQUIRED_PACKAGES = ("scipy",)
