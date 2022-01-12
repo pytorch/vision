@@ -64,7 +64,7 @@ class Flowers102(VisionDataset):
 
         # Read the label ids
         label_mat = loadmat(self._base_folder / self.file_dict["label"][0])
-        labels = label_mat["label"][0]
+        labels = label_mat["labels"][0]
 
         self.labels = np.unique(labels).tolist()
         self.label_to_idx = dict(zip(self.labels, range(len(self.labels))))
@@ -115,5 +115,5 @@ class Flowers102(VisionDataset):
             str(self._base_folder),
             md5=self.file_dict["image"][1],
         )
-        download_url(f"{self.download_url_prefix}{self.file_dict['label']}", str(self._base_folder))
-        download_url(f"{self.download_url_prefix}{self.file_dict['setid']}", str(self._base_folder))
+        download_url(f"{self.download_url_prefix}{self.file_dict['label'][0]}", str(self._base_folder))
+        download_url(f"{self.download_url_prefix}{self.file_dict['setid'][0]}", str(self._base_folder))
