@@ -32,13 +32,13 @@ class Flowers102(VisionDataset):
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
     """
 
-    download_url_prefix = "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/"
-    file_dict = {
+    _download_url_prefix = "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/"
+    _file_dict = {  # filename, md5
         "image": ("102flowers.tgz", "52808999861908f626f3c1f4e79d11fa"),
         "label": ("imagelabels.mat", "e0620be6f572b9609742df49c70aed4d"),
         "setid": ("setid.mat", "a5357ecc9cb78c4bef273ce3793fc85c"),
     }
-    splits_map = {"train": "trnid", "val": "valid", "test": "tstid"}
+    _splits_map = {"train": "trnid", "val": "valid", "test": "tstid"}
 
     def __init__(
         self,
@@ -61,10 +61,10 @@ class Flowers102(VisionDataset):
 
         from scipy.io import loadmat
 
-        set_ids = loadmat(self._base_folder / self.file_dict["setid"][0], squeeze_me=True)
-        image_ids = set_ids[self.splits_map[self._split]].tolist()
+        set_ids = loadmat(self._base_folder / self._file_dict["setid"][0], squeeze_me=True)
+        image_ids = set_ids[self._splits_map[self._split]].tolist()
 
-        labels = loadmat(self._base_folder / self.file_dict["label"][0], squeeze_me=True)
+        labels = loadmat(self._base_folder / self._file_dict["label"][0], squeeze_me=True)
         image_id_to_label = dict(enumerate(labels["labels"].tolist(), 1))
 
         self._labels = []
@@ -96,7 +96,7 @@ class Flowers102(VisionDataset):
 
     def _check_integrity(self):
         for id in ["label", "setid"]:
-            filename, md5 = self.file_dict[id]
+            filename, md5 = self._file_dict[id]
             if not check_integrity(str(self._base_folder / filename), md5):
                 return False
         return True
@@ -104,12 +104,12 @@ class Flowers102(VisionDataset):
     def download(self):
         if not self._check_exists():
             download_and_extract_archive(
-                f"{self.download_url_prefix}{self.file_dict['image'][0]}",
+                f"{self._download_url_prefix}{self._file_dict['image'][0]}",
                 str(self._base_folder),
-                md5=self.file_dict["image"][1],
+                md5=self._file_dict["image"][1],
             )
         if self._check_integrity():
             return
         for id in ["label", "setid"]:
-            filename, md5 = self.file_dict[id]
-            download_url(self.download_url_prefix + filename, str(self._base_folder), md5=md5)
+            filename, md5 = self._file_dict[id]
+            download_url(self._download_url_prefix + filename, str(self._base_folder), md5=md5)
