@@ -358,8 +358,8 @@ class FCOS(nn.Module):
         head=None,
         center_sampling_radius=1.5,
         score_thresh=0.2,
-        nms_thresh=0.5,
-        detections_per_img=300,
+        nms_thresh=0.6,
+        detections_per_img=100,
         topk_candidates=1000,
     ):
         super().__init__()
