@@ -48,7 +48,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     FlyingChairs
     FlyingThings3D
     Food101
-    FVGCAircraft
+    FGVCAircraft
     GTSRB
     HD1K
     HMDB51

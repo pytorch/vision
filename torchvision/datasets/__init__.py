@@ -8,10 +8,10 @@ from .coco import CocoCaptions, CocoDetection
 from .dtd import DTD
 from .fakedata import FakeData
 from .fer2013 import FER2013
+from .fgvc_aircraft import FGVCAircraft
 from .flickr import Flickr8k, Flickr30k
 from .folder import ImageFolder, DatasetFolder
 from .food101 import Food101
-from .fvgc_aircraft import FVGCAircraft
 from .gtsrb import GTSRB
 from .hmdb51 import HMDB51
 from .imagenet import ImageNet
@@ -92,5 +92,5 @@ __all__ = (
     "GTSRB",
     "CLEVRClassification",
     "OxfordIIITPet",
-    "FVGCAircraft",
+    "FGVCAircraft",
 )

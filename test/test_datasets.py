@@ -2206,8 +2206,8 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
         return len(sampled_classes * n_samples_per_class)
 
 
-class FVGCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
-    DATASET_CLASS = datasets.FVGCAircraft
+class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FGVCAircraft
     FEATURE_TYPES = (PIL.Image.Image, int)
 
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "trainval", "test"))
@@ -2219,7 +2219,7 @@ class FVGCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
 
         num_images_per_class = 5
         variants = ["707-320", "Hawk T1", "Tornado"]
-        n_samples_per_class = 4 if split == "trainval" else 2
+        num_samples_per_class = 4 if split == "trainval" else 2
 
         datasets_utils.create_image_folder(
             data_folder,
@@ -2235,21 +2235,21 @@ class FVGCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
                 [
                     f"{idx} {variant}"
                     for idx in random.sample(
-                        range(i * num_images_per_class, (i + 1) * num_images_per_class), n_samples_per_class
+                        range(i * num_images_per_class, (i + 1) * num_images_per_class), num_samples_per_class
                     )
                 ]
             )
 
-        varients_file = root_folder / "data" / "variants.txt"
+        variants_file = root_folder / "data" / "variants.txt"
         images_variant_file = root_folder / "data" / f"images_variant_{split}.txt"
 
-        with open(varients_file, "w") as file:
+        with open(variants_file, "w") as file:
             file.write("\n".join(variants))
 
         with open(images_variant_file, "w") as file:
             file.write("\n".join(images_variants))
 
-        return len(variants * n_samples_per_class)
+        return len(variants * num_samples_per_class)
 
 
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):

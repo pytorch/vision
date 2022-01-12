@@ -1,5 +1,4 @@
 import os
-import shutil
 from typing import Any, Callable, List, Optional, Tuple
 
 import PIL.Image
@@ -8,14 +7,14 @@ from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
-class FVGCAircraft(VisionDataset):
-    """`FVGC Aircraft <https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/>`_ Dataset.
+class FGVCAircraft(VisionDataset):
+    """`FGVC Aircraft <https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/>`_ Dataset.
 
     The dataset contains 10,200 images of aircraft, with 100 images for each of 102
     different aircraft model variants, most of which are airplanes.
 
     Args:
-        root (string): Root directory of the FVGC Aircraft dataset.
+        root (string): Root directory of the FGVC Aircraft dataset.
         split (string, optional): The dataset split, supports ``train``, ``val``,
             ``trainval`` and ``test``.
         download (bool, optional): If True, downloads the dataset from the internet and
@@ -34,10 +33,9 @@ class FVGCAircraft(VisionDataset):
         self,
         root: str,
         split: str = "trainval",
-        download: Optional[str] = None,
+        download: bool = False,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        **kwargs: Any,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "val", "trainval", "test"))
@@ -49,23 +47,16 @@ class FVGCAircraft(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self._label_names = sorted(self._get_label_names(self._data_path))
+        self._label_names = self._get_label_names(self._data_path)
 
         # Parse the downloaded files
         self._image_folder = os.path.join(self.root, self._split)
-        self._create_fgvc_aircrafts_disk_folder(self._data_path)
-
-        self._label_name_to_idx = dict(zip(self._label_names, range(len(self._label_names))))
 
         self._image_files = []
         self._labels = []
-        for label_name in self._label_names:
-            img_rel_folder = os.path.join(self._image_folder, label_name)
-            img_file_name_list = [
-                f for f in os.listdir(img_rel_folder) if os.path.isfile(os.path.join(img_rel_folder, f))
-            ]
-            self._labels += [self._label_name_to_idx[label_name]] * len(img_file_name_list)
-            self._image_files += [os.path.join(img_rel_folder, img_name) for img_name in img_file_name_list]
+        self._label_name_to_idx = dict(zip(self._label_names, range(len(self._label_names))))
+
+        self._read_fgvc_aircrafts_images_labels(self._data_path)
 
     def __len__(self) -> int:
         return len(self._image_files)
@@ -93,11 +84,9 @@ class FVGCAircraft(VisionDataset):
     def _check_exists(self) -> bool:
         return os.path.exists(self._data_path) and os.path.isdir(self._data_path)
 
-    def _create_fgvc_aircrafts_disk_folder(self, input_path: str):
-        img_data_folder = os.path.join(input_path, "data", "images")
+    def _read_fgvc_aircrafts_images_labels(self, input_path: str):
+        image_data_folder = os.path.join(input_path, "data", "images")
         labels_path = os.path.join(input_path, "data", f"images_variant_{self._split}.txt")
-        for label in self._label_names:
-            os.makedirs(os.path.join(self._image_folder, label), exist_ok=True)
 
         with open(labels_path, "r") as labels_file:
             lines = [line.strip() for line in labels_file]
@@ -105,10 +94,8 @@ class FVGCAircraft(VisionDataset):
                 line_list = line.split(" ")
                 image_name = line_list[0]
                 label_name = self._parse_aircraft_name(" ".join(line_list[1:]))
-                shutil.copy(
-                    src=os.path.join(img_data_folder, f"{image_name}.jpg"),
-                    dst=os.path.join(self._image_folder, label_name),
-                )
+                self._labels.append(self._label_name_to_idx[label_name])
+                self._image_files.append(os.path.join(image_data_folder, image_name + str(".jpg")))
 
     def _get_label_names(self, input_path: str) -> List[str]:
         variants_file = os.path.join(input_path, "data", "variants.txt")
