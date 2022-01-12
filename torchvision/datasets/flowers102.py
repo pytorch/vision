@@ -99,11 +99,10 @@ class Flowers102(VisionDataset):
         return f"split={self._split}"
 
     def _check_integrity(self):
-        st1 = check_integrity(str(self._base_folder / self.file_dict["image"][0]), self.file_dict["image"][1])
-        st2 = check_integrity(str(self._base_folder / self.file_dict["label"][0]), self.file_dict["label"][1])
-        st3 = check_integrity(str(self._base_folder / self.file_dict["setid"][0]), self.file_dict["setid"][1])
-        if not (st1 and st2 and st3):
-            return False
+        for id in ["label", "setid"]:
+            filename, md5 = self.file_dict[id]
+            if not check_integrity(str(self._base_folder / filename), md5):
+                return False
         return True
 
     def download(self):
