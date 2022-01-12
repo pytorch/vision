@@ -67,9 +67,9 @@ def _yuv420_to_rgb(mat, limited_color_range=True, standard="bt709"):
     offset = torch.tensor([16.0, 128.0, 128.0], device=mat.device)
 
     yuv2 = _yuv420_to_444(mat)
-
     res = (yuv2 - offset) @ m
-    return res
+    res.clamp_(min=0, max=255)
+    return res.round().to(torch.uint8)
 
 
 @pytest.mark.skipif(_HAS_VIDEO_DECODER is False, reason="Didn't compile with support for gpu decoder")
@@ -84,8 +84,6 @@ class TestVideoGPUDecoder:
                     av_frames_yuv = torch.tensor(av_frame.to_ndarray())
                     vision_frames = next(decoder)["data"]
                     av_frames = _yuv420_to_rgb(av_frames_yuv)
-                    av_frames.clamp_(min=0, max=255)
-                    av_frames = av_frames.round().to(torch.uint8)
                     mean_delta = torch.mean(torch.abs(av_frames.float() - vision_frames.cpu().float()))
                     assert mean_delta < 0.7
 
