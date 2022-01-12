@@ -4,7 +4,7 @@ from typing import Any, Tuple, Callable, Optional
 import numpy as np
 import PIL.Image
 
-from .utils import verify_str_arg, download_and_extract_archive, download_url
+from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -33,6 +33,14 @@ class Flowers102(VisionDataset):
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
     """
 
+    download_url_prefix = "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/"
+    file_dict = {
+        "image": ("102flowers.tgz", "52808999861908f626f3c1f4e79d11fa"),
+        "label": ("imagelabels.mat", "e0620be6f572b9609742df49c70aed4d"),
+        "setid": ("setid.mat", "a5357ecc9cb78c4bef273ce3793fc85c"),
+    }
+    splits_map = {"train": "trnid", "valid": "valid", "test": "tstid"}
+
     def __init__(
         self,
         root: str,
@@ -44,29 +52,26 @@ class Flowers102(VisionDataset):
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "valid", "test"))
         self._base_folder = Path(self.root) / "flowers-102"
-        self._meta_folder = self._base_folder / "labels"
         self._images_folder = self._base_folder / "jpg"
 
         if download:
-            self._download()
+            self.download()
 
-        if not self._check_exists():
-            raise RuntimeError("Dataset not found. You can use download=True to download it")
+        if not self._check_integrity():
+            raise RuntimeError("Dataset not found or corrupted. You can use download=True to download it")
 
         from scipy.io import loadmat
 
         # Read the label ids
-        label_mat = loadmat(self._meta_folder / "imagelabels.mat")
-        labels = label_mat["labels"][0]
+        label_mat = loadmat(self._base_folder / self.file_dict["label"][0])
+        labels = label_mat["label"][0]
 
         self.labels = np.unique(labels).tolist()
         self.label_to_idx = dict(zip(self.labels, range(len(self.labels))))
 
         # Read the image ids
-        set_ids = loadmat(self._meta_folder / "setid.mat")
-        splits_map = {"train": "trnid", "valid": "valid", "test": "tstid"}
-
-        image_ids = set_ids[splits_map[self._split]][0]
+        set_ids = loadmat(self._base_folder / self.file_dict["setid"][0])
+        image_ids = set_ids[self.splits_map[self._split]][0]
 
         self._labels = []
         self._image_files = []
@@ -93,27 +98,22 @@ class Flowers102(VisionDataset):
     def extra_repr(self) -> str:
         return f"split={self._split}"
 
-    def _check_exists(self) -> bool:
-        return all(folder.exists() and folder.is_dir() for folder in (self._meta_folder, self._images_folder))
+    def _check_integrity(self):
+        st1 = check_integrity(str(self._base_folder / self.file_dict["image"][0]), self.file_dict["image"][1])
+        st2 = check_integrity(str(self._base_folder / self.file_dict["label"][0]), self.file_dict["label"][1])
+        st3 = check_integrity(str(self._base_folder / self.file_dict["setid"][0]), self.file_dict["setid"][1])
+        if not (st1 and st2 and st3):
+            return False
+        return True
 
-    def _download(self) -> None:
-        if self._check_exists():
+    def download(self):
+        if self._check_integrity():
+            print("Files already downloaded and verified")
             return
-
         download_and_extract_archive(
-            "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/102flowers.tgz",
-            download_root=str(self._base_folder),
-            md5="52808999861908f626f3c1f4e79d11fa",
+            f"{self.download_url_prefix}{self.file_dict['image'][0]}",
+            str(self._base_folder),
+            md5=self.file_dict["image"][1],
         )
-
-        download_url(
-            "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/setid.mat",
-            str(self._meta_folder),
-            md5="a5357ecc9cb78c4bef273ce3793fc85c",
-        )
-
-        download_url(
-            "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/imagelabels.mat",
-            str(self._meta_folder),
-            md5="e0620be6f572b9609742df49c70aed4d",
-        )
+        download_url(f"{self.download_url_prefix}{self.file_dict['label']}", str(self._base_folder))
+        download_url(f"{self.download_url_prefix}{self.file_dict['setid']}", str(self._base_folder))
