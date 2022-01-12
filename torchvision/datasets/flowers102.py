@@ -1,7 +1,6 @@
 from pathlib import Path
 from typing import Any, Tuple, Callable, Optional
 
-import numpy as np
 import PIL.Image
 
 from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
@@ -62,22 +61,16 @@ class Flowers102(VisionDataset):
 
         from scipy.io import loadmat
 
-        # Read the label ids
-        label_mat = loadmat(self._base_folder / self.file_dict["label"][0])
-        labels = label_mat["labels"][0]
+        set_ids = loadmat(self._base_folder / self.file_dict["setid"][0], squeeze_me=True)
+        image_ids = set_ids[self.splits_map[self._split]].tolist()
 
-        classes = np.unique(labels).tolist()
-        class_to_idx = dict(zip(classes, range(len(classes))))
-
-        # Read the image ids
-        set_ids = loadmat(self._base_folder / self.file_dict["setid"][0])
-        image_ids = set_ids[self.splits_map[self._split]][0]
+        labels = loadmat(self._base_folder / self.file_dict["label"][0], squeeze_me=True)
+        image_id_to_label = dict(enumerate(labels["labels"].tolist(), 1))
 
         self._labels = []
         self._image_files = []
-
         for image_id in image_ids:
-            self._labels.append(class_to_idx[labels[image_id - 1]])
+            self._labels.append(image_id_to_label[image_id])
             self._image_files.append(self._images_folder / f"image_{image_id:05d}.jpg")
 
     def __len__(self) -> int:
