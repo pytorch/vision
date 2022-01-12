@@ -92,7 +92,7 @@ class Flowers102(VisionDataset):
         return f"split={self._split}"
 
     def _check_integrity(self):
-        if not (self._images_folder.exists() and self._images_folder.isdir()):
+        if not (self._images_folder.exists() and self._images_folder.is_dir()):
             return False
 
         for id in ["label", "setid"]:
