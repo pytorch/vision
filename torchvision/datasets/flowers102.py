@@ -15,11 +15,11 @@ class Flowers102(VisionDataset):
         This class needs `scipy <https://docs.scipy.org/doc/>`_ to load target files from `.mat` format.
 
     Oxford 102 Flower is an image classification dataset consisting of 102 flower categories. The
-    flowers chosen to be flower commonly occurring in the United Kingdom. Each class consists of
+    flowers were chosen to be flowers commonly occurring in the United Kingdom. Each class consists of
     between 40 and 258 images.
 
     The images have large scale, pose and light variations. In addition, there are categories that
-    have large variations within the category and several very similar categories.
+    have large variations within the category, and several very similar categories.
 
     Args:
         root (string): Root directory of the dataset.
