@@ -1,3 +1,4 @@
+import enum
 import io
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -30,6 +31,12 @@ from torchvision.prototype.datasets.utils._internal import (
 from torchvision.prototype.features import Label
 
 
+class DTDDemux(enum.IntEnum):
+    SPLIT = 0
+    JOINT_CATEGORIES = 1
+    IMAGES = 2
+
+
 class DTD(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -54,11 +61,11 @@ class DTD(Dataset):
         path = pathlib.Path(data[0])
         if path.parent.name == "labels":
             if path.name == "labels_joint_anno.txt":
-                return 1
+                return DTDDemux.JOINT_CATEGORIES
 
-            return 0
+            return DTDDemux.SPLIT
         elif path.parents[1].name == "images":
-            return 2
+            return DTDDemux.IMAGES
         else:
             return None
 
@@ -122,7 +129,7 @@ class DTD(Dataset):
         return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
 
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
-        return self._classify_archive(data) == 2
+        return self._classify_archive(data) == DTDDemux.IMAGES
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
