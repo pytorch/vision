@@ -91,9 +91,6 @@ class Flowers102(VisionDataset):
     def extra_repr(self) -> str:
         return f"split={self._split}"
 
-    def _check_exists(self) -> bool:
-        return self._images_folder.exists() and self._images_folder.is_dir()
-
     def _check_integrity(self):
         for id in ["label", "setid"]:
             filename, md5 = self._file_dict[id]
@@ -102,14 +99,13 @@ class Flowers102(VisionDataset):
         return True
 
     def download(self):
-        if not self._check_exists():
-            download_and_extract_archive(
-                f"{self._download_url_prefix}{self._file_dict['image'][0]}",
-                str(self._base_folder),
-                md5=self._file_dict["image"][1],
-            )
         if self._check_integrity():
             return
+        download_and_extract_archive(
+            f"{self._download_url_prefix}{self._file_dict['image'][0]}",
+            str(self._base_folder),
+            md5=self._file_dict["image"][1],
+        )
         for id in ["label", "setid"]:
             filename, md5 = self._file_dict[id]
             download_url(self._download_url_prefix + filename, str(self._base_folder), md5=md5)
