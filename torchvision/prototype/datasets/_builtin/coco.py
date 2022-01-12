@@ -1,3 +1,4 @@
+import functools
 import io
 import pathlib
 import re
@@ -8,7 +9,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Filter,
     Demultiplexer,
     Grouper,
@@ -31,6 +31,7 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     path_accessor,
     hint_sharding,
+    hint_shuffling,
 )
 from torchvision.prototype.features import BoundingBox, Label, Feature
 from torchvision.prototype.utils._internal import FrozenMapping
@@ -182,13 +183,17 @@ class Coco(Dataset):
 
         if config.annotations is None:
             dp = hint_sharding(images_dp)
-            dp = Shuffler(dp)
-            return Mapper(dp, self._collate_and_decode_image, fn_kwargs=dict(decoder=decoder))
+            dp = hint_shuffling(dp)
+            return Mapper(dp, functools.partial(self._collate_and_decode_image, decoder=decoder))
 
         meta_dp = Filter(
             meta_dp,
-            self._filter_meta_files,
-            fn_kwargs=dict(split=config.split, year=config.year, annotations=config.annotations),
+            functools.partial(
+                self._filter_meta_files,
+                split=config.split,
+                year=config.year,
+                annotations=config.annotations,
+            ),
         )
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
@@ -208,7 +213,7 @@ class Coco(Dataset):
         anns_meta_dp = UnBatcher(anns_meta_dp)
         anns_meta_dp = Grouper(anns_meta_dp, group_key_fn=getitem("image_id"), buffer_size=INFINITE_BUFFER_SIZE)
         anns_meta_dp = hint_sharding(anns_meta_dp)
-        anns_meta_dp = Shuffler(anns_meta_dp)
+        anns_meta_dp = hint_shuffling(anns_meta_dp)
 
         anns_dp = IterKeyZipper(
             anns_meta_dp,
@@ -226,16 +231,17 @@ class Coco(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(
-            dp, self._collate_and_decode_sample, fn_kwargs=dict(annotations=config.annotations, decoder=decoder)
+            dp, functools.partial(self._collate_and_decode_sample, annotations=config.annotations, decoder=decoder)
         )
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[Tuple[str, str]]:
         config = self.default_config
         resources = self.resources(config)
 
-        dp = resources[1].load(pathlib.Path(root) / self.name)
+        dp = resources[1].load(root)
         dp = Filter(
-            dp, self._filter_meta_files, fn_kwargs=dict(split=config.split, year=config.year, annotations="instances")
+            dp,
+            functools.partial(self._filter_meta_files, split=config.split, year=config.year, annotations="instances"),
         )
         dp = JsonParser(dp)
 

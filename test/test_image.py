@@ -478,7 +478,8 @@ def test_write_jpeg_reference(img_path, tmpdir):
     assert_equal(torch_bytes, pil_bytes)
 
 
-@pytest.mark.skipif(IS_WINDOWS, reason=("this test fails on windows because PIL uses libjpeg-turbo on windows"))
+# TODO: Remove the skip. See https://github.com/pytorch/vision/issues/5162.
+@pytest.mark.skip("this test fails because PIL uses libjpeg-turbo")
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
@@ -497,7 +498,8 @@ def test_encode_jpeg(img_path):
         assert_equal(encoded_jpeg_torch, encoded_jpeg_pil)
 
 
-@pytest.mark.skipif(IS_WINDOWS, reason=("this test fails on windows because PIL uses libjpeg-turbo on windows"))
+# TODO: Remove the skip. See https://github.com/pytorch/vision/issues/5162.
+@pytest.mark.skip("this test fails because PIL uses libjpeg-turbo")
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],

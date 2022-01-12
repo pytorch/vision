@@ -1001,32 +1001,39 @@ def elastic_transform(
     sigma: List[float],
     interpolation: str = "bilinear",
     fill: Optional[List[float]] = None,
+    displacement: Optional[Tensor] = None,
+    random_state: Optional[int] = None,
 ) -> Tensor:
 
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
     size = list(img.shape[-2:])
+    if random_state is not None:
+        torch.seed(random_state)
 
-    dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
-    if sigma[0] > 0.0:
-        dx = gaussian_blur(
-            dx,
-            [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
-            sigma,
-        )
-    dx = dx * alpha[0] / size[0]
-    dy = torch.rand([1, 1] + size, device=img.device) * 2 - 1
+    if displacement is not None:
+        displacement = displacement.to(img.device)
+    else:
+        dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
+        if sigma[0] > 0.0:
+            dx = gaussian_blur(
+                dx,
+                [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
+                sigma,
+            )
+        dx = dx * alpha[0] / size[0]
+        dy = torch.rand([1, 1] + size, device=img.device) * 2 - 1
 
-    if sigma[1] > 0.0:
-        dy = gaussian_blur(
-            dy,
-            [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
-            sigma,
-        )
-    dy = dy * alpha[1] / size[1]
+        if sigma[1] > 0.0:
+            dy = gaussian_blur(
+                dy,
+                [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
+                sigma,
+            )
+        dy = dy * alpha[1] / size[1]
 
-    displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
+        displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
 
     hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
     grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")

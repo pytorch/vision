@@ -37,7 +37,8 @@ def ps_roi_pool(
     Returns:
         Tensor[K, C / (output_size[0] * output_size[1]), output_size[0], output_size[1]]: The pooled RoIs.
     """
-    _log_api_usage_once("ops", "ps_roi_pool")
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(ps_roi_pool)
     _assert_has_ops()
     check_roi_boxes_shape(boxes)
     rois = boxes
@@ -55,6 +56,7 @@ class PSRoIPool(nn.Module):
 
     def __init__(self, output_size: int, spatial_scale: float):
         super().__init__()
+        _log_api_usage_once(self)
         self.output_size = output_size
         self.spatial_scale = spatial_scale
 
