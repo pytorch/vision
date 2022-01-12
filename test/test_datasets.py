@@ -2483,13 +2483,10 @@ class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
             num_examples=num_images_total,
         )
 
-        meta_folder = base_folder / "labels"
-        meta_folder.mkdir()
-
         label_dict = dict(
             labels=np.random.randint(1, num_classes + 1, size=(1, num_images_total), dtype=np.uint8),
         )
-        datasets_utils.lazy_importer.scipy.io.savemat(str(meta_folder / "imagelabels.mat"), label_dict)
+        datasets_utils.lazy_importer.scipy.io.savemat(str(base_folder / "imagelabels.mat"), label_dict)
 
         setid_mat = np.arange(1, num_images_total + 1, dtype=np.uint16)
         np.random.shuffle(setid_mat)
@@ -2498,7 +2495,7 @@ class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
             valid=setid_mat[num_images_per_split["train"] : -num_images_per_split["test"]].reshape(1, -1),
             tstid=setid_mat[-num_images_per_split["test"] :].reshape(1, -1),
         )
-        datasets_utils.lazy_importer.scipy.io.savemat(str(meta_folder / "setid.mat"), setid_dict)
+        datasets_utils.lazy_importer.scipy.io.savemat(str(base_folder / "setid.mat"), setid_dict)
 
         return num_images_per_split[config["split"]]
 
