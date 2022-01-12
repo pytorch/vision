@@ -66,8 +66,8 @@ class Flowers102(VisionDataset):
         label_mat = loadmat(self._base_folder / self.file_dict["label"][0])
         labels = label_mat["labels"][0]
 
-        self.labels = np.unique(labels).tolist()
-        self.label_to_idx = dict(zip(self.labels, range(len(self.labels))))
+        classes = np.unique(labels).tolist()
+        class_to_idx = dict(zip(classes, range(len(classes))))
 
         # Read the image ids
         set_ids = loadmat(self._base_folder / self.file_dict["setid"][0])
@@ -77,7 +77,7 @@ class Flowers102(VisionDataset):
         self._image_files = []
 
         for image_id in image_ids:
-            self._labels.append(self.label_to_idx[labels[image_id - 1]])
+            self._labels.append(class_to_idx[labels[image_id - 1]])
             self._image_files.append(self._images_folder / f"image_{image_id:05d}.jpg")
 
     def __len__(self) -> int:
