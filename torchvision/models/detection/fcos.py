@@ -268,8 +268,8 @@ class FCOS(nn.Module):
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
         - labels (Int64Tensor[N]): the class label for each ground-truth box
 
-    The model returns a Dict[Tensor] during training, containing the classification and regression
-    losses.
+    The model returns a Dict[Tensor] during training, containing the classification, regression
+    and centerness losses.
 
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a List[Dict[Tensor]], one for each input image. The fields of the Dict are as
