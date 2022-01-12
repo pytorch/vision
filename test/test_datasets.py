@@ -2494,14 +2494,14 @@ class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Flowers102
     FEATURE_TYPES = (PIL.Image.Image, int)
 
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "valid", "test"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
     REQUIRED_PACKAGES = ("scipy",)
 
     def inject_fake_data(self, tmpdir: str, config):
         base_folder = pathlib.Path(tmpdir) / "flowers-102"
 
         num_classes = 3
-        num_images_per_split = dict(train=5, valid=4, test=3)
+        num_images_per_split = dict(train=5, val=4, test=3)
         num_images_total = sum(num_images_per_split.values())
         datasets_utils.create_image_folder(
             base_folder,

@@ -38,7 +38,7 @@ class Flowers102(VisionDataset):
         "label": ("imagelabels.mat", "e0620be6f572b9609742df49c70aed4d"),
         "setid": ("setid.mat", "a5357ecc9cb78c4bef273ce3793fc85c"),
     }
-    splits_map = {"train": "trnid", "valid": "valid", "test": "tstid"}
+    splits_map = {"train": "trnid", "val": "valid", "test": "tstid"}
 
     def __init__(
         self,
@@ -49,7 +49,7 @@ class Flowers102(VisionDataset):
         target_transform: Optional[Callable] = None,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
-        self._split = verify_str_arg(split, "split", ("train", "valid", "test"))
+        self._split = verify_str_arg(split, "split", ("train", "val", "test"))
         self._base_folder = Path(self.root) / "flowers-102"
         self._images_folder = self._base_folder / "jpg"
 
