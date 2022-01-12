@@ -1499,9 +1499,9 @@ def elastic_transform(
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
-        displacement (Tensor): The displacement field. If not given, it will be generated based on
-            alpha and sigma.
-        random_state (int): If random_state is provided, it will be used as the random seed.
+        displacement (Tensor, optional): The displacement field, a tensor of shape (1, H, W, 2).
+            If not given, it will be generated based on alpha and sigma.
+        random_state (int, optional): If provided, it will be set as a random seed.
     """
     # Backward compatibility with integer value
     if isinstance(interpolation, int):

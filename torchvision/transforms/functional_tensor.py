@@ -1010,11 +1010,9 @@ def elastic_transform(
 
     size = list(img.shape[-2:])
     if random_state is not None:
-        torch.seed(random_state)
+        torch.manual_seed(random_state)
 
-    if displacement is not None:
-        displacement = displacement.to(img.device)
-    else:
+    if displacement is None:
         dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
         if sigma[0] > 0.0:
             dx = gaussian_blur(
@@ -1034,6 +1032,9 @@ def elastic_transform(
         dy = dy * alpha[1] / size[1]
 
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
+
+    if displacement.device != img.device:
+        displacement = displacement.to(img.device)
 
     hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
     grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
