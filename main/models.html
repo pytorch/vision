@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+6946920 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+dd6d332 ) &#x25BC</a>
     </div>
     
 
@@ -386,6 +386,7 @@ architectures for image classification:</p>
 <span class="n">regnet_y_8gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_8gf</span><span class="p">()</span>
 <span class="n">regnet_y_16gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_16gf</span><span class="p">()</span>
 <span class="n">regnet_y_32gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_32gf</span><span class="p">()</span>
+<span class="n">regnet_y_128gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_128gf</span><span class="p">()</span>
 <span class="n">regnet_x_400mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_400mf</span><span class="p">()</span>
 <span class="n">regnet_x_800mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_800mf</span><span class="p">()</span>
 <span class="n">regnet_x_1_6gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_x_1_6gf</span><span class="p">()</span>
@@ -1027,39 +1028,43 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <td><p><p>Constructs a RegNetY_32GF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
 </p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_400mf.html#torchvision.models.regnet_x_400mf" title="torchvision.models.regnet_x_400mf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_400mf</span></code></a>([pretrained, progress])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_y_128gf.html#torchvision.models.regnet_y_128gf" title="torchvision.models.regnet_y_128gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_y_128gf</span></code></a>([pretrained, progress])</p></td>
+<td><p><p>Constructs a RegNetY_128GF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_400mf.html#torchvision.models.regnet_x_400mf" title="torchvision.models.regnet_x_400mf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_400mf</span></code></a>([pretrained, progress])</p></td>
 <td><p><p>Constructs a RegNetX_400MF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
 </p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_800mf.html#torchvision.models.regnet_x_800mf" title="torchvision.models.regnet_x_800mf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_800mf</span></code></a>([pretrained, progress])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_800mf.html#torchvision.models.regnet_x_800mf" title="torchvision.models.regnet_x_800mf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_800mf</span></code></a>([pretrained, progress])</p></td>
 <td><p><p>Constructs a RegNetX_800MF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
 </p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_1_6gf.html#torchvision.models.regnet_x_1_6gf" title="torchvision.models.regnet_x_1_6gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_1_6gf</span></code></a>([pretrained, progress])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_1_6gf.html#torchvision.models.regnet_x_1_6gf" title="torchvision.models.regnet_x_1_6gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_1_6gf</span></code></a>([pretrained, progress])</p></td>
 <td><p><p>Constructs a RegNetX_1.6GF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
 </p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.regnet_x_3_2gf" title="torchvision.models.regnet_x_3_2gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_3_2gf</span></code></a>([pretrained, progress])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.regnet_x_3_2gf" title="torchvision.models.regnet_x_3_2gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_3_2gf</span></code></a>([pretrained, progress])</p></td>
 <td><p><p>Constructs a RegNetX_3.2GF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
 </p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_8gf.html#torchvision.models.regnet_x_8gf" title="torchvision.models.regnet_x_8gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_8gf</span></code></a>([pretrained, progress])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_8gf.html#torchvision.models.regnet_x_8gf" title="torchvision.models.regnet_x_8gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_8gf</span></code></a>([pretrained, progress])</p></td>
 <td><p><p>Constructs a RegNetX_8GF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
 </p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_16gf.html#torchvision.models.regnet_x_16gf" title="torchvision.models.regnet_x_16gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_16gf</span></code></a>([pretrained, progress])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_16gf.html#torchvision.models.regnet_x_16gf" title="torchvision.models.regnet_x_16gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_16gf</span></code></a>([pretrained, progress])</p></td>
 <td><p><p>Constructs a RegNetX_16GF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
 </p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_32gf.html#torchvision.models.regnet_x_32gf" title="torchvision.models.regnet_x_32gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_32gf</span></code></a>([pretrained, progress])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_x_32gf.html#torchvision.models.regnet_x_32gf" title="torchvision.models.regnet_x_32gf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_x_32gf</span></code></a>([pretrained, progress])</p></td>
 <td><p><p>Constructs a RegNetX_32GF architecture from <a class="reference external" href="https://arxiv.org/abs/2003.13678">“Designing Network Design Spaces”</a>.</p>
 </p></td>
 </tr>
 </tbody>
 </table>
 </div>
-<div class="section" id="id54">
-<h3>VisionTransformer<a class="headerlink" href="#id54" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id55">
+<h3>VisionTransformer<a class="headerlink" href="#id55" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.vit_b_16.html#torchvision.models.vit_b_16" title="torchvision.models.vit_b_16"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vit_b_16</span></code></a>([pretrained, progress])</p></td>
@@ -1488,8 +1493,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id58">
-<h3>Faster R-CNN<a class="headerlink" href="#id58" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id59">
+<h3>Faster R-CNN<a class="headerlink" href="#id59" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.fasterrcnn_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1504,8 +1509,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id59">
-<h3>RetinaNet<a class="headerlink" href="#id59" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id60">
+<h3>RetinaNet<a class="headerlink" href="#id60" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.retinanet_resnet50_fpn.html#torchvision.models.detection.retinanet_resnet50_fpn" title="torchvision.models.detection.retinanet_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.retinanet_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1514,8 +1519,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id60">
-<h3>SSD<a class="headerlink" href="#id60" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id61">
+<h3>SSD<a class="headerlink" href="#id61" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.ssd300_vgg16.html#torchvision.models.detection.ssd300_vgg16" title="torchvision.models.detection.ssd300_vgg16"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.ssd300_vgg16</span></code></a>([…])</p></td>
@@ -1524,8 +1529,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id61">
-<h3>SSDlite<a class="headerlink" href="#id61" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id62">
+<h3>SSDlite<a class="headerlink" href="#id62" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.html#torchvision.models.detection.ssdlite320_mobilenet_v3_large" title="torchvision.models.detection.ssdlite320_mobilenet_v3_large"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.ssdlite320_mobilenet_v3_large</span></code></a>([…])</p></td>
@@ -1535,8 +1540,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id64">
-<h3>Mask R-CNN<a class="headerlink" href="#id64" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id65">
+<h3>Mask R-CNN<a class="headerlink" href="#id65" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html#torchvision.models.detection.maskrcnn_resnet50_fpn" title="torchvision.models.detection.maskrcnn_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.maskrcnn_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1709,7 +1714,7 @@ images because it assumes the video is 4d.</p>
 <li><a class="reference internal" href="#id28">MNASNet</a></li>
 <li><a class="reference internal" href="#id32">EfficientNet</a></li>
 <li><a class="reference internal" href="#id40">RegNet</a></li>
-<li><a class="reference internal" href="#id54">VisionTransformer</a></li>
+<li><a class="reference internal" href="#id55">VisionTransformer</a></li>
 <li><a class="reference internal" href="#quantized-models">Quantized Models</a></li>
 </ul>
 </li>
@@ -1721,11 +1726,11 @@ images because it assumes the video is 4d.</p>
 </li>
 <li><a class="reference internal" href="#object-detection-instance-segmentation-and-person-keypoint-detection">Object Detection, Instance Segmentation and Person Keypoint Detection</a><ul>
 <li><a class="reference internal" href="#runtime-characteristics">Runtime characteristics</a></li>
-<li><a class="reference internal" href="#id58">Faster R-CNN</a></li>
-<li><a class="reference internal" href="#id59">RetinaNet</a></li>
-<li><a class="reference internal" href="#id60">SSD</a></li>
-<li><a class="reference internal" href="#id61">SSDlite</a></li>
-<li><a class="reference internal" href="#id64">Mask R-CNN</a></li>
+<li><a class="reference internal" href="#id59">Faster R-CNN</a></li>
+<li><a class="reference internal" href="#id60">RetinaNet</a></li>
+<li><a class="reference internal" href="#id61">SSD</a></li>
+<li><a class="reference internal" href="#id62">SSDlite</a></li>
+<li><a class="reference internal" href="#id65">Mask R-CNN</a></li>
 <li><a class="reference internal" href="#keypoint-r-cnn">Keypoint R-CNN</a></li>
 </ul>
 </li>
