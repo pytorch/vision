@@ -24,7 +24,7 @@ class TestModelsDetectionUtils:
 
     def test_box_linear_coder(self):
         box_coder = _utils.BoxLinearCoder(normalize_by_size=True)
-        # Generate the random boxes for testing
+        # Generate a random 10x4 boxes tensor, with coordinates < 50.
         boxes = torch.rand(10, 4) * 50
         boxes.clamp_(min=1.0)  # tiny boxes cause numerical instability in box regression
         boxes[:, 2:] += boxes[:, :2]
