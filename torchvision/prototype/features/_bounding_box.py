@@ -1,4 +1,4 @@
-from typing import Any, Dict, Tuple, Union
+from typing import Any, Tuple, Union, Optional
 
 import torch
 from torchvision.prototype.utils._internal import StrEnum
@@ -19,18 +19,23 @@ class BoundingBox(Feature):
     format: BoundingBoxFormat
     image_size: Tuple[int, int]
 
-    @classmethod
-    def _prepare_meta_data(
+    def __new__(
         cls,
-        data: torch.Tensor,
-        meta_data: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        if isinstance(meta_data["format"], str):
-            meta_data["format"] = BoundingBoxFormat[meta_data["format"]]
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
+        format: Union[BoundingBoxFormat, str],
+        image_size: Tuple[int, int],
+    ):
+        bounding_box = super().__new__(cls, data, dtype=dtype, device=device)
 
-        # TODO: input validation
+        if isinstance(format, str):
+            format = BoundingBoxFormat[format]
 
-        return meta_data
+        bounding_box._metadata.update(dict(format=format, image_size=image_size))
+
+        return bounding_box
 
     def to_format(self, format: Union[str, BoundingBoxFormat]) -> "BoundingBox":
         # import at runtime to avoid cyclic imports

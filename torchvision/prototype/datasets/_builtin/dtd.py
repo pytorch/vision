@@ -17,7 +17,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -25,7 +24,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     getitem,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 
 
 class DTD(Dataset):
@@ -63,10 +62,7 @@ class DTD(Dataset):
         path = pathlib.Path(data[0])
         return str(path.relative_to(path.parents[1]))
 
-    def _prepare_sample(
-        self,
-        data: Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         (_, joint_categories_data), image_data = data
         _, *joint_categories = joint_categories_data
         path, buffer = image_data
@@ -75,9 +71,9 @@ class DTD(Dataset):
 
         return dict(
             joint_categories={category for category in joint_categories if category},
-            label=Label(self.info.categories.index(category), category=category),
+            label=Label.from_category(category, categories=self.categories),
             path=path,
-            image=RawImage.fromfile(buffer),
+            image=EncodedImage.from_file(buffer),
         )
 
     def _make_datapipe(

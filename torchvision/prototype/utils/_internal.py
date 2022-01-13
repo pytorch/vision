@@ -42,6 +42,7 @@ __all__ = [
     "snake_to_camel_case",
     "fromfile",
     "ReadOnlyTensorBuffer",
+    "apply_recursively",
 ]
 
 
@@ -302,3 +303,28 @@ class ReadOnlyTensorBuffer:
         cursor = self.tell()
         offset, whence = (0, io.SEEK_END) if size == -1 else (size, io.SEEK_CUR)
         return self._memory[slice(cursor, self.seek(offset, whence))].tobytes()
+
+
+def apply_recursively(fn: Callable, obj: Any) -> Any:
+    # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
+    # "a" == "a"[0][0]...
+    if isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
+        sequence = []
+        for item in obj:
+            result = apply_recursively(fn, item)
+            if isinstance(result, collections.abc.Sequence) and hasattr(result, "__inline__"):
+                sequence.extend(result)
+            else:
+                sequence.append(result)
+        return sequence
+    elif isinstance(obj, collections.abc.Mapping):
+        mapping = {}
+        for name, item in obj.items():
+            result = apply_recursively(fn, item)
+            if isinstance(result, collections.abc.Mapping) and hasattr(result, "__inline__"):
+                mapping.update(result)
+            else:
+                mapping[name] = result
+        return mapping
+    else:
+        return fn(obj)

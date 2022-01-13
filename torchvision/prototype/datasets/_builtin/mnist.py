@@ -105,7 +105,7 @@ class _MNISTBase(Dataset):
         image, label = data
         return dict(
             image=Image(image),
-            label=Label(label, dtype=torch.int64, category=self.info.categories[int(label)]),
+            label=Label(label, dtype=torch.int64, categories=self.categories),
         )
 
     def _make_datapipe(

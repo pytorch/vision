@@ -2,22 +2,26 @@ from typing import Any, Callable, cast, Dict, Mapping, Optional, Sequence, Set, 
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
-from torchvision.prototype.utils._internal import add_suggestion
 
 
 F = TypeVar("F", bound="Feature")
 
 
-_EMPTY = object()
+class MetaData:
+    EMPTY = object()
+
+    def __init__(self, value, fallback=EMPTY):
+        self.value = value
+        self.fallback = fallback
 
 
 class Feature(torch.Tensor):
     _META_ATTRS: Set[str] = set()
-    _meta_data: Dict[str, Any]
-    _KERNELS: Dict[Callable, Callable] = {}
+    _metadata: Dict[str, Any]
+    _KERNELS: Dict[Callable, Callable]
 
     def __init_subclass__(cls):
-        # In order to help static type checkers, we require subclasses of `Feature` to add the meta data attributes
+        # In order to help static type checkers, we require subclasses of `Feature` to add the metadata attributes
         # as static class annotations:
         #
         # >>> class Foo(Feature):
@@ -40,58 +44,29 @@ class Feature(torch.Tensor):
 
         cls._META_ATTRS = meta_attrs
         for name in meta_attrs:
-            setattr(cls, name, property(lambda self, name=name: self._meta_data[name]))
+            setattr(cls, name, property(lambda self, name=name: self._metadata[name]))
 
-    def __new__(cls, data, *, dtype=None, device=None, like=None, **kwargs):
-        unknown_meta_attrs = kwargs.keys() - cls._META_ATTRS
-        if unknown_meta_attrs:
-            unknown_meta_attr = sorted(unknown_meta_attrs)[0]
-            raise TypeError(
-                add_suggestion(
-                    f"{cls.__name__}() got unexpected keyword '{unknown_meta_attr}'.",
-                    word=unknown_meta_attr,
-                    possibilities=sorted(cls._META_ATTRS),
-                )
-            )
+        cls._KERNELS = {}
 
-        if like is not None:
-            dtype = dtype or like.dtype
-            device = device or like.device
-        data = cls._to_tensor(data, dtype=dtype, device=device)
-        requires_grad = False
-        self = torch.Tensor._make_subclass(cast(_TensorBase, cls), data, requires_grad)
-
-        meta_data = {}
-        for name in cls._META_ATTRS:
-            if name in kwargs:
-                value = kwargs[name]
-            elif like is not None:
-                value = getattr(like, name)
-            else:
-                value = _EMPTY
-            meta_data[name] = value
-        meta_data = cls._prepare_meta_data(data, meta_data)
-        for key, value in meta_data.items():
-            if value is _EMPTY:
-                raise TypeError(
-                    f"{cls.__name__}() is missing a required argument: '{key}'. Either pass is explicitly, "
-                    f"or use the 'like' parameter to extract it from an object of the same type."
-                )
-        self._meta_data = meta_data
-
-        return self
+    def __new__(cls, data, *, dtype=None, device=None):
+        feature = torch.Tensor._make_subclass(
+            cast(_TensorBase, cls),
+            cls._to_tensor(data, dtype=dtype, device=device),
+            # requires_grad
+            False,
+        )
+        feature._metadata = dict()
+        return feature
 
     @classmethod
-    def _to_tensor(cls, data, *, dtype, device):
+    def _to_tensor(self, data: Any, *, dtype, device) -> torch.Tensor:
         return torch.as_tensor(data, dtype=dtype, device=device)
 
     @classmethod
-    def _prepare_meta_data(cls, data: torch.Tensor, meta_data: Dict[str, Any]) -> Dict[str, Any]:
-        return meta_data
-
-    _TORCH_FUNCTION_ALLOW_LIST = {
-        torch.Tensor.clone,
-    }
+    def new_like(cls, other, data, *, dtype=None, device=None, **metadata):
+        for name in cls._META_ATTRS:
+            metadata.setdefault(name, getattr(other, name))
+        return cls(data, dtype=dtype or other.dtype, device=device or other.device, **metadata)
 
     @classmethod
     def __torch_function__(
@@ -102,16 +77,16 @@ class Feature(torch.Tensor):
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> torch.Tensor:
         kwargs = kwargs or dict()
-        if func in cls._KERNELS:
+        if cls is not Feature and func in cls._KERNELS:
             return cls._KERNELS[func](*args, **kwargs)
 
         with DisableTorchFunction():
-            output = func(*args, **(kwargs or dict()))
+            output = func(*args, **kwargs)
 
-        if func not in cls._TORCH_FUNCTION_ALLOW_LIST:
-            return output
+        if func is torch.Tensor.clone:
+            return cls.new_like(args[0], output)
 
-        return cls(output, like=args[0])
+        return output
 
     def __repr__(self):
         return torch.Tensor.__repr__(self).replace("tensor", type(self).__name__)

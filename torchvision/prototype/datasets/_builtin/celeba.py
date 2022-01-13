@@ -15,7 +15,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     GDriveResource,
     OnlineResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -24,7 +23,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import BoundingBox, Feature, Label
+from torchvision.prototype.features import BoundingBox, Feature, Label, EncodedImage
 
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
@@ -152,10 +151,10 @@ class CelebA(Dataset):
         _, (_, image_data) = split_and_image_data
         path, buffer = image_data
 
-        image = RawImage.fromfile(buffer)
+        image = EncodedImage.from_file(buffer)
 
         return dict(
-            self._decode_anns(ann_data, image_size=image.probe_image_size()),
+            self._decode_anns(ann_data, image_size=image.image_size),
             path=path,
             image=image,
         )

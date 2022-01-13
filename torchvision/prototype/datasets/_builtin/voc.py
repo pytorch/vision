@@ -18,7 +18,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
@@ -28,7 +27,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import BoundingBox, Label
+from torchvision.prototype.features import BoundingBox, Label, EncodedImage
 
 
 class VOC(Dataset):
@@ -94,9 +93,9 @@ class VOC(Dataset):
                 format="xyxy",
                 image_size=tuple(int(anns["size"][dim]) for dim in ("height", "width")),
             ),
-            labels=[
-                Label(self.info.categories.index(instance["name"]), category=instance["name"]) for instance in instances
-            ],
+            labels=Label(
+                [self.categories.index(instance["name"]) for instance in instances], categories=self.categories
+            ),
         )
 
     def _prepare_sample(
@@ -113,9 +112,9 @@ class VOC(Dataset):
         return dict(
             self._decode_detection_ann(ann_buffer)
             if config.task == "detection"
-            else dict(segmentation=RawImage.fromfile(ann_buffer)),
+            else dict(segmentation=EncodedImage.from_file(ann_buffer)),
             image_path=image_path,
-            image=RawImage.fromfile(image_buffer),
+            image=EncodedImage.from_file(image_buffer),
             ann_path=ann_path,
         )
 

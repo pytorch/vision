@@ -15,10 +15,9 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat, hint_sharding, hint_shuffling
-from torchvision.prototype.features import Label, BoundingBox, Feature
+from torchvision.prototype.features import Label, BoundingBox, Feature, EncodedImage
 
 
 class Caltech101(Dataset):
@@ -94,11 +93,11 @@ class Caltech101(Dataset):
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        image = RawImage.fromfile(image_buffer)
+        image = EncodedImage.from_file(image_buffer)
 
         return dict(
-            self._decode_ann(ann_buffer, image_size=image.probe_image_size()),
-            label=Label(self.info.categories.index(category), category=category),
+            self._decode_ann(ann_buffer, image_size=image.image_size),
+            label=Label.from_category(category, categories=self.categories),
             image_path=image_path,
             image=image,
             ann_path=ann_path,
@@ -159,12 +158,10 @@ class Caltech256(Dataset):
     def _prepare_sample(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         path, buffer = data
 
-        dir_name = pathlib.Path(path).parent.name
-        label_str, category = dir_name.split(".")
         return dict(
             path=path,
-            image=RawImage.fromfile(buffer),
-            label=Label(int(label_str), category=category),
+            image=EncodedImage.from_file(buffer),
+            label=Label(int(pathlib.Path(path).parent.name.split(".", 1)[0]) - 1, categories=self.categories),
         )
 
     def _make_datapipe(

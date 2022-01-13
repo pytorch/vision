@@ -1,7 +1,7 @@
-from typing import Any, Dict, Tuple, TypeVar
+from typing import Tuple, TypeVar, List
 
 from torchvision.prototype import features
-from torchvision.prototype.transforms import FeatureSpecificArguments, Transform
+from torchvision.prototype.transforms import FeatureSpecificArguments, ConstantParamTransform, Transform
 
 from . import functional as F
 
@@ -9,25 +9,25 @@ T = TypeVar("T", bound=features.Feature)
 
 
 class HorizontalFlip(Transform):
-    def _dispatch(self, feature: T, **params: Any) -> T:
-        return F.horizontal_flip(feature, **params)
+    _DISPATCHER = F.horizontal_flip
 
 
-class Resize(Transform):
+class Resize(ConstantParamTransform):
+    _DISPATCHER = F.resize
+
     def __init__(
         self,
         size: Tuple[int, int],
-        interpolation_mode=FeatureSpecificArguments(
-            {features.SegmentationMask: "nearest"},
-            default="bilinear",
+        interpolation=FeatureSpecificArguments(
+            {features.SegmentationMask: F.InterpolationMode.NEAREST},
+            default=F.InterpolationMode.BILINEAR,
         ),
     ) -> None:
-        super().__init__()
-        self.size = size
-        self.interpolation_mode = interpolation_mode
+        super().__init__(size=size, interpolation=interpolation)
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(size=self.size, interpolation_mode=self.interpolation_mode)
 
-    def _dispatch(self, feature: T, **params: Any) -> T:
-        return F.resize(feature, **params)
+class CenterCrop(ConstantParamTransform):
+    _DISPATCHER = F.center_crop
+
+    def __init__(self, output_size: List[int]):
+        super().__init__(output_size=output_size)

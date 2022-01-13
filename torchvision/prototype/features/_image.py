@@ -1,10 +1,10 @@
 import warnings
-from typing import Any, Dict
+from typing import Any, Optional, Union
 
 import torch
 from torchvision.prototype.utils._internal import StrEnum
 
-from ._feature import _EMPTY, Feature
+from ._feature import Feature
 
 
 class ColorSpace(StrEnum):
@@ -19,31 +19,35 @@ class Image(Feature):
     color_spaces = ColorSpace
     color_space: ColorSpace
 
-    @classmethod
-    def _to_tensor(cls, data, *, dtype, device):
-        tensor = torch.as_tensor(data, dtype=dtype, device=device)
-        if tensor.ndim == 2:
-            tensor = tensor.unsqueeze(0)
-        elif tensor.ndim != 3:
-            raise ValueError("Only single images with 2 or 3 dimensions are allowed.")
-        return tensor
-
-    @classmethod
-    def _prepare_meta_data(
+    def __new__(
         cls,
-        data: torch.Tensor,
-        meta_data: Dict[str, Any],
-    ) -> Dict[str, Any]:
-        color_space = meta_data["color_space"]
-        if color_space is _EMPTY:
-            color_space = cls.guess_color_space(data)
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
+        color_space: Optional[Union[ColorSpace, str]] = None,
+    ):
+        image = super().__new__(cls, data, dtype=dtype, device=device)
+
+        if color_space is None:
+            color_space = cls.guess_color_space(image)
             if color_space == ColorSpace.OTHER:
                 warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
-        elif not isinstance(color_space, ColorSpace):
+        elif isinstance(color_space, str):
             color_space = ColorSpace[color_space]
-        meta_data["color_space"] = color_space
 
-        return meta_data
+        image._metadata.update(dict(color_space=color_space))
+
+        return image
+
+    @classmethod
+    def _to_tensor(cls, data, *, dtype, device):
+        tensor = super()._to_tensor(data, dtype=dtype, device=device)
+        if tensor.ndim < 2:
+            raise ValueError
+        elif tensor.ndim == 2:
+            tensor = tensor.unsqueeze(0)
+        return tensor
 
     @staticmethod
     def guess_color_space(data: torch.Tensor) -> ColorSpace:

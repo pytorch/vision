@@ -33,7 +33,15 @@ convert_dtype:
     kernel: convert_dtype_image
     meta_overwrite:
       dtype: new_dtype
-decode_image:
-  EncodedImage:
-    kernel: decode_image_with_pil
-    output_type: Image
+center_crop:
+  Image:
+    kernel: center_crop_image
+normalize:
+  Image:
+    kernel: normalize_image
+resized_crop:
+  Image:
+    kernel: resized_crop_image
+erase:
+  Image:
+    kernel: erase_image

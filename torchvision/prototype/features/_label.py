@@ -1,16 +1,36 @@
-from typing import Dict, Any, Optional
+from typing import Any, Optional, Sequence
 
 import torch
+from torchvision.prototype.utils._internal import apply_recursively
 
-from ._feature import Feature, _EMPTY
+from ._feature import Feature
 
 
 class Label(Feature):
-    category: Optional[str]
+    categories: Optional[Sequence[str]]
+
+    def __new__(
+        cls,
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
+        like: Optional["Label"] = None,
+        categories: Optional[Sequence[str]] = None,
+    ):
+        label = super().__new__(cls, data, dtype=dtype, device=device)
+
+        label._metadata.update(dict(categories=categories))
+
+        return label
 
     @classmethod
-    def _prepare_meta_data(cls, data: torch.Tensor, meta_data: Dict[str, Any]) -> Dict[str, Any]:
-        if meta_data["category"] is _EMPTY:
-            meta_data["category"] = None
+    def from_category(cls, category: str, *, categories: Sequence[str]):
+        categories = list(categories)
+        return cls(categories.index(category), categories=categories)
 
-        return meta_data
+    def to_categories(self):
+        if not self.categories:
+            raise RuntimeError()
+
+        return apply_recursively(lambda idx: self.categories[idx], self.tolist())

@@ -1,5 +1,6 @@
+import os
 import sys
-from typing import BinaryIO, Tuple, Type, TypeVar, cast
+from typing import BinaryIO, Tuple, Type, TypeVar, cast, Union
 
 import PIL.Image
 import torch
@@ -18,15 +19,22 @@ class EncodedData(Feature):
         return super()._to_tensor(data, dtype=dtype, device=device)
 
     @classmethod
-    def fromfile(cls: Type[D], file: BinaryIO) -> D:
+    def from_file(cls: Type[D], file: BinaryIO) -> D:
         return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder))
+
+    @classmethod
+    def from_path(cls: Type[D], path: Union[str, os.PathLike]) -> D:
+        with open(path, "rb") as file:
+            return cls.from_file(file)
 
 
 class EncodedImage(EncodedData):
-    def probe_image_size(self) -> Tuple[int, int]:
+    # TODO: Use @functools.cached_property if we can depend on Python 3.8
+    @property
+    def image_size(self) -> Tuple[int, int]:
         if not hasattr(self, "_image_size"):
-            image = PIL.Image.open(ReadOnlyTensorBuffer(self))
-            self._image_size = image.height, image.width
+            with PIL.Image.open(ReadOnlyTensorBuffer(self)) as image:
+                self._image_size = image.height, image.width
 
         return self._image_size
 
@@ -35,3 +43,7 @@ class EncodedImage(EncodedData):
         from torchvision.prototype.transforms.functional import decode_image
 
         return cast(Image, decode_image(self))
+
+
+class EncodedVideo(EncodedData):
+    pass

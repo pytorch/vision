@@ -39,13 +39,11 @@ class FER2013(Dataset):
         return [archive]
 
     def _prepare_sample(self, data: Dict[str, Any]) -> Dict[str, Any]:
-        image = Image([int(idx) for idx in data["pixels"].split()], dtype=torch.uint8).reshape(48, 48)
         label_id = data.get("emotion")
-        label_idx = int(label_id) if label_id is not None else None
 
         return dict(
-            image=image,
-            label=Label(label_idx, category=self.info.categories[label_idx]) if label_idx is not None else None,
+            image=Image([int(idx) for idx in data["pixels"].split()], dtype=torch.uint8).reshape(48, 48),
+            label=Label(int(label_id), categories=self.categories) if label_id is not None else None,
         )
 
     def _make_datapipe(

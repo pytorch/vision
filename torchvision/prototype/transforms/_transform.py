@@ -1,9 +1,13 @@
-import collections.abc
-from typing import Any, cast, Dict, Mapping, Optional, Type, TypeVar
+import functools
+from typing import Any, cast, Dict, Mapping, Optional, Type, TypeVar, Set
 
+import torch
 from torch import nn
 from torchvision.prototype import features
 from torchvision.prototype.utils._internal import FrozenMapping
+from torchvision.prototype.utils._internal import apply_recursively
+
+from .functional.utils import Dispatcher
 
 DEFAULT = object()
 
@@ -25,34 +29,74 @@ class FeatureSpecificArguments(FrozenMapping[Type[features.Feature], D]):
 
 
 class Transform(nn.Module):
+    _DISPATCHER: Optional[Dispatcher] = None
+    _NATIVE_FEATURE_TYPES = {
+        features.Image,
+        features.BoundingBox,
+        features.EncodedImage,
+        features.Label,
+    }
+    _NO_OP_FEATURE_TYPES: Set[Type[features.Feature]] = set()
+
     def get_params(self, sample: Any) -> Dict[str, Any]:
         return dict()
 
-    def _dispatch(self, feature: T, **params: Any) -> T:
-        raise NotImplementedError
+    def supports(self, obj: Any) -> bool:
+        if not self._DISPATCHER:
+            raise NotImplementedError()
 
-    def _apply_recursively(self, sample: Any, *, params: Dict[str, Any]) -> Any:
-        # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
-        # "a" == "a"[0][0]...
-        if isinstance(sample, collections.abc.Sequence) and not isinstance(sample, str):
-            return [self._apply_recursively(item, params=params) for item in sample]
-        elif isinstance(sample, collections.abc.Mapping):
-            return {name: self._apply_recursively(item, params=params) for name, item in sample.items()}
-        else:
-            feature_type = type(sample)
-            if not (issubclass(feature_type, features.Feature) and feature_type is not features.Feature):
-                return sample
+        return self._DISPATCHER.supports(obj)
 
-            return self._dispatch(
-                cast(features.Feature, sample),
-                **{
-                    key: value.get(feature_type) if isinstance(value, FeatureSpecificArguments) else value
-                    for key, value in params.items()
-                },
-            )
+    def register_no_op_feature_type(self, feature_type: Type[features.Feature]) -> None:
+        self._NO_OP_FEATURE_TYPES.add(feature_type)
+
+    def _dispatch(self, feature: T, params: Dict[str, Any]) -> Any:
+        if not self._DISPATCHER:
+            raise NotImplementedError()
+
+        return self._DISPATCHER(feature, params)
+
+    def _transform(self, sample: Any, *, params: Dict[str, Any]) -> Any:
+        if not isinstance(sample, torch.Tensor):
+            return sample
+
+        feature_type = type(sample)
+        if not (issubclass(feature_type, features.Feature) and feature_type is not features.Feature):
+            return sample
+
+        if not self.supports(feature_type):
+            if feature_type not in (self._NATIVE_FEATURE_TYPES | self._NO_OP_FEATURE_TYPES):
+                # This prevents subtle bugs that would turn this transform into a no-op for foreign features
+                raise TypeError(
+                    f"{type(self).__name__} does not support feature inputs of type {feature_type.__name__}"
+                    f"If you want {type(self).__name__} to return inputs of this type unchanged, "
+                    f"invoke {type(self).__name__}().register_no_op_feature_type({feature_type.__name__}) "
+                    f"once before you start using it."
+                )
+
+            return sample
+
+        return self._dispatch(
+            cast(features.Feature, sample),
+            {
+                key: value.get(feature_type) if isinstance(value, FeatureSpecificArguments) else value
+                for key, value in params.items()
+            },
+        )
 
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        if params is None:
-            params = self._last_params = self.get_params(sample)
-        return self._apply_recursively(sample, params=params)
+        params = params or self.get_params(sample)
+        return apply_recursively(functools.partial(self._transform, params=params), sample)
+
+
+class ConstantParamTransform(Transform):
+    def __init__(self, **params: Any) -> None:
+        super().__init__()
+        self._params = params
+
+    def get_params(self, sample: Any) -> Dict[str, Any]:
+        return self._params
+
+    def extra_repr(self) -> str:
+        return ", ".join(f"{param}={value}" for param, value in sorted(self._params.items()))

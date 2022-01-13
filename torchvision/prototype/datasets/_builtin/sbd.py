@@ -17,7 +17,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -28,7 +27,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import Feature
+from torchvision.prototype.features import Feature, EncodedImage
 
 
 class SBD(Dataset):
@@ -86,7 +85,7 @@ class SBD(Dataset):
         return dict(
             self._decode_ann(ann_buffer),
             image_path=image_path,
-            image=RawImage.fromfile(image_buffer),
+            image=EncodedImage.from_file(image_buffer),
             ann_path=ann_path,
         )
 

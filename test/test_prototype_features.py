@@ -95,8 +95,8 @@ class TestCommon:
 
     @features
     def test_meta_data_attribute_access(self, feature):
-        for name, value in feature._meta_data.items():
-            assert getattr(feature, name) == feature._meta_data[name]
+        for name, value in feature._metadata.items():
+            assert getattr(feature, name) == feature._metadata[name]
 
     @feature_types
     def test_torch_function(self, feature_type):
@@ -114,7 +114,7 @@ class TestCommon:
 
         assert type(output) is feature_type
         assert_close(output, input)
-        assert output._meta_data == input._meta_data
+        assert output._metadata == input._meta_data
 
     @features
     def test_serialization(self, tmpdir, feature):
@@ -125,7 +125,7 @@ class TestCommon:
 
         assert isinstance(loaded_feature, type(feature))
         assert_close(loaded_feature, feature)
-        assert loaded_feature._meta_data == feature._meta_data
+        assert loaded_feature._metadata == feature._metadata
 
     @features
     def test_repr(self, feature):

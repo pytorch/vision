@@ -33,15 +33,13 @@ class SEMEION(Dataset):
         return [data]
 
     def _prepare_sample(self, data: Tuple[str, ...]) -> Dict[str, Any]:
-        image_data = torch.tensor([float(pixel) for pixel in data[:256]], dtype=torch.uint8).reshape(16, 16)
-        label_data = [int(label) for label in data[256:] if label]
+        image_data, label_data = data[:256], data[256:]
 
-        label_idx = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
         return dict(
-            image=Image(image_data.unsqueeze(0)),
+            image=Image(torch.tensor([float(pixel) for pixel in image_data], dtype=torch.uint8).reshape(16, 16)),
             label=Label(
-                label_idx,
-                category=self.info.categories[label_idx],
+                next((idx for idx, one_hot_label in enumerate(label_data) if int(one_hot_label))),
+                categories=self.categories,
             ),
         )
 

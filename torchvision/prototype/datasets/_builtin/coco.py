@@ -21,7 +21,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     MappingIterator,
@@ -32,7 +31,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import BoundingBox, Label, Feature
+from torchvision.prototype.features import BoundingBox, Label, Feature, EncodedImage
 from torchvision.prototype.utils._internal import FrozenMapping
 
 
@@ -94,7 +93,6 @@ class Coco(Dataset):
     def _decode_instances_anns(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
         image_size = (image_meta["height"], image_meta["width"])
         labels = [ann["category_id"] for ann in anns]
-        categories = [self.info.categories[label] for label in labels]
         return dict(
             # TODO: create a segmentation feature
             segmentations=Feature(
@@ -112,9 +110,10 @@ class Coco(Dataset):
                 format="xywh",
                 image_size=image_size,
             ),
-            labels=Label(labels),
-            categories=categories,
-            super_categories=[self.info.extra.category_to_super_category[category] for category in categories],
+            labels=Label(labels, categories=self.categories),
+            super_categories=[
+                self.info.extra.category_to_super_category[self.info.categories[label]] for label in labels
+            ],
             ann_ids=[ann["id"] for ann in anns],
         )
 
@@ -152,7 +151,7 @@ class Coco(Dataset):
         path, buffer = data
         return dict(
             path=path,
-            image=RawImage.fromfile(buffer),
+            image=EncodedImage.from_file(buffer),
         )
 
     def _prepare_sample(

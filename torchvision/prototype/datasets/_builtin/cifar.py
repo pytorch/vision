@@ -55,7 +55,7 @@ class _CifarBase(Dataset):
         image_array, category_idx = data
         return dict(
             image=Image(image_array),
-            label=Label(category_idx, category=self.categories[category_idx]),
+            label=Label(category_idx, categories=self.categories),
         )
 
     def _make_datapipe(

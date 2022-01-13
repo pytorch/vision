@@ -1,7 +1,6 @@
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple, BinaryIO
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, JsonParser, UnBatcher
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -9,7 +8,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -19,7 +17,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     getitem,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 
 
 class CLEVR(Dataset):
@@ -53,18 +51,13 @@ class CLEVR(Dataset):
     def _add_empty_anns(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[str, BinaryIO], None]:
         return data, None
 
-    def _prepare_sample(
-        self,
-        data: Tuple[Tuple[str, BinaryIO], Optional[Dict[str, Any]]],
-        *,
-        decoder: Optional[Callable[[BinaryIO], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Optional[Dict[str, Any]]]) -> Dict[str, Any]:
         image_data, scenes_data = data
         path, buffer = image_data
 
         return dict(
             path=path,
-            image=RawImage.fromfile(buffer),
+            image=EncodedImage.from_file(buffer),
             label=Label(len(scenes_data["objects"])) if scenes_data else None,
         )
 

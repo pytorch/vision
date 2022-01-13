@@ -8,7 +8,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -18,7 +17,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     path_comparator,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 
 
 class OxfordIITPet(Dataset):
@@ -57,13 +56,6 @@ class OxfordIITPet(Dataset):
     def _filter_segmentations(self, data: Tuple[str, Any]) -> bool:
         return not pathlib.Path(data[0]).name.startswith(".")
 
-    def _decode_classification_data(self, data: Dict[str, str]) -> Dict[str, Any]:
-        label_idx = int(data["label"]) - 1
-        return dict(
-            label=Label(label_idx, category=self.info.categories[label_idx]),
-            species="cat" if data["species"] == "1" else "dog",
-        )
-
     def _prepare_sample(
         self, data: Tuple[Tuple[Dict[str, str], Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]
     ) -> Dict[str, Any]:
@@ -73,11 +65,12 @@ class OxfordIITPet(Dataset):
         image_path, image_buffer = image_data
 
         return dict(
-            self._decode_classification_data(classification_data),
+            label=Label(int(classification_data["label"]) - 1, categories=self.categories),
+            species="cat" if classification_data["species"] == "1" else "dog",
             segmentation_path=segmentation_path,
-            segmentation=RawImage.fromfile(segmentation_buffer),
+            segmentation=EncodedImage.from_file(segmentation_buffer),
             image_path=image_path,
-            image=RawImage.fromfile(image_buffer),
+            image=EncodedImage.from_file(image_buffer),
         )
 
     def _make_datapipe(

@@ -5,9 +5,8 @@ import pathlib
 from typing import BinaryIO, Optional, Collection, Union, Tuple, List, Dict, Any
 
 from torchdata.datapipes.iter import IterDataPipe, FileLister, Mapper, Filter, FileOpener
-from torchvision.prototype.datasets.utils import RawData, RawImage
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage, EncodedData
 
 
 __all__ = ["from_data_folder", "from_image_folder"]
@@ -28,7 +27,7 @@ def _prepare_sample(
     category = pathlib.Path(path).relative_to(root).parts[0]
     return dict(
         path=path,
-        data=RawData.fromfile(buffer),
+        data=EncodedData.from_file(buffer),
         label=Label(categories.index(category), category=category),
     )
 
@@ -51,7 +50,7 @@ def from_data_folder(
 
 
 def _data_to_image_key(sample: Dict[str, Any]) -> Dict[str, Any]:
-    sample["image"] = RawImage(sample.pop("data").data)
+    sample["image"] = EncodedImage(sample.pop("data").data)
     return sample
 
 

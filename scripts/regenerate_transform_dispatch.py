@@ -4,14 +4,15 @@ import functools
 import importlib
 import inspect
 import pathlib
+import typing
 import warnings
 from copy import copy
-from inspect import Parameter
 from textwrap import dedent
 from textwrap import indent as _indent
 from typing import Any
 
 import torchvision.prototype.transforms.functional as F
+from torchvision import transforms
 from torchvision.prototype import features
 from torchvision.prototype.utils._internal import camel_to_snake_case
 
@@ -22,35 +23,17 @@ except ModuleNotFoundError:
 
 HERE = pathlib.Path(__file__).parent
 
-try:
-    import ufmt
-
-    with open(HERE.parent / ".pre-commit-config.yaml") as file:
-        repo = next(
-            repo for repo in yaml.load(file, yaml.Loader)["repos"] for hook in repo["hooks"] if hook["id"] == "ufmt"
-        )
-
-    expected_versions = {ufmt: repo["rev"].replace("v", "")}
-    for dependency in repo["hooks"][0]["additional_dependencies"]:
-        name, version = [item.strip() for item in dependency.split("==")]
-        expected_versions[importlib.import_module(name)] = version
-
-    for module, expected_version in expected_versions.items():
-        if module.__version__ != expected_version:
-            warnings.warn("foo")
-except ModuleNotFoundError:
-    ufmt = None
-
-
 for module, name in [
     (features, "BoundingBoxFormat"),
+    (transforms, "InterpolationMode"),
 ]:
-    getattr(module, name).__module__ = ".".join(module.__package__.split(".")[2:])
+    getattr(module, name).__module__ = module.__package__.rsplit(".", 1)[1]
 
 ENUMS_MAP = {
     enum.__name__: enum
     for enum in [
         features.BoundingBoxFormat,
+        transforms.InterpolationMode,
     ]
 }
 
@@ -84,9 +67,12 @@ def main(config_path=FUNCTIONAL_ROOT / "dispatch.yaml", dispatch_path=FUNCTIONAL
     functions = []
 
     for dispatcher_name, feature_type_configs in dispatch_config.items():
-        feature_type_configs = validate_feature_type_configs(feature_type_configs)
-        kernel_params, implementer_params = make_kernel_and_implementer_params(feature_type_configs)
-        dispatcher_params = make_dispatcher_params(implementer_params)
+        try:
+            feature_type_configs = validate_feature_type_configs(feature_type_configs)
+            kernel_params, implementer_params = make_kernel_and_implementer_params(feature_type_configs)
+            dispatcher_params = make_dispatcher_params(implementer_params)
+        except Exception as error:
+            raise type(error)(f"{error}\nThe error happened while working on dispatcher '{dispatcher_name}'") from error
 
         functions.append(DispatcherFunction(name=dispatcher_name, params=dispatcher_params))
         functions.extend(
@@ -106,14 +92,22 @@ def main(config_path=FUNCTIONAL_ROOT / "dispatch.yaml", dispatch_path=FUNCTIONAL
             ]
         )
 
+    # make_file_content(functions)
     with open(dispatch_path, "w") as file:
         file.write(ufmt_format(make_file_content(functions)))
 
 
 def validate_feature_type_configs(feature_type_configs):
+    def get_feature_type(name):
+        try:
+            return getattr(features, name)
+        except AttributeError as error:
+            # unknown feature type
+            raise TypeError() from error
+
     try:
         feature_type_configs = {
-            getattr(features, feature_type_name): config for feature_type_name, config in feature_type_configs.items()
+            get_feature_type(feature_type_name): config for feature_type_name, config in feature_type_configs.items()
         }
     except AttributeError as error:
         # unknown feature type
@@ -163,6 +157,7 @@ def validate_feature_type_configs(feature_type_configs):
             with contextlib.suppress(KeyError):
                 config["meta_conversion"][meta_attr] = ENUMS_MAP[enum][member]
 
+        # TODO: remove
         try:
             config["output_type"] = getattr(features, config.get("output_type", feature_type.__name__))
         except AttributeError as error:
@@ -177,7 +172,9 @@ def make_kernel_and_implementer_params(feature_type_configs):
     kernel_params = {}
     implementer_params = {}
     for feature_type, config in feature_type_configs.items():
-        kernel_params[feature_type] = list(inspect.signature(config["kernel"]).parameters.values())[1:]
+        kernel_params[feature_type] = [
+            Parameter.from_regular(param) for param in list(inspect.signature(config["kernel"]).parameters.values())[1:]
+        ]
         implementer_params[feature_type] = [
             Parameter(
                 name=config["kwargs_overwrite"].get(kernel_param.name, kernel_param.name),
@@ -216,7 +213,10 @@ def make_dispatcher_params(implementer_params):
 
         annotations = {param.annotation for param in dispatcher_param_candidates}
         if len(annotations) > 1:
-            raise TypeError
+            raise TypeError(
+                f"Found multiple annotations for parameter `{name}`: "
+                f"{', '.join([str(annotation) for annotation in annotations])}"
+            )
 
         dispatcher_params.append(
             Parameter(
@@ -238,9 +238,10 @@ def make_file_content(functions):
         f"""
         # THIS FILE IS auto-generated!!
 
-        from typing import Any, Tuple, TypeVar
+        from typing import Any, TypeVar, List, Optional
 
         import torch
+        from torchvision import transforms
         from torchvision.prototype import features
 
         from .. import functional as F
@@ -275,6 +276,41 @@ def make_file_content(functions):
         )
         + "\n"
     )
+
+
+class Parameter(inspect.Parameter):
+    @classmethod
+    def from_regular(cls, param):
+        return cls(param.name, param.kind, default=param.default, annotation=param.annotation)
+
+    def __str__(self):
+        @contextlib.contextmanager
+        def tmp_override(**tmp_values):
+            values = {name: getattr(self, name) for name in tmp_values}
+            for name, tmp_value in tmp_values.items():
+                setattr(self, f"_{name}", tmp_value)
+            try:
+                yield
+            finally:
+                for name, value in values.items():
+                    setattr(self, f"_{name}", value)
+
+        tmp_values = dict()
+
+        if isinstance(self.default, enum.Enum):
+            tmp_values["default"] = ManualAnnotation(format_value(self.default))
+
+        if (
+            hasattr(self.annotation, "__origin__")
+            and self.annotation.__origin__ is typing.Union
+            and type(None) in self.annotation.__args__
+        ):
+            tmp_values["annotation"] = ManualAnnotation(
+                f"Optional[{', '.join(inspect.formatannotation(arg) for arg in self.annotation.__args__ if arg is not type(None))}]"
+            )
+
+        with tmp_override(**tmp_values):
+            return super().__str__()
 
 
 class Signature(inspect.Signature):
@@ -323,7 +359,7 @@ class DispatcherFunction(Function):
             return_annotation=GENERIC_FEATURE_TYPE,
         )
         super().__init__(
-            decorator="F.utils.dispatches",
+            decorator="F.utils.Dispatcher",
             name=name,
             signature=signature,
             docstring="ADDME",
@@ -391,7 +427,7 @@ class ImplementerFunction(Function):
         body.append(f"return {feature_type_wrapper}")
 
         super().__init__(
-            decorator=f"F.utils.implements({dispatcher_name}, {feature_type_usage})",
+            decorator=f"{dispatcher_name}.implements({feature_type_usage})",
             name=f"_{dispatcher_name}_{camel_to_snake_case(feature_type.__name__)}",
             signature=Signature(
                 parameters=[
@@ -423,20 +459,42 @@ class ImplementerFunction(Function):
         return f"F.{kernel.__name__}({', '.join(call_args)})"
 
     def _make_feature_type_wrapper(self, *, feature_type_usage, output_type_usage, meta_overwrite):
-        wrapper = f"{output_type_usage}(output"
-        if output_type_usage == feature_type_usage:
-            wrapper += ", like=input"
-        meta_overwrite_call_args = ", ".join(
+        retain_type = output_type_usage == feature_type_usage
+
+        call_args = []
+        if retain_type:
+            method = ".new_like("
+            call_args.append("input")
+        else:
+            method = "("
+
+        call_args.append("output")
+        call_args.extend(
             f"{meta_name}={dispatcher_param_name}" for meta_name, dispatcher_param_name in meta_overwrite.items()
         )
-        if meta_overwrite_call_args:
-            wrapper += f", {meta_overwrite_call_args}"
-        return f"{wrapper})"
+
+        return f"{output_type_usage}{method}{', '.join(call_args)})"
 
 
 def ufmt_format(content):
-    if ufmt is None:
+    try:
+        import ufmt
+    except ModuleNotFoundError:
         return content
+
+    with open(HERE.parent / ".pre-commit-config.yaml") as file:
+        repo = next(
+            repo for repo in yaml.load(file, yaml.Loader)["repos"] for hook in repo["hooks"] if hook["id"] == "ufmt"
+        )
+
+    expected_versions = {ufmt: repo["rev"].replace("v", "")}
+    for dependency in repo["hooks"][0]["additional_dependencies"]:
+        name, version = [item.strip() for item in dependency.split("==")]
+        expected_versions[importlib.import_module(name)] = version
+
+    for module, expected_version in expected_versions.items():
+        if module.__version__ != expected_version:
+            warnings.warn("foo")
 
     from ufmt.core import make_black_config
     from usort.config import Config as UsortConfig

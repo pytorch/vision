@@ -9,7 +9,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     OnlineResource,
     ManualDownloadResource,
-    RawImage,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -21,7 +20,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 from torchvision.prototype.utils._internal import FrozenMapping
 
 
@@ -84,12 +83,11 @@ class ImageNet(Dataset):
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _prepare_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str, str], Tuple[str, BinaryIO]]:
+    def _prepare_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
-        wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("wnid")  # type: ignore[union-attr]
-        category = self.wnid_to_category[wnid]
-        label_data = (Label(self.categories.index(category)), category, wnid)
-        return label_data, data
+        wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name)["wnid"]  # type: ignore[union-attr]
+        label = Label.from_category(self.wnid_to_category[wnid], categories=self.categories)
+        return (label, wnid), data
 
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
@@ -99,29 +97,27 @@ class ImageNet(Dataset):
 
     def _prepare_val_data(
         self, data: Tuple[Tuple[int, int], Tuple[str, BinaryIO]]
-    ) -> Tuple[Tuple[Label, str, str], Tuple[str, BinaryIO]]:
+    ) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
         label_data, image_data = data
-        _, label = label_data
-        category = self.categories[label]
-        wnid = self.category_to_wnid[category]
-        return (Label(label), category, wnid), image_data
+        _, label_idx = label_data
+        label = Label(label_idx, categories=self.categories)
+        wnid = self.category_to_wnid[label.to_categories()]
+        return (label, wnid), image_data
 
     def _prepare_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
         return None, data
 
     def _prepare_sample(
         self,
-        data: Tuple[Optional[Tuple[Label, str, str]], Tuple[str, BinaryIO]],
+        data: Tuple[Optional[Tuple[Label, str]], Tuple[str, BinaryIO]],
     ) -> Dict[str, Any]:
         label_data, (path, buffer) = data
 
-        sample = dict(
+        return dict(
+            dict(zip(("label", "wnid"), label_data if label_data else (None, None))),
             path=path,
-            image=RawImage.fromfile(buffer),
+            image=EncodedImage.from_file(buffer),
         )
-        if label_data:
-            sample.update(dict(zip(("label", "category", "wnid"), label_data)))
-        return sample
 
     def _make_datapipe(
         self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
