@@ -346,21 +346,21 @@ class FCOS(nn.Module):
 
     def __init__(
         self,
-        backbone,
-        num_classes,
+        backbone: nn.Module,
+        num_classes: int,
         # transform parameters
-        min_size=800,
-        max_size=1333,
-        image_mean=None,
-        image_std=None,
+        min_size: int = 800,
+        max_size: int = 1333,
+        image_mean: Optional[List[float]] = None,
+        image_std: Optional[List[float]] = None,
         # Anchor parameters
-        anchor_generator=None,
-        head=None,
-        center_sampling_radius=1.5,
-        score_thresh=0.2,
-        nms_thresh=0.6,
-        detections_per_img=100,
-        topk_candidates=1000,
+        anchor_generator: Optional[AnchorGenerator] = None,
+        head: Optional[nn.Module] = None,
+        center_sampling_radius: float = 1.5,
+        score_thresh: float = 0.2,
+        nms_thresh: float = 0.6,
+        detections_per_img: int = 100,
+        topk_candidates: int = 1000,
     ):
         super().__init__()
         _log_api_usage_once(self)
