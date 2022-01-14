@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Any, Callable, List, Optional, Sequence
+from typing import Any, Callable, Dict, List, Optional, Sequence
 
 import torch
 from torch import nn, Tensor
@@ -17,7 +17,7 @@ __all__ = [
 ]
 
 
-model_urls = {}
+model_urls: Dict[str, Optional[str]] = {}
 
 
 class LayerNorm(nn.LayerNorm):
