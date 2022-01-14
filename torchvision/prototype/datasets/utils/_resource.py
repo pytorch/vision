@@ -3,7 +3,7 @@ import hashlib
 import itertools
 import pathlib
 import warnings
-from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn, cast
+from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
@@ -145,11 +145,10 @@ class HttpResource(OnlineResource):
         self.mirrors = mirrors
         self._resolved = False
 
-    @property
-    def resolved(self) -> bool:
-        return self._resolved
+    def resolve(self) -> OnlineResource:
+        if self._resolved:
+            return self
 
-    def resolve(self) -> Optional[OnlineResource]:
         redirect_url = _get_redirect_url(self.url)
         if redirect_url == self.url:
             self._resolved = True
@@ -174,8 +173,8 @@ class HttpResource(OnlineResource):
         return http_resource
 
     def _download(self, root: pathlib.Path) -> None:
-        if not self.resolved:
-            return cast(OnlineResource, self.resolve())._download(root)
+        if not self._resolved:
+            return self.resolve()._download(root)
 
         for url in itertools.chain((self.url,), self.mirrors or ()):
             try:
