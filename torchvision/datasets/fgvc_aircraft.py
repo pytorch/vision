@@ -82,8 +82,7 @@ class FGVCAircraft(VisionDataset):
         self._labels = []
 
         with open(labels_file, "r") as f:
-            lines = [line.strip() for line in f]
-            for line in lines:
+            for line in f:
                 image_name, label_name = line.strip().split(" ", 1)
                 self._image_files.append(os.path.join(image_data_folder, f"{image_name}.jpg"))
                 self._labels.append(self.class_to_idx[label_name])
