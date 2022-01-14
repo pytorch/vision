@@ -4,6 +4,7 @@ from typing import Any, Callable, List, Optional, Sequence
 import torch
 from torch import nn, Tensor
 
+from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation
 from ..ops.stochastic_depth import StochasticDepth
 from ..utils import _log_api_usage_once
@@ -13,6 +14,9 @@ __all__ = [
     "ConvNeXt",
     "convnext_tiny",
 ]
+
+
+model_urls = {}
 
 
 class LayerNorm(nn.LayerNorm):
@@ -169,6 +173,13 @@ class ConvNeXt(nn.Module):
 
 
 def convnext_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
+    r"""ConvNeXt model architecture from the
+    `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
     block_setting = [
         CNBlockConfig(96, 192, 3),
         CNBlockConfig(192, 384, 3),
@@ -176,4 +187,10 @@ def convnext_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any
         CNBlockConfig(768, None, 3),
     ]
     model = ConvNeXt(block_setting, **kwargs)
+    if pretrained:
+        arch = "convnext_tiny"
+        if arch not in model_urls:
+            raise ValueError(f"No checkpoint is available for model type {arch}")
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        model.load_state_dict(state_dict)
     return model
