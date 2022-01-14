@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import os
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 import PIL.Image
 
@@ -82,7 +82,6 @@ class FGVCAircraft(VisionDataset):
         self._labels = []
 
         with open(labels_path, "r") as labels_file:
-            lines = [line.strip() for line in labels_file]
             for line in lines:
                 image_name, label_name = line.strip().split(" ", 1)
                 self._image_files.append(os.path.join(image_data_folder, f"{image_name}.jpg"))
