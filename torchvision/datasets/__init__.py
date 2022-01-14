@@ -10,6 +10,7 @@ from .dtd import DTD
 from .fakedata import FakeData
 from .fer2013 import FER2013
 from .flickr import Flickr8k, Flickr30k
+from .flowers102 import Flowers102
 from .folder import ImageFolder, DatasetFolder
 from .food101 import Food101
 from .gtsrb import GTSRB
@@ -61,6 +62,7 @@ __all__ = (
     "SBU",
     "Flickr8k",
     "Flickr30k",
+    "Flowers102",
     "VOCSegmentation",
     "VOCDetection",
     "Cityscapes",

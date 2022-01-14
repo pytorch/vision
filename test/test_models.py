@@ -1,6 +1,5 @@
 import contextlib
 import functools
-import io
 import operator
 import os
 import pkgutil
@@ -8,6 +7,7 @@ import sys
 import traceback
 import warnings
 from collections import OrderedDict
+from tempfile import TemporaryDirectory
 
 import pytest
 import torch
@@ -126,16 +126,16 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
 
         def get_export_import_copy(m):
             """Save and load a TorchScript model"""
-            buffer = io.BytesIO()
-            torch.jit.save(m, buffer)
-            buffer.seek(0)
-            imported = torch.jit.load(buffer)
+            with TemporaryDirectory() as dir:
+                path = os.path.join(dir, "script.pt")
+                m.save(path)
+                imported = torch.jit.load(path)
             return imported
 
         m_import = get_export_import_copy(m)
-        with freeze_rng_state():
+        with torch.no_grad(), freeze_rng_state():
             results = m(*args)
-        with freeze_rng_state():
+        with torch.no_grad(), freeze_rng_state():
             results_from_imported = m_import(*args)
         tol = 3e-4
         torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
@@ -156,10 +156,10 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
 
     sm = torch.jit.script(nn_module)
 
-    with freeze_rng_state():
+    with torch.no_grad(), freeze_rng_state():
         eager_out = nn_module(*args)
 
-    with freeze_rng_state():
+    with torch.no_grad(), freeze_rng_state():
         script_out = sm(*args)
         if unwrapper:
             script_out = unwrapper(script_out)
