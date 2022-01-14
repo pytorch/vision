@@ -3,6 +3,7 @@ from typing import Any, Callable, List, Optional, Sequence
 
 import torch
 from torch import nn, Tensor
+from torch.nn import functional as F
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation
@@ -27,7 +28,7 @@ class LayerNorm(nn.LayerNorm):
     def forward(self, x):
         if not self.channels_last:
             x = x.permute(0, 2, 3, 1)
-        x = super().forward(x)
+        x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
         if not self.channels_last:
             x = x.permute(0, 3, 1, 2)
         return x
