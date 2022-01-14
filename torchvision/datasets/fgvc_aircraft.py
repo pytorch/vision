@@ -80,7 +80,7 @@ class FGVCAircraft(VisionDataset):
         self._labels = []
 
         image_data_folder = os.path.join(self._data_path, "data", "images")
-        labels_path = os.path.join(self._data_path, "data", f"images_{annotation_level}_{self._split}.txt")
+        labels_path = os.path.join(self._data_path, "data", f"images_{self._annotation_level}_{self._split}.txt")
 
         with open(labels_path, "r") as labels_file:
             lines = [line.strip() for line in labels_file]
