@@ -8,27 +8,19 @@ import PIL.Image
 from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
-annotation_level_to_file = {
-    "variant": "variants.txt",
-    "family": "families.txt",
-    "manufacturer": "manufacturers.txt",
-}
-
 
 class FGVCAircraft(VisionDataset):
     """`FGVC Aircraft <https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/>`_ Dataset.
 
     The dataset contains 10,200 images of aircraft, with 100 images for each of 102
     different aircraft model variants, most of which are airplanes.
-    Aircraft models are organized in a four-levels hierarchy. The four levels, from
+    Aircraft models are organized in a three-levels hierarchy. The three levels, from
     finer to coarser, are:
 
-    - Model, e.g. Boeing 737-76J. Since certain models are nearly visually indistinguishable,
-        this level is not used in the evaluation.
-    - Variant, e.g. Boeing 737-700. A variant collapses all the models that are visually
+    - ``variant``, e.g. Boeing 737-700. A variant collapses all the models that are visually
         indistinguishable into one class. The dataset comprises 102 different variants.
-    - Family, e.g. Boeing 737. The dataset comprises 70 different families.
-    - Manufacturer, e.g. Boeing. The dataset comprises 41 different manufacturers.
+    - ``family``, e.g. Boeing 737. The dataset comprises 70 different families.
+    - ``manufacturer``, e.g. Boeing. The dataset comprises 41 different manufacturers.
 
     Args:
         root (string): Root directory of the FGVC Aircraft dataset.
@@ -45,8 +37,7 @@ class FGVCAircraft(VisionDataset):
             target and transforms it.
     """
 
-    _URL = "https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/archives/"
-    _URL_FILE = "fgvc-aircraft-2013b.tar.gz"
+    _URL = "https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/archives/fgvc-aircraft-2013b.tar.gz"
 
     def __init__(
         self,
@@ -70,17 +61,25 @@ class FGVCAircraft(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self.classes = self._get_classes(self._data_path)
+        annotation_file = os.path.join(
+            self._data_path,
+            "data",
+            {
+                "variant": "variants.txt",
+                "family": "families.txt",
+                "manufacturer": "manufacturers.txt",
+            }[self._annotation_level],
+        )
+        with open(annotation_file, "r") as f:
+            self.classes = [line.strip() for line in f]
 
-        # Parse the downloaded files
-        self._image_folder = os.path.join(self.root, self._split)
         self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
-
-        self._image_files = []
-        self._labels = []
 
         image_data_folder = os.path.join(self._data_path, "data", "images")
         labels_path = os.path.join(self._data_path, "data", f"images_{self._annotation_level}_{self._split}.txt")
+
+        self._image_files = []
+        self._labels = []
 
         with open(labels_path, "r") as labels_file:
             lines = [line.strip() for line in labels_file]
@@ -104,18 +103,13 @@ class FGVCAircraft(VisionDataset):
 
         return image, label
 
-    def _download(self):
+    def _download(self) -> None:
         """
         Download the FGVC Aircraft dataset archive and extract it under root.
         """
         if self._check_exists():
             return
-        download_and_extract_archive(self._URL + self._URL_FILE, self.root)
+        download_and_extract_archive(self._URL, self.root)
 
     def _check_exists(self) -> bool:
         return os.path.exists(self._data_path) and os.path.isdir(self._data_path)
-
-    def _get_classes(self, input_path: str) -> List[str]:
-        annotation_file = os.path.join(input_path, "data", annotation_level_to_file[self._annotation_level])
-        with open(annotation_file, "r") as f:
-            return [line.strip() for line in f]

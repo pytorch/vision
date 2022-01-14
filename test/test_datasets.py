@@ -2224,9 +2224,8 @@ class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
         root_folder = pathlib.Path(tmpdir) / "fgvc-aircraft-2013b"
         data_folder = root_folder / "data"
 
-        num_images_per_class = 5
         classes = ["707-320", "Hawk T1", "Tornado"]
-        num_samples_per_class = 4 if split == "trainval" else 2
+        num_images_per_class = 5
 
         datasets_utils.create_image_folder(
             data_folder,
@@ -2235,6 +2234,11 @@ class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
             num_examples=num_images_per_class * len(classes),
         )
 
+        annotation_file = data_folder / annotation_level_to_file[annotation_level]
+        with open(annotation_file, "w") as file:
+            file.write("\n".join(classes))
+
+        num_samples_per_class = 4 if split == "trainval" else 2
         images_classes = []
         for i in range(len(classes)):
             images_classes.extend(
@@ -2246,12 +2250,7 @@ class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
                 ]
             )
 
-        annotation_file = root_folder / "data" / annotation_level_to_file[annotation_level]
-        images_annotation_file = root_folder / "data" / f"images_{annotation_level}_{split}.txt"
-
-        with open(annotation_file, "w") as file:
-            file.write("\n".join(classes))
-
+        images_annotation_file = data_folder / f"images_{annotation_level}_{split}.txt"
         with open(images_annotation_file, "w") as file:
             file.write("\n".join(images_classes))
 
