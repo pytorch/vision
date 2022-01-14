@@ -27,6 +27,7 @@ from torchvision.models.regnet import (
     regnet_y_8gf,
     regnet_y_16gf,
     regnet_y_32gf,
+    regnet_y_128gf,
     regnet_x_400mf,
     regnet_x_800mf,
     regnet_x_1_6gf,

@@ -2490,5 +2490,41 @@ class Country211TestCase(datasets_utils.ImageDatasetTestCase):
         return num_examples * len(classes)
 
 
+class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.Flowers102
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
+    REQUIRED_PACKAGES = ("scipy",)
+
+    def inject_fake_data(self, tmpdir: str, config):
+        base_folder = pathlib.Path(tmpdir) / "flowers-102"
+
+        num_classes = 3
+        num_images_per_split = dict(train=5, val=4, test=3)
+        num_images_total = sum(num_images_per_split.values())
+        datasets_utils.create_image_folder(
+            base_folder,
+            "jpg",
+            file_name_fn=lambda idx: f"image_{idx + 1:05d}.jpg",
+            num_examples=num_images_total,
+        )
+
+        label_dict = dict(
+            labels=np.random.randint(1, num_classes + 1, size=(1, num_images_total), dtype=np.uint8),
+        )
+        datasets_utils.lazy_importer.scipy.io.savemat(str(base_folder / "imagelabels.mat"), label_dict)
+
+        setid_mat = np.arange(1, num_images_total + 1, dtype=np.uint16)
+        np.random.shuffle(setid_mat)
+        setid_dict = dict(
+            trnid=setid_mat[: num_images_per_split["train"]].reshape(1, -1),
+            valid=setid_mat[num_images_per_split["train"] : -num_images_per_split["test"]].reshape(1, -1),
+            tstid=setid_mat[-num_images_per_split["test"] :].reshape(1, -1),
+        )
+        datasets_utils.lazy_importer.scipy.io.savemat(str(base_folder / "setid.mat"), setid_dict)
+
+        return num_images_per_split[config["split"]]
+
+
 if __name__ == "__main__":
     unittest.main()
