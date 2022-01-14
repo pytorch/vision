@@ -38,6 +38,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     Cityscapes
     CocoCaptions
     CocoDetection
+    Country211
     DTD
     EMNIST
     FakeData
@@ -45,6 +46,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     FER2013
     Flickr8k
     Flickr30k
+    Flowers102
     FlyingChairs
     FlyingThings3D
     Food101
