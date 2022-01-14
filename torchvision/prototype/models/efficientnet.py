@@ -63,6 +63,9 @@ def _efficientnet(
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "EfficientNet",
+    "publication_year": 2019,
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BICUBIC,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
@@ -75,6 +78,7 @@ class EfficientNet_B0_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_COMMON_META,
+            "num_params": 5288548,
             "size": (224, 224),
             "acc@1": 77.692,
             "acc@5": 93.532,
@@ -89,6 +93,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_COMMON_META,
+            "num_params": 7794184,
             "size": (240, 240),
             "acc@1": 78.642,
             "acc@5": 94.186,
@@ -99,6 +104,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=240, resize_size=255, interpolation=InterpolationMode.BILINEAR),
         meta={
             **_COMMON_META,
+            "num_params": 7794184,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning",
             "interpolation": InterpolationMode.BILINEAR,
             "size": (240, 240),
@@ -115,6 +121,7 @@ class EfficientNet_B2_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_COMMON_META,
+            "num_params": 9109994,
             "size": (288, 288),
             "acc@1": 80.608,
             "acc@5": 95.310,
@@ -129,6 +136,7 @@ class EfficientNet_B3_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_COMMON_META,
+            "num_params": 12233232,
             "size": (300, 300),
             "acc@1": 82.008,
             "acc@5": 96.054,
@@ -143,6 +151,7 @@ class EfficientNet_B4_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_COMMON_META,
+            "num_params": 19341616,
             "size": (380, 380),
             "acc@1": 83.384,
             "acc@5": 96.594,
@@ -157,6 +166,7 @@ class EfficientNet_B5_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_COMMON_META,
+            "num_params": 30389784,
             "size": (456, 456),
             "acc@1": 83.444,
             "acc@5": 96.628,
@@ -171,6 +181,7 @@ class EfficientNet_B6_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_COMMON_META,
+            "num_params": 43040704,
             "size": (528, 528),
             "acc@1": 84.008,
             "acc@5": 96.916,
@@ -185,6 +196,7 @@ class EfficientNet_B7_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC),
         meta={
             **_COMMON_META,
+            "num_params": 66347960,
             "size": (600, 600),
             "acc@1": 84.122,
             "acc@5": 96.908,

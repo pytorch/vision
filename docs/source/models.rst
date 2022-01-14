@@ -40,6 +40,7 @@ architectures for image classification:
 -  `MNASNet`_
 -  `EfficientNet`_
 -  `RegNet`_
+-  `VisionTransformer`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -75,6 +76,7 @@ You can construct a model with random weights by calling its constructor:
     regnet_y_8gf = models.regnet_y_8gf()
     regnet_y_16gf = models.regnet_y_16gf()
     regnet_y_32gf = models.regnet_y_32gf()
+    regnet_y_128gf = models.regnet_y_128gf()
     regnet_x_400mf = models.regnet_x_400mf()
     regnet_x_800mf = models.regnet_x_800mf()
     regnet_x_1_6gf = models.regnet_x_1_6gf()
@@ -82,6 +84,10 @@ You can construct a model with random weights by calling its constructor:
     regnet_x_8gf = models.regnet_x_8gf()
     regnet_x_16gf = models.regnet_x_16gf()
     regnet_x_32gf = models.regnet_x_32gf()
+    vit_b_16 = models.vit_b_16()
+    vit_b_32 = models.vit_b_32()
+    vit_l_16 = models.vit_l_16()
+    vit_l_32 = models.vit_l_32()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -125,6 +131,10 @@ These can be constructed by passing ``pretrained=True``:
     regnet_x_8gf = models.regnet_x_8gf(pretrained=True)
     regnet_x_16gf = models.regnet_x_16gf(pretrainedTrue)
     regnet_x_32gf = models.regnet_x_32gf(pretrained=True)
+    vit_b_16 = models.vit_b_16(pretrained=True)
+    vit_b_32 = models.vit_b_32(pretrained=True)
+    vit_l_16 = models.vit_l_16(pretrained=True)
+    vit_l_32 = models.vit_l_32(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_HOME` environment variable. See
@@ -233,6 +243,10 @@ regnet_y_3_2gf                    78.948          94.576
 regnet_y_8gf                      80.032          95.048
 regnet_y_16gf                     80.424          95.240
 regnet_y_32gf                     80.878          95.340
+vit_b_16                          81.072          95.318
+vit_b_32                          75.912          92.466
+vit_l_16                          79.662          94.638
+vit_l_32                          76.972          93.070
 ================================  =============   =============
 
 
@@ -250,6 +264,7 @@ regnet_y_32gf                     80.878          95.340
 .. _MNASNet: https://arxiv.org/abs/1807.11626
 .. _EfficientNet: https://arxiv.org/abs/1905.11946
 .. _RegNet: https://arxiv.org/abs/2003.13678
+.. _VisionTransformer: https://arxiv.org/abs/2010.11929
 
 .. currentmodule:: torchvision.models
 
@@ -425,6 +440,7 @@ RegNet
     regnet_y_8gf
     regnet_y_16gf
     regnet_y_32gf
+    regnet_y_128gf
     regnet_x_400mf
     regnet_x_800mf
     regnet_x_1_6gf
@@ -432,6 +448,18 @@ RegNet
     regnet_x_8gf
     regnet_x_16gf
     regnet_x_32gf
+
+VisionTransformer
+-----------------
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    vit_b_16
+    vit_b_32
+    vit_l_16
+    vit_l_32
 
 Quantized Models
 ----------------
