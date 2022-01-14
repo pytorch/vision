@@ -2208,48 +2208,54 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
 
 class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.FGVCAircraft
-    FEATURE_TYPES = (PIL.Image.Image, int)
-
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "trainval", "test"))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "val", "trainval", "test"), annotation_level=("variant", "family", "manufacturer")
+    )
 
     def inject_fake_data(self, tmpdir: str, config):
         split = config["split"]
+        annotation_level = config["annotation_level"]
+        annotation_level_to_file = {
+            "variant": "variants.txt",
+            "family": "families.txt",
+            "manufacturer": "manufacturers.txt",
+        }
+
         root_folder = pathlib.Path(tmpdir) / "fgvc-aircraft-2013b"
         data_folder = root_folder / "data"
 
         num_images_per_class = 5
-        variants = ["707-320", "Hawk T1", "Tornado"]
+        classes = ["707-320", "Hawk T1", "Tornado"]
         num_samples_per_class = 4 if split == "trainval" else 2
 
         datasets_utils.create_image_folder(
             data_folder,
             "images",
             file_name_fn=lambda idx: f"{idx}.jpg",
-            num_examples=num_images_per_class * len(variants),
+            num_examples=num_images_per_class * len(classes),
         )
 
-        images_variants = []
-        for i in range(len(variants)):
-            variant = variants[i]
-            images_variants.extend(
+        images_classes = []
+        for i in range(len(classes)):
+            images_classes.extend(
                 [
-                    f"{idx} {variant}"
+                    f"{idx} {classes[i]}"
                     for idx in random.sample(
                         range(i * num_images_per_class, (i + 1) * num_images_per_class), num_samples_per_class
                     )
                 ]
             )
 
-        variants_file = root_folder / "data" / "variants.txt"
-        images_variant_file = root_folder / "data" / f"images_variant_{split}.txt"
+        annotation_file = root_folder / "data" / annotation_level_to_file[annotation_level]
+        images_annotation_file = root_folder / "data" / f"images_{annotation_level}_{split}.txt"
 
-        with open(variants_file, "w") as file:
-            file.write("\n".join(variants))
+        with open(annotation_file, "w") as file:
+            file.write("\n".join(classes))
 
-        with open(images_variant_file, "w") as file:
-            file.write("\n".join(images_variants))
+        with open(images_annotation_file, "w") as file:
+            file.write("\n".join(images_classes))
 
-        return len(variants * num_samples_per_class)
+        return len(classes * num_samples_per_class)
 
 
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
