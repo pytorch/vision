@@ -1016,9 +1016,13 @@ def elastic_transform(
         displacement = displacement.to(img.device)
     else:
         if alpha is None:
-            raise TypeError("elastic_transform() requires either positional arguments 'alpha' and 'sigma' or 'displacement'")
+            raise TypeError(
+                "elastic_transform() requires either positional arguments 'alpha' and 'sigma' or 'displacement'"
+            )
         if sigma is None:
-            raise TypeError("elastic_transform() requires either positional arguments 'alpha' and 'sigma' or 'displacement'")
+            raise TypeError(
+                "elastic_transform() requires either positional arguments 'alpha' and 'sigma' or 'displacement'"
+            )
         dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
         if sigma[0] > 0.0:
             dx = gaussian_blur(
