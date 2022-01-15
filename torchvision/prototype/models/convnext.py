@@ -25,7 +25,8 @@ def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: 
         CNBlockConfig(384, 768, 9),
         CNBlockConfig(768, None, 3),
     ]
-    model = ConvNeXt(block_setting, **kwargs)
+    stochastic_depth_prob = kwargs.pop("stochastic_depth_prob", 0.1)
+    model = ConvNeXt(block_setting, stochastic_depth_prob=stochastic_depth_prob, **kwargs)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))

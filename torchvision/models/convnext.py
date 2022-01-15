@@ -187,7 +187,8 @@ def convnext_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any
         CNBlockConfig(384, 768, 9),
         CNBlockConfig(768, None, 3),
     ]
-    model = ConvNeXt(block_setting, **kwargs)
+    stochastic_depth_prob = kwargs.pop("stochastic_depth_prob", 0.1)
+    model = ConvNeXt(block_setting, stochastic_depth_prob=stochastic_depth_prob, **kwargs)
     if pretrained:
         arch = "convnext_tiny"
         if arch not in model_urls:
