@@ -1465,8 +1465,8 @@ def equalize(img: Tensor) -> Tensor:
 
 def elastic_transform(
     img: Tensor,
-    alpha: List[float],
-    sigma: List[float],
+    alpha: Optional[List[float]] = None,
+    sigma: Optional[List[float]] = None,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[List[float]] = None,
     displacement: Optional[Tensor] = None,
@@ -1499,7 +1499,7 @@ def elastic_transform(
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
-        displacement (Tensor): The displacement field. If not given, it will be generated based on
+        displacement (Numpy array or Tensor): The displacement field. If not given, it will be generated based on
             alpha and sigma.
         random_state (int): If random_state is provided, it will be used as the random seed.
     """
@@ -1527,6 +1527,8 @@ def elastic_transform(
             raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
 
         t_img = to_tensor(img)
+    if not isinstance(displacement, torch.Tensor):
+        displacement = torch.from_numpy(displacement)
 
     output = F_t.elastic_transform(
         t_img,

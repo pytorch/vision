@@ -997,8 +997,8 @@ def equalize(img: Tensor) -> Tensor:
 
 def elastic_transform(
     img: Tensor,
-    alpha: List[float],
-    sigma: List[float],
+    alpha: Optional[List[float]] = None,
+    sigma: Optional[List[float]] = None,
     interpolation: str = "bilinear",
     fill: Optional[List[float]] = None,
     displacement: Optional[Tensor] = None,
@@ -1015,6 +1015,10 @@ def elastic_transform(
     if displacement is not None:
         displacement = displacement.to(img.device)
     else:
+        if alpha is None:
+            raise TypeError("elastic_transform() requires either positional arguments 'alpha' and 'sigma' or 'displacement'")
+        if sigma is None:
+            raise TypeError("elastic_transform() requires either positional arguments 'alpha' and 'sigma' or 'displacement'")
         dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
         if sigma[0] > 0.0:
             dx = gaussian_blur(
