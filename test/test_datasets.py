@@ -2206,6 +2206,57 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
         return len(sampled_classes * n_samples_per_class)
 
 
+class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FGVCAircraft
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "val", "trainval", "test"), annotation_level=("variant", "family", "manufacturer")
+    )
+
+    def inject_fake_data(self, tmpdir: str, config):
+        split = config["split"]
+        annotation_level = config["annotation_level"]
+        annotation_level_to_file = {
+            "variant": "variants.txt",
+            "family": "families.txt",
+            "manufacturer": "manufacturers.txt",
+        }
+
+        root_folder = pathlib.Path(tmpdir) / "fgvc-aircraft-2013b"
+        data_folder = root_folder / "data"
+
+        classes = ["707-320", "Hawk T1", "Tornado"]
+        num_images_per_class = 5
+
+        datasets_utils.create_image_folder(
+            data_folder,
+            "images",
+            file_name_fn=lambda idx: f"{idx}.jpg",
+            num_examples=num_images_per_class * len(classes),
+        )
+
+        annotation_file = data_folder / annotation_level_to_file[annotation_level]
+        with open(annotation_file, "w") as file:
+            file.write("\n".join(classes))
+
+        num_samples_per_class = 4 if split == "trainval" else 2
+        images_classes = []
+        for i in range(len(classes)):
+            images_classes.extend(
+                [
+                    f"{idx} {classes[i]}"
+                    for idx in random.sample(
+                        range(i * num_images_per_class, (i + 1) * num_images_per_class), num_samples_per_class
+                    )
+                ]
+            )
+
+        images_annotation_file = data_folder / f"images_{annotation_level}_{split}.txt"
+        with open(images_annotation_file, "w") as file:
+            file.write("\n".join(images_classes))
+
+        return len(classes * num_samples_per_class)
+
+
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SUN397
 

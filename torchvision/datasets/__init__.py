@@ -9,6 +9,7 @@ from .country211 import Country211
 from .dtd import DTD
 from .fakedata import FakeData
 from .fer2013 import FER2013
+from .fgvc_aircraft import FGVCAircraft
 from .flickr import Flickr8k, Flickr30k
 from .flowers102 import Flowers102
 from .folder import ImageFolder, DatasetFolder
@@ -95,4 +96,5 @@ __all__ = (
     "CLEVRClassification",
     "OxfordIIITPet",
     "Country211",
+    "FGVCAircraft",
 )
