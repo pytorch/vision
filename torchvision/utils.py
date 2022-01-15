@@ -393,16 +393,13 @@ def draw_keypoints(
 @torch.no_grad()
 def flow_to_image(
     flow: torch.Tensor,
-    *,
-    clip_flow: Optional[float] = None,
 ) -> torch.Tensor:
 
     """
     Converts the two-dimensional flow to an RGB Image.
 
     Args:
-        flow (Tensor): Flow of shape (2, H, W)
-        clip_flow (float, optional): Clip maximum of flow values. Defaults to None.
+        flow (Tensor): Flow of shape (2, H, W) and dtype torch.float.
 
     Returns:
         img (Tensor(3, H, W)): Image Tensor where each color corresponds to a given flow direction.
@@ -411,41 +408,30 @@ def flow_to_image(
     if flow.ndim != 3 or flow.size(0) != 2:
         raise ValueError(f"Input flow should have shape (2, H, W), got {flow.shape}.")
 
-    if clip_flow is not None:
-        flow = torch.clip(flow, 0, clip_flow)
-
-    u = flow[0, :, :]
-    v = flow[1, :, :]
-    rad = torch.sqrt(torch.square(u) + torch.square(v))
-    rad_max = torch.max(rad)
-    epslion = 1e-5
-    u = u / (rad_max + epslion)
-    v = v / (rad_max + epslion)
-    return _flow_to_colors(u, v)
+    max_norm = torch.sum(flow ** 2, dim=0).sqrt().max()
+    epsilon = torch.finfo((flow).dtype).eps
+    normalized_flow = flow / (max_norm + epsilon)
+    return _normalized_flow_to_colors(normalized_flow)
 
 
 @torch.no_grad()
-def _flow_to_colors(
-    u: torch.Tensor,
-    v: torch.Tensor,
-) -> torch.Tensor:
+def _normalized_flow_to_colors(normalized_flow: torch.Tensor) -> torch.Tensor:
 
     """
     Applies the flow color wheel to (possibly clipped) flow components u and v.
 
     Args:
-        u (torch.Tensor): Input horizontal flow of shape (H, W)
-        v (torch.Tensor): Input vertical flow of shape (H, W)
-
+        normalized_flow (torch.Tensor): Normalized flow tensor of shape (2, H, W)
     Returns:
-       img (Tensor(3, H, W)): Flow visualization image.
+       img (Tensor(3, H, W)): Flow visualization image of dtype uint8.
     """
 
+    u = normalized_flow[0, :, :]
+    v = normalized_flow[1, :, :]
     flow_image = torch.zeros((3, u.shape[0], u.shape[1]), dtype=torch.uint8)
     colorwheel = _make_colorwheel()  # shape [55x3]
     num_cols = colorwheel.shape[0]
     rad = torch.sqrt(torch.square(u) + torch.square(v))
-
     a = torch.atan2(-v, -u) / torch.pi
     fk = (a + 1) / 2 * (num_cols - 1)
     k0 = torch.floor(fk).to(torch.long)
