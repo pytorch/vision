@@ -134,7 +134,7 @@ class ConvNeXt(nn.Module):
             stage: List[nn.Module] = []
             for _ in range(cnf.num_layers):
                 # adjust stochastic depth probability based on the depth of the stage block
-                sd_prob = stochastic_depth_prob * float(stage_block_id) / total_stage_blocks
+                sd_prob = stochastic_depth_prob * stage_block_id / (total_stage_blocks - 1.0)
                 stage.append(block(cnf.input_channels, layer_scale, sd_prob, norm_layer))
                 stage_block_id += 1
             layers.append(nn.Sequential(*stage))
