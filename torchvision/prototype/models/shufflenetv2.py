@@ -41,6 +41,9 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ShuffleNetV2",
+    "publication_year": 2018,
     "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
@@ -54,6 +57,7 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 1366792,
             "acc@1": 69.362,
             "acc@5": 88.316,
         },
@@ -67,6 +71,7 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 2278604,
             "acc@1": 60.552,
             "acc@5": 81.746,
         },
