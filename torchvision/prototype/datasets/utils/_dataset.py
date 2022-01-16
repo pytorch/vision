@@ -21,6 +21,7 @@ from ._resource import OnlineResource
 class DatasetType(enum.Enum):
     RAW = enum.auto()
     IMAGE = enum.auto()
+    VIDEO = enum.auto()
 
 
 class DatasetConfig(FrozenBunch):

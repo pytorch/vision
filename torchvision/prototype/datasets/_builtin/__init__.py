@@ -10,4 +10,5 @@ from .mnist import MNIST, FashionMNIST, KMNIST, EMNIST, QMNIST
 from .oxford_iiit_pet import OxfordIITPet
 from .sbd import SBD
 from .semeion import SEMEION
+from .ucf101 import UCF101
 from .voc import VOC

@@ -51,9 +51,10 @@ def info(name: str) -> DatasetInfo:
 
 DEFAULT_DECODER = object()
 
-DEFAULT_DECODER_MAP: Dict[DatasetType, Callable[[io.IOBase], torch.Tensor]] = {
+DEFAULT_DECODER_MAP: Dict[DatasetType, Optional[Callable[[io.IOBase], torch.Tensor]]] = {
     DatasetType.RAW: raw,
     DatasetType.IMAGE: pil,
+    DatasetType.VIDEO: None,
 }
 
 

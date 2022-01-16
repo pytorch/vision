@@ -95,7 +95,11 @@ class OnlineResource(abc.ABC):
         # Instead of the raw file, there might also be files with fewer suffixes after decompression or directories
         # with no suffixes at all. Thus, we look for all paths that share the same name without suffixes as the raw
         # file.
-        path_candidates = {file for file in path.parent.glob(path.name.replace("".join(path.suffixes), "") + "*")}
+        stem = path.name.replace("".join(path.suffixes), "")
+        path_candidates = {file for file in path.parent.glob(stem + ".*")}
+        folder_candidate = path.parent / stem
+        if folder_candidate.exists() and folder_candidate.is_dir():
+            path_candidates.add(folder_candidate)
         # If we don't find anything, we try to download the raw file.
         if not path_candidates:
             path_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
@@ -103,6 +107,9 @@ class OnlineResource(abc.ABC):
         if path_candidates == {path}:
             if self._preprocess:
                 path = self._preprocess(path)
+        # If we only have one candidate, we use it.
+        elif len(path_candidates) == 1:
+            path = path_candidates.pop()
         # Otherwise we use the path with the fewest suffixes. This gives us the extracted > decompressed > raw priority
         # that we want.
         else:

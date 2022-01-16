@@ -286,9 +286,20 @@ def _extract_zip(from_path: str, to_path: str, compression: Optional[str]) -> No
         zip.extractall(to_path)
 
 
+def _extract_rar(from_path: str, to_path: str, compression: Optional[str]) -> None:
+    if compression is not None:
+        raise RuntimeError("Compressed rar archives are currently not supported")
+
+    import rarfile
+
+    with rarfile.RarFile(from_path) as rar:
+        rar.extractall(to_path)
+
+
 _ARCHIVE_EXTRACTORS: Dict[str, Callable[[str, str, Optional[str]], None]] = {
     ".tar": _extract_tar,
     ".zip": _extract_zip,
+    ".rar": _extract_rar,
 }
 _COMPRESSED_FILE_OPENERS: Dict[str, Callable[..., IO]] = {
     ".bz2": bz2.open,
