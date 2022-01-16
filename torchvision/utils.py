@@ -169,8 +169,7 @@ def draw_bounding_boxes(
         colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
-            By default, random colors are generated for boxes.
-            If labels are provided, boxes with same labels have same color.
+            By default, fixed colors are generated for boxes.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
@@ -219,10 +218,7 @@ def draw_bounding_boxes(
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
     if colors is None:
-        colors = _generate_random_color_palette(len(img_boxes))
-        if labels is not None:
-            label_color_map = dict(zip(labels, colors))
-            colors = [label_color_map[label] for label in labels]
+        colors = _generate_color_palette(len(img_boxes))
 
     for i, bbox in enumerate(img_boxes):
         if isinstance(colors, list):
@@ -395,33 +391,15 @@ def draw_keypoints(
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
-def _generate_color_palette(num_masks: int):
+def _generate_color_palette(num_masks: int, return_tensor: bool = True):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-    return [tuple((i * palette) % 255) for i in range(num_masks)]
-
-
-def _generate_random_color() -> Tuple[int, int, int]:
-    """
-    Generates a random RGB Color.
-
-    Returns:
-        color Tuple(int, int, int): A Tuple containing Random RGB Color.
-    """
-    return tuple(torch.randint(256, (3,)).tolist())
-
-
-def _generate_random_color_palette(num_colors: int) -> List[Tuple[int, int, int]]:
-    """
-    Generates a random RGB Color palette.
-
-    Args:
-        num_colors (int): Integer denoting number of random RGB colors to generate
-
-    Returns:
-        colors(List[Tuple[int, int, int]): A List of Tuples each containing random RGB color.
-            Each color is Tuple containing RGB values.
-    """
-    return [_generate_random_color() for i in range(num_colors)]
+    clrs = []
+    for i in range(num_masks):
+        if return_tensor:
+            clrs.append((tuple((palette * i) % 255)))
+        else:
+            clrs.append(tuple(((palette * i) % 255).tolist()))
+    return clrs
 
 
 def _log_api_usage_once(obj: Any) -> None:
