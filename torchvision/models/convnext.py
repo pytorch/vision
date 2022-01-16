@@ -20,7 +20,7 @@ __all__ = [
 model_urls: Dict[str, Optional[str]] = {}
 
 
-class LayerNorm(nn.LayerNorm):
+class LayerNorm2d(nn.LayerNorm):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         self.channels_last = kwargs.pop("channels_last", False)
         super().__init__(*args, **kwargs)
@@ -110,10 +110,11 @@ class ConvNeXt(nn.Module):
             block = CNBlock
 
         if norm_layer is None:
-            norm_layer = partial(LayerNorm, eps=1e-6)
+            norm_layer = partial(LayerNorm2d, eps=1e-6)
 
         layers: List[nn.Module] = []
 
+        # Stem
         firstconv_output_channels = block_setting[0].input_channels
         layers.append(
             ConvNormActivation(
@@ -131,6 +132,7 @@ class ConvNeXt(nn.Module):
         total_stage_blocks = sum(cnf.num_layers for cnf in block_setting)
         stage_block_id = 0
         for cnf in block_setting:
+            # Bottlenecks
             stage: List[nn.Module] = []
             for _ in range(cnf.num_layers):
                 # adjust stochastic depth probability based on the depth of the stage block
@@ -139,6 +141,7 @@ class ConvNeXt(nn.Module):
                 stage_block_id += 1
             layers.append(nn.Sequential(*stage))
             if cnf.out_channels is not None:
+                # Downsampling
                 layers.append(
                     nn.Sequential(
                         norm_layer(cnf.input_channels),
