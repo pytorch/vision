@@ -115,9 +115,9 @@ class ResNet50_Weights(WeightsEnum):
             "architecture": "ResNet",
             "publication_year": 2015,
             "num_params": 25557032,
-            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "acc@1": 80.674,
-            "acc@5": 95.166,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621",
+            "acc@1": 80.858,
+            "acc@5": 95.434,
         },
     )
     default = ImageNet1K_V2
