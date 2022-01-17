@@ -12,16 +12,16 @@ from .vision import VisionDataset
 class PCAM(VisionDataset):
     """`PCAM Dataset   <https://github.com/basveeling/pcam>`_.
 
-    The PatchCamelyon dataset is a binray classification dataset with 327,680
-    color images (96 x 96px), extracted from histopathologic scans of lymph node
-    sections. Each image is annoted with a binary label indicating presence of
+    The PatchCamelyon dataset is a binary classification dataset with 327,680
+    color images (96px x 96px), extracted from histopathologic scans of lymph node
+    sections. Each image is annotated with a binary label indicating presence of
     metastatic tissue.
 
     This dataset requires the ``h5py`` package which you can install with ``pip install h5py``.
 
      Args:
          root (string): Root directory of the dataset.
-         split (string, optional): The dataset split, supports ``"trai"`` (default), ``"test"`` or ``"val"``.
+         split (string, optional): The dataset split, supports ``"train"`` (default), ``"test"`` or ``"val"``.
          transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
              version. E.g, ``transforms.RandomCrop``.
          target_transform (callable, optional): A function/transform that takes in the target and transforms it.
@@ -102,7 +102,6 @@ class PCAM(VisionDataset):
     def __len__(self) -> int:
         images_file = self._FILES[self._split]["images"][0]
         with self.h5py.File(self._base_folder / images_file) as images_data:
-            print(images_data.keys())
             return images_data["x"].shape[0]
 
     def __getitem__(self, idx: int) -> Tuple[Any, Any]:
@@ -124,7 +123,7 @@ class PCAM(VisionDataset):
     def _check_exists(self) -> bool:
         images_file = self._FILES[self._split]["images"][0]
         targets_file = self._FILES[self._split]["targets"][0]
-        return all((os.path.exists(str(self._base_folder / h5_file)) for h5_file in (images_file, targets_file)))
+        return all(self._base_folder.joinpath(h5_file).exists() for h5_file in (images_file, targets_file)))
 
     def _download(self) -> None:
         if self._check_exists():
