@@ -66,6 +66,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     MNIST
     Omniglot
     OxfordIIITPet
+    PCAM
     PhotoTour
     Places365
     QMNIST
