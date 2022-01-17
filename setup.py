@@ -201,7 +201,7 @@ def get_extensions():
 
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
-
+        define_macros += [("USE_PYTHON", None)]
         extra_compile_args["cxx"].append("/MP")
 
     debug_mode = os.getenv("DEBUG", "0") == "1"
@@ -253,6 +253,9 @@ def get_extensions():
     image_include = [extensions_dir]
     image_library = []
     image_link_flags = []
+
+    if sys.platform == "win32":
+        image_macros += [("USE_PYTHON", None)]
 
     # Locating libPNG
     libpng = distutils.spawn.find_executable("libpng-config")
@@ -525,7 +528,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=get_extensions(),
-        python_requires=">=3.6",
+        python_requires=">=3.7",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,
