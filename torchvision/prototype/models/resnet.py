@@ -108,7 +108,7 @@ class ResNet50_Weights(WeightsEnum):
         },
     )
     ImageNet1K_V2 = Weights(
-        url="https://download.pytorch.org/models/resnet50-f46c3f97.pth",
+        url="https://download.pytorch.org/models/resnet50-11ad3fa6.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
