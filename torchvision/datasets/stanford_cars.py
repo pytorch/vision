@@ -73,7 +73,8 @@ class StanfordCars(VisionDataset):
         self._samples = [
             (
                 os.path.join(self.root, f"cars_{'train' if self.train else 'test'}", annotation["fname"]),
-                annotation["class"] - 1,  # Beware stanford cars target mapping  starts from 1
+                annotation["class"] - 1,
+                # Beware stanford cars target mapping  starts from 1
             )
             for annotation in sio.loadmat(
                 os.path.join(
@@ -84,8 +85,10 @@ class StanfordCars(VisionDataset):
             )["annotations"]
         ]
 
-        class_names = sio.loadmat(os.path.join(self.root, "devkit", "cars_meta.mat"))["class_names"][0]
-        self.classes = {class_name[0]: i for i, class_name in enumerate(class_names)}
+        self.classes = sio.loadmat(os.path.join(self.root, "devkit", "cars_meta.mat"), squeeze_me=True)[
+            "class_names"
+        ].tolist()
+        self.class_to_idx = {cls: i for i, cls in enumerate(self.classes)}
 
     def __len__(self) -> int:
         return len(self._samples)
