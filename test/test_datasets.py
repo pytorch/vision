@@ -2206,6 +2206,57 @@ class Food101TestCase(datasets_utils.ImageDatasetTestCase):
         return len(sampled_classes * n_samples_per_class)
 
 
+class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.FGVCAircraft
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
+        split=("train", "val", "trainval", "test"), annotation_level=("variant", "family", "manufacturer")
+    )
+
+    def inject_fake_data(self, tmpdir: str, config):
+        split = config["split"]
+        annotation_level = config["annotation_level"]
+        annotation_level_to_file = {
+            "variant": "variants.txt",
+            "family": "families.txt",
+            "manufacturer": "manufacturers.txt",
+        }
+
+        root_folder = pathlib.Path(tmpdir) / "fgvc-aircraft-2013b"
+        data_folder = root_folder / "data"
+
+        classes = ["707-320", "Hawk T1", "Tornado"]
+        num_images_per_class = 5
+
+        datasets_utils.create_image_folder(
+            data_folder,
+            "images",
+            file_name_fn=lambda idx: f"{idx}.jpg",
+            num_examples=num_images_per_class * len(classes),
+        )
+
+        annotation_file = data_folder / annotation_level_to_file[annotation_level]
+        with open(annotation_file, "w") as file:
+            file.write("\n".join(classes))
+
+        num_samples_per_class = 4 if split == "trainval" else 2
+        images_classes = []
+        for i in range(len(classes)):
+            images_classes.extend(
+                [
+                    f"{idx} {classes[i]}"
+                    for idx in random.sample(
+                        range(i * num_images_per_class, (i + 1) * num_images_per_class), num_samples_per_class
+                    )
+                ]
+            )
+
+        images_annotation_file = data_folder / f"images_{annotation_level}_{split}.txt"
+        with open(images_annotation_file, "w") as file:
+            file.write("\n".join(images_classes))
+
+        return len(classes * num_samples_per_class)
+
+
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SUN397
 
@@ -2524,6 +2575,29 @@ class Flowers102TestCase(datasets_utils.ImageDatasetTestCase):
         datasets_utils.lazy_importer.scipy.io.savemat(str(base_folder / "setid.mat"), setid_dict)
 
         return num_images_per_split[config["split"]]
+
+
+class PCAMTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.PCAM
+
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
+    REQUIRED_PACKAGES = ("h5py",)
+
+    def inject_fake_data(self, tmpdir: str, config):
+        base_folder = pathlib.Path(tmpdir) / "pcam"
+        base_folder.mkdir()
+
+        num_images = {"train": 2, "test": 3, "val": 4}[config["split"]]
+
+        images_file = datasets.PCAM._FILES[config["split"]]["images"][0]
+        with datasets_utils.lazy_importer.h5py.File(str(base_folder / images_file), "w") as f:
+            f["x"] = np.random.randint(0, 256, size=(num_images, 10, 10, 3), dtype=np.uint8)
+
+        targets_file = datasets.PCAM._FILES[config["split"]]["targets"][0]
+        with datasets_utils.lazy_importer.h5py.File(str(base_folder / targets_file), "w") as f:
+            f["y"] = np.random.randint(0, 2, size=(num_images, 1, 1, 1), dtype=np.uint8)
+
+        return num_images
 
 
 if __name__ == "__main__":

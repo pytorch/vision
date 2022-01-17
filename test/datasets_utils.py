@@ -61,6 +61,7 @@ class LazyImporter:
         "requests",
         "scipy.io",
         "scipy.sparse",
+        "h5py",
     )
 
     def __init__(self):

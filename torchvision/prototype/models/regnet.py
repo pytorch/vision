@@ -20,6 +20,7 @@ __all__ = [
     "RegNet_Y_8GF_Weights",
     "RegNet_Y_16GF_Weights",
     "RegNet_Y_32GF_Weights",
+    "RegNet_Y_128GF_Weights",
     "RegNet_X_400MF_Weights",
     "RegNet_X_800MF_Weights",
     "RegNet_X_1_6GF_Weights",
@@ -34,6 +35,7 @@ __all__ = [
     "regnet_y_8gf",
     "regnet_y_16gf",
     "regnet_y_32gf",
+    "regnet_y_128gf",
     "regnet_x_400mf",
     "regnet_x_800mf",
     "regnet_x_1_6gf",
@@ -251,6 +253,11 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
         },
     )
     default = ImageNet1K_V2
+
+
+class RegNet_Y_128GF_Weights(WeightsEnum):
+    # weights are not available yet.
+    pass
 
 
 class RegNet_X_400MF_Weights(WeightsEnum):
@@ -497,6 +504,16 @@ def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: 
 
     params = BlockParams.from_init_params(
         depth=20, w_0=232, w_a=115.89, w_m=2.53, group_width=232, se_ratio=0.25, **kwargs
+    )
+    return _regnet(params, weights, progress, **kwargs)
+
+
+@handle_legacy_interface(weights=("pretrained", None))
+def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
+    weights = RegNet_Y_128GF_Weights.verify(weights)
+
+    params = BlockParams.from_init_params(
+        depth=27, w_0=456, w_a=160.83, w_m=2.52, group_width=264, se_ratio=0.25, **kwargs
     )
     return _regnet(params, weights, progress, **kwargs)
 
