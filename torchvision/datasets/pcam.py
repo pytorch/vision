@@ -3,7 +3,7 @@ from typing import Any, Callable, Optional, Tuple
 
 from PIL import Image
 
-from .utils import download_file_from_google_drive, extract_archive, verify_str_arg
+from .utils import download_file_from_google_drive, _decompress, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -127,4 +127,4 @@ class PCAM(VisionDataset):
         for file_name, file_id, md5 in self._FILES[self._split].values():
             archive_name = file_name + ".gz"
             download_file_from_google_drive(file_id, str(self._base_folder), filename=archive_name, md5=md5)
-            extract_archive(str(self._base_folder / archive_name))
+            _decompress(str(self._base_folder / archive_name))
