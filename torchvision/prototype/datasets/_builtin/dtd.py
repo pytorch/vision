@@ -132,6 +132,9 @@ class DTD(Dataset):
         return self._classify_archive(data) == DTDDemux.IMAGES
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        dp = self.resources(self.default_config)[0].load(pathlib.Path(root) / self.name)
+        resources = self.resources(self.default_config)
+
+        dp = resources[0].load(root)
         dp = Filter(dp, self._filter_images)
+
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
