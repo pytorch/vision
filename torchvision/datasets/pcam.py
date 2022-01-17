@@ -1,5 +1,3 @@
-import os
-import os.path
 import pathlib
 from typing import Any, Callable, Optional, Tuple
 
@@ -19,7 +17,7 @@ class PCAM(VisionDataset):
 
     This dataset requires the ``h5py`` package which you can install with ``pip install h5py``.
 
-     Args:
+    Args:
          root (string): Root directory of the dataset.
          split (string, optional): The dataset split, supports ``"train"`` (default), ``"test"`` or ``"val"``.
          transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
@@ -96,9 +94,6 @@ class PCAM(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self.classes = ["neg", "pos"]
-        self.classes_to_idx = {"neg": 0, "pos": 1}
-
     def __len__(self) -> int:
         images_file = self._FILES[self._split]["images"][0]
         with self.h5py.File(self._base_folder / images_file) as images_data:
@@ -123,7 +118,7 @@ class PCAM(VisionDataset):
     def _check_exists(self) -> bool:
         images_file = self._FILES[self._split]["images"][0]
         targets_file = self._FILES[self._split]["targets"][0]
-        return all(self._base_folder.joinpath(h5_file).exists() for h5_file in (images_file, targets_file)))
+        return all(self._base_folder.joinpath(h5_file).exists() for h5_file in (images_file, targets_file))
 
     def _download(self) -> None:
         if self._check_exists():
