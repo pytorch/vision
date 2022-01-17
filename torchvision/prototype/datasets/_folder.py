@@ -7,8 +7,7 @@ from typing import Callable, Optional, Collection
 from typing import Union, Tuple, List, Dict, Any
 
 import torch
-from torch.utils.data import IterDataPipe
-from torch.utils.data.datapipes.iter import FileLister, FileLoader, Mapper, Shuffler, Filter
+from torchdata.datapipes.iter import IterDataPipe, FileLister, FileOpener, Mapper, Shuffler, Filter
 from torchvision.prototype.datasets.decoder import pil
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, hint_sharding
 
@@ -54,7 +53,7 @@ def from_data_folder(
     dp: IterDataPipe = Filter(dp, functools.partial(_is_not_top_level_file, root=root))
     dp = hint_sharding(dp)
     dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-    dp = FileLoader(dp)
+    dp = FileOpener(dp, mode="rb")
     return (
         Mapper(dp, functools.partial(_collate_and_decode_data, root=root, categories=categories, decoder=decoder)),
         categories,
