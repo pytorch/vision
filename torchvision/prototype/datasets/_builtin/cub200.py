@@ -94,14 +94,12 @@ class CUB200(Dataset):
         else:
             return None
 
-    _2011_SPLIT_MAP = {
-        "0": "test",
-        "1": "train",
-    }
-
     def _2011_filter_split(self, row: List[str], *, split: str) -> bool:
         _, split_id = row
-        return self._2011_SPLIT_MAP[split_id] == split
+        return {
+            "0": "test",
+            "1": "train",
+        }[split_id] == split
 
     def _2011_segmentation_key(self, data: Tuple[str, Any]) -> str:
         path = pathlib.Path(data[0])
@@ -226,7 +224,7 @@ class CUB200(Dataset):
         config = self.info.make_config(year="2011")
         resources = self.resources(config)
 
-        dp = resources[0].load(pathlib.Path(root) / self.name)
+        dp = resources[0].load(root)
         dp = Filter(dp, path_comparator("name", "classes.txt"))
         dp = CSVDictParser(dp, fieldnames=("label", "category"), dialect="cub200")
 
