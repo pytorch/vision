@@ -1,3 +1,4 @@
+import enum
 import functools
 import io
 import pathlib
@@ -22,6 +23,11 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
 )
 from torchvision.prototype.features import Label
+
+
+class OxfordIITPetDemux(enum.IntEnum):
+    SPLIT_AND_CLASSIFICATION = 0
+    SEGMENTATIONS = 1
 
 
 class OxfordIITPet(Dataset):
@@ -51,8 +57,8 @@ class OxfordIITPet(Dataset):
 
     def _classify_anns(self, data: Tuple[str, Any]) -> Optional[int]:
         return {
-            "annotations": 0,
-            "trimaps": 1,
+            "annotations": OxfordIITPetDemux.SPLIT_AND_CLASSIFICATION,
+            "trimaps": OxfordIITPetDemux.SEGMENTATIONS,
         }.get(pathlib.Path(data[0]).parent.name)
 
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
@@ -135,7 +141,7 @@ class OxfordIITPet(Dataset):
         return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     def _filter_split_and_classification_anns(self, data: Tuple[str, Any]) -> bool:
-        return self._classify_anns(data) == 0
+        return self._classify_anns(data) == OxfordIITPetDemux.SPLIT_AND_CLASSIFICATION
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         config = self.default_config
