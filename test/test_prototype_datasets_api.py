@@ -193,7 +193,7 @@ class TestDataset:
         ("config", "kwarg"),
         [
             pytest.param(*(datasets.utils.DatasetConfig(split="test"),) * 2, id="specific"),
-            pytest.param(datasets.utils.DatasetConfig(split="train"), None, id="default"),
+            pytest.param(DatasetMock().default_config, None, id="default"),
         ],
     )
     def test_load_config(self, config, kwarg):
