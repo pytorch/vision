@@ -12,3 +12,4 @@ from .oxford_iiit_pet import OxfordIITPet
 from .sbd import SBD
 from .semeion import SEMEION
 from .voc import VOC
+from .widerface import WIDERFace
