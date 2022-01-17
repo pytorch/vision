@@ -10,13 +10,13 @@ import pickle
 import random
 import tempfile
 import xml.etree.ElementTree as ET
-from collections import defaultdict, UserList
+from collections import defaultdict, UserList, Counter
 
 import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype import datasets
@@ -1106,3 +1106,170 @@ class OxfordIIITPetMockData:
 def oxford_iiit_pet(info, root, config):
     num_samples_map = OxfordIIITPetMockData.generate(root)
     return {config_: num_samples_map[config_.split] for config_ in info._configs}
+
+
+class _CUB200MockData:
+    @classmethod
+    def _category_folder(cls, category, idx):
+        return f"{idx:03d}.{category}"
+
+    @classmethod
+    def _file_stem(cls, category, idx):
+        return f"{category}_{idx:04d}"
+
+    @classmethod
+    def _make_images(cls, images_folder):
+        image_files = []
+        for category_idx, category in [
+            (1, "Black_footed_Albatross"),
+            (100, "Brown_Pelican"),
+            (200, "Common_Yellowthroat"),
+        ]:
+            image_files.extend(
+                create_image_folder(
+                    images_folder,
+                    cls._category_folder(category, category_idx),
+                    lambda image_idx: f"{cls._file_stem(category, image_idx)}.jpg",
+                    num_examples=5,
+                )
+            )
+
+        return image_files
+
+
+class CUB2002011MockData(_CUB200MockData):
+    @classmethod
+    def _make_archive(cls, root):
+        archive_folder = root / "CUB_200_2011"
+
+        images_folder = archive_folder / "images"
+        image_files = cls._make_images(images_folder)
+        image_ids = list(range(1, len(image_files) + 1))
+
+        with open(archive_folder / "images.txt", "w") as file:
+            file.write(
+                "\n".join(
+                    f"{id} {path.relative_to(images_folder).as_posix()}" for id, path in zip(image_ids, image_files)
+                )
+            )
+
+        split_ids = torch.randint(2, (len(image_ids),)).tolist()
+        counts = Counter(split_ids)
+        num_samples_map = {"train": counts[1], "test": counts[0]}
+        with open(archive_folder / "train_test_split.txt", "w") as file:
+            file.write("\n".join(f"{image_id} {split_id}" for image_id, split_id in zip(image_ids, split_ids)))
+
+        with open(archive_folder / "bounding_boxes.txt", "w") as file:
+            file.write(
+                "\n".join(
+                    " ".join(
+                        str(item)
+                        for item in [image_id, *make_tensor((4,), dtype=torch.int, low=0).to(torch.float).tolist()]
+                    )
+                    for image_id in image_ids
+                )
+            )
+
+        make_tar(root, archive_folder.with_suffix(".tgz").name, compression="gz")
+
+        return image_files, num_samples_map
+
+    @classmethod
+    def _make_segmentations(cls, root, image_files):
+        segmentations_folder = root / "segmentations"
+        for image_file in image_files:
+            folder = segmentations_folder.joinpath(image_file.relative_to(image_file.parents[1]))
+            folder.mkdir(exist_ok=True, parents=True)
+            create_image_file(
+                folder,
+                image_file.with_suffix(".png").name,
+                size=[1, *make_tensor((2,), low=3, dtype=torch.int).tolist()],
+            )
+
+        make_tar(root, segmentations_folder.with_suffix(".tgz").name)
+
+    @classmethod
+    def generate(cls, root):
+        image_files, num_samples_map = cls._make_archive(root)
+        cls._make_segmentations(root, image_files)
+        return num_samples_map
+
+
+class CUB2002010MockData(_CUB200MockData):
+    @classmethod
+    def _make_hidden_rouge_file(cls, *files):
+        for file in files:
+            (file.parent / f"._{file.name}").touch()
+
+    @classmethod
+    def _make_splits(cls, root, image_files):
+        split_folder = root / "lists"
+        split_folder.mkdir()
+        random.shuffle(image_files)
+        splits = ("train", "test")
+        num_samples_map = {}
+        for offset, split in enumerate(splits):
+            image_files_in_split = image_files[offset :: len(splits)]
+
+            split_file = split_folder / f"{split}.txt"
+            with open(split_file, "w") as file:
+                file.write(
+                    "\n".join(
+                        sorted(
+                            str(image_file.relative_to(image_file.parents[1]).as_posix())
+                            for image_file in image_files_in_split
+                        )
+                    )
+                )
+
+            cls._make_hidden_rouge_file(split_file)
+            num_samples_map[split] = len(image_files_in_split)
+
+        make_tar(root, split_folder.with_suffix(".tgz").name, compression="gz")
+
+        return num_samples_map
+
+    @classmethod
+    def _make_anns(cls, root, image_files):
+        from scipy.io import savemat
+
+        anns_folder = root / "annotations-mat"
+        for image_file in image_files:
+            ann_file = anns_folder / image_file.with_suffix(".mat").relative_to(image_file.parents[1])
+            ann_file.parent.mkdir(parents=True, exist_ok=True)
+
+            savemat(
+                ann_file,
+                {
+                    "seg": torch.randint(
+                        256, make_tensor((2,), low=3, dtype=torch.int).tolist(), dtype=torch.uint8
+                    ).numpy(),
+                    "bbox": dict(
+                        zip(("left", "top", "right", "bottom"), make_tensor((4,), dtype=torch.uint8).tolist())
+                    ),
+                },
+            )
+
+        readme_file = anns_folder / "README.txt"
+        readme_file.touch()
+        cls._make_hidden_rouge_file(readme_file)
+
+        make_tar(root, "annotations.tgz", anns_folder, compression="gz")
+
+    @classmethod
+    def generate(cls, root):
+        images_folder = root / "images"
+        image_files = cls._make_images(images_folder)
+        cls._make_hidden_rouge_file(*image_files)
+        make_tar(root, images_folder.with_suffix(".tgz").name, compression="gz")
+
+        num_samples_map = cls._make_splits(root, image_files)
+        cls._make_anns(root, image_files)
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.append_named_callable
+def cub200(info, root, config):
+    num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
+    return {config_: num_samples_map[config_.split] for config_ in info._configs if config_.year == config.year}

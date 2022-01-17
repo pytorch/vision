@@ -105,7 +105,7 @@ class CUB200(Dataset):
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name
 
-    def _2011_decode_ann(
+    def _2011_load_ann(
         self,
         data: Tuple[str, Tuple[List[str], Tuple[str, io.IOBase]]],
         *,
@@ -126,7 +126,7 @@ class CUB200(Dataset):
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name, data
 
-    def _2010_decode_ann(
+    def _2010_load_ann(
         self, data: Tuple[str, Tuple[str, io.IOBase]], *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
     ) -> Dict[str, Any]:
         _, (path, buffer) = data
@@ -154,7 +154,7 @@ class CUB200(Dataset):
         label_str, category = dir_name.split(".")
 
         return dict(
-            (self._2011_decode_ann if year == "2011" else self._2010_decode_ann)(anns_data, decoder=decoder),
+            (self._2011_load_ann if year == "2011" else self._2010_load_ann)(anns_data, decoder=decoder),
             image=decoder(buffer) if decoder else buffer,
             label=Label(int(label_str), category=category),
         )
@@ -196,7 +196,7 @@ class CUB200(Dataset):
         else:  # config.year == "2010"
             split_dp, images_dp, anns_dp = resource_dps
 
-            split_dp = Filter(split_dp, path_comparator("stem", config.split))
+            split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
             split_dp = LineReader(split_dp, decode=True, return_path=False)
             split_dp = Mapper(split_dp, self._2010_split_key)
 
