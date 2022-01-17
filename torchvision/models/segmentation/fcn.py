@@ -18,7 +18,9 @@ model_urls = {
 
 class FCN(_SimpleSegmentationModel):
     """
-    Implements a Fully-Convolutional Network for semantic segmentation.
+    Implements FCN model from
+    `"Fully Convolutional Networks for Semantic Segmentation"
+    <https://arxiv.org/abs/1411.4038>`_.
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
