@@ -957,11 +957,12 @@ def dtd(info, root, _):
                 file.write(" ".join([image_id, *sorted([cls, *joint_categories])]) + "\n")
 
     image_ids = list(itertools.chain(*image_ids_per_category.values()))
+    splits = ("train", "val", "test")
     num_samples_map = {}
     for fold in range(1, 11):
         random.shuffle(image_ids)
-        for step, split in enumerate(["train", "val", "test"], 1):
-            image_ids_in_config = image_ids[::step]
+        for offset, split in enumerate(splits):
+            image_ids_in_config = image_ids[offset :: len(splits)]
             with open(meta_folder / f"{split}{fold}.txt", "w") as file:
                 file.write("\n".join(image_ids_in_config) + "\n")
 
@@ -1076,9 +1077,10 @@ class OxfordIIITPetMockData:
         anns_folder = root / "annotations"
         anns_folder.mkdir()
         random.shuffle(split_and_classification_anns)
+        splits = ("trainval", "test")
         num_samples_map = {}
-        for step, split in enumerate(["trainval", "test"], 1):
-            split_and_classification_anns_in_split = split_and_classification_anns[::step]
+        for offset, split in enumerate(splits):
+            split_and_classification_anns_in_split = split_and_classification_anns[offset :: len(splits)]
             with open(anns_folder / f"{split}.txt", "w") as file:
                 writer = csv.writer(file, delimiter=" ")
                 for split_and_classification_ann in split_and_classification_anns_in_split:
