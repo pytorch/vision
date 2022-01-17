@@ -2517,53 +2517,43 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
 class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.StanfordCars
     REQUIRED_PACKAGES = ("scipy",)
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
 
-    def _inject_fake_data(self, tmpdir, config):
+    def inject_fake_data(self, tmpdir, config):
         import scipy.io as io
         from numpy.core.records import fromarrays
 
-        train = config["train"]
-        num_examples = 5
-        root_folder = tmpdir
+        num_examples = {"train": 5, "test": 7}[config["split"]]
+        num_classes = 3
+        base_folder = pathlib.Path(tmpdir) / "stanford_cars"
 
-        class_name = np.random.randint(0, 100, num_examples, dtype=np.uint8)
-        bbox_x1 = np.random.randint(0, 100, num_examples, dtype=np.uint8)
-        bbox_x2 = np.random.randint(0, 100, num_examples, dtype=np.uint8)
+        devkit = base_folder / "devkit"
+        devkit.mkdir(parents=True)
 
-        bbox_y1 = np.random.randint(0, 100, num_examples, dtype=np.uint8)
-        bb1ox_y2 = np.random.randint(0, 100, num_examples, dtype=np.uint8)
-        fname = [f"{i:5d}.jpg" for i in range(num_examples)]
-
-        rec_array = fromarrays(
-            [bbox_x1, bbox_y1, bbox_x2, bb1ox_y2, class_name, fname],
-            names=["bbox_x1", "bbox_y1", "bbox_x2", "bbox_y2", "class", "fname"],
-        )
-        devkit = os.path.join(root_folder, "devkit")
-        os.makedirs(devkit)
-
-        random_class_names = ["Tesla Model S Sedan 2012"] * 196
-
-        io.savemat(os.path.join(devkit, "cars_meta.mat"), {"class_names": random_class_names})
-
-        if train:
-            datasets_utils.create_image_folder(
-                root=root_folder,
-                name="cars_train",
-                file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
-                num_examples=num_examples,
-            )
-
-            io.savemat(f"{devkit}/cars_train_annos.mat", {"annotations": rec_array})
+        if config["split"] == "train":
+            images_folder_name = "cars_train"
+            annotations_mat_path = str(devkit / "cars_train_annos.mat")
         else:
+            images_folder_name = "cars_test"
+            annotations_mat_path = str(base_folder / "cars_test_annos_withlabels.mat")
 
-            datasets_utils.create_image_folder(
-                root=root_folder,
-                name="cars_test",
-                file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
-                num_examples=num_examples,
-            )
-            io.savemat(f"{root_folder}/cars_test_annos_withlabels.mat", {"annotations": rec_array})
+        datasets_utils.create_image_folder(
+            root=base_folder,
+            name=images_folder_name,
+            file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+            num_examples=num_examples,
+        )
+
+        classes = np.random.randint(1, num_classes + 1, num_examples, dtype=np.uint8)
+        fnames = [f"{i:5d}.jpg" for i in range(num_examples)]
+        rec_array = fromarrays(
+            [classes, fnames],
+            names=["class", "fname"],
+        )
+        io.savemat(annotations_mat_path, {"annotations": rec_array})
+
+        random_class_names = ["random_name"] * num_classes
+        io.savemat(str(devkit / "cars_meta.mat"), {"class_names": random_class_names})
 
         return num_examples
 
