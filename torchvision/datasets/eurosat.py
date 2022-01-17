@@ -22,15 +22,6 @@ class EuroSAT(ImageFolder):
     url = "https://madm.dfki.de/files/sentinel/EuroSAT.zip"
     md5 = "c8fa014336c82ac7804f0398fcb19387"
 
-    _class_map = {
-        "AnnualCrop": "Annual Crop",
-        "HerbaceousVegetation": "Herbaceous Vegetation",
-        "Industrial": "Industrial Buildings",
-        "PermanentCrop": "Permanent Crop",
-        "Residential": "Residential Buildings",
-        "SeaLake": "Sea & Lake",
-    }
-
     def __init__(
         self,
         root: str,
@@ -48,7 +39,6 @@ class EuroSAT(ImageFolder):
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         super().__init__(self._data_folder, **kwargs)
-        self.classes = [self._class_map.get(cls, cls) for cls in self.classes]
         self.root = os.path.expanduser(root)
 
     def __len__(self) -> int:
