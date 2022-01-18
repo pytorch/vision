@@ -19,12 +19,12 @@ class SUN397(VisionDataset):
         split (string, optional): The dataset split, supports ``"train"`` (default) and ``"test"``.
         partition (int, optional): A valid partition can be an integer from 1 to 10 or None,
             for the entire dataset.
-        download (bool, optional): If true, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
     """
 
     _DATASET_URL = "http://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz"
@@ -37,9 +37,9 @@ class SUN397(VisionDataset):
         root: str,
         split: str = "train",
         partition: Optional[int] = 1,
-        download: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = verify_str_arg(split, "split", ("train", "test"))

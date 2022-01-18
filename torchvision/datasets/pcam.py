@@ -72,7 +72,7 @@ class PCAM(VisionDataset):
         split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        download: bool = True,
+        download: bool = False,
     ):
         try:
             import h5py  # type: ignore[import]
