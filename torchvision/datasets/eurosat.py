@@ -19,9 +19,6 @@ class EuroSAT(ImageFolder):
             downloaded again. Default is False.
     """
 
-    url = "https://madm.dfki.de/files/sentinel/EuroSAT.zip"
-    md5 = "c8fa014336c82ac7804f0398fcb19387"
-
     def __init__(
         self,
         root: str,
@@ -54,4 +51,8 @@ class EuroSAT(ImageFolder):
             return
 
         os.makedirs(self._base_folder, exist_ok=True)
-        download_and_extract_archive(self.url, download_root=self._base_folder, md5=self.md5)
+        download_and_extract_archive(
+            "https://madm.dfki.de/files/sentinel/EuroSAT.zip",
+            download_root=self._base_folder,
+            md5="c8fa014336c82ac7804f0398fcb19387",
+        )
