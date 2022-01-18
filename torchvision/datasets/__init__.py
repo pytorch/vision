@@ -7,6 +7,7 @@ from .clevr import CLEVRClassification
 from .coco import CocoCaptions, CocoDetection
 from .country211 import Country211
 from .dtd import DTD
+from .eurosat import EuroSAT
 from .fakedata import FakeData
 from .fer2013 import FER2013
 from .fgvc_aircraft import FGVCAircraft
@@ -100,4 +101,5 @@ __all__ = (
     "OxfordIIITPet",
     "Country211",
     "FGVCAircraft",
+    "EuroSAT",
 )
