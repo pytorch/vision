@@ -1,9 +1,12 @@
-import functools
 import io
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+import pathlib
+import resource
+from functools import partial
+from importlib import resources
+from typing import Any, Callable, Dict, List, Optional, Union, cast, Tuple
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, CSVDictParser
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, CSVDictParser
 from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -24,7 +27,7 @@ from torchvision.prototype.features import Label, Image
 class GTSRB(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
-            "GTSRB",
+            "gtsrb",
             type=DatasetType.RAW,
             homepage="https://benchmark.ini.rub.de",
             categories=(
@@ -57,3 +60,21 @@ class GTSRB(Dataset):
             )
 
         return rsrcs
+
+    def _filter_images(self, data: Tuple[str, Any]) -> bool:
+        return pathlib.Path(data[0]).suffix == ".ppm"
+
+    def _collate(self, data: Tuple[str, Any]):
+        return {"image_path": data[0], "image": "LMAO YOU WISH", "label": pathlib.Path(data[0]).parent.stem}
+
+    def _make_datapipe(
+        self,
+        resource_dps: List[IterDataPipe],
+        *,
+        config: DatasetConfig,
+        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+    ) -> IterDataPipe[Dict[str, Any]]:
+        dp = resource_dps[0]
+        dp = Filter(dp, self._filter_images)
+        dp = Mapper(dp, self._collate)
+        return dp
