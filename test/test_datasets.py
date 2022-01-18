@@ -2532,10 +2532,10 @@ class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
 
         if config["split"] == "train":
             images_folder_name = "cars_train"
-            annotations_mat_path = str(devkit / "cars_train_annos.mat")
+            annotations_mat_path = devkit / "cars_train_annos.mat"
         else:
             images_folder_name = "cars_test"
-            annotations_mat_path = str(base_folder / "cars_test_annos_withlabels.mat")
+            annotations_mat_path = base_folder / "cars_test_annos_withlabels.mat"
 
         datasets_utils.create_image_folder(
             root=base_folder,
@@ -2553,7 +2553,7 @@ class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
         io.savemat(annotations_mat_path, {"annotations": rec_array})
 
         random_class_names = ["random_name"] * num_classes
-        io.savemat(str(devkit / "cars_meta.mat"), {"class_names": random_class_names})
+        io.savemat(devkit / "cars_meta.mat", {"class_names": random_class_names})
 
         return num_examples
 
