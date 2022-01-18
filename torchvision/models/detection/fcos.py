@@ -144,7 +144,7 @@ class FCOSClassificationHead(nn.Module):
         num_convs: int = 4,
         prior_probability: float = 0.01,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         super().__init__()
 
         self.num_classes = num_classes
