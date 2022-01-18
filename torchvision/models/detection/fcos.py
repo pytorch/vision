@@ -51,7 +51,7 @@ class FCOSHead(nn.Module):
         head_outputs: Dict[str, Tensor],
         anchors: List[Tensor],
         matched_idxs: List[Tensor],
-    ):
+    ) -> Dict[str, Tensor]:
 
         cls_logits = head_outputs["cls_logits"]  # [N, HWA, C]
         bbox_regression = head_outputs["bbox_regression"]  # [N, HWA, 4]
