@@ -75,7 +75,7 @@ class PCAM(VisionDataset):
         download: bool = False,
     ):
         try:
-            import h5py  # type: ignore[import]
+            import h5py
 
             self.h5py = h5py
         except ImportError:
