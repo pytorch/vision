@@ -51,7 +51,7 @@ class GTSRB(VisionDataset):
         else:
             with open(self._base_folder / "GT-final_test.csv") as csv_file:
                 samples = [
-                    (self._target_folder / row["Filename"], int(row["ClassId"]))
+                    (str(self._target_folder / row["Filename"]), int(row["ClassId"]))
                     for row in csv.DictReader(csv_file, delimiter=";", skipinitialspace=True)
                 ]
 
