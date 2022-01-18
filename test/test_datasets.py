@@ -2169,6 +2169,27 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
+class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.EuroSAT
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    def inject_fake_data(self, tmpdir, config):
+        data_folder = os.path.join(tmpdir, "eurosat", "2750")
+        os.makedirs(data_folder)
+
+        num_examples_per_class = 3
+        classes = ("AnnualCrop", "Forest")
+        for cls in classes:
+            datasets_utils.create_image_folder(
+                root=data_folder,
+                name=cls,
+                file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+                num_examples=num_examples_per_class,
+            )
+
+        return len(classes) * num_examples_per_class
+
+
 class Food101TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Food101
     FEATURE_TYPES = (PIL.Image.Image, int)
