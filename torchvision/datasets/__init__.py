@@ -32,6 +32,7 @@ from .places365 import Places365
 from .sbd import SBDataset
 from .sbu import SBU
 from .semeion import SEMEION
+from .stanford_cars import StanfordCars
 from .stl10 import STL10
 from .sun397 import SUN397
 from .svhn import SVHN
@@ -56,6 +57,7 @@ __all__ = (
     "QMNIST",
     "MNIST",
     "KMNIST",
+    "StanfordCars",
     "STL10",
     "SUN397",
     "SVHN",
