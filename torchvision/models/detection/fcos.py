@@ -39,7 +39,7 @@ class FCOSHead(nn.Module):
         "box_coder": det_utils.BoxLinearCoder,
     }
 
-    def __init__(self, in_channels: int, num_anchors: int, num_classes: int, num_convs: Optional[int] = 4):
+    def __init__(self, in_channels: int, num_anchors: int, num_classes: int, num_convs: Optional[int] = 4) -> None:
         super().__init__()
         self.box_coder = det_utils.BoxLinearCoder(normalize_by_size=True)
         self.classification_head = FCOSClassificationHead(in_channels, num_anchors, num_classes, num_convs)
@@ -51,7 +51,7 @@ class FCOSHead(nn.Module):
         head_outputs: Dict[str, Tensor],
         anchors: List[Tensor],
         matched_idxs: List[Tensor],
-    ):
+    ) -> Dict[str, Tensor]:
 
         cls_logits = head_outputs["cls_logits"]  # [N, HWA, C]
         bbox_regression = head_outputs["bbox_regression"]  # [N, HWA, 4]
@@ -144,14 +144,14 @@ class FCOSClassificationHead(nn.Module):
         num_convs: int = 4,
         prior_probability: float = 0.01,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
-    ):
+    ) -> None:
         super().__init__()
 
         self.num_classes = num_classes
         self.num_anchors = num_anchors
 
         if norm_layer is None:
-            norm_layer = partial(nn.GroupNorm, 32)
+            norm_layer = partial(nn.GroupNorm, num_groups=32)
 
         conv = []
         for _ in range(num_convs):
