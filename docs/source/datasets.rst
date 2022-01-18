@@ -50,6 +50,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     FlyingChairs
     FlyingThings3D
     Food101
+    FGVCAircraft
     GTSRB
     HD1K
     HMDB51
@@ -65,6 +66,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     MNIST
     Omniglot
     OxfordIIITPet
+    PCAM
     PhotoTour
     Places365
     QMNIST
