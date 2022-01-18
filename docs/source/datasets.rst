@@ -38,15 +38,21 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     Cityscapes
     CocoCaptions
     CocoDetection
+    Country211
     DTD
     EMNIST
+    EuroSAT
     FakeData
     FashionMNIST
+    FER2013
     Flickr8k
     Flickr30k
+    Flowers102
     FlyingChairs
     FlyingThings3D
     Food101
+    FGVCAircraft
+    GTSRB
     HD1K
     HMDB51
     ImageNet
@@ -60,6 +66,8 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     LSUN
     MNIST
     Omniglot
+    OxfordIIITPet
+    PCAM
     PhotoTour
     Places365
     QMNIST
@@ -67,7 +75,9 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     SBU
     SEMEION
     Sintel
+    StanfordCars
     STL10
+    SUN397
     SVHN
     UCF101
     USPS
