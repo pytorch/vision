@@ -2397,17 +2397,17 @@ class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.GTSRB
     FEATURE_TYPES = (PIL.Image.Image, int)
 
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
 
     def inject_fake_data(self, tmpdir: str, config):
-        root_folder = os.path.join(tmpdir, "GTSRB")
+        root_folder = os.path.join(tmpdir, "gtsrb")
         os.makedirs(root_folder, exist_ok=True)
 
         # Train data
-        train_folder = os.path.join(root_folder, "Training")
+        train_folder = os.path.join(root_folder, "GTSRB", "Training")
         os.makedirs(train_folder, exist_ok=True)
 
-        num_examples = 3
+        num_examples = 3 if config["split"] == "train" else 4
         classes = ("00000", "00042", "00012")
         for class_idx in classes:
             datasets_utils.create_image_folder(
@@ -2419,7 +2419,7 @@ class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
 
         total_number_of_examples = num_examples * len(classes)
         # Test data
-        test_folder = os.path.join(root_folder, "Final_Test", "Images")
+        test_folder = os.path.join(root_folder, "GTSRB", "Final_Test", "Images")
         os.makedirs(test_folder, exist_ok=True)
 
         with open(os.path.join(root_folder, "GT-final_test.csv"), "w") as csv_file:
