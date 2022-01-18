@@ -151,7 +151,7 @@ class FCOSClassificationHead(nn.Module):
         self.num_anchors = num_anchors
 
         if norm_layer is None:
-            norm_layer = partial(nn.GroupNorm, 32)
+            norm_layer = partial(nn.GroupNorm, num_groups=32)
 
         conv = []
         for _ in range(num_convs):
