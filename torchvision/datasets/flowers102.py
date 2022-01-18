@@ -24,12 +24,12 @@ class Flowers102(VisionDataset):
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), ``"val"``, or ``"test"``.
-        download (bool, optional): If true, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
         transform (callable, optional): A function/transform that takes in an PIL image and returns a
             transformed version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        download (bool, optional): If true, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
     """
 
     _download_url_prefix = "https://www.robots.ox.ac.uk/~vgg/data/flowers/102/"
@@ -44,9 +44,9 @@ class Flowers102(VisionDataset):
         self,
         root: str,
         split: str = "train",
-        download: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
