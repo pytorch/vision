@@ -2281,11 +2281,6 @@ class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SUN397
 
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        split=("train", "test"),
-        partition=(1, 10, None),
-    )
-
     def inject_fake_data(self, tmpdir: str, config):
         data_dir = pathlib.Path(tmpdir) / "SUN397"
         data_dir.mkdir()
@@ -2308,18 +2303,7 @@ class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
         with open(data_dir / "ClassName.txt", "w") as file:
             file.writelines("\n".join(f"/{cls[0]}/{cls}" for cls in sampled_classes))
 
-        if config["partition"] is not None:
-            num_samples = max(len(im_paths) // (2 if config["split"] == "train" else 3), 1)
-
-            with open(data_dir / f"{config['split'].title()}ing_{config['partition']:02d}.txt", "w") as file:
-                file.writelines(
-                    "\n".join(
-                        f"/{f_path.relative_to(data_dir).as_posix()}"
-                        for f_path in random.choices(im_paths, k=num_samples)
-                    )
-                )
-        else:
-            num_samples = len(im_paths)
+        num_samples = len(im_paths)
 
         return num_samples
 
