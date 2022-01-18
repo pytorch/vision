@@ -140,7 +140,7 @@ int Decoder::handle_picture_display(CUVIDPARSERDISPINFO* disp_info) {
 
   auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
   torch::Tensor decoded_frame =
-      torch::empty({get_height(), get_width(), 3}, options);
+      torch::empty({get_height(), width, 3}, options);
   uint8_t* frame_ptr = decoded_frame.data_ptr<uint8_t>();
   const uint8_t* const source_arr[] = {
       (const uint8_t* const)source_frame,
