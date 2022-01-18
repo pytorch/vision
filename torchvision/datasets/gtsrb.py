@@ -47,7 +47,7 @@ class GTSRB(VisionDataset):
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
         if self._split == "train":
-            samples = make_dataset(self._target_folder, extensions=(".ppm",))
+            samples = make_dataset(str(self._target_folder), extensions=(".ppm",))
         else:
             with open(self._base_folder / "GT-final_test.csv") as csv_file:
                 samples = [
