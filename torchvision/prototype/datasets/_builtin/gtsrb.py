@@ -63,7 +63,7 @@ class GTSRB(Dataset):
 
     def _append_label_train(self, path_and_handle: Tuple[str, Any]) -> Tuple[str, Any, int]:
         path, handle = path_and_handle
-        label = int(pathlib.Path(path).parent.stem)
+        label = int(pathlib.Path(path).parent.name)
         return path, handle, label
 
     def _append_label_test(self, path_and_handle: Tuple[str, Any], csv_info: Dict[str, Any]) -> Tuple[str, Any, int]:
