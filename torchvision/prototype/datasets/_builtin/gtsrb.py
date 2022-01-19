@@ -58,18 +58,24 @@ class GTSRB(Dataset):
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
         return pathlib.Path(data[0]).suffix == ".ppm"
 
-    def _append_label_train(self, path_and_handle: Tuple[str, Any]):
+    def _append_label_train(self, path_and_handle: Tuple[str, Any]) -> Tuple[str, Any, int]:
         path = path_and_handle[0]
         label = int(pathlib.Path(path).parent.stem)
         return *path_and_handle, label
 
-    def _append_label_test(self, path_and_handle, csv_info):
+    def _append_label_test(self, path_and_handle: Tuple[str, Any], csv_info: Dict[str, Any]) -> Tuple[str, Any, int]:
         label = int(csv_info["ClassId"])
         return *path_and_handle, label
 
-    def _collate(self, data, decoder):
+    def _collate(
+        self, data: Tuple[str, Any, int], decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+    ) -> Dict[str, Any]:
         image_path, image_buffer, label = data
-        return {"image_path": image_path, "image": decoder(image_buffer), "label": Label(label)}
+        return {
+            "image_path": image_path,
+            "image": decoder(image_buffer) if decoder else image_buffer,
+            "label": Label(label),
+        }
 
     def _make_datapipe(
         self,
