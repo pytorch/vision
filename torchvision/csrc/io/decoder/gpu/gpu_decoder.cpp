@@ -38,6 +38,11 @@ torch::Tensor GPUDecoder::decode() {
   return frame;
 }
 
+void GPUDecoder::seek(double timestamp, bool keyframes_only) {
+  int flag = keyframes_only ? 0 : AVSEEK_FLAG_ANY;
+  demuxer.seek(timestamp, flag);
+}
+
 /* Convert a tensor with data in NV12 format to a tensor with data in YUV420
  * format in-place.
  */
@@ -81,5 +86,6 @@ TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
       .def(torch::init<std::string, int64_t>())
       .def("next", &GPUDecoder::decode)
+      .def("seek", &GPUDecoder::seek)
       .def("reformat", &GPUDecoder::nv12_to_yuv420);
 }

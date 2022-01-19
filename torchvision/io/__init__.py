@@ -174,8 +174,6 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
-        if self.is_cuda:
-            raise RuntimeError("seek() not yet supported with GPU decoding.")
         self._c.seek(time_s, keyframes_only)
         return self
 
