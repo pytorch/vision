@@ -25,7 +25,7 @@ __all__ = [
 
 
 class FCOS_ResNet50_FPN_Weights(WeightsEnum):
-    Coco_V1 = Weights(
+    COCO_V1 = Weights(
         url="https://download.pytorch.org/models/fcos_resnet50_fpn_coco-99b0c9b7.pth",
         transforms=CocoEval,
         meta={
@@ -39,11 +39,11 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
             "map": 39.1,
         },
     )
-    default = Coco_V1
+    default = COCO_V1
 
 
 @handle_legacy_interface(
-    weights=("pretrained", FCOS_ResNet50_FPN_Weights.Coco_V1),
+    weights=("pretrained", FCOS_ResNet50_FPN_Weights.COCO_V1),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
 )
 def fcos_resnet50_fpn(
@@ -76,7 +76,7 @@ def fcos_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == FCOS_ResNet50_FPN_Weights.Coco_V1:
+        if weights == FCOS_ResNet50_FPN_Weights.COCO_V1:
             overwrite_eps(model, 0.0)
 
     return model
