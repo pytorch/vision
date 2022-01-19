@@ -17,7 +17,6 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     hint_sharding,
     hint_shuffling,
-    INFINITE_BUFFER_SIZE,
     path_accessor,
     getitem,
 )
@@ -103,7 +102,7 @@ class GTSRB(Dataset):
                 gt_dp,
                 key_fn=path_accessor("name"),
                 ref_key_fn=getitem("Filename"),
-                buffer_size=INFINITE_BUFFER_SIZE,
+                buffer_size=1,
                 merge_fn=self._append_label_test,
             )  # path, handle, label
 
