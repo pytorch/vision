@@ -44,7 +44,7 @@ class GTSRB(Dataset):
     }
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        rsrcs = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUMS[config.split])]
+        rsrcs: List[OnlineResource] = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUMS[config.split])]
 
         if config.split == "test":
             rsrcs.append(
@@ -53,6 +53,7 @@ class GTSRB(Dataset):
                     sha256=self._CHECKSUMS["test_gt"],
                 )
             )
+
         return rsrcs
 
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
