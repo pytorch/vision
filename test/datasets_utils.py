@@ -868,9 +868,9 @@ def _split_files_or_dirs(root, *files_or_dirs):
 def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
     archive = pathlib.Path(root) / name
     if not files_or_dirs:
-        dir = archive.with_suffix("")
-        if dir.exists() and dir.is_dir():
-            files_or_dirs = (dir,)
+        file_or_dir = archive.with_name(archive.name.rsplit("".join(archive.suffixes), 1)[0])
+        if file_or_dir.exists():
+            files_or_dirs = (file_or_dir,)
         else:
             raise ValueError("No file or dir provided.")
 
