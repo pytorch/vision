@@ -102,6 +102,13 @@ class TestCommon:
         else:
             raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
 
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_cycle(self, dataset_mock, config):
+        dataset, _ = dataset_mock.load(config)
+
+        for _ in dataset.cycle(2):
+            pass
+
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
 class TestQMNIST:
