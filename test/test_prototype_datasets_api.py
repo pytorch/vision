@@ -1,12 +1,33 @@
 import unittest.mock
 
 import pytest
+from torchdata.datapipes.iter import IterableWrapper
 from torchvision.prototype import datasets
+from torchvision.prototype.datasets import _api as api
 from torchvision.prototype.utils._internal import FrozenMapping, FrozenBunch
 
 
 def make_minimal_dataset_info(name="name", type=datasets.utils.DatasetType.RAW, categories=None, **kwargs):
     return datasets.utils.DatasetInfo(name, type=type, categories=categories or [], **kwargs)
+
+
+class DatasetMock(datasets.utils.Dataset):
+    def __init__(self, info=None, *, resources=None, make_datapipe=None):
+        self._info = info or make_minimal_dataset_info(valid_options=dict(split=("train", "test")))
+        self.resources = unittest.mock.Mock(return_value=[]) if resources is None else lambda config: resources
+        self._make_datapipe = make_datapipe or unittest.mock.Mock()
+        super().__init__()
+
+    def _make_info(self):
+        return self._info
+
+    def resources(self, config):
+        # This method is just defined to appease the ABC, but will be overwritten at instantiation
+        pass
+
+    def _make_datapipe(self, resource_dps, *, config, decoder):
+        # This method is just defined to appease the ABC, but will be overwritten at instantiation
+        pass
 
 
 class TestFrozenMapping:
@@ -159,33 +180,15 @@ class TestDatasetInfo:
 
 
 class TestDataset:
-    class DatasetMock(datasets.utils.Dataset):
-        def __init__(self, info=None, *, resources=None):
-            self._info = info or make_minimal_dataset_info(valid_options=dict(split=("train", "test")))
-            self.resources = unittest.mock.Mock(return_value=[]) if resources is None else lambda config: resources
-            self._make_datapipe = unittest.mock.Mock()
-            super().__init__()
-
-        def _make_info(self):
-            return self._info
-
-        def resources(self, config):
-            # This method is just defined to appease the ABC, but will be overwritten at instantiation
-            pass
-
-        def _make_datapipe(self, resource_dps, *, config, decoder):
-            # This method is just defined to appease the ABC, but will be overwritten at instantiation
-            pass
-
     def test_name(self):
         name = "sentinel"
-        dataset = self.DatasetMock(make_minimal_dataset_info(name=name))
+        dataset = DatasetMock(make_minimal_dataset_info(name=name))
 
         assert dataset.name == name
 
     def test_default_config(self):
         sentinel = "sentinel"
-        dataset = self.DatasetMock(info=make_minimal_dataset_info(valid_options=dict(split=(sentinel, "train"))))
+        dataset = DatasetMock(info=make_minimal_dataset_info(valid_options=dict(split=(sentinel, "train"))))
 
         assert dataset.default_config == datasets.utils.DatasetConfig(split=sentinel)
 
@@ -197,7 +200,7 @@ class TestDataset:
         ],
     )
     def test_load_config(self, config, kwarg):
-        dataset = self.DatasetMock()
+        dataset = DatasetMock()
 
         dataset.load("", config=kwarg)
 
@@ -208,7 +211,7 @@ class TestDataset:
 
     def test_missing_dependencies(self):
         dependency = "fake_dependency"
-        dataset = self.DatasetMock(make_minimal_dataset_info(dependencies=(dependency,)))
+        dataset = DatasetMock(make_minimal_dataset_info(dependencies=(dependency,)))
         with pytest.raises(ModuleNotFoundError, match=dependency):
             dataset.load("root")
 
@@ -216,7 +219,7 @@ class TestDataset:
         resource_mock = mocker.Mock(spec=["load"])
         sentinel = object()
         resource_mock.load.return_value = sentinel
-        dataset = self.DatasetMock(resources=[resource_mock])
+        dataset = DatasetMock(resources=[resource_mock])
 
         root = "root"
         dataset.load(root)
@@ -228,10 +231,54 @@ class TestDataset:
         assert call_args[0][0] is sentinel
 
     def test_decoder(self):
-        dataset = self.DatasetMock()
+        dataset = DatasetMock()
 
         sentinel = object()
         dataset.load("", decoder=sentinel)
 
         (_, call_kwargs) = dataset._make_datapipe.call_args
         assert call_kwargs["decoder"] is sentinel
+
+
+class TestAPI:
+    @pytest.fixture
+    def registered_datasets(self, mocker):
+        datasets = dict()
+        mocker.patch.object(api, "DATASETS", datasets)
+        return datasets
+
+    def test_register(self, registered_datasets):
+        dataset = DatasetMock()
+        datasets.register(dataset)
+
+        assert registered_datasets == {dataset.name: dataset}
+
+    def test_list(self, registered_datasets):
+        names = ["name1", "name3", "name2"]
+
+        for name in names:
+            datasets.register(DatasetMock(info=make_minimal_dataset_info(name=name)))
+
+        assert datasets.list() == sorted(names)
+
+    def test_info(self, registered_datasets):
+        dataset = DatasetMock()
+        datasets.register(dataset)
+
+        assert datasets.info(dataset.name) is dataset.info
+
+    def test_load(self, registered_datasets):
+        sentinel = object()
+        make_datapipe_mock = unittest.mock.Mock(return_value=IterableWrapper([sentinel], deepcopy=False))
+        dataset = DatasetMock(make_datapipe=make_datapipe_mock)
+
+        datasets.register(dataset)
+
+        datapipe = datasets.load(dataset.name)
+
+        make_datapipe_mock.assert_called_once()
+
+        samples = iter(datapipe)
+        assert next(samples) is sentinel
+        with pytest.raises(StopIteration):
+            next(samples)
