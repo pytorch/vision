@@ -1,35 +1,38 @@
+import collections.abc
+import contextlib
+import csv
 import functools
 import gzip
+import itertools
 import json
 import lzma
 import pathlib
 import pickle
+import random
 import tempfile
-from collections import defaultdict
-from typing import Any, Dict, Tuple
+import xml.etree.ElementTree as ET
+from collections import defaultdict, Counter, UserDict
 
 import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import create_image_folder, make_tar, make_zip
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
-from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype import datasets
-from torchvision.prototype.datasets._api import DEFAULT_DECODER_MAP, DEFAULT_DECODER
-from torchvision.prototype.datasets._api import find
-from torchvision.prototype.utils._internal import add_suggestion
-
+from torchvision.prototype.datasets._api import DEFAULT_DECODER_MAP, DEFAULT_DECODER, find
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
 
-__all__ = ["load"]
-
-DEFAULT_TEST_DECODER = object()
+TEST_HOME = pathlib.Path(tempfile.mkdtemp())
 
 
-class TestResource(datasets.utils.OnlineResource):
+__all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
+
+
+class ResourceMock(datasets.utils.OnlineResource):
     def __init__(self, *, dataset_name, dataset_config, **kwargs):
         super().__init__(**kwargs)
         self.dataset_name = dataset_name
@@ -42,96 +45,149 @@ class TestResource(datasets.utils.OnlineResource):
         )
 
 
-class DatasetMocks:
-    def __init__(self):
-        self._mock_data_fns = {}
-        self._tmp_home = pathlib.Path(tempfile.mkdtemp())
+class DatasetMock:
+    def __init__(self, name, mock_data_fn, *, configs=None):
+        self.dataset = find(name)
+        self.root = TEST_HOME / self.dataset.name
+        self.mock_data_fn = self._parse_mock_data(mock_data_fn)
+        self.configs = configs or self.info._configs
         self._cache = {}
 
-    def register_mock_data_fn(self, mock_data_fn):
-        name = mock_data_fn.__name__
-        if name not in datasets.list():
-            raise pytest.UsageError(
-                add_suggestion(
-                    f"The name of the mock data function '{name}' has no corresponding dataset.",
-                    word=name,
-                    possibilities=datasets.list(),
-                    close_match_hint=lambda close_match: f"Did you mean to name it '{close_match}'?",
-                    alternative_hint=lambda _: "",
+    @property
+    def info(self):
+        return self.dataset.info
+
+    @property
+    def name(self):
+        return self.info.name
+
+    def _parse_mock_data(self, mock_data_fn):
+        def wrapper(info, root, config):
+            mock_infos = mock_data_fn(info, root, config)
+
+            if mock_infos is None:
+                raise pytest.UsageError(
+                    f"The mock data function for dataset '{self.name}' returned nothing. It needs to at least return an "
+                    f"integer indicating the number of samples for the current `config`."
                 )
-            )
-        self._mock_data_fns[name] = mock_data_fn
-        return mock_data_fn
 
-    def _parse_mock_info(self, mock_info, *, name):
-        if mock_info is None:
-            raise pytest.UsageError(
-                f"The mock data function for dataset '{name}' returned nothing. It needs to at least return an integer "
-                f"indicating the number of samples for the current `config`."
-            )
-        elif isinstance(mock_info, int):
-            mock_info = dict(num_samples=mock_info)
-        elif not isinstance(mock_info, dict):
-            raise pytest.UsageError(
-                f"The mock data function for dataset '{name}' returned a {type(mock_info)}. The returned object should "
-                f"be a dictionary containing at least the number of samples for the current `config` for the key "
-                f"`'num_samples'`. If no additional information is required for specific tests, the number of samples "
-                f"can also be returned as an integer."
-            )
-        elif "num_samples" not in mock_info:
-            raise pytest.UsageError(
-                f"The dictionary returned by the mock data function for dataset '{name}' must contain a `'num_samples'` "
-                f"entry indicating the number of samples for the current `config`."
-            )
-        return mock_info
+            key_types = set(type(key) for key in mock_infos) if isinstance(mock_infos, dict) else {}
+            if datasets.utils.DatasetConfig not in key_types:
+                mock_infos = {config: mock_infos}
+            elif len(key_types) > 1:
+                raise pytest.UsageError(
+                    f"Unable to handle the returned dictionary of the mock data function for dataset {self.name}. If "
+                    f"returned dictionary uses `DatasetConfig` as key type, all keys should be of that type."
+                )
 
-    def _get(self, dataset, config, root):
-        name = dataset.info.name
-        resources_and_mock_info = self._cache.get((name, config))
-        if resources_and_mock_info:
-            return resources_and_mock_info
+            for config_, mock_info in list(mock_infos.items()):
+                if config_ in self._cache:
+                    raise pytest.UsageError(
+                        f"The mock info for config {config_} of dataset {self.name} generated for config {config} "
+                        f"already exists in the cache."
+                    )
+                if isinstance(mock_info, int):
+                    mock_infos[config_] = dict(num_samples=mock_info)
+                elif not isinstance(mock_info, dict):
+                    raise pytest.UsageError(
+                        f"The mock data function for dataset '{self.name}' returned a {type(mock_infos)} for `config` "
+                        f"{config_}. The returned object should be a dictionary containing at least the number of "
+                        f"samples for the key `'num_samples'`. If no additional information is required for specific "
+                        f"tests, the number of samples can also be returned as an integer."
+                    )
+                elif "num_samples" not in mock_info:
+                    raise pytest.UsageError(
+                        f"The dictionary returned by the mock data function for dataset '{self.name}' and config "
+                        f"{config_} has to contain a `'num_samples'` entry indicating the number of samples."
+                    )
 
+            return mock_infos
+
+        return wrapper
+
+    def _load_mock(self, config):
+        with contextlib.suppress(KeyError):
+            return self._cache[config]
+
+        self.root.mkdir(exist_ok=True)
+        for config_, mock_info in self.mock_data_fn(self.info, self.root, config).items():
+            mock_resources = [
+                ResourceMock(dataset_name=self.name, dataset_config=config_, file_name=resource.file_name)
+                for resource in self.dataset.resources(config_)
+            ]
+            self._cache[config_] = (mock_resources, mock_info)
+
+        return self._cache[config]
+
+    def load(self, config, *, decoder=DEFAULT_DECODER):
         try:
-            fakedata_fn = self._mock_data_fns[name]
-        except KeyError:
-            raise pytest.UsageError(
-                f"No mock data available for dataset '{name}'. "
-                f"Did you add a new dataset, but forget to provide mock data for it? "
-                f"Did you register the mock data function with `@DatasetMocks.register_mock_data_fn`?"
-            )
+            self.info.check_dependencies()
+        except ModuleNotFoundError as error:
+            pytest.skip(str(error))
 
-        mock_resources = [
-            TestResource(dataset_name=name, dataset_config=config, file_name=resource.file_name)
-            for resource in dataset.resources(config)
-        ]
-        mock_info = self._parse_mock_info(fakedata_fn(dataset.info, root, config), name=name)
-
-        self._cache[(name, config)] = mock_resources, mock_info
-        return mock_resources, mock_info
-
-    def load(
-        self, name: str, decoder=DEFAULT_DECODER, split="train", **options: Any
-    ) -> Tuple[IterDataPipe, Dict[str, Any]]:
-        dataset = find(name)
-        config = dataset.info.make_config(split=split, **options)
-
-        root = self._tmp_home / name
-        root.mkdir(exist_ok=True)
-        resources, mock_info = self._get(dataset, config, root)
-
-        datapipe = dataset._make_datapipe(
-            [resource.load(root) for resource in resources],
+        mock_resources, mock_info = self._load_mock(config)
+        datapipe = self.dataset._make_datapipe(
+            [resource.load(self.root) for resource in mock_resources],
             config=config,
-            decoder=DEFAULT_DECODER_MAP.get(dataset.info.type) if decoder is DEFAULT_DECODER else decoder,
+            decoder=DEFAULT_DECODER_MAP.get(self.info.type) if decoder is DEFAULT_DECODER else decoder,
         )
         return datapipe, mock_info
 
 
-dataset_mocks = DatasetMocks()
-load = dataset_mocks.load
+def config_id(name, config):
+    parts = [name]
+    for name, value in config.items():
+        if isinstance(value, bool):
+            part = ("" if value else "no_") + name
+        else:
+            part = str(value)
+        parts.append(part)
+    return "-".join(parts)
 
 
-class MNISTFakedata:
+def parametrize_dataset_mocks(*dataset_mocks, marks=None):
+    mocks = {}
+    for mock in dataset_mocks:
+        if isinstance(mock, DatasetMock):
+            mocks[mock.name] = mock
+        elif isinstance(mock, collections.abc.Sequence):
+            mocks.update({mock_.name: mock_ for mock_ in mock})
+        elif isinstance(mock, collections.abc.Mapping):
+            mocks.update(mock)
+        else:
+            raise pytest.UsageError(
+                f"The positional arguments passed to `parametrize_dataset_mocks` can either be a `DatasetMock`, "
+                f"a sequence of `DatasetMock`'s, or a mapping of names to `DatasetMock`'s, "
+                f"but got {mock} instead."
+            )
+    dataset_mocks = mocks
+
+    if marks is None:
+        marks = {}
+    elif not isinstance(marks, collections.abc.Mapping):
+        raise pytest.UsageError()
+
+    return pytest.mark.parametrize(
+        ("dataset_mock", "config"),
+        [
+            pytest.param(dataset_mock, config, id=config_id(name, config), marks=marks.get(name, ()))
+            for name, dataset_mock in dataset_mocks.items()
+            for config in dataset_mock.configs
+        ],
+    )
+
+
+class DatasetMocks(UserDict):
+    def set_from_named_callable(self, fn):
+        name = fn.__name__.replace("_", "-")
+        self.data[name] = DatasetMock(name, fn)
+        return fn
+
+
+DATASET_MOCKS = DatasetMocks()
+
+
+class MNISTMockData:
     _DTYPES_ID = {
         torch.uint8: 8,
         torch.int8: 9,
@@ -206,12 +262,12 @@ class MNISTFakedata:
         return num_samples
 
 
-@dataset_mocks.register_mock_data_fn
+@DATASET_MOCKS.set_from_named_callable
 def mnist(info, root, config):
     train = config.split == "train"
     images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
     labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
-    return MNISTFakedata.generate(
+    return MNISTMockData.generate(
         root,
         num_categories=len(info.categories),
         images_file=images_file,
@@ -219,60 +275,39 @@ def mnist(info, root, config):
     )
 
 
-@dataset_mocks.register_mock_data_fn
-def fashionmnist(info, root, config):
-    train = config.split == "train"
-    images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
-    labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
-    return MNISTFakedata.generate(
-        root,
-        num_categories=len(info.categories),
-        images_file=images_file,
-        labels_file=labels_file,
-    )
+DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
 
 
-@dataset_mocks.register_mock_data_fn
-def kmnist(info, root, config):
-    train = config.split == "train"
-    images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
-    labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
-    return MNISTFakedata.generate(
-        root,
-        num_categories=len(info.categories),
-        images_file=images_file,
-        labels_file=labels_file,
-    )
-
-
-@dataset_mocks.register_mock_data_fn
-def emnist(info, root, config):
+@DATASET_MOCKS.set_from_named_callable
+def emnist(info, root, _):
     # The image sets that merge some lower case letters in their respective upper case variant, still use dense
     # labels in the data files. Thus, num_categories != len(categories) there.
     num_categories = defaultdict(
-        lambda: len(info.categories), **{image_set: 47 for image_set in ("Balanced", "By_Merge")}
+        lambda: len(info.categories), {image_set: 47 for image_set in ("Balanced", "By_Merge")}
     )
 
-    num_samples = {}
+    mock_infos = {}
     file_names = set()
-    for _config in info._configs:
-        prefix = f"emnist-{_config.image_set.replace('_', '').lower()}-{_config.split}"
+    for config in info._configs:
+        prefix = f"emnist-{config.image_set.replace('_', '').lower()}-{config.split}"
         images_file = f"{prefix}-images-idx3-ubyte.gz"
         labels_file = f"{prefix}-labels-idx1-ubyte.gz"
         file_names.update({images_file, labels_file})
-        num_samples[_config.image_set] = MNISTFakedata.generate(
-            root,
-            num_categories=num_categories[_config.image_set],
-            images_file=images_file,
-            labels_file=labels_file,
+        mock_infos[config] = dict(
+            num_samples=MNISTMockData.generate(
+                root,
+                num_categories=num_categories[config.image_set],
+                images_file=images_file,
+                labels_file=labels_file,
+            )
         )
 
     make_zip(root, "emnist-gzip.zip", *file_names)
 
-    return num_samples[config.image_set]
+    return mock_infos
 
 
-@dataset_mocks.register_mock_data_fn
+@DATASET_MOCKS.set_from_named_callable
 def qmnist(info, root, config):
     num_categories = len(info.categories)
     if config.split == "train":
@@ -280,24 +315,27 @@ def qmnist(info, root, config):
         prefix = "qmnist-train"
         suffix = ".gz"
         compressor = gzip.open
+        mock_infos = num_samples
     elif config.split.startswith("test"):
-        # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create more
-        # than 10000 images for the dataset to not be empty.
-        num_samples = num_samples_gen = 10001
-        if config.split == "test10k":
-            num_samples = min(num_samples, 10000)
-        if config.split == "test50k":
-            num_samples -= 10000
+        # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create
+        # more than 10000 images for the dataset to not be empty.
+        num_samples_gen = 10001
         prefix = "qmnist-test"
         suffix = ".gz"
         compressor = gzip.open
+        mock_infos = {
+            info.make_config(split="test"): num_samples_gen,
+            info.make_config(split="test10k"): min(num_samples_gen, 10_000),
+            info.make_config(split="test50k"): num_samples_gen - 10_000,
+        }
     else:  # config.split == "nist"
         num_samples = num_samples_gen = num_categories + 3
         prefix = "xnist"
         suffix = ".xz"
         compressor = lzma.open
+        mock_infos = num_samples
 
-    MNISTFakedata.generate(
+    MNISTMockData.generate(
         root,
         num_categories=num_categories,
         num_samples=num_samples_gen,
@@ -307,11 +345,10 @@ def qmnist(info, root, config):
         label_dtype=torch.int32,
         compressor=compressor,
     )
+    return mock_infos
 
-    return num_samples
 
-
-class CIFARFakedata:
+class CIFARMockData:
     NUM_PIXELS = 32 * 32 * 3
 
     @classmethod
@@ -349,12 +386,12 @@ class CIFARFakedata:
         make_tar(root, name, folder, compression="gz")
 
 
-@dataset_mocks.register_mock_data_fn
+@DATASET_MOCKS.set_from_named_callable
 def cifar10(info, root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
 
-    CIFARFakedata.generate(
+    CIFARMockData.generate(
         root=root,
         name="cifar-10-python.tar.gz",
         folder=pathlib.Path("cifar-10-batches-py"),
@@ -367,12 +404,12 @@ def cifar10(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-@dataset_mocks.register_mock_data_fn
+@DATASET_MOCKS.set_from_named_callable
 def cifar100(info, root, config):
     train_files = ["train"]
     test_files = ["test"]
 
-    CIFARFakedata.generate(
+    CIFARMockData.generate(
         root=root,
         name="cifar-100-python.tar.gz",
         folder=pathlib.Path("cifar-100-python"),
@@ -385,7 +422,7 @@ def cifar100(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-@dataset_mocks.register_mock_data_fn
+@DATASET_MOCKS.set_from_named_callable
 def caltech101(info, root, config):
     def create_ann_file(root, name):
         import scipy.io
@@ -435,7 +472,7 @@ def caltech101(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-@dataset_mocks.register_mock_data_fn
+@DATASET_MOCKS.set_from_named_callable
 def caltech256(info, root, config):
     dir = root / "256_ObjectCategories"
     num_images_per_category = 2
@@ -455,7 +492,7 @@ def caltech256(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-@dataset_mocks.register_mock_data_fn
+@DATASET_MOCKS.set_from_named_callable
 def imagenet(info, root, config):
     wnids = tuple(info.extra.wnid_to_category.keys())
     if config.split == "train":
@@ -610,6 +647,654 @@ class CocoMockData:
         return num_samples
 
 
-@dataset_mocks.register_mock_data_fn
+@DATASET_MOCKS.set_from_named_callable
 def coco(info, root, config):
-    return CocoMockData.generate(root, year=config.year, num_samples=5)
+    return dict(
+        zip(
+            [config_ for config_ in info._configs if config_.year == config.year],
+            itertools.repeat(CocoMockData.generate(root, year=config.year, num_samples=5)),
+        )
+    )
+
+
+class SBDMockData:
+    _NUM_CATEGORIES = 20
+
+    @classmethod
+    def _make_split_files(cls, root_map):
+        ids_map = {
+            split: [f"2008_{idx:06d}" for idx in idcs]
+            for split, idcs in (
+                ("train", [0, 1, 2]),
+                ("train_noval", [0, 2]),
+                ("val", [3]),
+            )
+        }
+
+        for split, ids in ids_map.items():
+            with open(root_map[split] / f"{split}.txt", "w") as fh:
+                fh.writelines(f"{id}\n" for id in ids)
+
+        return sorted(set(itertools.chain(*ids_map.values()))), {split: len(ids) for split, ids in ids_map.items()}
+
+    @classmethod
+    def _make_anns_folder(cls, root, name, ids):
+        from scipy.io import savemat
+
+        anns_folder = root / name
+        anns_folder.mkdir()
+
+        sizes = torch.randint(1, 9, size=(len(ids), 2)).tolist()
+        for id, size in zip(ids, sizes):
+            savemat(
+                anns_folder / f"{id}.mat",
+                {
+                    "GTcls": {
+                        "Boundaries": cls._make_boundaries(size),
+                        "Segmentation": cls._make_segmentation(size),
+                    }
+                },
+            )
+        return sizes
+
+    @classmethod
+    def _make_boundaries(cls, size):
+        from scipy.sparse import csc_matrix
+
+        return [
+            [csc_matrix(torch.randint(0, 2, size=size, dtype=torch.uint8).numpy())] for _ in range(cls._NUM_CATEGORIES)
+        ]
+
+    @classmethod
+    def _make_segmentation(cls, size):
+        return torch.randint(0, cls._NUM_CATEGORIES + 1, size=size, dtype=torch.uint8).numpy()
+
+    @classmethod
+    def generate(cls, root):
+        archive_folder = root / "benchmark_RELEASE"
+        dataset_folder = archive_folder / "dataset"
+        dataset_folder.mkdir(parents=True, exist_ok=True)
+
+        ids, num_samples_map = cls._make_split_files(defaultdict(lambda: dataset_folder, {"train_noval": root}))
+        sizes = cls._make_anns_folder(dataset_folder, "cls", ids)
+        create_image_folder(
+            dataset_folder, "img", lambda idx: f"{ids[idx]}.jpg", num_examples=len(ids), size=lambda idx: sizes[idx]
+        )
+
+        make_tar(root, "benchmark.tgz", archive_folder, compression="gz")
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.set_from_named_callable
+def sbd(info, root, _):
+    num_samples_map = SBDMockData.generate(root)
+    return {config: num_samples_map[config.split] for config in info._configs}
+
+
+@DATASET_MOCKS.set_from_named_callable
+def semeion(info, root, config):
+    num_samples = 3
+
+    images = torch.rand(num_samples, 256)
+    labels = one_hot(torch.randint(len(info.categories), size=(num_samples,)))
+    with open(root / "semeion.data", "w") as fh:
+        for image, one_hot_label in zip(images, labels):
+            image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
+            labels_columns = " ".join([str(label.item()) for label in one_hot_label])
+            fh.write(f"{image_columns} {labels_columns}\n")
+
+    return num_samples
+
+
+class VOCMockData:
+    _TRAIN_VAL_FILE_NAMES = {
+        "2007": "VOCtrainval_06-Nov-2007.tar",
+        "2008": "VOCtrainval_14-Jul-2008.tar",
+        "2009": "VOCtrainval_11-May-2009.tar",
+        "2010": "VOCtrainval_03-May-2010.tar",
+        "2011": "VOCtrainval_25-May-2011.tar",
+        "2012": "VOCtrainval_11-May-2012.tar",
+    }
+    _TEST_FILE_NAMES = {
+        "2007": "VOCtest_06-Nov-2007.tar",
+    }
+
+    @classmethod
+    def _make_split_files(cls, root, *, year, trainval):
+        split_folder = root / "ImageSets"
+
+        if trainval:
+            idcs_map = {
+                "train": [0, 1, 2],
+                "val": [3, 4],
+            }
+            idcs_map["trainval"] = [*idcs_map["train"], *idcs_map["val"]]
+        else:
+            idcs_map = {
+                "test": [5],
+            }
+        ids_map = {split: [f"{year}_{idx:06d}" for idx in idcs] for split, idcs in idcs_map.items()}
+
+        for task_sub_folder in ("Main", "Segmentation"):
+            task_folder = split_folder / task_sub_folder
+            task_folder.mkdir(parents=True, exist_ok=True)
+            for split, ids in ids_map.items():
+                with open(task_folder / f"{split}.txt", "w") as fh:
+                    fh.writelines(f"{id}\n" for id in ids)
+
+        return sorted(set(itertools.chain(*ids_map.values()))), {split: len(ids) for split, ids in ids_map.items()}
+
+    @classmethod
+    def _make_detection_anns_folder(cls, root, name, *, file_name_fn, num_examples):
+        folder = root / name
+        folder.mkdir(parents=True, exist_ok=True)
+
+        for idx in range(num_examples):
+            cls._make_detection_ann_file(folder, file_name_fn(idx))
+
+    @classmethod
+    def _make_detection_ann_file(cls, root, name):
+        def add_child(parent, name, text=None):
+            child = ET.SubElement(parent, name)
+            child.text = text
+            return child
+
+        def add_name(obj, name="dog"):
+            add_child(obj, "name", name)
+            return name
+
+        def add_bndbox(obj, bndbox=None):
+            if bndbox is None:
+                bndbox = {"xmin": "1", "xmax": "2", "ymin": "3", "ymax": "4"}
+
+            obj = add_child(obj, "bndbox")
+            for name, text in bndbox.items():
+                add_child(obj, name, text)
+
+            return bndbox
+
+        annotation = ET.Element("annotation")
+        obj = add_child(annotation, "object")
+        data = dict(name=add_name(obj), bndbox=add_bndbox(obj))
+
+        with open(root / name, "wb") as fh:
+            fh.write(ET.tostring(annotation))
+
+        return data
+
+    @classmethod
+    def generate(cls, root, *, year, trainval):
+        archive_folder = root
+        if year == "2011":
+            archive_folder /= "TrainVal"
+        data_folder = archive_folder / "VOCdevkit" / f"VOC{year}"
+        data_folder.mkdir(parents=True, exist_ok=True)
+
+        ids, num_samples_map = cls._make_split_files(data_folder, year=year, trainval=trainval)
+        for make_folder_fn, name, suffix in [
+            (create_image_folder, "JPEGImages", ".jpg"),
+            (create_image_folder, "SegmentationClass", ".png"),
+            (cls._make_detection_anns_folder, "Annotations", ".xml"),
+        ]:
+            make_folder_fn(data_folder, name, file_name_fn=lambda idx: ids[idx] + suffix, num_examples=len(ids))
+        make_tar(root, (cls._TRAIN_VAL_FILE_NAMES if trainval else cls._TEST_FILE_NAMES)[year], data_folder)
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.set_from_named_callable
+def voc(info, root, config):
+    trainval = config.split != "test"
+    num_samples_map = VOCMockData.generate(root, year=config.year, trainval=trainval)
+    return {
+        config_: num_samples_map[config_.split]
+        for config_ in info._configs
+        if config_.year == config.year and ((config_.split == "test") ^ trainval)
+    }
+
+
+class CelebAMockData:
+    @classmethod
+    def _make_ann_file(cls, root, name, data, *, field_names=None):
+        with open(root / name, "w") as file:
+            if field_names:
+                file.write(f"{len(data)}\r\n")
+                file.write(" ".join(field_names) + "\r\n")
+            file.writelines(" ".join(str(item) for item in row) + "\r\n" for row in data)
+
+    _SPLIT_TO_IDX = {
+        "train": 0,
+        "val": 1,
+        "test": 2,
+    }
+
+    @classmethod
+    def _make_split_file(cls, root):
+        num_samples_map = {"train": 4, "val": 3, "test": 2}
+
+        data = [
+            (f"{idx:06d}.jpg", cls._SPLIT_TO_IDX[split])
+            for split, num_samples in num_samples_map.items()
+            for idx in range(num_samples)
+        ]
+        cls._make_ann_file(root, "list_eval_partition.txt", data)
+
+        image_file_names, _ = zip(*data)
+        return image_file_names, num_samples_map
+
+    @classmethod
+    def _make_identity_file(cls, root, image_file_names):
+        cls._make_ann_file(
+            root, "identity_CelebA.txt", [(name, int(make_scalar(low=1, dtype=torch.int))) for name in image_file_names]
+        )
+
+    @classmethod
+    def _make_attributes_file(cls, root, image_file_names):
+        field_names = ("5_o_Clock_Shadow", "Young")
+        data = [
+            [name, *[" 1" if attr else "-1" for attr in make_tensor((len(field_names),), dtype=torch.bool)]]
+            for name in image_file_names
+        ]
+        cls._make_ann_file(root, "list_attr_celeba.txt", data, field_names=(*field_names, ""))
+
+    @classmethod
+    def _make_bounding_boxes_file(cls, root, image_file_names):
+        field_names = ("image_id", "x_1", "y_1", "width", "height")
+        data = [
+            [f"{name}  ", *[f"{coord:3d}" for coord in make_tensor((4,), low=0, dtype=torch.int).tolist()]]
+            for name in image_file_names
+        ]
+        cls._make_ann_file(root, "list_bbox_celeba.txt", data, field_names=field_names)
+
+    @classmethod
+    def _make_landmarks_file(cls, root, image_file_names):
+        field_names = ("lefteye_x", "lefteye_y", "rightmouth_x", "rightmouth_y")
+        data = [
+            [
+                name,
+                *[
+                    f"{coord:4d}" if idx else coord
+                    for idx, coord in enumerate(make_tensor((len(field_names),), low=0, dtype=torch.int).tolist())
+                ],
+            ]
+            for name in image_file_names
+        ]
+        cls._make_ann_file(root, "list_landmarks_align_celeba.txt", data, field_names=field_names)
+
+    @classmethod
+    def generate(cls, root):
+        image_file_names, num_samples_map = cls._make_split_file(root)
+
+        image_files = create_image_folder(
+            root, "img_align_celeba", file_name_fn=lambda idx: image_file_names[idx], num_examples=len(image_file_names)
+        )
+        make_zip(root, image_files[0].parent.with_suffix(".zip").name)
+
+        for make_ann_file_fn in (
+            cls._make_identity_file,
+            cls._make_attributes_file,
+            cls._make_bounding_boxes_file,
+            cls._make_landmarks_file,
+        ):
+            make_ann_file_fn(root, image_file_names)
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.set_from_named_callable
+def celeba(info, root, _):
+    num_samples_map = CelebAMockData.generate(root)
+    return {config: num_samples_map[config.split] for config in info._configs}
+
+
+@DATASET_MOCKS.set_from_named_callable
+def dtd(info, root, _):
+    data_folder = root / "dtd"
+
+    num_images_per_class = 3
+    image_folder = data_folder / "images"
+    categories = {"banded", "marbled", "zigzagged"}
+    image_ids_per_category = {
+        category: [
+            str(path.relative_to(path.parents[1]).as_posix())
+            for path in create_image_folder(
+                image_folder,
+                category,
+                file_name_fn=lambda idx: f"{category}_{idx:04d}.jpg",
+                num_examples=num_images_per_class,
+            )
+        ]
+        for category in categories
+    }
+
+    meta_folder = data_folder / "labels"
+    meta_folder.mkdir()
+
+    with open(meta_folder / "labels_joint_anno.txt", "w") as file:
+        for cls, image_ids in image_ids_per_category.items():
+            for image_id in image_ids:
+                joint_categories = random.choices(
+                    list(categories - {cls}), k=int(torch.randint(len(categories) - 1, ()))
+                )
+                file.write(" ".join([image_id, *sorted([cls, *joint_categories])]) + "\n")
+
+    image_ids = list(itertools.chain(*image_ids_per_category.values()))
+    splits = ("train", "val", "test")
+    num_samples_map = {}
+    for fold in range(1, 11):
+        random.shuffle(image_ids)
+        for offset, split in enumerate(splits):
+            image_ids_in_config = image_ids[offset :: len(splits)]
+            with open(meta_folder / f"{split}{fold}.txt", "w") as file:
+                file.write("\n".join(image_ids_in_config) + "\n")
+
+            num_samples_map[info.make_config(split=split, fold=str(fold))] = len(image_ids_in_config)
+
+    make_tar(root, "dtd-r1.0.1.tar.gz", data_folder, compression="gz")
+
+    return num_samples_map
+
+
+@DATASET_MOCKS.set_from_named_callable
+def fer2013(info, root, config):
+    num_samples = 5 if config.split == "train" else 3
+
+    path = root / f"{config.split}.txt"
+    with open(path, "w", newline="") as file:
+        field_names = ["emotion"] if config.split == "train" else []
+        field_names.append("pixels")
+
+        file.write(",".join(field_names) + "\n")
+
+        writer = csv.DictWriter(file, fieldnames=field_names, quotechar='"', quoting=csv.QUOTE_NONNUMERIC)
+        for _ in range(num_samples):
+            rowdict = {
+                "pixels": " ".join([str(int(pixel)) for pixel in torch.randint(256, (48 * 48,), dtype=torch.uint8)])
+            }
+            if config.split == "train":
+                rowdict["emotion"] = int(torch.randint(7, ()))
+            writer.writerow(rowdict)
+
+    make_zip(root, f"{path.name}.zip", path)
+
+    return num_samples
+
+
+@DATASET_MOCKS.set_from_named_callable
+def clevr(info, root, config):
+    data_folder = root / "CLEVR_v1.0"
+
+    num_samples_map = {
+        "train": 3,
+        "val": 2,
+        "test": 1,
+    }
+
+    images_folder = data_folder / "images"
+    image_files = {
+        split: create_image_folder(
+            images_folder,
+            split,
+            file_name_fn=lambda idx: f"CLEVR_{split}_{idx:06d}.jpg",
+            num_examples=num_samples,
+        )
+        for split, num_samples in num_samples_map.items()
+    }
+
+    scenes_folder = data_folder / "scenes"
+    scenes_folder.mkdir()
+    for split in ["train", "val"]:
+        with open(scenes_folder / f"CLEVR_{split}_scenes.json", "w") as file:
+            json.dump(
+                {
+                    "scenes": [
+                        {
+                            "image_filename": image_file.name,
+                            # We currently only return the number of objects in a scene.
+                            # Thus, it is sufficient for now to only mock the number of elements.
+                            "objects": [None] * int(torch.randint(1, 5, ())),
+                        }
+                        for image_file in image_files[split]
+                    ]
+                },
+                file,
+            )
+
+    make_zip(root, f"{data_folder.name}.zip")
+
+    return {config_: num_samples_map[config_.split] for config_ in info._configs}
+
+
+class OxfordIIITPetMockData:
+    @classmethod
+    def _meta_to_split_and_classification_ann(cls, meta, idx):
+        image_id = "_".join(
+            [
+                *[(str.title if meta["species"] == "cat" else str.lower)(part) for part in meta["cls"].split()],
+                str(idx),
+            ]
+        )
+        class_id = str(meta["label"] + 1)
+        species = "1" if meta["species"] == "cat" else "2"
+        breed_id = "-1"
+        return (image_id, class_id, species, breed_id)
+
+    @classmethod
+    def generate(self, root):
+        classification_anns_meta = (
+            dict(cls="Abyssinian", label=0, species="cat"),
+            dict(cls="Keeshond", label=18, species="dog"),
+            dict(cls="Yorkshire Terrier", label=36, species="dog"),
+        )
+        split_and_classification_anns = [
+            self._meta_to_split_and_classification_ann(meta, idx)
+            for meta, idx in itertools.product(classification_anns_meta, (1, 2, 10))
+        ]
+        image_ids, *_ = zip(*split_and_classification_anns)
+
+        image_files = create_image_folder(
+            root, "images", file_name_fn=lambda idx: f"{image_ids[idx]}.jpg", num_examples=len(image_ids)
+        )
+
+        anns_folder = root / "annotations"
+        anns_folder.mkdir()
+        random.shuffle(split_and_classification_anns)
+        splits = ("trainval", "test")
+        num_samples_map = {}
+        for offset, split in enumerate(splits):
+            split_and_classification_anns_in_split = split_and_classification_anns[offset :: len(splits)]
+            with open(anns_folder / f"{split}.txt", "w") as file:
+                writer = csv.writer(file, delimiter=" ")
+                for split_and_classification_ann in split_and_classification_anns_in_split:
+                    writer.writerow(split_and_classification_ann)
+
+            num_samples_map[split] = len(split_and_classification_anns_in_split)
+
+        segmentation_files = create_image_folder(
+            anns_folder, "trimaps", file_name_fn=lambda idx: f"{image_ids[idx]}.png", num_examples=len(image_ids)
+        )
+
+        # The dataset has some rogue files
+        for path in image_files[:3]:
+            path.with_suffix(".mat").touch()
+        for path in segmentation_files:
+            path.with_name(f".{path.name}").touch()
+
+        make_tar(root, "images.tar")
+        make_tar(root, anns_folder.with_suffix(".tar").name)
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.set_from_named_callable
+def oxford_iiit_pet(info, root, config):
+    num_samples_map = OxfordIIITPetMockData.generate(root)
+    return {config_: num_samples_map[config_.split] for config_ in info._configs}
+
+
+class _CUB200MockData:
+    @classmethod
+    def _category_folder(cls, category, idx):
+        return f"{idx:03d}.{category}"
+
+    @classmethod
+    def _file_stem(cls, category, idx):
+        return f"{category}_{idx:04d}"
+
+    @classmethod
+    def _make_images(cls, images_folder):
+        image_files = []
+        for category_idx, category in [
+            (1, "Black_footed_Albatross"),
+            (100, "Brown_Pelican"),
+            (200, "Common_Yellowthroat"),
+        ]:
+            image_files.extend(
+                create_image_folder(
+                    images_folder,
+                    cls._category_folder(category, category_idx),
+                    lambda image_idx: f"{cls._file_stem(category, image_idx)}.jpg",
+                    num_examples=5,
+                )
+            )
+
+        return image_files
+
+
+class CUB2002011MockData(_CUB200MockData):
+    @classmethod
+    def _make_archive(cls, root):
+        archive_folder = root / "CUB_200_2011"
+
+        images_folder = archive_folder / "images"
+        image_files = cls._make_images(images_folder)
+        image_ids = list(range(1, len(image_files) + 1))
+
+        with open(archive_folder / "images.txt", "w") as file:
+            file.write(
+                "\n".join(
+                    f"{id} {path.relative_to(images_folder).as_posix()}" for id, path in zip(image_ids, image_files)
+                )
+            )
+
+        split_ids = torch.randint(2, (len(image_ids),)).tolist()
+        counts = Counter(split_ids)
+        num_samples_map = {"train": counts[1], "test": counts[0]}
+        with open(archive_folder / "train_test_split.txt", "w") as file:
+            file.write("\n".join(f"{image_id} {split_id}" for image_id, split_id in zip(image_ids, split_ids)))
+
+        with open(archive_folder / "bounding_boxes.txt", "w") as file:
+            file.write(
+                "\n".join(
+                    " ".join(
+                        str(item)
+                        for item in [image_id, *make_tensor((4,), dtype=torch.int, low=0).to(torch.float).tolist()]
+                    )
+                    for image_id in image_ids
+                )
+            )
+
+        make_tar(root, archive_folder.with_suffix(".tgz").name, compression="gz")
+
+        return image_files, num_samples_map
+
+    @classmethod
+    def _make_segmentations(cls, root, image_files):
+        segmentations_folder = root / "segmentations"
+        for image_file in image_files:
+            folder = segmentations_folder.joinpath(image_file.relative_to(image_file.parents[1]))
+            folder.mkdir(exist_ok=True, parents=True)
+            create_image_file(
+                folder,
+                image_file.with_suffix(".png").name,
+                size=[1, *make_tensor((2,), low=3, dtype=torch.int).tolist()],
+            )
+
+        make_tar(root, segmentations_folder.with_suffix(".tgz").name)
+
+    @classmethod
+    def generate(cls, root):
+        image_files, num_samples_map = cls._make_archive(root)
+        cls._make_segmentations(root, image_files)
+        return num_samples_map
+
+
+class CUB2002010MockData(_CUB200MockData):
+    @classmethod
+    def _make_hidden_rouge_file(cls, *files):
+        for file in files:
+            (file.parent / f"._{file.name}").touch()
+
+    @classmethod
+    def _make_splits(cls, root, image_files):
+        split_folder = root / "lists"
+        split_folder.mkdir()
+        random.shuffle(image_files)
+        splits = ("train", "test")
+        num_samples_map = {}
+        for offset, split in enumerate(splits):
+            image_files_in_split = image_files[offset :: len(splits)]
+
+            split_file = split_folder / f"{split}.txt"
+            with open(split_file, "w") as file:
+                file.write(
+                    "\n".join(
+                        sorted(
+                            str(image_file.relative_to(image_file.parents[1]).as_posix())
+                            for image_file in image_files_in_split
+                        )
+                    )
+                )
+
+            cls._make_hidden_rouge_file(split_file)
+            num_samples_map[split] = len(image_files_in_split)
+
+        make_tar(root, split_folder.with_suffix(".tgz").name, compression="gz")
+
+        return num_samples_map
+
+    @classmethod
+    def _make_anns(cls, root, image_files):
+        from scipy.io import savemat
+
+        anns_folder = root / "annotations-mat"
+        for image_file in image_files:
+            ann_file = anns_folder / image_file.with_suffix(".mat").relative_to(image_file.parents[1])
+            ann_file.parent.mkdir(parents=True, exist_ok=True)
+
+            savemat(
+                ann_file,
+                {
+                    "seg": torch.randint(
+                        256, make_tensor((2,), low=3, dtype=torch.int).tolist(), dtype=torch.uint8
+                    ).numpy(),
+                    "bbox": dict(
+                        zip(("left", "top", "right", "bottom"), make_tensor((4,), dtype=torch.uint8).tolist())
+                    ),
+                },
+            )
+
+        readme_file = anns_folder / "README.txt"
+        readme_file.touch()
+        cls._make_hidden_rouge_file(readme_file)
+
+        make_tar(root, "annotations.tgz", anns_folder, compression="gz")
+
+    @classmethod
+    def generate(cls, root):
+        images_folder = root / "images"
+        image_files = cls._make_images(images_folder)
+        cls._make_hidden_rouge_file(*image_files)
+        make_tar(root, images_folder.with_suffix(".tgz").name, compression="gz")
+
+        num_samples_map = cls._make_splits(root, image_files)
+        cls._make_anns(root, image_files)
+
+        return num_samples_map
+
+
+@DATASET_MOCKS.set_from_named_callable
+def cub200(info, root, config):
+    num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
+    return {config_: num_samples_map[config_.split] for config_ in info._configs if config_.year == config.year}

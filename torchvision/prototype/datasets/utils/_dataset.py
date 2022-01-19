@@ -6,7 +6,7 @@ import io
 import itertools
 import os
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple, Collection
 
 import torch
 from torch.utils.data import IterDataPipe
@@ -33,12 +33,12 @@ class DatasetInfo:
         name: str,
         *,
         type: Union[str, DatasetType],
-        dependencies: Sequence[str] = (),
+        dependencies: Collection[str] = (),
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
-        valid_options: Optional[Dict[str, Sequence]] = None,
+        valid_options: Optional[Dict[str, Sequence[Any]]] = None,
         extra: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.name = name.lower()
@@ -60,20 +60,10 @@ class DatasetInfo:
         self.homepage = homepage
         self.license = license
 
-        valid_split: Dict[str, Sequence] = dict(split=["train"])
-        if valid_options is None:
-            valid_options = valid_split
-        elif "split" not in valid_options:
-            valid_options.update(valid_split)
-        elif "train" not in valid_options["split"]:
-            raise ValueError(
-                f"'train' has to be a valid argument for option 'split', "
-                f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
-            )
-        self._valid_options: Dict[str, Sequence] = valid_options
+        self._valid_options = valid_options or dict()
         self._configs = tuple(
-            DatasetConfig(**dict(zip(valid_options.keys(), combination)))
-            for combination in itertools.product(*valid_options.values())
+            DatasetConfig(**dict(zip(self._valid_options.keys(), combination)))
+            for combination in itertools.product(*self._valid_options.values())
         )
 
         self.extra = FrozenBunch(extra or dict())

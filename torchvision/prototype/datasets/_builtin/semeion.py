@@ -1,3 +1,4 @@
+import functools
 import io
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
@@ -5,7 +6,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     CSVParser,
 )
 from torchvision.prototype.datasets.decoder import raw
@@ -17,7 +17,8 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, image_buffer_from_array, hint_sharding
+from torchvision.prototype.datasets.utils._internal import image_buffer_from_array, hint_sharding, hint_shuffling
+from torchvision.prototype.features import Image, Label
 
 
 class SEMEION(Dataset):
@@ -46,14 +47,13 @@ class SEMEION(Dataset):
         label_data = [int(label) for label in data[256:] if label]
 
         if decoder is raw:
-            image = image_data.unsqueeze(0)
+            image = Image(image_data.unsqueeze(0))
         else:
             image_buffer = image_buffer_from_array(image_data.numpy())
             image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        label = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
-        category = self.info.categories[label]
-        return dict(image=image, label=label, category=category)
+        label_idx = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
+        return dict(image=image, label=Label(label_idx, category=self.info.categories[label_idx]))
 
     def _make_datapipe(
         self,
@@ -65,6 +65,6 @@ class SEMEION(Dataset):
         dp = resource_dps[0]
         dp = CSVParser(dp, delimiter=" ")
         dp = hint_sharding(dp)
-        dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
-        dp = Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        dp = hint_shuffling(dp)
+        dp = Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
         return dp

@@ -1,7 +1,6 @@
 # Optional list of dependencies required by the package
 dependencies = ["torch"]
 
-# classification
 from torchvision.models.alexnet import alexnet
 from torchvision.models.densenet import densenet121, densenet169, densenet201, densenet161
 from torchvision.models.efficientnet import (
@@ -19,6 +18,7 @@ from torchvision.models.inception import inception_v3
 from torchvision.models.mnasnet import mnasnet0_5, mnasnet0_75, mnasnet1_0, mnasnet1_3
 from torchvision.models.mobilenetv2 import mobilenet_v2
 from torchvision.models.mobilenetv3 import mobilenet_v3_large, mobilenet_v3_small
+from torchvision.models.optical_flow import raft_large, raft_small
 from torchvision.models.regnet import (
     regnet_y_400mf,
     regnet_y_800mf,
@@ -27,6 +27,7 @@ from torchvision.models.regnet import (
     regnet_y_8gf,
     regnet_y_16gf,
     regnet_y_32gf,
+    regnet_y_128gf,
     regnet_x_400mf,
     regnet_x_800mf,
     regnet_x_1_6gf,
@@ -46,8 +47,6 @@ from torchvision.models.resnet import (
     wide_resnet50_2,
     wide_resnet101_2,
 )
-
-# segmentation
 from torchvision.models.segmentation import (
     fcn_resnet50,
     fcn_resnet101,
@@ -59,3 +58,9 @@ from torchvision.models.segmentation import (
 from torchvision.models.shufflenetv2 import shufflenet_v2_x0_5, shufflenet_v2_x1_0
 from torchvision.models.squeezenet import squeezenet1_0, squeezenet1_1
 from torchvision.models.vgg import vgg11, vgg13, vgg16, vgg19, vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
+from torchvision.models.vision_transformer import (
+    vit_b_16,
+    vit_b_32,
+    vit_l_16,
+    vit_l_32,
+)

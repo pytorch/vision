@@ -61,6 +61,7 @@ class LazyImporter:
         "requests",
         "scipy.io",
         "scipy.sparse",
+        "h5py",
     )
 
     def __init__(self):
@@ -867,7 +868,7 @@ def _split_files_or_dirs(root, *files_or_dirs):
 def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
     archive = pathlib.Path(root) / name
     if not files_or_dirs:
-        dir = archive.parent / archive.name.replace("".join(archive.suffixes), "")
+        dir = archive.with_suffix("")
         if dir.exists() and dir.is_dir():
             files_or_dirs = (dir,)
         else:
