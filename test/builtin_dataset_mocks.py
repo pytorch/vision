@@ -1054,19 +1054,23 @@ def gtsrb(info, root, config):
         make_zip(root, "GTSRB_Final_Test_Images.zip", test_folder)
 
         with open(root / "GT-final_test.csv", "w") as csv_file:
-            csv_file.write("Filename;Width;Height;Roi.X1;Roi.Y1;Roi.X2;Roi.Y2;ClassId\n")
+            csv_file.write("")
+            columns = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
+            writer = csv.DictWriter(csv_file, fieldnames=columns, delimiter=";")
+            writer.writeheader()
             for image_idx in range(num_examples):
-                row = [
-                    f"{image_idx:05d}.ppm",
-                    torch.randint(1, 100, size=()).item(),
-                    torch.randint(1, 100, size=()).item(),
-                    torch.randint(1, 100, size=()).item(),
-                    torch.randint(1, 100, size=()).item(),
-                    torch.randint(1, 100, size=()).item(),
-                    torch.randint(1, 100, size=()).item(),
-                    torch.randint(1, len(classes) + 1, size=()).item(),
-                ]
-                csv_file.write(";".join(map(str, row)) + "\n")
+                writer.writerow(
+                    {
+                        "Filename": f"{image_idx:05d}.ppm",
+                        "Width": torch.randint(1, 100, size=()).item(),
+                        "Height": torch.randint(1, 100, size=()).item(),
+                        "Roi.X1": torch.randint(1, 100, size=()).item(),
+                        "Roi.Y1": torch.randint(1, 100, size=()).item(),
+                        "Roi.X2": torch.randint(1, 100, size=()).item(),
+                        "Roi.Y2": torch.randint(1, 100, size=()).item(),
+                        "ClassId": torch.randint(1, len(classes) + 1, size=()).item(),
+                    }
+                )
         make_zip(root, "GTSRB_Final_Test_GT.zip", "GT-final_test.csv")
 
     return num_examples
