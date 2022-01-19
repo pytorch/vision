@@ -19,6 +19,7 @@ __all__ = [
     "ViT_B_32_Weights",
     "ViT_L_16_Weights",
     "ViT_L_32_Weights",
+    "ViT_H_14_Weights",
     "vit_b_16",
     "vit_b_32",
     "vit_l_16",
