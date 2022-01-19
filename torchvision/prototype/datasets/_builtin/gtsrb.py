@@ -78,7 +78,7 @@ class GTSRB(Dataset):
         return {
             "image_path": image_path,
             "image": decoder(image_buffer) if decoder else image_buffer,
-            "label": Label(label),
+            "label": Label(label, category=self.categories[label]),
         }
 
     def _make_datapipe(
@@ -97,7 +97,8 @@ class GTSRB(Dataset):
             images_dp, gt_dp = resource_dps
             dp = Filter(images_dp, self._filter_images)
 
-            gt_dp = CSVDictParser(gt_dp, fieldnames=("Filename", "ClassId"), delimiter=";")
+            fieldnames = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
+            gt_dp = CSVDictParser(gt_dp, fieldnames=fieldnames, delimiter=";")
 
             dp = IterKeyZipper(
                 images_dp,
