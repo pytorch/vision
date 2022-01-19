@@ -6,7 +6,7 @@ from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
-from torchvision.prototype import transforms
+from torchvision.prototype import transforms, datasets
 from torchvision.prototype.utils._internal import sequence_to_str
 
 
