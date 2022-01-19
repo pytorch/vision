@@ -78,6 +78,15 @@ class DatasetInfo:
             return [row for row in csv.reader(file)]
 
     def make_config(self, **options: Any) -> DatasetConfig:
+        if not self._valid_options:
+            if options:
+                raise ValueError(
+                    f"Dataset {self.name} does not take any options, "
+                    f"but got {sequence_to_str(list(options), separate_last=' and')}."
+                )
+
+            return DatasetConfig()
+
         for name, arg in options.items():
             if name not in self._valid_options:
                 raise ValueError(
