@@ -80,7 +80,7 @@ class RenderedSST2(VisionDataset):
 
     def _check_exists(self) -> bool:
         for class_label in set(self.classes):
-            if not (self._base_folder / self._split / class_label).is_dir():
+            if not (self._base_folder / self._split_to_folder[self._split] / class_label).is_dir():
                 return False
         return True
 
