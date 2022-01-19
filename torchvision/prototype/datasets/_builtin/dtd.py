@@ -1,4 +1,5 @@
 import enum
+import functools
 import io
 import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
@@ -126,7 +127,7 @@ class DTD(Dataset):
             ref_key_fn=self._image_key_fn,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
         return self._classify_archive(data) == DTDDemux.IMAGES
