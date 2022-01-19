@@ -60,13 +60,14 @@ class GTSRB(Dataset):
         return pathlib.Path(data[0]).suffix == ".ppm"
 
     def _append_label_train(self, path_and_handle: Tuple[str, Any]) -> Tuple[str, Any, int]:
-        path = path_and_handle[0]
+        path, handle = path_and_handle
         label = int(pathlib.Path(path).parent.stem)
-        return *path_and_handle, label
+        return path, handle, label
 
     def _append_label_test(self, path_and_handle: Tuple[str, Any], csv_info: Dict[str, Any]) -> Tuple[str, Any, int]:
+        path, handle = path_and_handle
         label = int(csv_info["ClassId"])
-        return *path_and_handle, label
+        return path, handle, label
 
     def _collate(
         self, data: Tuple[str, Any, int], decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
