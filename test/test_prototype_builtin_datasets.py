@@ -116,7 +116,6 @@ class TestCommon:
         else:
             raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
 
-    @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_loadable_through_api(self, mocker, dataset_mock, config):
         # Make all resources that are necessary for the given config
         dataset_mock.make_mock_resources(config)

@@ -1212,7 +1212,7 @@ class CUB2002011MockData(_CUB200MockData):
                 size=[1, *make_tensor((2,), low=3, dtype=torch.int).tolist()],
             )
 
-        make_tar(root, segmentations_folder.with_suffix(".tgz").name, compression="gz")
+        make_tar(root, segmentations_folder.with_suffix(".tgz").name)
 
     @classmethod
     def generate(cls, root):
