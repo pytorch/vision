@@ -114,7 +114,7 @@ class TestCommon:
             if type(dp) is annotation_dp_type:
                 break
         else:
-            raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
+            raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
 
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])

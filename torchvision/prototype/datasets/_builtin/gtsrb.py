@@ -14,6 +14,8 @@ from torchvision.prototype.datasets.utils import (
     HttpResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
+    hint_sharding,
+    hint_shuffling,
     INFINITE_BUFFER_SIZE,
     path_accessor,
     getitem,
@@ -95,6 +97,9 @@ class GTSRB(Dataset):
                 buffer_size=INFINITE_BUFFER_SIZE,
                 merge_fn=self._append_label_test,
             )  # path, handle, label
+
+        dp = hint_sharding(dp)
+        dp = hint_shuffling(dp)
 
         dp = Mapper(dp, partial(self._collate, decoder=decoder))
         return dp
