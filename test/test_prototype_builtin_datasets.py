@@ -6,7 +6,7 @@ from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
-from torchvision.prototype import transforms
+from torchvision.prototype import transforms, datasets
 from torchvision.prototype.utils._internal import sequence_to_str
 
 
@@ -84,6 +84,13 @@ class TestCommon:
                 break
         else:
             raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
+
+    def test_loadable_through_api(self, mocker, dataset_mock, config):
+        # Make all resources that are necessary for the given config
+        dataset_mock.make_mock_resources(config)
+        mocker.patch("torchvision.prototype.datasets._api.home", return_value=str(dataset_mock.home))
+
+        datasets.load(dataset_mock.name, **config)
 
 
 class TestQMNIST:

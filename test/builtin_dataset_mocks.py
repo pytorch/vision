@@ -43,7 +43,8 @@ class ResourceMock(datasets.utils.OnlineResource):
 class DatasetMock:
     def __init__(self, name, mock_data_fn, *, configs=None):
         self.dataset = find(name)
-        self.root = TEST_HOME / self.dataset.name
+        self.home = TEST_HOME
+        self.root = self.home / self.dataset.name
         self.mock_data_fn = self._parse_mock_data(mock_data_fn)
         self.configs = configs or self.info._configs
         self._cache = {}
@@ -100,7 +101,7 @@ class DatasetMock:
 
         return wrapper
 
-    def _load_mock(self, config):
+    def make_mock_resources(self, config):
         with contextlib.suppress(KeyError):
             return self._cache[config]
 
@@ -120,7 +121,7 @@ class DatasetMock:
         except ModuleNotFoundError as error:
             pytest.skip(str(error))
 
-        mock_resources, mock_info = self._load_mock(config)
+        mock_resources, mock_info = self.make_mock_resources(config)
         datapipe = self.dataset._make_datapipe(
             [resource.load(self.root) for resource in mock_resources],
             config=config,
