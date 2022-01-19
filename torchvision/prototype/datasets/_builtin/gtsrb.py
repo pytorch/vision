@@ -33,10 +33,11 @@ class GTSRB(Dataset):
             valid_options=dict(split=("train", "test")),
         )
 
+    _URL_ROOT = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/"
     _URLS = {
-        "train": "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB-Training_fixed.zip",
-        "test": "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_Images.zip",
-        "test_gt": "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_GT.zip",
+        "train": f"{_URL_ROOT}GTSRB-Training_fixed.zip",
+        "test": f"{_URL_ROOT}GTSRB_Final_Test_Images.zip",
+        "test_gt": f"{_URL_ROOT}GTSRB_Final_Test_GT.zip",
     }
     _CHECKSUMS = {
         "train": "df4144942083645bd60b594de348aa6930126c3e0e5de09e39611630abf8455a",
