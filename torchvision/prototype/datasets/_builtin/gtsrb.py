@@ -29,6 +29,7 @@ class GTSRB(Dataset):
             "gtsrb",
             type=DatasetType.IMAGE,
             homepage="https://benchmark.ini.rub.de",
+            categories=[f"{label:05d}" for label in range(43)],
             valid_options=dict(split=("train", "test")),
         )
 
@@ -111,12 +112,3 @@ class GTSRB(Dataset):
 
         dp = Mapper(dp, partial(self._collate, decoder=decoder))
         return dp
-
-    def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        config = self.default_config
-
-        images_dp = self.resources(config)[0].load(root)
-        images_dp = Filter(images_dp, self._filter_images)
-
-        labels = sorted(set(pathlib.Path(path).parent.stem for path, _ in images_dp))
-        return labels
