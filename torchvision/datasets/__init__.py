@@ -18,6 +18,7 @@ from .mnist import MNIST, EMNIST, FashionMNIST, KMNIST, QMNIST
 from .omniglot import Omniglot
 from .phototour import PhotoTour
 from .places365 import Places365
+from .rendered_sst2 import RenderedSST2
 from .sbd import SBDataset
 from .sbu import SBU
 from .semeion import SEMEION
@@ -77,4 +78,5 @@ __all__ = (
     "FlyingChairs",
     "FlyingThings3D",
     "HD1K",
+    "RenderedSST2",
 )

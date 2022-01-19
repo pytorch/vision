@@ -2168,5 +2168,27 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
+class RenderedSST2TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.RenderedSST2
+    FEATURE_TYPES = (PIL.Image.Image, int)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "valid", "test"))
+
+    def inject_fake_data(self, tmpdir: str, config):
+        root_folder = pathlib.Path(tmpdir) / "rendered-sst2"
+        image_folder = root_folder / config["split"]
+
+        num_images_per_class = 5
+        sampled_classes = ["positive", "negative"]
+        for cls in sampled_classes:
+            datasets_utils.create_image_folder(
+                image_folder,
+                cls,
+                file_name_fn=lambda idx: f"{idx}.png",
+                num_examples=num_images_per_class,
+            )
+
+        return len(sampled_classes) * num_images_per_class
+
+
 if __name__ == "__main__":
     unittest.main()
