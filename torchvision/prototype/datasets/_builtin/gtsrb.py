@@ -14,6 +14,7 @@ from torchvision.prototype.datasets.utils import (
     HttpResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
+    path_comparator,
     hint_sharding,
     hint_shuffling,
     INFINITE_BUFFER_SIZE,
@@ -58,9 +59,6 @@ class GTSRB(Dataset):
 
         return rsrcs
 
-    def _filter_images(self, data: Tuple[str, Any]) -> bool:
-        return pathlib.Path(data[0]).suffix == ".ppm"
-
     def _append_label_train(self, path_and_handle: Tuple[str, Any]) -> Tuple[str, Any, int]:
         path, handle = path_and_handle
         label = int(pathlib.Path(path).parent.name)
@@ -89,13 +87,13 @@ class GTSRB(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
 
+        images_dp = resource_dps[0]
+        images_dp = Filter(images_dp, path_comparator("suffix", ".ppm"))
+
         if config["split"] == "train":
-            images_dp = resource_dps[0]
-            images_dp = Filter(images_dp, self._filter_images)
             dp = Mapper(images_dp, self._append_label_train)  # path, handle, label
         else:
-            images_dp, gt_dp = resource_dps
-            dp = Filter(images_dp, self._filter_images)
+            gt_dp = resource_dps[1]
 
             fieldnames = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
             gt_dp = CSVDictParser(gt_dp, fieldnames=fieldnames, delimiter=";")
