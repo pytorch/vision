@@ -32,6 +32,7 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
             "publication_year": 2015,
             "num_params": 27161264,
             "size": (299, 299),
+            "min_size": (75, 75),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
