@@ -4,7 +4,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, CSVDictParser
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -27,10 +27,6 @@ class GTSRB(Dataset):
             "gtsrb",
             type=DatasetType.IMAGE,
             homepage="https://benchmark.ini.rub.de",
-            categories=(
-                "TO",
-                "DO",
-            ),  # TODO
             valid_options=dict(split=("train", "test")),
         )
 
