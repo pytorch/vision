@@ -9,6 +9,7 @@ import os.path
 import pathlib
 import pickle
 import platform
+from collections import UserDict
 from typing import BinaryIO
 from typing import (
     Sequence,
@@ -49,6 +50,7 @@ __all__ = [
     "fromfile",
     "read_flo",
     "hint_sharding",
+    "LazyDict",
 ]
 
 K = TypeVar("K")
@@ -345,3 +347,21 @@ def hint_sharding(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
 
 def hint_shuffling(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
     return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)
+
+
+class LazyDict(UserDict):
+    def __init__(self, datapipe: IterDataPipe[Tuple[K, D]], *args: Any, **kwargs: Any) -> None:
+        super().__init__(*args, **kwargs)
+        self.datapipe = datapipe
+        self.loaded = False
+
+    def load(self) -> None:
+        for key, value in self.datapipe:
+            self.data[key] = value
+        self.loaded = True
+
+    def __getitem__(self, item: K) -> D:
+        if not self.loaded:
+            self.load()
+
+        return self.data[item]

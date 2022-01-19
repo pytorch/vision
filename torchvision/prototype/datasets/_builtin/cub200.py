@@ -31,6 +31,7 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     path_comparator,
     path_accessor,
+    LazyDict,
 )
 from torchvision.prototype.features import Label, BoundingBox, Feature
 
@@ -93,6 +94,9 @@ class CUB200(Dataset):
             return 3
         else:
             return None
+
+    def _2011_image_key(self, rel_posix_path: str) -> str:
+        return rel_posix_path.rsplit("/", 1)[1]
 
     def _2011_filter_split(self, row: List[str], *, split: str) -> bool:
         _, split_id = row
@@ -173,9 +177,8 @@ class CUB200(Dataset):
             )
 
             image_files_dp = CSVParser(image_files_dp, dialect="cub200")
-            image_files_map = dict(
-                (image_id, rel_posix_path.rsplit("/", maxsplit=1)[1]) for image_id, rel_posix_path in image_files_dp
-            )
+            image_files_dp = Mapper(image_files_dp, self._2011_image_key, input_col=1)
+            image_files_map = LazyDict(image_files_dp)
 
             split_dp = CSVParser(split_dp, dialect="cub200")
             split_dp = Filter(split_dp, functools.partial(self._2011_filter_split, split=config.split))
