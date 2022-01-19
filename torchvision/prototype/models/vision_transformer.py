@@ -205,11 +205,11 @@ def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = Tru
     weights = ViT_H_14_Weights.verify(weights)
 
     return _vision_transformer(
-        patch_size=32,
-        num_layers=24,
+        patch_size=14,
+        num_layers=32,
         num_heads=16,
-        hidden_dim=1024,
-        mlp_dim=4096,
+        hidden_dim=1280,
+        mlp_dim=5120,
         weights=weights,
         progress=progress,
         **kwargs,
