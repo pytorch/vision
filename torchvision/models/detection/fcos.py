@@ -8,7 +8,7 @@ import torch
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops import sigmoid_focal_loss, giou_loss
+from ...ops import sigmoid_focal_loss, generalized_box_iou_loss
 from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
@@ -83,7 +83,7 @@ class FCOSHead(nn.Module):
             for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
         ]
         # amp issue: pred_boxes need to convert float
-        loss_bbox_reg = giou_loss(
+        loss_bbox_reg = generalized_box_iou_loss(
             torch.stack(pred_boxes)[foregroud_mask].float(),
             torch.stack(all_gt_boxes_targets)[foregroud_mask],
             reduction="sum",
