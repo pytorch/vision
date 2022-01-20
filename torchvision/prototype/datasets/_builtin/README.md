@@ -41,6 +41,7 @@ class MyDataset(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         ...
+```
 
 ### `_make_info(self)`
 
