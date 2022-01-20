@@ -868,10 +868,11 @@ def _split_files_or_dirs(root, *files_or_dirs):
 def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
     archive = pathlib.Path(root) / name
     if not files_or_dirs:
-        # We cannot use Path.with_suffix("") here, since that only applies to the last suffix if multiple suffixes are
-        # present. For example, `pathlib.Path("foo.tar.gz").with_suffix("")` results in `foo.tar`. Since we want to
-        # extract the name without any suffixes here, we replace them manually.
-        file_or_dir = archive.with_name(archive.name.replace("".join(archive.suffixes), ""))
+        # We need to invoke `Path.with_suffix("")`, since call only applies to the last suffix if multiple suffixes are
+        # present. For example, `pathlib.Path("foo.tar.gz").with_suffix("")` results in `foo.tar`.
+        file_or_dir = archive
+        for _ in range(len(archive.suffixes)):
+            file_or_dir = file_or_dir.with_suffix("")
         if file_or_dir.exists():
             files_or_dirs = (file_or_dir,)
         else:
