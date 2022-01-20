@@ -4,7 +4,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, CSVDictParser
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, CSVDictParser, Zipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -17,8 +17,6 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     hint_sharding,
     hint_shuffling,
-    path_accessor,
-    getitem,
 )
 from torchvision.prototype.features import Label
 
@@ -63,8 +61,8 @@ class GTSRB(Dataset):
         label = int(pathlib.Path(path).parent.name)
         return path, handle, label
 
-    def _append_label_test(self, path_and_handle: Tuple[str, Any], csv_info: Dict[str, Any]) -> Tuple[str, Any, int]:
-        path, handle = path_and_handle
+    def _append_label_test(self, data: Tuple[str, Any, Dict[str, Any]]) -> Tuple[str, Any, int]:
+        (path, handle), csv_info = data
         label = int(csv_info["ClassId"])
         return path, handle, label
 
@@ -95,16 +93,10 @@ class GTSRB(Dataset):
             gt_dp = resource_dps[1]
 
             fieldnames = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
-            gt_dp = CSVDictParser(gt_dp, fieldnames=fieldnames, delimiter=";")
+            gt_dp = CSVDictParser(gt_dp, fieldnames=fieldnames, delimiter=";", skip_lines=1)
 
-            dp = IterKeyZipper(
-                images_dp,
-                gt_dp,
-                key_fn=path_accessor("name"),
-                ref_key_fn=getitem("Filename"),
-                buffer_size=1,
-                merge_fn=self._append_label_test,
-            )  # path, handle, label
+            dp = Zipper(images_dp, gt_dp)
+            dp = Mapper(dp, self._append_label_test)  # path, handle, label
 
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
