@@ -31,10 +31,10 @@ class TestVideoGPUDecoder:
             decoder = VideoReader(full_path, device="cuda:0")
             with av.open(full_path) as container:
                 for av_frame in container.decode(container.streams.video[0]):
-                    av_frames = torch.tensor(av_frame.to_ndarray().flatten())
+                    av_frames = torch.tensor(av_frame.to_rgb(src_colorspace="ITU709").to_ndarray())
                     vision_frames = next(decoder)["data"]
-                    mean_delta = torch.mean(torch.abs(av_frames.float() - decoder._reformat(vision_frames).float()))
-                    assert mean_delta < 0.1
+                    mean_delta = torch.mean(torch.abs(av_frames.float() - vision_frames.cpu().float()))
+                    assert mean_delta < 0.75
 
 
 if __name__ == "__main__":

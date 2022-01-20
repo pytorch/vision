@@ -89,6 +89,7 @@ You can construct a model with random weights by calling its constructor:
     vit_b_32 = models.vit_b_32()
     vit_l_16 = models.vit_l_16()
     vit_l_32 = models.vit_l_32()
+    vit_h_14 = models.vit_h_14() 
     convnext_tiny = models.convnext_tiny()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
@@ -465,6 +466,7 @@ VisionTransformer
     vit_b_32
     vit_l_16
     vit_l_32
+    vit_h_14
 
 ConvNeXt
 --------
