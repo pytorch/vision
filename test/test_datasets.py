@@ -2169,6 +2169,27 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
+class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.EuroSAT
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    def inject_fake_data(self, tmpdir, config):
+        data_folder = os.path.join(tmpdir, "eurosat", "2750")
+        os.makedirs(data_folder)
+
+        num_examples_per_class = 3
+        classes = ("AnnualCrop", "Forest")
+        for cls in classes:
+            datasets_utils.create_image_folder(
+                root=data_folder,
+                name=cls,
+                file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+                num_examples=num_examples_per_class,
+            )
+
+        return len(classes) * num_examples_per_class
+
+
 class Food101TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Food101
     FEATURE_TYPES = (PIL.Image.Image, int)
@@ -2512,6 +2533,50 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         species = "1" if meta["species"] == "cat" else "2"
         breed_id = "-1"
         return (image_id, class_id, species, breed_id)
+
+
+class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StanfordCars
+    REQUIRED_PACKAGES = ("scipy",)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    def inject_fake_data(self, tmpdir, config):
+        import scipy.io as io
+        from numpy.core.records import fromarrays
+
+        num_examples = {"train": 5, "test": 7}[config["split"]]
+        num_classes = 3
+        base_folder = pathlib.Path(tmpdir) / "stanford_cars"
+
+        devkit = base_folder / "devkit"
+        devkit.mkdir(parents=True)
+
+        if config["split"] == "train":
+            images_folder_name = "cars_train"
+            annotations_mat_path = devkit / "cars_train_annos.mat"
+        else:
+            images_folder_name = "cars_test"
+            annotations_mat_path = base_folder / "cars_test_annos_withlabels.mat"
+
+        datasets_utils.create_image_folder(
+            root=base_folder,
+            name=images_folder_name,
+            file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+            num_examples=num_examples,
+        )
+
+        classes = np.random.randint(1, num_classes + 1, num_examples, dtype=np.uint8)
+        fnames = [f"{i:5d}.jpg" for i in range(num_examples)]
+        rec_array = fromarrays(
+            [classes, fnames],
+            names=["class", "fname"],
+        )
+        io.savemat(annotations_mat_path, {"annotations": rec_array})
+
+        random_class_names = ["random_name"] * num_classes
+        io.savemat(devkit / "cars_meta.mat", {"class_names": random_class_names})
+
+        return num_examples
 
 
 class Country211TestCase(datasets_utils.ImageDatasetTestCase):
