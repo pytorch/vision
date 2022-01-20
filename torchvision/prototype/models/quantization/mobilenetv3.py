@@ -66,6 +66,7 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
             "publication_year": 2019,
             "num_params": 5483032,
             "size": (224, 224),
+            "min_size": (1, 1),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "qnnpack",
