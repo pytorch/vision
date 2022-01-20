@@ -61,7 +61,7 @@ class GTSRB(Dataset):
         label = int(pathlib.Path(path).parent.name)
         return path, handle, label
 
-    def _append_label_test(self, data: Tuple[str, Any, Dict[str, Any]]) -> Tuple[str, Any, int]:
+    def _append_label_test(self, data: Tuple[Tuple[str, Any], Dict[str, Any]]) -> Tuple[str, Any, int]:
         (path, handle), csv_info = data
         label = int(csv_info["ClassId"])
         return path, handle, label
