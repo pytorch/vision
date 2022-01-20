@@ -2,6 +2,7 @@ import contextlib
 import gzip
 import os
 import pathlib
+import re
 import tarfile
 import zipfile
 
@@ -10,7 +11,6 @@ import torchvision.datasets.utils as utils
 from torch._utils_internal import get_file_path_2
 from torchvision.datasets.folder import make_dataset
 from torchvision.datasets.utils import _COMPRESSED_FILE_OPENERS
-
 
 TEST_FILE = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
@@ -220,8 +220,8 @@ class TestDatasetsUtils:
     ("kwargs", "expected_error_msg"),
     [
         (dict(is_valid_file=lambda path: pathlib.Path(path).suffix in {".png", ".jpeg"}), "classes c"),
-        (dict(extensions=".png"), r"classes b, c.*?[.]png"),
-        (dict(extensions=[".png", ".jpeg"]), "c.*?[.]png, [.]jpeg"),
+        (dict(extensions=".png"), re.escape("classes b, c. Supported extensions are: .png")),
+        (dict(extensions=[".png", ".jpeg"]), re.escape("c. Supported extensions are: .png, .jpeg")),
     ],
 )
 def test_make_dataset_no_valid_files(tmpdir, kwargs, expected_error_msg):
