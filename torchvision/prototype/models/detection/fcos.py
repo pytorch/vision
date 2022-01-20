@@ -9,7 +9,6 @@ from ....models.detection.fcos import (
     FCOS,
     LastLevelP6P7,
     misc_nn_ops,
-    overwrite_eps,
 )
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
