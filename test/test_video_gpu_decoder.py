@@ -45,29 +45,15 @@ class TestVideoGPUDecoder:
                     assert mean_delta < 0.1
 
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
-    def test_seek_reading_anyframe(self):
+    @pytest.mark.parametrize("keyframes", [True, False])
+    def test_seek_reading(self, keyframes):
         for test_video, time in test_videos_dict.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
             decoder = VideoReader(full_path, device="cuda:0")
             time = time / 2
-            decoder.seek(time, keyframes_only=False)
+            decoder.seek(time, keyframes_only=keyframes)
             with av.open(full_path) as container:
-                container.seek(int(time * 1000000), any_frame=True, backward=False)
-                for av_frame in container.decode(container.streams.video[0]):
-                    av_frames = torch.tensor(av_frame.to_ndarray().flatten())
-                    vision_frames = next(decoder)["data"]
-                    mean_delta = torch.mean(torch.abs(av_frames.float() - decoder._reformat(vision_frames).float()))
-                    assert mean_delta < 0.1
-
-    @pytest.mark.skipif(av is None, reason="PyAV unavailable")
-    def test_seek_reading_keyframe(self):
-        for test_video, time in test_videos_dict.items():
-            full_path = os.path.join(VIDEO_DIR, test_video)
-            decoder = VideoReader(full_path, device="cuda:0")
-            time = time / 2
-            decoder.seek(time, keyframes_only=True)
-            with av.open(full_path) as container:
-                container.seek(int(time * 1000000), any_frame=False, backward=False)
+                container.seek(int(time * 1000000), any_frame=not keyframes, backward=False)
                 for av_frame in container.decode(container.streams.video[0]):
                     av_frames = torch.tensor(av_frame.to_ndarray().flatten())
                     vision_frames = next(decoder)["data"]
