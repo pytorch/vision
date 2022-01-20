@@ -24,11 +24,11 @@ def giou_loss(
     Args:
         boxes1 (Tensor[N, 4] or Tensor[4]): first set of boxes
         boxes2 (Tensor[N, 4] or Tensor[4]): second set of boxes
-        reduction (str): 'none' | 'mean' | 'sum'
-                 'none': No reduction will be applied to the output.
-                 'mean': The output will be averaged.
-                 'sum': The output will be summed.
-        eps (float): small number to prevent division by zero
+        reduction (string, optional): Specifies the reduction to apply to the output:
+            ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: No reduction will be
+            applied to the output. ``'mean'``: The output will be averaged.
+            ``'sum'``: The output will be summed. Default: ``'none'``
+        eps (float, optional): small number to prevent division by zero. Default: 1e-7
     """
 
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
