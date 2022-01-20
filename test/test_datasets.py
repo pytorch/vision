@@ -2649,5 +2649,27 @@ class PCAMTestCase(datasets_utils.ImageDatasetTestCase):
         return num_images
 
 
+class RenderedSST2TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.RenderedSST2
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
+    SPLIT_TO_FOLDER = {"train": "train", "val": "valid", "test": "test"}
+
+    def inject_fake_data(self, tmpdir: str, config):
+        root_folder = pathlib.Path(tmpdir) / "rendered-sst2"
+        image_folder = root_folder / self.SPLIT_TO_FOLDER[config["split"]]
+
+        num_images_per_class = {"train": 5, "test": 6, "val": 7}
+        sampled_classes = ["positive", "negative"]
+        for cls in sampled_classes:
+            datasets_utils.create_image_folder(
+                image_folder,
+                cls,
+                file_name_fn=lambda idx: f"{idx}.png",
+                num_examples=num_images_per_class[config["split"]],
+            )
+
+        return len(sampled_classes) * num_images_per_class[config["split"]]
+
+
 if __name__ == "__main__":
     unittest.main()
