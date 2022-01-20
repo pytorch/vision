@@ -338,7 +338,7 @@ jobs:
     executor: windows-cpu
 #    docker:
 #      - image: circleci/python:3.7
-    resource_class: xlarge
+#    resource_class: xlarge
     steps:
       - checkout
 #      - run:
