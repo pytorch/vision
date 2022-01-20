@@ -722,7 +722,7 @@ Faster R-CNN
     torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
 
 FCOS
-------------
+----
 
 .. autosummary::
     :toctree: generated/
