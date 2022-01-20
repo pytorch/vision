@@ -4,10 +4,8 @@ import os
 import random
 import shutil
 import tempfile
-from distutils.util import strtobool
 
 import numpy as np
-import pytest
 import torch
 from PIL import Image
 from torchvision import io
@@ -15,18 +13,9 @@ from torchvision import io
 import __main__  # noqa: 401
 
 
-def get_bool_env_var(name, *, exist_ok=False, default=False):
-    value = os.getenv(name)
-    if value is None:
-        return default
-    if exist_ok:
-        return True
-    return bool(strtobool(value))
-
-
-IN_CIRCLE_CI = get_bool_env_var("CIRCLECI")
-IN_RE_WORKER = get_bool_env_var("INSIDE_RE_WORKER", exist_ok=True)
-IN_FBCODE = get_bool_env_var("IN_FBCODE_TORCHVISION")
+IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == "true"
+IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
+IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
 
@@ -213,7 +202,3 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
         # scriptable function test
         s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
         torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)
-
-
-def run_on_env_var(name, *, skip_reason=None, exist_ok=False, default=False):
-    return pytest.mark.skipif(not get_bool_env_var(name, exist_ok=exist_ok, default=default), reason=skip_reason)

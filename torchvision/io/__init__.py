@@ -3,10 +3,14 @@ from typing import Any, Dict, Iterator
 import torch
 
 from ..utils import _log_api_usage_once
+
+try:
+    from ._load_gpu_decoder import _HAS_VIDEO_DECODER
+except ModuleNotFoundError:
+    _HAS_VIDEO_DECODER = False
 from ._video_opt import (
     Timebase,
     VideoMetaData,
-    _HAS_VIDEO_DECODER,
     _HAS_VIDEO_OPT,
     _probe_video_from_file,
     _probe_video_from_memory,
@@ -204,16 +208,6 @@ class VideoReader:
         if self.is_cuda:
             print("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
-
-    def _reformat(self, tensor, output_format: str = "yuv420"):
-        supported_formats = [
-            "yuv420",
-        ]
-        if output_format not in supported_formats:
-            raise RuntimeError(f"{output_format} not supported, please use one of {', '.join(supported_formats)}")
-        if not isinstance(tensor, torch.Tensor):
-            raise RuntimeError("Expected tensor as input parameter!")
-        return self._c.reformat(tensor.cpu())
 
 
 __all__ = [

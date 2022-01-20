@@ -1,3 +1,4 @@
+import enum
 import functools
 import io
 import pathlib
@@ -24,6 +25,11 @@ from torchvision.prototype.datasets.utils._internal import (
 from torchvision.prototype.features import Label
 
 
+class OxfordIITPetDemux(enum.IntEnum):
+    SPLIT_AND_CLASSIFICATION = 0
+    SEGMENTATIONS = 1
+
+
 class OxfordIITPet(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -31,8 +37,7 @@ class OxfordIITPet(Dataset):
             type=DatasetType.IMAGE,
             homepage="https://www.robots.ox.ac.uk/~vgg/data/pets/",
             valid_options=dict(
-                # FIXME
-                split=("trainval", "test", "train"),
+                split=("trainval", "test"),
             ),
         )
 
@@ -51,8 +56,8 @@ class OxfordIITPet(Dataset):
 
     def _classify_anns(self, data: Tuple[str, Any]) -> Optional[int]:
         return {
-            "annotations": 0,
-            "trimaps": 1,
+            "annotations": OxfordIITPetDemux.SPLIT_AND_CLASSIFICATION,
+            "trimaps": OxfordIITPetDemux.SEGMENTATIONS,
         }.get(pathlib.Path(data[0]).parent.name)
 
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
@@ -135,14 +140,17 @@ class OxfordIITPet(Dataset):
         return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
 
     def _filter_split_and_classification_anns(self, data: Tuple[str, Any]) -> bool:
-        return self._classify_anns(data) == 0
+        return self._classify_anns(data) == OxfordIITPetDemux.SPLIT_AND_CLASSIFICATION
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         config = self.default_config
-        dp = self.resources(config)[1].load(pathlib.Path(root) / self.name)
+        resources = self.resources(config)
+
+        dp = resources[1].load(root)
         dp = Filter(dp, self._filter_split_and_classification_anns)
         dp = Filter(dp, path_comparator("name", f"{config.split}.txt"))
         dp = CSVDictParser(dp, fieldnames=("image_id", "label"), delimiter=" ")
+
         raw_categories_and_labels = {(data["image_id"].rsplit("_", 1)[0], data["label"]) for data in dp}
         raw_categories, _ = zip(
             *sorted(raw_categories_and_labels, key=lambda raw_category_and_label: int(raw_category_and_label[1]))
