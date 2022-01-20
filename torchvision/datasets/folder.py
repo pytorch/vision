@@ -1,13 +1,14 @@
 import os
 import os.path
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+from typing import Collection, Union
 
 from PIL import Image
 
 from .vision import VisionDataset
 
 
-def has_file_allowed_extension(filename: str, extensions: Tuple[str, ...]) -> bool:
+def has_file_allowed_extension(filename: str, extensions: Union[str, Collection[str]]) -> bool:
     """Checks if a file is an allowed extension.
 
     Args:
@@ -17,7 +18,7 @@ def has_file_allowed_extension(filename: str, extensions: Tuple[str, ...]) -> bo
     Returns:
         bool: True if the filename ends with one of given extensions
     """
-    return filename.lower().endswith(extensions)
+    return filename.lower().endswith(extensions if isinstance(extensions, str) else tuple(extensions))
 
 
 def is_image_file(filename: str) -> bool:
@@ -48,7 +49,7 @@ def find_classes(directory: str) -> Tuple[List[str], Dict[str, int]]:
 def make_dataset(
     directory: str,
     class_to_idx: Optional[Dict[str, int]] = None,
-    extensions: Optional[Tuple[str, ...]] = None,
+    extensions: Optional[Union[str, Collection[str]]] = None,
     is_valid_file: Optional[Callable[[str], bool]] = None,
 ) -> List[Tuple[str, int]]:
     """Generates a list of samples of a form (path_to_sample, class).
@@ -72,8 +73,11 @@ def make_dataset(
 
     if extensions is not None:
 
+        if isinstance(extensions, str):
+            extensions = (extensions,)
+
         def is_valid_file(x: str) -> bool:
-            return has_file_allowed_extension(x, cast(Tuple[str, ...], extensions))
+            return has_file_allowed_extension(x, cast(Collection[str], extensions))
 
     is_valid_file = cast(Callable[[str], bool], is_valid_file)
 
