@@ -66,6 +66,7 @@ _COMMON_META = {
     "task": "image_classification",
     "architecture": "EfficientNet",
     "publication_year": 2019,
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BICUBIC,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",

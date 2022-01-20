@@ -45,6 +45,7 @@ _COMMON_META = {
     "architecture": "VGG",
     "publication_year": 2014,
     "size": (224, 224),
+    "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",

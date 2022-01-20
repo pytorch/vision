@@ -55,6 +55,7 @@ _COMMON_META = {
     "task": "video_classification",
     "publication_year": 2017,
     "size": (112, 112),
+    "min_size": (1, 1),
     "categories": _KINETICS400_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
