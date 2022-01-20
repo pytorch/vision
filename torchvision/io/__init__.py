@@ -208,16 +208,6 @@ class VideoReader:
             print("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
 
-    def _reformat(self, tensor, output_format: str = "yuv420"):
-        supported_formats = [
-            "yuv420",
-        ]
-        if output_format not in supported_formats:
-            raise RuntimeError(f"{output_format} not supported, please use one of {', '.join(supported_formats)}")
-        if not isinstance(tensor, torch.Tensor):
-            raise RuntimeError("Expected tensor as input parameter!")
-        return self._c.reformat(tensor.cpu())
-
 
 __all__ = [
     "write_video",

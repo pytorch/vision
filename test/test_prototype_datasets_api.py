@@ -126,28 +126,16 @@ class TestDatasetInfo:
         assert info.default_config == default_config
 
     @pytest.mark.parametrize(
-        "valid_options",
+        ("valid_options", "options", "expected_error_msg"),
         [
-            pytest.param(None, id="default"),
-            pytest.param(dict(option=("value",)), id="no_split"),
+            (dict(), dict(any_option=None), "does not take any options"),
+            (dict(split="train"), dict(unknown_option=None), "Unknown option 'unknown_option'"),
+            (dict(split="train"), dict(split="invalid_argument"), "Invalid argument 'invalid_argument'"),
         ],
     )
-    def test_default_config_split_train(self, valid_options):
+    def test_make_config_invalid_inputs(self, info, valid_options, options, expected_error_msg):
         info = make_minimal_dataset_info(valid_options=valid_options)
-        assert info.default_config.split == "train"
 
-    def test_valid_options_split_but_no_train(self):
-        with pytest.raises(ValueError, match="'train' has to be a valid argument for option 'split'"):
-            make_minimal_dataset_info(valid_options=dict(split=("test",)))
-
-    @pytest.mark.parametrize(
-        ("options", "expected_error_msg"),
-        [
-            pytest.param(dict(unknown_option=None), "Unknown option 'unknown_option'", id="unknown_option"),
-            pytest.param(dict(split="unknown_split"), "Invalid argument 'unknown_split'", id="invalid_argument"),
-        ],
-    )
-    def test_make_config_invalid_inputs(self, info, options, expected_error_msg):
         with pytest.raises(ValueError, match=expected_error_msg):
             info.make_config(**options)
 
@@ -208,7 +196,7 @@ class TestDataset:
         ("config", "kwarg"),
         [
             pytest.param(*(datasets.utils.DatasetConfig(split="test"),) * 2, id="specific"),
-            pytest.param(make_minimal_dataset_info().default_config, None, id="default"),
+            pytest.param(DatasetMock().default_config, None, id="default"),
         ],
     )
     def test_load_config(self, config, kwarg):
@@ -218,7 +206,7 @@ class TestDataset:
 
         dataset.resources.assert_called_with(config)
 
-        (_, call_kwargs) = dataset._make_datapipe.call_args
+        _, call_kwargs = dataset._make_datapipe.call_args
         assert call_kwargs["config"] == config
 
     def test_missing_dependencies(self):

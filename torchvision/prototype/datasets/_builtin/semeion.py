@@ -18,6 +18,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import image_buffer_from_array, hint_sharding, hint_shuffling
+from torchvision.prototype.features import Image, Label
 
 
 class SEMEION(Dataset):
@@ -46,14 +47,13 @@ class SEMEION(Dataset):
         label_data = [int(label) for label in data[256:] if label]
 
         if decoder is raw:
-            image = image_data.unsqueeze(0)
+            image = Image(image_data.unsqueeze(0))
         else:
             image_buffer = image_buffer_from_array(image_data.numpy())
             image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
 
-        label = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
-        category = self.info.categories[label]
-        return dict(image=image, label=label, category=category)
+        label_idx = next((idx for idx, one_hot_label in enumerate(label_data) if one_hot_label))
+        return dict(image=image, label=Label(label_idx, category=self.info.categories[label_idx]))
 
     def _make_datapipe(
         self,
