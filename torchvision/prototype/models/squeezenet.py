@@ -34,7 +34,6 @@ class SqueezeNet1_0_Weights(WeightsEnum):
             "num_params": 1248424,
             "acc@1": 58.092,
             "acc@5": 80.420,
-
         },
     )
     default = ImageNet1K_V1
