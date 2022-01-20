@@ -60,9 +60,8 @@ class WeightsEnum(Enum):
 
     @classmethod
     def from_str(cls, value: str) -> "WeightsEnum":
-        for k, v in cls.__members__.items():
-            if k == value:
-                return v
+        if value in cls.__members__:
+            return cls.__members__[value]
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
     def get_state_dict(self, progress: bool) -> OrderedDict:
