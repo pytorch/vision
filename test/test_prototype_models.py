@@ -97,7 +97,7 @@ def test_naming_conventions(model_fn):
 )
 @run_if_test_with_prototype
 def test_schema_meta_validation(model_fn):
-    classification_fields = ["size", "categories", "acc@1", "acc@5"]
+    classification_fields = ["size", "categories", "acc@1", "acc@5", "min_size"]
     defaults = {
         "all": ["task", "architecture", "publication_year", "interpolation", "recipe", "num_params"],
         "models": classification_fields,
