@@ -208,7 +208,7 @@ torchrun --nproc_per_node=8 train.py\
 ```
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 32 GPUs),
+For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 64`.
 
 ## Mixed precision training

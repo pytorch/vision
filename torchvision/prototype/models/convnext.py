@@ -23,7 +23,7 @@ class LayerNorm2d(nn.LayerNorm):
         self.channels_last = kwargs.pop("channels_last", False)
         super().__init__(*args, **kwargs)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         #  TODO: Benchmark this against the approach described at https://github.com/pytorch/vision/pull/5197#discussion_r786251298
         if not self.channels_last:
             x = x.permute(0, 2, 3, 1)
@@ -34,7 +34,9 @@ class LayerNorm2d(nn.LayerNorm):
 
 
 class CNBlock(nn.Module):
-    def __init__(self, dim, layer_scale: float, stochastic_depth_prob: float, norm_layer: Callable[..., nn.Module]):
+    def __init__(
+        self, dim, layer_scale: float, stochastic_depth_prob: float, norm_layer: Callable[..., nn.Module]
+    ) -> None:
         super().__init__()
         self.block = nn.Sequential(
             ConvNormActivation(
