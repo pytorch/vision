@@ -1,14 +1,14 @@
 import os
 import os.path
 from typing import Any, Callable, cast, Dict, List, Optional, Tuple
-from typing import Collection, Union
+from typing import Union
 
 from PIL import Image
 
 from .vision import VisionDataset
 
 
-def has_file_allowed_extension(filename: str, extensions: Union[str, Collection[str]]) -> bool:
+def has_file_allowed_extension(filename: str, extensions: Union[str, Tuple[str, ...]]) -> bool:
     """Checks if a file is an allowed extension.
 
     Args:
@@ -49,7 +49,7 @@ def find_classes(directory: str) -> Tuple[List[str], Dict[str, int]]:
 def make_dataset(
     directory: str,
     class_to_idx: Optional[Dict[str, int]] = None,
-    extensions: Optional[Union[str, Collection[str]]] = None,
+    extensions: Optional[Union[str, Tuple[str, ...]]] = None,
     is_valid_file: Optional[Callable[[str], bool]] = None,
 ) -> List[Tuple[str, int]]:
     """Generates a list of samples of a form (path_to_sample, class).
@@ -73,11 +73,8 @@ def make_dataset(
 
     if extensions is not None:
 
-        if isinstance(extensions, str):
-            extensions = (extensions,)
-
         def is_valid_file(x: str) -> bool:
-            return has_file_allowed_extension(x, cast(Collection[str], extensions))
+            return has_file_allowed_extension(x, extensions)  # type: ignore[arg-type]
 
     is_valid_file = cast(Callable[[str], bool], is_valid_file)
 
@@ -102,7 +99,7 @@ def make_dataset(
     if empty_classes:
         msg = f"Found no valid file for the classes {', '.join(sorted(empty_classes))}. "
         if extensions is not None:
-            msg += f"Supported extensions are: {', '.join(extensions)}"
+            msg += f"Supported extensions are: {extensions if isinstance(extensions, str) else ', '.join(extensions)}"
         raise FileNotFoundError(msg)
 
     return instances
