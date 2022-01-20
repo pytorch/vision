@@ -3,6 +3,7 @@ from typing import Any, Tuple, Callable, Optional
 
 import PIL.Image
 
+from .folder import make_dataset
 from .utils import verify_str_arg, download_and_extract_archive
 from .vision import VisionDataset
 
@@ -53,18 +54,13 @@ class RenderedSST2(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self._labels = []
-        self._image_files = []
-
-        for p in (self._base_folder / self._split_to_folder[self._split]).glob("**/*.png"):
-            self._labels.append(self.class_to_idx[p.parent.name])
-            self._image_files.append(p)
+        self._samples = make_dataset(str(self._base_folder / self._split_to_folder[self._split]), extensions="png")
 
     def __len__(self) -> int:
-        return len(self._image_files)
+        return len(self._samples)
 
     def __getitem__(self, idx) -> Tuple[Any, Any]:
-        image_file, label = self._image_files[idx], self._labels[idx]
+        image_file, label = self._samples[idx]
         image = PIL.Image.open(image_file).convert("RGB")
 
         if self.transform:
