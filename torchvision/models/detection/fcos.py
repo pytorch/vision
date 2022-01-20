@@ -15,7 +15,6 @@ from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...utils import _log_api_usage_once
 from ..resnet import resnet50
 from . import _utils as det_utils
-from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
