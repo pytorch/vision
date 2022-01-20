@@ -1294,3 +1294,23 @@ class CUB2002010MockData(_CUB200MockData):
 def cub200(info, root, config):
     num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
     return {config_: num_samples_map[config_.split] for config_ in info._configs if config_.year == config.year}
+
+
+@DATASET_MOCKS.set_from_named_callable
+def svhn(info, root, config):
+    import scipy.io as sio
+
+    num_samples = {
+        "train": 2,
+        "test": 3,
+        "extra": 4,
+    }[config.split]
+
+    sio.savemat(
+        root / f"{config.split}_32x32.mat",
+        {
+            "X": np.random.randint(256, size=(32, 32, 3, num_samples), dtype=np.uint8),
+            "y": np.random.randint(10, size=(num_samples,), dtype=np.uint8),
+        },
+    )
+    return num_samples
