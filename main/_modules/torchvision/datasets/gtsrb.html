@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+7315ad5 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+47bf55f ) &#x25BC</a>
     </div>
     
 
@@ -318,13 +318,13 @@
               
   <h1>Source code for torchvision.datasets.gtsrb</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">csv</span>
-<span class="kn">import</span> <span class="nn">os</span>
+<span class="kn">import</span> <span class="nn">pathlib</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">PIL</span>
 
 <span class="kn">from</span> <span class="nn">.folder</span> <span class="kn">import</span> <span class="n">make_dataset</span>
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_and_extract_archive</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_and_extract_archive</span><span class="p">,</span> <span class="n">verify_str_arg</span>
 <span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
@@ -333,8 +333,7 @@
 
 <span class="sd">    Args:</span>
 <span class="sd">        root (string): Root directory of the dataset.</span>
-<span class="sd">        train (bool, optional): If True, creates dataset from training set, otherwise</span>
-<span class="sd">            creates from test set.</span>
+<span class="sd">        split (string, optional): The dataset split, supports ``&quot;train&quot;`` (default), or ``&quot;test&quot;``.</span>
 <span class="sd">        transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed</span>
 <span class="sd">            version. E.g, ``transforms.RandomCrop``.</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the target and transforms it.</span>
@@ -343,23 +342,10 @@
 <span class="sd">            downloaded again.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Ground Truth for the test set</span>
-    <span class="n">_gt_url</span> <span class="o">=</span> <span class="s2">&quot;https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_GT.zip&quot;</span>
-    <span class="n">_gt_csv</span> <span class="o">=</span> <span class="s2">&quot;GT-final_test.csv&quot;</span>
-    <span class="n">_gt_md5</span> <span class="o">=</span> <span class="s2">&quot;fe31e9c9270bbcd7b84b7f21a9d9d9e5&quot;</span>
-
-    <span class="c1"># URLs for the test and train set</span>
-    <span class="n">_urls</span> <span class="o">=</span> <span class="p">(</span>
-        <span class="s2">&quot;https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_Images.zip&quot;</span><span class="p">,</span>
-        <span class="s2">&quot;https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB-Training_fixed.zip&quot;</span><span class="p">,</span>
-    <span class="p">)</span>
-
-    <span class="n">_md5s</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;c7e4e6327067d32654124b0fe9e82185&quot;</span><span class="p">,</span> <span class="s2">&quot;513f3c79a4c5141765e10e952eaa2478&quot;</span><span class="p">)</span>
-
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
         <span class="bp">self</span><span class="p">,</span>
         <span class="n">root</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span>
-        <span class="n">train</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+        <span class="n">split</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;train&quot;</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
@@ -367,12 +353,11 @@
 
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">root</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">expanduser</span><span class="p">(</span><span class="n">root</span><span class="p">)</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="o">=</span> <span class="n">train</span>
-
-        <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="nb">type</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">,</span> <span class="s2">&quot;Training&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="k">else</span> <span class="s2">&quot;Final_Test/Images&quot;</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">=</span> <span class="n">verify_str_arg</span><span class="p">(</span><span class="n">split</span><span class="p">,</span> <span class="s2">&quot;split&quot;</span><span class="p">,</span> <span class="p">(</span><span class="s2">&quot;train&quot;</span><span class="p">,</span> <span class="s2">&quot;test&quot;</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">=</span> <span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="n">root</span><span class="p">)</span> <span class="o">/</span> <span class="s2">&quot;gtsrb&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">&quot;GTSRB&quot;</span> <span class="o">/</span> <span class="p">(</span><span class="s2">&quot;Training&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span> <span class="k">else</span> <span class="s2">&quot;Final_Test/Images&quot;</span><span class="p">)</span>
+        <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
@@ -380,12 +365,12 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Dataset not found. You can use download=True to download it&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">train</span><span class="p">:</span>
-            <span class="n">samples</span> <span class="o">=</span> <span class="n">make_dataset</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span><span class="p">,</span> <span class="n">extensions</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;.ppm&quot;</span><span class="p">,))</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
+            <span class="n">samples</span> <span class="o">=</span> <span class="n">make_dataset</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span><span class="p">),</span> <span class="n">extensions</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;.ppm&quot;</span><span class="p">,))</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gt_csv</span><span class="p">))</span> <span class="k">as</span> <span class="n">csv_file</span><span class="p">:</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span> <span class="o">/</span> <span class="s2">&quot;GT-final_test.csv&quot;</span><span class="p">)</span> <span class="k">as</span> <span class="n">csv_file</span><span class="p">:</span>
                 <span class="n">samples</span> <span class="o">=</span> <span class="p">[</span>
-                    <span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span><span class="p">,</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Filename&quot;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;ClassId&quot;</span><span class="p">]))</span>
+                    <span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span> <span class="o">/</span> <span class="n">row</span><span class="p">[</span><span class="s2">&quot;Filename&quot;</span><span class="p">]),</span> <span class="nb">int</span><span class="p">(</span><span class="n">row</span><span class="p">[</span><span class="s2">&quot;ClassId&quot;</span><span class="p">]))</span>
                     <span class="k">for</span> <span class="n">row</span> <span class="ow">in</span> <span class="n">csv</span><span class="o">.</span><span class="n">DictReader</span><span class="p">(</span><span class="n">csv_file</span><span class="p">,</span> <span class="n">delimiter</span><span class="o">=</span><span class="s2">&quot;;&quot;</span><span class="p">,</span> <span class="n">skipinitialspace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
                 <span class="p">]</span>
 
@@ -410,18 +395,30 @@
         <span class="k">return</span> <span class="n">sample</span><span class="p">,</span> <span class="n">target</span></div>
 
     <span class="k">def</span> <span class="nf">_check_exists</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">bool</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span><span class="p">)</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span><span class="p">)</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_target_folder</span><span class="o">.</span><span class="n">is_dir</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">download</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_exists</span><span class="p">():</span>
             <span class="k">return</span>
 
-        <span class="n">download_and_extract_archive</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_urls</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">],</span> <span class="n">download_root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">md5</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_md5s</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">])</span>
+        <span class="n">base_url</span> <span class="o">=</span> <span class="s2">&quot;https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/&quot;</span>
 
-        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span><span class="p">:</span>
-            <span class="c1"># Download Ground Truth for the test set</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_split</span> <span class="o">==</span> <span class="s2">&quot;train&quot;</span><span class="p">:</span>
             <span class="n">download_and_extract_archive</span><span class="p">(</span>
-                <span class="bp">self</span><span class="o">.</span><span class="n">_gt_url</span><span class="p">,</span> <span class="n">download_root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="n">extract_root</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">,</span> <span class="n">md5</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_gt_md5</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">GTSRB-Training_fixed.zip&quot;</span><span class="p">,</span>
+                <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span>
+                <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;513f3c79a4c5141765e10e952eaa2478&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">download_and_extract_archive</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">GTSRB_Final_Test_Images.zip&quot;</span><span class="p">,</span>
+                <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span>
+                <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;c7e4e6327067d32654124b0fe9e82185&quot;</span><span class="p">,</span>
+            <span class="p">)</span>
+            <span class="n">download_and_extract_archive</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">base_url</span><span class="si">}</span><span class="s2">GTSRB_Final_Test_GT.zip&quot;</span><span class="p">,</span>
+                <span class="n">download_root</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_base_folder</span><span class="p">),</span>
+                <span class="n">md5</span><span class="o">=</span><span class="s2">&quot;fe31e9c9270bbcd7b84b7f21a9d9d9e5&quot;</span><span class="p">,</span>
             <span class="p">)</span></div>
 </pre></div>
 
