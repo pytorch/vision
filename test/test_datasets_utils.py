@@ -216,29 +216,28 @@ class TestDatasetsUtils:
         pytest.raises(ValueError, utils.verify_str_arg, "b", ("a",), "arg")
 
 
-class TestFolderUtils:
-    @pytest.mark.parametrize(
-        ("kwargs", "expected_error_msg"),
-        [
-            (dict(is_valid_file=lambda path: pathlib.Path(path).suffix in {".png", ".jpeg"}), "classes c"),
-            (dict(extensions=".png"), r"classes b, c.*?[.]png"),
-            (dict(extensions=[".png", ".jpeg"]), "c.*?[.]png, [.]jpeg"),
-        ],
-    )
-    def test_make_dataset_no_valid(self, tmpdir, kwargs, expected_error_msg):
-        tmpdir = pathlib.Path(tmpdir)
+@pytest.mark.parametrize(
+    ("kwargs", "expected_error_msg"),
+    [
+        (dict(is_valid_file=lambda path: pathlib.Path(path).suffix in {".png", ".jpeg"}), "classes c"),
+        (dict(extensions=".png"), r"classes b, c.*?[.]png"),
+        (dict(extensions=[".png", ".jpeg"]), "c.*?[.]png, [.]jpeg"),
+    ],
+)
+def test_make_dataset_no_valid_files(tmpdir, kwargs, expected_error_msg):
+    tmpdir = pathlib.Path(tmpdir)
 
-        (tmpdir / "a").mkdir()
-        (tmpdir / "a" / "a.png").touch()
+    (tmpdir / "a").mkdir()
+    (tmpdir / "a" / "a.png").touch()
 
-        (tmpdir / "b").mkdir()
-        (tmpdir / "b" / "b.jpeg").touch()
+    (tmpdir / "b").mkdir()
+    (tmpdir / "b" / "b.jpeg").touch()
 
-        (tmpdir / "c").mkdir()
-        (tmpdir / "c" / "c.unknown").touch()
+    (tmpdir / "c").mkdir()
+    (tmpdir / "c" / "c.unknown").touch()
 
-        with pytest.raises(FileNotFoundError, match=expected_error_msg):
-            make_dataset(str(tmpdir), **kwargs)
+    with pytest.raises(FileNotFoundError, match=expected_error_msg):
+        make_dataset(str(tmpdir), **kwargs)
 
 
 if __name__ == "__main__":
