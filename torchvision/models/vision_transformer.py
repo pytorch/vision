@@ -130,6 +130,8 @@ class Encoder(nn.Module):
 class VisionTransformer(nn.Module):
     """Vision Transformer as per https://arxiv.org/abs/2010.11929."""
 
+    conv_proj: nn.Module
+
     def __init__(
         self,
         image_size: int,
@@ -164,11 +166,13 @@ class VisionTransformer(nn.Module):
         if self.conv_stem_layers is not None:
             # As per https://arxiv.org/abs/2106.14881
             self.conv_proj = nn.Sequential()
+            conv_proj_layers: OrderedDict[str, nn.Module] = OrderedDict()
             prev_channels = input_channels
             for i, conv_stem_layer in enumerate(self.conv_stem_layers):
                 if isinstance(conv_stem_layer, Dict):
-                    conv_stem_layer = ConvStemLayer(**conv_stem_layer)
-                conv_stem_layer_params = conv_stem_layer._asdict()
+                    conv_stem_layer_params = ConvStemLayer(**conv_stem_layer)._asdict()
+                elif isinstance(conv_stem_layer, ConvStemLayer):
+                    conv_stem_layer_params = conv_stem_layer._asdict()
                 self.conv_proj.add_module(
                     f"conv_{i}",
                     nn.Conv2d(
@@ -180,6 +184,7 @@ class VisionTransformer(nn.Module):
                 self.conv_proj.add_module(f"relu_{i}", nn.ReLU())
                 prev_channels = conv_stem_layer_params["out_channels"]
             self.conv_proj.add_module(f"conv_{i + 1}", nn.Conv2d(prev_channels, hidden_dim, kernel_size=1))
+            self.conv_proj = nn.Sequential(conv_proj_layers)
         else:
             self.conv_proj = nn.Conv2d(input_channels, hidden_dim, kernel_size=patch_size, stride=patch_size)
 
