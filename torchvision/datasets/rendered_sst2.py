@@ -54,7 +54,7 @@ class RenderedSST2(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self._samples = make_dataset(str(self._base_folder / self._split_to_folder[self._split]), extensions="png")
+        self._samples = make_dataset(str(self._base_folder / self._split_to_folder[self._split]), extensions=("png",))
 
     def __len__(self) -> int:
         return len(self._samples)
