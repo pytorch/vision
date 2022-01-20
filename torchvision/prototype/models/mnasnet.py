@@ -28,6 +28,7 @@ _COMMON_META = {
     "architecture": "MNASNet",
     "publication_year": 2018,
     "size": (224, 224),
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/1e100/mnasnet_trainer",
