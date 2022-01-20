@@ -41,6 +41,7 @@ architectures for image classification:
 -  `EfficientNet`_
 -  `RegNet`_
 -  `VisionTransformer`_
+-  `ConvNeXt`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -88,6 +89,7 @@ You can construct a model with random weights by calling its constructor:
     vit_b_32 = models.vit_b_32()
     vit_l_16 = models.vit_l_16()
     vit_l_32 = models.vit_l_32()
+    vit_h_14 = models.vit_h_14()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -247,6 +249,7 @@ vit_b_16                          81.072          95.318
 vit_b_32                          75.912          92.466
 vit_l_16                          79.662          94.638
 vit_l_32                          76.972          93.070
+convnext_tiny (prototype)         82.520          96.146
 ================================  =============   =============
 
 
@@ -265,6 +268,7 @@ vit_l_32                          76.972          93.070
 .. _EfficientNet: https://arxiv.org/abs/1905.11946
 .. _RegNet: https://arxiv.org/abs/2003.13678
 .. _VisionTransformer: https://arxiv.org/abs/2010.11929
+.. _ConvNeXt: https://arxiv.org/abs/2201.03545
 
 .. currentmodule:: torchvision.models
 
@@ -460,6 +464,7 @@ VisionTransformer
     vit_b_32
     vit_l_16
     vit_l_32
+    vit_h_14
 
 Quantized Models
 ----------------

@@ -8,7 +8,6 @@ class GPUDecoder : public torch::CustomClassHolder {
   GPUDecoder(std::string, int64_t);
   ~GPUDecoder();
   torch::Tensor decode();
-  torch::Tensor nv12_to_yuv420(torch::Tensor);
 
  private:
   Demuxer demuxer;

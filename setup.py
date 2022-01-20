@@ -472,6 +472,7 @@ def get_extensions():
                     "z",
                     "pthread",
                     "dl",
+                    "nppicc",
                 ],
                 extra_compile_args=extra_compile_args,
             )
