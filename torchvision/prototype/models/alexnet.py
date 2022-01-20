@@ -23,6 +23,7 @@ class AlexNet_Weights(WeightsEnum):
             "publication_year": 2012,
             "num_params": 61100840,
             "size": (224, 224),
+            "min_size": (63, 63),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",

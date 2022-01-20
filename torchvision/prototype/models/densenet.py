@@ -68,6 +68,7 @@ _COMMON_META = {
     "architecture": "DenseNet",
     "publication_year": 2016,
     "size": (224, 224),
+    "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/pull/116",
