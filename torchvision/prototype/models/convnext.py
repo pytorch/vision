@@ -16,7 +16,7 @@ __all__ = ["ConvNeXt", "ConvNeXt_Tiny_Weights", "convnext_tiny"]
 class ConvNeXt_Tiny_Weights(WeightsEnum):
     ImageNet1K_V1 = Weights(
         url="https://download.pytorch.org/models/convnext_tiny-47b116bd.pth",
-        transforms=partial(ImageNetEval, crop_size=236),
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=236),
         meta={
             "task": "image_classification",
             "architecture": "ConvNeXt",
