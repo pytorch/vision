@@ -11,8 +11,6 @@ def giou_loss(
     Original implementation from
     https://github.com/facebookresearch/fvcore/blob/bfff2ef/fvcore/nn/giou_loss.py
 
-    Generalized Intersection over Union Loss (Hamid Rezatofighi et. al)
-    https://arxiv.org/abs/1902.09630
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
     boxes do not overlap and scales with the size of their smallest enclosing box.
     This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.
@@ -24,11 +22,16 @@ def giou_loss(
     Args:
         boxes1 (Tensor[N, 4] or Tensor[4]): first set of boxes
         boxes2 (Tensor[N, 4] or Tensor[4]): second set of boxes
-        reduction (str): 'none' | 'mean' | 'sum'
-                 'none': No reduction will be applied to the output.
-                 'mean': The output will be averaged.
-                 'sum': The output will be summed.
-        eps (float): small number to prevent division by zero
+        reduction (string, optional): Specifies the reduction to apply to the output:
+            ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: No reduction will be
+            applied to the output. ``'mean'``: The output will be averaged.
+            ``'sum'``: The output will be summed. Default: ``'none'``
+        eps (float, optional): small number to prevent division by zero. Default: 1e-7
+
+    Reference:
+        Hamid Rezatofighi et. al: Generalized Intersection over Union:
+        A Metric and A Loss for Bounding Box Regression:
+        https://arxiv.org/abs/1902.09630
     """
 
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
