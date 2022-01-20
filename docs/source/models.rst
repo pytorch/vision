@@ -89,8 +89,7 @@ You can construct a model with random weights by calling its constructor:
     vit_b_32 = models.vit_b_32()
     vit_l_16 = models.vit_l_16()
     vit_l_32 = models.vit_l_32()
-    vit_h_14 = models.vit_h_14() 
-    convnext_tiny = models.convnext_tiny()
+    vit_h_14 = models.vit_h_14()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -138,7 +137,6 @@ These can be constructed by passing ``pretrained=True``:
     vit_b_32 = models.vit_b_32(pretrained=True)
     vit_l_16 = models.vit_l_16(pretrained=True)
     vit_l_32 = models.vit_l_32(pretrained=True)
-    convnext_tiny = models.convnext_tiny(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_HOME` environment variable. See
@@ -251,7 +249,7 @@ vit_b_16                          81.072          95.318
 vit_b_32                          75.912          92.466
 vit_l_16                          79.662          94.638
 vit_l_32                          76.972          93.070
-convnext_tiny                     82.520          96.146
+convnext_tiny (prototype)         82.520          96.146
 ================================  =============   =============
 
 
@@ -467,15 +465,6 @@ VisionTransformer
     vit_l_16
     vit_l_32
     vit_h_14
-
-ConvNeXt
---------
-
-.. autosummary::
-    :toctree: generated/
-    :template: function.rst
-
-    convnext_tiny
 
 Quantized Models
 ----------------
