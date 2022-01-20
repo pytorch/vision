@@ -72,7 +72,7 @@ class DTD(Dataset):
 
     def _image_key_fn(self, data: Tuple[str, Any]) -> str:
         path = pathlib.Path(data[0])
-        return str(path.relative_to(path.parents[1]))
+        return str(path.relative_to(path.parents[1]).as_posix())
 
     def _collate_and_decode_sample(
         self,
