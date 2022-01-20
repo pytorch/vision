@@ -155,7 +155,7 @@ commands:
   install_prototype_dependencies:
     steps:
       - pip_install:
-          args: iopath git+https://github.com/pytorch/data
+          args: iopath git+https://github.com/pmeier/data@fix-strip-newline
           descr: Install prototype dependencies
 
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
@@ -335,27 +335,28 @@ jobs:
           file_or_dir: test/test_onnx.py
 
   unittest_prototype:
-    docker:
-      - image: circleci/python:3.7
-    resource_class: xlarge
+    executor: windows-cpu
+#    docker:
+#      - image: circleci/python:3.7
+#    resource_class: xlarge
     steps:
       - checkout
-      - run:
-          name: Download model weights
-          background: true
-          command: |
-            sudo apt update -qy && sudo apt install -qy parallel wget
-            mkdir -p ~/.cache/torch/hub/checkpoints
-            python scripts/collect_model_urls.py torchvision/prototype/models \
-                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
+#      - run:
+#          name: Download model weights
+#          background: true
+#          command: |
+#            sudo apt update -qy && sudo apt install -qy parallel wget
+#            mkdir -p ~/.cache/torch/hub/checkpoints
+#            python scripts/collect_model_urls.py torchvision/prototype/models \
+#                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
       - install_torchvision
       - install_prototype_dependencies
       - pip_install:
           args: scipy pycocotools
           descr: Install optional dependencies
-      - run:
-          name: Enable prototype tests
-          command: echo 'export PYTORCH_TEST_WITH_PROTOTYPE=1' >> $BASH_ENV
+#      - run:
+#          name: Enable prototype tests
+#          command: echo 'export PYTORCH_TEST_WITH_PROTOTYPE=1' >> $BASH_ENV
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
 
