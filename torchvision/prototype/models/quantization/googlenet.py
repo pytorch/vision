@@ -33,6 +33,7 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
             "publication_year": 2014,
             "num_params": 6624904,
             "size": (224, 224),
+            "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
