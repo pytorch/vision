@@ -36,7 +36,7 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
-            "map": 39.1,
+            "map": 39.2,
         },
     )
     default = COCO_V1
@@ -76,7 +76,5 @@ def fcos_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == FCOS_ResNet50_FPN_Weights.COCO_V1:
-            overwrite_eps(model, 0.0)
 
     return model
