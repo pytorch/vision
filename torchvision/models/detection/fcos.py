@@ -637,6 +637,7 @@ def fcos_resnet50_fpn(
 ):
     """
     Constructs a FCOS model with a ResNet-50-FPN backbone.
+
     Reference: `"FCOS: Fully Convolutional One-Stage Object Detection" <https://arxiv.org/abs/1904.01355>`_.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
@@ -646,19 +647,23 @@ def fcos_resnet50_fpn(
 
     During training, the model expects both the input tensors, as well as a targets (list of dictionary),
     containing:
+
         - boxes (``FloatTensor[N, 4]``): the ground-truth boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
         - labels (``Int64Tensor[N]``): the class label for each ground-truth box
+
     The model returns a ``Dict[Tensor]`` during training, containing the classification and regression
     losses.
 
     During inference, the model requires only the input tensors, and returns the post-processed
     predictions as a ``List[Dict[Tensor]]``, one for each input image. The fields of the ``Dict`` are as
     follows, where ``N`` is the number of detections:
+
         - boxes (``FloatTensor[N, 4]``): the predicted boxes in ``[x1, y1, x2, y2]`` format, with
           ``0 <= x1 < x2 <= W`` and ``0 <= y1 < y2 <= H``.
         - labels (``Int64Tensor[N]``): the predicted labels for each detection
         - scores (``Tensor[N]``): the scores of each detection
+
     For more details on the output, you may refer to :ref:`instance_seg_output`.
 
     Example:
@@ -673,9 +678,9 @@ def fcos_resnet50_fpn(
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
-            passed (the default) this value is set to 3.
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) resnet layers starting
+            from final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are
+            trainable. If ``None`` is passed (the default) this value is set to 3. Default: None
     """
     trainable_backbone_layers = _validate_trainable_layers(
         pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
@@ -687,7 +692,7 @@ def fcos_resnet50_fpn(
 
     backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
     backbone = _resnet_fpn_extractor(
-        backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)  # use P5
+        backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)
     )
     model = FCOS(backbone, num_classes, **kwargs)
     if pretrained:
