@@ -534,7 +534,7 @@ def imagenet(info, root, config):
     devkit_root.mkdir()
     data_root = devkit_root / "data"
     data_root.mkdir()
-    with open(data_root / "ILSVRC2012_validation_ground_truth.txt", "w") as file:
+    with open(data_root / "ILSVRC2012_validation_ground_truth.txt", "w", newline="") as file:
         for label in torch.randint(0, len(wnids), (num_samples,)).tolist():
             file.write(f"{label}\n")
     make_tar(root, f"{devkit_root}.tar.gz", devkit_root, compression="gz")
@@ -672,7 +672,7 @@ class SBDMockData:
         }
 
         for split, ids in ids_map.items():
-            with open(root_map[split] / f"{split}.txt", "w") as fh:
+            with open(root_map[split] / f"{split}.txt", "w", newline="") as fh:
                 fh.writelines(f"{id}\n" for id in ids)
 
         return sorted(set(itertools.chain(*ids_map.values()))), {split: len(ids) for split, ids in ids_map.items()}
@@ -738,11 +738,11 @@ def semeion(info, root, config):
 
     images = torch.rand(num_samples, 256)
     labels = one_hot(torch.randint(len(info.categories), size=(num_samples,)))
-    with open(root / "semeion.data", "w") as fh:
+    with open(root / "semeion.data", "w", newline="") as fh:
         for image, one_hot_label in zip(images, labels):
             image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
             labels_columns = " ".join([str(label.item()) for label in one_hot_label])
-            fh.write(f"{image_columns} {labels_columns}\n")
+            fh.write(f"{image_columns} {labels_columns}\r\n")
 
     return num_samples
 
@@ -780,7 +780,7 @@ class VOCMockData:
             task_folder = split_folder / task_sub_folder
             task_folder.mkdir(parents=True, exist_ok=True)
             for split, ids in ids_map.items():
-                with open(task_folder / f"{split}.txt", "w") as fh:
+                with open(task_folder / f"{split}.txt", "w", newline="") as fh:
                     fh.writelines(f"{id}\n" for id in ids)
 
         return sorted(set(itertools.chain(*ids_map.values()))), {split: len(ids) for split, ids in ids_map.items()}
@@ -857,7 +857,7 @@ def voc(info, root, config):
 class CelebAMockData:
     @classmethod
     def _make_ann_file(cls, root, name, data, *, field_names=None):
-        with open(root / name, "w") as file:
+        with open(root / name, "w", newline="") as file:
             if field_names:
                 file.write(f"{len(data)}\r\n")
                 file.write(" ".join(field_names) + "\r\n")
@@ -971,13 +971,13 @@ def dtd(info, root, _):
     meta_folder = data_folder / "labels"
     meta_folder.mkdir()
 
-    with open(meta_folder / "labels_joint_anno.txt", "w") as file:
+    with open(meta_folder / "labels_joint_anno.txt", "w", newline="") as file:
         for cls, image_ids in image_ids_per_category.items():
             for image_id in image_ids:
                 joint_categories = random.choices(
                     list(categories - {cls}), k=int(torch.randint(len(categories) - 1, ()))
                 )
-                file.write(" ".join([image_id, *sorted([cls, *joint_categories])]) + "\n")
+                file.write(" ".join([image_id, *sorted([cls, *joint_categories])]) + " \n")
 
     image_ids = list(itertools.chain(*image_ids_per_category.values()))
     splits = ("train", "val", "test")
@@ -986,7 +986,7 @@ def dtd(info, root, _):
         random.shuffle(image_ids)
         for offset, split in enumerate(splits):
             image_ids_in_config = image_ids[offset :: len(splits)]
-            with open(meta_folder / f"{split}{fold}.txt", "w") as file:
+            with open(meta_folder / f"{split}{fold}.txt", "w", newline="") as file:
                 file.write("\n".join(image_ids_in_config) + "\n")
 
             num_samples_map[info.make_config(split=split, fold=str(fold))] = len(image_ids_in_config)
@@ -1104,7 +1104,7 @@ class OxfordIIITPetMockData:
         num_samples_map = {}
         for offset, split in enumerate(splits):
             split_and_classification_anns_in_split = split_and_classification_anns[offset :: len(splits)]
-            with open(anns_folder / f"{split}.txt", "w") as file:
+            with open(anns_folder / f"{split}.txt", "w", newline="") as file:
                 writer = csv.writer(file, delimiter=" ")
                 for split_and_classification_ann in split_and_classification_anns_in_split:
                     writer.writerow(split_and_classification_ann)
@@ -1171,7 +1171,7 @@ class CUB2002011MockData(_CUB200MockData):
         image_files = cls._make_images(images_folder)
         image_ids = list(range(1, len(image_files) + 1))
 
-        with open(archive_folder / "images.txt", "w") as file:
+        with open(archive_folder / "images.txt", "w", newline="") as file:
             file.write(
                 "\n".join(
                     f"{id} {path.relative_to(images_folder).as_posix()}" for id, path in zip(image_ids, image_files)
@@ -1181,10 +1181,10 @@ class CUB2002011MockData(_CUB200MockData):
         split_ids = torch.randint(2, (len(image_ids),)).tolist()
         counts = Counter(split_ids)
         num_samples_map = {"train": counts[1], "test": counts[0]}
-        with open(archive_folder / "train_test_split.txt", "w") as file:
+        with open(archive_folder / "train_test_split.txt", "w", newline="") as file:
             file.write("\n".join(f"{image_id} {split_id}" for image_id, split_id in zip(image_ids, split_ids)))
 
-        with open(archive_folder / "bounding_boxes.txt", "w") as file:
+        with open(archive_folder / "bounding_boxes.txt", "w", newline="") as file:
             file.write(
                 "\n".join(
                     " ".join(
@@ -1237,7 +1237,7 @@ class CUB2002010MockData(_CUB200MockData):
             image_files_in_split = image_files[offset :: len(splits)]
 
             split_file = split_folder / f"{split}.txt"
-            with open(split_file, "w") as file:
+            with open(split_file, "w", newline="") as file:
                 file.write(
                     "\n".join(
                         sorted(
