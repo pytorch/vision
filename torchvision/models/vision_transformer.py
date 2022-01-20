@@ -15,6 +15,7 @@ __all__ = [
     "vit_b_32",
     "vit_l_16",
     "vit_l_32",
+    "vit_h_14",
 ]
 
 model_urls = {
@@ -260,6 +261,8 @@ def _vision_transformer(
     )
 
     if pretrained:
+        if arch not in model_urls:
+            raise ValueError(f"No checkpoint is available for model type '{arch}'!")
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
 
@@ -348,6 +351,26 @@ def vit_l_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> 
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
+        pretrained=pretrained,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def vit_h_14(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+    """
+    Constructs a vit_h_14 architecture from
+    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
+
+    NOTE: Pretrained weights are not available for this model.
+    """
+    return _vision_transformer(
+        arch="vit_h_14",
+        patch_size=14,
+        num_layers=32,
+        num_heads=16,
+        hidden_dim=1280,
+        mlp_dim=5120,
         pretrained=pretrained,
         progress=progress,
         **kwargs,

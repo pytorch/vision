@@ -1,16 +1,17 @@
 import importlib
+import os
 
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu, run_on_env_var, needs_cuda
+from common_utils import cpu_and_gpu, needs_cuda
 from torchvision.prototype import models
 from torchvision.prototype.models._api import WeightsEnum, Weights
 from torchvision.prototype.models._utils import handle_legacy_interface
 
-run_if_test_with_prototype = run_on_env_var(
-    "PYTORCH_TEST_WITH_PROTOTYPE",
-    skip_reason="Prototype tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run them.",
+run_if_test_with_prototype = pytest.mark.skipif(
+    os.getenv("PYTORCH_TEST_WITH_PROTOTYPE") != "1",
+    reason="Prototype tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run them.",
 )
 
 
