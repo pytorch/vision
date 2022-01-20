@@ -21,6 +21,7 @@ import pytest
 import torch
 import torch.nn.functional as F
 from torchvision import datasets
+from torchvision.transforms import ToTensor
 
 
 class STL10TestCase(datasets_utils.ImageDatasetTestCase):
@@ -1302,6 +1303,12 @@ class PhotoTourTestCase(datasets_utils.ImageDatasetTestCase):
         finally:
             self.FEATURE_TYPES = feature_types
 
+    @datasets_utils.test_all_configs
+    def test_collate_smoke(self, config):
+        # Unlike all other datasets, PhotoTour returns a `torch.Tensor` as image. Thus, we explicitly pass empty
+        # transformation keyword arguments here, to avoid trying to convert a sample `torch.Tensor` twice.
+        super().test_collate_smoke.__wrapped__(self, config, transform_kwargs=dict())
+
 
 class Flickr8kTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Flickr8k
@@ -1587,6 +1594,12 @@ class DatasetFolderTestCase(datasets_utils.ImageDatasetTestCase):
             assert len(dataset.classes) == len(info["classes"])
             assert all([a == b for a, b in zip(dataset.classes, info["classes"])])
 
+    @datasets_utils.test_all_configs
+    def test_collate_smoke(self, config):
+        # This test case does not return PIL images, but rather strings. Thus, we explicitly pass empty
+        # transformation keyword arguments here, to avoid trying to convert them into a `torch.Tensor`.
+        super().test_collate_smoke.__wrapped__(self, config, transform_kwargs=dict())
+
 
 class ImageFolderTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.ImageFolder
@@ -1795,9 +1808,8 @@ class INaturalistTestCase(datasets_utils.ImageDatasetTestCase):
                 assert item[6] == i // 3
 
 
-class LFWPeopleTestCase(datasets_utils.DatasetTestCase):
+class LFWPeopleTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.LFWPeople
-    FEATURE_TYPES = (PIL.Image.Image, int)
     ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
         split=("10fold", "train", "test"), image_set=("original", "funneled", "deepfunneled")
     )
@@ -2517,6 +2529,28 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         species = "1" if meta["species"] == "cat" else "2"
         breed_id = "-1"
         return (image_id, class_id, species, breed_id)
+
+    @datasets_utils.test_all_configs
+    def test_collate_smoke(self, config):
+        # OxfordIIITPet can return a PIL image as target either directly or inside a tuple. Thus, we need a special
+        # joint transform here.
+
+        class JointTransform:
+            def __init__(self):
+                self._transform = ToTensor()
+
+            def __call__(self, input, target):
+                input = self._transform(input)
+                if isinstance(target, PIL.Image.Image):
+                    target = self._transform(target)
+                elif isinstance(target, tuple):
+                    target = tuple(
+                        self._transform(feature) if isinstance(feature, PIL.Image.Image) else feature
+                        for feature in target
+                    )
+                return input, target
+
+        super().test_collate_smoke.__wrapped__(self, config, transform_kwargs=dict(transforms=JointTransform()))
 
 
 class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):

@@ -3,6 +3,7 @@ import io
 import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
+from torch.utils.data import default_collate
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
@@ -115,6 +116,13 @@ class TestCommon:
                 break
         else:
             raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
+
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_collate(self, dataset_mock, config):
+        dataset, _ = dataset_mock.load(config)
+
+        batch = next(iter(dataset.batch(2)))
+        default_collate(batch)
 
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
