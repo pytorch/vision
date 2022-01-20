@@ -640,7 +640,7 @@ Network                                 box AP   mask AP   keypoint AP
 Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
-FCOS ResNet-50 FPN                      39.1     -         -
+FCOS ResNet-50 FPN                      39.2     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
 SSD300 VGG16                            25.1     -         -
 SSDlite320 MobileNetV3-Large            21.3     -         -
