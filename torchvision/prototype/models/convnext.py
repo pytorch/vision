@@ -34,7 +34,7 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
     default = ImageNet1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ConvNeXt_Tiny_Weights.ImageNet1K_V1))
 def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     weights = ConvNeXt_Tiny_Weights.verify(weights)
 
