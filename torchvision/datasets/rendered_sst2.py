@@ -3,6 +3,7 @@ from typing import Any, Tuple, Callable, Optional
 
 import PIL.Image
 
+from .folder import make_dataset
 from .utils import verify_str_arg, download_and_extract_archive
 from .vision import VisionDataset
 
@@ -21,12 +22,12 @@ class RenderedSST2(VisionDataset):
     Args:
         root (string): Root directory of the dataset.
         split (string, optional): The dataset split, supports ``"train"`` (default), `"val"` and ``"test"``.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again. Default is False.
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again. Default is False.
     """
 
     _URL = "https://openaipublic.azureedge.net/clip/data/rendered-sst2.tgz"
@@ -36,9 +37,9 @@ class RenderedSST2(VisionDataset):
         self,
         root: str,
         split: str = "train",
-        download: bool = False,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
@@ -53,18 +54,13 @@ class RenderedSST2(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        self._labels = []
-        self._image_files = []
-
-        for p in (self._base_folder / self._split_to_folder[self._split]).glob("**/*.png"):
-            self._labels.append(self.class_to_idx[p.parent.name])
-            self._image_files.append(p)
+        self._samples = make_dataset(str(self._base_folder / self._split_to_folder[self._split]), extensions=("png",))
 
     def __len__(self) -> int:
-        return len(self._image_files)
+        return len(self._samples)
 
     def __getitem__(self, idx) -> Tuple[Any, Any]:
-        image_file, label = self._image_files[idx], self._labels[idx]
+        image_file, label = self._samples[idx]
         image = PIL.Image.open(image_file).convert("RGB")
 
         if self.transform:
