@@ -77,6 +77,7 @@ class FCOSHead(nn.Module):
         loss_cls = sigmoid_focal_loss(cls_logits, gt_classes_targets, reduction="sum")
 
         # regression loss: GIoU loss
+        # TODO: vectorize this instead of using a for loop
         pred_boxes = [
             self.box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
             for anchors_per_image, bbox_regression_per_image in zip(anchors, bbox_regression)
@@ -151,7 +152,7 @@ class FCOSClassificationHead(nn.Module):
         self.num_anchors = num_anchors
 
         if norm_layer is None:
-            norm_layer = partial(nn.GroupNorm, num_groups=32)
+            norm_layer = partial(nn.GroupNorm, 32)
 
         conv = []
         for _ in range(num_convs):
