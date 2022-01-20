@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
 
 import torch
 import torch.nn as nn
@@ -24,6 +24,14 @@ model_urls = {
     "vit_l_16": "https://download.pytorch.org/models/vit_l_16-852ce7e3.pth",
     "vit_l_32": "https://download.pytorch.org/models/vit_l_32-c7638314.pth",
 }
+
+
+class ConvStemLayer(NamedTuple):
+    out_channels: int
+    kernel_size: int
+    stride: int
+    padding: Union[str, int]
+    bias: bool = False
 
 
 class MLPBlock(nn.Sequential):
@@ -135,6 +143,7 @@ class VisionTransformer(nn.Module):
         num_classes: int = 1000,
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
+        conv_stem_layers: Union[List[ConvStemLayer], List[Dict], None] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -148,12 +157,31 @@ class VisionTransformer(nn.Module):
         self.num_classes = num_classes
         self.representation_size = representation_size
         self.norm_layer = norm_layer
+        self.conv_stem_layers = conv_stem_layers
 
         input_channels = 3
 
-        # The conv_proj is a more efficient version of reshaping, permuting
-        # and projecting the input
-        self.conv_proj = nn.Conv2d(input_channels, hidden_dim, kernel_size=patch_size, stride=patch_size)
+        if self.conv_stem_layers is not None:
+            # As per https://arxiv.org/abs/2106.14881
+            self.conv_proj = nn.Sequential()
+            prev_channels = input_channels
+            for i, conv_stem_layer in enumerate(self.conv_stem_layers):
+                if isinstance(conv_stem_layer, Dict):
+                    conv_stem_layer = ConvStemLayer(**conv_stem_layer)
+                conv_stem_layer_params = conv_stem_layer._asdict()
+                self.conv_proj.add_module(
+                    f"conv_{i}",
+                    nn.Conv2d(
+                        in_channels=prev_channels,
+                        **conv_stem_layer_params,
+                    ),
+                )
+                self.conv_proj.add_module(f"bn_{i}", nn.BatchNorm2d(conv_stem_layer_params["out_channels"]))
+                self.conv_proj.add_module(f"relu_{i}", nn.ReLU())
+                prev_channels = conv_stem_layer_params["out_channels"]
+            self.conv_proj.add_module(f"conv_{i + 1}", nn.Conv2d(prev_channels, hidden_dim, kernel_size=1))
+        else:
+            self.conv_proj = nn.Conv2d(input_channels, hidden_dim, kernel_size=patch_size, stride=patch_size)
 
         seq_length = (image_size // patch_size) ** 2
 
@@ -185,9 +213,10 @@ class VisionTransformer(nn.Module):
         self._init_weights()
 
     def _init_weights(self):
-        fan_in = self.conv_proj.in_channels * self.conv_proj.kernel_size[0] * self.conv_proj.kernel_size[1]
-        nn.init.trunc_normal_(self.conv_proj.weight, std=math.sqrt(1 / fan_in))
-        nn.init.zeros_(self.conv_proj.bias)
+        if self.conv_stem_layers is None:
+            fan_in = self.conv_proj.in_channels * self.conv_proj.kernel_size[0] * self.conv_proj.kernel_size[1]
+            nn.init.trunc_normal_(self.conv_proj.weight, std=math.sqrt(1 / fan_in))
+            nn.init.zeros_(self.conv_proj.bias)
 
         if hasattr(self.heads, "pre_logits"):
             fan_in = self.heads.pre_logits.in_features
