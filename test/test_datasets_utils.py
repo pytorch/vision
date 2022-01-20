@@ -221,7 +221,7 @@ class TestDatasetsUtils:
     [
         (dict(is_valid_file=lambda path: pathlib.Path(path).suffix in {".png", ".jpeg"}), "classes c"),
         (dict(extensions=".png"), re.escape("classes b, c. Supported extensions are: .png")),
-        (dict(extensions=(".png", ".jpeg")), re.escape("c. Supported extensions are: .png, .jpeg")),
+        (dict(extensions=(".png", ".jpeg")), re.escape("classes c. Supported extensions are: .png, .jpeg")),
     ],
 )
 def test_make_dataset_no_valid_files(tmpdir, kwargs, expected_error_msg):
