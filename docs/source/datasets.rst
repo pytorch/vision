@@ -70,6 +70,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     PCAM
     PhotoTour
     Places365
+    RenderedSST2
     QMNIST
     SBDataset
     SBU

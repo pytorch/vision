@@ -126,13 +126,16 @@ class TestDatasetInfo:
         assert info.default_config == default_config
 
     @pytest.mark.parametrize(
-        ("options", "expected_error_msg"),
+        ("valid_options", "options", "expected_error_msg"),
         [
-            pytest.param(dict(unknown_option=None), "Unknown option 'unknown_option'", id="unknown_option"),
-            pytest.param(dict(split="unknown_split"), "Invalid argument 'unknown_split'", id="invalid_argument"),
+            (dict(), dict(any_option=None), "does not take any options"),
+            (dict(split="train"), dict(unknown_option=None), "Unknown option 'unknown_option'"),
+            (dict(split="train"), dict(split="invalid_argument"), "Invalid argument 'invalid_argument'"),
         ],
     )
-    def test_make_config_invalid_inputs(self, info, options, expected_error_msg):
+    def test_make_config_invalid_inputs(self, info, valid_options, options, expected_error_msg):
+        info = make_minimal_dataset_info(valid_options=valid_options)
+
         with pytest.raises(ValueError, match=expected_error_msg):
             info.make_config(**options)
 
