@@ -10,9 +10,9 @@ from presets import OpticalFlowPresetTrain, OpticalFlowPresetEval
 from torchvision.datasets import KittiFlow, FlyingChairs, FlyingThings3D, Sintel, HD1K
 
 try:
-    from torchvision.prototype import models as PM, transforms as PT
+    from torchvision import prototype
 except ImportError:
-    PM = PT = None
+    prototype = None
 
 
 def get_train_dataset(stage, dataset_root):
@@ -134,10 +134,10 @@ def validate(model, args):
 
     if args.prototype:
         if args.weights:
-            weights = PM.get_weight(args.weights)
+            weights = prototype.models.get_weight(args.weights)
             preprocessing = weights.transforms()
         else:
-            preprocessing = PT.RaftEval()
+            preprocessing = prototype.transforms.RaftEval()
     else:
         preprocessing = OpticalFlowPresetEval()
 
@@ -194,14 +194,14 @@ def train_one_epoch(model, optimizer, scheduler, train_loader, logger, args):
 
 
 def main(args):
-    if args.prototype and PM is None:
+    if args.prototype and prototype.models is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if not args.prototype and args.weights:
         raise ImportError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     utils.setup_ddp(args)
 
     if args.prototype:
-        model = PM.optical_flow.__dict__[args.model](weights=args.weights)
+        model = prototype.models.optical_flow.__dict__[args.model](weights=args.weights)
     else:
         model = torchvision.models.optical_flow.__dict__[args.model](pretrained=args.pretrained)
 

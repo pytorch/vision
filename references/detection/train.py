@@ -34,9 +34,9 @@ from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_group
 
 
 try:
-    from torchvision.prototype import models as PM, transforms as PT
+    from torchvision import prototype
 except ImportError:
-    PM = PT = None
+    prototype = None
 
 
 def get_dataset(name, image_set, transform, data_path):
@@ -54,10 +54,10 @@ def get_transform(train, args):
         return presets.DetectionPresetEval()
     else:
         if args.weights:
-            weights = PM.get_weight(args.weights)
+            weights = prototype.models.get_weight(args.weights)
             return weights.transforms()
         else:
-            return PT.CocoEval()
+            return prototype.transforms.CocoEval()
 
 
 def get_args_parser(add_help=True):
@@ -159,7 +159,7 @@ def get_args_parser(add_help=True):
 
 
 def main(args):
-    if args.prototype and PM is None:
+    if args.prototype and prototype.models is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if not args.prototype and args.weights:
         raise ImportError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
@@ -209,7 +209,7 @@ def main(args):
             pretrained=args.pretrained, num_classes=num_classes, **kwargs
         )
     else:
-        model = PM.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
+        model = prototype.models.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)

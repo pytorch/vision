@@ -13,9 +13,9 @@ from torch.utils.data.dataloader import default_collate
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
 try:
-    from torchvision.prototype import models as PM, transforms as PT
+    from torchvision import prototype
 except ImportError:
-    PM = PT = None
+    prototype = None
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -96,7 +96,7 @@ def collate_fn(batch):
 
 
 def main(args):
-    if args.prototype and PM is None:
+    if args.prototype and prototype.models is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if not args.prototype and args.weights:
         raise ImportError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
@@ -154,10 +154,10 @@ def main(args):
         transform_test = presets.VideoClassificationPresetEval(resize_size=(128, 171), crop_size=(112, 112))
     else:
         if args.weights:
-            weights = PM.get_weight(args.weights)
+            weights = prototype.models.get_weight(args.weights)
             transform_test = weights.transforms()
         else:
-            transform_test = PT.Kinect400Eval(crop_size=(112, 112), resize_size=(128, 171))
+            transform_test = prototype.transforms.Kinect400Eval(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
@@ -211,7 +211,7 @@ def main(args):
     if not args.prototype:
         model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
     else:
-        model = PM.video.__dict__[args.model](weights=args.weights)
+        model = prototype.models.video.__dict__[args.model](weights=args.weights)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)

@@ -12,9 +12,9 @@ from torch import nn
 
 
 try:
-    from torchvision.prototype import models as PM, transforms as PT
+    from torchvision import prototype
 except ImportError:
-    PM = PT = None
+    prototype = None
 
 
 def get_dataset(dir_path, name, image_set, transform):
@@ -39,10 +39,10 @@ def get_transform(train, args):
         return presets.SegmentationPresetEval(base_size=520)
     else:
         if args.weights:
-            weights = PM.get_weight(args.weights)
+            weights = prototype.models.get_weight(args.weights)
             return weights.transforms()
         else:
-            return PT.VocEval(resize_size=520)
+            return prototype.transforms.VocEval(resize_size=520)
 
 
 def criterion(inputs, target):
@@ -100,7 +100,7 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 
 def main(args):
-    if args.prototype and PM is None:
+    if args.prototype and prototype.models is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if not args.prototype and args.weights:
         raise ImportError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
@@ -142,7 +142,7 @@ def main(args):
             aux_loss=args.aux_loss,
         )
     else:
-        model = PM.segmentation.__dict__[args.model](
+        model = prototype.models.segmentation.__dict__[args.model](
             weights=args.weights, num_classes=num_classes, aux_loss=args.aux_loss
         )
     model.to(device)
