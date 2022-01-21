@@ -1522,13 +1522,18 @@ def elastic_transform(
         sigma = [sigma[0], sigma[0]]
 
     t_img = img
-    if not isinstance(img, torch.Tensor):
+    if not isinstance(img, torch.Tensor) and not isinstance(displacement, torch.Tensor):
         if not F_pil._is_pil_image(img):
             raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
-
+        if not _is_numpy(displacement):
+            raise TypeError(f"displacement should be ndarray or Tensor. Got {type(displacement)}")
         t_img = to_tensor(img)
-    if not isinstance(displacement, torch.Tensor):
         displacement = torch.from_numpy(displacement)
+    elif not isinstance(img, torch.Tensor) or not isinstance(displacement, torch.Tensor):
+        raise TypeError(
+            "displacement and img must be either of type ndarray and Pil Image or both of type Tensor. "
+            + f"Got img {type(img)} and displacement {type(displacement)}."
+        )
 
     output = F_t.elastic_transform(
         t_img,

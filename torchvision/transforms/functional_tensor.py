@@ -1013,16 +1013,10 @@ def elastic_transform(
         torch.seed(random_state)
 
     if displacement is not None:
+        if alpha is not None or sigma is not None:
+            raise ValueError("alpha and sigma must be None if displacement is given or vice versa")
         displacement = displacement.to(img.device)
-    else:
-        if alpha is None:
-            raise TypeError(
-                "elastic_transform() requires either positional arguments 'alpha' and 'sigma' or 'displacement'"
-            )
-        if sigma is None:
-            raise TypeError(
-                "elastic_transform() requires either positional arguments 'alpha' and 'sigma' or 'displacement'"
-            )
+    elif alpha is not None and sigma is not None:
         dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
         if sigma[0] > 0.0:
             dx = gaussian_blur(
@@ -1042,6 +1036,8 @@ def elastic_transform(
         dy = dy * alpha[1] / size[1]
 
         displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
+    else:
+        raise ValueError("elastic_transform requires either positional arguments 'alpha' and 'sigma' or 'displacement'")
 
     hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
     grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
