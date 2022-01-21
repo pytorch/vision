@@ -4,7 +4,7 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, CSVDictParser, Zipper
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, CSVDictParser, Zipper, Demultiplexer
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -17,8 +17,9 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, BoundingBox
 
 
 class GTSRB(Dataset):
@@ -61,20 +62,31 @@ class GTSRB(Dataset):
         label = int(pathlib.Path(path).parent.name)
         return path, handle, label
 
-    def _append_label_test(self, data: Tuple[Tuple[str, Any], Dict[str, Any]]) -> Tuple[str, Any, int]:
-        (path, handle), csv_info = data
-        label = int(csv_info["ClassId"])
-        return path, handle, label
-
-    def _collate(
-        self, data: Tuple[str, Any, int], decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
+    def _collate_and_decode(
+        self, data: Tuple[Tuple[str, Any], Dict[str, Any]], decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
     ) -> Dict[str, Any]:
-        image_path, image_buffer, label = data
+        (image_path, image_buffer), csv_info = data
+        label = int(csv_info["ClassId"])
+
+        bbox = BoundingBox(
+            torch.tensor([int(csv_info[k]) for k in ("Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2")]), format="xyxy"
+        )
+
         return {
             "image_path": image_path,
             "image": decoder(image_buffer) if decoder else image_buffer,
             "label": Label(label, category=self.categories[label]),
+            "bbox": bbox,
         }
+
+    def _classify_train_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+        path = pathlib.Path(data[0])
+        if path.suffix == ".ppm":
+            return 0
+        elif path.suffix == ".csv":
+            return 1
+        else:
+            return None
 
     def _make_datapipe(
         self,
@@ -84,22 +96,19 @@ class GTSRB(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
 
-        images_dp = resource_dps[0]
-        images_dp = Filter(images_dp, path_comparator("suffix", ".ppm"))
-
-        if config["split"] == "train":
-            dp = Mapper(images_dp, self._append_label_train)
+        if config.split == "train":
+            images_dp, ann_dp = Demultiplexer(
+                resource_dps[0], 2, self._classify_train_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
+            )
         else:
-            ground_truth_dp = resource_dps[1]
+            images_dp, ann_dp = resource_dps
+            images_dp = Filter(images_dp, path_comparator("suffix", ".ppm"))
 
-            fieldnames = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
-            ground_truth_dp = CSVDictParser(ground_truth_dp, fieldnames=fieldnames, delimiter=";", skip_lines=1)
-
-            dp = Zipper(images_dp, ground_truth_dp)
-            dp = Mapper(dp, self._append_label_test)
+        ann_dp = CSVDictParser(ann_dp, delimiter=";")
+        dp = Zipper(images_dp, ann_dp)
 
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
 
-        dp = Mapper(dp, partial(self._collate, decoder=decoder))
+        dp = Mapper(dp, partial(self._collate_and_decode, decoder=decoder))
         return dp

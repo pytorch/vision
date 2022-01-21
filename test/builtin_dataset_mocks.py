@@ -1023,6 +1023,29 @@ def gtsrb(info, root, config):
     classes = ("00000", "00042", "00012")
     num_examples = num_examples_per_class * len(classes)
 
+    csv_columns = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
+
+    def _make_ann_file(path, num_examples, class_idx):
+        if class_idx == "random":
+            class_idx = torch.randint(1, len(classes) + 1, size=(1,)).item()
+
+        with open(path, "w") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=csv_columns, delimiter=";")
+            writer.writeheader()
+            for image_idx in range(num_examples):
+                writer.writerow(
+                    {
+                        "Filename": f"{image_idx:05d}.ppm",
+                        "Width": torch.randint(1, 100, size=()).item(),
+                        "Height": torch.randint(1, 100, size=()).item(),
+                        "Roi.X1": torch.randint(1, 100, size=()).item(),
+                        "Roi.Y1": torch.randint(1, 100, size=()).item(),
+                        "Roi.X2": torch.randint(1, 100, size=()).item(),
+                        "Roi.Y2": torch.randint(1, 100, size=()).item(),
+                        "ClassId": class_idx,
+                    }
+                )
+
     if config["split"] == "train":
         train_folder = root / "GTSRB" / "Training"
         train_folder.mkdir(parents=True)
@@ -1034,7 +1057,11 @@ def gtsrb(info, root, config):
                 file_name_fn=lambda image_idx: f"{class_idx}_{image_idx:05d}.ppm",
                 num_examples=num_examples_per_class,
             )
-
+            _make_ann_file(
+                path=train_folder / class_idx / f"GT-{class_idx}.csv",
+                num_examples=num_examples_per_class,
+                class_idx=int(class_idx),
+            )
         make_zip(root, "GTSRB-Training_fixed.zip", train_folder)
     else:
         test_folder = root / "GTSRB" / "Final_Test"
@@ -1049,24 +1076,12 @@ def gtsrb(info, root, config):
 
         make_zip(root, "GTSRB_Final_Test_Images.zip", test_folder)
 
-        with open(root / "GT-final_test.csv", "w") as csv_file:
-            csv_file.write("")
-            columns = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
-            writer = csv.DictWriter(csv_file, fieldnames=columns, delimiter=";")
-            writer.writeheader()
-            for image_idx in range(num_examples):
-                writer.writerow(
-                    {
-                        "Filename": f"{image_idx:05d}.ppm",
-                        "Width": torch.randint(1, 100, size=()).item(),
-                        "Height": torch.randint(1, 100, size=()).item(),
-                        "Roi.X1": torch.randint(1, 100, size=()).item(),
-                        "Roi.Y1": torch.randint(1, 100, size=()).item(),
-                        "Roi.X2": torch.randint(1, 100, size=()).item(),
-                        "Roi.Y2": torch.randint(1, 100, size=()).item(),
-                        "ClassId": torch.randint(1, len(classes) + 1, size=()).item(),
-                    }
-                )
+        _make_ann_file(
+            path=root / "GT-final_test.csv",
+            num_examples=num_examples,
+            class_idx="random",
+        )
+
         make_zip(root, "GTSRB_Final_Test_GT.zip", "GT-final_test.csv")
 
     return num_examples
