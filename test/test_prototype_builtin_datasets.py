@@ -1,4 +1,5 @@
 import io
+from pathlib import Path
 
 import pytest
 import torch
@@ -143,3 +144,19 @@ class TestQMNIST:
             ("unused", bool),
         ):
             assert key in sample and isinstance(sample[key], type)
+
+
+@parametrize_dataset_mocks(DATASET_MOCKS["gtsrb"])
+class TestGTSRB:
+    def test_label_matches_path(self, dataset_mock, config):
+        # We read the labels from the csv files instead. But for the trainset, the labels are also part of the path.
+        # This test makes sure that they're both the same
+        if config["split"] != "train":
+            return
+
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
+
+        for sample in dataset:
+            label_from_path = int(Path(sample["image_path"]).parent.name)
+            assert sample["label"] == label_from_path

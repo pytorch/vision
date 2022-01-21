@@ -101,6 +101,8 @@ class GTSRB(Dataset):
             images_dp, ann_dp = resource_dps
             images_dp = Filter(images_dp, path_comparator("suffix", ".ppm"))
 
+        # The order of the image files in the the .zip archives perfectly match the order of the entries in
+        # the (possibly concatenated) .csv files. So we're able to use Zipper here instead of a IterKeyZipper.
         ann_dp = CSVDictParser(ann_dp, delimiter=";")
         dp = Zipper(images_dp, ann_dp)
 
