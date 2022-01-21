@@ -168,10 +168,9 @@ from torchvision.prototype import datasets
 
 dataset = datasets.load("mydataset")
 for sample in dataset:
-    # this is the content of an item in datapipe returned by _make_datapipe()
-    print(sample)
+    print(sample)  # this is the content of an item in datapipe returned by _make_datapipe()
     break
-# Or you can also inspect e in a debugger
+# Or you can also inspect the sample in a debugger
 ```
 
 This will give you an idea of what the first datapipe in `resources_dp`
