@@ -15,7 +15,17 @@ from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
-__all__ = ["ConvNeXt", "ConvNeXt_Tiny_Weights", "convnext_tiny"]
+__all__ = [
+    "ConvNeXt",
+    "ConvNeXt_Tiny_Weights",
+    "ConvNeXt_Small_Weights",
+    "ConvNeXt_Base_Weights",
+    "ConvNeXt_Large_Weights",
+    "convnext_tiny",
+    "convnext_small",
+    "convnext_base",
+    "convnext_large",
+]
 
 
 class LayerNorm2d(nn.LayerNorm):
@@ -216,6 +226,18 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
     default = ImageNet1K_V1
 
 
+class ConvNeXt_Small_Weights(WeightsEnum):
+    pass
+
+
+class ConvNeXt_Base_Weights(WeightsEnum):
+    pass
+
+
+class ConvNeXt_Large_Weights(WeightsEnum):
+    pass
+
+
 @handle_legacy_interface(weights=("pretrained", ConvNeXt_Tiny_Weights.ImageNet1K_V1))
 def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     r"""ConvNeXt Tiny model architecture from the
@@ -234,4 +256,50 @@ def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: 
         CNBlockConfig(768, None, 3),
     ]
     stochastic_depth_prob = kwargs.pop("stochastic_depth_prob", 0.1)
+    return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
+
+
+@handle_legacy_interface(weights=("pretrained", None))
+def convnext_small(
+    *, weights: Optional[ConvNeXt_Small_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ConvNeXt:
+    weights = ConvNeXt_Small_Weights.verify(weights)
+
+    block_setting = [
+        CNBlockConfig(96, 192, 3),
+        CNBlockConfig(192, 384, 3),
+        CNBlockConfig(384, 768, 27),
+        CNBlockConfig(768, None, 3),
+    ]
+    stochastic_depth_prob = kwargs.pop("stochastic_depth_prob", 0.4)
+    return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
+
+
+@handle_legacy_interface(weights=("pretrained", None))
+def convnext_base(*, weights: Optional[ConvNeXt_Base_Weights] = None, progress: bool = True, **kwargs: Any) -> ConvNeXt:
+    weights = ConvNeXt_Base_Weights.verify(weights)
+
+    block_setting = [
+        CNBlockConfig(128, 256, 3),
+        CNBlockConfig(256, 512, 3),
+        CNBlockConfig(512, 1024, 27),
+        CNBlockConfig(1024, None, 3),
+    ]
+    stochastic_depth_prob = kwargs.pop("stochastic_depth_prob", 0.5)
+    return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
+
+
+@handle_legacy_interface(weights=("pretrained", None))
+def convnext_large(
+    *, weights: Optional[ConvNeXt_Large_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ConvNeXt:
+    weights = ConvNeXt_Large_Weights.verify(weights)
+
+    block_setting = [
+        CNBlockConfig(192, 384, 3),
+        CNBlockConfig(384, 768, 3),
+        CNBlockConfig(768, 1536, 27),
+        CNBlockConfig(1536, None, 3),
+    ]
+    stochastic_depth_prob = kwargs.pop("stochastic_depth_prob", 0.5)
     return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
