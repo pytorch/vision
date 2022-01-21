@@ -197,6 +197,20 @@ Note that the above command corresponds to training on a single node with 8 GPUs
 For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
 and `--batch_size 64`.
 
+
+### ConvNeXt
+```
+torchrun --nproc_per_node=8 train.py\ 
+--model convnext_tiny --batch-size 128 --opt adamw --lr 1e-3 --lr-scheduler cosineannealinglr \ 
+--lr-warmup-epochs 5 --lr-warmup-method linear --auto-augment ta_wide --epochs 600 --random-erase 0.1 \ 
+--label-smoothing 0.1 --mixup-alpha 0.2 --cutmix-alpha 1.0 --weight-decay 0.05 --norm-weight-decay 0.0 \
+--train-crop-size 176 --model-ema --val-resize-size 236 --ra-sampler --ra-reps 4
+```
+
+Note that the above command corresponds to training on a single node with 8 GPUs.
+For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
+and `--batch_size 64`.
+
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).
 

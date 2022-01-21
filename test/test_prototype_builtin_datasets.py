@@ -23,13 +23,16 @@ def test_coverage():
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
+
         if not isinstance(dataset, IterDataPipe):
             raise AssertionError(f"Loading the dataset should return an IterDataPipe, but got {type(dataset)} instead.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_sample(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
 
         try:
             sample = next(iter(dataset))
@@ -44,7 +47,8 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_num_samples(self, dataset_mock, config):
-        dataset, mock_info = dataset_mock.load(config)
+        with dataset_mock.prepare(config) as mock_info:
+            dataset = datasets.load(dataset_mock.name, **config)
 
         num_samples = 0
         for _ in dataset:
@@ -54,7 +58,8 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_decoding(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
 
         undecoded_features = {key for key, value in next(iter(dataset)).items() if isinstance(value, io.IOBase)}
         if undecoded_features:
@@ -65,7 +70,8 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_no_vanilla_tensors(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
 
         vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
         if vanilla_tensors:
@@ -76,7 +82,8 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_transformable(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
 
         next(iter(dataset.map(transforms.Identity())))
 
@@ -89,7 +96,8 @@ class TestCommon:
         },
     )
     def test_traversable(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
 
         traverse(dataset)
 
@@ -108,7 +116,8 @@ class TestCommon:
                 yield node
                 yield from scan(sub_graph)
 
-        dataset, _ = dataset_mock.load(config)
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
 
         for dp in scan(traverse(dataset)):
             if type(dp) is annotation_dp_type:
@@ -120,7 +129,8 @@ class TestCommon:
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
 class TestQMNIST:
     def test_extra_label(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
 
         sample = next(iter(dataset))
         for key, type in (
