@@ -194,7 +194,7 @@ def main(args):
     if args.prototype and prototype.models is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if not args.prototype and args.weights:
-        raise ImportError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
+        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
