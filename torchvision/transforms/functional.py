@@ -1528,7 +1528,7 @@ def elastic_transform(
 
         t_img = to_tensor(img)
     if not isinstance(displacement, torch.Tensor):
-        displacement = torch.Tensor(displacement)
+        displacement = torch.from_numpy(displacement)
 
     output = F_t.elastic_transform(
         t_img,
