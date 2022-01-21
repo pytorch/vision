@@ -164,16 +164,20 @@ register the dataset and it will be instantiable via
 `datasets.load("mydataset")`. On a separate script, try something like
 
 ```py
-d = datasets.load("mydataset")
-for e in d:
-    print(e)  # this is the content of the datapipe returned by _make_datapipe()
+from torchvision.prototype import datasets
+
+dataset = datasets.load("mydataset")
+for sample in dataset:
+    # this is the content of an item in datapipe returned by _make_datapipe()
+    print(sample)
+    break
 # Or you can also inspect e in a debugger
 ```
 
 This will give you an idea of what the first datapipe in `resources_dp`
 contains. You can also do that with `resources_dp[1]` or `resources_dp[2]`
 (etc.) if they exist. Then follow the instructions above to manipulate these
-datapipes and return the appropriate dict format.
+datapipes and return the appropriate dictionary format.
 
 ### What is the `DatasetType.RAW` and when do I use it?
 

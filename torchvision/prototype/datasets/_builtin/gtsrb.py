@@ -88,9 +88,9 @@ class GTSRB(Dataset):
         images_dp = Filter(images_dp, path_comparator("suffix", ".ppm"))
 
         if config["split"] == "train":
-            dp = Mapper(images_dp, self._append_label_train)  # path, handle, label
+            dp = Mapper(images_dp, self._append_label_train)
         else:
-            gt_dp = resource_dps[1]
+            ground_truth_dp = resource_dps[1]
 
             fieldnames = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
             gt_dp = CSVDictParser(gt_dp, fieldnames=fieldnames, delimiter=";", skip_lines=1)
