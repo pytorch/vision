@@ -35,12 +35,12 @@ class GTSRB(Dataset):
     _URLS = {
         "train": f"{_URL_ROOT}GTSRB-Training_fixed.zip",
         "test": f"{_URL_ROOT}GTSRB_Final_Test_Images.zip",
-        "test_gt": f"{_URL_ROOT}GTSRB_Final_Test_GT.zip",
+        "test_ground_truth": f"{_URL_ROOT}GTSRB_Final_Test_GT.zip",
     }
     _CHECKSUMS = {
         "train": "df4144942083645bd60b594de348aa6930126c3e0e5de09e39611630abf8455a",
         "test": "48ba6fab7e877eb64eaf8de99035b0aaecfbc279bee23e35deca4ac1d0a837fa",
-        "test_gt": "f94e5a7614d75845c74c04ddb26b8796b9e483f43541dd95dd5b726504e16d6d",
+        "test_ground_truth": "f94e5a7614d75845c74c04ddb26b8796b9e483f43541dd95dd5b726504e16d6d",
     }
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -49,8 +49,8 @@ class GTSRB(Dataset):
         if config.split == "test":
             rsrcs.append(
                 HttpResource(
-                    self._URLS["test_gt"],
-                    sha256=self._CHECKSUMS["test_gt"],
+                    self._URLS["test_ground_truth"],
+                    sha256=self._CHECKSUMS["test_ground_truth"],
                 )
             )
 
@@ -93,10 +93,10 @@ class GTSRB(Dataset):
             ground_truth_dp = resource_dps[1]
 
             fieldnames = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
-            gt_dp = CSVDictParser(gt_dp, fieldnames=fieldnames, delimiter=";", skip_lines=1)
+            ground_truth_dp = CSVDictParser(ground_truth_dp, fieldnames=fieldnames, delimiter=";", skip_lines=1)
 
-            dp = Zipper(images_dp, gt_dp)
-            dp = Mapper(dp, self._append_label_test)  # path, handle, label
+            dp = Zipper(images_dp, ground_truth_dp)
+            dp = Mapper(dp, self._append_label_test)
 
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)

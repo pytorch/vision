@@ -881,7 +881,7 @@ def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
     files, dirs = _split_files_or_dirs(root, *files_or_dirs)
 
     with opener(archive) as fh:
-        for file in sorted(files):
+        for file in files:
             adder(fh, file, file.relative_to(root))
 
     if remove:
