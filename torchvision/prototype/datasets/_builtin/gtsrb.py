@@ -57,10 +57,14 @@ class GTSRB(Dataset):
 
         return rsrcs
 
-    def _append_label_train(self, path_and_handle: Tuple[str, Any]) -> Tuple[str, Any, int]:
-        path, handle = path_and_handle
-        label = int(pathlib.Path(path).parent.name)
-        return path, handle, label
+    def _classify_train_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+        path = pathlib.Path(data[0])
+        if path.suffix == ".ppm":
+            return 0
+        elif path.suffix == ".csv":
+            return 1
+        else:
+            return None
 
     def _collate_and_decode(
         self, data: Tuple[Tuple[str, Any], Dict[str, Any]], decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
@@ -80,15 +84,6 @@ class GTSRB(Dataset):
             "label": Label(label, category=self.categories[label]),
             "bbox": bbox,
         }
-
-    def _classify_train_archive(self, data: Tuple[str, Any]) -> Optional[int]:
-        path = pathlib.Path(data[0])
-        if path.suffix == ".ppm":
-            return 0
-        elif path.suffix == ".csv":
-            return 1
-        else:
-            return None
 
     def _make_datapipe(
         self,
