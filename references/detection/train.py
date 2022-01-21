@@ -159,7 +159,7 @@ def get_args_parser(add_help=True):
 
 
 def main(args):
-    if args.prototype and prototype.models is None:
+    if args.prototype and prototype is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if not args.prototype and args.weights:
         raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
