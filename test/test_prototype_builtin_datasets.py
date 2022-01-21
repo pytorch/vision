@@ -6,12 +6,14 @@ from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
-from torchvision.prototype import transforms, datasets
-from torchvision.prototype.utils._internal import sequence_to_str
+from torchvision.prototype import transforms, datasets, features
+from torchvision.prototype.utils._internal import sequence_to_str, query_recursively
+
+DATASET_MOCKS_MAP = {dataset_mock.name: dataset_mock for dataset_mock in DATASET_MOCKS}
 
 
 def test_coverage():
-    untested_datasets = set(datasets.list()) - DATASET_MOCKS.keys()
+    untested_datasets = set(datasets.list()) - DATASET_MOCKS_MAP.keys()
     if untested_datasets:
         raise AssertionError(
             f"The dataset(s) {sequence_to_str(sorted(untested_datasets), separate_last='and ')} "
@@ -125,8 +127,46 @@ class TestCommon:
         else:
             raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
 
+    @parametrize_dataset_mocks(DATASET_MOCKS_MAP["voc"])
+    def test_feature_types(self, dataset_mock, config):
+        if dataset_mock.feature_types is None:
+            raise pytest.skip("No feature types are specified.")
 
-@parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
+
+        expected = dataset_mock.feature_types
+        if callable(expected):
+            expected = expected(config)
+        expected = set(expected)
+
+        sample = next(iter(dataset))
+
+        def extract_feature_types(obj):
+            feature_type = type(obj)
+            if issubclass(feature_type, features.Feature):
+                return feature_type
+
+        actual = set(query_recursively(extract_feature_types, sample))
+
+        extra = actual - expected
+        if extra:
+            feature_types = sequence_to_str(
+                sorted(feature_type.__name__ for feature_type in extra), separate_last="and "
+            )
+            raise AssertionError(
+                f"Feature types {feature_types} are present in the sample, but were not added to `DatasetMock`."
+            )
+
+        missing = expected - actual
+        if missing:
+            feature_types = sequence_to_str(
+                sorted(feature_type.__name__ for feature_type in missing), separate_last="and "
+            )
+            raise AssertionError(f"Feature types {feature_types} are not present in the sample.")
+
+
+@parametrize_dataset_mocks(DATASET_MOCKS_MAP["qmnist"])
 class TestQMNIST:
     def test_extra_label(self, dataset_mock, config):
         with dataset_mock.prepare(config):
