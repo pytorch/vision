@@ -45,7 +45,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "map_kp": 61.1,
         },
     )
-    Coco_V1 = Weights(
+    COCO_V1 = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth",
         transforms=CocoEval,
         meta={
@@ -56,7 +56,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "map_kp": 65.0,
         },
     )
-    default = Coco_V1
+    default = COCO_V1
 
 
 @handle_legacy_interface(
@@ -64,7 +64,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
         "pretrained",
         lambda kwargs: KeypointRCNN_ResNet50_FPN_Weights.Coco_Legacy
         if kwargs["pretrained"] == "legacy"
-        else KeypointRCNN_ResNet50_FPN_Weights.Coco_V1,
+        else KeypointRCNN_ResNet50_FPN_Weights.COCO_V1,
     ),
     weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
 )
@@ -101,7 +101,7 @@ def keypointrcnn_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == KeypointRCNN_ResNet50_FPN_Weights.Coco_V1:
+        if weights == KeypointRCNN_ResNet50_FPN_Weights.COCO_V1:
             overwrite_eps(model, 0.0)
 
     return model
