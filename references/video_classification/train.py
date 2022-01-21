@@ -13,9 +13,9 @@ from torch.utils.data.dataloader import default_collate
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
 try:
-    from torchvision.prototype import models as PM
+    from torchvision.prototype import models as PM, transforms as PT
 except ImportError:
-    PM = None
+    PM = PT = None
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -96,9 +96,10 @@ def collate_fn(batch):
 
 
 def main(args):
-    if args.weights and PM is None:
+    if args.prototype and PM is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-
+    if not args.prototype and args.weights:
+        raise ImportError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -149,11 +150,14 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    if not args.weights:
-        transform_test = presets.VideoClassificationPresetEval((128, 171), (112, 112))
+    if not args.prototype:
+        transform_test = presets.VideoClassificationPresetEval(resize_size=(128, 171), crop_size=(112, 112))
     else:
-        weights = PM.get_weight(args.weights)
-        transform_test = weights.transforms()
+        if args.weights:
+            weights = PM.get_weight(args.weights)
+            transform_test = weights.transforms()
+        else:
+            transform_test = PT.Kinect400Eval(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
@@ -204,7 +208,7 @@ def main(args):
     )
 
     print("Creating model")
-    if not args.weights:
+    if not args.prototype:
         model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
     else:
         model = PM.video.__dict__[args.model](weights=args.weights)
@@ -360,6 +364,12 @@ def parse_args():
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
     # Prototype models only
+    parser.add_argument(
+        "--prototype",
+        dest="prototype",
+        help="Use prototype model builders instead those from main area",
+        action="store_true",
+    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     # Mixed precision training parameters
