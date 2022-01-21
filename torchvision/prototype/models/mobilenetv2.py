@@ -23,6 +23,7 @@ class MobileNet_V2_Weights(WeightsEnum):
             "publication_year": 2018,
             "num_params": 3504872,
             "size": (224, 224),
+            "min_size": (1, 1),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
