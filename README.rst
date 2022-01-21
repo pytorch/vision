@@ -1,5 +1,5 @@
-torchvision
-===========
+torchvision2
+============
 
 .. image:: https://pepy.tech/badge/torchvision
     :target: https://pepy.tech/project/torchvision
