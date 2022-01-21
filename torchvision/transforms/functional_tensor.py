@@ -1010,7 +1010,7 @@ def elastic_transform(
 
     size = list(img.shape[-2:])
     if random_state is not None:
-        torch.seed(random_state)
+        torch.manual_seed(random_state)
 
     if displacement is not None:
         if alpha is not None or sigma is not None:
