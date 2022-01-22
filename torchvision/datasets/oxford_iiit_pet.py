@@ -27,8 +27,8 @@ class OxfordIIITPet(VisionDataset):
         transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
-        download (bool, optional): If True, downloads the dataset from the internet and puts it into ``root/dtd``. If
-            dataset is already downloaded, it is not downloaded again.
+        download (bool, optional): If True, downloads the dataset from the internet and puts it into
+            ``root/oxford-iiit-pet``. If dataset is already downloaded, it is not downloaded again.
     """
 
     _RESOURCES = (
@@ -45,7 +45,7 @@ class OxfordIIITPet(VisionDataset):
         transforms: Optional[Callable] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        download: bool = True,
+        download: bool = False,
     ):
         self._split = verify_str_arg(split, "split", ("trainval", "test"))
         if isinstance(target_types, str):

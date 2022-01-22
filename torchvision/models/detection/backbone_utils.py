@@ -84,7 +84,7 @@ def resnet_fpn_backbone(
         >>>    ('pool', torch.Size([1, 256, 1, 1]))]
 
     Args:
-        backbone_name (string): resnet architecture. Possible values are 'ResNet', 'resnet18', 'resnet34', 'resnet50',
+        backbone_name (string): resnet architecture. Possible values are 'resnet18', 'resnet34', 'resnet50',
              'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
         pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
         norm_layer (callable): it is recommended to use the default value. For details visit:

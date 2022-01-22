@@ -7,6 +7,7 @@ from .clevr import CLEVRClassification
 from .coco import CocoCaptions, CocoDetection
 from .country211 import Country211
 from .dtd import DTD
+from .eurosat import EuroSAT
 from .fakedata import FakeData
 from .fer2013 import FER2013
 from .fgvc_aircraft import FGVCAircraft
@@ -25,11 +26,14 @@ from .lsun import LSUN, LSUNClass
 from .mnist import MNIST, EMNIST, FashionMNIST, KMNIST, QMNIST
 from .omniglot import Omniglot
 from .oxford_iiit_pet import OxfordIIITPet
+from .pcam import PCAM
 from .phototour import PhotoTour
 from .places365 import Places365
+from .rendered_sst2 import RenderedSST2
 from .sbd import SBDataset
 from .sbu import SBU
 from .semeion import SEMEION
+from .stanford_cars import StanfordCars
 from .stl10 import STL10
 from .sun397 import SUN397
 from .svhn import SVHN
@@ -54,6 +58,7 @@ __all__ = (
     "QMNIST",
     "MNIST",
     "KMNIST",
+    "StanfordCars",
     "STL10",
     "SUN397",
     "SVHN",
@@ -97,4 +102,6 @@ __all__ = (
     "OxfordIIITPet",
     "Country211",
     "FGVCAircraft",
+    "EuroSAT",
+    "RenderedSST2",
 )
