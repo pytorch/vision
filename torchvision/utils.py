@@ -396,14 +396,17 @@ def flow_to_image(
 ) -> torch.Tensor:
 
     """
-    Converts the two-dimensional flow to an RGB Image.
+    Converts a normalized flow to an RGB image.
 
     Args:
         flow (Tensor): Flow of shape (2, H, W) and dtype torch.float.
 
     Returns:
-        img (Tensor(3, H, W)): Image Tensor where each color corresponds to a given flow direction.
+        img (Tensor(3, H, W)): Image Tensor of dtype uint8 where each color corresponds to a given flow direction.
     """
+
+    if flow.dtype != torch.float:
+        raise ValueError(f"Flow should be of dtype torch.float, got {flow.dtype}.")
 
     if flow.ndim != 3 or flow.size(0) != 2:
         raise ValueError(f"Input flow should have shape (2, H, W), got {flow.shape}.")
@@ -411,11 +414,11 @@ def flow_to_image(
     max_norm = torch.sum(flow ** 2, dim=0).sqrt().max()
     epsilon = torch.finfo((flow).dtype).eps
     normalized_flow = flow / (max_norm + epsilon)
-    return _normalized_flow_to_colors(normalized_flow)
+    return _normalized_flow_to_image(normalized_flow)
 
 
 @torch.no_grad()
-def _normalized_flow_to_colors(normalized_flow: torch.Tensor) -> torch.Tensor:
+def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
 
     """
     Applies the flow color wheel to (possibly clipped) flow components u and v.

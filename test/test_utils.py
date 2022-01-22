@@ -320,11 +320,14 @@ def test_draw_keypoints_errors():
 def test_flow_to_image_errors():
     wrong_flow1 = torch.full((3, 10, 10), 0)
     wrong_flow2 = torch.full((2, 10), 0)
+    wrong_flow3 = torch.full((2, 10, 30), 0, dtype=torch.int)
 
     with pytest.raises(ValueError, match="Input flow should have shape"):
         utils.flow_to_image(flow=wrong_flow1)
     with pytest.raises(ValueError, match="Input flow should have shape"):
         utils.flow_to_image(flow=wrong_flow2)
+    with pytest.raises(ValueError, match="Flow should be of dtype torch.float"):
+        utils.flow_to_image(flow=wrong_flow3)
 
 
 if __name__ == "__main__":
