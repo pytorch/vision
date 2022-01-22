@@ -395,10 +395,11 @@ def _generate_color_palette(num_masks: int, return_tensor: bool = True):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
     clrs = []
     for i in range(num_masks):
+        clr = (palette * i) % 255
         if return_tensor:
-            clrs.append((tuple((palette * i) % 255)))
+            clrs.append(tuple(clr))
         else:
-            clrs.append(tuple(((palette * i) % 255).tolist()))
+            clrs.append(tuple((clr.tolist())))
     return clrs
 
 
