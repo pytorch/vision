@@ -142,6 +142,7 @@ def test_schema_meta_validation(model_fn):
 
     assert not problematic_weights
     assert not incorrect_params
+    assert not bad_names
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
