@@ -123,7 +123,7 @@ def test_schema_meta_validation(model_fn):
             problematic_weights[w] = missing_fields
         if w == weights_enum.DEFAULT:
             if module_name == "quantization":
-                # parametes() cound doesn't work well with quantization, so we check against the non-quantized
+                # parameters() count doesn't work well with quantization, so we check against the non-quantized
                 unquantized_w = w.meta.get("unquantized")
                 if unquantized_w is not None and w.meta.get("num_params") != unquantized_w.meta.get("num_params"):
                     incorrect_params.append(w)
