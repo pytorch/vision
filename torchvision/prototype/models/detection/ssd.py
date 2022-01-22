@@ -38,7 +38,7 @@ class SSD300_VGG16_Weights(WeightsEnum):
             "map": 25.1,
         },
     )
-    default = COCO_V1
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(

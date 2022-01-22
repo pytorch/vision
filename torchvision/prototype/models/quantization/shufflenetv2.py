@@ -76,7 +76,7 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
             "acc@5": 79.780,
         },
     )
-    default = IMAGENET1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
@@ -91,7 +91,7 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
             "acc@5": 87.582,
         },
     )
-    default = IMAGENET1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 @handle_legacy_interface(

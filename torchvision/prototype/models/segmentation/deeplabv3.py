@@ -45,7 +45,7 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
             "acc": 92.4,
         },
     )
-    default = COCO_WITH_VOC_LABELS_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 class DeepLabV3_ResNet101_Weights(WeightsEnum):
@@ -60,7 +60,7 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
             "acc": 92.4,
         },
     )
-    default = COCO_WITH_VOC_LABELS_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
@@ -75,7 +75,7 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
             "acc": 91.2,
         },
     )
-    default = COCO_WITH_VOC_LABELS_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 @handle_legacy_interface(

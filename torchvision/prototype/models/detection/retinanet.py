@@ -39,7 +39,7 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
             "map": 36.4,
         },
     )
-    default = COCO_V1
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(

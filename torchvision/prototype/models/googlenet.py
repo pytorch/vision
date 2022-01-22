@@ -32,7 +32,7 @@ class GoogLeNet_Weights(WeightsEnum):
             "acc@5": 89.530,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.IMAGENET1K_V1))

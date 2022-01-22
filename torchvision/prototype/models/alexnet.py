@@ -31,7 +31,7 @@ class AlexNet_Weights(WeightsEnum):
             "acc@5": 79.066,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", AlexNet_Weights.IMAGENET1K_V1))

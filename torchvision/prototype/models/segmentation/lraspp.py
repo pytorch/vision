@@ -30,7 +30,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
             "acc": 91.2,
         },
     )
-    default = COCO_WITH_VOC_LABELS_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 @handle_legacy_interface(

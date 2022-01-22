@@ -50,7 +50,7 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "map": 37.0,
         },
     )
-    default = COCO_V1
+    DEFAULT = COCO_V1
 
 
 class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
@@ -64,7 +64,7 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
             "map": 32.8,
         },
     )
-    default = COCO_V1
+    DEFAULT = COCO_V1
 
 
 class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
@@ -78,7 +78,7 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
             "map": 22.8,
         },
     )
-    default = COCO_V1
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(

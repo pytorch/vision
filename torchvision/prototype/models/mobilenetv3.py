@@ -71,7 +71,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             "acc@5": 92.566,
         },
     )
-    default = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class MobileNet_V3_Small_Weights(WeightsEnum):
@@ -86,7 +86,7 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
             "acc@5": 87.402,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", MobileNet_V3_Large_Weights.IMAGENET1K_V1))

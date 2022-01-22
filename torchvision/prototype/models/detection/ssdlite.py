@@ -43,7 +43,7 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
             "map": 21.3,
         },
     )
-    default = COCO_V1
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(

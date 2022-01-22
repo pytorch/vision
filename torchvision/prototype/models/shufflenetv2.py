@@ -63,7 +63,7 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
             "acc@5": 88.316,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
@@ -77,7 +77,7 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
             "acc@5": 81.746,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ShuffleNet_V2_X1_5_Weights(WeightsEnum):

@@ -43,7 +43,7 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
             "acc@5": 93.354,
         },
     )
-    default = IMAGENET1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 @handle_legacy_interface(

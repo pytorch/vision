@@ -31,7 +31,7 @@ class Inception_V3_Weights(WeightsEnum):
             "acc@5": 93.450,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", Inception_V3_Weights.IMAGENET1K_V1))

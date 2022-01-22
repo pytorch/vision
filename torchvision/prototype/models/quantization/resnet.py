@@ -79,7 +79,7 @@ class ResNet18_QuantizedWeights(WeightsEnum):
             "acc@5": 88.882,
         },
     )
-    default = IMAGENET1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 class ResNet50_QuantizedWeights(WeightsEnum):
@@ -109,7 +109,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             "acc@5": 94.976,
         },
     )
-    default = IMAGENET1K_FBGEMM_V2
+    DEFAULT = IMAGENET1K_FBGEMM_V2
 
 
 class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
@@ -139,7 +139,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             "acc@5": 96.132,
         },
     )
-    default = IMAGENET1K_FBGEMM_V2
+    DEFAULT = IMAGENET1K_FBGEMM_V2
 
 
 @handle_legacy_interface(

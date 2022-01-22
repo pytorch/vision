@@ -35,7 +35,7 @@ class FCN_ResNet50_Weights(WeightsEnum):
             "acc": 91.4,
         },
     )
-    default = COCO_WITH_VOC_LABELS_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 class FCN_ResNet101_Weights(WeightsEnum):
@@ -50,7 +50,7 @@ class FCN_ResNet101_Weights(WeightsEnum):
             "acc": 91.9,
         },
     )
-    default = COCO_WITH_VOC_LABELS_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 @handle_legacy_interface(

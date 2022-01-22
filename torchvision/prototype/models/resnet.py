@@ -74,7 +74,7 @@ class ResNet18_Weights(WeightsEnum):
             "acc@5": 89.078,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ResNet34_Weights(WeightsEnum):
@@ -91,7 +91,7 @@ class ResNet34_Weights(WeightsEnum):
             "acc@5": 91.420,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ResNet50_Weights(WeightsEnum):
@@ -121,7 +121,7 @@ class ResNet50_Weights(WeightsEnum):
             "acc@5": 95.434,
         },
     )
-    default = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class ResNet101_Weights(WeightsEnum):
@@ -151,7 +151,7 @@ class ResNet101_Weights(WeightsEnum):
             "acc@5": 95.780,
         },
     )
-    default = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class ResNet152_Weights(WeightsEnum):
@@ -181,7 +181,7 @@ class ResNet152_Weights(WeightsEnum):
             "acc@5": 96.002,
         },
     )
-    default = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class ResNeXt50_32X4D_Weights(WeightsEnum):
@@ -211,7 +211,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
             "acc@5": 95.340,
         },
     )
-    default = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class ResNeXt101_32X8D_Weights(WeightsEnum):
@@ -241,7 +241,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
             "acc@5": 96.228,
         },
     )
-    default = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class Wide_ResNet50_2_Weights(WeightsEnum):
@@ -271,7 +271,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
             "acc@5": 95.758,
         },
     )
-    default = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class Wide_ResNet101_2_Weights(WeightsEnum):
@@ -301,7 +301,7 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
             "acc@5": 96.020,
         },
     )
-    default = IMAGENET1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 @handle_legacy_interface(weights=("pretrained", ResNet18_Weights.IMAGENET1K_V1))

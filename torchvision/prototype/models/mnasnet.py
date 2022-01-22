@@ -46,7 +46,7 @@ class MNASNet0_5_Weights(WeightsEnum):
             "acc@5": 87.490,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class MNASNet0_75_Weights(WeightsEnum):
@@ -65,7 +65,7 @@ class MNASNet1_0_Weights(WeightsEnum):
             "acc@5": 91.510,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class MNASNet1_3_Weights(WeightsEnum):

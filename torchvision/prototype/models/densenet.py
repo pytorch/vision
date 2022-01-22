@@ -86,7 +86,7 @@ class DenseNet121_Weights(WeightsEnum):
             "acc@5": 91.972,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class DenseNet161_Weights(WeightsEnum):
@@ -100,7 +100,7 @@ class DenseNet161_Weights(WeightsEnum):
             "acc@5": 93.560,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class DenseNet169_Weights(WeightsEnum):
@@ -114,7 +114,7 @@ class DenseNet169_Weights(WeightsEnum):
             "acc@5": 92.806,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class DenseNet201_Weights(WeightsEnum):
@@ -128,7 +128,7 @@ class DenseNet201_Weights(WeightsEnum):
             "acc@5": 93.370,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", DenseNet121_Weights.IMAGENET1K_V1))

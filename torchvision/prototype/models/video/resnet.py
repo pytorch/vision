@@ -74,7 +74,7 @@ class R3D_18_Weights(WeightsEnum):
             "acc@5": 75.45,
         },
     )
-    default = KINETICS400_V1
+    DEFAULT = KINETICS400_V1
 
 
 class MC3_18_Weights(WeightsEnum):
@@ -89,7 +89,7 @@ class MC3_18_Weights(WeightsEnum):
             "acc@5": 76.29,
         },
     )
-    default = KINETICS400_V1
+    DEFAULT = KINETICS400_V1
 
 
 class R2Plus1D_18_Weights(WeightsEnum):
@@ -104,7 +104,7 @@ class R2Plus1D_18_Weights(WeightsEnum):
             "acc@5": 78.81,
         },
     )
-    default = KINETICS400_V1
+    DEFAULT = KINETICS400_V1
 
 
 @handle_legacy_interface(weights=("pretrained", R3D_18_Weights.KINETICS400_V1))

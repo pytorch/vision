@@ -51,7 +51,7 @@ class ViT_B_16_Weights(WeightsEnum):
             "acc@5": 95.318,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ViT_B_32_Weights(WeightsEnum):
@@ -68,7 +68,7 @@ class ViT_B_32_Weights(WeightsEnum):
             "acc@5": 92.466,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ViT_L_16_Weights(WeightsEnum):
@@ -85,7 +85,7 @@ class ViT_L_16_Weights(WeightsEnum):
             "acc@5": 94.638,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ViT_L_32_Weights(WeightsEnum):
@@ -102,7 +102,7 @@ class ViT_L_32_Weights(WeightsEnum):
             "acc@5": 93.07,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ViT_H_14_Weights(WeightsEnum):

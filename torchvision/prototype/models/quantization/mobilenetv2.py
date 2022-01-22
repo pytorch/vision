@@ -44,7 +44,7 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
             "acc@5": 90.150,
         },
     )
-    default = IMAGENET1K_QNNPACK_V1
+    DEFAULT = IMAGENET1K_QNNPACK_V1
 
 
 @handle_legacy_interface(

@@ -39,7 +39,7 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "map_mask": 34.6,
         },
     )
-    default = COCO_V1
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(

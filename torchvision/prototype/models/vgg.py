@@ -63,7 +63,7 @@ class VGG11_Weights(WeightsEnum):
             "acc@5": 88.628,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class VGG11_BN_Weights(WeightsEnum):
@@ -77,7 +77,7 @@ class VGG11_BN_Weights(WeightsEnum):
             "acc@5": 89.810,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class VGG13_Weights(WeightsEnum):
@@ -91,7 +91,7 @@ class VGG13_Weights(WeightsEnum):
             "acc@5": 89.246,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class VGG13_BN_Weights(WeightsEnum):
@@ -105,7 +105,7 @@ class VGG13_BN_Weights(WeightsEnum):
             "acc@5": 90.374,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class VGG16_Weights(WeightsEnum):
@@ -136,7 +136,7 @@ class VGG16_Weights(WeightsEnum):
             "acc@5": float("nan"),
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class VGG16_BN_Weights(WeightsEnum):
@@ -150,7 +150,7 @@ class VGG16_BN_Weights(WeightsEnum):
             "acc@5": 91.516,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class VGG19_Weights(WeightsEnum):
@@ -164,7 +164,7 @@ class VGG19_Weights(WeightsEnum):
             "acc@5": 90.876,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class VGG19_BN_Weights(WeightsEnum):
@@ -178,7 +178,7 @@ class VGG19_BN_Weights(WeightsEnum):
             "acc@5": 91.842,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", VGG11_Weights.IMAGENET1K_V1))

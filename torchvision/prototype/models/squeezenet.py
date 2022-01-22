@@ -36,7 +36,7 @@ class SqueezeNet1_0_Weights(WeightsEnum):
             "acc@5": 80.420,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class SqueezeNet1_1_Weights(WeightsEnum):
@@ -51,7 +51,7 @@ class SqueezeNet1_1_Weights(WeightsEnum):
             "acc@5": 80.624,
         },
     )
-    default = IMAGENET1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", SqueezeNet1_0_Weights.IMAGENET1K_V1))
