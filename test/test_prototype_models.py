@@ -83,7 +83,7 @@ def test_naming_conventions(model_fn):
     weights_enum = _get_model_weights(model_fn)
     print(weights_enum)
     assert weights_enum is not None
-    assert len(weights_enum) == 0 or hasattr(weights_enum, "default")
+    assert len(weights_enum) == 0 or hasattr(weights_enum, "DEFAULT")
 
 
 @pytest.mark.parametrize(
