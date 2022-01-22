@@ -22,6 +22,19 @@ class TestModelsDetectionUtils:
         assert neg[0].sum() == 3
         assert neg[0][0:6].sum() == 3
 
+    def test_box_linear_coder(self):
+        box_coder = _utils.BoxLinearCoder(normalize_by_size=True)
+        # Generate a random 10x4 boxes tensor, with coordinates < 50.
+        boxes = torch.rand(10, 4) * 50
+        boxes.clamp_(min=1.0)  # tiny boxes cause numerical instability in box regression
+        boxes[:, 2:] += boxes[:, :2]
+
+        proposals = torch.tensor([0, 0, 101, 101] * 10).reshape(10, 4).float()
+
+        rel_codes = box_coder.encode_single(boxes, proposals)
+        pred_boxes = box_coder.decode_single(rel_codes, boxes)
+        torch.allclose(proposals, pred_boxes)
+
     @pytest.mark.parametrize("train_layers, exp_froz_params", [(0, 53), (1, 43), (2, 24), (3, 11), (4, 1), (5, 0)])
     def test_resnet_fpn_backbone_frozen_layers(self, train_layers, exp_froz_params):
         # we know how many initial layers and parameters of the network should
