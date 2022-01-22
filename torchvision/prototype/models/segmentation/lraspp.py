@@ -35,7 +35,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
 
 @handle_legacy_interface(
     weights=("pretrained", LRASPP_MobileNet_V3_Large_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
 )
 def lraspp_mobilenet_v3_large(
     *,

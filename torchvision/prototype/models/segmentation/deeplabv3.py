@@ -80,7 +80,7 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
 
 @handle_legacy_interface(
     weights=("pretrained", DeepLabV3_ResNet50_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def deeplabv3_resnet50(
     *,
@@ -112,7 +112,7 @@ def deeplabv3_resnet50(
 
 @handle_legacy_interface(
     weights=("pretrained", DeepLabV3_ResNet101_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", ResNet101_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
 )
 def deeplabv3_resnet101(
     *,
@@ -144,7 +144,7 @@ def deeplabv3_resnet101(
 
 @handle_legacy_interface(
     weights=("pretrained", DeepLabV3_MobileNet_V3_Large_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
 )
 def deeplabv3_mobilenet_v3_large(
     *,

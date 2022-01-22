@@ -44,7 +44,7 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
 
 @handle_legacy_interface(
     weights=("pretrained", RetinaNet_ResNet50_FPN_Weights.Coco_V1),
-    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def retinanet_resnet50_fpn(
     *,

@@ -48,7 +48,7 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
 
 @handle_legacy_interface(
     weights=("pretrained", SSDLite320_MobileNet_V3_Large_Weights.Coco_V1),
-    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
 )
 def ssdlite320_mobilenet_v3_large(
     *,

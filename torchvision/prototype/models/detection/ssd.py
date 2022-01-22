@@ -43,7 +43,7 @@ class SSD300_VGG16_Weights(WeightsEnum):
 
 @handle_legacy_interface(
     weights=("pretrained", SSD300_VGG16_Weights.Coco_V1),
-    weights_backbone=("pretrained_backbone", VGG16_Weights.ImageNet1K_Features),
+    weights_backbone=("pretrained_backbone", VGG16_Weights.IMAGENET1K_FEATURES),
 )
 def ssd300_vgg16(
     *,

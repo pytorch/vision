@@ -38,7 +38,7 @@ _COMMON_META = {
 
 
 class ViT_B_16_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_16-c867db91.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -51,11 +51,11 @@ class ViT_B_16_Weights(WeightsEnum):
             "acc@5": 95.318,
         },
     )
-    default = ImageNet1K_V1
+    default = IMAGENET1K_V1
 
 
 class ViT_B_32_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_32-d86f8d99.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -68,11 +68,11 @@ class ViT_B_32_Weights(WeightsEnum):
             "acc@5": 92.466,
         },
     )
-    default = ImageNet1K_V1
+    default = IMAGENET1K_V1
 
 
 class ViT_L_16_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_16-852ce7e3.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=242),
         meta={
@@ -85,11 +85,11 @@ class ViT_L_16_Weights(WeightsEnum):
             "acc@5": 94.638,
         },
     )
-    default = ImageNet1K_V1
+    default = IMAGENET1K_V1
 
 
 class ViT_L_32_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_32-c7638314.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -102,7 +102,7 @@ class ViT_L_32_Weights(WeightsEnum):
             "acc@5": 93.07,
         },
     )
-    default = ImageNet1K_V1
+    default = IMAGENET1K_V1
 
 
 class ViT_H_14_Weights(WeightsEnum):
@@ -141,7 +141,7 @@ def _vision_transformer(
     return model
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.IMAGENET1K_V1))
 def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     weights = ViT_B_16_Weights.verify(weights)
 
@@ -157,7 +157,7 @@ def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_B_32_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", ViT_B_32_Weights.IMAGENET1K_V1))
 def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     weights = ViT_B_32_Weights.verify(weights)
 
@@ -173,7 +173,7 @@ def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_L_16_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", ViT_L_16_Weights.IMAGENET1K_V1))
 def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     weights = ViT_L_16_Weights.verify(weights)
 
@@ -189,7 +189,7 @@ def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_L_32_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", ViT_L_32_Weights.IMAGENET1K_V1))
 def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     weights = ViT_L_32_Weights.verify(weights)
 

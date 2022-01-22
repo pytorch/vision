@@ -55,7 +55,7 @@ class FCN_ResNet101_Weights(WeightsEnum):
 
 @handle_legacy_interface(
     weights=("pretrained", FCN_ResNet50_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def fcn_resnet50(
     *,
@@ -87,7 +87,7 @@ def fcn_resnet50(
 
 @handle_legacy_interface(
     weights=("pretrained", FCN_ResNet101_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", ResNet101_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
 )
 def fcn_resnet101(
     *,

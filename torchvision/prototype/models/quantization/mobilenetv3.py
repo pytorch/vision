@@ -57,7 +57,7 @@ def _mobilenet_v3_model(
 
 
 class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
-    ImageNet1K_QNNPACK_V1 = Weights(
+    IMAGENET1K_QNNPACK_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -72,20 +72,20 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
             "backend": "qnnpack",
             "quantization": "qat",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3",
-            "unquantized": MobileNet_V3_Large_Weights.ImageNet1K_V1,
+            "unquantized": MobileNet_V3_Large_Weights.IMAGENET1K_V1,
             "acc@1": 73.004,
             "acc@5": 90.858,
         },
     )
-    default = ImageNet1K_QNNPACK_V1
+    default = IMAGENET1K_QNNPACK_V1
 
 
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: MobileNet_V3_Large_QuantizedWeights.ImageNet1K_QNNPACK_V1
+        lambda kwargs: MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1
         if kwargs.get("quantize", False)
-        else MobileNet_V3_Large_Weights.ImageNet1K_V1,
+        else MobileNet_V3_Large_Weights.IMAGENET1K_V1,
     )
 )
 def mobilenet_v3_large(

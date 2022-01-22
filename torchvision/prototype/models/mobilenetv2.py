@@ -14,7 +14,7 @@ __all__ = ["MobileNetV2", "MobileNet_V2_Weights", "mobilenet_v2"]
 
 
 class MobileNet_V2_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -31,10 +31,10 @@ class MobileNet_V2_Weights(WeightsEnum):
             "acc@5": 90.286,
         },
     )
-    default = ImageNet1K_V1
+    default = IMAGENET1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", MobileNet_V2_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", MobileNet_V2_Weights.IMAGENET1K_V1))
 def mobilenet_v2(
     *, weights: Optional[MobileNet_V2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV2:

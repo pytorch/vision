@@ -54,15 +54,15 @@ def _build_model(fn, **kwargs):
 @pytest.mark.parametrize(
     "name, weight",
     [
-        ("ResNet50_Weights.ImageNet1K_V1", models.ResNet50_Weights.ImageNet1K_V1),
-        ("ResNet50_Weights.default", models.ResNet50_Weights.ImageNet1K_V2),
+        ("ResNet50_Weights.IMAGENET1K_V1", models.ResNet50_Weights.IMAGENET1K_V1),
+        ("ResNet50_Weights.default", models.ResNet50_Weights.IMAGENET1K_V2),
         (
             "ResNet50_QuantizedWeights.default",
-            models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V2,
+            models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2,
         ),
         (
-            "ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1",
-            models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1,
+            "ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1",
+            models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1,
         ),
     ],
 )

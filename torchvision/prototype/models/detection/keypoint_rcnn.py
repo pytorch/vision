@@ -66,7 +66,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
         if kwargs["pretrained"] == "legacy"
         else KeypointRCNN_ResNet50_FPN_Weights.Coco_V1,
     ),
-    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def keypointrcnn_resnet50_fpn(
     *,
