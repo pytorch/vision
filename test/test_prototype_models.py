@@ -55,9 +55,9 @@ def _build_model(fn, **kwargs):
     "name, weight",
     [
         ("ResNet50_Weights.IMAGENET1K_V1", models.ResNet50_Weights.IMAGENET1K_V1),
-        ("ResNet50_Weights.default", models.ResNet50_Weights.IMAGENET1K_V2),
+        ("ResNet50_Weights.DEFAULT", models.ResNet50_Weights.IMAGENET1K_V2),
         (
-            "ResNet50_QuantizedWeights.default",
+            "ResNet50_QuantizedWeights.DEFAULT",
             models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2,
         ),
         (
@@ -121,7 +121,7 @@ def test_schema_meta_validation(model_fn):
         missing_fields = fields - set(w.meta.keys())
         if missing_fields:
             problematic_weights[w] = missing_fields
-        if w == weights_enum.default:
+        if w == weights_enum.DEFAULT:
             if module_name == "quantization":
                 # parametes() cound doesn't work well with quantization, so we check against the non-quantized
                 unquantized_w = w.meta.get("unquantized")
@@ -131,8 +131,14 @@ def test_schema_meta_validation(model_fn):
                 if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
                     incorrect_params.append(w)
         else:
-            if w.meta.get("num_params") != weights_enum.default.meta.get("num_params"):
+            if w.meta.get("num_params") != weights_enum.DEFAULT.meta.get("num_params"):
                 incorrect_params.append(w)
+
+    bad_names = []
+    for k, v in weights_enum.__members__.item():
+        # Weights are constant members, thus should be all capital
+        if isinstance(v, Weights) and not k.isupper():
+            bad_names.append(k)
 
     assert not problematic_weights
     assert not incorrect_params
