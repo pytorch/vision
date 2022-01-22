@@ -429,13 +429,12 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
        img (Tensor(3, H, W)): Flow visualization image of dtype uint8.
     """
 
-    u = normalized_flow[0, :, :]
-    v = normalized_flow[1, :, :]
-    flow_image = torch.zeros((3, u.shape[0], u.shape[1]), dtype=torch.uint8)
+    _, H, W = normalized_flow.shape
+    flow_image = torch.zeros((3, H, W), dtype=torch.uint8)
     colorwheel = _make_colorwheel()  # shape [55x3]
     num_cols = colorwheel.shape[0]
-    rad = torch.sqrt(torch.square(u) + torch.square(v))
-    a = torch.atan2(-v, -u) / torch.pi
+    norm = torch.sum(normalized_flow ** 2, dim=0).sqrt()
+    a = torch.atan2(-normalized_flow[1], -normalized_flow[0]) / torch.pi
     fk = (a + 1) / 2 * (num_cols - 1)
     k0 = torch.floor(fk).to(torch.long)
     k1 = k0 + 1
@@ -447,9 +446,7 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
         col0 = tmp[k0] / 255.0
         col1 = tmp[k1] / 255.0
         col = (1 - f) * col0 + f * col1
-        idx = rad <= 1
-        col[idx] = 1 - rad[idx] * (1 - col[idx])
-        col[~idx] = col[~idx] * 0.75  # out of range
+        col = 1 - norm * (1 - col)
         ch_idx = i
         flow_image[ch_idx, :, :] = torch.floor(255 * col)
     return flow_image
