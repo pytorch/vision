@@ -54,6 +54,7 @@ def _resnet(
 _COMMON_META = {
     "task": "image_classification",
     "size": (224, 224),
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
@@ -108,16 +109,16 @@ class ResNet50_Weights(WeightsEnum):
         },
     )
     ImageNet1K_V2 = Weights(
-        url="https://download.pytorch.org/models/resnet50-f46c3f97.pth",
+        url="https://download.pytorch.org/models/resnet50-11ad3fa6.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
             "publication_year": 2015,
             "num_params": 25557032,
-            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "acc@1": 80.674,
-            "acc@5": 95.166,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621",
+            "acc@1": 80.858,
+            "acc@5": 95.434,
         },
     )
     default = ImageNet1K_V2

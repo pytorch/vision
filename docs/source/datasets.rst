@@ -41,6 +41,7 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     Country211
     DTD
     EMNIST
+    EuroSAT
     FakeData
     FashionMNIST
     FER2013
@@ -66,13 +67,16 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     MNIST
     Omniglot
     OxfordIIITPet
+    PCAM
     PhotoTour
     Places365
+    RenderedSST2
     QMNIST
     SBDataset
     SBU
     SEMEION
     Sintel
+    StanfordCars
     STL10
     SUN397
     SVHN
