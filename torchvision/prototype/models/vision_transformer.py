@@ -19,12 +19,10 @@ __all__ = [
     "ViT_B_32_Weights",
     "ViT_L_16_Weights",
     "ViT_L_32_Weights",
-    "ViT_H_14_Weights",
     "vit_b_16",
     "vit_b_32",
     "vit_l_16",
     "vit_l_32",
-    "vit_h_14",
 ]
 
 
@@ -103,11 +101,6 @@ class ViT_L_32_Weights(WeightsEnum):
         },
     )
     default = ImageNet1K_V1
-
-
-class ViT_H_14_Weights(WeightsEnum):
-    # Weights are not available yet.
-    pass
 
 
 def _vision_transformer(
@@ -199,22 +192,6 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
-        weights=weights,
-        progress=progress,
-        **kwargs,
-    )
-
-
-@handle_legacy_interface(weights=("pretrained", None))
-def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
-    weights = ViT_H_14_Weights.verify(weights)
-
-    return _vision_transformer(
-        patch_size=14,
-        num_layers=32,
-        num_heads=16,
-        hidden_dim=1280,
-        mlp_dim=5120,
         weights=weights,
         progress=progress,
         **kwargs,
