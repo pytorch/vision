@@ -82,8 +82,6 @@ __global__ void roi_pool_backward_kernel_impl(
     int nthreads,
     const T* grad_output,
     const int* argmax_data,
-    int num_rois,
-    const T spatial_scale,
     int channels,
     int height,
     int width,
@@ -188,7 +186,7 @@ at::Tensor roi_pool_backward_kernel(
     const at::Tensor& grad,
     const at::Tensor& rois,
     const at::Tensor& argmax,
-    double spatial_scale,
+    double /*spatial_scale*/,
     int64_t pooled_height,
     int64_t pooled_width,
     int64_t batch_size,
@@ -208,8 +206,6 @@ at::Tensor roi_pool_backward_kernel(
   at::checkAllSameType(c, {grad_t, rois_t});
 
   at::cuda::CUDAGuard device_guard(grad.device());
-
-  auto num_rois = rois.size(0);
 
   at::Tensor grad_input =
       at::zeros({batch_size, channels, height, width}, grad.options());
@@ -239,8 +235,6 @@ at::Tensor roi_pool_backward_kernel(
             grad.numel(),
             grad.data_ptr<scalar_t>(),
             argmax_.data_ptr<int>(),
-            num_rois,
-            spatial_scale,
             channels,
             height,
             width,
