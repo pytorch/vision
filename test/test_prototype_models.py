@@ -135,7 +135,7 @@ def test_schema_meta_validation(model_fn):
                 incorrect_params.append(w)
 
     bad_names = []
-    for k, v in weights_enum.__members__.item():
+    for k, v in weights_enum.__members__.items():
         # Weights are constant members, thus should be all capital
         if isinstance(v, Weights) and not k.isupper():
             bad_names.append(k)
