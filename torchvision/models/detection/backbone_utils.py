@@ -1,12 +1,11 @@
 import warnings
-from typing import Callable, Dict, Optional, List, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
-from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool, ExtraFPNBlock
+from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
 
-from .. import mobilenet
-from .. import resnet
+from .. import mobilenet, resnet
 from .._utils import IntermediateLayerGetter
 
 
@@ -155,7 +154,9 @@ def _validate_trainable_layers(
     if trainable_backbone_layers is None:
         trainable_backbone_layers = default_value
     if trainable_backbone_layers < 0 or trainable_backbone_layers > max_value:
-        raise ValueError(f"Trainable backbone layers should be in the range [0,{max_value}]. Got {trainable_backbone_layers}")
+        raise ValueError(
+            f"Trainable backbone layers should be in the range [0,{max_value}]. Got {trainable_backbone_layers}"
+        )
     return trainable_backbone_layers
 
 
