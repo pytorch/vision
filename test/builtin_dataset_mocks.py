@@ -28,8 +28,6 @@ from torchvision.prototype.utils._internal import sequence_to_str
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
 
-TEST_HOME = pathlib.Path(tempfile.mkdtemp())
-
 
 __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
 
@@ -40,7 +38,6 @@ class DatasetMock:
         self.info = self.dataset.info
         self.name = self.info.name
 
-        self.root = TEST_HOME / self.dataset.name
         self.mock_data_fn = mock_data_fn
         self.configs = self.info._configs
         self._cache = {}
@@ -84,14 +81,14 @@ class DatasetMock:
 
         return mock_infos
 
-    def _prepare_resources(self, config):
+    def _prepare_resources(self, config, root):
         if config in self._cache:
             return self._cache[config]
 
-        self.root.mkdir(exist_ok=True)
-        mock_infos = self._parse_mock_data(config, self.mock_data_fn(self.info, self.root, config))
+        root.mkdir(exist_ok=True)
+        mock_infos = self._parse_mock_data(config, self.mock_data_fn(self.info, root, config))
 
-        available_file_names = {path.name for path in self.root.glob("*")}
+        available_file_names = {path.name for path in root.glob("*")}
         for config_, mock_info in mock_infos.items():
             required_file_names = {resource.file_name for resource in self.dataset.resources(config_)}
             missing_file_names = required_file_names - available_file_names
@@ -106,9 +103,9 @@ class DatasetMock:
         return self._cache[config]
 
     @contextlib.contextmanager
-    def prepare(self, config):
-        mock_info = self._prepare_resources(config)
-        with unittest.mock.patch("torchvision.prototype.datasets._api.home", return_value=str(TEST_HOME)):
+    def prepare(self, config, root):
+        mock_info = self._prepare_resources(config, root)
+        with unittest.mock.patch("torchvision.prototype.datasets._api.home", return_value=str(root)):
             yield mock_info
 
 

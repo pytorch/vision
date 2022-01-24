@@ -21,6 +21,13 @@ def test_coverage():
         )
 
 
+import pathlib
+import tempfile
+@pytest.fixture
+def root():
+    return pathlib.Path(tempfile.mkdtemp())
+
+
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, dataset_mock, config):
@@ -31,8 +38,8 @@ class TestCommon:
             raise AssertionError(f"Loading the dataset should return an IterDataPipe, but got {type(dataset)} instead.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_sample(self, dataset_mock, config):
-        with dataset_mock.prepare(config):
+    def test_sample(self, dataset_mock, config, root):
+        with dataset_mock.prepare(config, root):
             dataset = datasets.load(dataset_mock.name, **config)
 
         try:
