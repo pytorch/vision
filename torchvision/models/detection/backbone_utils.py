@@ -126,7 +126,7 @@ def _resnet_fpn_extractor(
     if returned_layers is None:
         returned_layers = [1, 2, 3, 4]
     if min(returned_layers) <= 0 or max(returned_layers) >= 5:
-        raise ValueError(f" `returned_layers` object should contain integers between [1,4], got {returned_layers} ")
+        raise ValueError(f"Each returned layer must be in the range [1,4]. Got {returned_layers}")
     return_layers = {f"layer{k}": str(v) for v, k in enumerate(returned_layers)}
 
     in_channels_stage2 = backbone.inplanes // 8
@@ -154,9 +154,9 @@ def _validate_trainable_layers(
     # by default freeze first blocks
     if trainable_backbone_layers is None:
         trainable_backbone_layers = default_value
-        if trainable_backbone_layers not in range(0, max_value + 1):
+        if trainable_backbone_layers < 0 or trainable_backbone_layers > max_value:
             raise ValueError(
-                f"trainable_layers expected to be in between [0,{max_value}], got {trainable_backbone_layers} "
+                f"trainable_backbone_layers expected to be in between [0,{max_value}], got {trainable_backbone_layers} "
             )
     return trainable_backbone_layers
 
