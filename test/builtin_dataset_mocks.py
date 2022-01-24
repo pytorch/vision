@@ -28,19 +28,27 @@ from torchvision.prototype.utils._internal import sequence_to_str
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
 
-TEST_HOME = pathlib.Path(tempfile.mkdtemp())
+TEST_HOME = pathlib.Path(
+    tempfile.mkdtemp()
+)  # Are these files removed at the end of the process? Does this pollute /tmp (or another dir)?
+
+# TODO: revisit assumption that we want all mock data to be in the same root dir
+# TODO: revisit need for caching: will it be too slow? if we don't use caching
+#       we might be able to simplify the dicts returned by the mocks
+# TODO: qmnist test 50k is quite slow, is it worth keeping? Should we think of a faster way to test it?
 
 
 __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
 
 
+# maybe the whole class can be removed?
 class ResourceMock(datasets.utils.OnlineResource):
     def __init__(self, *, dataset_name, dataset_config, **kwargs):
         super().__init__(**kwargs)
         self.dataset_name = dataset_name
         self.dataset_config = dataset_config
 
-    def _download(self, _):
+    def _download(self, _):  # When is this called?
         raise pytest.UsageError(
             f"Dataset '{self.dataset_name}' requires the file '{self.file_name}' for {self.dataset_config}, "
             f"but this file does not exist."
@@ -48,7 +56,7 @@ class ResourceMock(datasets.utils.OnlineResource):
 
 
 class DatasetMock:
-    def __init__(self, name, mock_data_fn, *, configs=None):
+    def __init__(self, name, mock_data_fn, *, configs=None):  # maybe remove configs param
         self.dataset = find(name)
         self.root = TEST_HOME / self.dataset.name
         self.mock_data_fn = mock_data_fn
@@ -56,14 +64,15 @@ class DatasetMock:
         self._cache = {}
 
     @property
-    def info(self):
+    def info(self):  # Does this need to be a property?
         return self.dataset.info
 
     @property
-    def name(self):
+    def name(self):  # Does this need to be a property?
         return self.info.name
 
     def _parse_mock_data(self, config, mock_infos):
+        # Is there a dataset that returns more than one "mock_infos" dict?
         if mock_infos is None:
             raise pytest.UsageError(
                 f"The mock data function for dataset '{self.name}' returned nothing. It needs to at least return an "
@@ -71,7 +80,7 @@ class DatasetMock:
             )
 
         key_types = set(type(key) for key in mock_infos) if isinstance(mock_infos, dict) else {}
-        if datasets.utils.DatasetConfig not in key_types:
+        if datasets.utils.DatasetConfig not in key_types:  # Which datasets return DatasetConfig?
             mock_infos = {config: mock_infos}
         elif len(key_types) > 1:
             raise pytest.UsageError(
@@ -79,7 +88,9 @@ class DatasetMock:
                 f"returned dictionary uses `DatasetConfig` as key type, all keys should be of that type."
             )
 
-        for config_, mock_info in list(mock_infos.items()):
+        for config_, mock_info in list(
+            mock_infos.items()
+        ):  # Do we need to convert to a list? We only potentially override the current item
             if config_ in self._cache:
                 raise pytest.UsageError(
                     f"The mock info for config {config_} of dataset {self.name} generated for config {config} "
@@ -103,7 +114,9 @@ class DatasetMock:
         return mock_infos
 
     def _prepare_resources(self, config):
-        with contextlib.suppress(KeyError):
+        with contextlib.suppress(
+            KeyError
+        ):  # This looks like a plain return unless one knows what contextlib.suppress does - maybe just check that the key exists
             return self._cache[config]
 
         self.root.mkdir(exist_ok=True)
@@ -119,11 +132,11 @@ class DatasetMock:
                     f"for {config_}, but they were not created by the mock data function."
                 )
 
-            self._cache[config_] = mock_info
+            self._cache[config_] = mock_info  # I guess this assumes files are never manipulated?
 
         return self._cache[config]
 
-    @contextlib.contextmanager
+    @contextlib.contextmanager  # Does this need to be a CM?
     def prepare(self, config):
         mock_info = self._prepare_resources(config)
         with unittest.mock.patch("torchvision.prototype.datasets._api.home", return_value=str(TEST_HOME)):
@@ -142,11 +155,11 @@ def config_id(name, config):
 
 
 def parametrize_dataset_mocks(*dataset_mocks, marks=None):
-    mocks = {}
+    mocks = {}  # Should we allow @parametrize_dataset_mocks() without needing to pass DATASET_MOCKS?
     for mock in dataset_mocks:
         if isinstance(mock, DatasetMock):
             mocks[mock.name] = mock
-        elif isinstance(mock, collections.abc.Sequence):
+        elif isinstance(mock, collections.abc.Sequence):  # Is this used?
             mocks.update({mock_.name: mock_ for mock_ in mock})
         elif isinstance(mock, collections.abc.Mapping):
             mocks.update(mock)
@@ -173,9 +186,10 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
     )
 
 
-class DatasetMocks(UserDict):
-    def set_from_named_callable(self, fn):
-        name = fn.__name__.replace("_", "-")
+# TODO: just make it a @register_mock function?
+class DatasetMocks(UserDict):  # why UserDict?
+    def set_from_named_callable(self, fn):  # Why a method? Could we just have a function? Is name descriptive?
+        name = fn.__name__.replace("_", "-")  # Is this needed?
         self.data[name] = DatasetMock(name, fn)
         return fn
 
@@ -300,7 +314,7 @@ def emnist(info, root, _):
 
     make_zip(root, "emnist-gzip.zip", *file_names)
 
-    return mock_infos
+    return mock_infos  # mock info vs num_samples?
 
 
 @DATASET_MOCKS.set_from_named_callable

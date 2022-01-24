@@ -24,7 +24,7 @@ def test_coverage():
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, dataset_mock, config):
-        with dataset_mock.prepare(config):
+        with dataset_mock.prepare(config):  # Are there tests that don't start with these lines?
             dataset = datasets.load(dataset_mock.name, **config)
 
         if not isinstance(dataset, IterDataPipe):
@@ -58,7 +58,7 @@ class TestCommon:
         assert num_samples == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_decoding(self, dataset_mock, config):
+    def test_decoding(self, dataset_mock, config):  # test_no_undecoded_features() ?
         with dataset_mock.prepare(config):
             dataset = datasets.load(dataset_mock.name, **config)
 
@@ -70,7 +70,9 @@ class TestCommon:
             )
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_no_vanilla_tensors(self, dataset_mock, config):
+    def test_no_vanilla_tensors(
+        self, dataset_mock, config
+    ):  # What if a user implements a custom dataset that returns tensors?
         with dataset_mock.prepare(config):
             dataset = datasets.load(dataset_mock.name, **config)
 
@@ -100,7 +102,7 @@ class TestCommon:
         with dataset_mock.prepare(config):
             dataset = datasets.load(dataset_mock.name, **config)
 
-        traverse(dataset)
+        traverse(dataset)  # What's traverse()?
 
     @parametrize_dataset_mocks(
         DATASET_MOCKS,
@@ -110,7 +112,9 @@ class TestCommon:
             )
         },
     )
-    @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter), ids=lambda type: type.__name__)
+    @pytest.mark.parametrize(
+        "annotation_dp_type", (Shuffler, ShardingFilter), ids=lambda type: type.__name__
+    )  # I think the ids= is the same as pytest's default id
     def test_has_annotations(self, dataset_mock, config, annotation_dp_type):
         def scan(graph):
             for node, sub_graph in graph.items():
@@ -120,7 +124,7 @@ class TestCommon:
         with dataset_mock.prepare(config):
             dataset = datasets.load(dataset_mock.name, **config)
 
-        for dp in scan(traverse(dataset)):
+        for dp in scan(traverse(dataset)):  # for else are not common - could this be an any() or something?
             if type(dp) is annotation_dp_type:
                 break
         else:
