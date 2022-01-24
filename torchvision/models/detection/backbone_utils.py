@@ -188,7 +188,7 @@ def _mobilenet_extractor(
     num_stages = len(stage_indices)
 
     # find the index of the layer from which we wont freeze
-    if trainable_layers not in range(0, num_stages + 1):
+    if trainable_layers < 0 or trainable_layers > num_stages:
         raise ValueError(f"trainable_layers expected to be in between [0,{num_stages}], got {trainable_layers} ")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
