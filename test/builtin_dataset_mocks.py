@@ -21,7 +21,7 @@ import torch
 from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
-from torchvision.prototype import datasets
+from torchvision.prototype import datasets, features
 from torchvision.prototype.datasets._api import find
 from torchvision.prototype.utils._internal import sequence_to_str
 
@@ -48,10 +48,11 @@ class ResourceMock(datasets.utils.OnlineResource):
 
 
 class DatasetMock:
-    def __init__(self, name, mock_data_fn, *, configs=None):
+    def __init__(self, name, *, mock_data_fn, sample_structure=None, configs=None):
         self.dataset = find(name)
         self.root = TEST_HOME / self.dataset.name
         self.mock_data_fn = mock_data_fn
+        self.sample_structure = sample_structure
         self.configs = configs or self.info._configs
         self._cache = {}
 
@@ -176,7 +177,7 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
 class DatasetMocks(UserDict):
     def set_from_named_callable(self, fn):
         name = fn.__name__.replace("_", "-")
-        self.data[name] = DatasetMock(name, fn)
+        self.data[name] = DatasetMock(name, mock_data_fn=fn)
         return fn
 
 
@@ -258,8 +259,7 @@ class MNISTMockData:
         return num_samples
 
 
-@DATASET_MOCKS.set_from_named_callable
-def mnist(info, root, config):
+def mnist_mock_data_fn(info, root, config):
     train = config.split == "train"
     images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
     labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
@@ -271,7 +271,19 @@ def mnist(info, root, config):
     )
 
 
-DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
+DATASET_MOCKS.update(
+    {
+        name: DatasetMock(
+            name,
+            mock_data_fn=mnist_mock_data_fn,
+            sample_structure=dict(
+                image=features.Image,
+                label=features.Label,
+            ),
+        )
+        for name in ("mnist", "fashionmnist", "kmnist")
+    }
+)
 
 
 @DATASET_MOCKS.set_from_named_callable
@@ -839,8 +851,7 @@ class VOCMockData:
         return num_samples_map
 
 
-@DATASET_MOCKS.set_from_named_callable
-def voc(info, root, config):
+def voc_mock_data_fn(info, root, config):
     trainval = config.split != "test"
     num_samples_map = VOCMockData.generate(root, year=config.year, trainval=trainval)
     return {
@@ -848,6 +859,18 @@ def voc(info, root, config):
         for config_ in info._configs
         if config_.year == config.year and ((config_.split == "test") ^ trainval)
     }
+
+
+def voc_sample_structure_fn(config):
+    return dict(
+        image_path=str,
+        image=features.Image,
+        ann_path=int,
+        ann=features.BoundingBox if config.task == "detection" else features.Image,
+    )
+
+
+DATASET_MOCKS["voc"] = DatasetMock("voc", mock_data_fn=voc_mock_data_fn, sample_structure=voc_sample_structure_fn)
 
 
 class CelebAMockData:

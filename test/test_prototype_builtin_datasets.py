@@ -4,11 +4,26 @@ from pathlib import Path
 import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
+from torch.testing._comparison import assert_equal, Pair, UnsupportedInputs
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.utils._internal import sequence_to_str
+
+
+class SampleStructurePair(Pair):
+    def __init__(self, actual, expected, **kwargs):
+        if not isinstance(expected, type):
+            raise UnsupportedInputs()
+
+        super().__init__(actual, expected, **kwargs)
+
+    def compare(self) -> None:
+        if not isinstance(self.actual, self.expected):
+            raise self._make_error_meta(
+                AssertionError, f"Expected type {self.expected.__name__}, but got {type(self.actual).__name__} instead."
+            )
 
 
 def test_coverage():
@@ -110,7 +125,7 @@ class TestCommon:
             )
         },
     )
-    @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter), ids=lambda type: type.__name__)
+    @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, dataset_mock, config, annotation_dp_type):
         def scan(graph):
             for node, sub_graph in graph.items():
@@ -125,6 +140,20 @@ class TestCommon:
                 break
         else:
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
+
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_sample_structure(self, dataset_mock, config):
+        if dataset_mock.sample_structure is None:
+            raise pytest.skip("No feature types are specified.")
+
+        with dataset_mock.prepare(config):
+            dataset = datasets.load(dataset_mock.name, **config)
+
+        sample_structure = dataset_mock.sample_structure
+        if callable(sample_structure):
+            sample_structure = sample_structure(config)
+
+        assert_equal(next(iter(dataset)), sample_structure, pair_types=[SampleStructurePair])
 
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
