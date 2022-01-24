@@ -1,16 +1,17 @@
 import importlib
+import os
 
 import pytest
 import test_models as TM
 import torch
-from common_utils import cpu_and_gpu, run_on_env_var, needs_cuda
+from common_utils import cpu_and_gpu, needs_cuda
 from torchvision.prototype import models
 from torchvision.prototype.models._api import WeightsEnum, Weights
 from torchvision.prototype.models._utils import handle_legacy_interface
 
-run_if_test_with_prototype = run_on_env_var(
-    "PYTORCH_TEST_WITH_PROTOTYPE",
-    skip_reason="Prototype tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run them.",
+run_if_test_with_prototype = pytest.mark.skipif(
+    os.getenv("PYTORCH_TEST_WITH_PROTOTYPE") != "1",
+    reason="Prototype tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run them.",
 )
 
 
@@ -53,15 +54,15 @@ def _build_model(fn, **kwargs):
 @pytest.mark.parametrize(
     "name, weight",
     [
-        ("ResNet50_Weights.ImageNet1K_V1", models.ResNet50_Weights.ImageNet1K_V1),
-        ("ResNet50_Weights.default", models.ResNet50_Weights.ImageNet1K_V2),
+        ("ResNet50_Weights.IMAGENET1K_V1", models.ResNet50_Weights.IMAGENET1K_V1),
+        ("ResNet50_Weights.DEFAULT", models.ResNet50_Weights.IMAGENET1K_V2),
         (
-            "ResNet50_QuantizedWeights.default",
-            models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V2,
+            "ResNet50_QuantizedWeights.DEFAULT",
+            models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2,
         ),
         (
-            "ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1",
-            models.quantization.ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1,
+            "ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1",
+            models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1,
         ),
     ],
 )
@@ -82,7 +83,7 @@ def test_naming_conventions(model_fn):
     weights_enum = _get_model_weights(model_fn)
     print(weights_enum)
     assert weights_enum is not None
-    assert len(weights_enum) == 0 or hasattr(weights_enum, "default")
+    assert len(weights_enum) == 0 or hasattr(weights_enum, "DEFAULT")
 
 
 @pytest.mark.parametrize(
@@ -94,10 +95,11 @@ def test_naming_conventions(model_fn):
     + TM.get_models_from_module(models.video)
     + TM.get_models_from_module(models.optical_flow),
 )
+@run_if_test_with_prototype
 def test_schema_meta_validation(model_fn):
-    classification_fields = ["size", "categories", "acc@1", "acc@5"]
+    classification_fields = ["size", "categories", "acc@1", "acc@5", "min_size"]
     defaults = {
-        "all": ["interpolation", "recipe"],
+        "all": ["task", "architecture", "publication_year", "interpolation", "recipe", "num_params"],
         "models": classification_fields,
         "detection": ["categories", "map"],
         "quantization": classification_fields + ["backend", "quantization", "unquantized"],
@@ -105,18 +107,39 @@ def test_schema_meta_validation(model_fn):
         "video": classification_fields,
         "optical_flow": [],
     }
+    model_name = model_fn.__name__
     module_name = model_fn.__module__.split(".")[-2]
     fields = set(defaults["all"] + defaults[module_name])
 
     weights_enum = _get_model_weights(model_fn)
+    if len(weights_enum) == 0:
+        pytest.skip(f"Model '{model_name}' doesn't have any pre-trained weights.")
 
     problematic_weights = {}
+    incorrect_params = []
+    bad_names = []
     for w in weights_enum:
         missing_fields = fields - set(w.meta.keys())
         if missing_fields:
             problematic_weights[w] = missing_fields
+        if w == weights_enum.DEFAULT:
+            if module_name == "quantization":
+                # parameters() count doesn't work well with quantization, so we check against the non-quantized
+                unquantized_w = w.meta.get("unquantized")
+                if unquantized_w is not None and w.meta.get("num_params") != unquantized_w.meta.get("num_params"):
+                    incorrect_params.append(w)
+            else:
+                if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
+                    incorrect_params.append(w)
+        else:
+            if w.meta.get("num_params") != weights_enum.DEFAULT.meta.get("num_params"):
+                incorrect_params.append(w)
+        if not w.name.isupper():
+            bad_names.append(w)
 
     assert not problematic_weights
+    assert not incorrect_params
+    assert not bad_names
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))

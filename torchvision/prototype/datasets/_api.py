@@ -62,7 +62,6 @@ def load(
     *,
     decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = DEFAULT_DECODER,  # type: ignore[assignment]
     skip_integrity_check: bool = False,
-    split: str = "train",
     **options: Any,
 ) -> IterDataPipe[Dict[str, Any]]:
     dataset = find(name)
@@ -70,7 +69,7 @@ def load(
     if decoder is DEFAULT_DECODER:
         decoder = DEFAULT_DECODER_MAP.get(dataset.info.type)
 
-    config = dataset.info.make_config(split=split, **options)
+    config = dataset.info.make_config(**options)
     root = os.path.join(home(), dataset.name)
 
     return dataset.load(root, config=config, decoder=decoder, skip_integrity_check=skip_integrity_check)

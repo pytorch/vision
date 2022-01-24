@@ -71,7 +71,7 @@ def _validate_pts(pts_range: Tuple[int, int]) -> None:
         assert (
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
-            start pts: {0:d} and end pts: {1:d}""".format(
+            start pts: {:d} and end pts: {:d}""".format(
             pts_range[0],
             pts_range[1],
         )

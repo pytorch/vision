@@ -28,10 +28,14 @@ __all__ = [
 
 
 class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
-    Coco_V1 = Weights(
+    COCO_V1 = Weights(
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
         transforms=CocoEval,
         meta={
+            "task": "image_object_detection",
+            "architecture": "SSDLite",
+            "publication_year": 2018,
+            "num_params": 3440060,
             "size": (320, 320),
             "categories": _COCO_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
@@ -39,12 +43,12 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
             "map": 21.3,
         },
     )
-    default = Coco_V1
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(
-    weights=("pretrained", SSDLite320_MobileNet_V3_Large_Weights.Coco_V1),
-    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+    weights=("pretrained", SSDLite320_MobileNet_V3_Large_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
 )
 def ssdlite320_mobilenet_v3_large(
     *,
