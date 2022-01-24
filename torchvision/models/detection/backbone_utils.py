@@ -154,10 +154,10 @@ def _validate_trainable_layers(
     # by default freeze first blocks
     if trainable_backbone_layers is None:
         trainable_backbone_layers = default_value
-        if trainable_backbone_layers < 0 or trainable_backbone_layers > max_value:
-            raise ValueError(
-                f"trainable_backbone_layers expected to be in between [0,{max_value}], got {trainable_backbone_layers} "
-            )
+    if trainable_backbone_layers < 0 or trainable_backbone_layers > max_value:
+        raise ValueError(
+            f"trainable_backbone_layers expected to be in between [0,{max_value}], got {trainable_backbone_layers} "
+        )
     return trainable_backbone_layers
 
 
@@ -203,10 +203,10 @@ def _mobilenet_extractor(
 
         if returned_layers is None:
             returned_layers = [num_stages - 2, num_stages - 1]
-            if min(returned_layers) <= 0 or max(returned_layers) >= num_stages:
-                raise ValueError(
-                    f" returned_layers object should contain integers between [1,{num_stages - 1}], got {returned_layers} "
-                )
+        if min(returned_layers) <= 0 or max(returned_layers) >= num_stages:
+            raise ValueError(
+                f" returned_layers object should contain integers between [1,{num_stages - 1}], got {returned_layers} "
+            )
         return_layers = {f"{stage_indices[k]}": str(v) for v, k in enumerate(returned_layers)}
 
         in_channels_list = [backbone[stage_indices[i]].out_channels for i in returned_layers]
