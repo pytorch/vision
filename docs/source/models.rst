@@ -89,7 +89,6 @@ You can construct a model with random weights by calling its constructor:
     vit_b_32 = models.vit_b_32()
     vit_l_16 = models.vit_l_16()
     vit_l_32 = models.vit_l_32()
-    vit_h_14 = models.vit_h_14()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -464,7 +463,6 @@ VisionTransformer
     vit_b_32
     vit_l_16
     vit_l_32
-    vit_h_14
 
 Quantized Models
 ----------------
@@ -597,6 +595,7 @@ The models subpackage contains definitions for the following model
 architectures for detection:
 
 - `Faster R-CNN <https://arxiv.org/abs/1506.01497>`_
+- `FCOS <https://arxiv.org/abs/1904.01355>`_
 - `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
 - `RetinaNet <https://arxiv.org/abs/1708.02002>`_
 - `SSD <https://arxiv.org/abs/1512.02325>`_
@@ -642,6 +641,7 @@ Network                                 box AP   mask AP   keypoint AP
 Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
+FCOS ResNet-50 FPN                      39.2     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
 SSD300 VGG16                            25.1     -         -
 SSDlite320 MobileNetV3-Large            21.3     -         -
@@ -702,6 +702,7 @@ Network                                 train time (s / it)  test time (s / it) 
 Faster R-CNN ResNet-50 FPN              0.2288               0.0590              5.2
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
+FCOS ResNet-50 FPN                      0.1450               0.0539              3.3
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
 SSD300 VGG16                            0.2093               0.0744              1.5
 SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
@@ -720,6 +721,15 @@ Faster R-CNN
     torchvision.models.detection.fasterrcnn_resnet50_fpn
     torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn
     torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
+
+FCOS
+----
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.fcos_resnet50_fpn
 
 
 RetinaNet

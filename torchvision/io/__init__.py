@@ -183,8 +183,6 @@ class VideoReader:
         Returns:
             (dict): dictionary containing duration and frame rate for every stream
         """
-        if self.is_cuda:
-            raise RuntimeError("get_metadata() not yet supported with GPU decoding.")
         return self._c.get_metadata()
 
     def set_current_stream(self, stream: str) -> bool:

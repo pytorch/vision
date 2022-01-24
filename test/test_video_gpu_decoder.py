@@ -1,3 +1,4 @@
+import math
 import os
 
 import pytest
@@ -62,6 +63,18 @@ class TestVideoGPUDecoder:
                 vision_frames = next(decoder)["data"]
                 mean_delta = torch.mean(torch.abs(av_frames.float() - vision_frames.cpu().float()))
                 assert mean_delta < 0.75
+
+    @pytest.mark.skipif(av is None, reason="PyAV unavailable")
+    def test_metadata(self):
+        for test_video in test_videos:
+            full_path = os.path.join(VIDEO_DIR, test_video)
+            decoder = VideoReader(full_path, device="cuda:0")
+            video_metadata = decoder.get_metadata()["video"]
+            with av.open(full_path) as container:
+                video = container.streams.video[0]
+                av_duration = float(video.duration * video.time_base)
+                assert math.isclose(video_metadata["duration"], av_duration, rel_tol=1e-2)
+                assert math.isclose(video_metadata["fps"], video.base_rate, rel_tol=1e-2)
 
 
 if __name__ == "__main__":
