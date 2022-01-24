@@ -41,6 +41,13 @@ torchrun --nproc_per_node=8 train.py\
     --lr-steps 16 22 --aspect-ratio-group-factor 3
 ```
 
+### FCOS ResNet-50 FPN
+```
+torchrun --nproc_per_node=8 train.py\
+    --dataset coco --model fcos_resnet50_fpn --epochs 26\
+    --lr-steps 16 22 --aspect-ratio-group-factor 3  --lr 0.01 --amp
+```
+
 ### RetinaNet
 ```
 torchrun --nproc_per_node=8 train.py\

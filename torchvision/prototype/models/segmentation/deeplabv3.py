@@ -34,7 +34,7 @@ _COMMON_META = {
 
 
 class DeepLabV3_ResNet50_Weights(WeightsEnum):
-    CocoWithVocLabels_V1 = Weights(
+    COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -45,11 +45,11 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
             "acc": 92.4,
         },
     )
-    default = CocoWithVocLabels_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 class DeepLabV3_ResNet101_Weights(WeightsEnum):
-    CocoWithVocLabels_V1 = Weights(
+    COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -60,11 +60,11 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
             "acc": 92.4,
         },
     )
-    default = CocoWithVocLabels_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
-    CocoWithVocLabels_V1 = Weights(
+    COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
@@ -75,12 +75,12 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
             "acc": 91.2,
         },
     )
-    default = CocoWithVocLabels_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 @handle_legacy_interface(
-    weights=("pretrained", DeepLabV3_ResNet50_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+    weights=("pretrained", DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def deeplabv3_resnet50(
     *,
@@ -111,8 +111,8 @@ def deeplabv3_resnet50(
 
 
 @handle_legacy_interface(
-    weights=("pretrained", DeepLabV3_ResNet101_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", ResNet101_Weights.ImageNet1K_V1),
+    weights=("pretrained", DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
 )
 def deeplabv3_resnet101(
     *,
@@ -143,8 +143,8 @@ def deeplabv3_resnet101(
 
 
 @handle_legacy_interface(
-    weights=("pretrained", DeepLabV3_MobileNet_V3_Large_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+    weights=("pretrained", DeepLabV3_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
 )
 def deeplabv3_mobilenet_v3_large(
     *,
