@@ -56,6 +56,7 @@ def _resnet(
 _COMMON_META = {
     "task": "image_classification",
     "size": (224, 224),
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "backend": "fbgemm",
@@ -65,7 +66,7 @@ _COMMON_META = {
 
 
 class ResNet18_QuantizedWeights(WeightsEnum):
-    ImageNet1K_FBGEMM_V1 = Weights(
+    IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -73,16 +74,16 @@ class ResNet18_QuantizedWeights(WeightsEnum):
             "architecture": "ResNet",
             "publication_year": 2015,
             "num_params": 11689512,
-            "unquantized": ResNet18_Weights.ImageNet1K_V1,
+            "unquantized": ResNet18_Weights.IMAGENET1K_V1,
             "acc@1": 69.494,
             "acc@5": 88.882,
         },
     )
-    default = ImageNet1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 class ResNet50_QuantizedWeights(WeightsEnum):
-    ImageNet1K_FBGEMM_V1 = Weights(
+    IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -90,12 +91,12 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             "architecture": "ResNet",
             "publication_year": 2015,
             "num_params": 25557032,
-            "unquantized": ResNet50_Weights.ImageNet1K_V1,
+            "unquantized": ResNet50_Weights.IMAGENET1K_V1,
             "acc@1": 75.920,
             "acc@5": 92.814,
         },
     )
-    ImageNet1K_FBGEMM_V2 = Weights(
+    IMAGENET1K_FBGEMM_V2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -103,16 +104,16 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             "architecture": "ResNet",
             "publication_year": 2015,
             "num_params": 25557032,
-            "unquantized": ResNet50_Weights.ImageNet1K_V2,
+            "unquantized": ResNet50_Weights.IMAGENET1K_V2,
             "acc@1": 80.282,
             "acc@5": 94.976,
         },
     )
-    default = ImageNet1K_FBGEMM_V2
+    DEFAULT = IMAGENET1K_FBGEMM_V2
 
 
 class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
-    ImageNet1K_FBGEMM_V1 = Weights(
+    IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -120,12 +121,12 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             "architecture": "ResNeXt",
             "publication_year": 2016,
             "num_params": 88791336,
-            "unquantized": ResNeXt101_32X8D_Weights.ImageNet1K_V1,
+            "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V1,
             "acc@1": 78.986,
             "acc@5": 94.480,
         },
     )
-    ImageNet1K_FBGEMM_V2 = Weights(
+    IMAGENET1K_FBGEMM_V2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -133,20 +134,20 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             "architecture": "ResNeXt",
             "publication_year": 2016,
             "num_params": 88791336,
-            "unquantized": ResNeXt101_32X8D_Weights.ImageNet1K_V2,
+            "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V2,
             "acc@1": 82.574,
             "acc@5": 96.132,
         },
     )
-    default = ImageNet1K_FBGEMM_V2
+    DEFAULT = IMAGENET1K_FBGEMM_V2
 
 
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ResNet18_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        lambda kwargs: ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1
         if kwargs.get("quantize", False)
-        else ResNet18_Weights.ImageNet1K_V1,
+        else ResNet18_Weights.IMAGENET1K_V1,
     )
 )
 def resnet18(
@@ -164,9 +165,9 @@ def resnet18(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ResNet50_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        lambda kwargs: ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1
         if kwargs.get("quantize", False)
-        else ResNet50_Weights.ImageNet1K_V1,
+        else ResNet50_Weights.IMAGENET1K_V1,
     )
 )
 def resnet50(
@@ -184,9 +185,9 @@ def resnet50(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ResNeXt101_32X8D_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        lambda kwargs: ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V1
         if kwargs.get("quantize", False)
-        else ResNeXt101_32X8D_Weights.ImageNet1K_V1,
+        else ResNeXt101_32X8D_Weights.IMAGENET1K_V1,
     )
 )
 def resnext101_32x8d(

@@ -55,6 +55,7 @@ _COMMON_META = {
     "architecture": "ShuffleNetV2",
     "publication_year": 2018,
     "size": (224, 224),
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "backend": "fbgemm",
@@ -64,41 +65,41 @@ _COMMON_META = {
 
 
 class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
-    ImageNet1K_FBGEMM_V1 = Weights(
+    IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 1366792,
-            "unquantized": ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1,
+            "unquantized": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1,
             "acc@1": 57.972,
             "acc@5": 79.780,
         },
     )
-    default = ImageNet1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
-    ImageNet1K_FBGEMM_V1 = Weights(
+    IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 2278604,
-            "unquantized": ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1,
+            "unquantized": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1,
             "acc@1": 68.360,
             "acc@5": 87.582,
         },
     )
-    default = ImageNet1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ShuffleNet_V2_X0_5_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        lambda kwargs: ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1
         if kwargs.get("quantize", False)
-        else ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1,
+        else ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1,
     )
 )
 def shufflenet_v2_x0_5(
@@ -117,9 +118,9 @@ def shufflenet_v2_x0_5(
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: ShuffleNet_V2_X1_0_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        lambda kwargs: ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1
         if kwargs.get("quantize", False)
-        else ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1,
+        else ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1,
     )
 )
 def shufflenet_v2_x1_0(

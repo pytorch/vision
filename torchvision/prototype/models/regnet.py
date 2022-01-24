@@ -50,6 +50,7 @@ _COMMON_META = {
     "architecture": "RegNet",
     "publication_year": 2020,
     "size": (224, 224),
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
@@ -74,7 +75,7 @@ def _regnet(
 
 
 class RegNet_Y_400MF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_400mf-c65dace8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -85,7 +86,7 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
             "acc@5": 91.716,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_y_400mf-e6988f5f.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -96,11 +97,11 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
             "acc@5": 92.742,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_Y_800MF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_800mf-1b27b58c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -111,7 +112,7 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
             "acc@5": 93.136,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_y_800mf-58fc7688.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -122,11 +123,11 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
             "acc@5": 94.502,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_Y_1_6GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_1_6gf-b11a554e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -137,7 +138,7 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
             "acc@5": 93.966,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_y_1_6gf-0d7bc02a.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -148,11 +149,11 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
             "acc@5": 95.444,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_Y_3_2GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_3_2gf-b5a9779c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -163,7 +164,7 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
             "acc@5": 94.576,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_y_3_2gf-9180c971.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -174,11 +175,11 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
             "acc@5": 95.972,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_Y_8GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_8gf-d0d0e4a8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -189,7 +190,7 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
             "acc@5": 95.048,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_y_8gf-dc2b1b54.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -200,11 +201,11 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
             "acc@5": 96.330,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_Y_16GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_16gf-9e6ed7dd.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -215,7 +216,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "acc@5": 95.240,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_y_16gf-3e4a00f9.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -226,11 +227,11 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "acc@5": 96.328,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_Y_32GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_32gf-4dee3f7a.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -241,7 +242,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "acc@5": 95.340,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_y_32gf-8db6d4b5.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -252,7 +253,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "acc@5": 96.498,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_Y_128GF_Weights(WeightsEnum):
@@ -261,7 +262,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
 
 
 class RegNet_X_400MF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_400mf-adf1edd5.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -272,7 +273,7 @@ class RegNet_X_400MF_Weights(WeightsEnum):
             "acc@5": 90.950,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_x_400mf-62229a5f.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -283,11 +284,11 @@ class RegNet_X_400MF_Weights(WeightsEnum):
             "acc@5": 92.322,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_X_800MF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_800mf-ad17e45c.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -298,7 +299,7 @@ class RegNet_X_800MF_Weights(WeightsEnum):
             "acc@5": 92.348,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_x_800mf-94a99ebd.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -309,11 +310,11 @@ class RegNet_X_800MF_Weights(WeightsEnum):
             "acc@5": 93.826,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_X_1_6GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_1_6gf-e3633e7f.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -324,7 +325,7 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
             "acc@5": 93.440,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_x_1_6gf-a12f2b72.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -335,11 +336,11 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
             "acc@5": 94.922,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_X_3_2GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_3_2gf-f342aeae.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -350,7 +351,7 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
             "acc@5": 93.992,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_x_3_2gf-7071aa85.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -361,11 +362,11 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
             "acc@5": 95.430,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_X_8GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_8gf-03ceed89.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -376,7 +377,7 @@ class RegNet_X_8GF_Weights(WeightsEnum):
             "acc@5": 94.686,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_x_8gf-2b70d774.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -387,11 +388,11 @@ class RegNet_X_8GF_Weights(WeightsEnum):
             "acc@5": 95.678,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_X_16GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_16gf-2007eb11.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -402,7 +403,7 @@ class RegNet_X_16GF_Weights(WeightsEnum):
             "acc@5": 94.944,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_x_16gf-ba3796d7.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -413,11 +414,11 @@ class RegNet_X_16GF_Weights(WeightsEnum):
             "acc@5": 96.196,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class RegNet_X_32GF_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_x_32gf-9d47f8d0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -428,7 +429,7 @@ class RegNet_X_32GF_Weights(WeightsEnum):
             "acc@5": 95.248,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/regnet_x_32gf-6eb8fdc6.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -439,10 +440,10 @@ class RegNet_X_32GF_Weights(WeightsEnum):
             "acc@5": 96.288,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_Y_400MF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_400MF_Weights.IMAGENET1K_V1))
 def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_400MF_Weights.verify(weights)
 
@@ -450,7 +451,7 @@ def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_Y_800MF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_800MF_Weights.IMAGENET1K_V1))
 def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_800MF_Weights.verify(weights)
 
@@ -458,7 +459,7 @@ def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_Y_1_6GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_1_6GF_Weights.IMAGENET1K_V1))
 def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_1_6GF_Weights.verify(weights)
 
@@ -468,7 +469,7 @@ def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_Y_3_2GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_3_2GF_Weights.IMAGENET1K_V1))
 def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_3_2GF_Weights.verify(weights)
 
@@ -478,7 +479,7 @@ def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_Y_8GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_8GF_Weights.IMAGENET1K_V1))
 def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_8GF_Weights.verify(weights)
 
@@ -488,7 +489,7 @@ def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bo
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_Y_16GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_16GF_Weights.IMAGENET1K_V1))
 def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_16GF_Weights.verify(weights)
 
@@ -498,7 +499,7 @@ def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: 
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_Y_32GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_Y_32GF_Weights.IMAGENET1K_V1))
 def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_Y_32GF_Weights.verify(weights)
 
@@ -518,7 +519,7 @@ def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_X_400MF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_X_400MF_Weights.IMAGENET1K_V1))
 def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_400MF_Weights.verify(weights)
 
@@ -526,7 +527,7 @@ def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_X_800MF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_X_800MF_Weights.IMAGENET1K_V1))
 def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_800MF_Weights.verify(weights)
 
@@ -534,7 +535,7 @@ def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_X_1_6GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_X_1_6GF_Weights.IMAGENET1K_V1))
 def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_1_6GF_Weights.verify(weights)
 
@@ -542,7 +543,7 @@ def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_X_3_2GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_X_3_2GF_Weights.IMAGENET1K_V1))
 def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_3_2GF_Weights.verify(weights)
 
@@ -550,7 +551,7 @@ def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_X_8GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_X_8GF_Weights.IMAGENET1K_V1))
 def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_8GF_Weights.verify(weights)
 
@@ -558,7 +559,7 @@ def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bo
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_X_16GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_X_16GF_Weights.IMAGENET1K_V1))
 def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_16GF_Weights.verify(weights)
 
@@ -566,7 +567,7 @@ def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: 
     return _regnet(params, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", RegNet_X_32GF_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", RegNet_X_32GF_Weights.IMAGENET1K_V1))
 def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     weights = RegNet_X_32GF_Weights.verify(weights)
 

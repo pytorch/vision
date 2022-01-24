@@ -28,6 +28,7 @@ _COMMON_META = {
     "architecture": "MNASNet",
     "publication_year": 2018,
     "size": (224, 224),
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/1e100/mnasnet_trainer",
@@ -35,7 +36,7 @@ _COMMON_META = {
 
 
 class MNASNet0_5_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mnasnet0.5_top1_67.823-3ffadce67e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -45,7 +46,7 @@ class MNASNet0_5_Weights(WeightsEnum):
             "acc@5": 87.490,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class MNASNet0_75_Weights(WeightsEnum):
@@ -54,7 +55,7 @@ class MNASNet0_75_Weights(WeightsEnum):
 
 
 class MNASNet1_0_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -64,7 +65,7 @@ class MNASNet1_0_Weights(WeightsEnum):
             "acc@5": 91.510,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class MNASNet1_3_Weights(WeightsEnum):
@@ -84,7 +85,7 @@ def _mnasnet(alpha: float, weights: Optional[WeightsEnum], progress: bool, **kwa
     return model
 
 
-@handle_legacy_interface(weights=("pretrained", MNASNet0_5_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", MNASNet0_5_Weights.IMAGENET1K_V1))
 def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet0_5_Weights.verify(weights)
 
@@ -98,7 +99,7 @@ def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool
     return _mnasnet(0.75, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", MNASNet1_0_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", MNASNet1_0_Weights.IMAGENET1K_V1))
 def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     weights = MNASNet1_0_Weights.verify(weights)
 

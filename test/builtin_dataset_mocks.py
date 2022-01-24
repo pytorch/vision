@@ -10,8 +10,9 @@ import pathlib
 import pickle
 import random
 import tempfile
+import unittest.mock
 import xml.etree.ElementTree as ET
-from collections import defaultdict, Counter, UserDict
+from collections import defaultdict, Counter
 
 import numpy as np
 import PIL.Image
@@ -21,7 +22,8 @@ from datasets_utils import make_zip, make_tar, create_image_folder, create_image
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype import datasets
-from torchvision.prototype.datasets._api import DEFAULT_DECODER_MAP, DEFAULT_DECODER, find
+from torchvision.prototype.datasets._api import find
+from torchvision.prototype.utils._internal import sequence_to_str
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
@@ -32,106 +34,82 @@ TEST_HOME = pathlib.Path(tempfile.mkdtemp())
 __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
 
 
-class ResourceMock(datasets.utils.OnlineResource):
-    def __init__(self, *, dataset_name, dataset_config, **kwargs):
-        super().__init__(**kwargs)
-        self.dataset_name = dataset_name
-        self.dataset_config = dataset_config
-
-    def _download(self, _):
-        raise pytest.UsageError(
-            f"Dataset '{self.dataset_name}' requires the file '{self.file_name}' for {self.dataset_config}, "
-            f"but this file does not exist."
-        )
-
-
 class DatasetMock:
-    def __init__(self, name, mock_data_fn, *, configs=None):
+    def __init__(self, name, mock_data_fn):
         self.dataset = find(name)
+        self.info = self.dataset.info
+        self.name = self.info.name
+
         self.root = TEST_HOME / self.dataset.name
-        self.mock_data_fn = self._parse_mock_data(mock_data_fn)
-        self.configs = configs or self.info._configs
+        self.mock_data_fn = mock_data_fn
+        self.configs = self.info._configs
         self._cache = {}
 
-    @property
-    def info(self):
-        return self.dataset.info
+    def _parse_mock_data(self, config, mock_infos):
+        if mock_infos is None:
+            raise pytest.UsageError(
+                f"The mock data function for dataset '{self.name}' returned nothing. It needs to at least return an "
+                f"integer indicating the number of samples for the current `config`."
+            )
 
-    @property
-    def name(self):
-        return self.info.name
+        key_types = set(type(key) for key in mock_infos) if isinstance(mock_infos, dict) else {}
+        if datasets.utils.DatasetConfig not in key_types:
+            mock_infos = {config: mock_infos}
+        elif len(key_types) > 1:
+            raise pytest.UsageError(
+                f"Unable to handle the returned dictionary of the mock data function for dataset {self.name}. If "
+                f"returned dictionary uses `DatasetConfig` as key type, all keys should be of that type."
+            )
 
-    def _parse_mock_data(self, mock_data_fn):
-        def wrapper(info, root, config):
-            mock_infos = mock_data_fn(info, root, config)
-
-            if mock_infos is None:
+        for config_, mock_info in mock_infos.items():
+            if config_ in self._cache:
                 raise pytest.UsageError(
-                    f"The mock data function for dataset '{self.name}' returned nothing. It needs to at least return an "
-                    f"integer indicating the number of samples for the current `config`."
+                    f"The mock info for config {config_} of dataset {self.name} generated for config {config} "
+                    f"already exists in the cache."
+                )
+            if isinstance(mock_info, int):
+                mock_infos[config_] = dict(num_samples=mock_info)
+            elif not isinstance(mock_info, dict):
+                raise pytest.UsageError(
+                    f"The mock data function for dataset '{self.name}' returned a {type(mock_infos)} for `config` "
+                    f"{config_}. The returned object should be a dictionary containing at least the number of "
+                    f"samples for the key `'num_samples'`. If no additional information is required for specific "
+                    f"tests, the number of samples can also be returned as an integer."
+                )
+            elif "num_samples" not in mock_info:
+                raise pytest.UsageError(
+                    f"The dictionary returned by the mock data function for dataset '{self.name}' and config "
+                    f"{config_} has to contain a `'num_samples'` entry indicating the number of samples."
                 )
 
-            key_types = set(type(key) for key in mock_infos) if isinstance(mock_infos, dict) else {}
-            if datasets.utils.DatasetConfig not in key_types:
-                mock_infos = {config: mock_infos}
-            elif len(key_types) > 1:
-                raise pytest.UsageError(
-                    f"Unable to handle the returned dictionary of the mock data function for dataset {self.name}. If "
-                    f"returned dictionary uses `DatasetConfig` as key type, all keys should be of that type."
-                )
+        return mock_infos
 
-            for config_, mock_info in list(mock_infos.items()):
-                if config_ in self._cache:
-                    raise pytest.UsageError(
-                        f"The mock info for config {config_} of dataset {self.name} generated for config {config} "
-                        f"already exists in the cache."
-                    )
-                if isinstance(mock_info, int):
-                    mock_infos[config_] = dict(num_samples=mock_info)
-                elif not isinstance(mock_info, dict):
-                    raise pytest.UsageError(
-                        f"The mock data function for dataset '{self.name}' returned a {type(mock_infos)} for `config` "
-                        f"{config_}. The returned object should be a dictionary containing at least the number of "
-                        f"samples for the key `'num_samples'`. If no additional information is required for specific "
-                        f"tests, the number of samples can also be returned as an integer."
-                    )
-                elif "num_samples" not in mock_info:
-                    raise pytest.UsageError(
-                        f"The dictionary returned by the mock data function for dataset '{self.name}' and config "
-                        f"{config_} has to contain a `'num_samples'` entry indicating the number of samples."
-                    )
-
-            return mock_infos
-
-        return wrapper
-
-    def _load_mock(self, config):
-        with contextlib.suppress(KeyError):
+    def _prepare_resources(self, config):
+        if config in self._cache:
             return self._cache[config]
 
         self.root.mkdir(exist_ok=True)
-        for config_, mock_info in self.mock_data_fn(self.info, self.root, config).items():
-            mock_resources = [
-                ResourceMock(dataset_name=self.name, dataset_config=config_, file_name=resource.file_name)
-                for resource in self.dataset.resources(config_)
-            ]
-            self._cache[config_] = (mock_resources, mock_info)
+        mock_infos = self._parse_mock_data(config, self.mock_data_fn(self.info, self.root, config))
+
+        available_file_names = {path.name for path in self.root.glob("*")}
+        for config_, mock_info in mock_infos.items():
+            required_file_names = {resource.file_name for resource in self.dataset.resources(config_)}
+            missing_file_names = required_file_names - available_file_names
+            if missing_file_names:
+                raise pytest.UsageError(
+                    f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
+                    f"for {config_}, but they were not created by the mock data function."
+                )
+
+            self._cache[config_] = mock_info
 
         return self._cache[config]
 
-    def load(self, config, *, decoder=DEFAULT_DECODER):
-        try:
-            self.info.check_dependencies()
-        except ModuleNotFoundError as error:
-            pytest.skip(str(error))
-
-        mock_resources, mock_info = self._load_mock(config)
-        datapipe = self.dataset._make_datapipe(
-            [resource.load(self.root) for resource in mock_resources],
-            config=config,
-            decoder=DEFAULT_DECODER_MAP.get(self.info.type) if decoder is DEFAULT_DECODER else decoder,
-        )
-        return datapipe, mock_info
+    @contextlib.contextmanager
+    def prepare(self, config):
+        mock_info = self._prepare_resources(config)
+        with unittest.mock.patch("torchvision.prototype.datasets._api.home", return_value=str(TEST_HOME)):
+            yield mock_info
 
 
 def config_id(name, config):
@@ -150,8 +128,6 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
     for mock in dataset_mocks:
         if isinstance(mock, DatasetMock):
             mocks[mock.name] = mock
-        elif isinstance(mock, collections.abc.Sequence):
-            mocks.update({mock_.name: mock_ for mock_ in mock})
         elif isinstance(mock, collections.abc.Mapping):
             mocks.update(mock)
         else:
@@ -177,14 +153,13 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
     )
 
 
-class DatasetMocks(UserDict):
-    def set_from_named_callable(self, fn):
-        name = fn.__name__.replace("_", "-")
-        self.data[name] = DatasetMock(name, fn)
-        return fn
+DATASET_MOCKS = {}
 
 
-DATASET_MOCKS = DatasetMocks()
+def register_mock(fn):
+    name = fn.__name__.replace("_", "-")
+    DATASET_MOCKS[name] = DatasetMock(name, fn)
+    return fn
 
 
 class MNISTMockData:
@@ -262,7 +237,7 @@ class MNISTMockData:
         return num_samples
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def mnist(info, root, config):
     train = config.split == "train"
     images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
@@ -278,7 +253,7 @@ def mnist(info, root, config):
 DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def emnist(info, root, _):
     # The image sets that merge some lower case letters in their respective upper case variant, still use dense
     # labels in the data files. Thus, num_categories != len(categories) there.
@@ -307,7 +282,7 @@ def emnist(info, root, _):
     return mock_infos
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def qmnist(info, root, config):
     num_categories = len(info.categories)
     if config.split == "train":
@@ -386,7 +361,7 @@ class CIFARMockData:
         make_tar(root, name, folder, compression="gz")
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def cifar10(info, root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
@@ -404,7 +379,7 @@ def cifar10(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def cifar100(info, root, config):
     train_files = ["train"]
     test_files = ["test"]
@@ -422,7 +397,7 @@ def cifar100(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def caltech101(info, root, config):
     def create_ann_file(root, name):
         import scipy.io
@@ -472,7 +447,7 @@ def caltech101(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def caltech256(info, root, config):
     dir = root / "256_ObjectCategories"
     num_images_per_category = 2
@@ -492,7 +467,7 @@ def caltech256(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def imagenet(info, root, config):
     wnids = tuple(info.extra.wnid_to_category.keys())
     if config.split == "train":
@@ -647,7 +622,7 @@ class CocoMockData:
         return num_samples
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def coco(info, root, config):
     return dict(
         zip(
@@ -726,13 +701,13 @@ class SBDMockData:
         return num_samples_map
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def sbd(info, root, _):
     num_samples_map = SBDMockData.generate(root)
     return {config: num_samples_map[config.split] for config in info._configs}
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def semeion(info, root, config):
     num_samples = 3
 
@@ -843,7 +818,7 @@ class VOCMockData:
         return num_samples_map
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def voc(info, root, config):
     trainval = config.split != "test"
     num_samples_map = VOCMockData.generate(root, year=config.year, trainval=trainval)
@@ -942,13 +917,13 @@ class CelebAMockData:
         return num_samples_map
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def celeba(info, root, _):
     num_samples_map = CelebAMockData.generate(root)
     return {config: num_samples_map[config.split] for config in info._configs}
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def dtd(info, root, _):
     data_folder = root / "dtd"
 
@@ -996,11 +971,11 @@ def dtd(info, root, _):
     return num_samples_map
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def fer2013(info, root, config):
     num_samples = 5 if config.split == "train" else 3
 
-    path = root / f"{config.split}.txt"
+    path = root / f"{config.split}.csv"
     with open(path, "w", newline="") as file:
         field_names = ["emotion"] if config.split == "train" else []
         field_names.append("pixels")
@@ -1021,7 +996,77 @@ def fer2013(info, root, config):
     return num_samples
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
+def gtsrb(info, root, config):
+    num_examples_per_class = 5 if config.split == "train" else 3
+    classes = ("00000", "00042", "00012")
+    num_examples = num_examples_per_class * len(classes)
+
+    csv_columns = ["Filename", "Width", "Height", "Roi.X1", "Roi.Y1", "Roi.X2", "Roi.Y2", "ClassId"]
+
+    def _make_ann_file(path, num_examples, class_idx):
+        if class_idx == "random":
+            class_idx = torch.randint(1, len(classes) + 1, size=(1,)).item()
+
+        with open(path, "w") as csv_file:
+            writer = csv.DictWriter(csv_file, fieldnames=csv_columns, delimiter=";")
+            writer.writeheader()
+            for image_idx in range(num_examples):
+                writer.writerow(
+                    {
+                        "Filename": f"{image_idx:05d}.ppm",
+                        "Width": torch.randint(1, 100, size=()).item(),
+                        "Height": torch.randint(1, 100, size=()).item(),
+                        "Roi.X1": torch.randint(1, 100, size=()).item(),
+                        "Roi.Y1": torch.randint(1, 100, size=()).item(),
+                        "Roi.X2": torch.randint(1, 100, size=()).item(),
+                        "Roi.Y2": torch.randint(1, 100, size=()).item(),
+                        "ClassId": class_idx,
+                    }
+                )
+
+    if config["split"] == "train":
+        train_folder = root / "GTSRB" / "Training"
+        train_folder.mkdir(parents=True)
+
+        for class_idx in classes:
+            create_image_folder(
+                train_folder,
+                name=class_idx,
+                file_name_fn=lambda image_idx: f"{class_idx}_{image_idx:05d}.ppm",
+                num_examples=num_examples_per_class,
+            )
+            _make_ann_file(
+                path=train_folder / class_idx / f"GT-{class_idx}.csv",
+                num_examples=num_examples_per_class,
+                class_idx=int(class_idx),
+            )
+        make_zip(root, "GTSRB-Training_fixed.zip", train_folder)
+    else:
+        test_folder = root / "GTSRB" / "Final_Test"
+        test_folder.mkdir(parents=True)
+
+        create_image_folder(
+            test_folder,
+            name="Images",
+            file_name_fn=lambda image_idx: f"{image_idx:05d}.ppm",
+            num_examples=num_examples,
+        )
+
+        make_zip(root, "GTSRB_Final_Test_Images.zip", test_folder)
+
+        _make_ann_file(
+            path=root / "GT-final_test.csv",
+            num_examples=num_examples,
+            class_idx="random",
+        )
+
+        make_zip(root, "GTSRB_Final_Test_GT.zip", "GT-final_test.csv")
+
+    return num_examples
+
+
+@register_mock
 def clevr(info, root, config):
     data_folder = root / "CLEVR_v1.0"
 
@@ -1061,7 +1106,7 @@ def clevr(info, root, config):
                 file,
             )
 
-    make_zip(root, f"{data_folder.name}.zip")
+    make_zip(root, f"{data_folder.name}.zip", data_folder)
 
     return {config_: num_samples_map[config_.split] for config_ in info._configs}
 
@@ -1121,13 +1166,13 @@ class OxfordIIITPetMockData:
         for path in segmentation_files:
             path.with_name(f".{path.name}").touch()
 
-        make_tar(root, "images.tar")
-        make_tar(root, anns_folder.with_suffix(".tar").name)
+        make_tar(root, "images.tar.gz", compression="gz")
+        make_tar(root, anns_folder.with_suffix(".tar.gz").name, compression="gz")
 
         return num_samples_map
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def oxford_iiit_pet(info, root, config):
     num_samples_map = OxfordIIITPetMockData.generate(root)
     return {config_: num_samples_map[config_.split] for config_ in info._configs}
@@ -1211,7 +1256,7 @@ class CUB2002011MockData(_CUB200MockData):
                 size=[1, *make_tensor((2,), low=3, dtype=torch.int).tolist()],
             )
 
-        make_tar(root, segmentations_folder.with_suffix(".tgz").name)
+        make_tar(root, segmentations_folder.with_suffix(".tgz").name, compression="gz")
 
     @classmethod
     def generate(cls, root):
@@ -1294,7 +1339,27 @@ class CUB2002010MockData(_CUB200MockData):
         return num_samples_map
 
 
-@DATASET_MOCKS.set_from_named_callable
+@register_mock
 def cub200(info, root, config):
     num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
     return {config_: num_samples_map[config_.split] for config_ in info._configs if config_.year == config.year}
+
+
+@register_mock
+def svhn(info, root, config):
+    import scipy.io as sio
+
+    num_samples = {
+        "train": 2,
+        "test": 3,
+        "extra": 4,
+    }[config.split]
+
+    sio.savemat(
+        root / f"{config.split}_32x32.mat",
+        {
+            "X": np.random.randint(256, size=(32, 32, 3, num_samples), dtype=np.uint8),
+            "y": np.random.randint(10, size=(num_samples,), dtype=np.uint8),
+        },
+    )
+    return num_samples

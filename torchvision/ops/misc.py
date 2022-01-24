@@ -131,7 +131,7 @@ class ConvNormActivation(torch.nn.Sequential):
         norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         dilation: int = 1,
-        inplace: bool = True,
+        inplace: Optional[bool] = True,
         bias: Optional[bool] = None,
     ) -> None:
         if padding is None:
@@ -153,7 +153,8 @@ class ConvNormActivation(torch.nn.Sequential):
         if norm_layer is not None:
             layers.append(norm_layer(out_channels))
         if activation_layer is not None:
-            layers.append(activation_layer(inplace=inplace))
+            params = {} if inplace is None else {"inplace": inplace}
+            layers.append(activation_layer(**params))
         super().__init__(*layers)
         _log_api_usage_once(self)
         self.out_channels = out_channels
