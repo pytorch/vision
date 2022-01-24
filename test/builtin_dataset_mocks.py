@@ -44,18 +44,13 @@ __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
 class DatasetMock:
     def __init__(self, name, mock_data_fn, *, configs=None):  # maybe remove configs param
         self.dataset = find(name)
+        self.info = self.dataset.info
+        self.name = self.info.name
+
         self.root = TEST_HOME / self.dataset.name
         self.mock_data_fn = mock_data_fn
         self.configs = configs or self.info._configs
         self._cache = {}
-
-    @property
-    def info(self):  # Does this need to be a property?
-        return self.dataset.info
-
-    @property
-    def name(self):  # Does this need to be a property?
-        return self.info.name
 
     def _parse_mock_data(self, config, mock_infos):
         # Is there a dataset that returns more than one "mock_infos" dict?
