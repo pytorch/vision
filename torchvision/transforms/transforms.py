@@ -1414,6 +1414,8 @@ class RandomAffine(torch.nn.Module):
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``interpolation`` parameter instead.
+        center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
+            Default is the center of the image.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1429,6 +1431,7 @@ class RandomAffine(torch.nn.Module):
         fill=0,
         fillcolor=None,
         resample=None,
+        center=None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -1481,6 +1484,11 @@ class RandomAffine(torch.nn.Module):
             raise TypeError("Fill should be either a sequence or a number.")
 
         self.fillcolor = self.fill = fill
+
+        if center is not None:
+            _check_sequence_input(center, "center", req_sizes=(2,))
+
+        self.center = center
 
     @staticmethod
     def get_params(
@@ -1538,7 +1546,7 @@ class RandomAffine(torch.nn.Module):
 
         ret = self.get_params(self.degrees, self.translate, self.scale, self.shear, img_size)
 
-        return F.affine(img, *ret, interpolation=self.interpolation, fill=fill)
+        return F.affine(img, *ret, interpolation=self.interpolation, fill=fill, center=self.center)
 
     def __repr__(self):
         s = "{name}(degrees={degrees}"
@@ -1552,6 +1560,8 @@ class RandomAffine(torch.nn.Module):
             s += ", interpolation={interpolation}"
         if self.fill != 0:
             s += ", fill={fill}"
+        if self.center is not None:
+            s += ", center={center}"
         s += ")"
         d = dict(self.__dict__)
         d["interpolation"] = self.interpolation.value
