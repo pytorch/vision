@@ -38,12 +38,12 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
             "map": 39.2,
         },
     )
-    default = COCO_V1
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(
     weights=("pretrained", FCOS_ResNet50_FPN_Weights.COCO_V1),
-    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def fcos_resnet50_fpn(
     *,
