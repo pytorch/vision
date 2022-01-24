@@ -12,7 +12,7 @@ import random
 import tempfile
 import unittest.mock
 import xml.etree.ElementTree as ET
-from collections import defaultdict, Counter, UserDict
+from collections import defaultdict, Counter
 
 import numpy as np
 import PIL.Image
@@ -155,10 +155,12 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
 
 DATASET_MOCKS = {}
 
+
 def register_mock(fn):
     name = fn.__name__.replace("_", "-")
     DATASET_MOCKS[name] = DatasetMock(name, fn)
     return fn
+
 
 class MNISTMockData:
     _DTYPES_ID = {
