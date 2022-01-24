@@ -151,7 +151,7 @@ class TestGTSRB:
     def test_label_matches_path(self, dataset_mock, config):
         # We read the labels from the csv files instead. But for the trainset, the labels are also part of the path.
         # This test makes sure that they're both the same
-        if config["split"] != "train":
+        if config.split != "train":
             return
 
         with dataset_mock.prepare(config):
