@@ -48,11 +48,11 @@ class ResourceMock(datasets.utils.OnlineResource):
 
 
 class DatasetMock:
-    def __init__(self, name, *, mock_data_fn, feature_types=None, configs=None):
+    def __init__(self, name, *, mock_data_fn, sample_structure=None, configs=None):
         self.dataset = find(name)
         self.root = TEST_HOME / self.dataset.name
         self.mock_data_fn = mock_data_fn
-        self.feature_types = feature_types
+        self.sample_structure = sample_structure
         self.configs = configs or self.info._configs
         self._cache = {}
 
@@ -273,7 +273,14 @@ def mnist_mock_data_fn(info, root, config):
 
 DATASET_MOCKS.update(
     {
-        name: DatasetMock(name, mock_data_fn=mnist_mock_data_fn, feature_types=(features.Image, features.Label))
+        name: DatasetMock(
+            name,
+            mock_data_fn=mnist_mock_data_fn,
+            sample_structure=dict(
+                image=features.Image,
+                label=features.Label,
+            ),
+        )
         for name in ("mnist", "fashionmnist", "kmnist")
     }
 )
@@ -854,14 +861,16 @@ def voc_mock_data_fn(info, root, config):
     }
 
 
-def voc_feature_type_fn(config):
-    feature_types = [features.Image]
-    if config.task == "detection":
-        feature_types.append(features.BoundingBox)
-    return feature_types
+def voc_sample_structure_fn(config):
+    return dict(
+        image_path=str,
+        image=features.Image,
+        ann_path=int,
+        ann=features.BoundingBox if config.task == "detection" else features.Image,
+    )
 
 
-DATASET_MOCKS["voc"] = DatasetMock("voc", mock_data_fn=voc_mock_data_fn, feature_types=voc_feature_type_fn)
+DATASET_MOCKS["voc"] = DatasetMock("voc", mock_data_fn=voc_mock_data_fn, sample_structure=voc_sample_structure_fn)
 
 
 class CelebAMockData:

@@ -7,20 +7,7 @@ import os
 import os.path
 import textwrap
 import warnings
-from typing import (
-    Collection,
-    Sequence,
-    Callable,
-    Any,
-    Iterator,
-    NoReturn,
-    Mapping,
-    TypeVar,
-    Iterable,
-    Tuple,
-    cast,
-    Optional,
-)
+from typing import Collection, Sequence, Callable, Any, Iterator, NoReturn, Mapping, TypeVar, Iterable, Tuple, cast
 
 __all__ = [
     "StrEnum",
@@ -30,7 +17,6 @@ __all__ = [
     "make_repr",
     "FrozenBunch",
     "kwonly_to_pos_or_kw",
-    "query_recursively",
 ]
 
 
@@ -200,17 +186,3 @@ def kwonly_to_pos_or_kw(fn: Callable[..., D]) -> Callable[..., D]:
         return fn(*args, **kwargs)
 
     return wrapper
-
-
-def query_recursively(fn: Callable[[Any], Optional[D]], obj: Any) -> Iterator[D]:
-    # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
-    # "a" == "a"[0][0]...
-    if (isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str)) or isinstance(
-        obj, collections.abc.Mapping
-    ):
-        for item in obj.values() if isinstance(obj, collections.abc.Mapping) else obj:
-            yield from query_recursively(fn, item)
-    else:
-        result = fn(obj)
-        if result is not None:
-            yield result
