@@ -110,7 +110,7 @@ class TestCommon:
             )
         },
     )
-    @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter), ids=lambda type: type.__name__)
+    @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, dataset_mock, config, annotation_dp_type):
         def scan(graph):
             for node, sub_graph in graph.items():
@@ -120,10 +120,7 @@ class TestCommon:
         with dataset_mock.prepare(config):
             dataset = datasets.load(dataset_mock.name, **config)
 
-        for dp in scan(traverse(dataset)):
-            if type(dp) is annotation_dp_type:
-                break
-        else:
+        if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
 
 
