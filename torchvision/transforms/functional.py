@@ -950,37 +950,26 @@ def _get_inverse_affine_matrix(
     translate: List[float],
     scale: float,
     shear: List[float],
-    centered_shear: bool = True,
 ) -> List[float]:
     # Helper method to compute inverse matrix for affine transformation
 
     # Pillow requires inverse affine transformation matrix:
-    #  option 1 (centered_shear=True) curr  : M = T * C * RotateScaleShear * C^-1
-    #  option 2 (centered_shear=False) new  : M = T * C * RotateScale * C^-1 * Shear
+    # Affine matrix is : M = T * C * RotateScaleShear * C^-1
     #
     # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
     #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
     #       RotateScaleShear is rotation with scale and shear matrix
-    #       RotateScale is rotation with scale matrix
     #
     #       RotateScaleShear(a, s, (sx, sy)) =
     #       = R(a) * S(s) * SHy(sy) * SHx(sx)
     #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]
     #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
     #         [ 0                    , 0                                      , 1 ]
-    #
-    #       RotateScale(a, s) =
-    #       = R(a) * S(s)
-    #       = [ s*cos(a), -s*sin(a), 0 ]
-    #         [ s*sin(a),  s*cos(a), 0 ]
-    #         [ 0       ,  0       , 1 ]
-    #
     # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
     # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
     #          [0, 1      ]              [-tan(s), 1]
-
-    # TODO: implement the option
-    assert centered_shear
+    #
+    # Thus, the inverse is M^-1 = C * RotateScaleShear^-1 * C^-1 * T^-1
 
     rot = math.radians(angle)
     sx = math.radians(shear[0])
