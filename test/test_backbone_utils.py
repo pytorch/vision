@@ -27,6 +27,8 @@ def test_resnet_fpn_backbone(backbone_name):
         y = resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False, trainable_layers=6)
     with pytest.raises(ValueError):
         y = resnet_fpn_backbone(backbone_name, False, returned_layers=[0, 1, 2, 3])
+    with pytest.raises(ValueError):
+        y = resnet_fpn_backbone(backbone_name, False, returned_layers=[2, 3, 4, 5])
 
 
 # Needed by TestFxFeatureExtraction.test_leaf_module_and_function
