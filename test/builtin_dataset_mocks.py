@@ -41,20 +41,6 @@ TEST_HOME = pathlib.Path(
 __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
 
 
-# maybe the whole class can be removed?
-class ResourceMock(datasets.utils.OnlineResource):
-    def __init__(self, *, dataset_name, dataset_config, **kwargs):
-        super().__init__(**kwargs)
-        self.dataset_name = dataset_name
-        self.dataset_config = dataset_config
-
-    def _download(self, _):  # When is this called?
-        raise pytest.UsageError(
-            f"Dataset '{self.dataset_name}' requires the file '{self.file_name}' for {self.dataset_config}, "
-            f"but this file does not exist."
-        )
-
-
 class DatasetMock:
     def __init__(self, name, mock_data_fn, *, configs=None):  # maybe remove configs param
         self.dataset = find(name)
