@@ -143,6 +143,17 @@ class TestModelsDetectionNegativeSamples:
 
         assert_equal(loss_dict["bbox_regression"], torch.tensor(0.0))
 
+    def test_forward_negative_sample_fcos(self):
+        model = torchvision.models.detection.fcos_resnet50_fpn(
+            num_classes=2, min_size=100, max_size=100, pretrained_backbone=False
+        )
+
+        images, targets = self._make_empty_sample()
+        loss_dict = model(images, targets)
+
+        assert_equal(loss_dict["bbox_regression"], torch.tensor(0.0))
+        assert_equal(loss_dict["bbox_ctrness"], torch.tensor(0.0))
+
     def test_forward_negative_sample_ssd(self):
         model = torchvision.models.detection.ssd300_vgg16(num_classes=2, pretrained_backbone=False)
 
