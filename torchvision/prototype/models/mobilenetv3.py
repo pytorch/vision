@@ -42,13 +42,14 @@ _COMMON_META = {
     "architecture": "MobileNetV3",
     "publication_year": 2019,
     "size": (224, 224),
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
 
 
 class MobileNet_V3_Large_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -59,7 +60,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             "acc@5": 91.340,
         },
     )
-    ImageNet1K_V2 = Weights(
+    IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
@@ -70,11 +71,11 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             "acc@5": 92.566,
         },
     )
-    default = ImageNet1K_V2
+    DEFAULT = IMAGENET1K_V2
 
 
 class MobileNet_V3_Small_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -85,10 +86,10 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
             "acc@5": 87.402,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", MobileNet_V3_Large_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", MobileNet_V3_Large_Weights.IMAGENET1K_V1))
 def mobilenet_v3_large(
     *, weights: Optional[MobileNet_V3_Large_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:
@@ -98,7 +99,7 @@ def mobilenet_v3_large(
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", MobileNet_V3_Small_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", MobileNet_V3_Small_Weights.IMAGENET1K_V1))
 def mobilenet_v3_small(
     *, weights: Optional[MobileNet_V3_Small_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV3:

@@ -14,7 +14,7 @@ __all__ = ["AlexNet", "AlexNet_Weights", "alexnet"]
 
 
 class AlexNet_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/alexnet-owt-7be5be79.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -23,6 +23,7 @@ class AlexNet_Weights(WeightsEnum):
             "publication_year": 2012,
             "num_params": 61100840,
             "size": (224, 224),
+            "min_size": (63, 63),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
@@ -30,10 +31,10 @@ class AlexNet_Weights(WeightsEnum):
             "acc@5": 79.066,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", AlexNet_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", AlexNet_Weights.IMAGENET1K_V1))
 def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
     weights = AlexNet_Weights.verify(weights)
 

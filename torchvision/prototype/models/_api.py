@@ -60,9 +60,8 @@ class WeightsEnum(Enum):
 
     @classmethod
     def from_str(cls, value: str) -> "WeightsEnum":
-        for k, v in cls.__members__.items():
-            if k == value:
-                return v
+        if value in cls.__members__:
+            return cls.__members__[value]
         raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
     def get_state_dict(self, progress: bool) -> OrderedDict:
@@ -81,7 +80,7 @@ class WeightsEnum(Enum):
 
 def get_weight(name: str) -> WeightsEnum:
     """
-    Gets the weight enum value by its full name. Example: "ResNet50_Weights.ImageNet1K_V1"
+    Gets the weight enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
 
     Args:
         name (str): The name of the weight enum entry.
