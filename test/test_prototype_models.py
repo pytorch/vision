@@ -117,7 +117,6 @@ def test_schema_meta_validation(model_fn):
 
     problematic_weights = {}
     incorrect_params = []
-    bad_names = []
     for w in weights_enum:
         missing_fields = fields - set(w.meta.keys())
         if missing_fields:
@@ -135,14 +134,8 @@ def test_schema_meta_validation(model_fn):
             if w.meta.get("num_params") != weights_enum.DEFAULT.meta.get("num_params"):
                 incorrect_params.append(w)
 
-        for k, v in w.__members__.items():
-            # Weights are constant members, thus should be all capital
-            if isinstance(v, Weights) and not k.isupper():
-                bad_names.append(k)
-
     assert not problematic_weights
     assert not incorrect_params
-    assert not bad_names
 
 
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
