@@ -177,7 +177,7 @@ def mobilenet_backbone(
 def _mobilenet_extractor(
     backbone: Union[mobilenet.MobileNetV2, mobilenet.MobileNetV3],
     fpn: bool,
-    trainable_layers,
+    trainable_layers: int,
     returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> nn.Module:
