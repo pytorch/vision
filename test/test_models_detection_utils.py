@@ -54,7 +54,7 @@ class TestModelsDetectionUtils:
         )
         assert ret == 3
         # can't go beyond 5
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             ret = backbone_utils._validate_trainable_layers(
                 pretrained=True, trainable_backbone_layers=6, max_value=5, default_value=3
             )
