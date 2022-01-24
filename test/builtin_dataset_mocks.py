@@ -12,7 +12,7 @@ import random
 import tempfile
 import unittest.mock
 import xml.etree.ElementTree as ET
-from collections import defaultdict, Counter, UserList
+from collections import defaultdict, Counter, UserDict
 
 import numpy as np
 import PIL.Image
@@ -174,10 +174,10 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
     )
 
 
-class DatasetMocks(UserList):
-    def append_from_named_callable(self, fn):
+class DatasetMocks(UserDict):
+    def set_from_named_callable(self, fn):
         name = fn.__name__.replace("_", "-")
-        self.data.append(DatasetMock(name, mock_data_fn=fn))
+        self.data[name] = DatasetMock(name, mock_data_fn=fn)
         return fn
 
 
@@ -271,13 +271,15 @@ def mnist_mock_data_fn(info, root, config):
     )
 
 
-DATASET_MOCKS.extend(
-    DatasetMock(name, mock_data_fn=mnist_mock_data_fn, feature_types=(features.Image, features.Label))
-    for name in ("mnist", "fashionmnist", "kmnist")
+DATASET_MOCKS.update(
+    {
+        name: DatasetMock(name, mock_data_fn=mnist_mock_data_fn, feature_types=(features.Image, features.Label))
+        for name in ("mnist", "fashionmnist", "kmnist")
+    }
 )
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def emnist(info, root, _):
     # The image sets that merge some lower case letters in their respective upper case variant, still use dense
     # labels in the data files. Thus, num_categories != len(categories) there.
@@ -306,7 +308,7 @@ def emnist(info, root, _):
     return mock_infos
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def qmnist(info, root, config):
     num_categories = len(info.categories)
     if config.split == "train":
@@ -385,7 +387,7 @@ class CIFARMockData:
         make_tar(root, name, folder, compression="gz")
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def cifar10(info, root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
@@ -403,7 +405,7 @@ def cifar10(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def cifar100(info, root, config):
     train_files = ["train"]
     test_files = ["test"]
@@ -421,7 +423,7 @@ def cifar100(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def caltech101(info, root, config):
     def create_ann_file(root, name):
         import scipy.io
@@ -471,7 +473,7 @@ def caltech101(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def caltech256(info, root, config):
     dir = root / "256_ObjectCategories"
     num_images_per_category = 2
@@ -491,7 +493,7 @@ def caltech256(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def imagenet(info, root, config):
     wnids = tuple(info.extra.wnid_to_category.keys())
     if config.split == "train":
@@ -646,7 +648,7 @@ class CocoMockData:
         return num_samples
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def coco(info, root, config):
     return dict(
         zip(
@@ -725,13 +727,13 @@ class SBDMockData:
         return num_samples_map
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def sbd(info, root, _):
     num_samples_map = SBDMockData.generate(root)
     return {config: num_samples_map[config.split] for config in info._configs}
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def semeion(info, root, config):
     num_samples = 3
 
@@ -859,7 +861,7 @@ def voc_feature_type_fn(config):
     return feature_types
 
 
-DATASET_MOCKS.append(DatasetMock("voc", mock_data_fn=voc_mock_data_fn, feature_types=voc_feature_type_fn))
+DATASET_MOCKS["voc"] = DatasetMock("voc", mock_data_fn=voc_mock_data_fn, feature_types=voc_feature_type_fn)
 
 
 class CelebAMockData:
@@ -950,13 +952,13 @@ class CelebAMockData:
         return num_samples_map
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def celeba(info, root, _):
     num_samples_map = CelebAMockData.generate(root)
     return {config: num_samples_map[config.split] for config in info._configs}
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def dtd(info, root, _):
     data_folder = root / "dtd"
 
@@ -1004,7 +1006,7 @@ def dtd(info, root, _):
     return num_samples_map
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def fer2013(info, root, config):
     num_samples = 5 if config.split == "train" else 3
 
@@ -1029,7 +1031,7 @@ def fer2013(info, root, config):
     return num_samples
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def clevr(info, root, config):
     data_folder = root / "CLEVR_v1.0"
 
@@ -1135,7 +1137,7 @@ class OxfordIIITPetMockData:
         return num_samples_map
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def oxford_iiit_pet(info, root, config):
     num_samples_map = OxfordIIITPetMockData.generate(root)
     return {config_: num_samples_map[config_.split] for config_ in info._configs}
@@ -1302,13 +1304,13 @@ class CUB2002010MockData(_CUB200MockData):
         return num_samples_map
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def cub200(info, root, config):
     num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
     return {config_: num_samples_map[config_.split] for config_ in info._configs if config_.year == config.year}
 
 
-@DATASET_MOCKS.append_from_named_callable
+@DATASET_MOCKS.set_from_named_callable
 def svhn(info, root, config):
     import scipy.io as sio
 

@@ -9,11 +9,9 @@ from torchdata.datapipes.iter import IterDataPipe, Shuffler
 from torchvision.prototype import transforms, datasets, features
 from torchvision.prototype.utils._internal import sequence_to_str, query_recursively
 
-DATASET_MOCKS_MAP = {dataset_mock.name: dataset_mock for dataset_mock in DATASET_MOCKS}
-
 
 def test_coverage():
-    untested_datasets = set(datasets.list()) - DATASET_MOCKS_MAP.keys()
+    untested_datasets = set(datasets.list()) - DATASET_MOCKS.keys()
     if untested_datasets:
         raise AssertionError(
             f"The dataset(s) {sequence_to_str(sorted(untested_datasets), separate_last='and ')} "
@@ -127,7 +125,7 @@ class TestCommon:
         else:
             raise AssertionError(f"The dataset doesn't comprise a {annotation_dp_type.__name__}() datapipe.")
 
-    @parametrize_dataset_mocks(DATASET_MOCKS_MAP["voc"])
+    @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_feature_types(self, dataset_mock, config):
         if dataset_mock.feature_types is None:
             raise pytest.skip("No feature types are specified.")
@@ -166,7 +164,7 @@ class TestCommon:
             raise AssertionError(f"Feature types {feature_types} are not present in the sample.")
 
 
-@parametrize_dataset_mocks(DATASET_MOCKS_MAP["qmnist"])
+@parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
 class TestQMNIST:
     def test_extra_label(self, dataset_mock, config):
         with dataset_mock.prepare(config):
