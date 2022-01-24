@@ -38,6 +38,14 @@ torch::Tensor GPUDecoder::decode() {
   return frame;
 }
 
+/* Seek to a passed timestamp. The second argument controls whether to seek to a
+ * keyframe.
+ */
+void GPUDecoder::seek(double timestamp, bool keyframes_only) {
+  int flag = keyframes_only ? 0 : AVSEEK_FLAG_ANY;
+  demuxer.seek(timestamp, flag);
+}
+
 c10::Dict<std::string, c10::Dict<std::string, double>> GPUDecoder::
     get_metadata() const {
   c10::Dict<std::string, c10::Dict<std::string, double>> metadata;
@@ -51,6 +59,7 @@ c10::Dict<std::string, c10::Dict<std::string, double>> GPUDecoder::
 TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
       .def(torch::init<std::string, int64_t>())
+      .def("seek", &GPUDecoder::seek)
       .def("get_metadata", &GPUDecoder::get_metadata)
       .def("next", &GPUDecoder::decode);
 }
