@@ -95,9 +95,7 @@ class DatasetMock:
         return mock_infos
 
     def _prepare_resources(self, config):
-        with contextlib.suppress(
-            KeyError
-        ):  # This looks like a plain return unless one knows what contextlib.suppress does - maybe just check that the key exists
+        if config in self._cache:
             return self._cache[config]
 
         self.root.mkdir(exist_ok=True)
