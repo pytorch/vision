@@ -1,10 +1,7 @@
 import enum
-import functools
-import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, CSVDictParser
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -12,7 +9,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -22,7 +18,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     path_comparator,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 
 
 class OxfordIITPetDemux(enum.IntEnum):
@@ -34,7 +30,6 @@ class OxfordIITPet(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "oxford-iiit-pet",
-            type=DatasetType.IMAGE,
             homepage="https://www.robots.ox.ac.uk/~vgg/data/pets/",
             valid_options=dict(
                 split=("trainval", "test"),
@@ -66,18 +61,8 @@ class OxfordIITPet(Dataset):
     def _filter_segmentations(self, data: Tuple[str, Any]) -> bool:
         return not pathlib.Path(data[0]).name.startswith(".")
 
-    def _decode_classification_data(self, data: Dict[str, str]) -> Dict[str, Any]:
-        label_idx = int(data["label"]) - 1
-        return dict(
-            label=Label(label_idx, category=self.info.categories[label_idx]),
-            species="cat" if data["species"] == "1" else "dog",
-        )
-
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[Tuple[Dict[str, str], Tuple[str, io.IOBase]], Tuple[str, io.IOBase]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+    def _prepare_sample(
+        self, data: Tuple[Tuple[Dict[str, str], Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]
     ) -> Dict[str, Any]:
         ann_data, image_data = data
         classification_data, segmentation_data = ann_data
@@ -85,19 +70,16 @@ class OxfordIITPet(Dataset):
         image_path, image_buffer = image_data
 
         return dict(
-            self._decode_classification_data(classification_data),
+            label=Label(int(classification_data["label"]) - 1, categories=self.categories),
+            species="cat" if classification_data["species"] == "1" else "dog",
             segmentation_path=segmentation_path,
-            segmentation=decoder(segmentation_buffer) if decoder else segmentation_buffer,
+            segmentation=EncodedImage.from_file(segmentation_buffer),
             image_path=image_path,
-            image=decoder(image_buffer) if decoder else image_buffer,
+            image=EncodedImage.from_file(image_buffer),
         )
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
@@ -137,7 +119,7 @@ class OxfordIITPet(Dataset):
             ref_key_fn=path_accessor("stem"),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     def _filter_split_and_classification_anns(self, data: Tuple[str, Any]) -> bool:
         return self._classify_anns(data) == OxfordIITPetDemux.SPLIT_AND_CLASSIFICATION

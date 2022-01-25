@@ -34,11 +34,7 @@ class MyDataset(Dataset):
         ...
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig,
     ) -> IterDataPipe[Dict[str, Any]]:
         ...
 ```
@@ -105,7 +101,7 @@ def sha256sum(path, chunk_size=1024 * 1024):
     print(checksum.hexdigest())
 ```
 
-### `_make_datapipe(resource_dps, *, config, decoder)`
+### `_make_datapipe(resource_dps, *, config)`
 
 This method is the heart of the dataset, where we transform the raw data into
 a usable form. A major difference compared to the current stable datasets is
@@ -180,11 +176,18 @@ datapipes and return the appropriate dictionary format.
 
 ### What is the `DatasetType.RAW` and when do I use it?
 
+<<<<<<< HEAD
+# FIXME
+
+`DatasetType.RAW` marks dataset that provides decoded, i.e. raw pixel values, rather than encoded image files such as 
+`.jpg` or `.png`. This is usually only the case for small datasets, since it requires a lot more disk space. The default decoder `datasets.decoder.raw` is only a sentinel and should not be called directly. The decoding should look something like 
+=======
 `DatasetType.RAW` marks dataset that provides decoded, i.e. raw pixel values,
 rather than encoded image files such as `.jpg` or `.png`. This is usually only
 the case for small datasets, since it requires a lot more disk space. The
 default decoder `datasets.decoder.raw` is only a sentinel and should not be
 called directly. The decoding should look something like
+>>>>>>> main
 
 ```python
 from torchvision.prototype.datasets.decoder import raw
