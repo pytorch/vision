@@ -218,6 +218,7 @@ script_model_unwrapper = {
     "retinanet_resnet50_fpn": lambda x: x[1],
     "ssd300_vgg16": lambda x: x[1],
     "ssdlite320_mobilenet_v3_large": lambda x: x[1],
+    "fcos_resnet50_fpn": lambda x: x[1],
 }
 
 
@@ -274,6 +275,13 @@ _model_params = {
         "max_size": 224,
         "input_shape": (3, 224, 224),
     },
+    "fcos_resnet50_fpn": {
+        "num_classes": 2,
+        "score_thresh": 0.05,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
     "maskrcnn_resnet50_fpn": {
         "num_classes": 10,
         "min_size": 224,
@@ -324,6 +332,10 @@ _model_tests_values = {
     "ssdlite320_mobilenet_v3_large": {
         "max_trainable": 6,
         "n_trn_params_per_layer": [96, 99, 138, 200, 239, 257, 266],
+    },
+    "fcos_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [54, 64, 83, 96, 106, 107],
     },
 }
 

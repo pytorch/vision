@@ -10,10 +10,9 @@ from presets import OpticalFlowPresetTrain, OpticalFlowPresetEval
 from torchvision.datasets import KittiFlow, FlyingChairs, FlyingThings3D, Sintel, HD1K
 
 try:
-    from torchvision.prototype import models as PM
-    from torchvision.prototype.models import optical_flow as PMOF
+    from torchvision import prototype
 except ImportError:
-    PM = PMOF = None
+    prototype = None
 
 
 def get_train_dataset(stage, dataset_root):
@@ -133,9 +132,12 @@ def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
 def validate(model, args):
     val_datasets = args.val_dataset or []
 
-    if args.weights:
-        weights = PM.get_weight(args.weights)
-        preprocessing = weights.transforms()
+    if args.prototype:
+        if args.weights:
+            weights = prototype.models.get_weight(args.weights)
+            preprocessing = weights.transforms()
+        else:
+            preprocessing = prototype.transforms.RaftEval()
     else:
         preprocessing = OpticalFlowPresetEval()
 
@@ -192,10 +194,14 @@ def train_one_epoch(model, optimizer, scheduler, train_loader, logger, args):
 
 
 def main(args):
+    if args.prototype and prototype is None:
+        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+    if not args.prototype and args.weights:
+        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     utils.setup_ddp(args)
 
-    if args.weights:
-        model = PMOF.__dict__[args.model](weights=args.weights)
+    if args.prototype:
+        model = prototype.models.optical_flow.__dict__[args.model](weights=args.weights)
     else:
         model = torchvision.models.optical_flow.__dict__[args.model](pretrained=args.pretrained)
 
@@ -317,7 +323,6 @@ def get_args_parser(add_help=True):
     )
     # TODO: resume, pretrained, and weights should be in an exclusive arg group
     parser.add_argument("--pretrained", action="store_true", help="Whether to use pretrained weights")
-    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load.")
 
     parser.add_argument(
         "--num_flow_updates",
@@ -335,6 +340,15 @@ def get_args_parser(add_help=True):
         help="Root folder where the datasets are stored. Will be passed as the 'root' parameter of the datasets.",
         required=True,
     )
+
+    # Prototype models only
+    parser.add_argument(
+        "--prototype",
+        dest="prototype",
+        help="Use prototype model builders instead those from main area",
+        action="store_true",
+    )
+    parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load.")
 
     return parser
 

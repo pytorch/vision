@@ -945,26 +945,31 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 
 def _get_inverse_affine_matrix(
-    center: List[float], angle: float, translate: List[float], scale: float, shear: List[float]
+    center: List[float],
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
 ) -> List[float]:
     # Helper method to compute inverse matrix for affine transformation
 
-    # As it is explained in PIL.Image.rotate
-    # We need compute INVERSE of affine transformation matrix: M = T * C * RSS * C^-1
+    # Pillow requires inverse affine transformation matrix:
+    # Affine matrix is : M = T * C * RotateScaleShear * C^-1
+    #
     # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
     #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
-    #       RSS is rotation with scale and shear matrix
-    #       RSS(a, s, (sx, sy)) =
-    #       = R(a) * S(s) * SHy(sy) * SHx(sx)
-    #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(x)/cos(y) - sin(a)), 0 ]
-    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(x)/cos(y) + cos(a)), 0 ]
-    #         [ 0                    , 0                                      , 1 ]
+    #       RotateScaleShear is rotation with scale and shear matrix
     #
+    #       RotateScaleShear(a, s, (sx, sy)) =
+    #       = R(a) * S(s) * SHy(sy) * SHx(sx)
+    #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]
+    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
+    #         [ 0                    , 0                                      , 1 ]
     # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
     # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
     #          [0, 1      ]              [-tan(s), 1]
     #
-    # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
+    # Thus, the inverse is M^-1 = C * RotateScaleShear^-1 * C^-1 * T^-1
 
     rot = math.radians(angle)
     sx = math.radians(shear[0])
@@ -1085,6 +1090,7 @@ def affine(
     fill: Optional[List[float]] = None,
     resample: Optional[int] = None,
     fillcolor: Optional[List[float]] = None,
+    center: Optional[List[int]] = None,
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
     If the image is torch Tensor, it is expected
@@ -1112,6 +1118,8 @@ def affine(
             Please use the ``fill`` parameter instead.
         resample (int, optional): deprecated argument and will be removed since v0.10.0.
             Please use the ``interpolation`` parameter instead.
+        center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
+            Default is the center of the image.
 
     Returns:
         PIL Image or Tensor: Transformed image.
@@ -1172,18 +1180,28 @@ def affine(
     if len(shear) != 2:
         raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
 
+    if center is not None and not isinstance(center, (list, tuple)):
+        raise TypeError("Argument center should be a sequence")
+
     img_size = get_image_size(img)
     if not isinstance(img, torch.Tensor):
         # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
         # it is visually better to estimate the center without 0.5 offset
         # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
-        center = [img_size[0] * 0.5, img_size[1] * 0.5]
+        if center is None:
+            center = [img_size[0] * 0.5, img_size[1] * 0.5]
         matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
+    center_f = [0.0, 0.0]
+    if center is not None:
+        img_size = get_image_size(img)
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+
     translate_f = [1.0 * t for t in translate]
-    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
+    matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
 

@@ -16,9 +16,9 @@ from torchvision.transforms.functional import InterpolationMode
 
 
 try:
-    from torchvision.prototype import models as PM
+    from torchvision import prototype
 except ImportError:
-    PM = None
+    prototype = None
 
 
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
@@ -154,13 +154,18 @@ def load_data(traindir, valdir, args):
         print(f"Loading dataset_test from {cache_path}")
         dataset_test, _ = torch.load(cache_path)
     else:
-        if not args.weights:
+        if not args.prototype:
             preprocessing = presets.ClassificationPresetEval(
                 crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
             )
         else:
-            weights = PM.get_weight(args.weights)
-            preprocessing = weights.transforms()
+            if args.weights:
+                weights = prototype.models.get_weight(args.weights)
+                preprocessing = weights.transforms()
+            else:
+                preprocessing = prototype.transforms.ImageNetEval(
+                    crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
+                )
 
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
@@ -186,8 +191,10 @@ def load_data(traindir, valdir, args):
 
 
 def main(args):
-    if args.weights and PM is None:
+    if args.prototype and prototype is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+    if not args.prototype and args.weights:
+        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -229,10 +236,10 @@ def main(args):
     )
 
     print("Creating model")
-    if not args.weights:
+    if not args.prototype:
         model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
     else:
-        model = PM.__dict__[args.model](weights=args.weights, num_classes=num_classes)
+        model = prototype.models.__dict__[args.model](weights=args.weights, num_classes=num_classes)
     model.to(device)
 
     if args.distributed and args.sync_bn:
@@ -491,6 +498,12 @@ def get_args_parser(add_help=True):
     )
 
     # Prototype models only
+    parser.add_argument(
+        "--prototype",
+        dest="prototype",
+        help="Use prototype model builders instead those from main area",
+        action="store_true",
+    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser
