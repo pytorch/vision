@@ -1,12 +1,13 @@
 import os
 import sys
-from typing import BinaryIO, Tuple, Type, TypeVar, Union
+from typing import BinaryIO, Tuple, Type, TypeVar, cast, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
 from ._feature import Feature
+from ._image import Image
 
 D = TypeVar("D", bound="EncodedData")
 
@@ -36,6 +37,12 @@ class EncodedImage(EncodedData):
                 self._image_size = image.height, image.width
 
         return self._image_size
+
+    def decode(self) -> Image:
+        # import at runtime to avoid cyclic imports
+        from torchvision.prototype.transforms.functional import decode_image_with_pil
+
+        return cast(Image, decode_image_with_pil(self))
 
 
 class EncodedVideo(EncodedData):

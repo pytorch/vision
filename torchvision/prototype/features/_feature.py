@@ -10,6 +10,7 @@ F = TypeVar("F", bound="Feature")
 class Feature(torch.Tensor):
     _META_ATTRS: Set[str] = set()
     _metadata: Dict[str, Any]
+    _KERNELS: Dict[Callable, Callable]
 
     def __init_subclass__(cls):
         # In order to help static type checkers, we require subclasses of `Feature` to add the metadata attributes
@@ -37,6 +38,8 @@ class Feature(torch.Tensor):
         for name in meta_attrs:
             setattr(cls, name, property(lambda self, name=name: self._metadata[name]))
 
+        cls._KERNELS = {}
+
     def __new__(cls, data, *, dtype=None, device=None):
         feature = torch.Tensor._make_subclass(
             cast(_TensorBase, cls),
@@ -56,6 +59,47 @@ class Feature(torch.Tensor):
         for name in cls._META_ATTRS:
             metadata.setdefault(name, getattr(other, name))
         return cls(data, dtype=dtype or other.dtype, device=device or other.device, **metadata)
+
+    _TORCH_FUNCTION_ALLOW_MAP = {
+        torch.Tensor.clone: (0,),
+        torch.stack: (0, 0),
+        torch.Tensor.to: (0,),
+    }
+
+    _DTYPE_CONVERTERS = {
+        torch.Tensor.to,
+    }
+
+    _DEVICE_CONVERTERS = {
+        torch.Tensor.to,
+    }
+
+    @classmethod
+    def __torch_function__(
+        cls,
+        func: Callable[..., torch.Tensor],
+        types: Tuple[Type[torch.Tensor], ...],
+        args: Sequence[Any] = (),
+        kwargs: Optional[Mapping[str, Any]] = None,
+    ) -> torch.Tensor:
+        kwargs = kwargs or dict()
+        if cls is not Feature and func in cls._KERNELS:
+            return cls._KERNELS[func](*args, **kwargs)
+
+        with DisableTorchFunction():
+            output = func(*args, **kwargs)
+
+        if func not in cls._TORCH_FUNCTION_ALLOW_MAP:
+            return output
+
+        other = args
+        for item in cls._TORCH_FUNCTION_ALLOW_MAP[func]:
+            other = other[item]
+
+        dtype = output.dtype if func in cls._DTYPE_CONVERTERS else None
+        device = output.device if func in cls._DTYPE_CONVERTERS else None
+
+        return cls.new_like(other, output, dtype=dtype, device=device)
 
     def __repr__(self):
         return torch.Tensor.__repr__(self).replace("tensor", type(self).__name__)
