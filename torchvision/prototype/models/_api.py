@@ -80,7 +80,7 @@ class WeightsEnum(Enum):
 
 def get_weight(name: str) -> WeightsEnum:
     """
-    Gets the weight enum value by its full name. Example: "ResNet50_Weights.ImageNet1K_V1"
+    Gets the weight enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
 
     Args:
         name (str): The name of the weight enum entry.

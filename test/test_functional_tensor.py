@@ -232,7 +232,8 @@ class TestAffine:
     @pytest.mark.parametrize("dt", ALL_DTYPES)
     @pytest.mark.parametrize("angle", [90, 45, 15, -30, -60, -120])
     @pytest.mark.parametrize("fn", [F.affine, scripted_affine])
-    def test_rect_rotations(self, device, height, width, dt, angle, fn):
+    @pytest.mark.parametrize("center", [None, [0, 0]])
+    def test_rect_rotations(self, device, height, width, dt, angle, fn, center):
         # Tests on rectangular images
         tensor, pil_img = _create_data(height, width, device=device)
 
@@ -244,11 +245,13 @@ class TestAffine:
             tensor = tensor.to(dtype=dt)
 
         out_pil_img = F.affine(
-            pil_img, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST
+            pil_img, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST, center=center
         )
         out_pil_tensor = torch.from_numpy(np.array(out_pil_img).transpose((2, 0, 1)))
 
-        out_tensor = fn(tensor, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST).cpu()
+        out_tensor = fn(
+            tensor, angle=angle, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=NEAREST, center=center
+        ).cpu()
 
         if out_tensor.dtype != torch.uint8:
             out_tensor = out_tensor.to(torch.uint8)
