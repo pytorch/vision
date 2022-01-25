@@ -388,6 +388,21 @@ def _generate_color_palette(num_masks: int):
 
 
 def _log_api_usage_once(obj: Any) -> None:
+
+    """
+    Logs API usage(module and name) within an organization.
+    In a large ecosystem, it's often useful to track the PyTorch and
+    TorchVision APIs usage. This function is triggered once for a API call
+    within a process. By default, no logs is generated(see https://github.com/pytorch/pytorch/blob/eb3b9fe719b21fae13c7a7cf3253f970290a573e/c10/util/Logging.cpp#L104).
+    Users can subscribe to API usage events by registering instrumentation 
+    handler with `SetAPIUsageLogger`.
+    For more information, please refer to 
+    * PyTorch note: https://pytorch.org/docs/stable/notes/large_scale_deployments.html#api-usage-logging;
+    * Logging policy: https://github.com/pytorch/vision/issues/5052;
+
+    Args:
+        obj (class instance or method): an object to extract info from.
+    """
     if not obj.__module__.startswith("torchvision"):
         return
     name = obj.__class__.__name__
