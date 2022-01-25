@@ -198,7 +198,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+9cade17 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+d8d63bd ) &#x25BC</a>
     </div>
     
 
@@ -324,7 +324,7 @@
 <h1>affine<a class="headerlink" href="#affine" title="Permalink to this headline">¶</a></h1>
 <dl class="py function">
 <dt id="torchvision.transforms.functional.affine">
-<code class="sig-prename descclassname"><span class="pre">torchvision.transforms.functional.</span></code><code class="sig-name descname"><span class="pre">affine</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">img:</span> <span class="pre">torch.Tensor,</span> <span class="pre">angle:</span> <span class="pre">float,</span> <span class="pre">translate:</span> <span class="pre">List[int],</span> <span class="pre">scale:</span> <span class="pre">float,</span> <span class="pre">shear:</span> <span class="pre">List[float],</span> <span class="pre">interpolation:</span> <span class="pre">torchvision.transforms.functional.InterpolationMode</span> <span class="pre">=</span> <span class="pre">&lt;InterpolationMode.NEAREST:</span> <span class="pre">'nearest'&gt;,</span> <span class="pre">fill:</span> <span class="pre">Optional[List[float]]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">resample:</span> <span class="pre">Optional[int]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">fillcolor:</span> <span class="pre">Optional[List[float]]</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.1)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="../_modules/torchvision/transforms/functional.html#affine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.functional.affine" title="Permalink to this definition">¶</a></dt>
+<code class="sig-prename descclassname"><span class="pre">torchvision.transforms.functional.</span></code><code class="sig-name descname"><span class="pre">affine</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">img:</span> <span class="pre">torch.Tensor,</span> <span class="pre">angle:</span> <span class="pre">float,</span> <span class="pre">translate:</span> <span class="pre">List[int],</span> <span class="pre">scale:</span> <span class="pre">float,</span> <span class="pre">shear:</span> <span class="pre">List[float],</span> <span class="pre">interpolation:</span> <span class="pre">torchvision.transforms.functional.InterpolationMode</span> <span class="pre">=</span> <span class="pre">&lt;InterpolationMode.NEAREST:</span> <span class="pre">'nearest'&gt;,</span> <span class="pre">fill:</span> <span class="pre">Optional[List[float]]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">resample:</span> <span class="pre">Optional[int]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">fillcolor:</span> <span class="pre">Optional[List[float]]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">center:</span> <span class="pre">Optional[List[int]]</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.1)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="../_modules/torchvision/transforms/functional.html#affine"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.functional.affine" title="Permalink to this definition">¶</a></dt>
 <dd><p>Apply affine transformation on the image keeping image center invariant.
 If the image is torch Tensor, it is expected
 to have […, H, W] shape, where … means an arbitrary number of leading dimensions.</p>
@@ -354,6 +354,8 @@ of length 1: <code class="docutils literal notranslate"><span class="pre">[value
 Please use the <code class="docutils literal notranslate"><span class="pre">fill</span></code> parameter instead.</p></li>
 <li><p><strong>resample</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – deprecated argument and will be removed since v0.10.0.
 Please use the <code class="docutils literal notranslate"><span class="pre">interpolation</span></code> parameter instead.</p></li>
+<li><p><strong>center</strong> (<em>sequence</em><em>, </em><em>optional</em>) – Optional center of rotation. Origin is the upper left corner.
+Default is the center of the image.</p></li>
 </ul>
 </dd>
 <dt class="field-even">Returns</dt>

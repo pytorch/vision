@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+9cade17 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+d8d63bd ) &#x25BC</a>
     </div>
     
 
@@ -1264,26 +1264,31 @@
 
 
 <span class="k">def</span> <span class="nf">_get_inverse_affine_matrix</span><span class="p">(</span>
-    <span class="n">center</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">shear</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="n">angle</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">translate</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
+    <span class="n">scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span>
+    <span class="n">shear</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]:</span>
     <span class="c1"># Helper method to compute inverse matrix for affine transformation</span>
 
-    <span class="c1"># As it is explained in PIL.Image.rotate</span>
-    <span class="c1"># We need compute INVERSE of affine transformation matrix: M = T * C * RSS * C^-1</span>
+    <span class="c1"># Pillow requires inverse affine transformation matrix:</span>
+    <span class="c1"># Affine matrix is : M = T * C * RotateScaleShear * C^-1</span>
+    <span class="c1">#</span>
     <span class="c1"># where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]</span>
     <span class="c1">#       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]</span>
-    <span class="c1">#       RSS is rotation with scale and shear matrix</span>
-    <span class="c1">#       RSS(a, s, (sx, sy)) =</span>
-    <span class="c1">#       = R(a) * S(s) * SHy(sy) * SHx(sx)</span>
-    <span class="c1">#       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(x)/cos(y) - sin(a)), 0 ]</span>
-    <span class="c1">#         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(x)/cos(y) + cos(a)), 0 ]</span>
-    <span class="c1">#         [ 0                    , 0                                      , 1 ]</span>
+    <span class="c1">#       RotateScaleShear is rotation with scale and shear matrix</span>
     <span class="c1">#</span>
+    <span class="c1">#       RotateScaleShear(a, s, (sx, sy)) =</span>
+    <span class="c1">#       = R(a) * S(s) * SHy(sy) * SHx(sx)</span>
+    <span class="c1">#       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]</span>
+    <span class="c1">#         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]</span>
+    <span class="c1">#         [ 0                    , 0                                      , 1 ]</span>
     <span class="c1"># where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:</span>
     <span class="c1"># SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]</span>
     <span class="c1">#          [0, 1      ]              [-tan(s), 1]</span>
     <span class="c1">#</span>
-    <span class="c1"># Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1</span>
+    <span class="c1"># Thus, the inverse is M^-1 = C * RotateScaleShear^-1 * C^-1 * T^-1</span>
 
     <span class="n">rot</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
     <span class="n">sx</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="n">shear</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
@@ -1404,6 +1409,7 @@
     <span class="n">fill</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">resample</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="n">fillcolor</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">center</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Apply affine transformation on the image keeping image center invariant.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
@@ -1431,6 +1437,8 @@
 <span class="sd">            Please use the ``fill`` parameter instead.</span>
 <span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>
 <span class="sd">            Please use the ``interpolation`` parameter instead.</span>
+<span class="sd">        center (sequence, optional): Optional center of rotation. Origin is the upper left corner.</span>
+<span class="sd">            Default is the center of the image.</span>
 
 <span class="sd">    Returns:</span>
 <span class="sd">        PIL Image or Tensor: Transformed image.</span>
@@ -1491,18 +1499,28 @@
     <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">shear</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
         <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;Shear should be a sequence containing two values. Got </span><span class="si">{</span><span class="n">shear</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
 
+    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="p">(</span><span class="nb">list</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="s2">&quot;Argument center should be a sequence&quot;</span><span class="p">)</span>
+
     <span class="n">img_size</span> <span class="o">=</span> <span class="n">get_image_size</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
         <span class="c1"># center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)</span>
         <span class="c1"># it is visually better to estimate the center without 0.5 offset</span>
         <span class="c1"># otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine</span>
-        <span class="n">center</span> <span class="o">=</span> <span class="p">[</span><span class="n">img_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">img_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">]</span>
+        <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">center</span> <span class="o">=</span> <span class="p">[</span><span class="n">img_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">,</span> <span class="n">img_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">]</span>
         <span class="n">matrix</span> <span class="o">=</span> <span class="n">_get_inverse_affine_matrix</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">translate</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">shear</span><span class="p">)</span>
         <span class="n">pil_interpolation</span> <span class="o">=</span> <span class="n">pil_modes_mapping</span><span class="p">[</span><span class="n">interpolation</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">F_pil</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">matrix</span><span class="o">=</span><span class="n">matrix</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">pil_interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span>
 
+    <span class="n">center_f</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">img_size</span> <span class="o">=</span> <span class="n">get_image_size</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+        <span class="c1"># Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.</span>
+        <span class="n">center_f</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">*</span> <span class="p">(</span><span class="n">c</span> <span class="o">-</span> <span class="n">s</span> <span class="o">*</span> <span class="mf">0.5</span><span class="p">)</span> <span class="k">for</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span> <span class="ow">in</span> <span class="nb">zip</span><span class="p">(</span><span class="n">center</span><span class="p">,</span> <span class="n">img_size</span><span class="p">)]</span>
+
     <span class="n">translate_f</span> <span class="o">=</span> <span class="p">[</span><span class="mf">1.0</span> <span class="o">*</span> <span class="n">t</span> <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="n">translate</span><span class="p">]</span>
-    <span class="n">matrix</span> <span class="o">=</span> <span class="n">_get_inverse_affine_matrix</span><span class="p">([</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">],</span> <span class="n">angle</span><span class="p">,</span> <span class="n">translate_f</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">shear</span><span class="p">)</span>
+    <span class="n">matrix</span> <span class="o">=</span> <span class="n">_get_inverse_affine_matrix</span><span class="p">(</span><span class="n">center_f</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="n">translate_f</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">shear</span><span class="p">)</span>
     <span class="k">return</span> <span class="n">F_t</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">matrix</span><span class="o">=</span><span class="n">matrix</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">)</span>
 
 
