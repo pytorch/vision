@@ -7,10 +7,8 @@ import torch
 from common_utils import set_rng_seed
 from torchvision import models
 from torchvision.models._utils import IntermediateLayerGetter
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-from torchvision.models.detection.backbone_utils import mobilenet_backbone
-from torchvision.models.feature_extraction import create_feature_extractor
-from torchvision.models.feature_extraction import get_graph_node_names
+from torchvision.models.detection.backbone_utils import mobilenet_backbone, resnet_fpn_backbone
+from torchvision.models.feature_extraction import create_feature_extractor, get_graph_node_names
 
 
 def get_available_models():
