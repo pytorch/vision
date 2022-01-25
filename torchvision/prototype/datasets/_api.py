@@ -18,16 +18,19 @@ def register(dataset: Dataset) -> None:
     DATASETS[dataset.name] = dataset
 
 
+## Should we manually register datasets instead of relying on the content of _builtings.__init__.py?
 for name, obj in _builtin.__dict__.items():
     if not name.startswith("_") and isinstance(obj, type) and issubclass(obj, Dataset) and obj is not Dataset:
         register(obj())
 
 
 # This is exposed as 'list', but we avoid that here to not shadow the built-in 'list'
+## Maybe we could call it as list_available_datasets()?
 def _list() -> List[str]:
     return sorted(DATASETS.keys())
 
 
+## Does this need to be public? Looks like users would only need load() and info()
 def find(name: str) -> Dataset:
     name = name.lower()
     try:
@@ -57,11 +60,12 @@ DEFAULT_DECODER_MAP: Dict[DatasetType, Callable[[io.IOBase], torch.Tensor]] = {
 }
 
 
+## Should DEFAULT_DECODER just be None? Or "auto"? Or "default"?
 def load(
     name: str,
     *,
     decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = DEFAULT_DECODER,  # type: ignore[assignment]
-    skip_integrity_check: bool = False,
+    skip_integrity_check: bool = False,  ## When do we need it to be True?
     **options: Any,
 ) -> IterDataPipe[Dict[str, Any]]:
     dataset = find(name)

@@ -80,7 +80,7 @@ def image_buffer_from_array(array: np.ndarray, *, format: str = "png") -> io.Byt
     return buffer
 
 
-class SequenceIterator(IterDataPipe[D]):
+class SequenceIterator(IterDataPipe[D]):  ## Is this used?
     def __init__(self, datapipe: IterDataPipe[Sequence[D]]):
         self.datapipe = datapipe
 
@@ -152,6 +152,7 @@ class CompressionType(enum.Enum):
     LZMA = "lzma"
 
 
+## Is this somewhat redundant with the resources preprocessing logic?
 class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
     types = CompressionType
 

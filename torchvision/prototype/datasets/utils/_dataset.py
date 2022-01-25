@@ -19,11 +19,13 @@ from ._resource import OnlineResource
 
 
 class DatasetType(enum.Enum):
+    ## Looks like this is only used to determine the decoder to use.
+    ## Should we then have a more direct way of setting the default decoder?
     RAW = enum.auto()
     IMAGE = enum.auto()
 
 
-class DatasetConfig(FrozenBunch):
+class DatasetConfig(FrozenBunch):  ## Do we need this to be a FrozenBunch?
     pass
 
 
@@ -34,7 +36,7 @@ class DatasetInfo:
         *,
         type: Union[str, DatasetType],
         dependencies: Collection[str] = (),
-        categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
+        categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,  ## Nit: do we need to allow Paths?
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
@@ -60,12 +62,15 @@ class DatasetInfo:
         self.homepage = homepage
         self.license = license
 
+        ## What about mutually exclusive parameters?
+        ## How are we going to document the dataset parameters?
         self._valid_options = valid_options or dict()
         self._configs = tuple(
             DatasetConfig(**dict(zip(self._valid_options.keys(), combination)))
             for combination in itertools.product(*self._valid_options.values())
         )
 
+        ## What is this?
         self.extra = FrozenBunch(extra or dict())
 
     @property
@@ -75,7 +80,7 @@ class DatasetInfo:
     @staticmethod
     def read_categories_file(path: pathlib.Path) -> List[List[str]]:
         with open(path, newline="") as file:
-            return [row for row in csv.reader(file)]
+            return [row for row in csv.reader(file)]  ## Nit: do we need a csv reader?
 
     def make_config(self, **options: Any) -> DatasetConfig:
         if not self._valid_options and options:
@@ -135,6 +140,9 @@ class Dataset(abc.ABC):
     def _make_info(self) -> DatasetInfo:
         pass
 
+    ## Could these @properties be simple attributes?
+    ## Also, do we actually need to expose these attributes in the Dataset class, or could we just access dataset.info.the_attr ?
+    ## Dumb idea: what if we get rid of the `info` attribute and put everything in the Dataset class namespace?
     @property
     def info(self) -> DatasetInfo:
         return self._info
@@ -151,6 +159,7 @@ class Dataset(abc.ABC):
     def categories(self) -> Tuple[str, ...]:
         return self.info.categories
 
+    ## Q: why is resources() "public" while _make_datapipe() isn't?
     @abc.abstractmethod
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         pass
@@ -165,6 +174,7 @@ class Dataset(abc.ABC):
     ) -> IterDataPipe[Dict[str, Any]]:
         pass
 
+    ## Is this related to Manifold support or does this have OSS user facing impact?
     def supports_sharded(self) -> bool:
         return False
 
@@ -179,12 +189,14 @@ class Dataset(abc.ABC):
         if not config:
             config = self.info.default_config
 
+        ## TODO: need to understand this bit
         if use_sharded_dataset() and self.supports_sharded():
             root = os.path.join(root, *config.values())
             dataset_size = self.info.extra["sizes"][config]
             return _make_sharded_datapipe(root, dataset_size)  # type: ignore[no-any-return]
 
         self.info.check_dependencies()
+        ## Nit: a lot of method are called load() and they all do somewhat different things on different objects
         resource_dps = [
             resource.load(root, skip_integrity_check=skip_integrity_check) for resource in self.resources(config)
         ]

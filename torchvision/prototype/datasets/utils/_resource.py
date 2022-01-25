@@ -24,6 +24,7 @@ from torchvision.datasets.utils import (
 )
 
 
+## We don't seem to use extract, preprocess, or loader params. Maybe we can remove them for now?
 class OnlineResource(abc.ABC):
     def __init__(
         self,
@@ -31,7 +32,7 @@ class OnlineResource(abc.ABC):
         file_name: str,
         sha256: Optional[str] = None,
         decompress: bool = False,
-        extract: bool = False,
+        extract: bool = False,  ## Do we ever want to decompress without extracting?
         preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]] = None,
         loader: Optional[Callable[[pathlib.Path], IterDataPipe[Tuple[str, IO]]]] = None,
     ) -> None:
@@ -72,6 +73,7 @@ class OnlineResource(abc.ABC):
 
         return dp
 
+    ## Overall, what's the plan regarding allowing user to impelment their own datasets (and their own loaders etc?)
     _ARCHIVE_LOADERS = {
         ".tar": TarArchiveReader,
         ".zip": ZipArchiveReader,
@@ -83,6 +85,8 @@ class OnlineResource(abc.ABC):
     ) -> Optional[Callable[[IterDataPipe[Tuple[str, IO]]], IterDataPipe[Tuple[str, IO]]]]:
         try:
             _, archive_type, _ = _detect_file_type(path.name)
+        ## Unrelated but it looks like it could be a ValueError. Or instead of
+        ## raising, _detect_file_type could just return an empty tuple or None?
         except RuntimeError:
             return None
         return self._ARCHIVE_LOADERS.get(archive_type)  # type: ignore[arg-type]
@@ -106,6 +110,7 @@ class OnlineResource(abc.ABC):
         # Otherwise we use the path with the fewest suffixes. This gives us the extracted > decompressed > raw priority
         # that we want.
         else:
+            ## Are there current examples where we reach this line?
             path = min(path_candidates, key=lambda path: len(path.suffixes))
         return self._loader(path)
 
