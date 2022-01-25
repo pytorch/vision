@@ -3,12 +3,10 @@ import functools
 import gzip
 import io
 import lzma
-import mmap
 import os
 import os.path
 import pathlib
 import pickle
-import platform
 from typing import BinaryIO
 from typing import (
     Sequence,
@@ -32,6 +30,7 @@ import torch.distributed as dist
 import torch.utils.data
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
+from torchvision.prototype.utils._internal import fromfile
 
 
 __all__ = [
@@ -46,7 +45,6 @@ __all__ = [
     "path_accessor",
     "path_comparator",
     "Decompressor",
-    "fromfile",
     "read_flo",
     "hint_sharding",
 ]
@@ -265,69 +263,6 @@ def _make_sharded_datapipe(root: str, dataset_size: int) -> IterDataPipe[Dict[st
     # dp = dp.cycle(2)
     dp = TakerDataPipe(dp, dataset_size)
     return dp
-
-
-def _read_mutable_buffer_fallback(file: BinaryIO, count: int, item_size: int) -> bytearray:
-    # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
-    return bytearray(file.read(-1 if count == -1 else count * item_size))
-
-
-def fromfile(
-    file: BinaryIO,
-    *,
-    dtype: torch.dtype,
-    byte_order: str,
-    count: int = -1,
-) -> torch.Tensor:
-    """Construct a tensor from a binary file.
-
-    .. note::
-
-        This function is similar to :func:`numpy.fromfile` with two notable differences:
-
-        1. This function only accepts an open binary file, but not a path to it.
-        2. This function has an additional ``byte_order`` parameter, since PyTorch's ``dtype``'s do not support that
-            concept.
-
-    .. note::
-
-        If the ``file`` was opened in update mode, i.e. "r+b" or "w+b", reading data is much faster. Be aware that as
-        long as the file is still open, inplace operations on the returned tensor will reflect back to the file.
-
-    Args:
-        file (IO): Open binary file.
-        dtype (torch.dtype): Data type of the underlying data as well as of the returned tensor.
-        byte_order (str): Byte order of the data. Can be "little" or "big" endian.
-        count (int): Number of values of the returned tensor. If ``-1`` (default), will read the complete file.
-    """
-    byte_order = "<" if byte_order == "little" else ">"
-    char = "f" if dtype.is_floating_point else ("i" if dtype.is_signed else "u")
-    item_size = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
-    np_dtype = byte_order + char + str(item_size)
-
-    buffer: Union[memoryview, bytearray]
-    if platform.system() != "Windows":
-        # PyTorch does not support tensors with underlying read-only memory. In case
-        # - the file has a .fileno(),
-        # - the file was opened for updating, i.e. 'r+b' or 'w+b',
-        # - the file is seekable
-        # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it
-        # to a mutable location afterwards.
-        try:
-            buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
-            # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
-            file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
-        except (PermissionError, io.UnsupportedOperation):
-            buffer = _read_mutable_buffer_fallback(file, count, item_size)
-    else:
-        # On Windows just trying to call mmap.mmap() on a file that does not support it, may corrupt the internal state
-        # so no data can be read afterwards. Thus, we simply ignore the possible speed-up.
-        buffer = _read_mutable_buffer_fallback(file, count, item_size)
-
-    # We cannot use torch.frombuffer() directly, since it only supports the native byte order of the system. Thus, we
-    # read the data with np.frombuffer() with the correct byte order and convert it to the native one with the
-    # successive .astype() call.
-    return torch.from_numpy(np.frombuffer(buffer, dtype=np_dtype, count=count).astype(np_dtype[1:], copy=False))
 
 
 def read_flo(file: BinaryIO) -> torch.Tensor:
