@@ -1,7 +1,7 @@
-from typing import Any, cast, Dict, Set, TypeVar
+from typing import Any, Callable, cast, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar
 
 import torch
-from torch._C import _TensorBase
+from torch._C import _TensorBase, DisableTorchFunction
 
 
 F = TypeVar("F", bound="Feature")
@@ -56,6 +56,25 @@ class Feature(torch.Tensor):
         for name in cls._META_ATTRS:
             metadata.setdefault(name, getattr(other, name))
         return cls(data, dtype=dtype or other.dtype, device=device or other.device, **metadata)
+
+    @classmethod
+    def __torch_function__(
+        cls,
+        func: Callable[..., torch.Tensor],
+        types: Tuple[Type[torch.Tensor], ...],
+        args: Sequence[Any] = (),
+        kwargs: Optional[Mapping[str, Any]] = None,
+    ) -> torch.Tensor:
+        kwargs = kwargs or dict()
+        with DisableTorchFunction():
+            output = func(*args, **kwargs)
+
+        if func is torch.Tensor.clone:
+            return cls.new_like(args[0], output)
+        elif func is torch.Tensor.to:
+            return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
+        else:
+            return output
 
     def __repr__(self):
         return torch.Tensor.__repr__(self).replace("tensor", type(self).__name__)

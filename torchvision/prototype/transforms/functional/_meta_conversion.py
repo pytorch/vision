@@ -34,10 +34,13 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
 
 
 def convert_bounding_box_format(
-    bounding_box: torch.Tensor, *, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
+    bounding_box: torch.Tensor, *, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, copy: bool = False
 ) -> torch.Tensor:
     if new_format == old_format:
-        return bounding_box
+        if copy:
+            return bounding_box.clone()
+        else:
+            return bounding_box
 
     if old_format == BoundingBoxFormat.XYWH:
         bounding_box = _xywh_to_xyxy(bounding_box)

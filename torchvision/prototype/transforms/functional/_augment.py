@@ -1,10 +1,29 @@
 from typing import Tuple
+from typing import TypeVar
 
 import torch
+from torchvision.prototype import features
 from torchvision.transforms import functional as _F
+
+from .utils import dispatch
+
+T = TypeVar("T", bound=features.Feature)
+
+
+@dispatch
+def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False) -> T:
+    """ADDME"""
+    pass
 
 
 erase_image = _F.erase
+erase.register(features.Image, erase_image)
+
+
+@dispatch
+def mixup(input: T, *, lam: float, inplace: bool = False) -> T:
+    """ADDME"""
+    pass
 
 
 def _mixup(input: torch.Tensor, batch_dim: int, lam: float, inplace: bool) -> torch.Tensor:
@@ -22,11 +41,29 @@ def mixup_image(image_batch: torch.Tensor, *, lam: float, inplace: bool = False)
     return _mixup(image_batch, -4, lam, inplace)
 
 
+mixup.register(features.Image, mixup_image)
+
+
 def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
     if one_hot_label_batch.ndim < 2:
         raise ValueError("Need a batch of one hot labels")
 
     return _mixup(one_hot_label_batch, -2, lam, inplace)
+
+
+mixup.register(features.OneHotLabel, mixup_one_hot_label)
+
+
+@dispatch
+def cutmix(
+    input: T,
+    *,
+    box: Tuple[int, int, int, int] = dispatch.FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
+    lam_adjusted: float = dispatch.FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
+    inplace: bool = False,
+) -> T:
+    """ADDME"""
+    pass
 
 
 def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], inplace: bool = False) -> torch.Tensor:
@@ -43,6 +80,9 @@ def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], i
     return image_batch
 
 
+cutmix.register(features.Image, cutmix_image)
+
+
 def cutmix_one_hot_label(
     one_hot_label_batch: torch.Tensor, *, lam_adjusted: float, inplace: bool = False
 ) -> torch.Tensor:
@@ -50,3 +90,6 @@ def cutmix_one_hot_label(
         raise ValueError("Need a batch of one hot labels")
 
     return _mixup(one_hot_label_batch, -2, lam_adjusted, inplace)
+
+
+cutmix.register(features.OneHotLabel, cutmix_one_hot_label)
