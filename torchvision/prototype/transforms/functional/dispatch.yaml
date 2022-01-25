@@ -1,0 +1,164 @@
+# This is the configuration file to auto-generate the dispatch of feature type specific kernels of the same transform.
+#   The auto-generation is general enough to apply to all dispatchers that
+#   1. take a feature as first input that is solely used to determine the required kernel and
+#   2. are feature type preserving.
+#
+# After you have implemented new kernels, follow the schema explanation below to configure the auto-generation.
+#  Finally, run `$ python scripts/regenerate_transform_dispatch.py` to regenerate the dispatch.
+#
+# This configuration uses the following schema:
+#
+# $DISPATCHER_NAME:
+#   $FEATURE_NAME:
+#     kernel: $KERNEL_NAME
+#     meta_conversion: $META_CONVERSION
+#     kwargs_overwrite: $KWARGS_OVERWRITE
+#     meta_overwrite: $META_OVERWRITE
+#   ...
+#
+# KERNEL_NAME: Name of the kernel that can be accessed from `torchvision.prototype.transforms.fuctional`. If the
+#   canonical naming scheme is followed, this should be $DISPATCHER_NAME followed by $FEATURE_NAME in snake case.
+#
+# META_CONVERSION: Optional mapping of meta attributes to convert before the kernel call. This is needed if the kernel
+#   makes assumptions on meta attributes of the input tensor. For example, the `resize_bounding_box` requires the input
+#   to be in XYXY format. This can be achieved with:
+#
+#     resize:
+#       BoundingBox:
+#         kernel: resize_bounding_box
+#         meta_conversion:
+#           format: BoundingBoxFormat.XYXY
+#
+# KWARGS_OVERWRITE: Optional mapping of keyword arguments to apply to the keyword arguments of the dispatcher before
+#   they get passed to the kernel. If a value is prefixed with a dot, this meta attribute of the input feature is added
+#   under the given key. This is useful in two scenarios:
+#
+#     1. The kernel requires meta information that is available as meta attribute on the input feature or
+#     2. the kernel parameters names differ from the ones of the dispatcher.
+#
+#   For example, the `resize_bounding_box` kernel takes the `old_image_size` and `new_image_size` parameters, whereas
+#   the `resize` dispatcher should only take `size`. Thus, we need to take `image_size` stored on the `BoundingBox`
+#   feature and map it to `old_image_size` as well as mapping the `size` input to `new_image_size`.
+#
+#     resize:
+#       BoundingBox:
+#         kernel: resize_bounding_box
+#         kwargs_overwrite:
+#           old_image_size: .image_size
+#           new_image_size: size
+#
+# META_OVERWRITE: Optional mapping of keyword arguments to overwrite meta attributes when creating the new feature from
+#   the kernel output. This is needed if the kernel changes a meta attribute. For example, the `resize_bounding_box`
+#   kernel adapts the values, but the new image size cannot be inferred from them. Thus, we set the `image_size`
+# metadata of the new bounding box to be the `size` the dispatcher was called with:
+#
+#     resize:
+#       BoundingBox:
+#         kernel: resize_bounding_box
+#         meta_overwrite:
+#           image_size: size
+#
+# For $FEATURE_NAME == Image, there is also the `pil_kernel` key available. This is the name of the legacy `PIL` kernel
+#   that can be accessed from `torchvision.transforms.fuctional` (note the missing `.prototype` compared to
+#   $KERNEL_NAME). It will be called with same arguments as the dispatcher.
+#
+# If no optional configuration is required, the shortcut
+#
+#   $DISPATCHER_NAME:
+#     $FEATURE_NAME: $KERNEL_NAME
+#
+# can be used, which is equivalent to
+#
+#   $DISPATCHER_NAME:
+#     $FEATURE_NAME:
+#       kernel: $KERNEL_NAME
+
+horizontal_flip:
+  Image: horizontal_flip_image
+  BoundingBox:
+    kernel: horizontal_flip_bounding_box
+    meta_conversion:
+      format: BoundingBoxFormat.XYXY
+    kwargs_overwrite:
+      image_size: .image_size
+resize:
+  Image:
+    kernel: resize_image
+    pil_kernel: resize
+  BoundingBox:
+    kernel: resize_bounding_box
+    meta_conversion:
+      format: BoundingBoxFormat.XYXY
+    kwargs_overwrite:
+      old_image_size: .image_size
+      new_image_size: size
+    meta_overwrite:
+      image_size: size
+  SegmentationMask: resize_segmentation_mask
+center_crop:
+  Image:
+    kernel: center_crop_image
+    pil_kernel: center_crop
+normalize:
+  Image:
+    kernel: normalize_image
+    meta_overwrite:
+      color_space: ColorSpace.OTHER
+resized_crop:
+  Image:
+    kernel: resized_crop_image
+    pil_kernel: resized_crop
+erase:
+  Image:
+    kernel: erase_image
+    pil_kernel: erase
+mixup:
+  Image: mixup_image
+  OneHotLabel: mixup_one_hot_label
+cutmix:
+  Image: cutmix_image
+  OneHotLabel: cutmix_one_hot_label
+affine:
+  Image:
+    kernel: affine_image
+    pil_kernel: affine
+rotate:
+  Image:
+    kernel: rotate_image
+    pil_kernel: rotate
+adjust_brightness:
+  Image:
+    kernel: adjust_brightness_image
+    pil_kernel: adjust_brightness
+adjust_saturation:
+  Image:
+    kernel: adjust_saturation_image
+    pil_kernel: adjust_saturation
+adjust_contrast:
+  Image:
+    kernel: adjust_contrast_image
+    pil_kernel: adjust_contrast
+adjust_sharpness:
+  Image:
+    kernel: adjust_sharpness_image
+    pil_kernel: adjust_sharpness
+posterize:
+  Image:
+    kernel: posterize_image
+    pil_kernel: posterize
+solarize:
+  Image:
+    kernel: solarize_image
+    pil_kernel: solarize
+autocontrast:
+  Image:
+    kernel: autocontrast_image
+    pil_kernel: autocontrast
+equalize:
+  Image:
+    kernel: equalize_image
+    pil_kernel: equalize
+invert:
+  Image:
+    kernel: invert_image
+    pil_kernel: invert

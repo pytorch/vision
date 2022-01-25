@@ -1,3 +1,5 @@
+from . import utils  # usort: skip
+
 from ._augment import erase_image, mixup_image, mixup_one_hot_label, cutmix_image, cutmix_one_hot_label
 from ._color import (
     adjust_brightness_image,
@@ -25,3 +27,5 @@ from ._geometry import (
 from ._meta_conversion import convert_color_space, convert_bounding_box_format
 from ._misc import normalize_image
 from ._type_conversion import decode_image_with_pil, decode_video_with_av, label_to_one_hot
+
+from ._dispatch import *  # usort: skip

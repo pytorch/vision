@@ -28,9 +28,6 @@ def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tupl
     )
 
 
-_resize_image = _F.resize
-
-
 def resize_image(
     image: torch.Tensor,
     size: List[int],
@@ -41,7 +38,7 @@ def resize_image(
     new_height, new_width = size
     num_channels, old_height, old_width = image.shape[-3:]
     batch_shape = image.shape[:-3]
-    return _resize_image(
+    return _F.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
         size=size,
         interpolation=interpolation,
