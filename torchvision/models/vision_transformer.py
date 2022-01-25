@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, Dict, List, NamedTuple, Optional, Union
+from typing import Any, Callable, List, NamedTuple, Optional
 
 import torch
 import torch.nn as nn
@@ -173,13 +173,15 @@ class VisionTransformer(nn.Module):
                         kernel_size=conv_stem_layer.kernel_size,
                         stride=conv_stem_layer.stride,
                         padding=conv_stem_layer.padding,
-                        norm_layer=nn.BatchNorm2d(conv_stem_layer.out_channels),
-                        activation_layer=nn.ReLU(),
+                        norm_layer=nn.BatchNorm2d,
+                        activation_layer=nn.ReLU,
                         bias=conv_stem_layer.bias,
                     ),
                 )
                 prev_channels = conv_stem_layer.out_channels
-            self.conv_proj.add_module(f"conv_last", nn.Conv2d(prev_channels, hidden_dim, kernel_size=1))
+            self.conv_proj.add_module(
+                "conv_last", nn.Conv2d(in_channels=prev_channels, out_channels=hidden_dim, kernel_size=1)
+            )
         else:
             self.conv_proj = nn.Conv2d(
                 in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size
@@ -299,8 +301,6 @@ def _vision_transformer(
     )
 
     if pretrained:
-        if arch not in model_urls:
-            raise ValueError(f"No checkpoint is available for model type '{arch}'!")
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
 
