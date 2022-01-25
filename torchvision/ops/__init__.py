@@ -13,7 +13,7 @@ from .boxes import box_convert
 from .deform_conv import deform_conv2d, DeformConv2d
 from .feature_pyramid_network import FeaturePyramidNetwork
 from .focal_loss import sigmoid_focal_loss
-from .generalized_box_iou_loss import generalized_box_iou_loss
+from .giou_loss import generalized_box_iou_loss
 from .misc import FrozenBatchNorm2d, ConvNormActivation, SqueezeExcitation
 from .poolers import MultiScaleRoIAlign
 from .ps_roi_align import ps_roi_align, PSRoIAlign
