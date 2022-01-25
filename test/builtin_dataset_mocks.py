@@ -1,5 +1,4 @@
 import collections.abc
-import contextlib
 import csv
 import functools
 import gzip
@@ -9,8 +8,6 @@ import lzma
 import pathlib
 import pickle
 import random
-import tempfile
-import unittest.mock
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 
@@ -30,6 +27,8 @@ make_scalar = functools.partial(make_tensor, ())
 
 
 __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
+
+TEST_HOME = []
 
 
 class DatasetMock:
@@ -81,10 +80,11 @@ class DatasetMock:
 
         return mock_infos
 
-    def _prepare_resources(self, config, root):
+    def prepare(self, config):
         if config in self._cache:
             return self._cache[config]
 
+        root = TEST_HOME[0] / self.name
         root.mkdir(exist_ok=True)
         mock_infos = self._parse_mock_data(config, self.mock_data_fn(self.info, root, config))
 
@@ -101,12 +101,6 @@ class DatasetMock:
             self._cache[config_] = mock_info
 
         return self._cache[config]
-
-    @contextlib.contextmanager
-    def prepare(self, config, root):
-        mock_info = self._prepare_resources(config, root)
-        with unittest.mock.patch("torchvision.prototype.datasets._api.home", return_value=str(root)):
-            yield mock_info
 
 
 def config_id(name, config):
