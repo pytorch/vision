@@ -203,7 +203,7 @@ def _mobilenet_extractor(
 
         if returned_layers is None:
             returned_layers = [num_stages - 2, num_stages - 1]
-        if min(returned_layers) <= 0 or max(returned_layers) >= num_stages:
+        if min(returned_layers) < 0 or max(returned_layers) >= num_stages:
             raise ValueError(
                 f" returned_layers object should contain integers between [1,{num_stages - 1}], got {returned_layers} "
             )
