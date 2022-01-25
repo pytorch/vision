@@ -36,7 +36,7 @@ def test_mobilenet_backbone(backbone_name):
         mobilenet_backbone(backbone_name=backbone_name, pretrained=False, fpn=False, trainable_layers=-1)
     with pytest.raises(ValueError, "returned_layers object should contain integers between [1,num_stages - 1]"):
         mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[-1, 0, 1, 2])
-    with pytest.raises(ValueError "returned_layers object should contain integers between [1,num_stages - 1]"):
+    with pytest.raises(ValueError, "returned_layers object should contain integers between [1,num_stages - 1]"):
         mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[3, 4, 5, 6])
 
 
