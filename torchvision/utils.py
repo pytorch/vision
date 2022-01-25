@@ -2,11 +2,11 @@ import math
 import pathlib
 import warnings
 from types import FunctionType
-from typing import Any, Union, Optional, List, Tuple, BinaryIO
+from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageDraw, ImageFont, ImageColor
+from PIL import Image, ImageColor, ImageDraw, ImageFont
 
 __all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks", "draw_keypoints"]
 
@@ -394,9 +394,9 @@ def _log_api_usage_once(obj: Any) -> None:
     In a large ecosystem, it's often useful to track the PyTorch and
     TorchVision APIs usage. This function is triggered once for a API call
     within a process. By default, no logs is generated(see https://github.com/pytorch/pytorch/blob/eb3b9fe719b21fae13c7a7cf3253f970290a573e/c10/util/Logging.cpp#L104).
-    Users can subscribe to API usage events by registering instrumentation 
+    Users can subscribe to API usage events by registering instrumentation
     handler with `SetAPIUsageLogger`.
-    For more information, please refer to 
+    For more information, please refer to
     * PyTorch note: https://pytorch.org/docs/stable/notes/large_scale_deployments.html#api-usage-logging;
     * Logging policy: https://github.com/pytorch/vision/issues/5052;
 
