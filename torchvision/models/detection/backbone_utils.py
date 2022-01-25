@@ -205,7 +205,7 @@ def _mobilenet_extractor(
             returned_layers = [num_stages - 2, num_stages - 1]
         if min(returned_layers) < 0 or max(returned_layers) >= num_stages:
             raise ValueError(
-                f" returned_layers object should contain integers between [1,{num_stages - 1}], got {returned_layers} "
+                f" returned_layers object should contain integers between [0,{num_stages - 1}], got {returned_layers} "
             )
         return_layers = {f"{stage_indices[k]}": str(v) for v, k in enumerate(returned_layers)}
 
