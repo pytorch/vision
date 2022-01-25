@@ -3,7 +3,7 @@ from pathlib import Path
 
 import pytest
 import torch
-from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS, TEST_HOME  # noqa: F401
+from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
@@ -11,15 +11,10 @@ from torchvision.prototype import transforms, datasets
 from torchvision.prototype.utils._internal import sequence_to_str
 
 
-@pytest.fixture(scope="session", autouse=True)
-def test_home(session_mocker, tmp_path_factory):
-    home = tmp_path_factory.mktemp("datasets", numbered=False)
-    session_mocker.patch("torchvision.prototype.datasets._api.home", return_value=str(home))
-
-    global TEST_HOME
-    TEST_HOME.append(home)
-
-    yield home
+@pytest.fixture
+def test_home(mocker, tmp_path):
+    mocker.patch("torchvision.prototype.datasets._api.home", return_value=str(tmp_path))
+    yield tmp_path
 
 
 def test_coverage():
@@ -34,8 +29,8 @@ def test_coverage():
 
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_smoke(self, dataset_mock, config):
-        dataset_mock.prepare(config)
+    def test_smoke(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -43,8 +38,8 @@ class TestCommon:
             raise AssertionError(f"Loading the dataset should return an IterDataPipe, but got {type(dataset)} instead.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_sample(self, dataset_mock, config):
-        dataset_mock.prepare(config)
+    def test_sample(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -60,8 +55,8 @@ class TestCommon:
             raise AssertionError("Sample dictionary is empty.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_num_samples(self, dataset_mock, config):
-        mock_info = dataset_mock.prepare(config)
+    def test_num_samples(self, test_home, dataset_mock, config):
+        mock_info = dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -72,8 +67,8 @@ class TestCommon:
         assert num_samples == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_decoding(self, dataset_mock, config):
-        dataset_mock.prepare(config)
+    def test_decoding(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -85,8 +80,8 @@ class TestCommon:
             )
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_no_vanilla_tensors(self, dataset_mock, config):
-        dataset_mock.prepare(config)
+    def test_no_vanilla_tensors(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -98,8 +93,8 @@ class TestCommon:
             )
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_transformable(self, dataset_mock, config):
-        dataset_mock.prepare(config)
+    def test_transformable(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -113,8 +108,8 @@ class TestCommon:
             )
         },
     )
-    def test_traversable(self, dataset_mock, config):
-        dataset_mock.prepare(config)
+    def test_traversable(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -129,13 +124,13 @@ class TestCommon:
         },
     )
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
-    def test_has_annotations(self, dataset_mock, config, annotation_dp_type):
+    def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
         def scan(graph):
             for node, sub_graph in graph.items():
                 yield node
                 yield from scan(sub_graph)
 
-        dataset_mock.prepare(config)
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -145,8 +140,8 @@ class TestCommon:
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
 class TestQMNIST:
-    def test_extra_label(self, dataset_mock, config):
-        dataset_mock.prepare(config)
+    def test_extra_label(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
@@ -165,13 +160,13 @@ class TestQMNIST:
 
 @parametrize_dataset_mocks(DATASET_MOCKS["gtsrb"])
 class TestGTSRB:
-    def test_label_matches_path(self, dataset_mock, config):
+    def test_label_matches_path(self, test_home, dataset_mock, config):
         # We read the labels from the csv files instead. But for the trainset, the labels are also part of the path.
         # This test makes sure that they're both the same
         if config.split != "train":
             return
 
-        dataset_mock.prepare(config)
+        dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
