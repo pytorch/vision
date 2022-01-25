@@ -142,6 +142,14 @@ class Demuxer {
     return eVideoCodec;
   }
 
+  double get_duration() const {
+    return (double)fmtCtx->duration / AV_TIME_BASE;
+  }
+
+  double get_fps() const {
+    return av_q2d(fmtCtx->streams[iVideoStream]->r_frame_rate);
+  }
+
   bool demux(uint8_t** video, unsigned long* videoBytes) {
     if (!fmtCtx) {
       return false;
@@ -209,6 +217,15 @@ class Demuxer {
     }
     frameCount++;
     return true;
+  }
+
+  void seek(double timestamp, int flag) {
+    int64_t time = timestamp * AV_TIME_BASE;
+    TORCH_CHECK(
+        0 <= av_seek_frame(fmtCtx, -1, time, flag),
+        "avformat_open_input() failed at line ",
+        __LINE__,
+        " in demuxer.h\n");
   }
 };
 
