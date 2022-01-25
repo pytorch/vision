@@ -130,8 +130,6 @@ class Encoder(nn.Module):
 class VisionTransformer(nn.Module):
     """Vision Transformer as per https://arxiv.org/abs/2010.11929."""
 
-    conv_proj: nn.Module
-
     def __init__(
         self,
         image_size: int,
@@ -185,7 +183,7 @@ class VisionTransformer(nn.Module):
         else:
             self.conv_proj = nn.Conv2d(
                 in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size
-            )
+            )  # type: ignore
 
         seq_length = (image_size // patch_size) ** 2
 
