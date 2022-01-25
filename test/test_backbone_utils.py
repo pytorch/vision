@@ -22,21 +22,21 @@ def test_resnet_fpn_backbone(backbone_name):
     y = resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False)(x)
     assert list(y.keys()) == ["0", "1", "2", "3", "pool"]
 
-    with pytest.raises(ValueError):
-        y = resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False, trainable_layers=6)
-    with pytest.raises(ValueError):
-        y = resnet_fpn_backbone(backbone_name, False, returned_layers=[0, 1, 2, 3])
-    with pytest.raises(ValueError):
-        y = resnet_fpn_backbone(backbone_name, False, returned_layers=[2, 3, 4, 5])
+    with pytest.raises(ValueError, "trainable_layers  expected to be in [0,5]"):
+        resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False, trainable_layers=6)
+    with pytest.raises(ValueError, "Each returned layer must be in the range [1,4]"):
+        resnet_fpn_backbone(backbone_name, False, returned_layers=[0, 1, 2, 3])
+    with pytest.raises(ValueError, "Each returned layer must be in the range [1,4]"):
+        resnet_fpn_backbone(backbone_name, False, returned_layers=[2, 3, 4, 5])
 
 
 @pytest.mark.parametrize("backbone_name", ("mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"))
 def test_mobilenet_backbone(backbone_name):
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, "trainable_layers expected to be in between [0,num_stages]"):
         mobilenet_backbone(backbone_name=backbone_name, pretrained=False, fpn=False, trainable_layers=-1)
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError, "returned_layers object should contain integers between [1,num_stages - 1]"):
         mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[-1, 0, 1, 2])
-    with pytest.raises(ValueError):
+    with pytest.raises(ValueError "returned_layers object should contain integers between [1,num_stages - 1]"):
         mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[3, 4, 5, 6])
 
 
