@@ -47,12 +47,8 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
         14: torch.float64,
     }
 
-    def __init__(
-        self, datapipe: IterDataPipe[Tuple[Any, BinaryIO]], *, start: Optional[int], stop: Optional[int]
-    ) -> None:
+    def __init__(self, datapipe: IterDataPipe[Tuple[Any, BinaryIO]]) -> None:
         self.datapipe = datapipe
-        self.start = start
-        self.stop = stop
 
     def __iter__(self) -> Iterator[torch.Tensor]:
         for _, file in self.datapipe:
@@ -66,14 +62,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
             shape = cast(List[int], read(dtype=torch.int32, count=ndim).tolist()) if ndim else []
             count = prod(shape) if shape else 1
 
-            start = self.start or 0
-            stop = min(self.stop, num_samples) if self.stop else num_samples
-
-            if start:
-                num_bytes_per_value = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
-                file.seek(num_bytes_per_value * count * start, 1)
-
-            for _ in range(stop - start):
+            for _ in range(num_samples):
                 yield read(dtype=dtype, count=count).reshape(shape)
 
 
@@ -102,9 +91,6 @@ class _MNISTBase(Dataset):
 
         return [images, labels]
 
-    def start_and_stop(self, config: DatasetConfig) -> Tuple[Optional[int], Optional[int]]:
-        return None, None
-
     def _collate_and_decode(
         self,
         data: Tuple[torch.Tensor, torch.Tensor],
@@ -132,13 +118,12 @@ class _MNISTBase(Dataset):
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, labels_dp = resource_dps
-        start, stop = self.start_and_stop(config)
 
         images_dp = Decompressor(images_dp)
-        images_dp = MNISTFileReader(images_dp, start=start, stop=stop)
+        images_dp = MNISTFileReader(images_dp)
 
         labels_dp = Decompressor(labels_dp)
-        labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
+        labels_dp = MNISTFileReader(labels_dp)
 
         dp = Zipper(images_dp, labels_dp)
         dp = hint_sharding(dp)
@@ -338,7 +323,7 @@ class QMNIST(_MNISTBase):
             categories=10,
             homepage="https://github.com/facebookresearch/qmnist",
             valid_options=dict(
-                split=("train", "test", "test10k", "test50k", "nist"),
+                split=("train", "test", "nist"),
             ),
         )
 
@@ -361,20 +346,6 @@ class QMNIST(_MNISTBase):
             labels_file,
             self._CHECKSUMS[labels_file],
         )
-
-    def start_and_stop(self, config: DatasetConfig) -> Tuple[Optional[int], Optional[int]]:
-        start: Optional[int]
-        stop: Optional[int]
-        if config.split == "test10k":
-            start = 0
-            stop = 10000
-        elif config.split == "test50k":
-            start = 10000
-            stop = None
-        else:
-            start = stop = None
-
-        return start, stop
 
     def _collate_and_decode(
         self,

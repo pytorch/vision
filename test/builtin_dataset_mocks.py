@@ -286,41 +286,31 @@ def emnist(info, root, _):
 def qmnist(info, root, config):
     num_categories = len(info.categories)
     if config.split == "train":
-        num_samples = num_samples_gen = num_categories + 2
+        num_samples = num_categories + 2
         prefix = "qmnist-train"
         suffix = ".gz"
         compressor = gzip.open
-        mock_infos = num_samples
     elif config.split.startswith("test"):
-        # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create
-        # more than 10000 images for the dataset to not be empty.
-        num_samples_gen = 10001
+        num_samples = num_categories + 1
         prefix = "qmnist-test"
         suffix = ".gz"
         compressor = gzip.open
-        mock_infos = {
-            info.make_config(split="test"): num_samples_gen,
-            info.make_config(split="test10k"): min(num_samples_gen, 10_000),
-            info.make_config(split="test50k"): num_samples_gen - 10_000,
-        }
     else:  # config.split == "nist"
-        num_samples = num_samples_gen = num_categories + 3
+        num_samples = num_categories + 3
         prefix = "xnist"
         suffix = ".xz"
         compressor = lzma.open
-        mock_infos = num_samples
 
-    MNISTMockData.generate(
+    return MNISTMockData.generate(
         root,
         num_categories=num_categories,
-        num_samples=num_samples_gen,
+        num_samples=num_samples,
         images_file=f"{prefix}-images-idx3-ubyte{suffix}",
         labels_file=f"{prefix}-labels-idx2-int{suffix}",
         label_size=(8,),
         label_dtype=torch.int32,
         compressor=compressor,
     )
-    return mock_infos
 
 
 class CIFARMockData:
