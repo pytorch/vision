@@ -24,8 +24,7 @@ from typing import (
     Tuple,
     TypeVar,
     Union,
-    List,
-    Dict,
+    Optional,
 )
 
 import numpy as np
@@ -42,6 +41,7 @@ __all__ = [
     "fromfile",
     "ReadOnlyTensorBuffer",
     "apply_recursively",
+    "query_recursively",
 ]
 
 
@@ -305,22 +305,22 @@ def apply_recursively(fn: Callable, obj: Any) -> Any:
     # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
     # "a" == "a"[0][0]...
     if isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-        sequence: List[Any] = []
-        for item in obj:
-            result = apply_recursively(fn, item)
-            if isinstance(result, collections.abc.Sequence) and hasattr(result, "__inline__"):
-                sequence.extend(result)
-            else:
-                sequence.append(result)
-        return sequence
+        return [apply_recursively(fn, item) for item in obj]
     elif isinstance(obj, collections.abc.Mapping):
-        mapping: Dict[Any, Any] = {}
-        for name, item in obj.items():
-            result = apply_recursively(fn, item)
-            if isinstance(result, collections.abc.Mapping) and hasattr(result, "__inline__"):
-                mapping.update(result)
-            else:
-                mapping[name] = result
-        return mapping
+        return {key: apply_recursively(fn, item) for key, item in obj.items()}
     else:
         return fn(obj)
+
+
+def query_recursively(fn: Callable[[Any], Optional[D]], obj: Any) -> Iterator[D]:
+    # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
+    # "a" == "a"[0][0]...
+    if (isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str)) or isinstance(
+        obj, collections.abc.Mapping
+    ):
+        for item in obj.values() if isinstance(obj, collections.abc.Mapping) else obj:
+            yield from query_recursively(fn, item)
+    else:
+        result = fn(obj)
+        if result is not None:
+            yield result
