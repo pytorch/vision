@@ -33,11 +33,11 @@ def test_resnet_fpn_backbone(backbone_name):
 @pytest.mark.parametrize("backbone_name", ("mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"))
 def test_mobilenet_backbone(backbone_name):
     with pytest.raises(ValueError):
-        y = mobilenet_backbone(backbone_name=backbone_name, pretrained=False, fpn=False, trainable_layers=-1)
+        mobilenet_backbone(backbone_name=backbone_name, pretrained=False, fpn=False, trainable_layers=-1)
     with pytest.raises(ValueError):
-        y = mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[-1, 0, 1, 2])
+        mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[-1, 0, 1, 2])
     with pytest.raises(ValueError):
-        y = mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[3, 4, 5, 6])
+        mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[3, 4, 5, 6])
 
 
 # Needed by TestFxFeatureExtraction.test_leaf_module_and_function
