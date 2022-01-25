@@ -174,8 +174,6 @@ class VideoReader:
             frame with the exact timestamp if it exists or
             the first frame with timestamp larger than ``time_s``.
         """
-        if self.is_cuda:
-            raise RuntimeError("seek() not yet supported with GPU decoding.")
         self._c.seek(time_s, keyframes_only)
         return self
 
@@ -185,8 +183,6 @@ class VideoReader:
         Returns:
             (dict): dictionary containing duration and frame rate for every stream
         """
-        if self.is_cuda:
-            raise RuntimeError("get_metadata() not yet supported with GPU decoding.")
         return self._c.get_metadata()
 
     def set_current_stream(self, stream: str) -> bool:
@@ -209,16 +205,6 @@ class VideoReader:
         if self.is_cuda:
             print("GPU decoding only works with video stream.")
         return self._c.set_current_stream(stream)
-
-    def _reformat(self, tensor, output_format: str = "yuv420"):
-        supported_formats = [
-            "yuv420",
-        ]
-        if output_format not in supported_formats:
-            raise RuntimeError(f"{output_format} not supported, please use one of {', '.join(supported_formats)}")
-        if not isinstance(tensor, torch.Tensor):
-            raise RuntimeError("Expected tensor as input parameter!")
-        return self._c.reformat(tensor.cpu())
 
 
 __all__ = [

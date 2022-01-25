@@ -38,48 +38,28 @@ torch::Tensor GPUDecoder::decode() {
   return frame;
 }
 
-/* Convert a tensor with data in NV12 format to a tensor with data in YUV420
- * format in-place.
+/* Seek to a passed timestamp. The second argument controls whether to seek to a
+ * keyframe.
  */
-torch::Tensor GPUDecoder::nv12_to_yuv420(torch::Tensor frameTensor) {
-  int width = decoder.get_width(), height = decoder.get_height();
-  int pitch = width;
-  uint8_t* frame = frameTensor.data_ptr<uint8_t>();
-  uint8_t* ptr = new uint8_t[((width + 1) / 2) * ((height + 1) / 2)];
+void GPUDecoder::seek(double timestamp, bool keyframes_only) {
+  int flag = keyframes_only ? 0 : AVSEEK_FLAG_ANY;
+  demuxer.seek(timestamp, flag);
+}
 
-  // sizes of source surface plane
-  int sizePlaneY = pitch * height;
-  int sizePlaneU = ((pitch + 1) / 2) * ((height + 1) / 2);
-  int sizePlaneV = sizePlaneU;
-
-  uint8_t* uv = frame + sizePlaneY;
-  uint8_t* u = uv;
-  uint8_t* v = uv + sizePlaneU;
-
-  // split chroma from interleave to planar
-  for (int y = 0; y < (height + 1) / 2; y++) {
-    for (int x = 0; x < (width + 1) / 2; x++) {
-      u[y * ((pitch + 1) / 2) + x] = uv[y * pitch + x * 2];
-      ptr[y * ((width + 1) / 2) + x] = uv[y * pitch + x * 2 + 1];
-    }
-  }
-  if (pitch == width) {
-    memcpy(v, ptr, sizePlaneV * sizeof(uint8_t));
-  } else {
-    for (int i = 0; i < (height + 1) / 2; i++) {
-      memcpy(
-          v + ((pitch + 1) / 2) * i,
-          ptr + ((width + 1) / 2) * i,
-          ((width + 1) / 2) * sizeof(uint8_t));
-    }
-  }
-  delete[] ptr;
-  return frameTensor;
+c10::Dict<std::string, c10::Dict<std::string, double>> GPUDecoder::
+    get_metadata() const {
+  c10::Dict<std::string, c10::Dict<std::string, double>> metadata;
+  c10::Dict<std::string, double> video_metadata;
+  video_metadata.insert("duration", demuxer.get_duration());
+  video_metadata.insert("fps", demuxer.get_fps());
+  metadata.insert("video", video_metadata);
+  return metadata;
 }
 
 TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
       .def(torch::init<std::string, int64_t>())
-      .def("next", &GPUDecoder::decode)
-      .def("reformat", &GPUDecoder::nv12_to_yuv420);
+      .def("seek", &GPUDecoder::seek)
+      .def("get_metadata", &GPUDecoder::get_metadata)
+      .def("next", &GPUDecoder::decode);
 }

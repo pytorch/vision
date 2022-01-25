@@ -31,6 +31,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
+from torchvision.prototype.features import Feature
 
 
 class SBD(Dataset):
@@ -83,11 +84,11 @@ class SBD(Dataset):
 
         # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
         boundaries = (
-            torch.as_tensor(np.stack([raw_boundary[0].toarray() for raw_boundary in raw_boundaries]))
+            Feature(np.stack([raw_boundary[0].toarray() for raw_boundary in raw_boundaries]))
             if decode_boundaries
             else None
         )
-        segmentation = torch.as_tensor(raw_segmentation) if decode_segmentation else None
+        segmentation = Feature(raw_segmentation) if decode_segmentation else None
 
         return boundaries, segmentation
 
@@ -140,6 +141,7 @@ class SBD(Dataset):
 
         if config.split == "train_noval":
             split_dp = extra_split_dp
+        split_dp = Filter(split_dp, path_comparator("stem", config.split))
         split_dp = LineReader(split_dp, decode=True)
         split_dp = hint_sharding(split_dp)
         split_dp = hint_shuffling(split_dp)

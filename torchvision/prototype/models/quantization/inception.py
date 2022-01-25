@@ -23,7 +23,7 @@ __all__ = [
 
 
 class Inception_V3_QuantizedWeights(WeightsEnum):
-    ImageNet1K_FBGEMM_V1 = Weights(
+    IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
         transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
         meta={
@@ -32,25 +32,26 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
             "publication_year": 2015,
             "num_params": 27161264,
             "size": (299, 299),
+            "min_size": (75, 75),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
             "quantization": "ptq",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
-            "unquantized": Inception_V3_Weights.ImageNet1K_V1,
+            "unquantized": Inception_V3_Weights.IMAGENET1K_V1,
             "acc@1": 77.176,
             "acc@5": 93.354,
         },
     )
-    default = ImageNet1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: Inception_V3_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        lambda kwargs: Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1
         if kwargs.get("quantize", False)
-        else Inception_V3_Weights.ImageNet1K_V1,
+        else Inception_V3_Weights.IMAGENET1K_V1,
     )
 )
 def inception_v3(

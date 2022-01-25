@@ -25,34 +25,36 @@ _COMMON_META = {
 
 
 class SqueezeNet1_0_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "min_size": (21, 21),
             "num_params": 1248424,
             "acc@1": 58.092,
             "acc@5": 80.420,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class SqueezeNet1_1_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "min_size": (17, 17),
             "num_params": 1235496,
             "acc@1": 58.178,
             "acc@5": 80.624,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", SqueezeNet1_0_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", SqueezeNet1_0_Weights.IMAGENET1K_V1))
 def squeezenet1_0(
     *, weights: Optional[SqueezeNet1_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> SqueezeNet:
@@ -69,7 +71,7 @@ def squeezenet1_0(
     return model
 
 
-@handle_legacy_interface(weights=("pretrained", SqueezeNet1_1_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", SqueezeNet1_1_Weights.IMAGENET1K_V1))
 def squeezenet1_1(
     *, weights: Optional[SqueezeNet1_1_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> SqueezeNet:
