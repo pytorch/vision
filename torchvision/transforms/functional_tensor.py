@@ -1013,8 +1013,6 @@ def elastic_transform(
         torch.manual_seed(random_state)
 
     if displacement is not None:
-        if alpha is not None or sigma is not None:
-            raise ValueError("alpha and sigma must be None if displacement is given or vice versa")
         displacement = displacement.to(img.device)
     elif alpha is not None and sigma is not None:
         dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1

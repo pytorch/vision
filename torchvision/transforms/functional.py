@@ -1517,8 +1517,8 @@ def elastic_transform(
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
-        displacement (numpy array or Tensor): The displacement field. If not given, it will be generated based on
-            alpha and sigma.
+        displacement (Tensor): The displacement field. If provided then ``alpha`` and ``sigma` should be ``None``.
+            If not given, it will be generated based on ``alpha`` and ``sigma``.
         random_state (int): If random_state is provided, it will be used as the random seed.
     """
     # Backward compatibility with integer value
@@ -1539,19 +1539,17 @@ def elastic_transform(
     if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
         sigma = [sigma[0], sigma[0]]
 
+    if displacement is not None:
+        if alpha is not None or sigma is not None:
+            raise ValueError("alpha and sigma must be None if displacement is given and vice versa")
+        if not isinstance(displacement, torch.Tensor):
+            raise TypeError("displacement should be a Tensor")
+
     t_img = img
-    if not isinstance(img, torch.Tensor) and not isinstance(displacement, torch.Tensor):
+    if not isinstance(img, torch.Tensor):
         if not F_pil._is_pil_image(img):
             raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
-        if not _is_numpy(displacement):
-            raise TypeError(f"displacement should be ndarray or Tensor. Got {type(displacement)}")
         t_img = to_tensor(img)
-        displacement = torch.from_numpy(displacement)
-    elif not isinstance(img, torch.Tensor) or not isinstance(displacement, torch.Tensor):
-        raise TypeError(
-            "displacement and img must be either of type ndarray and Pil Image or both of type Tensor. "
-            + f"Got img {type(img)} and displacement {type(displacement)}."
-        )
 
     output = F_t.elastic_transform(
         t_img,
