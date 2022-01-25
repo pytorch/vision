@@ -3,8 +3,7 @@ import copy
 import pytest
 import torch
 from common_utils import assert_equal
-from torchvision.models.detection import _utils
-from torchvision.models.detection import backbone_utils
+from torchvision.models.detection import _utils, backbone_utils
 from torchvision.models.detection.transform import GeneralizedRCNNTransform
 
 
