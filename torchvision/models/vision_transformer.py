@@ -181,9 +181,9 @@ class VisionTransformer(nn.Module):
                 "conv_last", nn.Conv2d(in_channels=prev_channels, out_channels=hidden_dim, kernel_size=1)
             )
         else:
-            self.conv_proj = nn.Conv2d(
+            self.conv_proj = nn.Conv2d(  # type: ignore
                 in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size
-            )  # type: ignore
+            )
 
         seq_length = (image_size // patch_size) ** 2
 
