@@ -26,7 +26,7 @@ def test_resnet_fpn_backbone(backbone_name):
         resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False, trainable_layers=6)
     with pytest.raises(ValueError, "Each returned layer must be in the range [1,4]. Got 0"):
         resnet_fpn_backbone(backbone_name, False, returned_layers=[0, 1, 2, 3])
-    with pytest.raises(ValueError, "Each returned layer must be in the range [1,4]. Got 6"):
+    with pytest.raises(ValueError, "Each returned layer must be in the range [1,4]. Got 5"):
         resnet_fpn_backbone(backbone_name, False, returned_layers=[2, 3, 4, 5])
 
 
