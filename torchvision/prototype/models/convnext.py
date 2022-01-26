@@ -222,6 +222,7 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/convnext_tiny-47b116bd.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=236),
         meta={
+            **_COMMON_META,
             "num_params": 28589128,
             "acc@1": 82.520,
             "acc@5": 96.146,
@@ -235,6 +236,7 @@ class ConvNeXt_Small_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/convnext_small-9aa23d28.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=230),
         meta={
+            **_COMMON_META,
             "num_params": 28589128,
             "acc@1": 83.616,
             "acc@5": 96.650,
