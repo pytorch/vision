@@ -255,7 +255,7 @@ class DefaultBoxGenerator(nn.Module):
         default_boxes = default_boxes.to(device)
 
         dboxes = []
-        x_y_size = torch.tensor([image_size[1], image_size[0]]).to(default_boxes.device)
+        x_y_size = torch.tensor([image_size[1], image_size[0]], device=default_boxes.device)
         for _ in image_list.image_sizes:
             dboxes_in_image = default_boxes
             dboxes_in_image = torch.cat(
