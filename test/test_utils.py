@@ -317,6 +317,17 @@ def test_draw_keypoints_errors():
         utils.draw_keypoints(image=img, keypoints=invalid_keypoints)
 
 
+def test_flow_to_image():
+    h, w = 100, 100
+    flow = torch.meshgrid(torch.arange(h), torch.arange(w), indexing="ij")
+    flow = torch.stack(flow[::-1], dim=0).float()
+    flow[0] -= h / 2
+    flow[1] -= w / 2
+    img = utils.flow_to_image(flow)
+    expected_img = torch.load("assets/expected_flow.pt", map_location="cpu")
+    assert_equal(expected_img, img)
+
+
 def test_flow_to_image_errors():
     wrong_flow1 = torch.full((3, 10, 10), 0, dtype=torch.float)
     wrong_flow2 = torch.full((2, 10), 0, dtype=torch.float)

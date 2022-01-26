@@ -445,9 +445,9 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
         tmp = colorwheel[:, i]
         col0 = tmp[k0] / 255.0
         col1 = tmp[k1] / 255.0
-        col = 1 - norm * (1 - col0 + f * (col0 - col1))
-        ch_idx = i
-        flow_image[ch_idx, :, :] = torch.floor(255 * col)
+        col = (1 - f) * col0 + f * col1
+        col = 1 - norm * (1 - col)
+        flow_image[i, :, :] = torch.floor(255 * col)
     return flow_image
 
 
