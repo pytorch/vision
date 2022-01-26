@@ -65,7 +65,7 @@ class TestVideoApi:
 
                     assert float(av_frame.pts * av_frame.time_base) == approx(vr_frame["pts"], abs=0.1)
 
-                    av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1)
+                    av_array = torch.tensor(av_frame.to_rgb(src_colorspace="ITU709").to_ndarray()).permute(2, 0, 1)
                     vr_array = vr_frame["data"]
                     mean_delta = torch.mean(torch.abs(av_array.float() - vr_array.float()))
                     # on average the difference is very small and caused
