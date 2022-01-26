@@ -205,29 +205,42 @@ def _convnext(
     return model
 
 
+_COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ConvNeXt",
+    "publication_year": 2022,
+    "size": (224, 224),
+    "min_size": (32, 32),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+    "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#convnext",
+}
+
+
 class ConvNeXt_Tiny_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/convnext_tiny-47b116bd.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=236),
         meta={
-            "task": "image_classification",
-            "architecture": "ConvNeXt",
-            "publication_year": 2022,
             "num_params": 28589128,
-            "size": (224, 224),
-            "min_size": (32, 32),
-            "categories": _IMAGENET_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#convnext",
             "acc@1": 82.520,
             "acc@5": 96.146,
         },
     )
     DEFAULT = IMAGENET1K_V1
 
-    
+
 class ConvNeXt_Small_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/convnext_small-9aa23d28.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=230),
+        meta={
+            "num_params": 28589128,
+            "acc@1": 83.616,
+            "acc@5": 96.650,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class ConvNeXt_Base_Weights(WeightsEnum):
@@ -259,7 +272,7 @@ def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: 
     return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ConvNeXt_Small_Weights.IMAGENET1K_V1))
 def convnext_small(
     *, weights: Optional[ConvNeXt_Small_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ConvNeXt:
