@@ -3,7 +3,6 @@
 #include "util.h"
 
 // www.ffmpeg.org/doxygen/0.5/swscale-example_8c-source.html
-
 namespace ffmpeg {
 
 namespace {
@@ -65,6 +64,48 @@ int transformImage(
   if ((result = preparePlanes(outFormat, out, planes, lines)) < 0) {
     return result;
   }
+
+  // Here we're changing colourspace in order to maintain consistency with the
+  // GPU decoder Since SWSContext cannot be edited directly, we're borrowing
+  // pyAV approach from:
+  // https://github.com/PyAV-Org/PyAV/blob/9ac05d9ac902d71ecb2fe80f04dcae454008378c/av/video/reformatter.pyx#L141
+  // very sory for this, found no cleaner way of doing it
+  const int* inv_tbl;
+  const int* tbl;
+  int src_range, dst_range, brightness, contrast, saturation;
+  int ret_get, ret_set;
+
+  if ((ret_get = sws_getColorspaceDetails(
+           context,
+           (int**)&inv_tbl,
+           &src_range,
+           (int**)&tbl,
+           &dst_range,
+           &brightness,
+           &contrast,
+           &saturation)) >= 0) {
+    LOG(INFO) << "Successfuly got the information about colourspace \n "
+              << "attempting to set a new one";
+
+    inv_tbl = sws_getCoefficients(SWS_CS_ITU709);
+
+    if ((ret_set = sws_setColorspaceDetails(
+             context,
+             inv_tbl,
+             src_range,
+             tbl,
+             dst_range,
+             brightness,
+             contrast,
+             saturation)) >= 0) {
+      LOG(INFO) << "Successfuly set new colourspace info";
+    } else {
+      LOG(ERROR) << "Failed to set new colourspace info";
+    }
+  } else {
+    LOG(ERROR) << "Failed to get new colourspace info";
+  }
+
   // NOTE: srcY stride always 0: this is a parameter of YUV format
   if ((result = sws_scale(
            context, srcSlice, srcStride, 0, inFormat.height, planes, lines)) <
