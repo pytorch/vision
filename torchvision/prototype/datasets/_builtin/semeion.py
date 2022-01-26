@@ -14,7 +14,7 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
-from torchvision.prototype.features import Image, Label
+from torchvision.prototype.features import Image, OneHotLabel
 
 
 class SEMEION(Dataset):
@@ -33,14 +33,11 @@ class SEMEION(Dataset):
         return [data]
 
     def _prepare_sample(self, data: Tuple[str, ...]) -> Dict[str, Any]:
-        image_data, label_data = data[:256], data[256:]
+        image_data, label_data = data[:256], data[256:-1]
 
         return dict(
             image=Image(torch.tensor([float(pixel) for pixel in image_data], dtype=torch.uint8).reshape(16, 16)),
-            label=Label(
-                next((idx for idx, one_hot_label in enumerate(label_data) if int(one_hot_label))),
-                categories=self.categories,
-            ),
+            label=OneHotLabel([int(label) for label in label_data], categories=self.categories),
         )
 
     def _make_datapipe(
