@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+d8d63bd ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+b78bb19 ) &#x25BC</a>
     </div>
     
 
@@ -321,11 +321,11 @@
 <span class="kn">import</span> <span class="nn">pathlib</span>
 <span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">types</span> <span class="kn">import</span> <span class="n">FunctionType</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">BinaryIO</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">BinaryIO</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">numpy</span> <span class="k">as</span> <span class="nn">np</span>
 <span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageDraw</span><span class="p">,</span> <span class="n">ImageFont</span><span class="p">,</span> <span class="n">ImageColor</span>
+<span class="kn">from</span> <span class="nn">PIL</span> <span class="kn">import</span> <span class="n">Image</span><span class="p">,</span> <span class="n">ImageColor</span><span class="p">,</span> <span class="n">ImageDraw</span><span class="p">,</span> <span class="n">ImageFont</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;make_grid&quot;</span><span class="p">,</span> <span class="s2">&quot;save_image&quot;</span><span class="p">,</span> <span class="s2">&quot;draw_bounding_boxes&quot;</span><span class="p">,</span> <span class="s2">&quot;draw_segmentation_masks&quot;</span><span class="p">,</span> <span class="s2">&quot;draw_keypoints&quot;</span><span class="p">]</span>
 
@@ -707,6 +707,23 @@
 
 
 <span class="k">def</span> <span class="nf">_log_api_usage_once</span><span class="p">(</span><span class="n">obj</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
+
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Logs API usage(module and name) within an organization.</span>
+<span class="sd">    In a large ecosystem, it&#39;s often useful to track the PyTorch and</span>
+<span class="sd">    TorchVision APIs usage. This API provides the similar functionality to the</span>
+<span class="sd">    logging module in the Python stdlib. It can be used for debugging purpose</span>
+<span class="sd">    to log which methods are used and by default it is inactive, unless the user</span>
+<span class="sd">    manually subscribes a logger via the `SetAPIUsageLogger method &lt;https://github.com/pytorch/pytorch/blob/eb3b9fe719b21fae13c7a7cf3253f970290a573e/c10/util/Logging.cpp#L114&gt;`_.</span>
+<span class="sd">    Please note it is triggered only once for the same API call within a process.</span>
+<span class="sd">    It does not collect any data from open-source users since it is no-op by default.</span>
+<span class="sd">    For more information, please refer to</span>
+<span class="sd">    * PyTorch note: https://pytorch.org/docs/stable/notes/large_scale_deployments.html#api-usage-logging;</span>
+<span class="sd">    * Logging policy: https://github.com/pytorch/vision/issues/5052;</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        obj (class instance or method): an object to extract info from.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
     <span class="k">if</span> <span class="ow">not</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__module__</span><span class="o">.</span><span class="n">startswith</span><span class="p">(</span><span class="s2">&quot;torchvision&quot;</span><span class="p">):</span>
         <span class="k">return</span>
     <span class="n">name</span> <span class="o">=</span> <span class="n">obj</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span>
