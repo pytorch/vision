@@ -2203,11 +2203,16 @@ def test_elastic_transformation():
     with pytest.raises(TypeError, match=r"fill should be int or float"):
         transforms.ElasticTransform(alpha=1.0, sigma=1.0, fill={})
 
-    x = np.zeros((100, 100, 3), dtype=np.uint8)
+    x = torch.randint(0, 256, (3, 32, 32), dtype=torch.uint8)
     img = F.to_pil_image(x)
     t = transforms.ElasticTransform(alpha=0.0, sigma=0.0)
     transformed_img = t(img)
     assert transformed_img == img
+
+    # Smoke test on PIL images
+    t = transforms.ElasticTransform(alpha=0.5, sigma=0.23)
+    transformed_img = t(img)
+    assert isinstance(transformed_img, Image.Image)
 
     # Checking if ElasticTransform can be printed as string
     t.__repr__()

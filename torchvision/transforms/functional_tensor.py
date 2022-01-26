@@ -1015,7 +1015,7 @@ def elastic_transform(
     if displacement is not None:
         displacement = displacement.to(img.device)
     elif alpha is not None and sigma is not None:
-        dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
+        dx = torch.empty([1, 1] + size, device=img.device).uniform_(-1, 1)
         if sigma[0] > 0.0:
             dx = gaussian_blur(
                 dx,
@@ -1023,8 +1023,8 @@ def elastic_transform(
                 sigma,
             )
         dx = dx * alpha[0] / size[0]
-        dy = torch.rand([1, 1] + size, device=img.device) * 2 - 1
 
+        dy = torch.empty([1, 1] + size, device=img.device).uniform_(-1, 1)
         if sigma[1] > 0.0:
             dy = gaussian_blur(
                 dy,

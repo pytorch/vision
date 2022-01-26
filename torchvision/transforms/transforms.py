@@ -2130,10 +2130,10 @@ class ElasticTransform(torch.nn.Module):
     def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
-            tensor (Tensor): Tensor image to be transformed.
+            img (PIL Image or Tensor): Image to be transformed.
 
         Returns:
-            Tensor: Transformed image.
+            PIL Image or Tensor: Transformed image.
         """
         return F.elastic_transform(tensor, self.alpha, self.sigma, self.interpolation, self.fill)
 
