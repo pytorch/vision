@@ -110,32 +110,6 @@ class CelebA(Dataset):
     def _filter_split(self, data: Tuple[str, Dict[str, str]], *, split: str) -> bool:
         return self._SPLIT_ID_TO_NAME[data[1]["split_id"]] == split
 
-    def _decode_anns(
-        self,
-        data: Tuple[
-            Tuple[str, Dict[str, str]],
-            Tuple[str, Dict[str, str]],
-            Tuple[str, Dict[str, str]],
-            Tuple[str, Dict[str, str]],
-        ],
-        *,
-        image_size: Tuple[int, int],
-    ) -> Dict[str, Any]:
-        (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = data
-        return dict(
-            identity=Label(int(identity["identity"])),
-            attributes={attr: value == "1" for attr, value in attributes.items()},
-            bounding_box=BoundingBox(
-                [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
-                format="xywh",
-                image_size=image_size,
-            ),
-            landmarks={
-                landmark: Feature((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
-                for landmark in {key[:-2] for key in landmarks.keys()}
-            },
-        )
-
     def _prepare_sample(
         self,
         data: Tuple[
@@ -153,11 +127,22 @@ class CelebA(Dataset):
         path, buffer = image_data
 
         image = EncodedImage.from_file(buffer)
+        (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = ann_data
 
         return dict(
-            self._decode_anns(ann_data, image_size=image.image_size),
             path=path,
             image=image,
+            identity=Label(int(identity["identity"])),
+            attributes={attr: value == "1" for attr, value in attributes.items()},
+            bounding_box=BoundingBox(
+                [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
+                format="xywh",
+                image_size=image.image_size,
+            ),
+            landmarks={
+                landmark: Feature((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
+                for landmark in {key[:-2] for key in landmarks.keys()}
+            },
         )
 
     def _make_datapipe(

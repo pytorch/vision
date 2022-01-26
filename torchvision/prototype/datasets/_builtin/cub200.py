@@ -149,7 +149,7 @@ class CUB200(Dataset):
         return dict(
             prepare_ann_fn(anns_data, image.image_size),
             image=image,
-            label=Label.from_category(pathlib.Path(path).parent.name.rsplit(".", 1)[1], categories=self.categories),
+            label=Label(int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]), categories=self.categories),
         )
 
     def _make_datapipe(

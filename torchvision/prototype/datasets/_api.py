@@ -55,6 +55,6 @@ def load(
     dataset = find(name)
 
     config = dataset.info.make_config(**options)
-
     root = os.path.join(home(), dataset.name)
+
     return dataset.load(root, config=config, skip_integrity_check=skip_integrity_check)

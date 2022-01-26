@@ -76,15 +76,6 @@ class Caltech101(Dataset):
 
         return category, id
 
-    def _decode_ann(self, data: BinaryIO, image_size: Tuple[int, int]) -> Dict[str, Any]:
-        ann = read_mat(data)
-        return dict(
-            bounding_box=BoundingBox(
-                ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy", image_size=image_size
-            ),
-            contour=Feature(ann["obj_contour"].T),
-        )
-
     def _prepare_sample(
         self, data: Tuple[Tuple[str, str], Tuple[Tuple[str, BinaryIO], Tuple[str, BinaryIO]]]
     ) -> Dict[str, Any]:
@@ -94,13 +85,17 @@ class Caltech101(Dataset):
         ann_path, ann_buffer = ann_data
 
         image = EncodedImage.from_file(image_buffer)
+        ann = read_mat(ann_buffer)
 
         return dict(
-            self._decode_ann(ann_buffer, image_size=image.image_size),
             label=Label.from_category(category, categories=self.categories),
             image_path=image_path,
             image=image,
             ann_path=ann_path,
+            bounding_box=BoundingBox(
+                ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy", image_size=image.image_size
+            ),
+            contour=Feature(ann["obj_contour"].T),
         )
 
     def _make_datapipe(

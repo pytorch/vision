@@ -45,6 +45,13 @@ class ImageNet(Dataset):
             extra=dict(
                 wnid_to_category=FrozenMapping(zip(wnids, categories)),
                 category_to_wnid=FrozenMapping(zip(categories, wnids)),
+                sizes=FrozenMapping(
+                    [
+                        (DatasetConfig(split="train"), 1_281_167),
+                        (DatasetConfig(split="val"), 50_000),
+                        (DatasetConfig(split="test"), 100_000),
+                    ]
+                ),
             ),
         )
 

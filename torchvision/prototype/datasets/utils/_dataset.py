@@ -144,10 +144,6 @@ class Dataset(abc.ABC):
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         pass
 
-    # @abc.abstractmethod
-    def num_samples(self, config: DatasetConfig) -> int:
-        pass
-
     @abc.abstractmethod
     def _make_datapipe(
         self,
@@ -179,7 +175,6 @@ class Dataset(abc.ABC):
         resource_dps = [
             resource.load(root, skip_integrity_check=skip_integrity_check) for resource in self.resources(config)
         ]
-
         return self._make_datapipe(resource_dps, config=config)
 
     def _generate_categories(self, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:

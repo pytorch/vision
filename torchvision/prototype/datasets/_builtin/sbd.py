@@ -68,25 +68,21 @@ class SBD(Dataset):
         else:
             return None
 
-    def _decode_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
-        raw_anns = read_mat(buffer)["GTcls"][0]
-        return dict(
-            # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
-            boundaries=Feature(np.stack([raw_boundary[0].toarray() for raw_boundary in raw_anns["Boundaries"][0]])),
-            segmentation=Feature(raw_anns["Segmentation"][0]),
-        )
-
     def _prepare_sample(self, data: Tuple[Tuple[Any, Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
+        anns = read_mat(ann_buffer, squeeze_me=True)["GTcls"]
+
         return dict(
-            self._decode_ann(ann_buffer),
             image_path=image_path,
             image=EncodedImage.from_file(image_buffer),
             ann_path=ann_path,
+            # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
+            boundaries=Feature(np.stack([raw_boundary.toarray() for raw_boundary in anns["Boundaries"].item()])),
+            segmentation=Feature(anns["Segmentation"].item()),
         )
 
     def _make_datapipe(
