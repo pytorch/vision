@@ -178,7 +178,7 @@ class ConvNeXt(nn.Module):
 
 
 class ConvNeXt_Tiny_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/convnext_tiny-47b116bd.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=236),
         meta={
@@ -195,10 +195,10 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
             "acc@5": 96.146,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", ConvNeXt_Tiny_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", ConvNeXt_Tiny_Weights.IMAGENET1K_V1))
 def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     r"""ConvNeXt model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
