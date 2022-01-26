@@ -237,7 +237,7 @@ class ConvNeXt_Small_Weights(WeightsEnum):
         transforms=partial(ImageNetEval, crop_size=224, resize_size=230),
         meta={
             **_COMMON_META,
-            "num_params": 28589128,
+            "num_params": 50223688,
             "acc@1": 83.616,
             "acc@5": 96.650,
         },
