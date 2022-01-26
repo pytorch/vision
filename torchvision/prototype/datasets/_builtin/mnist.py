@@ -26,11 +26,11 @@ from torchvision.prototype.datasets.utils._internal import (
     image_buffer_from_array,
     Decompressor,
     INFINITE_BUFFER_SIZE,
-    fromfile,
     hint_sharding,
     hint_shuffling,
 )
 from torchvision.prototype.features import Image, Label
+from torchvision.prototype.utils._internal import fromfile
 
 __all__ = ["MNIST", "FashionMNIST", "KMNIST", "EMNIST", "QMNIST"]
 
