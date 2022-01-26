@@ -7,9 +7,8 @@ import torch
 from common_utils import set_rng_seed
 from torchvision import models
 from torchvision.models._utils import IntermediateLayerGetter
-from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-from torchvision.models.feature_extraction import create_feature_extractor
-from torchvision.models.feature_extraction import get_graph_node_names
+from torchvision.models.detection.backbone_utils import mobilenet_backbone, resnet_fpn_backbone
+from torchvision.models.feature_extraction import create_feature_extractor, get_graph_node_names
 
 
 def get_available_models():
@@ -22,6 +21,23 @@ def test_resnet_fpn_backbone(backbone_name):
     x = torch.rand(1, 3, 300, 300, dtype=torch.float32, device="cpu")
     y = resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False)(x)
     assert list(y.keys()) == ["0", "1", "2", "3", "pool"]
+
+    with pytest.raises(ValueError, match=r"Trainable layers should be in the range"):
+        resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False, trainable_layers=6)
+    with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
+        resnet_fpn_backbone(backbone_name, False, returned_layers=[0, 1, 2, 3])
+    with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
+        resnet_fpn_backbone(backbone_name, False, returned_layers=[2, 3, 4, 5])
+
+
+@pytest.mark.parametrize("backbone_name", ("mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"))
+def test_mobilenet_backbone(backbone_name):
+    with pytest.raises(ValueError, match=r"Trainable layers should be in the range"):
+        mobilenet_backbone(backbone_name=backbone_name, pretrained=False, fpn=False, trainable_layers=-1)
+    with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
+        mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[-1, 0, 1, 2])
+    with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
+        mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[3, 4, 5, 6])
 
 
 # Needed by TestFxFeatureExtraction.test_leaf_module_and_function
