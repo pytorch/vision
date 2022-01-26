@@ -189,7 +189,7 @@ class RandomZoomOut(nn.Module):
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
-        if torch.rand(1) < self.p:
+        if torch.rand(1) >= self.p:
             return image, target
 
         orig_w, orig_h = F.get_image_size(image)
@@ -211,6 +211,7 @@ class RandomZoomOut(nn.Module):
 
         image = F.pad(image, [left, top, right, bottom], fill=fill)
         if isinstance(image, torch.Tensor):
+            # PyTorch's pad supports only integers on fill. So we need to overwrite the colour
             v = torch.tensor(self.fill, device=image.device, dtype=image.dtype).view(-1, 1, 1)
             image[..., :top, :] = image[..., :, :left] = image[..., (top + orig_h) :, :] = image[
                 ..., :, (left + orig_w) :
