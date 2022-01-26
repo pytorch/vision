@@ -24,7 +24,6 @@ from torchvision.datasets.utils import (
 )
 
 
-## We don't seem to use extract, preprocess, or loader params. Maybe we can remove them for now?
 class OnlineResource(abc.ABC):
     def __init__(
         self,
@@ -32,24 +31,19 @@ class OnlineResource(abc.ABC):
         file_name: str,
         sha256: Optional[str] = None,
         decompress: bool = False,
-        extract: bool = False,  ## Do we ever want to decompress without extracting?
-        preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]] = None,
-        loader: Optional[Callable[[pathlib.Path], IterDataPipe[Tuple[str, IO]]]] = None,
+        extract: bool = False,
     ) -> None:
         self.file_name = file_name
         self.sha256 = sha256
 
-        if preprocess and (decompress or extract):
-            warnings.warn("The parameters 'decompress' and 'extract' are ignored when 'preprocess' is passed.")
-        elif extract:
-            preprocess = self._extract
+        if extract:
+            self._preprocess = self._extract
         elif decompress:
-            preprocess = self._decompress
-        self._preprocess = preprocess
+            self._preprocess = self._decompress
+        else:
+            self._preprocess = None
 
-        if loader is None:
-            loader = self._default_loader
-        self._loader = loader
+        self._loader = self._default_loader
 
     @staticmethod
     def _extract(file: pathlib.Path) -> pathlib.Path:
@@ -73,7 +67,6 @@ class OnlineResource(abc.ABC):
 
         return dp
 
-    ## Overall, what's the plan regarding allowing user to impelment their own datasets (and their own loaders etc?)
     _ARCHIVE_LOADERS = {
         ".tar": TarArchiveReader,
         ".zip": ZipArchiveReader,
@@ -85,8 +78,6 @@ class OnlineResource(abc.ABC):
     ) -> Optional[Callable[[IterDataPipe[Tuple[str, IO]]], IterDataPipe[Tuple[str, IO]]]]:
         try:
             _, archive_type, _ = _detect_file_type(path.name)
-        ## Unrelated but it looks like it could be a ValueError. Or instead of
-        ## raising, _detect_file_type could just return an empty tuple or None?
         except RuntimeError:
             return None
         return self._ARCHIVE_LOADERS.get(archive_type)  # type: ignore[arg-type]
@@ -105,12 +96,11 @@ class OnlineResource(abc.ABC):
             path_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
         # If the only thing we find is the raw file, we use it and optionally perform some preprocessing steps.
         if path_candidates == {path}:
-            if self._preprocess:
+            if self._preprocess is not None:
                 path = self._preprocess(path)
         # Otherwise we use the path with the fewest suffixes. This gives us the extracted > decompressed > raw priority
         # that we want.
         else:
-            ## Are there current examples where we reach this line?
             path = min(path_candidates, key=lambda path: len(path.suffixes))
         return self._loader(path)
 

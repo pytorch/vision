@@ -12,8 +12,6 @@ from torchvision.prototype.datasets.decoder import pil
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, hint_sharding
 
 
-## We don't seem to use these anywhere for now.
-## If we keep them, should we add tests?
 __all__ = ["from_data_folder", "from_image_folder"]
 
 
@@ -54,7 +52,7 @@ def from_data_folder(
     dp = FileLister(str(root), recursive=recursive, masks=masks)
     dp: IterDataPipe = Filter(dp, functools.partial(_is_not_top_level_file, root=root))
     dp = hint_sharding(dp)
-    dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)  ## Should this be hint_shuffling() ?
+    dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
     dp = FileOpener(dp, mode="rb")
     return (
         Mapper(dp, functools.partial(_collate_and_decode_data, root=root, categories=categories, decoder=decoder)),
