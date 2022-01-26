@@ -43,8 +43,6 @@ class OnlineResource(abc.ABC):
         else:
             self._preprocess = None
 
-        self._loader = self._default_loader
-
     @staticmethod
     def _extract(file: pathlib.Path) -> pathlib.Path:
         return pathlib.Path(
@@ -55,7 +53,7 @@ class OnlineResource(abc.ABC):
     def _decompress(file: pathlib.Path) -> pathlib.Path:
         return pathlib.Path(_decompress(str(file), remove_finished=True))
 
-    def _default_loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
+    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
             return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
