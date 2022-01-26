@@ -210,14 +210,13 @@ class SharderDataPipe(torch.utils.data.datapipes.iter.grouping.ShardingFilterIte
 
 
 class TakerDataPipe(IterDataPipe):
-    def __init__(self, datapipe: IterDataPipe, num_take: Optional[int] = None) -> None:
+    def __init__(self, source_datapipe: IterDataPipe, num_take: int) -> None:
         super().__init__()
-        self.source_datapipe = datapipe
-        try:
-            self.num_take = num_take or len(datapipe)
-        except Exception as error:
-            raise ValueError("foo") from error
-        self.world_size = cast(int, dist.get_world_size()) if dist.is_available() and dist.is_initialized() else 1
+        self.source_datapipe = source_datapipe
+        self.num_take = num_take
+        self.world_size = 1
+        if dist.is_available() and dist.is_initialized():
+            self.world_size = dist.get_world_size()
 
     def __iter__(self) -> Iterator[Any]:
         num_workers = self.world_size

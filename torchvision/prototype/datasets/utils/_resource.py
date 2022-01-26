@@ -51,18 +51,14 @@ class OnlineResource(abc.ABC):
         self._loader = loader
 
     @staticmethod
-    def _extract(file: pathlib.Path, *, remove_finished: bool = False) -> pathlib.Path:
+    def _extract(file: pathlib.Path) -> pathlib.Path:
         return pathlib.Path(
-            extract_archive(
-                str(file),
-                to_path=str(file).replace("".join(file.suffixes), ""),
-                remove_finished=remove_finished,
-            )
+            extract_archive(str(file), to_path=str(file).replace("".join(file.suffixes), ""), remove_finished=False)
         )
 
     @staticmethod
-    def _decompress(file: pathlib.Path, *, remove_finished: bool = False) -> pathlib.Path:
-        return pathlib.Path(_decompress(str(file), remove_finished=remove_finished))
+    def _decompress(file: pathlib.Path) -> pathlib.Path:
+        return pathlib.Path(_decompress(str(file), remove_finished=True))
 
     def _default_loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
