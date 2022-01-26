@@ -31,6 +31,8 @@ class ConvStemConfig(NamedTuple):
     kernel_size: int
     stride: int
     padding: int
+    norm_layer: nn.Module = nn.BatchNorm2d
+    activation_layer: nn.Module = nn.ReLU
     bias: bool = False
 
 
@@ -143,7 +145,7 @@ class VisionTransformer(nn.Module):
         num_classes: int = 1000,
         representation_size: Optional[int] = None,
         norm_layer: Callable[..., torch.nn.Module] = partial(nn.LayerNorm, eps=1e-6),
-        conv_stem_layers: Optional[List[ConvStemConfig]] = None,
+        conv_stem_configs: Optional[List[ConvStemConfig]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -158,32 +160,31 @@ class VisionTransformer(nn.Module):
         self.representation_size = representation_size
         self.norm_layer = norm_layer
 
-        if conv_stem_layers is not None:
+        if conv_stem_configs is not None:
             # As per https://arxiv.org/abs/2106.14881
-            self.conv_proj = nn.Sequential()
+            conv_proj = nn.Sequential()
             prev_channels = 3
-            for i, conv_stem_layer in enumerate(conv_stem_layers):
-                self.conv_proj.add_module(
+            for i, conv_stem_layer_config in enumerate(conv_stem_configs):
+                conv_proj.add_module(
                     f"conv_bn_relu_{i}",
                     ConvNormActivation(
                         in_channels=prev_channels,
-                        out_channels=conv_stem_layer.out_channels,
-                        kernel_size=conv_stem_layer.kernel_size,
-                        stride=conv_stem_layer.stride,
-                        padding=conv_stem_layer.padding,
-                        norm_layer=nn.BatchNorm2d,
-                        activation_layer=nn.ReLU,
-                        bias=conv_stem_layer.bias,
+                        out_channels=conv_stem_layer_config.out_channels,
+                        kernel_size=conv_stem_layer_config.kernel_size,
+                        stride=conv_stem_layer_config.stride,
+                        padding=conv_stem_layer_config.padding,
+                        norm_layer=conv_stem_layer_config.norm_layer,
+                        activation_layer=conv_stem_layer_config.activation_layer,
+                        bias=conv_stem_layer_config.bias,
                     ),
                 )
-                prev_channels = conv_stem_layer.out_channels
-            self.conv_proj.add_module(
+                prev_channels = conv_stem_layer_config.out_channels
+            conv_proj.add_module(
                 "conv_last", nn.Conv2d(in_channels=prev_channels, out_channels=hidden_dim, kernel_size=1)
             )
         else:
-            self.conv_proj = nn.Conv2d(  # type: ignore
-                in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size
-            )
+            conv_proj = nn.Conv2d(in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size)
+        self.conv_proj: nn.Module = conv_proj
 
         seq_length = (image_size // patch_size) ** 2
 

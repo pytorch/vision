@@ -8,6 +8,7 @@ import traceback
 import warnings
 from collections import OrderedDict
 from tempfile import TemporaryDirectory
+from typing import Any
 
 import pytest
 import torch
@@ -27,6 +28,47 @@ def get_models_from_module(module):
         for k, v in module.__dict__.items()
         if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
     ]
+
+
+test_vit_conv_stem_configs = [
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=64, padding=1),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=128, padding=1),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=1, out_channels=128, padding=1),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=256, padding=1),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=1, out_channels=256, padding=1),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=512, padding=1),
+]
+
+
+def vitc_b_16(**kwargs: Any):
+    return models.VisionTransformer(
+        image_size=224,
+        patch_size=16,
+        num_layers=12,
+        num_heads=12,
+        hidden_dim=768,
+        mlp_dim=3072,
+        conv_stem_configs=test_vit_conv_stem_configs,
+        **kwargs,
+    )
+
+
+def vitc_l_16(**kwargs: Any):
+    return models.VisionTransformer(
+        image_size=224,
+        patch_size=16,
+        num_layers=24,
+        num_heads=16,
+        hidden_dim=1024,
+        mlp_dim=4096,
+        conv_stem_configs=test_vit_conv_stem_configs,
+        **kwargs,
+    )
+
+
+def get_models_from_builder():
+    # This function returns model builders created in this file
+    return [vitc_b_16, vitc_l_16]
 
 
 @pytest.fixture
@@ -514,7 +556,7 @@ def test_generalizedrcnn_transform_repr():
     assert t.__repr__() == expected_string
 
 
-@pytest.mark.parametrize("model_fn", get_models_from_module(models))
+@pytest.mark.parametrize("model_fn", get_models_from_module(models) + get_models_from_builder())
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_classification_model(model_fn, dev):
     set_rng_seed(0)
