@@ -1,6 +1,6 @@
 import functools
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, cast
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, cast, Callable
 from xml.etree import ElementTree
 
 from torchdata.datapipes.iter import (
@@ -98,7 +98,7 @@ class VOC(Dataset):
     def _parse_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
         return cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
 
-    def _decode_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
+    def _prepare_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
         anns = self._parse_detection_ann(buffer)
         instances = anns["object"]
         return dict(
@@ -115,11 +115,14 @@ class VOC(Dataset):
             ),
         )
 
+    def _prepare_segmentation_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
+        return dict(segmentation=EncodedImage.from_file(buffer))
+
     def _prepare_sample(
         self,
         data: Tuple[Tuple[Tuple[str, str], Tuple[str, BinaryIO]], Tuple[str, BinaryIO]],
         *,
-        config: DatasetConfig,
+        prepare_ann_fn: Callable[[BinaryIO], Dict[str, Any]],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
@@ -127,9 +130,7 @@ class VOC(Dataset):
         ann_path, ann_buffer = ann_data
 
         return dict(
-            self._decode_detection_ann(ann_buffer)
-            if config.task == "detection"
-            else dict(segmentation=EncodedImage.from_file(ann_buffer)),
+            prepare_ann_fn(ann_buffer),
             image_path=image_path,
             image=EncodedImage.from_file(image_buffer),
             ann_path=ann_path,
@@ -165,7 +166,15 @@ class VOC(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, functools.partial(self._prepare_sample, config=config))
+        return Mapper(
+            dp,
+            functools.partial(
+                self._prepare_sample,
+                prepare_ann_fn=self._prepare_detection_ann
+                if config.task == "detection"
+                else self._prepare_segmentation_ann,
+            ),
+        )
 
     def _filter_detection_anns(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
         return self._classify_archive(data, config=config) == 2
