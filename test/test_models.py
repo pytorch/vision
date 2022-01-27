@@ -53,22 +53,9 @@ def vitc_b_16(**kwargs: Any):
     )
 
 
-def vitc_l_16(**kwargs: Any):
-    return models.VisionTransformer(
-        image_size=224,
-        patch_size=16,
-        num_layers=24,
-        num_heads=16,
-        hidden_dim=1024,
-        mlp_dim=4096,
-        conv_stem_configs=test_vit_conv_stem_configs,
-        **kwargs,
-    )
-
-
 def get_models_from_builder():
     # This function returns model builders created in this file
-    return [vitc_b_16, vitc_l_16]
+    return [vitc_b_16]
 
 
 @pytest.fixture
