@@ -112,8 +112,8 @@ class PCAM(Dataset):
 
         images_dp, targets_dp = resource_dps
 
-        images_dp = H5Reader(images_dp, key="x")
-        targets_dp = H5Reader(targets_dp, key="y")
+        images_dp = PCAMH5Reader(images_dp, key="x")
+        targets_dp = PCAMH5Reader(targets_dp, key="y")
 
         dp = Zipper(images_dp, targets_dp)
         dp = hint_sharding(dp)
