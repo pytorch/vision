@@ -29,7 +29,7 @@ class PCAMH5Reader(IterDataPipe[Tuple[str, io.IOBase]]):
         self.key = key
 
     def __iter__(self) -> Iterator[Tuple[str, io.IOBase]]:
-        import h5py  # noqa
+        import h5py
 
         for _, handle in self.datapipe:
             with h5py.File(handle) as data:
