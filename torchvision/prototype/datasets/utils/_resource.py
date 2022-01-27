@@ -35,6 +35,7 @@ class OnlineResource(abc.ABC):
         self.file_name = file_name
         self.sha256 = sha256
 
+        self._preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]]
         if extract:
             self._preprocess = self._extract
         elif decompress:
