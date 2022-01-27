@@ -324,7 +324,8 @@ def test_flow_to_image():
     flow[0] -= h / 2
     flow[1] -= w / 2
     img = utils.flow_to_image(flow)
-    expected_img = torch.load("assets/expected_flow.pt", map_location="cpu")
+    path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "expected_flow.pt")
+    expected_img = torch.load(path, map_location="cpu")
     assert_equal(expected_img, img)
 
 
