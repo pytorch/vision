@@ -38,7 +38,7 @@ def find(name: str) -> Dataset:
                 word=name,
                 possibilities=DATASETS.keys(),
                 alternative_hint=lambda _: (
-                    "You can use torchvision.datasets.list() to get a list of all available datasets."
+                    "You can use torchvision.datasets.list_datasets() to get a list of all available datasets."
                 ),
             )
         ) from error
