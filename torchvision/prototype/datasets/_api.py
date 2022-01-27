@@ -23,7 +23,7 @@ for name, obj in _builtin.__dict__.items():
         register(obj())
 
 
-def list_names() -> List[str]:
+def list_datasets() -> List[str]:
     return sorted(DATASETS.keys())
 
 
