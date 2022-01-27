@@ -391,12 +391,10 @@ def draw_keypoints(
 
 # Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
 @torch.no_grad()
-def flow_to_image(
-    flow: torch.Tensor,
-) -> torch.Tensor:
+def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
 
     """
-    Converts a normalized flow to an RGB image.
+    Converts a flow to an RGB image.
 
     Args:
         flow (Tensor): Flow of shape (2, H, W) and dtype torch.float.
@@ -421,7 +419,7 @@ def flow_to_image(
 def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
 
     """
-    Applies the flow color wheel to (possibly clipped) flow components u and v.
+    Converts a normalized flow to an RGB image.
 
     Args:
         normalized_flow (torch.Tensor): Normalized flow tensor of shape (2, H, W)
@@ -441,13 +439,13 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
     k1[k1 == num_cols] = 0
     f = fk - k0
 
-    for i in range(colorwheel.shape[1]):
-        tmp = colorwheel[:, i]
+    for c in range(colorwheel.shape[1]):
+        tmp = colorwheel[:, c]
         col0 = tmp[k0] / 255.0
         col1 = tmp[k1] / 255.0
         col = (1 - f) * col0 + f * col1
         col = 1 - norm * (1 - col)
-        flow_image[i, :, :] = torch.floor(255 * col)
+        flow_image[c, :, :] = torch.floor(255 * col)
     return flow_image
 
 
