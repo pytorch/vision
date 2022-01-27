@@ -2,13 +2,20 @@ import math
 import pathlib
 import warnings
 from types import FunctionType
-from typing import Any, Union, Optional, List, Tuple, BinaryIO
+from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
-from PIL import Image, ImageDraw, ImageFont, ImageColor
+from PIL import Image, ImageColor, ImageDraw, ImageFont
 
-__all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks", "draw_keypoints"]
+__all__ = [
+    "make_grid",
+    "save_image",
+    "draw_bounding_boxes",
+    "draw_segmentation_masks",
+    "draw_keypoints",
+    "flow_to_image",
+]
 
 
 @torch.no_grad()
@@ -391,6 +398,113 @@ def draw_keypoints(
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
+# Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
+@torch.no_grad()
+def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
+
+    """
+    Converts a flow to an RGB image.
+
+    Args:
+        flow (Tensor): Flow of shape (2, H, W) and dtype torch.float.
+
+    Returns:
+        img (Tensor(3, H, W)): Image Tensor of dtype uint8 where each color corresponds to a given flow direction.
+    """
+
+    if flow.dtype != torch.float:
+        raise ValueError(f"Flow should be of dtype torch.float, got {flow.dtype}.")
+
+    if flow.ndim != 3 or flow.size(0) != 2:
+        raise ValueError(f"Input flow should have shape (2, H, W), got {flow.shape}.")
+
+    max_norm = torch.sum(flow ** 2, dim=0).sqrt().max()
+    epsilon = torch.finfo((flow).dtype).eps
+    normalized_flow = flow / (max_norm + epsilon)
+    return _normalized_flow_to_image(normalized_flow)
+
+
+@torch.no_grad()
+def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
+
+    """
+    Converts a normalized flow to an RGB image.
+
+    Args:
+        normalized_flow (torch.Tensor): Normalized flow tensor of shape (2, H, W)
+    Returns:
+       img (Tensor(3, H, W)): Flow visualization image of dtype uint8.
+    """
+
+    _, H, W = normalized_flow.shape
+    flow_image = torch.zeros((3, H, W), dtype=torch.uint8)
+    colorwheel = _make_colorwheel()  # shape [55x3]
+    num_cols = colorwheel.shape[0]
+    norm = torch.sum(normalized_flow ** 2, dim=0).sqrt()
+    a = torch.atan2(-normalized_flow[1], -normalized_flow[0]) / torch.pi
+    fk = (a + 1) / 2 * (num_cols - 1)
+    k0 = torch.floor(fk).to(torch.long)
+    k1 = k0 + 1
+    k1[k1 == num_cols] = 0
+    f = fk - k0
+
+    for c in range(colorwheel.shape[1]):
+        tmp = colorwheel[:, c]
+        col0 = tmp[k0] / 255.0
+        col1 = tmp[k1] / 255.0
+        col = (1 - f) * col0 + f * col1
+        col = 1 - norm * (1 - col)
+        flow_image[c, :, :] = torch.floor(255 * col)
+    return flow_image
+
+
+def _make_colorwheel() -> torch.Tensor:
+    """
+    Generates a color wheel for optical flow visualization as presented in:
+    Baker et al. "A Database and Evaluation Methodology for Optical Flow" (ICCV, 2007)
+    URL: http://vision.middlebury.edu/flow/flowEval-iccv07.pdf.
+
+    Returns:
+        colorwheel (Tensor[55, 3]): Colorwheel Tensor.
+    """
+
+    RY = 15
+    YG = 6
+    GC = 4
+    CB = 11
+    BM = 13
+    MR = 6
+
+    ncols = RY + YG + GC + CB + BM + MR
+    colorwheel = torch.zeros((ncols, 3))
+    col = 0
+
+    # RY
+    colorwheel[0:RY, 0] = 255
+    colorwheel[0:RY, 1] = torch.floor(255 * torch.arange(0, RY) / RY)
+    col = col + RY
+    # YG
+    colorwheel[col : col + YG, 0] = 255 - torch.floor(255 * torch.arange(0, YG) / YG)
+    colorwheel[col : col + YG, 1] = 255
+    col = col + YG
+    # GC
+    colorwheel[col : col + GC, 1] = 255
+    colorwheel[col : col + GC, 2] = torch.floor(255 * torch.arange(0, GC) / GC)
+    col = col + GC
+    # CB
+    colorwheel[col : col + CB, 1] = 255 - torch.floor(255 * torch.arange(CB) / CB)
+    colorwheel[col : col + CB, 2] = 255
+    col = col + CB
+    # BM
+    colorwheel[col : col + BM, 2] = 255
+    colorwheel[col : col + BM, 0] = torch.floor(255 * torch.arange(0, BM) / BM)
+    col = col + BM
+    # MR
+    colorwheel[col : col + MR, 2] = 255 - torch.floor(255 * torch.arange(MR) / MR)
+    colorwheel[col : col + MR, 0] = 255
+    return colorwheel
+
+
 def _generate_color_palette(num_masks: int, return_tensor: bool = True):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
     clrs = []
@@ -404,6 +518,23 @@ def _generate_color_palette(num_masks: int, return_tensor: bool = True):
 
 
 def _log_api_usage_once(obj: Any) -> None:
+
+    """
+    Logs API usage(module and name) within an organization.
+    In a large ecosystem, it's often useful to track the PyTorch and
+    TorchVision APIs usage. This API provides the similar functionality to the
+    logging module in the Python stdlib. It can be used for debugging purpose
+    to log which methods are used and by default it is inactive, unless the user
+    manually subscribes a logger via the `SetAPIUsageLogger method <https://github.com/pytorch/pytorch/blob/eb3b9fe719b21fae13c7a7cf3253f970290a573e/c10/util/Logging.cpp#L114>`_.
+    Please note it is triggered only once for the same API call within a process.
+    It does not collect any data from open-source users since it is no-op by default.
+    For more information, please refer to
+    * PyTorch note: https://pytorch.org/docs/stable/notes/large_scale_deployments.html#api-usage-logging;
+    * Logging policy: https://github.com/pytorch/vision/issues/5052;
+
+    Args:
+        obj (class instance or method): an object to extract info from.
+    """
     if not obj.__module__.startswith("torchvision"):
         return
     name = obj.__class__.__name__

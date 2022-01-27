@@ -365,7 +365,7 @@ def get_extensions():
         ffmpeg_include_dir = os.path.join(ffmpeg_root, "include")
         ffmpeg_library_dir = os.path.join(ffmpeg_root, "lib")
 
-        gcc = distutils.spawn.find_executable("gcc")
+        gcc = os.environ.get("CC", distutils.spawn.find_executable("gcc"))
         platform_tag = subprocess.run([gcc, "-print-multiarch"], stdout=subprocess.PIPE)
         platform_tag = platform_tag.stdout.strip().decode("utf-8")
 

@@ -115,7 +115,7 @@ class Raft_Large_Weights(WeightsEnum):
         },
     )
 
-    default = C_T_V2
+    DEFAULT = C_T_V2
 
 
 class Raft_Small_Weights(WeightsEnum):
@@ -148,7 +148,7 @@ class Raft_Small_Weights(WeightsEnum):
         },
     )
 
-    default = C_T_V2
+    DEFAULT = C_T_V2
 
 
 @handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_V2))
