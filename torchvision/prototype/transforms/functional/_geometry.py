@@ -9,7 +9,6 @@ from torchvision.transforms import (  # noqa: F401
 )
 
 from ._meta_conversion import convert_bounding_box_format
-from .utils import _from_legacy_kernel
 
 
 def horizontal_flip_image(image: torch.Tensor) -> torch.Tensor:
@@ -30,7 +29,7 @@ def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tupl
     )
 
 
-_resize_image = _from_legacy_kernel(_FT.resize)
+_resize_image = _FT.resize
 
 
 def resize_image(
@@ -79,10 +78,10 @@ def resize_bounding_box(
     )
 
 
-center_crop_image = _from_legacy_kernel(_F.center_crop)
+center_crop_image = _F.center_crop
 
-resized_crop_image = _from_legacy_kernel(_F.resized_crop)
+resized_crop_image = _F.resized_crop
 
-affine_image = _from_legacy_kernel(_F.affine)
+affine_image = _F.affine
 
-rotate_image = _from_legacy_kernel(_F.rotate)
+rotate_image = _F.rotate

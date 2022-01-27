@@ -3,9 +3,8 @@ from typing import Tuple
 import torch
 from torchvision.transforms import functional as _F
 
-from .utils import _from_legacy_kernel
 
-erase_image = _from_legacy_kernel(_F.erase)
+erase_image = _F.erase
 
 
 def _mixup(input: torch.Tensor, batch_dim: int, lam: float, inplace: bool) -> torch.Tensor:
