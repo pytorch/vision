@@ -3,6 +3,7 @@ from typing import Any, cast, Dict, Set, TypeVar
 import torch
 from torch._C import _TensorBase
 
+
 F = TypeVar("F", bound="Feature")
 
 
