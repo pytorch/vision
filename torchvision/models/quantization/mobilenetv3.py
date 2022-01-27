@@ -29,8 +29,7 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
         return self.skip_mul.mul(self._scale(input), input)
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
-        fuse_modules = _fuse_modules(is_qat, self.training)
-        fuse_modules(self, ["fc1", "activation"], inplace=True)
+        _fuse_modules(self, ["fc1", "activation"], is_qat, inplace=True)
 
     def _load_from_state_dict(
         self,
@@ -103,13 +102,12 @@ class QuantizableMobileNetV3(MobileNetV3):
         return x
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
-        fuse_modules = _fuse_modules(is_qat, self.training)
         for m in self.modules():
             if type(m) is ConvNormActivation:
                 modules_to_fuse = ["0", "1"]
                 if len(m) == 3 and type(m[2]) is nn.ReLU:
                     modules_to_fuse.append("2")
-                fuse_modules(m, modules_to_fuse, inplace=True)
+                _fuse_modules(m, modules_to_fuse, is_qat, inplace=True)
             elif type(m) is QuantizableSqueezeExcitation:
                 m.fuse_model(is_qat)
 
@@ -137,7 +135,7 @@ def _mobilenet_v3_model(
     if quantize:
         backend = "qnnpack"
 
-        model.fuse_model()
+        model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
 

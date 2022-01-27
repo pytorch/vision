@@ -29,10 +29,9 @@ class QuantizableInvertedResidual(InvertedResidual):
             return self.conv(x)
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
-        fuse_modules = _fuse_modules(is_qat, self.training)
         for idx in range(len(self.conv)):
             if type(self.conv[idx]) is nn.Conv2d:
-                fuse_modules(self.conv, [str(idx), str(idx + 1)], inplace=True)
+                _fuse_modules(self.conv, [str(idx), str(idx + 1)], is_qat, inplace=True)
 
 
 class QuantizableMobileNetV2(MobileNetV2):
@@ -54,10 +53,9 @@ class QuantizableMobileNetV2(MobileNetV2):
         return x
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
-        fuse_modules = _fuse_modules(is_qat, self.training)
         for m in self.modules():
             if type(m) is ConvNormActivation:
-                fuse_modules(m, ["0", "1", "2"], inplace=True)
+                _fuse_modules(m, ["0", "1", "2"], is_qat, inplace=True)
             if type(m) is QuantizableInvertedResidual:
                 m.fuse_model(is_qat)
 

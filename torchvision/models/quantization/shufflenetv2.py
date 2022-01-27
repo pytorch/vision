@@ -57,17 +57,17 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
         Model is modified in place.  Note that this operation does not change numerics
         and the model after modification is in floating point
         """
-        fuse_modules = _fuse_modules(is_qat, self.training)
         for name, m in self._modules.items():
             if name in ["conv1", "conv5"]:
-                fuse_modules(m, [["0", "1", "2"]], inplace=True)
+                _fuse_modules(m, [["0", "1", "2"]], is_qat, inplace=True)
         for m in self.modules():
             if type(m) is QuantizableInvertedResidual:
                 if len(m.branch1._modules.items()) > 0:
-                    fuse_modules(m.branch1, [["0", "1"], ["2", "3", "4"]], inplace=True)
-                fuse_modules(
+                    _fuse_modules(m.branch1, [["0", "1"], ["2", "3", "4"]], is_qat, inplace=True)
+                _fuse_modules(
                     m.branch2,
                     [["0", "1", "2"], ["3", "4"], ["5", "6", "7"]],
+                    is_qat,
                     inplace=True,
                 )
 

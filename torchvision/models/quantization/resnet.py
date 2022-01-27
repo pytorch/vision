@@ -41,10 +41,9 @@ class QuantizableBasicBlock(BasicBlock):
         return out
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
-        fuse_modules = _fuse_modules(is_qat, self.training)
-        fuse_modules(self, [["conv1", "bn1", "relu"], ["conv2", "bn2"]], inplace=True)
+        _fuse_modules(self, [["conv1", "bn1", "relu"], ["conv2", "bn2"]], is_qat, inplace=True)
         if self.downsample:
-            fuse_modules(self.downsample, ["0", "1"], inplace=True)
+            _fuse_modules(self.downsample, ["0", "1"], is_qat, inplace=True)
 
 
 class QuantizableBottleneck(Bottleneck):
@@ -73,10 +72,11 @@ class QuantizableBottleneck(Bottleneck):
         return out
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
-        fuse_modules = _fuse_modules(is_qat, self.training)
-        fuse_modules(self, [["conv1", "bn1", "relu1"], ["conv2", "bn2", "relu2"], ["conv3", "bn3"]], inplace=True)
+        _fuse_modules(
+            self, [["conv1", "bn1", "relu1"], ["conv2", "bn2", "relu2"], ["conv3", "bn3"]], is_qat, inplace=True
+        )
         if self.downsample:
-            fuse_modules(self.downsample, ["0", "1"], inplace=True)
+            _fuse_modules(self.downsample, ["0", "1"], is_qat, inplace=True)
 
 
 class QuantizableResNet(ResNet):
@@ -102,9 +102,7 @@ class QuantizableResNet(ResNet):
         Model is modified in place.  Note that this operation does not change numerics
         and the model after modification is in floating point
         """
-
-        fuse_modules = _fuse_modules(is_qat, self.training)
-        fuse_modules(self, ["conv1", "bn1", "relu"], inplace=True)
+        _fuse_modules(self, ["conv1", "bn1", "relu"], is_qat, inplace=True)
         for m in self.modules():
             if type(m) is QuantizableBottleneck or type(m) is QuantizableBasicBlock:
                 m.fuse_model(is_qat)

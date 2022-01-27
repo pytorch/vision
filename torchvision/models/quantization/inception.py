@@ -36,8 +36,7 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
         return x
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
-        fuse_modules = _fuse_modules(is_qat, self.training)
-        fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+        _fuse_modules(self, ["conv", "bn", "relu"], is_qat, inplace=True)
 
 
 class QuantizableInceptionA(inception_module.InceptionA):
