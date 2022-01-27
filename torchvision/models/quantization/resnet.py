@@ -1,13 +1,12 @@
-from typing import Any, Type, Union, List
+from typing import Any, Type, Union, List, Optional
 
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torch.ao.quantization import fuse_modules
 from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from .utils import _replace_relu, quantize_model
+from .utils import _fuse_modules, _replace_relu, quantize_model
 
 __all__ = ["QuantizableResNet", "resnet18", "resnet50", "resnext101_32x8d"]
 
@@ -41,10 +40,11 @@ class QuantizableBasicBlock(BasicBlock):
 
         return out
 
-    def fuse_model(self) -> None:
-        torch.ao.quantization.fuse_modules(self, [["conv1", "bn1", "relu"], ["conv2", "bn2"]], inplace=True)
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
+        fuse_modules = _fuse_modules(is_qat, self.training)
+        fuse_modules(self, [["conv1", "bn1", "relu"], ["conv2", "bn2"]], inplace=True)
         if self.downsample:
-            torch.ao.quantization.fuse_modules(self.downsample, ["0", "1"], inplace=True)
+            fuse_modules(self.downsample, ["0", "1"], inplace=True)
 
 
 class QuantizableBottleneck(Bottleneck):
@@ -72,10 +72,11 @@ class QuantizableBottleneck(Bottleneck):
 
         return out
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
+        fuse_modules = _fuse_modules(is_qat, self.training)
         fuse_modules(self, [["conv1", "bn1", "relu1"], ["conv2", "bn2", "relu2"], ["conv3", "bn3"]], inplace=True)
         if self.downsample:
-            torch.ao.quantization.fuse_modules(self.downsample, ["0", "1"], inplace=True)
+            fuse_modules(self.downsample, ["0", "1"], inplace=True)
 
 
 class QuantizableResNet(ResNet):
@@ -94,7 +95,7 @@ class QuantizableResNet(ResNet):
         x = self.dequant(x)
         return x
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         r"""Fuse conv/bn/relu modules in resnet models
 
         Fuse conv+bn+relu/ Conv+relu/conv+Bn modules to prepare for quantization.
@@ -102,10 +103,11 @@ class QuantizableResNet(ResNet):
         and the model after modification is in floating point
         """
 
+        fuse_modules = _fuse_modules(is_qat, self.training)
         fuse_modules(self, ["conv1", "bn1", "relu"], inplace=True)
         for m in self.modules():
             if type(m) is QuantizableBottleneck or type(m) is QuantizableBasicBlock:
-                m.fuse_model()
+                m.fuse_model(is_qat)
 
 
 def _resnet(

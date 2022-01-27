@@ -1,6 +1,8 @@
 import torch
 from torch import nn
 
+from typing import Optional
+
 
 def _replace_relu(module: nn.Module) -> None:
     reassign = {}
@@ -40,3 +42,9 @@ def quantize_model(model: nn.Module, backend: str) -> None:
     torch.ao.quantization.convert(model, inplace=True)
 
     return
+
+
+def _fuse_modules(is_qat: Optional[bool], training: bool):
+    if is_qat is None:
+        is_qat = training
+    return torch.ao.quantization.fuse_modules_qat if is_qat else torch.ao.quantization.fuse_modules

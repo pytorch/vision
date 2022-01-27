@@ -2,12 +2,12 @@ from typing import Any, List, Optional
 
 import torch
 from torch import nn, Tensor
-from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
+from torch.ao.quantization import QuantStub, DeQuantStub
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation, SqueezeExcitation
 from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, model_urls, _mobilenet_v3_conf
-from .utils import _replace_relu
+from .utils import _fuse_modules, _replace_relu
 
 
 __all__ = ["QuantizableMobileNetV3", "mobilenet_v3_large"]
@@ -28,7 +28,8 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
     def forward(self, input: Tensor) -> Tensor:
         return self.skip_mul.mul(self._scale(input), input)
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
+        fuse_modules = _fuse_modules(is_qat, self.training)
         fuse_modules(self, ["fc1", "activation"], inplace=True)
 
     def _load_from_state_dict(
@@ -101,7 +102,8 @@ class QuantizableMobileNetV3(MobileNetV3):
         x = self.dequant(x)
         return x
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
+        fuse_modules = _fuse_modules(is_qat, self.training)
         for m in self.modules():
             if type(m) is ConvNormActivation:
                 modules_to_fuse = ["0", "1"]
@@ -109,7 +111,7 @@ class QuantizableMobileNetV3(MobileNetV3):
                     modules_to_fuse.append("2")
                 fuse_modules(m, modules_to_fuse, inplace=True)
             elif type(m) is QuantizableSqueezeExcitation:
-                m.fuse_model()
+                m.fuse_model(is_qat)
 
 
 def _load_weights(arch: str, model: QuantizableMobileNetV3, model_url: Optional[str], progress: bool) -> None:
