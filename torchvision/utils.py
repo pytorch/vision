@@ -201,13 +201,19 @@ def draw_bounding_boxes(
 
     if labels:
         if len(labels) != boxes.size(0):
-            raise ValueError("Number of boxes and labels mismatch. Please specify labels for each box.")
+            raise ValueError(
+                f"Number of boxes ({boxes.size(0)}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
+            )
 
     # List of colors should have minimum colors.
     if colors:
         if isinstance(colors, list):
             if len(colors) < boxes.size(0):
-                raise ValueError("Number of colors should be greater or equal to the number of boxes.")
+                raise ValueError(
+                    f"Number of colors ({len(colors)}) are less than number of boxes ({boxes.size(0)}). Atleast supply colors for each box."
+                )
+        else:
+            colors = [colors] * boxes.size(0)
 
     # Handle Grayscale images
     if image.size(0) == 1:
@@ -228,11 +234,7 @@ def draw_bounding_boxes(
         colors = _generate_color_palette(len(img_boxes))
 
     for i, bbox in enumerate(img_boxes):
-        if isinstance(colors, list):
-            color = colors[i]
-        else:
-            color = colors
-
+        color = colors[i]
         if fill:
             if isinstance(color, str):
                 # This will automatically raise Error if rgb cannot be parsed.
@@ -505,16 +507,9 @@ def _make_colorwheel() -> torch.Tensor:
     return colorwheel
 
 
-def _generate_color_palette(num_masks: int, return_tensor: bool = True):
+def _generate_color_palette(num_objects: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-    clrs = []
-    for i in range(num_masks):
-        clr = (palette * i) % 255
-        if return_tensor:
-            clrs.append(tuple(clr))
-        else:
-            clrs.append(tuple((clr.tolist())))
-    return clrs
+    return [tuple((i * palette) % 255) for i in range(num_objects)]
 
 
 def _log_api_usage_once(obj: Any) -> None:

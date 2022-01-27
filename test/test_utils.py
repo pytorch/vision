@@ -162,9 +162,9 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_wrong2, boxes)
     with pytest.raises(ValueError, match="Only grayscale and RGB images are supported"):
         utils.draw_bounding_boxes(img_wrong2[0][:2], boxes)
-    with pytest.raises(ValueError, match="Number of boxes and labels mismatch."):
+    with pytest.raises(ValueError, match="Number of boxes"):
         utils.draw_bounding_boxes(img_correct, boxes, labels_wrong)
-    with pytest.raises(ValueError, match="Number of colors should be greater or equal to the number of boxes."):
+    with pytest.raises(ValueError, match="Number of colors"):
         utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
 
 
