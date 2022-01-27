@@ -53,6 +53,14 @@ class Image(Feature):
             tensor = tensor.unsqueeze(0)
         return tensor
 
+    @property
+    def image_size(self) -> Tuple[int, int]:
+        return cast(Tuple[int, int], self.shape[-2:])
+
+    @property
+    def num_channels(self) -> int:
+        return self.shape[-3]
+
     @staticmethod
     def guess_color_space(data: torch.Tensor) -> ColorSpace:
         if data.ndim < 2:
@@ -70,14 +78,6 @@ class Image(Feature):
 
     def show(self) -> None:
         to_pil_image(make_grid(self.view(-1, *self.shape[-3:]))).show()
-
-    @property
-    def image_size(self) -> Tuple[int, int]:
-        return cast(Tuple[int, int], self.shape[-2:])
-
-    @property
-    def num_channels(self) -> int:
-        return self.shape[-3]
 
     def draw_bounding_box(self, bounding_box: BoundingBox, **kwargs: Any) -> "Image":
         return Image.new_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))

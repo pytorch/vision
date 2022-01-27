@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import BinaryIO, Tuple, Type, TypeVar, cast, Union
+from typing import BinaryIO, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
@@ -42,7 +42,7 @@ class EncodedImage(EncodedData):
         # import at runtime to avoid cyclic imports
         from torchvision.prototype.transforms.functional import decode_image_with_pil
 
-        return cast(Image, decode_image_with_pil(self))
+        return Image(decode_image_with_pil(self))
 
 
 class EncodedVideo(EncodedData):
