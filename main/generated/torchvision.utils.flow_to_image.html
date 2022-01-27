@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Reading/Writing images and videos &mdash; Torchvision main documentation</title>
+  <title>flow_to_image &mdash; Torchvision main documentation</title>
   
 
   
@@ -25,18 +25,18 @@
 
   
 
-  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
-  <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
-  <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
-  <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
-  <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="_static/sg_gallery-dataframe.css" type="text/css" />
-  <link rel="stylesheet" href="_static/sg_gallery-rendered-html.css" type="text/css" />
-  <link rel="stylesheet" href="_static/css/custom_torchvision.css" type="text/css" />
-    <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" />
-    <link rel="next" title="read_video" href="generated/torchvision.io.read_video.html" />
-    <link rel="prev" title="SqueezeExcitation" href="generated/torchvision.ops.SqueezeExcitation.html" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="make_grid" href="torchvision.utils.make_grid.html" />
+    <link rel="prev" title="draw_keypoints" href="torchvision.utils.draw_keypoints.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -52,16 +52,16 @@
   
 
   
-  <script src="_static/js/modernizr.min.js"></script>
+  <script src="../_static/js/modernizr.min.js"></script>
 
   <!-- Preload the theme fonts -->
 
-<link rel="preload" href="_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
 
 <!-- Preload the katex fonts -->
 
@@ -207,7 +207,7 @@
 
 
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
     <input type="text" name="q" placeholder="Search Docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -224,18 +224,18 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
-<li class="toctree-l1"><a class="reference internal" href="datasets.html">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="utils.html">Utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="ops.html">Operators</a></li>
-<li class="toctree-l1 current"><a class="current reference internal" href="#">Reading/Writing images and videos</a></li>
-<li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Example gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="training_references.html">Training references</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../auto_examples/index.html">Example gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../training_references.html">Training references</a></li>
 </ul>
 <p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
@@ -278,7 +278,7 @@
   <ul class="pytorch-breadcrumbs">
     
       <li>
-        <a href="index.html">
+        <a href="../index.html">
           
             Docs
           
@@ -286,13 +286,15 @@
       </li>
 
         
-      <li>Reading/Writing images and videos</li>
+          <li><a href="../utils.html">Utils</a> &gt;</li>
+        
+      <li>flow_to_image</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="_sources/io.rst.txt" rel="nofollow"><img src="_static/images/view-page-source-icon.svg"></a>
+            <a href="../_sources/generated/torchvision.utils.flow_to_image.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -318,109 +320,25 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="reading-writing-images-and-videos">
-<h1>Reading/Writing images and videos<a class="headerlink" href="#reading-writing-images-and-videos" title="Permalink to this headline">¶</a></h1>
-<p>The <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.io</span></code> package provides functions for performing IO
-operations. They are currently specific to reading and writing video and
-images.</p>
-<div class="section" id="video">
-<h2>Video<a class="headerlink" href="#video" title="Permalink to this headline">¶</a></h2>
-<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_video.html#torchvision.io.read_video" title="torchvision.io.read_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_video</span></code></a>(filename[, start_pts, end_pts, …])</p></td>
-<td><p>Reads a video from a file, returning both the video frames as well as the audio frames</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.read_video_timestamps.html#torchvision.io.read_video_timestamps" title="torchvision.io.read_video_timestamps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_video_timestamps</span></code></a>(filename[, pts_unit])</p></td>
-<td><p>List the video frames timestamps.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_video.html#torchvision.io.write_video" title="torchvision.io.write_video"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_video</span></code></a>(filename, video_array, fps[, …])</p></td>
-<td><p>Writes a 4d tensor in [T, H, W, C] format in a video file</p></td>
-</tr>
-</tbody>
-</table>
-</div>
-<div class="section" id="fine-grained-video-api">
-<h2>Fine-grained video API<a class="headerlink" href="#fine-grained-video-api" title="Permalink to this headline">¶</a></h2>
-<p>In addition to the <code class="xref py py-mod docutils literal notranslate"><span class="pre">read_video</span></code> function, we provide a high-performance
-lower-level API for more fine-grained control compared to the <code class="xref py py-mod docutils literal notranslate"><span class="pre">read_video</span></code> function.
-It does all this whilst fully supporting torchscript.</p>
-<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader" title="torchvision.io.VideoReader"><code class="xref py py-obj docutils literal notranslate"><span class="pre">VideoReader</span></code></a>(path, stream, num_threads, device)</p></td>
-<td><p>Fine-grained video-reading API.</p></td>
-</tr>
-</tbody>
-</table>
-<p>Example of inspecting a video:</p>
-<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torchvision</span>
-<span class="n">video_path</span> <span class="o">=</span> <span class="s2">&quot;path to a test video&quot;</span>
-<span class="c1"># Constructor allocates memory and a threaded decoder</span>
-<span class="c1"># instance per video. At the moment it takes two arguments:</span>
-<span class="c1"># path to the video file, and a wanted stream.</span>
-<span class="n">reader</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">io</span><span class="o">.</span><span class="n">VideoReader</span><span class="p">(</span><span class="n">video_path</span><span class="p">,</span> <span class="s2">&quot;video&quot;</span><span class="p">)</span>
+  <div class="section" id="flow-to-image">
+<h1>flow_to_image<a class="headerlink" href="#flow-to-image" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="torchvision.utils.flow_to_image">
+<code class="sig-prename descclassname"><span class="pre">torchvision.utils.</span></code><code class="sig-name descname"><span class="pre">flow_to_image</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">flow</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.1)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.1)"><span class="pre">torch.Tensor</span></a><a class="reference internal" href="../_modules/torchvision/utils.html#flow_to_image"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.utils.flow_to_image" title="Permalink to this definition">¶</a></dt>
+<dd><p>Converts a flow to an RGB image.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><p><strong>flow</strong> (<em>Tensor</em>) – Flow of shape (2, H, W) and dtype torch.float.</p>
+</dd>
+<dt class="field-even">Returns</dt>
+<dd class="field-even"><p>Image Tensor of dtype uint8 where each color corresponds to a given flow direction.</p>
+</dd>
+<dt class="field-odd">Return type</dt>
+<dd class="field-odd"><p>img (Tensor(3, H, W))</p>
+</dd>
+</dl>
+</dd></dl>
 
-<span class="c1"># The information about the video can be retrieved using the</span>
-<span class="c1"># `get_metadata()` method. It returns a dictionary for every stream, with</span>
-<span class="c1"># duration and other relevant metadata (often frame rate)</span>
-<span class="n">reader_md</span> <span class="o">=</span> <span class="n">reader</span><span class="o">.</span><span class="n">get_metadata</span><span class="p">()</span>
-
-<span class="c1"># metadata is structured as a dict of dicts with following structure</span>
-<span class="c1"># {&quot;stream_type&quot;: {&quot;attribute&quot;: [attribute per stream]}}</span>
-<span class="c1">#</span>
-<span class="c1"># following would print out the list of frame rates for every present video stream</span>
-<span class="nb">print</span><span class="p">(</span><span class="n">reader_md</span><span class="p">[</span><span class="s2">&quot;video&quot;</span><span class="p">][</span><span class="s2">&quot;fps&quot;</span><span class="p">])</span>
-
-<span class="c1"># we explicitly select the stream we would like to operate on. In</span>
-<span class="c1"># the constructor we select a default video stream, but</span>
-<span class="c1"># in practice, we can set whichever stream we would like</span>
-<span class="n">video</span><span class="o">.</span><span class="n">set_current_stream</span><span class="p">(</span><span class="s2">&quot;video:0&quot;</span><span class="p">)</span>
-</pre></div>
-</div>
-</div>
-<div class="section" id="image">
-<h2>Image<a class="headerlink" href="#image" title="Permalink to this headline">¶</a></h2>
-<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.ImageReadMode.html#torchvision.io.ImageReadMode" title="torchvision.io.ImageReadMode"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ImageReadMode</span></code></a>(value)</p></td>
-<td><p>Support for various modes while reading images.</p></td>
-</tr>
-</tbody>
-</table>
-<table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
-<tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_image.html#torchvision.io.read_image" title="torchvision.io.read_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_image</span></code></a>(path[, mode])</p></td>
-<td><p>Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_image.html#torchvision.io.decode_image" title="torchvision.io.decode_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_image</span></code></a>(input[, mode])</p></td>
-<td><p>Detects whether an image is a JPEG or PNG and performs the appropriate operation to decode the image into a 3 dimensional RGB or grayscale Tensor.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.encode_jpeg.html#torchvision.io.encode_jpeg" title="torchvision.io.encode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_jpeg</span></code></a>(input[, quality])</p></td>
-<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding JPEG file.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.decode_jpeg.html#torchvision.io.decode_jpeg" title="torchvision.io.decode_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_jpeg</span></code></a>(input[, mode, device])</p></td>
-<td><p>Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.write_jpeg.html#torchvision.io.write_jpeg" title="torchvision.io.write_jpeg"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_jpeg</span></code></a>(input, filename[, quality])</p></td>
-<td><p>Takes an input tensor in CHW layout and saves it in a JPEG file.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.encode_png.html#torchvision.io.encode_png" title="torchvision.io.encode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">encode_png</span></code></a>(input[, compression_level])</p></td>
-<td><p>Takes an input tensor in CHW layout and returns a buffer with the contents of its corresponding PNG file.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.decode_png.html#torchvision.io.decode_png" title="torchvision.io.decode_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">decode_png</span></code></a>(input[, mode])</p></td>
-<td><p>Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_png.html#torchvision.io.write_png" title="torchvision.io.write_png"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_png</span></code></a>(input, filename[, compression_level])</p></td>
-<td><p>Takes an input tensor in CHW layout (or HW in the case of grayscale images) and saves it in a PNG file.</p></td>
-</tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.io.read_file.html#torchvision.io.read_file" title="torchvision.io.read_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_file</span></code></a>(path)</p></td>
-<td><p>Reads and outputs the bytes contents of a file as a uint8 Tensor with one dimension.</p></td>
-</tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.io.write_file.html#torchvision.io.write_file" title="torchvision.io.write_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_file</span></code></a>(filename, data)</p></td>
-<td><p>Writes the contents of a uint8 tensor with one dimension to a file.</p></td>
-</tr>
-</tbody>
-</table>
-</div>
 </div>
 
 
@@ -431,10 +349,10 @@ It does all this whilst fully supporting torchscript.</p>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="generated/torchvision.io.read_video.html" class="btn btn-neutral float-right" title="read_video" accesskey="n" rel="next">Next <img src="_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="torchvision.utils.make_grid.html" class="btn btn-neutral float-right" title="make_grid" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="generated/torchvision.ops.SqueezeExcitation.html" class="btn btn-neutral" title="SqueezeExcitation" accesskey="p" rel="prev"><img src="_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="torchvision.utils.draw_keypoints.html" class="btn btn-neutral" title="draw_keypoints" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -466,14 +384,7 @@ It does all this whilst fully supporting torchscript.</p>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">Reading/Writing images and videos</a><ul>
-<li><a class="reference internal" href="#video">Video</a></li>
-<li><a class="reference internal" href="#fine-grained-video-api">Fine-grained video API</a></li>
-<li><a class="reference internal" href="#image">Image</a><ul>
-</ul>
-</li>
-</ul>
-</li>
+<li><a class="reference internal" href="#">flow_to_image</a></li>
 </ul>
 
             </div>
@@ -488,20 +399,20 @@ It does all this whilst fully supporting torchscript.</p>
   
 
      
-       <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
-         <script src="_static/jquery.js"></script>
-         <script src="_static/underscore.js"></script>
-         <script src="_static/doctools.js"></script>
-         <script src="_static/clipboard.min.js"></script>
-         <script src="_static/copybutton.js"></script>
+       <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+         <script src="../_static/jquery.js"></script>
+         <script src="../_static/underscore.js"></script>
+         <script src="../_static/doctools.js"></script>
+         <script src="../_static/clipboard.min.js"></script>
+         <script src="../_static/copybutton.js"></script>
      
 
   
 
-  <script type="text/javascript" src="_static/js/vendor/popper.min.js"></script>
-  <script type="text/javascript" src="_static/js/vendor/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../_static/js/vendor/bootstrap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
-  <script type="text/javascript" src="_static/js/theme.js"></script>
+  <script type="text/javascript" src="../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
@@ -613,7 +524,7 @@ It does all this whilst fully supporting torchscript.</p>
   <div class="cookie-banner-wrapper">
   <div class="container">
     <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
-    <img class="close-button" src="_static/images/pytorch-x.svg">
+    <img class="close-button" src="../_static/images/pytorch-x.svg">
   </div>
 </div>
 
@@ -728,7 +639,7 @@ It does all this whilst fully supporting torchscript.</p>
 
   <!-- End Mobile Menu -->
 
-  <script type="text/javascript" src="_static/js/vendor/anchor.min.js"></script>
+  <script type="text/javascript" src="../_static/js/vendor/anchor.min.js"></script>
 
   <script type="text/javascript">
     $(document).ready(function() {
