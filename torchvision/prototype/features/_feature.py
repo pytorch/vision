@@ -55,3 +55,6 @@ class Feature(torch.Tensor):
         for name in cls._META_ATTRS:
             metadata.setdefault(name, getattr(other, name))
         return cls(data, dtype=dtype or other.dtype, device=device or other.device, **metadata)
+
+    def __repr__(self):
+        return torch.Tensor.__repr__(self).replace("tensor", type(self).__name__)
