@@ -1,4 +1,5 @@
 import io
+from collections import namedtuple
 from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator
 
 import torch
@@ -38,6 +39,9 @@ class PCAMH5Reader(IterDataPipe[Tuple[str, io.IOBase]]):
                 yield from data
 
 
+_Resource = namedtuple("_Resource", ("file_name", "gdrive_id", "sha256"))
+
+
 class PCAM(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -51,39 +55,39 @@ class PCAM(Dataset):
 
     _RESOURCES = {
         "train": (
-            (  # Images
-                "camelyonpatch_level_2_split_train_x.h5.gz",  # file name
-                "1Ka0XfEMiwgCYPdTI-vv6eUElOBnKFKQ2",  # Google Drive ID
-                "d619e741468a7ab35c7e4a75e6821b7e7e6c9411705d45708f2a0efc8960656c",  # sha256
+            _Resource(  # Images
+                file_name="camelyonpatch_level_2_split_train_x.h5.gz",
+                gdrive_id="1Ka0XfEMiwgCYPdTI-vv6eUElOBnKFKQ2",
+                sha256="d619e741468a7ab35c7e4a75e6821b7e7e6c9411705d45708f2a0efc8960656c",
             ),
-            (  # Targets
-                "camelyonpatch_level_2_split_train_y.h5.gz",
-                "1269yhu3pZDP8UYFQs-NYs3FPwuK-nGSG",
-                "b74126d2c01b20d3661f9b46765d29cf4e4fba6faba29c8e0d09d406331ab75a",
+            _Resource(  # Targets
+                file_name="camelyonpatch_level_2_split_train_y.h5.gz",
+                gdrive_id="1269yhu3pZDP8UYFQs-NYs3FPwuK-nGSG",
+                sha256="b74126d2c01b20d3661f9b46765d29cf4e4fba6faba29c8e0d09d406331ab75a",
             ),
         ),
         "test": (
-            (
-                "camelyonpatch_level_2_split_test_x.h5.gz",
-                "1qV65ZqZvWzuIVthK8eVDhIwrbnsJdbg_",
-                "79174c2201ad521602a5888be8f36ee10875f37403dd3f2086caf2182ef87245",
+            _Resource(  # Images
+                file_name="camelyonpatch_level_2_split_test_x.h5.gz",
+                gdrive_id="1qV65ZqZvWzuIVthK8eVDhIwrbnsJdbg_",
+                sha256="79174c2201ad521602a5888be8f36ee10875f37403dd3f2086caf2182ef87245",
             ),
-            (
-                "camelyonpatch_level_2_split_test_y.h5.gz",
-                "17BHrSrwWKjYsOgTMmoqrIjDy6Fa2o_gP",
-                "0a522005fccc8bbd04c5a117bfaf81d8da2676f03a29d7499f71d0a0bd6068ef",
+            _Resource(  # Targets
+                file_name="camelyonpatch_level_2_split_test_y.h5.gz",
+                gdrive_id="17BHrSrwWKjYsOgTMmoqrIjDy6Fa2o_gP",
+                sha256="0a522005fccc8bbd04c5a117bfaf81d8da2676f03a29d7499f71d0a0bd6068ef",
             ),
         ),
         "val": (
-            (
-                "camelyonpatch_level_2_split_valid_x.h5.gz",
-                "1hgshYGWK8V-eGRy8LToWJJgDU_rXWVJ3",
-                "f82ee1670d027b4ec388048d9eabc2186b77c009655dae76d624c0ecb053ccb2",
+            _Resource(  # Images
+                file_name="camelyonpatch_level_2_split_valid_x.h5.gz",
+                gdrive_id="1hgshYGWK8V-eGRy8LToWJJgDU_rXWVJ3",
+                sha256="f82ee1670d027b4ec388048d9eabc2186b77c009655dae76d624c0ecb053ccb2",
             ),
-            (
-                "camelyonpatch_level_2_split_valid_y.h5.gz",
-                "1bH8ZRbhSVAhScTS0p9-ZzGnX91cHT3uO",
-                "ce1ae30f08feb468447971cfd0472e7becd0ad96d877c64120c72571439ae48c",
+            _Resource(  # Targets
+                file_name="camelyonpatch_level_2_split_valid_y.h5.gz",
+                gdrive_id="1bH8ZRbhSVAhScTS0p9-ZzGnX91cHT3uO",
+                sha256="ce1ae30f08feb468447971cfd0472e7becd0ad96d877c64120c72571439ae48c",
             ),
         ),
     }
