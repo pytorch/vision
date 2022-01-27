@@ -1,7 +1,7 @@
-from typing import Any, cast, Dict, Set, TypeVar
+from typing import Any, cast, Dict, Set, TypeVar, Callable, Tuple, Type, Sequence, Optional, Mapping
 
 import torch
-from torch._C import _TensorBase
+from torch._C import _TensorBase, DisableTorchFunction
 
 
 F = TypeVar("F", bound="Feature")
