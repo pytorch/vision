@@ -2,7 +2,6 @@ import abc
 import hashlib
 import itertools
 import pathlib
-import warnings
 from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
 from urllib.parse import urlparse
 
