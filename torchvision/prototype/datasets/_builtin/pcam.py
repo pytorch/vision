@@ -103,7 +103,7 @@ class PCAM(Dataset):
 
         return {
             "image": features.Image(image),
-            "label": Label(target),
+            "label": Label(target.item()),
         }
 
     def _make_datapipe(
