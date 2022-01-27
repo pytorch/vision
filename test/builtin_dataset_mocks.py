@@ -668,14 +668,15 @@ def sbd(info, root, config):
 @register_mock
 def semeion(info, root, config):
     num_samples = 3
+    num_categories = len(info.categories)
 
     images = torch.rand(num_samples, 256)
-    labels = one_hot(torch.randint(len(info.categories), size=(num_samples,)))
+    labels = one_hot(torch.randint(num_categories, size=(num_samples,)), num_classes=num_categories)
     with open(root / "semeion.data", "w") as fh:
         for image, one_hot_label in zip(images, labels):
             image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
             labels_columns = " ".join([str(label.item()) for label in one_hot_label])
-            fh.write(f"{image_columns} {labels_columns}\n")
+            fh.write(f"{image_columns} {labels_columns} \n")
 
     return num_samples
 
