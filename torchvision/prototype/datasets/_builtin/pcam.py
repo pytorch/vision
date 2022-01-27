@@ -1,9 +1,9 @@
 import io
-from torchvision.prototype import features
 from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator
 
 import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
+from torchvision.prototype import features
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -30,11 +30,13 @@ class H5Reader(IterDataPipe[Tuple[str, io.IOBase]]):
 
     def __iter__(self) -> Iterator[Tuple[str, io.IOBase]]:
         import h5py  # noqa
+
         for _, handle in self.datapipe:
             with h5py.File(handle) as data:
                 if self.key is not None:
                     data = data[self.key]
                 yield from data
+
 
 class PCAM(Dataset):
     def _make_info(self) -> DatasetInfo:
@@ -44,10 +46,10 @@ class PCAM(Dataset):
             homepage="https://github.com/basveeling/pcam",
             categories=2,
             valid_options=dict(split=("train", "test", "val")),
-            dependencies=["h5py"]
+            dependencies=["h5py"],
         )
 
-    _RESOURCES= {
+    _RESOURCES = {
         "train": (
             (  # Images
                 "camelyonpatch_level_2_split_train_x.h5.gz",  # file name
@@ -92,8 +94,7 @@ class PCAM(Dataset):
             for file_name, gdrive_id, sha256 in self._RESOURCES[config.split]
         ]
 
-    def _collate_and_decode(
-        self, data: Tuple[Any, Any]) -> Dict[str, Any]:
+    def _collate_and_decode(self, data: Tuple[Any, Any]) -> Dict[str, Any]:
         image, target = data  # They're both numpy arrays at this point
 
         return {

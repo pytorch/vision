@@ -2,6 +2,7 @@ import collections.abc
 import csv
 import functools
 import gzip
+import io
 import itertools
 import json
 import lzma
@@ -1322,22 +1323,20 @@ def pcam(info, root, config):
 
     split = "valid" if config.split == "val" else config.split
 
-    # Create uncompressed .h5 files for images and targets
-    images_file = root / f"camelyonpatch_level_2_split_{split}_x.h5"
-    with h5py.File(images_file, "w") as f:
+    images_io = io.BytesIO()
+    with h5py.File(images_io, "w") as f:
         f["x"] = np.random.randint(0, 256, size=(num_images, 10, 10, 3), dtype=np.uint8)
 
-    targets_file = root / f"camelyonpatch_level_2_split_{split}_y.h5"
-    with h5py.File(targets_file, "w") as f:
+    targets_io = io.BytesIO()
+    with h5py.File(targets_io, "w") as f:
         f["y"] = np.random.randint(0, 2, size=(num_images, 1, 1, 1), dtype=np.uint8)
 
     # Create .gz compressed files
-    for file_name in (images_file, targets_file):
-        with open(file_name, "rb") as file:
-            compressed_data = gzip.compress(file.read())
-        compressed_file_name = file_name.with_suffix(".h5.gz")
+    images_file = root / f"camelyonpatch_level_2_split_{split}_x.h5.gz"
+    targets_file = root / f"camelyonpatch_level_2_split_{split}_y.h5.gz"
+    for compressed_file_name, uncompressed_file_io in ((images_file, images_io), (targets_file, targets_io)):
+        compressed_data = gzip.compress(uncompressed_file_io.getbuffer())
         with open(compressed_file_name, "wb") as compressed_file:
             compressed_file.write(compressed_data)
-        file_name.unlink()
 
     return num_images
