@@ -1,20 +1,20 @@
-from torchvision.transforms import functional_tensor as _FT
+from torchvision.transforms import functional as _F
 
 
-adjust_brightness_image = _FT.adjust_brightness
+adjust_brightness_image = _F.adjust_brightness
 
-adjust_saturation_image = _FT.adjust_saturation
+adjust_saturation_image = _F.adjust_saturation
 
-adjust_contrast_image = _FT.adjust_contrast
+adjust_contrast_image = _F.adjust_contrast
 
-adjust_sharpness_image = _FT.adjust_sharpness
+adjust_sharpness_image = _F.adjust_sharpness
 
-posterize_image = _FT.posterize
+posterize_image = _F.posterize
 
-solarize_image = _FT.solarize
+solarize_image = _F.solarize
 
-autocontrast_image = _FT.autocontrast
+autocontrast_image = _F.autocontrast
 
-equalize_image = _FT.equalize
+equalize_image = _F.equalize
 
-invert_image = _FT.invert
+invert_image = _F.invert

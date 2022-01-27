@@ -4,7 +4,6 @@ import torch
 from torchvision.prototype.features import BoundingBoxFormat
 from torchvision.transforms import (  # noqa: F401
     functional as _F,
-    functional_tensor as _FT,
     InterpolationMode,
 )
 
