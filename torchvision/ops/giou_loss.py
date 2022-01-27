@@ -4,7 +4,7 @@ import torch
 def generalized_box_iou_loss(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,
-    reduction: Optional[str] = None,
+    reduction: str = "none",
     eps: float = 1e-7,
 ) -> torch.Tensor:
     """
@@ -23,7 +23,7 @@ def generalized_box_iou_loss(
         boxes1 (Tensor[N, 4] or Tensor[4]): first set of boxes
         boxes2 (Tensor[N, 4] or Tensor[4]): second set of boxes
         reduction (string, optional): Specifies the reduction to apply to the output:
-            ``'mean'`` | ``'sum'``. By default, no reduction will be
+            ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: No reduction will be
             applied to the output. ``'mean'``: The output will be averaged.
             ``'sum'``: The output will be summed. Default: ``'none'``
         eps (float, optional): small number to prevent division by zero. Default: 1e-7
