@@ -1,5 +1,3 @@
-from . import utils  # usort: skip
-
 from ._augment import erase_image, mixup_image, mixup_one_hot_label, cutmix_image, cutmix_one_hot_label
 from ._color import (
     adjust_brightness_image,
