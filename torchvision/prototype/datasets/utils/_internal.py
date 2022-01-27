@@ -34,7 +34,6 @@ __all__ = [
     "INFINITE_BUFFER_SIZE",
     "BUILTIN_DIR",
     "read_mat",
-    "SequenceIterator",
     "MappingIterator",
     "Enumerator",
     "getitem",
@@ -64,15 +63,6 @@ def read_mat(buffer: BinaryIO, **kwargs: Any) -> Any:
         buffer = buffer.file_obj
 
     return sio.loadmat(buffer, **kwargs)
-
-
-class SequenceIterator(IterDataPipe[D]):
-    def __init__(self, datapipe: IterDataPipe[Sequence[D]]):
-        self.datapipe = datapipe
-
-    def __iter__(self) -> Iterator[D]:
-        for sequence in self.datapipe:
-            yield from iter(sequence)
 
 
 class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
