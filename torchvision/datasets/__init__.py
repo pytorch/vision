@@ -20,6 +20,8 @@ from .hmdb51 import HMDB51
 from .imagenet import ImageNet
 from .inaturalist import INaturalist
 from .kinetics import Kinetics400, Kinetics
+from .kinetics2 import KineticsNew
+from .kinetics_new import KineticsSequentialDataset, KineticsRandomDataset
 from .kitti import Kitti
 from .lfw import LFWPeople, LFWPairs
 from .lsun import LSUN, LSUNClass
@@ -82,6 +84,9 @@ __all__ = (
     "USPS",
     "Kinetics400",
     "Kinetics",
+    "KineticsNew",
+    "KineticsRandomDataset",
+    "KineticsSequentialDataset",
     "HMDB51",
     "UCF101",
     "Places365",
