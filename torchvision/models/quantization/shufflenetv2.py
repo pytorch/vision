@@ -58,7 +58,7 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
         and the model after modification is in floating point
         """
         for name, m in self._modules.items():
-            if name in ["conv1", "conv5"]:
+            if name in ["conv1", "conv5"] and m is not None:
                 _fuse_modules(m, [["0", "1", "2"]], is_qat, inplace=True)
         for m in self.modules():
             if type(m) is QuantizableInvertedResidual:
