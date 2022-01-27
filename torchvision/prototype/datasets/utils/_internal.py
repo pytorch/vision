@@ -39,7 +39,6 @@ __all__ = [
     "BUILTIN_DIR",
     "read_mat",
     "image_buffer_from_array",
-    "SequenceIterator",
     "MappingIterator",
     "Enumerator",
     "getitem",
@@ -78,15 +77,6 @@ def image_buffer_from_array(array: np.ndarray, *, format: str = "png") -> io.Byt
     image.save(buffer, format=format)
     buffer.seek(0)
     return buffer
-
-
-class SequenceIterator(IterDataPipe[D]):
-    def __init__(self, datapipe: IterDataPipe[Sequence[D]]):
-        self.datapipe = datapipe
-
-    def __iter__(self) -> Iterator[D]:
-        for sequence in self.datapipe:
-            yield from iter(sequence)
 
 
 class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
