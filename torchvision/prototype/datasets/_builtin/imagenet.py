@@ -1,18 +1,16 @@
 import functools
-import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast
 
-import torch
-from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, TarArchiveReader, Filter
+from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, Filter, Demultiplexer
+from torchdata.datapipes.iter import TarArchiveReader
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
     OnlineResource,
     ManualDownloadResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -24,7 +22,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 from torchvision.prototype.utils._internal import FrozenMapping
 
 
@@ -40,7 +38,6 @@ class ImageNet(Dataset):
 
         return DatasetInfo(
             name,
-            type=DatasetType.IMAGE,
             dependencies=("scipy",),
             categories=categories,
             homepage="https://www.image-net.org/",
@@ -61,14 +58,6 @@ class ImageNet(Dataset):
     def supports_sharded(self) -> bool:
         return True
 
-    @property
-    def category_to_wnid(self) -> Dict[str, str]:
-        return cast(Dict[str, str], self.info.extra.category_to_wnid)
-
-    @property
-    def wnid_to_category(self) -> Dict[str, str]:
-        return cast(Dict[str, str], self.info.extra.wnid_to_category)
-
     _IMAGES_CHECKSUMS = {
         "train": "b08200a27a8e34218a0e58fde36b0fe8f73bc377f4acea2d91602057c3ca45bb",
         "val": "c7e06a6c0baccf06d8dbeb6577d71efff84673a5dbdd50633ab44f8ea0456ae0",
@@ -77,23 +66,56 @@ class ImageNet(Dataset):
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         name = "test_v10102019" if config.split == "test" else config.split
-        images = ImageNetResource(file_name=f"ILSVRC2012_img_{name}.tar", sha256=self._IMAGES_CHECKSUMS[name])
-
-        devkit = ImageNetResource(
-            file_name="ILSVRC2012_devkit_t12.tar.gz",
-            sha256="b59243268c0d266621fd587d2018f69e906fb22875aca0e295b48cafaa927953",
+        images = ImageNetResource(
+            file_name=f"ILSVRC2012_img_{name}.tar",
+            sha256=self._IMAGES_CHECKSUMS[name],
         )
+        resources: List[OnlineResource] = [images]
 
-        return [images, devkit]
+        if config.split == "val":
+            devkit = ImageNetResource(
+                file_name="ILSVRC2012_devkit_t12.tar.gz",
+                sha256="b59243268c0d266621fd587d2018f69e906fb22875aca0e295b48cafaa927953",
+            )
+            resources.append(devkit)
+
+        return resources
+
+    def num_samples(self, config: DatasetConfig) -> int:
+        return {
+            "train": 1_281_167,
+            "val": 50_000,
+            "test": 100_000,
+        }[config.split]
 
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
-    def _collate_train_data(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[Label, str, str], Tuple[str, io.IOBase]]:
+    def _prepare_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
-        wnid = self._TRAIN_IMAGE_NAME_PATTERN.match(path.name).group("wnid")  # type: ignore[union-attr]
-        category = self.wnid_to_category[wnid]
-        label_data = (Label(self.categories.index(category)), category, wnid)
-        return label_data, data
+        wnid = cast(Match[str], self._TRAIN_IMAGE_NAME_PATTERN.match(path.name))["wnid"]
+        label = Label.from_category(self.info.extra.wnid_to_category[wnid], categories=self.categories)
+        return (label, wnid), data
+
+    def _prepare_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
+        return None, data
+
+    def _classifiy_devkit(self, data: Tuple[str, BinaryIO]) -> Optional[int]:
+        return {
+            "meta.mat": 0,
+            "ILSVRC2012_validation_ground_truth.txt": 1,
+        }.get(pathlib.Path(data[0]).name)
+
+    def _extract_categories_and_wnids(self, data: Tuple[str, BinaryIO]) -> List[Tuple[str, str]]:
+        synsets = read_mat(data[1], squeeze_me=True)["synsets"]
+        return [
+            (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
+            for _, wnid, category, _, num_children, *_ in synsets
+            # if num_children > 0, we are looking at a superclass that has no direct instance
+            if num_children == 0
+        ]
+
+    def _imagenet_label_to_wnid(self, imagenet_label: str, *, wnids: List[str]) -> str:
+        return wnids[int(imagenet_label) - 1]
 
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
@@ -101,72 +123,65 @@ class ImageNet(Dataset):
         path = pathlib.Path(data[0])
         return int(self._VAL_TEST_IMAGE_NAME_PATTERN.match(path.name).group("id"))  # type: ignore[union-attr]
 
-    def _collate_val_data(
-        self, data: Tuple[Tuple[int, int], Tuple[str, io.IOBase]]
-    ) -> Tuple[Tuple[Label, str, str], Tuple[str, io.IOBase]]:
+    def _prepare_val_data(
+        self, data: Tuple[Tuple[int, str], Tuple[str, BinaryIO]]
+    ) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
         label_data, image_data = data
-        _, label = label_data
-        category = self.categories[label]
-        wnid = self.category_to_wnid[category]
-        return (Label(label), category, wnid), image_data
+        _, wnid = label_data
+        label = Label.from_category(self.info.extra.wnid_to_category[wnid], categories=self.categories)
+        return (label, wnid), image_data
 
-    def _collate_test_data(self, data: Tuple[str, io.IOBase]) -> Tuple[None, Tuple[str, io.IOBase]]:
-        return None, data
-
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self,
-        data: Tuple[Optional[Tuple[Label, str, str]], Tuple[str, io.IOBase]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        data: Tuple[Optional[Tuple[Label, str]], Tuple[str, BinaryIO]],
     ) -> Dict[str, Any]:
         label_data, (path, buffer) = data
 
-        sample = dict(
+        return dict(
+            dict(zip(("label", "wnid"), label_data if label_data else (None, None))),
             path=path,
-            image=decoder(buffer) if decoder else buffer,
+            image=EncodedImage.from_file(buffer),
         )
-        if label_data:
-            sample.update(dict(zip(("label", "category", "wnid"), label_data)))
-
-        return sample
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
-        images_dp, devkit_dp = resource_dps
+        if config.split in {"train", "test"}:
+            dp = resource_dps[0]
 
-        if config.split == "train":
             # the train archive is a tar of tars
-            dp = TarArchiveReader(images_dp)
+            if config.split == "train":
+                dp = TarArchiveReader(dp)
+
             dp = hint_sharding(dp)
             dp = hint_shuffling(dp)
-            dp = Mapper(dp, self._collate_train_data)
-        elif config.split == "val":
-            devkit_dp = Filter(devkit_dp, path_comparator("name", "ILSVRC2012_validation_ground_truth.txt"))
-            devkit_dp = LineReader(devkit_dp, return_path=False)
-            devkit_dp = Mapper(devkit_dp, int)
-            devkit_dp = Enumerator(devkit_dp, 1)
-            devkit_dp = hint_sharding(devkit_dp)
-            devkit_dp = hint_shuffling(devkit_dp)
+            dp = Mapper(dp, self._prepare_train_data if config.split == "train" else self._prepare_test_data)
+        else:  # config.split == "val":
+            images_dp, devkit_dp = resource_dps
+
+            meta_dp, label_dp = Demultiplexer(
+                devkit_dp, 2, self._classifiy_devkit, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
+            )
+
+            meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
+            _, wnids = zip(*next(iter(meta_dp)))
+
+            label_dp = LineReader(label_dp, decode=True, return_path=False)
+            label_dp = Mapper(label_dp, functools.partial(self._imagenet_label_to_wnid, wnids=wnids))
+            label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
+            label_dp = hint_sharding(label_dp)
+            label_dp = hint_shuffling(label_dp)
 
             dp = IterKeyZipper(
-                devkit_dp,
+                label_dp,
                 images_dp,
                 key_fn=getitem(0),
                 ref_key_fn=self._val_test_image_key,
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-            dp = Mapper(dp, self._collate_val_data)
-        else:  # config.split == "test"
-            dp = hint_sharding(images_dp)
-            dp = hint_shuffling(dp)
-            dp = Mapper(dp, self._collate_test_data)
+            dp = Mapper(dp, self._prepare_val_data)
 
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
     # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
@@ -176,22 +191,13 @@ class ImageNet(Dataset):
     }
 
     def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
-        resources = self.resources(self.default_config)
+        config = self.info.make_config(split="val")
+        resources = self.resources(config)
 
         devkit_dp = resources[1].load(root)
-        devkit_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
+        meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
+        meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
 
-        meta = next(iter(devkit_dp))[1]
-        synsets = read_mat(meta, squeeze_me=True)["synsets"]
-        categories_and_wnids = cast(
-            List[Tuple[str, ...]],
-            [
-                (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
-                for _, wnid, category, _, num_children, *_ in synsets
-                # if num_children > 0, we are looking at a superclass that has no direct instance
-                if num_children == 0
-            ],
-        )
+        categories_and_wnids = cast(List[Tuple[str, ...]], next(iter(meta_dp)))
         categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
-
         return categories_and_wnids

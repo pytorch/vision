@@ -1,7 +1,6 @@
 import enum
 import functools
 import gzip
-import io
 import lzma
 import os
 import os.path
@@ -23,8 +22,6 @@ from typing import (
 )
 from typing import cast
 
-import numpy as np
-import PIL.Image
 import torch
 import torch.distributed as dist
 import torch.utils.data
@@ -37,7 +34,6 @@ __all__ = [
     "INFINITE_BUFFER_SIZE",
     "BUILTIN_DIR",
     "read_mat",
-    "image_buffer_from_array",
     "SequenceIterator",
     "MappingIterator",
     "Enumerator",
@@ -58,7 +54,7 @@ INFINITE_BUFFER_SIZE = 1_000_000_000
 BUILTIN_DIR = pathlib.Path(__file__).parent.parent / "_builtin"
 
 
-def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
+def read_mat(buffer: BinaryIO, **kwargs: Any) -> Any:
     try:
         import scipy.io as sio
     except ImportError as error:
@@ -68,14 +64,6 @@ def read_mat(buffer: io.IOBase, **kwargs: Any) -> Any:
         buffer = buffer.file_obj
 
     return sio.loadmat(buffer, **kwargs)
-
-
-def image_buffer_from_array(array: np.ndarray, *, format: str = "png") -> io.BytesIO:
-    image = PIL.Image.fromarray(array)
-    buffer = io.BytesIO()
-    image.save(buffer, format=format)
-    buffer.seek(0)
-    return buffer
 
 
 class SequenceIterator(IterDataPipe[D]):
@@ -150,17 +138,17 @@ class CompressionType(enum.Enum):
     LZMA = "lzma"
 
 
-class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
+class Decompressor(IterDataPipe[Tuple[str, BinaryIO]]):
     types = CompressionType
 
-    _DECOMPRESSORS = {
-        types.GZIP: lambda file: gzip.GzipFile(fileobj=file),
-        types.LZMA: lambda file: lzma.LZMAFile(file),
+    _DECOMPRESSORS: Dict[CompressionType, Callable[[BinaryIO], BinaryIO]] = {
+        types.GZIP: lambda file: cast(BinaryIO, gzip.GzipFile(fileobj=file)),
+        types.LZMA: lambda file: cast(BinaryIO, lzma.LZMAFile(file)),
     }
 
     def __init__(
         self,
-        datapipe: IterDataPipe[Tuple[str, io.IOBase]],
+        datapipe: IterDataPipe[Tuple[str, BinaryIO]],
         *,
         type: Optional[Union[str, CompressionType]] = None,
     ) -> None:
@@ -182,7 +170,7 @@ class Decompressor(IterDataPipe[Tuple[str, io.IOBase]]):
         else:
             raise RuntimeError("FIXME")
 
-    def __iter__(self) -> Iterator[Tuple[str, io.IOBase]]:
+    def __iter__(self) -> Iterator[Tuple[str, BinaryIO]]:
         for path, file in self.datapipe:
             type = self._detect_compression_type(path)
             decompressor = self._DECOMPRESSORS[type]
@@ -274,9 +262,9 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
     return flow.reshape((height, width, 2)).permute((2, 0, 1))
 
 
-def hint_sharding(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+def hint_sharding(datapipe: IterDataPipe[D]) -> ShardingFilter[D]:
     return ShardingFilter(datapipe)
 
 
-def hint_shuffling(datapipe: IterDataPipe[D]) -> IterDataPipe[D]:
+def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
     return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)

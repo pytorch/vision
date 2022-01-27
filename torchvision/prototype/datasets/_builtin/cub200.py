@@ -1,10 +1,8 @@
 import csv
 import functools
-import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Callable
 
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -21,7 +19,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -32,7 +29,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     path_accessor,
 )
-from torchvision.prototype.features import Label, BoundingBox, Feature
+from torchvision.prototype.features import Label, BoundingBox, Feature, EncodedImage
 
 csv.register_dialect("cub200", delimiter=" ")
 
@@ -41,7 +38,6 @@ class CUB200(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "cub200",
-            type=DatasetType.IMAGE,
             homepage="http://www.vision.caltech.edu/visipedia/CUB-200-2011.html",
             dependencies=("scipy",),
             valid_options=dict(
@@ -105,58 +101,55 @@ class CUB200(Dataset):
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name
 
-    def _2011_load_ann(
-        self,
-        data: Tuple[str, Tuple[List[str], Tuple[str, io.IOBase]]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+    def _2011_prepare_ann(
+        self, data: Tuple[str, Tuple[List[str], Tuple[str, BinaryIO]]], image_size: Tuple[int, int]
     ) -> Dict[str, Any]:
         _, (bounding_box_data, segmentation_data) = data
         segmentation_path, segmentation_buffer = segmentation_data
         return dict(
-            bounding_box=BoundingBox([float(part) for part in bounding_box_data[1:]], format="xywh"),
+            bounding_box=BoundingBox(
+                [float(part) for part in bounding_box_data[1:]], format="xywh", image_size=image_size
+            ),
             segmentation_path=segmentation_path,
-            segmentation=Feature(decoder(segmentation_buffer)) if decoder else segmentation_buffer,
+            segmentation=EncodedImage.from_file(segmentation_buffer),
         )
 
     def _2010_split_key(self, data: str) -> str:
         return data.rsplit("/", maxsplit=1)[1]
 
-    def _2010_anns_key(self, data: Tuple[str, io.IOBase]) -> Tuple[str, Tuple[str, io.IOBase]]:
+    def _2010_anns_key(self, data: Tuple[str, BinaryIO]) -> Tuple[str, Tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name, data
 
-    def _2010_load_ann(
-        self, data: Tuple[str, Tuple[str, io.IOBase]], *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
-    ) -> Dict[str, Any]:
+    def _2010_prepare_ann(self, data: Tuple[str, Tuple[str, BinaryIO]], image_size: Tuple[int, int]) -> Dict[str, Any]:
         _, (path, buffer) = data
         content = read_mat(buffer)
         return dict(
             ann_path=path,
             bounding_box=BoundingBox(
-                [int(content["bbox"][coord]) for coord in ("left", "bottom", "right", "top")], format="xyxy"
+                [int(content["bbox"][coord]) for coord in ("left", "bottom", "right", "top")],
+                format="xyxy",
+                image_size=image_size,
             ),
             segmentation=Feature(content["seg"]),
         )
 
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self,
-        data: Tuple[Tuple[str, Tuple[str, io.IOBase]], Any],
+        data: Tuple[Tuple[str, Tuple[str, BinaryIO]], Any],
         *,
-        year: str,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        prepare_ann_fn: Callable[[Any, Tuple[int, int]], Dict[str, Any]],
     ) -> Dict[str, Any]:
         data, anns_data = data
         _, image_data = data
         path, buffer = image_data
 
-        dir_name = pathlib.Path(path).parent.name
-        label_str, category = dir_name.split(".")
+        image = EncodedImage.from_file(buffer)
 
         return dict(
-            (self._2011_load_ann if year == "2011" else self._2010_load_ann)(anns_data, decoder=decoder),
-            image=decoder(buffer) if decoder else buffer,
-            label=Label(int(label_str), category=category),
+            prepare_ann_fn(anns_data, image.image_size),
+            image=image,
+            label=Label(int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]), categories=self.categories),
         )
 
     def _make_datapipe(
@@ -164,8 +157,8 @@ class CUB200(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
+        prepare_ann_fn: Callable
         if config.year == "2011":
             archive_dp, segmentations_dp = resource_dps
             images_dp, split_dp, image_files_dp, bounding_boxes_dp = Demultiplexer(
@@ -193,6 +186,8 @@ class CUB200(Dataset):
                 keep_key=True,
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
+
+            prepare_ann_fn = self._2011_prepare_ann
         else:  # config.year == "2010"
             split_dp, images_dp, anns_dp = resource_dps
 
@@ -201,6 +196,8 @@ class CUB200(Dataset):
             split_dp = Mapper(split_dp, self._2010_split_key)
 
             anns_dp = Mapper(anns_dp, self._2010_anns_key)
+
+            prepare_ann_fn = self._2010_prepare_ann
 
         split_dp = hint_sharding(split_dp)
         split_dp = hint_shuffling(split_dp)
@@ -218,7 +215,7 @@ class CUB200(Dataset):
             getitem(0),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, year=config.year, decoder=decoder))
+        return Mapper(dp, functools.partial(self._prepare_sample, prepare_ann_fn=prepare_ann_fn))
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         config = self.info.make_config(year="2011")
