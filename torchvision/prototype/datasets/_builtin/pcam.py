@@ -19,7 +19,7 @@ from torchvision.prototype.datasets.utils._internal import (
 from torchvision.prototype.features import Label
 
 
-class H5Reader(IterDataPipe[Tuple[str, io.IOBase]]):
+class PCAMH5Reader(IterDataPipe[Tuple[str, io.IOBase]]):
     def __init__(
         self,
         datapipe: IterDataPipe[Tuple[str, io.IOBase]],
@@ -98,8 +98,8 @@ class PCAM(Dataset):
         image, target = data  # They're both numpy arrays at this point
 
         return {
-            "image": features.Image(torch.tensor(image)),
-            "label": Label(target.item()),
+            "image": features.Image(image),
+            "label": Label(target),
         }
 
     def _make_datapipe(
@@ -118,6 +118,4 @@ class PCAM(Dataset):
         dp = Zipper(images_dp, targets_dp)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        dp = Mapper(dp, self._collate_and_decode)
-
-        return dp
+        return Mapper(dp, self._collate_and_decode)
