@@ -2,6 +2,7 @@ import collections.abc
 import csv
 import functools
 import gzip
+import io
 import itertools
 import json
 import lzma
@@ -1316,3 +1317,30 @@ def svhn(info, root, config):
         },
     )
     return num_samples
+
+
+@register_mock
+def pcam(info, root, config):
+    import h5py
+
+    num_images = {"train": 2, "test": 3, "val": 4}[config.split]
+
+    split = "valid" if config.split == "val" else config.split
+
+    images_io = io.BytesIO()
+    with h5py.File(images_io, "w") as f:
+        f["x"] = np.random.randint(0, 256, size=(num_images, 10, 10, 3), dtype=np.uint8)
+
+    targets_io = io.BytesIO()
+    with h5py.File(targets_io, "w") as f:
+        f["y"] = np.random.randint(0, 2, size=(num_images, 1, 1, 1), dtype=np.uint8)
+
+    # Create .gz compressed files
+    images_file = root / f"camelyonpatch_level_2_split_{split}_x.h5.gz"
+    targets_file = root / f"camelyonpatch_level_2_split_{split}_y.h5.gz"
+    for compressed_file_name, uncompressed_file_io in ((images_file, images_io), (targets_file, targets_io)):
+        compressed_data = gzip.compress(uncompressed_file_io.getbuffer())
+        with open(compressed_file_name, "wb") as compressed_file:
+            compressed_file.write(compressed_data)
+
+    return num_images
