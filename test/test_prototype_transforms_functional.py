@@ -154,8 +154,8 @@ def resize_image():
     for image, interpolation in itertools.product(
         make_images(),
         [
-            "bilinear",
-            "nearest",
+            F.InterpolationMode.BILINEAR,
+            F.InterpolationMode.NEAREST,
         ],
     ):
         height, width = image.shape[-2:]

@@ -28,31 +28,32 @@ def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tupl
     )
 
 
-_resize_image = _FT.resize
+_resize_image = _F.resize
 
 
 def resize_image(
     image: torch.Tensor,
     size: List[int],
-    interpolation: str = "bilinear",
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
+    new_height, new_width = size
     num_channels, old_height, old_width = image.shape[-3:]
     batch_shape = image.shape[:-3]
     return _resize_image(
-        image.reshape(-1, num_channels, old_height, old_width),
+        image.reshape((-1, num_channels, old_height, old_width)),
         size=size,
         interpolation=interpolation,
         max_size=max_size,
         antialias=antialias,
-    ).reshape(batch_shape + (num_channels,) + size)
+    ).reshape(batch_shape + (num_channels, new_height, new_width))
 
 
 def resize_segmentation_mask(
     segmentation_mask: torch.Tensor,
     size: List[int],
-    interpolation: str = "nearest",
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
