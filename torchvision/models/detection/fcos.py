@@ -5,6 +5,7 @@ from functools import partial
 from typing import Callable, Dict, List, Tuple, Optional
 
 import torch
+import torchvision
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
@@ -501,7 +502,10 @@ class FCOS(nn.Module):
                 topk_idxs = torch.where(keep_idxs)[0]
 
                 # keep only topk scoring predictions
-                num_topk = min(self.topk_candidates, topk_idxs.size(0))
+                if torchvision._is_tracing():
+                    _, num_topk = det_utils._onnx_tracing_topk_min(topk_idxs, self.topk_candidates, 0)
+                else:
+                    num_topk = min(self.topk_candidates, topk_idxs.size(0))
                 scores_per_level, idxs = scores_per_level.topk(num_topk)
                 topk_idxs = topk_idxs[idxs]
 

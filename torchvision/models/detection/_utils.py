@@ -1,6 +1,6 @@
 import math
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import List, Tuple, cast
 
 import torch
 from torch import Tensor, nn
@@ -468,3 +468,31 @@ def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
         model.train()
 
     return out_channels
+
+
+@torch.jit.unused
+def _onnx_tracing_topk_min(input: Tensor, orig_kval: int, axis: int) -> Tuple[int, int]:
+    """
+    ONNX spec requires the k-value to be less than or equal to the number of inputs along
+    provided dim. Certain models uses python's min() function to determine whether to use
+    the provided k-value or the specified dim axis value.
+
+    However in cases where the model is being exported in tracing mode, python min() is
+    static causing the model to be traced incorrectly and eventually fail at the topk node.
+    In order to avoid this situation, in tracing mode, torch.min() is used instead.
+
+    Args:
+        input (Tensor): The orignal input tensor.
+        orig_kval (int): The provided k-value.
+        axis(int): Axis along which we retreive the input size.
+
+    Returns:
+        (Tuple[int, int]): Input size along axis, appropriately selected k-value.
+    """
+    from torch.onnx import operators
+
+    axis_dim_val = operators.shape_as_tensor(input)[axis].unsqueeze(0)
+    min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
+
+    # for mypy we cast at runtime
+    return cast(int, axis_dim_val), cast(int, min_kval)
