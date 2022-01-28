@@ -1,4 +1,4 @@
-from typing import List, Optional, Dict, Tuple, cast
+from typing import List, Optional, Dict, Tuple
 
 import torch
 import torchvision

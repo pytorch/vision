@@ -3,8 +3,8 @@ from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
-import torchvision
 import torch.nn.functional as F
+import torchvision
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
