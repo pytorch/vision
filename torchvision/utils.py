@@ -397,42 +397,51 @@ def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
     Converts a flow to an RGB image.
 
     Args:
-        flow (Tensor): Flow of shape (2, H, W) and dtype torch.float.
+        flow (Tensor): Flow of shape (N, 2, H, W) or (2, H, W) and dtype torch.float.
 
     Returns:
-        img (Tensor(3, H, W)): Image Tensor of dtype uint8 where each color corresponds to a given flow direction.
+        img (Tensor): Image Tensor of dtype uint8 where each color corresponds
+            to a given flow direction. Shape is (N, 3, H, W) or (3, H, W) depending on the input.
     """
 
     if flow.dtype != torch.float:
         raise ValueError(f"Flow should be of dtype torch.float, got {flow.dtype}.")
 
-    if flow.ndim != 3 or flow.size(0) != 2:
-        raise ValueError(f"Input flow should have shape (2, H, W), got {flow.shape}.")
+    orig_shape = flow.shape
+    if flow.ndim == 3:
+        flow = flow[None]  # Add batch dim
 
-    max_norm = torch.sum(flow ** 2, dim=0).sqrt().max()
+    if flow.ndim != 4 or flow.shape[1] != 2:
+        raise ValueError(f"Input flow should have shape (2, H, W) or (N, 2, H, W), got {orig_shape}.")
+
+    max_norm = torch.sum(flow ** 2, dim=1).sqrt().max()
     epsilon = torch.finfo((flow).dtype).eps
     normalized_flow = flow / (max_norm + epsilon)
-    return _normalized_flow_to_image(normalized_flow)
+    img = _normalized_flow_to_image(normalized_flow)
+
+    if len(orig_shape) == 3:
+        img = img[0]  # Remove batch dim
+    return img
 
 
 @torch.no_grad()
 def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
 
     """
-    Converts a normalized flow to an RGB image.
+    Converts a batch of normalized flow to an RGB image.
 
     Args:
-        normalized_flow (torch.Tensor): Normalized flow tensor of shape (2, H, W)
+        normalized_flow (torch.Tensor): Normalized flow tensor of shape (N, 2, H, W)
     Returns:
-       img (Tensor(3, H, W)): Flow visualization image of dtype uint8.
+       img (Tensor(N, 3, H, W)): Flow visualization image of dtype uint8.
     """
 
-    _, H, W = normalized_flow.shape
-    flow_image = torch.zeros((3, H, W), dtype=torch.uint8)
+    N, _, H, W = normalized_flow.shape
+    flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8)
     colorwheel = _make_colorwheel()  # shape [55x3]
     num_cols = colorwheel.shape[0]
-    norm = torch.sum(normalized_flow ** 2, dim=0).sqrt()
-    a = torch.atan2(-normalized_flow[1], -normalized_flow[0]) / torch.pi
+    norm = torch.sum(normalized_flow ** 2, dim=1).sqrt()
+    a = torch.atan2(-normalized_flow[:, 1, :, :], -normalized_flow[:, 0, :, :]) / torch.pi
     fk = (a + 1) / 2 * (num_cols - 1)
     k0 = torch.floor(fk).to(torch.long)
     k1 = k0 + 1
@@ -445,7 +454,7 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
         col1 = tmp[k1] / 255.0
         col = (1 - f) * col0 + f * col1
         col = 1 - norm * (1 - col)
-        flow_image[c, :, :] = torch.floor(255 * col)
+        flow_image[:, c, :, :] = torch.floor(255 * col)
     return flow_image
 
 
