@@ -22,6 +22,7 @@ class KineticsRandomDataset(torch.utils.data.IterableDataset):
         super(KineticsRandomDataset).__init__()
 
         self.samples = get_samples(root)
+        self.epoch_size = epoch_multiplier * len(self.samples)
         self.clip_len = clip_len  # length of a clip in frames
         self.frame_transform = frame_transform  # transform for every frame individually
         self.video_transform = video_transform # transform on a video sequence
@@ -41,12 +42,15 @@ class KineticsRandomDataset(torch.utils.data.IterableDataset):
             vid = VideoReader(path, device=self.device)
             video_frames = [] # video frame buffer
             # seek and return frames
-            max_seek = vid.get_metadata()['video']['duration'] - (self.clip_len / vid.get_metadata()['video']['fps'] + self.alpha)
+            metadata = vid.get_metadata()['video']
+            duration = metadata['duration'][0] if self.device == 'cpu' else metadata['duration']
+            fps = metadata['fps'][0] if self.device == 'cpu' else metadata['fps']
+            max_seek = duration - (self.clip_len / fps + self.alpha)
             start = random.uniform(0., max_seek)
             vid.seek(start, keyframes_only=self.from_keyframes)
             while len(video_frames) < self.clip_len:
-                frame, current_pts = next(vid)
-                video_frames.append(self.frame_transform(frame))
+                frame = next(vid)['data']
+                video_frames.append(self.frame_transform(frame) if self.frame_transform else frame)
             # stack it into a tensor
             video = torch.stack(video_frames, 0)
             if self.video_transform:
@@ -66,6 +70,7 @@ class KineticsSequentialDataset(torch.utils.data.IterableDataset):
         super(KineticsSequentialDataset).__init__()
 
         self.samples = get_samples(root)
+        self.num_steps = epoch_multiplier // len(self.samples)
         self.clip_len = clip_len  # length of a clip in frames
         self.frame_transform = frame_transform  # transform for every frame individually
         self.video_transform = video_transform # transform on a video sequence
@@ -85,14 +90,17 @@ class KineticsSequentialDataset(torch.utils.data.IterableDataset):
             video_frames = [] # video frame buffer
             # seek and return frames
 
-            max_seek = vid.get_metadata()['video']['duration'] - (self.clip_len / vid.get_metadata()['video']['fps'] + self.alpha)
+            metadata = vid.get_metadata()['video']
+            duration = metadata['duration'][0] if self.device == 'cpu' else metadata['duration']
+            fps = metadata['fps'][0] if self.device == 'cpu' else metadata['fps']
+            max_seek = duration - (self.clip_len / fps + self.alpha)
             step = max(max_seek // self.num_steps, 1)
             tss = [i.item() for i in list(torch.linspace(0, max_seek, steps=self.num_steps))]
             for start in tss:
                 vid.seek(start, keyframes_only=True)
                 while len(video_frames) < self.clip_len:
-                    frame, current_pts = next(vid)
-                    video_frames.append(self.frame_transform(frame))
+                    frame = next(vid)['data']
+                    video_frames.append(self.frame_transform(frame) if self.frame_transform else frame)
                 # stack it into a tensor
                 video = torch.stack(video_frames, 0)
                 if self.video_transform:

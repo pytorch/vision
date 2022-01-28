@@ -133,7 +133,7 @@ def main(args):
             traindir,
             clip_len=args.clip_len,
             video_transform=transform_train,
-            device="cuda:0",
+            device="cuda:0" if args.gpu_decoder else "cpu",
         )
         if args.cache_dataset:
             print(f"Saving dataset_train to {cache_path}")
@@ -165,7 +165,7 @@ def main(args):
             valdir,
             clip_len=args.clip_len,
             video_transform=transform_test,
-            device="cuda:0",
+            device="cuda:0" if args.gpu_decoder else "cpu",
         )
         if args.cache_dataset:
             print(f"Saving dataset_test to {cache_path}")
@@ -254,8 +254,6 @@ def main(args):
     print("Start training")
     start_time = time.time()
     for epoch in range(args.start_epoch, args.epochs):
-        if args.distributed:
-            train_sampler.set_epoch(epoch)
         train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, args.print_freq, scaler)
         evaluate(model, criterion, data_loader_test, device=device)
         if args.output_dir:
@@ -357,6 +355,9 @@ def parse_args():
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
+
+    # CPU or GPU decoding
+    parser.add_argument("--gpu-decoder", action="store_true", help="Use GPU decoder")
 
     args = parser.parse_args()
 
