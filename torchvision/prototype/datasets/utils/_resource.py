@@ -2,7 +2,6 @@ import abc
 import hashlib
 import itertools
 import pathlib
-import warnings
 from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
 from urllib.parse import urlparse
 
@@ -32,23 +31,17 @@ class OnlineResource(abc.ABC):
         sha256: Optional[str] = None,
         decompress: bool = False,
         extract: bool = False,
-        preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]] = None,
-        loader: Optional[Callable[[pathlib.Path], IterDataPipe[Tuple[str, IO]]]] = None,
     ) -> None:
         self.file_name = file_name
         self.sha256 = sha256
 
-        if preprocess and (decompress or extract):
-            warnings.warn("The parameters 'decompress' and 'extract' are ignored when 'preprocess' is passed.")
-        elif extract:
-            preprocess = self._extract
+        self._preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]]
+        if extract:
+            self._preprocess = self._extract
         elif decompress:
-            preprocess = self._decompress
-        self._preprocess = preprocess
-
-        if loader is None:
-            loader = self._default_loader
-        self._loader = loader
+            self._preprocess = self._decompress
+        else:
+            self._preprocess = None
 
     @staticmethod
     def _extract(file: pathlib.Path) -> pathlib.Path:
@@ -60,7 +53,7 @@ class OnlineResource(abc.ABC):
     def _decompress(file: pathlib.Path) -> pathlib.Path:
         return pathlib.Path(_decompress(str(file), remove_finished=True))
 
-    def _default_loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
+    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
             return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
@@ -101,7 +94,7 @@ class OnlineResource(abc.ABC):
             path_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
         # If the only thing we find is the raw file, we use it and optionally perform some preprocessing steps.
         if path_candidates == {path}:
-            if self._preprocess:
+            if self._preprocess is not None:
                 path = self._preprocess(path)
         # Otherwise we use the path with the fewest suffixes. This gives us the extracted > decompressed > raw priority
         # that we want.

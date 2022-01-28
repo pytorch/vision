@@ -351,7 +351,7 @@ jobs:
       - install_torchvision
       - install_prototype_dependencies
       - pip_install:
-          args: scipy pycocotools
+          args: scipy pycocotools h5py
           descr: Install optional dependencies
       - run:
           name: Enable prototype tests
