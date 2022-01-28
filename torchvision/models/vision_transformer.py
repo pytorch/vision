@@ -30,10 +30,8 @@ class ConvStemConfig(NamedTuple):
     out_channels: int
     kernel_size: int
     stride: int
-    padding: int
-    norm_layer: nn.Module = nn.BatchNorm2d
-    activation_layer: nn.Module = nn.ReLU
-    bias: bool = False
+    norm_layer: Callable[..., nn.Module] = nn.BatchNorm2d
+    activation_layer: Callable[..., nn.Module] = nn.ReLU
 
 
 class MLPBlock(nn.Sequential):
@@ -162,29 +160,29 @@ class VisionTransformer(nn.Module):
 
         if conv_stem_configs is not None:
             # As per https://arxiv.org/abs/2106.14881
-            conv_proj = nn.Sequential()
+            seq_proj = nn.Sequential()
             prev_channels = 3
             for i, conv_stem_layer_config in enumerate(conv_stem_configs):
-                conv_proj.add_module(
+                seq_proj.add_module(
                     f"conv_bn_relu_{i}",
                     ConvNormActivation(
                         in_channels=prev_channels,
                         out_channels=conv_stem_layer_config.out_channels,
                         kernel_size=conv_stem_layer_config.kernel_size,
                         stride=conv_stem_layer_config.stride,
-                        padding=conv_stem_layer_config.padding,
                         norm_layer=conv_stem_layer_config.norm_layer,
                         activation_layer=conv_stem_layer_config.activation_layer,
-                        bias=conv_stem_layer_config.bias,
                     ),
                 )
                 prev_channels = conv_stem_layer_config.out_channels
-            conv_proj.add_module(
+            seq_proj.add_module(
                 "conv_last", nn.Conv2d(in_channels=prev_channels, out_channels=hidden_dim, kernel_size=1)
             )
+            self.conv_proj: nn.Module = seq_proj
         else:
-            conv_proj = nn.Conv2d(in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size)
-        self.conv_proj: nn.Module = conv_proj
+            self.conv_proj = nn.Conv2d(
+                in_channels=3, out_channels=hidden_dim, kernel_size=patch_size, stride=patch_size
+            )
 
         seq_length = (image_size // patch_size) ** 2
 
