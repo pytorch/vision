@@ -119,6 +119,7 @@ class Demuxer {
           " in demuxer.h\n");
     }
   }
+
   ~Demuxer() {
     if (!fmtCtx) {
       return;
@@ -223,7 +224,7 @@ class Demuxer {
     int64_t time = timestamp * AV_TIME_BASE;
     TORCH_CHECK(
         0 <= av_seek_frame(fmtCtx, -1, time, flag),
-        "avformat_open_input() failed at line ",
+        "av_seek_frame() failed at line ",
         __LINE__,
         " in demuxer.h\n");
   }

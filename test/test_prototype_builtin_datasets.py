@@ -18,7 +18,7 @@ def test_home(mocker, tmp_path):
 
 
 def test_coverage():
-    untested_datasets = set(datasets.list()) - DATASET_MOCKS.keys()
+    untested_datasets = set(datasets.list_datasets()) - DATASET_MOCKS.keys()
     if untested_datasets:
         raise AssertionError(
             f"The dataset(s) {sequence_to_str(sorted(untested_datasets), separate_last='and ')} "
