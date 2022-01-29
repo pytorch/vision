@@ -56,37 +56,68 @@ class TestVideoApi:
         for test_video, config in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
 
-            av_reader = av.open(full_path)
+            with av.open(full_path) as av_reader:
+                is_video = True if av_reader.streams.video else False
 
-            if av_reader.streams.video:
-                video_reader = VideoReader(full_path, "video")
-                for av_frame in av_reader.decode(av_reader.streams.video[0]):
-                    vr_frame = next(video_reader)
+                if is_video:
+                    av_frames, vr_frames = [], []
+                    av_pts, vr_pts = [], []
+                    # get av frames
+                    for av_frame in av_reader.decode(av_reader.streams.video[0]):
+                        av_frames.append(torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1))
+                        av_pts.append(av_frame.pts * av_frame.time_base)
 
-                    assert float(av_frame.pts * av_frame.time_base) == approx(vr_frame["pts"], abs=0.1)
+                    # get vr frames
+                    video_reader = VideoReader(full_path, "video")
+                    for vr_frame in video_reader:
+                        vr_frames.append(vr_frame["data"])
+                        vr_pts.append(vr_frame["pts"])
 
-                    av_array = torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1)
-                    vr_array = vr_frame["data"]
-                    mean_delta = torch.mean(torch.abs(av_array.float() - vr_array.float()))
-                    # on average the difference is very small and caused
-                    # by decoding (around 1%)
-                    # TODO: asses empirically how to set this? atm it's 1%
-                    # averaged over all frames
-                    assert mean_delta.item() < 2.5
+                    # same number of frames
+                    assert len(vr_frames) == len(av_frames)
+                    assert len(vr_pts) == len(av_pts)
 
-            av_reader = av.open(full_path)
-            if av_reader.streams.audio:
-                video_reader = VideoReader(full_path, "audio")
-                for av_frame in av_reader.decode(av_reader.streams.audio[0]):
-                    vr_frame = next(video_reader)
-                    assert float(av_frame.pts * av_frame.time_base) == approx(vr_frame["pts"], abs=0.1)
+                    # compare the frames and ptss
+                    for i in range(len(vr_frames)):
+                        assert float(av_pts[i]) == approx(vr_pts[i], abs=0.1)
+                        mean_delta = torch.mean(torch.abs(av_frames[i].float() - vr_frames[i].float()))
+                        # on average the difference is very small and caused
+                        # by decoding (around 1%)
+                        # TODO: asses empirically how to set this? atm it's 1%
+                        # averaged over all frames
+                        assert mean_delta.item() < 2.55
 
-                    av_array = torch.tensor(av_frame.to_ndarray()).permute(1, 0)
-                    vr_array = vr_frame["data"]
+                    del vr_frames, av_frames, vr_pts, av_pts
 
-                    max_delta = torch.max(torch.abs(av_array.float() - vr_array.float()))
-                    # we assure that there is never more than 1% difference in signal
-                    assert max_delta.item() < 0.001
+            # test audio reading compared to PYAV
+            with av.open(full_path) as av_reader:
+                is_audio = True if av_reader.streams.audio else False
+
+                if is_audio:
+                    av_frames, vr_frames = [], []
+                    av_pts, vr_pts = [], []
+                    # get av frames
+                    for av_frame in av_reader.decode(av_reader.streams.audio[0]):
+                        av_frames.append(torch.tensor(av_frame.to_ndarray()).permute(1, 0))
+                        av_pts.append(av_frame.pts * av_frame.time_base)
+                    av_reader.close()
+
+                    # get vr frames
+                    video_reader = VideoReader(full_path, "audio")
+                    for vr_frame in video_reader:
+                        vr_frames.append(vr_frame["data"])
+                        vr_pts.append(vr_frame["pts"])
+
+                    # same number of frames
+                    assert len(vr_frames) == len(av_frames)
+                    assert len(vr_pts) == len(av_pts)
+
+                    # compare the frames and ptss
+                    for i in range(len(vr_frames)):
+                        assert float(av_pts[i]) == approx(vr_pts[i], abs=0.1)
+                        max_delta = torch.max(torch.abs(av_frames[i].float() - vr_frames[i].float()))
+                        # we assure that there is never more than 1% difference in signal
+                        assert max_delta.item() < 0.001
 
     def test_metadata(self):
         """
