@@ -69,9 +69,9 @@ The process of improving existing models, for instance improving accuracy by ret
 =======
 >>>>>>> 1f79d422 (update CONTRIBUTING_MODELS.md)
 
-- [New Model Architectures - Overview](#new-model-architectures-overview)
+- [New Model Architectures - Overview](#new-model-architectures---overview)
 
-- [New Model Architectures - Implementation Details](#new-model-architectures-implementation-details)
+- [New Model Architectures - Implementation Details](#new-model-architectures---implementation-details)
 
 - [New Weights for Existing Model Architectures](#new-weights-for-existing-model-architectures)
 
