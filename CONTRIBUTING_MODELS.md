@@ -1,8 +1,8 @@
 # Contributing to Torchvision - Models
 
-- [New Model Architectures - Overview](#new-model-architectures-overview)
+- [New Model Architectures - Overview](#new-model-architectures---overview)
 
-- [New Model Architectures - Implementation Details](#new-model-architectures-implementation-details)
+- [New Model Architectures - Implementation Details](#new-model-architectures---implementation-details)
 
 - [New Weights for Existing Model Architectures](#new-weights-for-existing-model-architectures)
 
