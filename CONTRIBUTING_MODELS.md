@@ -1,13 +1,10 @@
 # Contributing to Torchvision - Models
 
-<!-- toc -->
-
 - [New Model Architectures - Overview](#new-model-architectures-overview)
+
 - [New Model Architectures - Implementation Details](#new-model-architectures-implementation-details)
+
 - [New Weights for Existing Model Architectures](#new-weights-for-existing-model-architectures)
-
-<!-- tocstop -->
-
 
 ## New Model Architectures - Overview
 
@@ -106,7 +103,7 @@ Finally, run the model test to generate expected model files for testing. Please
     - submit a PR to [https://github.com/pytorch/hub](https://github.com/pytorch/hub) with a model page (or update an existing one)
 
 - `README.md` under the reference script folder:
-    
+
     - command(s) to train the model
 
 
@@ -114,10 +111,10 @@ Finally, run the model test to generate expected model files for testing. Please
 
 The process of improving existing models, for instance improving accuracy by retraining the model with a different set of hyperparameters or augmentations, is the following:
 
-1. Open a ticket and discuss with the community and maintainers whether this improvement should be added to TorchVision. Note that to add new weights the improvement should be significant. 
+1. Open a ticket and discuss with the community and maintainers whether this improvement should be added to TorchVision. Note that to add new weights the improvement should be significant.
 
 2. Train the model using TorchVision reference scripts. You can add new primitives (transforms, losses, etc) when necessary, but the final location will be determined after discussion with the dedicated maintainer.
 
-3. Open a PR with the new weights, together with the training logs and the checkpoint chosen so the reviewers can verify the submission.  Details on how the model was trained, i.e., the training command using the reference scripts, should be included in the PR. 
+3. Open a PR with the new weights, together with the training logs and the checkpoint chosen so the reviewers can verify the submission.  Details on how the model was trained, i.e., the training command using the reference scripts, should be included in the PR.
 
-4. The PR reviewers should replicate the results on their side to verify the submission and if all goes well the new weights should be ready to be released! 
+4. The PR reviewers should replicate the results on their side to verify the submission and if all goes well the new weights should be ready to be released!
