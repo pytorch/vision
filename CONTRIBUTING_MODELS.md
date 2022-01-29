@@ -186,9 +186,10 @@ You can also choose to only build a subset of the examples by using the
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
 with "transforms" in their name.
 
-### New or improved model
+### New model
 
-Please refer to guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
+More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
+it in an issue as, most likely, it will not be accepted.
  
 ### New dataset
 
