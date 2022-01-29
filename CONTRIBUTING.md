@@ -188,7 +188,7 @@ with "transforms" in their name.
 
 ### New or improved model
 
-Please refer to guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
+Please refer to the guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
  
 ### New dataset
 
