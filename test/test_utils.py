@@ -317,29 +317,42 @@ def test_draw_keypoints_errors():
         utils.draw_keypoints(image=img, keypoints=invalid_keypoints)
 
 
-def test_flow_to_image():
+@pytest.mark.parametrize("batch", (True, False))
+def test_flow_to_image(batch):
     h, w = 100, 100
     flow = torch.meshgrid(torch.arange(h), torch.arange(w), indexing="ij")
     flow = torch.stack(flow[::-1], dim=0).float()
     flow[0] -= h / 2
     flow[1] -= w / 2
+
+    if batch:
+        flow = torch.stack([flow, flow])
+
     img = utils.flow_to_image(flow)
+    assert img.shape == (2, 3, h, w) if batch else (3, h, w)
+
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "expected_flow.pt")
     expected_img = torch.load(path, map_location="cpu")
+
+    if batch:
+        expected_img = torch.stack([expected_img, expected_img])
+
     assert_equal(expected_img, img)
 
 
-def test_flow_to_image_errors():
-    wrong_flow1 = torch.full((3, 10, 10), 0, dtype=torch.float)
-    wrong_flow2 = torch.full((2, 10), 0, dtype=torch.float)
-    wrong_flow3 = torch.full((2, 10, 30), 0, dtype=torch.int)
-
-    with pytest.raises(ValueError, match="Input flow should have shape"):
-        utils.flow_to_image(flow=wrong_flow1)
-    with pytest.raises(ValueError, match="Input flow should have shape"):
-        utils.flow_to_image(flow=wrong_flow2)
-    with pytest.raises(ValueError, match="Flow should be of dtype torch.float"):
-        utils.flow_to_image(flow=wrong_flow3)
+@pytest.mark.parametrize(
+    "input_flow, match",
+    (
+        (torch.full((3, 10, 10), 0, dtype=torch.float), "Input flow should have shape"),
+        (torch.full((5, 3, 10, 10), 0, dtype=torch.float), "Input flow should have shape"),
+        (torch.full((2, 10), 0, dtype=torch.float), "Input flow should have shape"),
+        (torch.full((5, 2, 10), 0, dtype=torch.float), "Input flow should have shape"),
+        (torch.full((2, 10, 30), 0, dtype=torch.int), "Flow should be of dtype torch.float"),
+    ),
+)
+def test_flow_to_image_errors(input_flow, match):
+    with pytest.raises(ValueError, match=match):
+        utils.flow_to_image(flow=input_flow)
 
 
 if __name__ == "__main__":
