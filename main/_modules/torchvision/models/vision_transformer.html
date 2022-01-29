@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+187876c ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+04a24ae ) &#x25BC</a>
     </div>
     
 
@@ -320,12 +320,13 @@
 <span></span><span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 
 <span class="kn">from</span> <span class="nn">.._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
+<span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">ConvNormActivation</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
@@ -342,6 +343,14 @@
     <span class="s2">&quot;vit_l_16&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/vit_l_16-852ce7e3.pth&quot;</span><span class="p">,</span>
     <span class="s2">&quot;vit_l_32&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/vit_l_32-c7638314.pth&quot;</span><span class="p">,</span>
 <span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">ConvStemConfig</span><span class="p">(</span><span class="n">NamedTuple</span><span class="p">):</span>
+    <span class="n">out_channels</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">kernel_size</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">stride</span><span class="p">:</span> <span class="nb">int</span>
+    <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span>
+    <span class="n">activation_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span>
 
 
 <span class="k">class</span> <span class="nc">MLPBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
@@ -453,6 +462,7 @@
         <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
         <span class="n">representation_size</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]</span> <span class="o">=</span> <span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">LayerNorm</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-6</span><span class="p">),</span>
+        <span class="n">conv_stem_configs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">ConvStemConfig</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
@@ -467,11 +477,31 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">representation_size</span> <span class="o">=</span> <span class="n">representation_size</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">norm_layer</span> <span class="o">=</span> <span class="n">norm_layer</span>
 
-        <span class="n">input_channels</span> <span class="o">=</span> <span class="mi">3</span>
-
-        <span class="c1"># The conv_proj is a more efficient version of reshaping, permuting</span>
-        <span class="c1"># and projecting the input</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">input_channels</span><span class="p">,</span> <span class="n">hidden_dim</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">patch_size</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">patch_size</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">conv_stem_configs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># As per https://arxiv.org/abs/2106.14881</span>
+            <span class="n">seq_proj</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">()</span>
+            <span class="n">prev_channels</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">conv_stem_layer_config</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">conv_stem_configs</span><span class="p">):</span>
+                <span class="n">seq_proj</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s2">&quot;conv_bn_relu_</span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">,</span>
+                    <span class="n">ConvNormActivation</span><span class="p">(</span>
+                        <span class="n">in_channels</span><span class="o">=</span><span class="n">prev_channels</span><span class="p">,</span>
+                        <span class="n">out_channels</span><span class="o">=</span><span class="n">conv_stem_layer_config</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span>
+                        <span class="n">kernel_size</span><span class="o">=</span><span class="n">conv_stem_layer_config</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span>
+                        <span class="n">stride</span><span class="o">=</span><span class="n">conv_stem_layer_config</span><span class="o">.</span><span class="n">stride</span><span class="p">,</span>
+                        <span class="n">norm_layer</span><span class="o">=</span><span class="n">conv_stem_layer_config</span><span class="o">.</span><span class="n">norm_layer</span><span class="p">,</span>
+                        <span class="n">activation_layer</span><span class="o">=</span><span class="n">conv_stem_layer_config</span><span class="o">.</span><span class="n">activation_layer</span><span class="p">,</span>
+                    <span class="p">),</span>
+                <span class="p">)</span>
+                <span class="n">prev_channels</span> <span class="o">=</span> <span class="n">conv_stem_layer_config</span><span class="o">.</span><span class="n">out_channels</span>
+            <span class="n">seq_proj</span><span class="o">.</span><span class="n">add_module</span><span class="p">(</span>
+                <span class="s2">&quot;conv_last&quot;</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">in_channels</span><span class="o">=</span><span class="n">prev_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span> <span class="o">=</span> <span class="n">seq_proj</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
+                <span class="n">in_channels</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">out_channels</span><span class="o">=</span><span class="n">hidden_dim</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="n">patch_size</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">patch_size</span>
+            <span class="p">)</span>
 
         <span class="n">seq_length</span> <span class="o">=</span> <span class="p">(</span><span class="n">image_size</span> <span class="o">//</span> <span class="n">patch_size</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
 
@@ -503,9 +533,17 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">_init_weights</span><span class="p">()</span>
 
     <span class="k">def</span> <span class="nf">_init_weights</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">fan_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">in_channels</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
-        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">trunc_normal_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">fan_in</span><span class="p">))</span>
-        <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+            <span class="c1"># Init the patchify stem</span>
+            <span class="n">fan_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">in_channels</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">*</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">trunc_normal_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">fan_in</span><span class="p">))</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Init the last 1x1 conv of the conv stem</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">normal_</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">conv_last</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span> <span class="o">/</span> <span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">conv_last</span><span class="o">.</span><span class="n">out_channels</span><span class="p">)</span>
+            <span class="p">)</span>
+            <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">conv_proj</span><span class="o">.</span><span class="n">conv_last</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
 
         <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">heads</span><span class="p">,</span> <span class="s2">&quot;pre_logits&quot;</span><span class="p">):</span>
             <span class="n">fan_in</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">heads</span><span class="o">.</span><span class="n">pre_logits</span><span class="o">.</span><span class="n">in_features</span>

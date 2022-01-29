@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+187876c ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+04a24ae ) &#x25BC</a>
     </div>
     
 
@@ -378,7 +378,7 @@
 <span class="p">]</span>
 
 
-<span class="k">class</span> <span class="nc">Compose</span><span class="p">:</span>
+<div class="viewcode-block" id="Compose"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Compose.html#torchvision.transforms.Compose">[docs]</a><span class="k">class</span> <span class="nc">Compose</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Composes several transforms together. This transform does not support torchscript.</span>
 <span class="sd">    Please, see the note below.</span>
 
@@ -422,7 +422,7 @@
             <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span>
+        <span class="k">return</span> <span class="n">format_string</span></div>
 
 
 <span class="k">class</span> <span class="nc">ToTensor</span><span class="p">:</span>
@@ -459,7 +459,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;()&quot;</span>
 
 
-<div class="viewcode-block" id="PILToTensor"><a class="viewcode-back" href="../../../generated/torchvision.transforms.PILToTensor.html#torchvision.transforms.PILToTensor">[docs]</a><span class="k">class</span> <span class="nc">PILToTensor</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">PILToTensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Convert a ``PIL Image`` to a tensor of the same type. This transform does not support torchscript.</span>
 
 <span class="sd">    Converts a PIL Image (H x W x C) to a Tensor of shape (C x H x W).</span>
@@ -483,10 +483,10 @@
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">pil_to_tensor</span><span class="p">(</span><span class="n">pic</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;()&quot;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;()&quot;</span>
 
 
-<span class="k">class</span> <span class="nc">ConvertImageDtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="ConvertImageDtype"><a class="viewcode-back" href="../../../generated/torchvision.transforms.ConvertImageDtype.html#torchvision.transforms.ConvertImageDtype">[docs]</a><span class="k">class</span> <span class="nc">ConvertImageDtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert a tensor image to the given ``dtype`` and scale the values accordingly</span>
 <span class="sd">    This function does not support PIL Image.</span>
 
@@ -510,8 +510,8 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span> <span class="o">=</span> <span class="n">dtype</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_image_dtype</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span>
+<div class="viewcode-block" id="ConvertImageDtype.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.ConvertImageDtype.html#torchvision.transforms.ConvertImageDtype.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">image</span><span class="p">):</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">convert_image_dtype</span><span class="p">(</span><span class="n">image</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">dtype</span><span class="p">)</span></div></div>
 
 
 <span class="k">class</span> <span class="nc">ToPILImage</span><span class="p">:</span>
@@ -555,7 +555,7 @@
         <span class="k">return</span> <span class="n">format_string</span>
 
 
-<div class="viewcode-block" id="Normalize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Normalize.html#torchvision.transforms.Normalize">[docs]</a><span class="k">class</span> <span class="nc">Normalize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Normalize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Normalize a tensor image with mean and standard deviation.</span>
 <span class="sd">    This transform does not support PIL Image.</span>
 <span class="sd">    Given mean: ``(mean[1],...,mean[n])`` and std: ``(std[1],..,std[n])`` for ``n``</span>
@@ -580,7 +580,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">std</span> <span class="o">=</span> <span class="n">std</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">inplace</span> <span class="o">=</span> <span class="n">inplace</span>
 
-<div class="viewcode-block" id="Normalize.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Normalize.html#torchvision.transforms.Normalize.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            tensor (Tensor): Tensor image to be normalized.</span>
@@ -588,10 +588,10 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            Tensor: Normalized Tensor image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inplace</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inplace</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(mean=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="si">}</span><span class="s2">, std=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(mean=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="si">}</span><span class="s2">, std=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">Resize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -685,7 +685,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">CenterCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="CenterCrop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.CenterCrop.html#torchvision.transforms.CenterCrop">[docs]</a><span class="k">class</span> <span class="nc">CenterCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crops the given image at the center.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -702,7 +702,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">_setup_size</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Please provide only two dimensions (h, w) for size.&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="CenterCrop.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.CenterCrop.html#torchvision.transforms.CenterCrop.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be cropped.</span>
@@ -710,13 +710,13 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            PIL Image or Tensor: Cropped image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">center_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">center_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
-<div class="viewcode-block" id="Pad"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Pad.html#torchvision.transforms.Pad">[docs]</a><span class="k">class</span> <span class="nc">Pad</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Pad</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Pad the given image on all sides with the given &quot;pad&quot; value.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,</span>
@@ -775,7 +775,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span> <span class="o">=</span> <span class="n">padding_mode</span>
 
-<div class="viewcode-block" id="Pad.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Pad.html#torchvision.transforms.Pad.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be padded.</span>
@@ -783,13 +783,13 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            PIL Image or Tensor: Padded image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(padding=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="si">}</span><span class="s2">, fill=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="si">}</span><span class="s2">, padding_mode=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(padding=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="si">}</span><span class="s2">, fill=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="si">}</span><span class="s2">, padding_mode=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
-<div class="viewcode-block" id="Lambda"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Lambda.html#torchvision.transforms.Lambda">[docs]</a><span class="k">class</span> <span class="nc">Lambda</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">Lambda</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Apply a user-defined lambda as a transform. This transform does not support torchscript.</span>
 
 <span class="sd">    Args:</span>
@@ -806,7 +806,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambd</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;()&quot;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;()&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">RandomTransforms</span><span class="p">:</span>
@@ -1309,7 +1309,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">FiveCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="FiveCrop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.FiveCrop.html#torchvision.transforms.FiveCrop">[docs]</a><span class="k">class</span> <span class="nc">FiveCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crop the given image into four corners and the central crop.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading</span>
@@ -1342,7 +1342,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">_setup_size</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">error_msg</span><span class="o">=</span><span class="s2">&quot;Please provide only two dimensions (h, w) for size.&quot;</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="FiveCrop.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.FiveCrop.html#torchvision.transforms.FiveCrop.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be cropped.</span>
@@ -1350,10 +1350,10 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            tuple of 5 images. Image can be PIL Image or Tensor</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">five_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">five_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
 <span class="k">class</span> <span class="nc">TenCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1406,7 +1406,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, vertical_flip=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
-<div class="viewcode-block" id="LinearTransformation"><a class="viewcode-back" href="../../../generated/torchvision.transforms.LinearTransformation.html#torchvision.transforms.LinearTransformation">[docs]</a><span class="k">class</span> <span class="nc">LinearTransformation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">LinearTransformation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Transform a tensor image with a square transformation matrix and a mean_vector computed</span>
 <span class="sd">    offline.</span>
 <span class="sd">    This transform does not support PIL Image.</span>
@@ -1448,7 +1448,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span> <span class="o">=</span> <span class="n">transformation_matrix</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span> <span class="o">=</span> <span class="n">mean_vector</span>
 
-<div class="viewcode-block" id="LinearTransformation.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.LinearTransformation.html#torchvision.transforms.LinearTransformation.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            tensor (Tensor): Tensor image to be whitened.</span>
@@ -1474,16 +1474,16 @@
         <span class="n">flat_tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n</span><span class="p">)</span> <span class="o">-</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span>
         <span class="n">transformed_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mm</span><span class="p">(</span><span class="n">flat_tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span><span class="p">)</span>
         <span class="n">tensor</span> <span class="o">=</span> <span class="n">transformed_tensor</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">tensor</span></div>
+        <span class="k">return</span> <span class="n">tensor</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(transformation_matrix=&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;, (mean_vector=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span></div>
+        <span class="k">return</span> <span class="n">format_string</span>
 
 
-<span class="k">class</span> <span class="nc">ColorJitter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="ColorJitter"><a class="viewcode-back" href="../../../generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter">[docs]</a><span class="k">class</span> <span class="nc">ColorJitter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Randomly change the brightness, contrast, saturation and hue of an image.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -1532,7 +1532,7 @@
             <span class="n">value</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">return</span> <span class="n">value</span>
 
-    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="ColorJitter.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span>
         <span class="n">brightness</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
         <span class="n">contrast</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
@@ -1562,9 +1562,9 @@
         <span class="n">s</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">saturation</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">saturation</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">saturation</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
         <span class="n">h</span> <span class="o">=</span> <span class="kc">None</span> <span class="k">if</span> <span class="n">hue</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">hue</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">hue</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
 
-        <span class="k">return</span> <span class="n">fn_idx</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span>
+        <span class="k">return</span> <span class="n">fn_idx</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">c</span><span class="p">,</span> <span class="n">s</span><span class="p">,</span> <span class="n">h</span></div>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="ColorJitter.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.ColorJitter.html#torchvision.transforms.ColorJitter.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Input image.</span>
@@ -1586,7 +1586,7 @@
             <span class="k">elif</span> <span class="n">fn_id</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="n">hue_factor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">img</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_hue</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">hue_factor</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">img</span>
+        <span class="k">return</span> <span class="n">img</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span>
@@ -1594,7 +1594,7 @@
         <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, contrast=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">contrast</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, saturation=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">saturation</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, hue=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hue</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span>
+        <span class="k">return</span> <span class="n">format_string</span></div>
 
 
 <span class="k">class</span> <span class="nc">RandomRotation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1887,7 +1887,7 @@
         <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="o">**</span><span class="n">d</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="Grayscale"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Grayscale.html#torchvision.transforms.Grayscale">[docs]</a><span class="k">class</span> <span class="nc">Grayscale</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">Grayscale</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Convert image to grayscale.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions</span>
@@ -1908,7 +1908,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span> <span class="o">=</span> <span class="n">num_output_channels</span>
 
-<div class="viewcode-block" id="Grayscale.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.Grayscale.html#torchvision.transforms.Grayscale.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be converted to grayscale.</span>
@@ -1916,10 +1916,10 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            PIL Image or Tensor: Grayscaled image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="p">)</span>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(num_output_channels=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(num_output_channels=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">RandomGrayscale</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -2095,7 +2095,7 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="n">s</span>
 
 
-<span class="k">class</span> <span class="nc">GaussianBlur</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="GaussianBlur"><a class="viewcode-back" href="../../../generated/torchvision.transforms.GaussianBlur.html#torchvision.transforms.GaussianBlur">[docs]</a><span class="k">class</span> <span class="nc">GaussianBlur</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Blurs image with randomly chosen Gaussian blur.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., C, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -2132,7 +2132,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span> <span class="o">=</span> <span class="n">sigma</span>
 
-    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="GaussianBlur.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.GaussianBlur.html#torchvision.transforms.GaussianBlur.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">sigma_min</span><span class="p">:</span> <span class="nb">float</span><span class="p">,</span> <span class="n">sigma_max</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Choose sigma for random gaussian blurring.</span>
 
@@ -2143,9 +2143,9 @@
 <span class="sd">        Returns:</span>
 <span class="sd">            float: Standard deviation to be passed to calculate kernel for gaussian blurring.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">sigma_min</span><span class="p">,</span> <span class="n">sigma_max</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="n">sigma_min</span><span class="p">,</span> <span class="n">sigma_max</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="GaussianBlur.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.GaussianBlur.html#torchvision.transforms.GaussianBlur.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): image to be blurred.</span>
@@ -2154,12 +2154,12 @@
 <span class="sd">            PIL Image or Tensor: Gaussian blurred image</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">gaussian_blur</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="p">[</span><span class="n">sigma</span><span class="p">,</span> <span class="n">sigma</span><span class="p">])</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">gaussian_blur</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="p">[</span><span class="n">sigma</span><span class="p">,</span> <span class="n">sigma</span><span class="p">])</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
         <span class="n">s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(kernel_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="si">}</span><span class="s2">, &quot;</span>
         <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;sigma=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="n">s</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="n">s</span></div>
 
 
 <span class="k">def</span> <span class="nf">_setup_size</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">error_msg</span><span class="p">):</span>
