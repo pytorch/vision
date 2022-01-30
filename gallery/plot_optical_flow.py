@@ -3,13 +3,16 @@
 Optical Flow using Torchvision
 ==============================
 
-The following example illustrates ......
-
+Optical flow is a task consisting of estimating per pixel motion between two consecutive frames of a video.
+We aim to find the displacement of all image pixels and calculate their motion vectors.
+The following example illustrates how torchvision can be used in predicting as well as
+visualizing optical flow.
 
 """
 
-# sphinx_gallery_thumbnail_path = "../../gallery/assets/visualization_utils_thumbnail2.png"
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/optical_flow_thumbnail.png"
 
+import os
 import numpy as np
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
@@ -30,49 +33,73 @@ def show(imgs):
         axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
 
-def frame_preprocess(frame, device):
-    frame = frame.permute(2, 0, 1).float()
-    frame = frame.unsqueeze(0)
-    frame = frame.to(device)
-    return frame
+####################################
+# Reading Videos Using Torchvision
+# --------------------------------
+# We will first read a video using torchvision's read_video.
+# Alternatively once can use the new VideoReader API (if torchvision is built from source) or
+# open-cv VideoCapture method.
 
-
-from torchvision.models.optical_flow import raft_large
-model = raft_large(pretrained=True)
-
-device = "cpu"
-model = model.eval()
-
-video_path = "./crowd.mp4"
 
 from torchvision.io import read_video
+video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./crowd.mp4")
+
+#########################
+# Read video returns the video_frames, audio_frames and the metadata
+# We will focus only on the video frames.
+# Note that v_frames tensor is of shape ``(num_frames, height, width, num_channels)``.
+# We will visualize the optical flow between the first two frames of the video.
+
 
 v_frames, a_frames, meta_data = read_video(video_path)
-
 print(v_frames.shape)
 
 frame_1 = v_frames[1, :, :, :]
 frame_2 = v_frames[2, :, :, :]
 
-# print(frame_1.shape)
+print(frame_1.shape)
 
-# show(frame_1)
+#########################
+# Little preprocessing to convert the frames to (1, C, H, W).
+#
 
-frame_1 = frame_preprocess(frame_1, device)
-frame_2 = frame_preprocess(frame_2, device)
 
+def frame_preprocess(frame):
+    frame = frame.permute(2, 0, 1).float()
+    frame = frame.unsqueeze(0)
+    return frame
+
+
+frame_1 = frame_preprocess(frame_1)
+frame_2 = frame_preprocess(frame_2)
+
+# Now both the frames are of shape (1, C, H, W)
 print(frame_1.shape)
 print(frame_2.shape)
 
+
+####################################
+# Estimating Optical flow using RAFT
+# ----------------------------------
+# Some text
+#
+
+from torchvision.models.optical_flow import raft_large
+
+model = raft_large(pretrained=True, progress=False)
+model = model.eval()
 flow_preds = model(2 * frame_1 / 255 - 1, 2 * frame_2 / 255 - 1)
-flow_up = flow_preds[-1]
+flow = flow_preds[-1]
+
+####################################
+# Visualizing optical flow
+# -------------------------
+# Torchvision provides ``flow_to_image`` utlity to visualize optical flow.
+# It can be used to convert single images as well as batches to flow.
+
 
 from torchvision.utils import flow_to_image
-flo = flow_to_image(flow_up)
-flo = flo.squeeze(0)
+img = flow_to_image(flow)
 
-print(flo.shape)
-print(frame_1.shape)
-
-show([flo, frame_1])
-plt.show()
+img = img.squeeze(0)
+show(img)
