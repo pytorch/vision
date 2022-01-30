@@ -186,7 +186,7 @@ You can also choose to only build a subset of the examples by using the
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
 with "transforms" in their name.
 
-### New or improved model
+### New architecture or improved model weights
 
 Please refer to the guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
  
