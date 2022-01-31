@@ -289,7 +289,9 @@ jobs:
             sudo mv clang-format /opt/clang-format
       - run:
           name: Lint C code
-          command: ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
+          command: |
+            /opt/clang-format --version
+            ./.circleci/unittest/linux/scripts/run-clang-format.py -r torchvision/csrc --clang-format-executable /opt/clang-format
       - run:
           name: Required lint modifications
           when: on_fail
