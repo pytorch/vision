@@ -11,7 +11,7 @@ from .vision import VisionDataset
 
 class HMDB51(VisionDataset):
     """
-    `HMDB51 <http://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/>`_
+    `HMDB51 <https://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/>`_
     dataset.
 
     HMDB51 is an action recognition video dataset.
@@ -47,9 +47,9 @@ class HMDB51(VisionDataset):
             - label (int): class of the video clip
     """
 
-    data_url = "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"
+    data_url = "https://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/hmdb51_org.rar"
     splits = {
-        "url": "http://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar",
+        "url": "https://serre-lab.clps.brown.edu/wp-content/uploads/2013/10/test_train_splits.rar",
         "md5": "15e67781e70dcfbdce2d7dbb9b3344b5",
     }
     TRAIN_TAG = 1
