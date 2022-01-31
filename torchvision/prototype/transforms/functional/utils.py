@@ -31,9 +31,6 @@ class Dispatcher:
             self._pil_kernel = pil_kernel
 
         def outer_wrapper(implement_fn):
-            feature_type._KERNELS[self._dispatch_fn] = implement_fn
-            self._support.add(feature_type)
-
             @functools.wraps(implement_fn)
             def inner_wrapper(*args, **kwargs) -> Any:
                 missing = [
@@ -43,11 +40,14 @@ class Dispatcher:
                 ]
                 if missing:
                     raise TypeError(
-                        f"{implement_fn.__name__}() missing {len(missing)} required keyword-only arguments: "
-                        f"{sequence_to_str(missing, separate_last='and ')}"
+                        f"{self._dispatch_fn.__name__}() missing {len(missing)} required keyword-only arguments "
+                        f"for feature type {feature_type.__name__}: {sequence_to_str(missing, separate_last='and ')}"
                     )
 
                 return implement_fn(*args, **kwargs)
+
+            feature_type._KERNELS[self._dispatch_fn] = inner_wrapper
+            self._support.add(feature_type)
 
             return inner_wrapper
 
