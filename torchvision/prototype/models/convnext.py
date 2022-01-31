@@ -29,17 +29,11 @@ __all__ = [
 
 
 class LayerNorm2d(nn.LayerNorm):
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        self.channels_last = kwargs.pop("channels_last", False)
-        super().__init__(*args, **kwargs)
-
     def forward(self, x: Tensor) -> Tensor:
         #  TODO: Benchmark this against the approach described at https://github.com/pytorch/vision/pull/5197#discussion_r786251298
-        if not self.channels_last:
-            x = x.permute(0, 2, 3, 1)
+        x = x.permute(0, 2, 3, 1)
         x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
-        if not self.channels_last:
-            x = x.permute(0, 3, 1, 2)
+        x = x.permute(0, 3, 1, 2)
         return x
 
 
