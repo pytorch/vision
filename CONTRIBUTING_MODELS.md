@@ -71,8 +71,6 @@ The process of improving existing models, for instance improving accuracy by ret
 
 - [New Model Architectures - Overview](#new-model-architectures---overview)
 
-- [New Model Architectures - Implementation Details](#new-model-architectures---implementation-details)
-
 - [New Weights for Existing Model Architectures](#new-weights-for-existing-model-architectures)
 
 ## New Model Architectures - Overview
@@ -106,6 +104,7 @@ Please take a look at existing models in TorchVision to get familiar with the id
 - The PR description should include commands/configuration used to train the model, so that the TorchVision maintainers can easily run them to verify the implementation and generate the final model to be released
 - Make sure we re-use existing components as much as possible (inheritance)
 - New primitives (transforms, losses, etc) can be added if necessary, but the final location will be determined after discussion with the dedicated maintainer
+- Please take a look at the detailed [implementation and documentation guidelines](https://github.com/pytorch/vision/issues/5319) for a fine grain list of things not to be missed
 
 ### 3. Train the model with reference scripts
 
@@ -121,60 +120,6 @@ Submit a PR and tag the assigned maintainer. This PR should:
 - Provide a link for the original paper and the original repository if available
 - Highlight the important test metrics and how they compare to the original paper
 - Highlight any design choices that deviate from the original paper/implementation and rationale for these choices
-
-## New Model Architectures - Implementation Details
-
-### Model development and training steps
-
-When developing a new model there are some details not to be missed:
-
-- Implement a model factory function for each of the model variants
-
-- in the module constructor, [pass layer constructor instead of instance](https://github.com/pytorch/vision/blob/47bd962069ba03f753e7ba711cb825317be0b00a/torchvision/models/efficientnet.py#L88) for configurable layers like norm, activation, and log the api usage with `_log_api_usage_once(self)`
-
-- fuse layers together with existing common blocks if possible; For example consecutive conv, bn, activation layers could be replaced by [ConvNormActication](https://github.com/pytorch/vision/blob/47bd962069ba03f753e7ba711cb825317be0b00a/torchvision/ops/misc.py#L104)
-
-- define `__all__` in the beginning of the model file to expose model factory functions; import model public APIs (e.g. factory methods) in `torchvision/models/__init__.py`
-
-- create the model builder using the new API and add it to the prototype area. Here is an [example](https://github.com/pytorch/vision/pull/4784/files) on how to do this. The new API requires adding more information about the weights such as the preprocessing transforms necessary for using the model, meta-data about the model, etc
-
-- Make sure you write tests for the model itself (see `_check_input_backprop`, `_model_params` and `_model_params` in `test/test_models.py`) and for any new operators/transforms or important functions that you introduce
-
-Note that this list is not exhaustive and there are details here related to the code quality etc, but these are rules that apply in all PRs (see [Contributing to TorchVision](https://github.com/pytorch/vision/blob/main/CONTRIBUTING.md)).
-
-Once the model is implemented, you need to train the model using the reference scripts. For example, in order to train a classification resnet18 model you would:
-
-1. go to `references/classification`
-
-2. run the train command (for example `torchrun --nproc_per_node=8 train.py --model resnet18`)
-
-After training the model, select the best checkpoint and estimate its accuracy with a batch size of 1 on a single GPU. This helps us get better measurements about the accuracy of the models and avoid variants introduced due to batch padding (read [here](https://github.com/pytorch/vision/pull/4609/commits/5264b1a670107bcb4dc89e83a369f6fd97466ef8) for more details).
-
-Finally, run the model test to generate expected model files for testing. Please include those generated files in the PR as well.:
-
-`EXPECTTEST_ACCEPT=1 pytest test/test_models.py -k {model_name}`
-
-
-### Documentation and Pytorch Hub
-
-- `docs/source/models.rst`:
-
-    - add the model to the corresponding section (classification/detection/video etc.)
-
-    - describe how to construct the model variants (with and without pre-trained weights)
-
-    - add model metrics and reference to the original paper
-
-- `hubconf.py`:
-
-    - import the model factory functions
-
-    - submit a PR to [https://github.com/pytorch/hub](https://github.com/pytorch/hub) with a model page (or update an existing one)
-
-- `README.md` under the reference script folder:
-
-    - command(s) to train the model
-
 
 ## New Weights for Existing Model Architectures
 
