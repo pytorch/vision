@@ -36,3 +36,14 @@ class BoundingBox(Feature):
         bounding_box._metadata.update(dict(format=format, image_size=image_size))
 
         return bounding_box
+
+    def to_format(self, format: Union[str, BoundingBoxFormat]) -> "BoundingBox":
+        # import at runtime to avoid cyclic imports
+        from torchvision.prototype.transforms.functional import convert_bounding_box_format
+
+        if isinstance(format, str):
+            format = BoundingBoxFormat[format]
+
+        return BoundingBox.new_like(
+            self, convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
+        )
