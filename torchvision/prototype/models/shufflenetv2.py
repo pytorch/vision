@@ -45,6 +45,7 @@ _COMMON_META = {
     "architecture": "ShuffleNetV2",
     "publication_year": 2018,
     "size": (224, 224),
+    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0",
@@ -52,7 +53,7 @@ _COMMON_META = {
 
 
 class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -62,11 +63,11 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
             "acc@5": 88.316,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -76,7 +77,7 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
             "acc@5": 81.746,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
@@ -87,7 +88,7 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
     pass
 
 
-@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x0_5(
     *, weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
@@ -96,7 +97,7 @@ def shufflenet_v2_x0_5(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_0_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x1_0(
     *, weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:

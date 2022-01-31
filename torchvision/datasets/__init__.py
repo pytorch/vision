@@ -29,6 +29,7 @@ from .oxford_iiit_pet import OxfordIIITPet
 from .pcam import PCAM
 from .phototour import PhotoTour
 from .places365 import Places365
+from .rendered_sst2 import RenderedSST2
 from .sbd import SBDataset
 from .sbu import SBU
 from .semeion import SEMEION
@@ -99,7 +100,9 @@ __all__ = (
     "GTSRB",
     "CLEVRClassification",
     "OxfordIIITPet",
+    "PCAM",
     "Country211",
     "FGVCAircraft",
     "EuroSAT",
+    "RenderedSST2",
 )

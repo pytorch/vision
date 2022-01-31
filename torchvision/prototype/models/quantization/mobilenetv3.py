@@ -43,21 +43,21 @@ def _mobilenet_v3_model(
 
     if quantize:
         model.fuse_model()
-        model.qconfig = torch.quantization.get_default_qat_qconfig(backend)
-        torch.quantization.prepare_qat(model, inplace=True)
+        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
+        torch.ao.quantization.prepare_qat(model, inplace=True)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     if quantize:
-        torch.quantization.convert(model, inplace=True)
+        torch.ao.quantization.convert(model, inplace=True)
         model.eval()
 
     return model
 
 
 class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
-    ImageNet1K_QNNPACK_V1 = Weights(
+    IMAGENET1K_QNNPACK_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -66,25 +66,26 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
             "publication_year": 2019,
             "num_params": 5483032,
             "size": (224, 224),
+            "min_size": (1, 1),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "qnnpack",
             "quantization": "qat",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3",
-            "unquantized": MobileNet_V3_Large_Weights.ImageNet1K_V1,
+            "unquantized": MobileNet_V3_Large_Weights.IMAGENET1K_V1,
             "acc@1": 73.004,
             "acc@5": 90.858,
         },
     )
-    default = ImageNet1K_QNNPACK_V1
+    DEFAULT = IMAGENET1K_QNNPACK_V1
 
 
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: MobileNet_V3_Large_QuantizedWeights.ImageNet1K_QNNPACK_V1
+        lambda kwargs: MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1
         if kwargs.get("quantize", False)
-        else MobileNet_V3_Large_Weights.ImageNet1K_V1,
+        else MobileNet_V3_Large_Weights.IMAGENET1K_V1,
     )
 )
 def mobilenet_v3_large(
