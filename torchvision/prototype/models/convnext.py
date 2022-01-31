@@ -260,7 +260,17 @@ class ConvNeXt_Base_Weights(WeightsEnum):
 
 
 class ConvNeXt_Large_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/convnext_large-d73f62ac.pth",
+        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 197767336,
+            "acc@1": 84.414,
+            "acc@5": 96.976,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", ConvNeXt_Tiny_Weights.IMAGENET1K_V1))
@@ -314,7 +324,7 @@ def convnext_base(*, weights: Optional[ConvNeXt_Base_Weights] = None, progress: 
     return _convnext(block_setting, stochastic_depth_prob, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ConvNeXt_Large_Weights.IMAGENET1K_V1))
 def convnext_large(
     *, weights: Optional[ConvNeXt_Large_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ConvNeXt:

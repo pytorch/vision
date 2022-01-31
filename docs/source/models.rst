@@ -251,6 +251,7 @@ vit_l_32                          76.972          93.070
 convnext_tiny (prototype)         82.520          96.146
 convnext_small (prototype)        83.616          96.650
 convnext_base (prototype)         84.062          96.870
+convnext_large (prototype)        84.414          96.976
 ================================  =============   =============
 
 
