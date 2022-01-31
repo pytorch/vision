@@ -42,6 +42,9 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                     # ROCm conda packages not yet supported
                     if cu_version.startswith("rocm") and btype == "conda":
                         continue
+                    # Skip MacOSX and python 3.10
+                    if python_version == "3.10" and os_type == "macos":
+                        continue
                     for unicode in [False]:
                         fb = filter_branch
                         if (
