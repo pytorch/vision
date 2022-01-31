@@ -1821,10 +1821,6 @@ workflows:
           cu_version: cpu
           name: unittest_macos_cpu_py3.9
           python_version: '3.9'
-      - unittest_macos_cpu:
-          cu_version: cpu
-          name: unittest_macos_cpu_py3.10
-          python_version: '3.10'
 
   cmake:
     jobs:

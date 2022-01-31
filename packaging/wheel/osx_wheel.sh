@@ -21,7 +21,7 @@ rm -rf vision
 git clone https://github.com/pytorch/vision
 pushd vision
 
-desired_pythons=( "3.7" "3.8" "3.9" )
+desired_pythons=( "3.7" "3.8" "3.9" "3.10" )
 # for each python
 for desired_python in "${desired_pythons[@]}"
 do

@@ -246,6 +246,9 @@ def unittest_workflows(indentation=6):
             if os_type == "macos" and device_type == "gpu":
                 continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
+                # Skip MacOSX and python 3.10
+                if python_version == "3.10" and os_type == "macos":
+                    continue
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
                     "python_version": python_version,
