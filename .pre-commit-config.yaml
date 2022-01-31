@@ -14,6 +14,7 @@ repos:
     rev: v12.0.1
     hooks:
       - id: clang-format
+        args: [--verbose]
 
   - repo: https://github.com/omnilib/ufmt
     rev: v1.3.0
