@@ -42,7 +42,7 @@ def show(imgs):
 
 
 from torchvision.io import read_video
-video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./crowd.mp4")
+video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./basketball.mp4")
 
 #########################
 # Read video returns the video_frames, audio_frames and the metadata
