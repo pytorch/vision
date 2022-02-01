@@ -191,7 +191,7 @@ def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace:
     pass
 
 
-@erase.implements(features.Image, pil_kernel=_F.erase)
+@erase.implements(features.Image)
 def _erase_image(
     input: features.Image, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False
 ) -> features.Image:

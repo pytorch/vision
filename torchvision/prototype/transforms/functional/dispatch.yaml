@@ -109,9 +109,7 @@ resized_crop:
     kernel: resized_crop_image
     pil_kernel: resized_crop
 erase:
-  Image:
-    kernel: erase_image
-    pil_kernel: erase
+  Image: erase_image
 mixup:
   Image: mixup_image
   OneHotLabel: mixup_one_hot_label
