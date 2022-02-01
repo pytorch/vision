@@ -181,7 +181,6 @@ def make_dispatcher_params(implementer_params):
             if len(implementer_params) == 1:
                 dispatcher_params.append(copy(param))
             else:
-                param._default = FEATURE_SPECIFIC_PARAM
                 dispatcher_params.append(
                     Parameter(
                         name=name,
@@ -390,12 +389,6 @@ class ImplementerFunction(Function):
 
         body = []
 
-        feature_specific_params = []
-        for param in params:
-            if param.default is FEATURE_SPECIFIC_PARAM:
-                feature_specific_params.append(param.name)
-                param._default = Parameter.empty
-
         output_conversions = []
         for idx, (attr, intermediate_value) in enumerate(conversion_map.items()):
 
@@ -442,7 +435,6 @@ class ImplementerFunction(Function):
             decorator=self._make_decorator(
                 dispatcher_name=dispatcher_name,
                 feature_type_usage=feature_type_usage,
-                feature_specific_params=feature_specific_params,
                 pil_kernel=pil_kernel,
             ),
             name=f"_{dispatcher_name}_{camel_to_snake_case(feature_type.__name__)}",
@@ -460,10 +452,8 @@ class ImplementerFunction(Function):
             body=body,
         )
 
-    def _make_decorator(self, *, dispatcher_name, feature_type_usage, feature_specific_params, pil_kernel):
+    def _make_decorator(self, *, dispatcher_name, feature_type_usage, pil_kernel):
         decorator = f"{dispatcher_name}.implements({feature_type_usage}"
-        if feature_specific_params:
-            decorator += f", feature_specific_params={tuple(feature_specific_params)}"
         if pil_kernel:
             decorator += f", pil_kernel=_F.{pil_kernel}"
         return f"{decorator})"

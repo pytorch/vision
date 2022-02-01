@@ -1,4 +1,5 @@
 import functools
+import inspect
 from typing import Any, Type, Optional, Callable
 
 import PIL.Image
@@ -23,7 +24,7 @@ class Dispatcher:
     def supports(self, obj: Any) -> bool:
         return is_supported(obj, *self._support)
 
-    def implements(self, feature_type, *, feature_specific_params=(), pil_kernel=None):
+    def implements(self, feature_type, *, pil_kernel=None):
         if pil_kernel is not None:
             if not issubclass(feature_type, features.Image):
                 raise TypeError("PIL kernel can only be registered for images")
@@ -31,6 +32,15 @@ class Dispatcher:
             self._pil_kernel = pil_kernel
 
         def outer_wrapper(implement_fn):
+            implement_params = inspect.signature(implement_fn).parameters
+            feature_specific_params = [
+                name
+                for name, param in inspect.signature(self._dispatch_fn).parameters.items()
+                if param.default is self.FEATURE_SPECIFIC_PARAM
+                and name in implement_params
+                and implement_params[name] is inspect.Parameter.empty
+            ]
+
             @functools.wraps(implement_fn)
             def inner_wrapper(*args, **kwargs) -> Any:
                 missing = [

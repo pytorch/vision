@@ -232,7 +232,7 @@ def cutmix(
     pass
 
 
-@cutmix.implements(features.Image, feature_specific_params=("box",))
+@cutmix.implements(features.Image)
 def _cutmix_image(
     input: features.Image, *, box: Tuple[int, int, int, int], inplace: bool = False, **_: Any
 ) -> features.Image:
@@ -241,7 +241,7 @@ def _cutmix_image(
     return features.Image.new_like(input, output)
 
 
-@cutmix.implements(features.OneHotLabel, feature_specific_params=("lam_adjusted",))
+@cutmix.implements(features.OneHotLabel)
 def _cutmix_one_hot_label(
     input: features.OneHotLabel, *, lam_adjusted: float, inplace: bool = False, **_: Any
 ) -> features.OneHotLabel:
