@@ -177,6 +177,8 @@ def main(args):
     dataset, num_classes = get_dataset(args.dataset, "train", get_transform(True, args), args.data_path)
     dataset_test, _ = get_dataset(args.dataset, "val", get_transform(False, args), args.data_path)
 
+    dataset[0]
+
     print("Creating data loaders")
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
@@ -276,5 +278,12 @@ def main(args):
 
 
 if __name__ == "__main__":
-    args = get_args_parser().parse_args()
+    args = get_args_parser().parse_args(
+        [
+            "--data-path=/home/philip/datasets/coco",
+            "--device=cpu",
+            "--dataset=coco_kp",
+            "--model=keypointrcnn_resnet50_fpn",
+        ]
+    )
     main(args)

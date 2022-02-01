@@ -16,12 +16,12 @@
 #     meta_overwrite: $META_OVERWRITE
 #   ...
 #
-# KERNEL_NAME: Name of the kernel that can be accessed from `torchvision.prototype.transforms.fuctional`. If the
+# KERNEL_NAME: Name of the kernel that can be accessed from `torchvision.prototype.transforms.functional`. If the
 #   canonical naming scheme is followed, this should be $DISPATCHER_NAME followed by $FEATURE_NAME in snake case.
 #
 # META_CONVERSION: Optional mapping of meta attributes to convert before the kernel call. This is needed if the kernel
-#   makes assumptions on meta attributes of the input tensor. For example, the `resize_bounding_box` requires the input
-#   to be in XYXY format. This can be achieved with:
+#   makes assumptions on meta attributes of the input tensor. For example, the `resize_bounding_box` kernel requires
+#   the input to be in XYXY format. This can be achieved with:
 #
 #     resize:
 #       BoundingBox:
@@ -50,7 +50,7 @@
 # META_OVERWRITE: Optional mapping of keyword arguments to overwrite meta attributes when creating the new feature from
 #   the kernel output. This is needed if the kernel changes a meta attribute. For example, the `resize_bounding_box`
 #   kernel adapts the values, but the new image size cannot be inferred from them. Thus, we set the `image_size`
-# metadata of the new bounding box to be the `size` the dispatcher was called with:
+#   metadata of the new bounding box to be the `size` the dispatcher was called with:
 #
 #     resize:
 #       BoundingBox:
@@ -59,7 +59,7 @@
 #           image_size: size
 #
 # For $FEATURE_NAME == Image, there is also the `pil_kernel` key available. This is the name of the legacy `PIL` kernel
-#   that can be accessed from `torchvision.transforms.fuctional` (note the missing `.prototype` compared to
+#   that can be accessed from `torchvision.transforms.functional` (note the missing `.prototype` compared to
 #   $KERNEL_NAME). It will be called with same arguments as the dispatcher.
 #
 # If no optional configuration is required, the shortcut
