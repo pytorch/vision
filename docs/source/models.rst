@@ -89,6 +89,10 @@ You can construct a model with random weights by calling its constructor:
     vit_b_32 = models.vit_b_32()
     vit_l_16 = models.vit_l_16()
     vit_l_32 = models.vit_l_32()
+    convnext_tiny = models.convnext_tiny()
+    convnext_small = models.convnext_small()
+    convnext_base = models.convnext_base()
+    convnext_large = models.convnext_large()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -136,6 +140,10 @@ These can be constructed by passing ``pretrained=True``:
     vit_b_32 = models.vit_b_32(pretrained=True)
     vit_l_16 = models.vit_l_16(pretrained=True)
     vit_l_32 = models.vit_l_32(pretrained=True)
+    convnext_tiny = models.convnext_tiny(pretrained=True)
+    convnext_small = models.convnext_small(pretrained=True)
+    convnext_base = models.convnext_base(pretrained=True)
+    convnext_large = models.convnext_large(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_HOME` environment variable. See
@@ -248,10 +256,10 @@ vit_b_16                          81.072          95.318
 vit_b_32                          75.912          92.466
 vit_l_16                          79.662          94.638
 vit_l_32                          76.972          93.070
-convnext_tiny (prototype)         82.520          96.146
-convnext_small (prototype)        83.616          96.650
-convnext_base (prototype)         84.062          96.870
-convnext_large (prototype)        84.414          96.976
+convnext_tiny                     82.520          96.146
+convnext_small                    83.616          96.650
+convnext_base                     84.062          96.870
+convnext_large                    84.414          96.976
 ================================  =============   =============
 
 
@@ -466,6 +474,18 @@ VisionTransformer
     vit_b_32
     vit_l_16
     vit_l_32
+
+ConvNeXt
+--------
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    convnext_tiny
+    convnext_small
+    convnext_base
+    convnext_large
 
 Quantized Models
 ----------------
