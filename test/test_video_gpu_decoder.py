@@ -17,21 +17,19 @@ VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "
 class TestVideoGPUDecoder:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize(
-        "full_path",
+        "video_file",
         [
-            os.path.join(VIDEO_DIR, x)
-            for x in [
-                "RATRACE_wave_f_nm_np1_fr_goo_37.avi",
-                "TrumanShow_wave_f_nm_np1_fr_med_26.avi",
-                "v_SoccerJuggling_g23_c01.avi",
-                "v_SoccerJuggling_g24_c01.avi",
-                "R6llTwEh07w.mp4",
-                "SOX5yA1l24A.mp4",
-                "WUzgd7C1pWA.mp4",
-            ]
+            "RATRACE_wave_f_nm_np1_fr_goo_37.avi",
+            "TrumanShow_wave_f_nm_np1_fr_med_26.avi",
+            "v_SoccerJuggling_g23_c01.avi",
+            "v_SoccerJuggling_g24_c01.avi",
+            "R6llTwEh07w.mp4",
+            "SOX5yA1l24A.mp4",
+            "WUzgd7C1pWA.mp4",
         ],
     )
-    def test_frame_reading(self, full_path):
+    def test_frame_reading(self, video_file):
+        full_path = os.path.join(VIDEO_DIR, video_file)
         decoder = VideoReader(full_path, device="cuda:0")
         with av.open(full_path) as container:
             for av_frame in container.decode(container.streams.video[0]):
@@ -69,21 +67,19 @@ class TestVideoGPUDecoder:
 
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize(
-        "full_path",
+        "video_file",
         [
-            os.path.join(VIDEO_DIR, x)
-            for x in [
-                "RATRACE_wave_f_nm_np1_fr_goo_37.avi",
-                "TrumanShow_wave_f_nm_np1_fr_med_26.avi",
-                "v_SoccerJuggling_g23_c01.avi",
-                "v_SoccerJuggling_g24_c01.avi",
-                "R6llTwEh07w.mp4",
-                "SOX5yA1l24A.mp4",
-                "WUzgd7C1pWA.mp4",
-            ]
+            "RATRACE_wave_f_nm_np1_fr_goo_37.avi",
+            "TrumanShow_wave_f_nm_np1_fr_med_26.avi",
+            "v_SoccerJuggling_g23_c01.avi",
+            "v_SoccerJuggling_g24_c01.avi",
+            "R6llTwEh07w.mp4",
+            "SOX5yA1l24A.mp4",
+            "WUzgd7C1pWA.mp4",
         ],
     )
-    def test_metadata(self, full_path):
+    def test_metadata(self, video_file):
+        full_path = os.path.join(VIDEO_DIR, video_file)
         decoder = VideoReader(full_path, device="cuda:0")
         video_metadata = decoder.get_metadata()["video"]
         with av.open(full_path) as container:
