@@ -20,7 +20,7 @@ __all__ = [
 ]
 
 
-model_urls: Dict[str, Optional[str]] = {
+_MODELS_URLS: Dict[str, Optional[str]] = {
     "convnext_tiny": "https://download.pytorch.org/models/convnext_tiny-983f1562.pth",
     "convnext_small": "https://download.pytorch.org/models/convnext_small-0c510722.pth",
     "convnext_base": "https://download.pytorch.org/models/convnext_base-6075fbad.pth",
@@ -196,14 +196,14 @@ def _convnext(
 ) -> ConvNeXt:
     model = ConvNeXt(block_setting, stochastic_depth_prob=stochastic_depth_prob, **kwargs)
     if pretrained:
-        if arch not in model_urls:
+        if arch not in _MODELS_URLS:
             raise ValueError(f"No checkpoint is available for model type {arch}")
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
+        state_dict = load_state_dict_from_url(_MODELS_URLS[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
 
 
-def convnext_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
+def convnext_tiny(*, pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     r"""ConvNeXt Tiny model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
     Args:
@@ -220,7 +220,7 @@ def convnext_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any
     return _convnext("convnext_tiny", block_setting, stochastic_depth_prob, pretrained, progress, **kwargs)
 
 
-def convnext_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
+def convnext_small(*, pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     r"""ConvNeXt Small model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
     Args:
@@ -237,7 +237,7 @@ def convnext_small(pretrained: bool = False, progress: bool = True, **kwargs: An
     return _convnext("convnext_small", block_setting, stochastic_depth_prob, pretrained, progress, **kwargs)
 
 
-def convnext_base(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
+def convnext_base(*, pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     r"""ConvNeXt Base model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
     Args:
@@ -254,7 +254,7 @@ def convnext_base(pretrained: bool = False, progress: bool = True, **kwargs: Any
     return _convnext("convnext_base", block_setting, stochastic_depth_prob, pretrained, progress, **kwargs)
 
 
-def convnext_large(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
+def convnext_large(*, pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ConvNeXt:
     r"""ConvNeXt Large model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
     Args:
