@@ -127,7 +127,7 @@ class Coco(Dataset):
             keypoints=KeyPoint(
                 keypoints_meta[..., :2],
                 # As of COCO 2017, only the person category has keypoints.
-                names=(
+                descriptions=(
                     "nose",
                     "left_eye",
                     "right_eye",

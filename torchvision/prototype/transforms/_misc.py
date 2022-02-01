@@ -1,7 +1,7 @@
 from typing import Any, Dict, Sequence
 
 import torch
-from torchvision.prototype.features import Image, BoundingBox, Label
+from torchvision.prototype.features import Image, BoundingBox, Label, KeyPoint
 from torchvision.prototype.transforms import Transform
 
 
@@ -15,7 +15,7 @@ class Identity(Transform):
 
 
 class Normalize(Transform):
-    NO_OP_FEATURE_TYPES = {BoundingBox, Label}
+    NO_OP_FEATURE_TYPES = {BoundingBox, Label, KeyPoint}
 
     def __init__(self, mean: Sequence[float], std: Sequence[float]):
         super().__init__()

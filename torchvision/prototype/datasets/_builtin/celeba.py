@@ -67,6 +67,7 @@ class CelebA(Dataset):
         return DatasetInfo(
             "celeba",
             type=DatasetType.IMAGE,
+            categories=[str(label + 1) for label in range(10177)],
             homepage="https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html",
             valid_options=dict(split=("train", "val", "test")),
         )
@@ -133,10 +134,13 @@ class CelebA(Dataset):
         identity = Label(int(ann["identity"]["identity"]))
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
         bbox = BoundingBox([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
-        keypoint_names = {key[:-2] for key in ann["landmarks"].keys()}
+        keypoint_descriptions = {key[:-2] for key in ann["landmarks"].keys()}
         keypoints = KeyPoint(
-            [(int(ann["landmarks"][f"{name}_x"]), int(ann["landmarks"][f"{name}_y"])) for name in keypoint_names],
-            names=keypoint_names,
+            [
+                (int(ann["landmarks"][f"{name}_x"]), int(ann["landmarks"][f"{name}_y"]))
+                for name in keypoint_descriptions
+            ],
+            descriptions=keypoint_descriptions,
         )
 
         return dict(

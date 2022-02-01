@@ -143,6 +143,7 @@ class Transform(nn.Module):
         features.BoundingBox,
         features.Image,
         features.Label,
+        features.KeyPoint,
     )
     _FEATURE_NAME_MAP = {
         "_".join([part.lower() for part in re.findall("[A-Z][^A-Z]*", feature_type.__name__)]): feature_type

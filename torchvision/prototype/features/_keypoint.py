@@ -6,7 +6,7 @@ from ._feature import Feature, DEFAULT
 
 
 class KeyPoint(Feature):
-    names: Optional[Sequence[str]]
+    descriptions: Optional[Sequence[str]]
 
     @classmethod
     def _to_tensor(cls, data, *, dtype, device):
@@ -18,6 +18,6 @@ class KeyPoint(Feature):
     @classmethod
     def _parse_meta_data(
         cls,
-        names: Optional[Sequence[str]] = DEFAULT,  # type: ignore[assignment]
+        descriptions: Optional[Sequence[str]] = DEFAULT,  # type: ignore[assignment]
     ) -> Dict[str, Tuple[Any, Any]]:
-        return dict(names=(names, None))
+        return dict(descriptions=(descriptions, None))
