@@ -201,11 +201,12 @@ and `--batch_size 64`.
 ### ConvNeXt
 ```
 torchrun --nproc_per_node=8 train.py\ 
---model convnext_tiny --batch-size 128 --opt adamw --lr 1e-3 --lr-scheduler cosineannealinglr \ 
+--model $MODEL --batch-size 128 --opt adamw --lr 1e-3 --lr-scheduler cosineannealinglr \ 
 --lr-warmup-epochs 5 --lr-warmup-method linear --auto-augment ta_wide --epochs 600 --random-erase 0.1 \ 
 --label-smoothing 0.1 --mixup-alpha 0.2 --cutmix-alpha 1.0 --weight-decay 0.05 --norm-weight-decay 0.0 \
---train-crop-size 176 --model-ema --val-resize-size 236 --ra-sampler --ra-reps 4
+--train-crop-size 176 --model-ema --val-resize-size 232 --ra-sampler --ra-reps 4
 ```
+Here `$MODEL` is one of `convnext_tiny`, `convnext_small`, `convnext_base` and `convnext_large`. Note that each variant had its `--val-resize-size` optimized in a post-training step, see their `Weights` entry for their exact value.
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
 For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
