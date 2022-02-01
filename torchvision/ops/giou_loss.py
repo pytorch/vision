@@ -37,9 +37,6 @@ def generalized_box_iou_loss(
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-    assert (x2 >= x1).all(), "bad box: x1 larger than x2"
-    assert (y2 >= y1).all(), "bad box: y1 larger than y2"
-
     # Intersection keypoints
     xkis1 = torch.max(x1, x1g)
     ykis1 = torch.max(y1, y1g)
