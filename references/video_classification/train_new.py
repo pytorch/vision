@@ -25,7 +25,8 @@ def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, devi
     metric_logger.add_meter("clips/s", utils.SmoothedValue(window_size=10, fmt="{value:.3f}"))
 
     header = f"Epoch: [{epoch}]"
-    for video, target in metric_logger.log_every(data_loader, print_freq, header):
+    for element in metric_logger.log_every(data_loader, print_freq, header):
+        video, target = element["video"], element["target"]
         start_time = time.time()
         video, target = video.to(device), target.to(device)
         with torch.cuda.amp.autocast(enabled=scaler is not None):
@@ -56,7 +57,8 @@ def evaluate(model, criterion, data_loader, device):
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
     with torch.inference_mode():
-        for video, target in metric_logger.log_every(data_loader, 100, header):
+        for element in metric_logger.log_every(data_loader, 100, header):
+            video, target = element["video"], element["target"]
             video = video.to(device, non_blocking=True)
             target = target.to(device, non_blocking=True)
             output = model(video)
@@ -87,12 +89,6 @@ def _get_cache_path(filepath):
     cache_path = os.path.join("~", ".torch", "vision", "datasets", "kinetics", h[:10] + ".pt")
     cache_path = os.path.expanduser(cache_path)
     return cache_path
-
-
-def collate_fn(batch):
-    # remove audio from the batch
-    batch = [(d[0], d[2]) for d in batch]
-    return default_collate(batch)
 
 
 def main(args):
@@ -134,6 +130,7 @@ def main(args):
             clip_len=args.clip_len,
             video_transform=transform_train,
             device="cuda:0" if args.gpu_decoder else "cpu",
+            from_keyframes=False,
         )
         if args.cache_dataset:
             print(f"Saving dataset_train to {cache_path}")
@@ -166,6 +163,7 @@ def main(args):
             clip_len=args.clip_len,
             video_transform=transform_test,
             device="cuda:0" if args.gpu_decoder else "cpu",
+            from_keyframes=False,
         )
         if args.cache_dataset:
             print(f"Saving dataset_test to {cache_path}")
@@ -178,16 +176,14 @@ def main(args):
         dataset,
         batch_size=args.batch_size,
         num_workers=args.workers,
-        pin_memory=True,
-        collate_fn=collate_fn,
+        pin_memory=False,
     )
 
     data_loader_test = torch.utils.data.DataLoader(
         dataset_test,
         batch_size=args.batch_size,
         num_workers=args.workers,
-        pin_memory=True,
-        collate_fn=collate_fn,
+        pin_memory=False,
     )
 
     print("Creating model")
