@@ -642,8 +642,9 @@ def test_assert_resize_antialias(interpolation):
     torch.manual_seed(12)
     tensor, _ = _create_data(1000, 1000, device="cuda")
 
+    # Error message is not yet updated in pytorch nightly
     # with pytest.raises(RuntimeError, match=r"Provided interpolation parameters can not be handled"):
-    with pytest.raises(RuntimeError, match=r"Too much"):
+    with pytest.raises(RuntimeError, match=r"Too much shared memory required"):
         F.resize(tensor, size=(5, 5), interpolation=interpolation, antialias=True)
 
 
