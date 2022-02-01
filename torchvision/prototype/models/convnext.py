@@ -30,7 +30,6 @@ __all__ = [
 
 class LayerNorm2d(nn.LayerNorm):
     def forward(self, x: Tensor) -> Tensor:
-        #  TODO: Benchmark this against the approach described at https://github.com/pytorch/vision/pull/5197#discussion_r786251298
         x = x.permute(0, 2, 3, 1)
         x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
         x = x.permute(0, 3, 1, 2)
@@ -219,7 +218,7 @@ _COMMON_META = {
 
 class ConvNeXt_Tiny_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/convnext_tiny-47b116bd.pth",  # TODO: repackage
+        url="https://download.pytorch.org/models/convnext_tiny-983f1562.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=236),
         meta={
             **_COMMON_META,
@@ -233,7 +232,7 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
 
 class ConvNeXt_Small_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/convnext_small-9aa23d28.pth",  # TODO: repackage
+        url="https://download.pytorch.org/models/convnext_small-0c510722.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=230),
         meta={
             **_COMMON_META,
@@ -247,7 +246,7 @@ class ConvNeXt_Small_Weights(WeightsEnum):
 
 class ConvNeXt_Base_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/convnext_base-3b9f985d.pth",  # TODO: repackage
+        url="https://download.pytorch.org/models/convnext_base-6075fbad.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
@@ -261,7 +260,7 @@ class ConvNeXt_Base_Weights(WeightsEnum):
 
 class ConvNeXt_Large_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/convnext_large-d73f62ac.pth",  # TODO: repackage
+        url="https://download.pytorch.org/models/convnext_large-ea097f82.pth",
         transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
