@@ -550,9 +550,7 @@ def resize(
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    img = interpolate(
-        img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners, antialias=antialias
-    )
+    img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners, antialias=antialias)
 
     if interpolation == "bicubic" and out_dtype == torch.uint8:
         img = img.clamp(min=0, max=255)
