@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, NamedTuple, Optional, cast
+from typing import Any, Callable, List, NamedTuple, Optional
 
 import torch
 import torch.nn as nn
