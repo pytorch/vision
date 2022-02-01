@@ -33,7 +33,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import BoundingBox, Label, Feature
+from torchvision.prototype.features import BoundingBox, Label, Feature, KeyPoint
 from torchvision.prototype.utils._internal import FrozenMapping
 
 
@@ -121,9 +121,33 @@ class Coco(Dataset):
         )
 
     def _decode_person_keypoints_anns(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
+        keypoints_meta = torch.tensor([ann["keypoints"] for ann in anns]).view(len(anns), -1, 3)
         return dict(
             self._decode_instances_anns(anns, image_meta),
-            keypoints=Feature(torch.tensor([ann["keypoints"] for ann in anns]).view(len(anns), -1, 3)),
+            keypoints=KeyPoint(
+                keypoints_meta[..., :2],
+                # As of COCO 2017, only the person category has keypoints.
+                names=(
+                    "nose",
+                    "left_eye",
+                    "right_eye",
+                    "left_ear",
+                    "right_ear",
+                    "left_shoulder",
+                    "right_shoulder",
+                    "left_elbow",
+                    "right_elbow",
+                    "left_wrist",
+                    "right_wrist",
+                    "left_hip",
+                    "right_hip",
+                    "left_knee",
+                    "right_knee",
+                    "left_ankle",
+                    "right_ankle",
+                ),
+            ),
+            visibility=Feature(keypoints_meta[..., 2]),
         )
 
     def _decode_captions_ann(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:

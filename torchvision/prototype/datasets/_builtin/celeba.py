@@ -26,7 +26,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import Feature, Label, BoundingBox
+from torchvision.prototype.features import Label, BoundingBox, KeyPoint
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 
@@ -133,10 +133,11 @@ class CelebA(Dataset):
         identity = Label(int(ann["identity"]["identity"]))
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
         bbox = BoundingBox([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
-        landmarks = {
-            landmark: Feature((int(ann["landmarks"][f"{landmark}_x"]), int(ann["landmarks"][f"{landmark}_y"])))
-            for landmark in {key[:-2] for key in ann["landmarks"].keys()}
-        }
+        keypoint_names = {key[:-2] for key in ann["landmarks"].keys()}
+        keypoints = KeyPoint(
+            [(int(ann["landmarks"][f"{name}_x"]), int(ann["landmarks"][f"{name}_y"])) for name in keypoint_names],
+            names=keypoint_names,
+        )
 
         return dict(
             path=path,
@@ -144,7 +145,7 @@ class CelebA(Dataset):
             identity=identity,
             attributes=attributes,
             bbox=bbox,
-            landmarks=landmarks,
+            keypoints=keypoints,
         )
 
     def _make_datapipe(
