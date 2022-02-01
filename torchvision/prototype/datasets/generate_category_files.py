@@ -49,7 +49,7 @@ def parse_args(argv=None):
     args = parser.parse_args(argv or sys.argv[1:])
 
     if not args.names:
-        args.names = datasets.list()
+        args.names = datasets.list_datasets()
 
     return args
 

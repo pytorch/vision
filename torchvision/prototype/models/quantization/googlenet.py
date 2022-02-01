@@ -24,7 +24,7 @@ __all__ = [
 
 
 class GoogLeNet_QuantizedWeights(WeightsEnum):
-    ImageNet1K_FBGEMM_V1 = Weights(
+    IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
@@ -39,20 +39,20 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
             "backend": "fbgemm",
             "quantization": "ptq",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
-            "unquantized": GoogLeNet_Weights.ImageNet1K_V1,
+            "unquantized": GoogLeNet_Weights.IMAGENET1K_V1,
             "acc@1": 69.826,
             "acc@5": 89.404,
         },
     )
-    default = ImageNet1K_FBGEMM_V1
+    DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
 @handle_legacy_interface(
     weights=(
         "pretrained",
-        lambda kwargs: GoogLeNet_QuantizedWeights.ImageNet1K_FBGEMM_V1
+        lambda kwargs: GoogLeNet_QuantizedWeights.IMAGENET1K_FBGEMM_V1
         if kwargs.get("quantize", False)
-        else GoogLeNet_Weights.ImageNet1K_V1,
+        else GoogLeNet_Weights.IMAGENET1K_V1,
     )
 )
 def googlenet(

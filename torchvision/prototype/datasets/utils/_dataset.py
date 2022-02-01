@@ -24,6 +24,8 @@ class DatasetType(enum.Enum):
 
 
 class DatasetConfig(FrozenBunch):
+    # This needs to be Frozen because we often pass configs as partial(func, config=config)
+    # and partial() requires the parameters to be hashable.
     pass
 
 

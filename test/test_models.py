@@ -8,6 +8,7 @@ import traceback
 import warnings
 from collections import OrderedDict
 from tempfile import TemporaryDirectory
+from typing import Any
 
 import pytest
 import torch
@@ -218,6 +219,7 @@ script_model_unwrapper = {
     "retinanet_resnet50_fpn": lambda x: x[1],
     "ssd300_vgg16": lambda x: x[1],
     "ssdlite320_mobilenet_v3_large": lambda x: x[1],
+    "fcos_resnet50_fpn": lambda x: x[1],
 }
 
 
@@ -274,6 +276,13 @@ _model_params = {
         "max_size": 224,
         "input_shape": (3, 224, 224),
     },
+    "fcos_resnet50_fpn": {
+        "num_classes": 2,
+        "score_thresh": 0.05,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
     "maskrcnn_resnet50_fpn": {
         "num_classes": 10,
         "min_size": 224,
@@ -324,6 +333,10 @@ _model_tests_values = {
     "ssdlite320_mobilenet_v3_large": {
         "max_trainable": 6,
         "n_trn_params_per_layer": [96, 99, 138, 200, 239, 257, 266],
+    },
+    "fcos_resnet50_fpn": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [54, 64, 83, 96, 106, 107],
     },
 }
 
@@ -500,6 +513,35 @@ def test_generalizedrcnn_transform_repr():
     expected_string += f"{_indent}Resize(min_size=({min_size},), max_size={max_size}, "
     expected_string += "mode='bilinear')\n)"
     assert t.__repr__() == expected_string
+
+
+test_vit_conv_stem_configs = [
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=64),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=128),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=1, out_channels=128),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=256),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=1, out_channels=256),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=512),
+]
+
+
+def vitc_b_16(**kwargs: Any):
+    return models.VisionTransformer(
+        image_size=224,
+        patch_size=16,
+        num_layers=12,
+        num_heads=12,
+        hidden_dim=768,
+        mlp_dim=3072,
+        conv_stem_configs=test_vit_conv_stem_configs,
+        **kwargs,
+    )
+
+
+@pytest.mark.parametrize("model_fn", [vitc_b_16])
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_vitc_models(model_fn, dev):
+    test_classification_model(model_fn, dev)
 
 
 @pytest.mark.parametrize("model_fn", get_models_from_module(models))
