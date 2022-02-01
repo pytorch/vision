@@ -10,6 +10,19 @@ from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
+__all__ = [
+    "ConvNeXt",
+    "ConvNeXt_Tiny_Weights",
+    "ConvNeXt_Small_Weights",
+    "ConvNeXt_Base_Weights",
+    "ConvNeXt_Large_Weights",
+    "convnext_tiny",
+    "convnext_small",
+    "convnext_base",
+    "convnext_large",
+]
+
+
 def _convnext(
     block_setting: List[CNBlockConfig],
     stochastic_depth_prob: float,
