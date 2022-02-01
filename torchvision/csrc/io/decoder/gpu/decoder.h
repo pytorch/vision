@@ -36,16 +36,6 @@ class Decoder {
   void release();
   void decode(const uint8_t*, unsigned long);
   torch::Tensor fetch_frame();
-  int get_frame_size() const {
-    return get_width() * (luma_height + (chroma_height * num_chroma_planes)) *
-        bytes_per_pixel;
-  }
-  int get_width() const {
-    return (video_output_format == cudaVideoSurfaceFormat_NV12 ||
-            video_output_format == cudaVideoSurfaceFormat_P016)
-        ? (width + 1) & ~1
-        : width;
-  }
   int get_height() const {
     return luma_height;
   }
