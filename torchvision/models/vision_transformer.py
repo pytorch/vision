@@ -44,9 +44,7 @@ class MLPBlock(nn.Sequential):
         self.dropout_1 = nn.Dropout(dropout)
         self.linear_2 = nn.Linear(mlp_dim, in_dim)
         self.dropout_2 = nn.Dropout(dropout)
-        self._init_weights()
 
-    def _init_weights(self):
         nn.init.xavier_uniform_(self.linear_1.weight)
         nn.init.xavier_uniform_(self.linear_2.weight)
         nn.init.normal_(self.linear_1.bias, std=1e-6)
@@ -211,9 +209,7 @@ class VisionTransformer(nn.Module):
             heads_layers["head"] = nn.Linear(representation_size, num_classes)
 
         self.heads = nn.Sequential(heads_layers)
-        self._init_weights()
 
-    def _init_weights(self):
         if isinstance(self.conv_proj, nn.Conv2d):
             # Init the patchify stem
             fan_in = self.conv_proj.in_channels * self.conv_proj.kernel_size[0] * self.conv_proj.kernel_size[1]
