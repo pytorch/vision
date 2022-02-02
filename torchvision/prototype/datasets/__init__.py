@@ -11,5 +11,5 @@ from . import decoder, utils
 from ._home import home
 
 # Load this last, since some parts depend on the above being loaded first
-from ._api import register, _list as list, info, load, find  # usort: skip
+from ._api import register, list_datasets, info, load, find  # usort: skip
 from ._folder import from_data_folder, from_image_folder
