@@ -97,7 +97,7 @@ def main(args):
             ds, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True
         )
         model.eval()
-        model.fuse_model(is_qat=True)
+        model.fuse_model(is_qat=False)
         model.qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
         torch.ao.quantization.prepare(model, inplace=True)
         # Calibrate first
