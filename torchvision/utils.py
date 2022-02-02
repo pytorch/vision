@@ -202,8 +202,7 @@ def draw_bounding_boxes(
     num_boxes = boxes.shape[0]
     if labels and len(labels) != num_boxes:
         raise ValueError(
-            f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. "
-            "Please specify labels for each box."
+            f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
 
     if colors is None:
