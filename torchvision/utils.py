@@ -200,7 +200,10 @@ def draw_bounding_boxes(
         raise ValueError("Only grayscale and RGB images are supported")
 
     num_boxes = boxes.shape[0]
-    if labels and len(labels) != num_boxes:
+
+    if labels is None:
+        labels = [None] * num_boxes
+    elif len(labels) != num_boxes:
         raise ValueError(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
         )
@@ -230,16 +233,16 @@ def draw_bounding_boxes(
 
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
-    for i, (bbox, color) in enumerate(zip(img_boxes, colors)):
+    for bbox, color, label in zip(img_boxes, colors, labels):
         if fill:
             fill_color = color + (100,)
             draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
         else:
             draw.rectangle(bbox, width=width, outline=color)
 
-        if labels is not None:
+        if label is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), labels[i], fill=color, font=txt_font)
+            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
