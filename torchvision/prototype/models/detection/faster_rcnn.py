@@ -31,53 +31,59 @@ __all__ = [
 
 
 _COMMON_META = {
+    "task": "image_object_detection",
+    "architecture": "FasterRCNN",
+    "publication_year": 2015,
     "categories": _COCO_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
 }
 
 
 class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
-    Coco_V1 = Weights(
+    COCO_V1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth",
         transforms=CocoEval,
         meta={
             **_COMMON_META,
+            "num_params": 41755286,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn",
             "map": 37.0,
         },
     )
-    default = Coco_V1
+    DEFAULT = COCO_V1
 
 
 class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
-    Coco_V1 = Weights(
+    COCO_V1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth",
         transforms=CocoEval,
         meta={
             **_COMMON_META,
+            "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn",
             "map": 32.8,
         },
     )
-    default = Coco_V1
+    DEFAULT = COCO_V1
 
 
 class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
-    Coco_V1 = Weights(
+    COCO_V1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth",
         transforms=CocoEval,
         meta={
             **_COMMON_META,
+            "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn",
             "map": 22.8,
         },
     )
-    default = Coco_V1
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(
-    weights=("pretrained", FasterRCNN_ResNet50_FPN_Weights.Coco_V1),
-    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+    weights=("pretrained", FasterRCNN_ResNet50_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def fasterrcnn_resnet50_fpn(
     *,
@@ -107,7 +113,7 @@ def fasterrcnn_resnet50_fpn(
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
-        if weights == FasterRCNN_ResNet50_FPN_Weights.Coco_V1:
+        if weights == FasterRCNN_ResNet50_FPN_Weights.COCO_V1:
             overwrite_eps(model, 0.0)
 
     return model
@@ -155,8 +161,8 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
 
 
 @handle_legacy_interface(
-    weights=("pretrained", FasterRCNN_MobileNet_V3_Large_FPN_Weights.Coco_V1),
-    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+    weights=("pretrained", FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
 )
 def fasterrcnn_mobilenet_v3_large_fpn(
     *,
@@ -186,8 +192,8 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 
 
 @handle_legacy_interface(
-    weights=("pretrained", FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.Coco_V1),
-    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+    weights=("pretrained", FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
 )
 def fasterrcnn_mobilenet_v3_large_320_fpn(
     *,

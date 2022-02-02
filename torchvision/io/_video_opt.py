@@ -5,12 +5,11 @@ from typing import List, Tuple, Dict, Optional, Union
 
 import torch
 
-from .._internally_replaced_utils import _get_extension_path
+from ..extension import _load_library
 
 
 try:
-    lib_path = _get_extension_path("video_reader")
-    torch.ops.load_library(lib_path)
+    _load_library("video_reader")
     _HAS_VIDEO_OPT = True
 except (ImportError, OSError):
     _HAS_VIDEO_OPT = False
@@ -72,7 +71,7 @@ def _validate_pts(pts_range: Tuple[int, int]) -> None:
         assert (
             pts_range[0] <= pts_range[1]
         ), """Start pts should not be smaller than end pts, got
-            start pts: {0:d} and end pts: {1:d}""".format(
+            start pts: {:d} and end pts: {:d}""".format(
             pts_range[0],
             pts_range[1],
         )

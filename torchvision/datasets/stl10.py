@@ -1,5 +1,5 @@
 import os.path
-from typing import Any, Callable, Optional, Tuple
+from typing import Any, Callable, Optional, Tuple, cast
 
 import numpy as np
 from PIL import Image
@@ -65,10 +65,12 @@ class STL10(VisionDataset):
         self.labels: Optional[np.ndarray]
         if self.split == "train":
             self.data, self.labels = self.__loadfile(self.train_list[0][0], self.train_list[1][0])
+            self.labels = cast(np.ndarray, self.labels)
             self.__load_folds(folds)
 
         elif self.split == "train+unlabeled":
             self.data, self.labels = self.__loadfile(self.train_list[0][0], self.train_list[1][0])
+            self.labels = cast(np.ndarray, self.labels)
             self.__load_folds(folds)
             unlabeled_data, _ = self.__loadfile(self.train_list[2][0])
             self.data = np.concatenate((self.data, unlabeled_data))

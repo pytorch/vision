@@ -223,7 +223,17 @@ class VideoResNet(nn.Module):
         self.fc = nn.Linear(512 * block.expansion, num_classes)
 
         # init weights
-        self._initialize_weights()
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm3d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, 0, 0.01)
+                nn.init.constant_(m.bias, 0)
 
         if zero_init_residual:
             for m in self.modules():
@@ -269,19 +279,6 @@ class VideoResNet(nn.Module):
             layers.append(block(self.inplanes, planes, conv_builder))
 
         return nn.Sequential(*layers)
-
-    def _initialize_weights(self) -> None:
-        for m in self.modules():
-            if isinstance(m, nn.Conv3d):
-                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.BatchNorm3d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
-            elif isinstance(m, nn.Linear):
-                nn.init.normal_(m.weight, 0, 0.01)
-                nn.init.constant_(m.bias, 0)
 
 
 def _video_resnet(arch: str, pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VideoResNet:

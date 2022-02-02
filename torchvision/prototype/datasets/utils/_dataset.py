@@ -6,7 +6,7 @@ import io
 import itertools
 import os
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple
+from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple, Collection
 
 import torch
 from torch.utils.data import IterDataPipe
@@ -24,6 +24,8 @@ class DatasetType(enum.Enum):
 
 
 class DatasetConfig(FrozenBunch):
+    # This needs to be Frozen because we often pass configs as partial(func, config=config)
+    # and partial() requires the parameters to be hashable.
     pass
 
 
@@ -33,12 +35,12 @@ class DatasetInfo:
         name: str,
         *,
         type: Union[str, DatasetType],
-        dependencies: Sequence[str] = (),
+        dependencies: Collection[str] = (),
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
-        valid_options: Optional[Dict[str, Sequence]] = None,
+        valid_options: Optional[Dict[str, Sequence[Any]]] = None,
         extra: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.name = name.lower()
@@ -60,20 +62,10 @@ class DatasetInfo:
         self.homepage = homepage
         self.license = license
 
-        valid_split: Dict[str, Sequence] = dict(split=["train"])
-        if valid_options is None:
-            valid_options = valid_split
-        elif "split" not in valid_options:
-            valid_options.update(valid_split)
-        elif "train" not in valid_options["split"]:
-            raise ValueError(
-                f"'train' has to be a valid argument for option 'split', "
-                f"but found only {sequence_to_str(valid_options['split'], separate_last='and ')}."
-            )
-        self._valid_options: Dict[str, Sequence] = valid_options
+        self._valid_options = valid_options or dict()
         self._configs = tuple(
-            DatasetConfig(**dict(zip(valid_options.keys(), combination)))
-            for combination in itertools.product(*valid_options.values())
+            DatasetConfig(**dict(zip(self._valid_options.keys(), combination)))
+            for combination in itertools.product(*self._valid_options.values())
         )
 
         self.extra = FrozenBunch(extra or dict())
@@ -88,6 +80,12 @@ class DatasetInfo:
             return [row for row in csv.reader(file)]
 
     def make_config(self, **options: Any) -> DatasetConfig:
+        if not self._valid_options and options:
+            raise ValueError(
+                f"Dataset {self.name} does not take any options, "
+                f"but got {sequence_to_str(list(options), separate_last=' and')}."
+            )
+
         for name, arg in options.items():
             if name not in self._valid_options:
                 raise ValueError(
@@ -172,12 +170,13 @@ class Dataset(abc.ABC):
     def supports_sharded(self) -> bool:
         return False
 
-    def to_datapipe(
+    def load(
         self,
         root: Union[str, pathlib.Path],
         *,
         config: Optional[DatasetConfig] = None,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
+        skip_integrity_check: bool = False,
     ) -> IterDataPipe[Dict[str, Any]]:
         if not config:
             config = self.info.default_config
@@ -185,10 +184,12 @@ class Dataset(abc.ABC):
         if use_sharded_dataset() and self.supports_sharded():
             root = os.path.join(root, *config.values())
             dataset_size = self.info.extra["sizes"][config]
-            return _make_sharded_datapipe(root, dataset_size)
+            return _make_sharded_datapipe(root, dataset_size)  # type: ignore[no-any-return]
 
         self.info.check_dependencies()
-        resource_dps = [resource.to_datapipe(root) for resource in self.resources(config)]
+        resource_dps = [
+            resource.load(root, skip_integrity_check=skip_integrity_check) for resource in self.resources(config)
+        ]
         return self._make_datapipe(resource_dps, config=config, decoder=decoder)
 
     def _generate_categories(self, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:

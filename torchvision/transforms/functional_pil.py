@@ -4,6 +4,7 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 from PIL import Image, ImageOps, ImageEnhance
+from typing_extensions import Literal
 
 try:
     import accimage
@@ -130,7 +131,7 @@ def pad(
     img: Image.Image,
     padding: Union[int, List[int], Tuple[int, ...]],
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
-    padding_mode: str = "constant",
+    padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -189,7 +190,7 @@ def pad(
         if img.mode == "P":
             palette = img.getpalette()
             img = np.asarray(img)
-            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), mode=padding_mode)
             img = Image.fromarray(img)
             img.putpalette(palette)
             return img

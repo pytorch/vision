@@ -2,6 +2,7 @@
 
 import argparse
 import csv
+import pathlib
 import sys
 
 from torchvision.prototype import datasets
@@ -10,7 +11,7 @@ from torchvision.prototype.datasets.utils._internal import BUILTIN_DIR
 
 
 def main(*names, force=False):
-    root = datasets.home()
+    home = pathlib.Path(datasets.home())
 
     for name in names:
         path = BUILTIN_DIR / f"{name}.categories"
@@ -19,12 +20,14 @@ def main(*names, force=False):
 
         dataset = find(name)
         try:
-            categories = dataset._generate_categories(root)
+            categories = dataset._generate_categories(home / name)
         except NotImplementedError:
             continue
 
-        with open(path, "w", newline="") as file:
-            csv.writer(file).writerows(categories)
+        with open(path, "w") as file:
+            writer = csv.writer(file, lineterminator="\n")
+            for category in categories:
+                writer.writerow((category,) if isinstance(category, str) else category)
 
 
 def parse_args(argv=None):
@@ -46,7 +49,7 @@ def parse_args(argv=None):
     args = parser.parse_args(argv or sys.argv[1:])
 
     if not args.names:
-        args.names = datasets.list()
+        args.names = datasets.list_datasets()
 
     return args
 

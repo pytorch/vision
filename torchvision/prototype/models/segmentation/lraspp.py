@@ -15,10 +15,14 @@ __all__ = ["LRASPP", "LRASPP_MobileNet_V3_Large_Weights", "lraspp_mobilenet_v3_l
 
 
 class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
-    CocoWithVocLabels_V1 = Weights(
+    COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
         transforms=partial(VocEval, resize_size=520),
         meta={
+            "task": "image_semantic_segmentation",
+            "architecture": "LRASPP",
+            "publication_year": 2019,
+            "num_params": 3221538,
             "categories": _VOC_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
@@ -26,12 +30,12 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
             "acc": 91.2,
         },
     )
-    default = CocoWithVocLabels_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 @handle_legacy_interface(
-    weights=("pretrained", LRASPP_MobileNet_V3_Large_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.ImageNet1K_V1),
+    weights=("pretrained", LRASPP_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
 )
 def lraspp_mobilenet_v3_large(
     *,

@@ -46,6 +46,14 @@ setup_cuda() {
 
   # Now work out the CUDA settings
   case "$CU_VERSION" in
+    cu115)
+      if [[ "$OSTYPE" == "msys" ]]; then
+        export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.5"
+      else
+        export CUDA_HOME=/usr/local/cuda-11.5/
+      fi
+      export TORCH_CUDA_ARCH_LIST="3.5;5.0+PTX;6.0;7.0;7.5;8.0;8.6"
+      ;;
     cu113)
       if [[ "$OSTYPE" == "msys" ]]; then
         export CUDA_HOME="C:\\Program Files\\NVIDIA GPU Computing Toolkit\\CUDA\\v11.3"
@@ -175,7 +183,7 @@ retry () {
 }
 
 # Inputs:
-#   PYTHON_VERSION (2.7, 3.5, 3.6, 3.7)
+#   PYTHON_VERSION (3.7, 3.8, 3.9)
 #   UNICODE_ABI (bool)
 #
 # Outputs:
@@ -194,15 +202,6 @@ setup_wheel_python() {
     # Install native CentOS libJPEG, freetype and GnuTLS
     yum install -y libjpeg-turbo-devel freetype gnutls
     case "$PYTHON_VERSION" in
-      2.7)
-        if [[ -n "$UNICODE_ABI" ]]; then
-          python_abi=cp27-cp27mu
-        else
-          python_abi=cp27-cp27m
-        fi
-        ;;
-      3.5) python_abi=cp35-cp35m ;;
-      3.6) python_abi=cp36-cp36m ;;
       3.7) python_abi=cp37-cp37m ;;
       3.8) python_abi=cp38-cp38 ;;
       3.9) python_abi=cp39-cp39 ;;
@@ -289,6 +288,9 @@ setup_conda_cudatoolkit_constraint() {
     export CONDA_BUILD_VARIANT="cpu"
   else
     case "$CU_VERSION" in
+      cu115)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.5,<11.6 # [not osx]"
+        ;;
       cu113)
         export CONDA_CUDATOOLKIT_CONSTRAINT="- cudatoolkit >=11.3,<11.4 # [not osx]"
         ;;
@@ -333,6 +335,9 @@ setup_conda_cudatoolkit_plain_constraint() {
     export CMAKE_USE_CUDA=0
   else
     case "$CU_VERSION" in
+      cu115)
+        export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.5"
+        ;;
       cu113)
         export CONDA_CUDATOOLKIT_CONSTRAINT="cudatoolkit=11.3"
         ;;

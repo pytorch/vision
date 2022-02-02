@@ -21,7 +21,11 @@ supported Python versions.
 +--------------------------+--------------------------+---------------------------------+
 | ``torch``                | ``torchvision``          | ``python``                      |
 +==========================+==========================+=================================+
-| ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.6``, ``<=3.9``            |
+| ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.7``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.10.2``               | ``0.11.3``               | ``>=3.6``, ``<=3.9``            |
++--------------------------+--------------------------+---------------------------------+
+| ``1.10.1``               | ``0.11.2``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.10.0``               | ``0.11.1``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
@@ -154,6 +158,10 @@ The ``TorchVision`` package will also automatically look for the ``Torch`` packa
 so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 For an example setup, take a look at ``examples/cpp/hello_world``.
+
+Python linking is disabled by default when compiling TorchVision with CMake, this allows you to run models without any Python 
+dependency. In some special cases where TorchVision's operators are used from Python code, you may need to link to Python. This 
+can be done by passing ``-DUSE_PYTHON=on`` to CMake.
 
 TorchVision Operators
 ---------------------

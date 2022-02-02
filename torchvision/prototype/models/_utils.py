@@ -43,6 +43,7 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
                 if (
                     (weights_param not in kwargs and pretrained_param not in kwargs)
                     or isinstance(weights_arg, WeightsEnum)
+                    or (isinstance(weights_arg, str) and weights_arg != "legacy")
                     or weights_arg is None
                 ):
                     continue
@@ -77,7 +78,7 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
                 )
                 if pretrained_arg:
                     msg = (
-                        f"{msg} You can also use `{weights_param}={type(default_weights_arg).__name__}.default` "
+                        f"{msg} You can also use `{weights_param}={type(default_weights_arg).__name__}.DEFAULT` "
                         f"to get the most up-to-date weights."
                     )
                 warnings.warn(msg)

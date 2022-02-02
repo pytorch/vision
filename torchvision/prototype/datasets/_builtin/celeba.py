@@ -1,4 +1,5 @@
 import csv
+import functools
 import io
 from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence
 
@@ -6,9 +7,7 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Filter,
-    ZipArchiveReader,
     Zipper,
     IterKeyZipper,
 )
@@ -20,8 +19,14 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, getitem, path_accessor
-
+from torchvision.prototype.datasets.utils._internal import (
+    INFINITE_BUFFER_SIZE,
+    getitem,
+    path_accessor,
+    hint_sharding,
+    hint_shuffling,
+)
+from torchvision.prototype.features import Feature, Label, BoundingBox
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 
@@ -63,6 +68,7 @@ class CelebA(Dataset):
             "celeba",
             type=DatasetType.IMAGE,
             homepage="https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html",
+            valid_options=dict(split=("train", "val", "test")),
         )
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -100,7 +106,7 @@ class CelebA(Dataset):
 
     _SPLIT_ID_TO_NAME = {
         "0": "train",
-        "1": "valid",
+        "1": "val",
         "2": "test",
     }
 
@@ -113,22 +119,22 @@ class CelebA(Dataset):
 
     def _collate_and_decode_sample(
         self,
-        data: Tuple[Tuple[str, Tuple[str, List[str]], Tuple[str, io.IOBase]], Tuple[str, Dict[str, Any]]],
+        data: Tuple[Tuple[str, Tuple[Tuple[str, Dict[str, Any]], Tuple[str, io.IOBase]]], Tuple[str, Dict[str, Any]]],
         *,
         decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
-        _, _, image_data = split_and_image_data
+        _, (_, image_data) = split_and_image_data
         path, buffer = image_data
         _, ann = ann_data
 
         image = decoder(buffer) if decoder else buffer
 
-        identity = int(ann["identity"]["identity"])
+        identity = Label(int(ann["identity"]["identity"]))
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
-        bbox = torch.tensor([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
+        bbox = BoundingBox([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
         landmarks = {
-            landmark: torch.tensor((int(ann["landmarks"][f"{landmark}_x"]), int(ann["landmarks"][f"{landmark}_y"])))
+            landmark: Feature((int(ann["landmarks"][f"{landmark}_x"]), int(ann["landmarks"][f"{landmark}_y"])))
             for landmark in {key[:-2] for key in ann["landmarks"].keys()}
         }
 
@@ -151,10 +157,9 @@ class CelebA(Dataset):
         splits_dp, images_dp, identities_dp, attributes_dp, bboxes_dp, landmarks_dp = resource_dps
 
         splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))
-        splits_dp = Filter(splits_dp, self._filter_split, fn_kwargs=dict(split=config.split))
-        splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
-
-        images_dp = ZipArchiveReader(images_dp)
+        splits_dp = Filter(splits_dp, functools.partial(self._filter_split, split=config.split))
+        splits_dp = hint_sharding(splits_dp)
+        splits_dp = hint_shuffling(splits_dp)
 
         anns_dp = Zipper(
             *[
@@ -178,4 +183,4 @@ class CelebA(Dataset):
             keep_key=True,
         )
         dp = IterKeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))

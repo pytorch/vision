@@ -1983,11 +1983,11 @@ class TestAffine:
         result_matrix[2, 2] = 1
         return np.linalg.inv(result_matrix)
 
-    def _test_transformation(self, angle, translate, scale, shear, pil_image, input_img):
+    def _test_transformation(self, angle, translate, scale, shear, pil_image, input_img, center=None):
 
         a_rad = math.radians(angle)
         s_rad = [math.radians(sh_) for sh_ in shear]
-        cnt = [20, 20]
+        cnt = [20, 20] if center is None else center
         cx, cy = cnt
         tx, ty = translate
         sx, sy = s_rad
@@ -2032,7 +2032,7 @@ class TestAffine:
                 if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                     true_result[y, x, :] = input_img[_y, _x, :]
 
-        result = F.affine(pil_image, angle=angle, translate=translate, scale=scale, shear=shear)
+        result = F.affine(pil_image, angle=angle, translate=translate, scale=scale, shear=shear, center=center)
         assert result.size == pil_image.size
         # Compute number of different pixels:
         np_result = np.array(result)
@@ -2048,6 +2048,18 @@ class TestAffine:
         angle = 45
         self._test_transformation(
             angle=angle, translate=(0, 0), scale=1.0, shear=(0.0, 0.0), pil_image=pil_image, input_img=input_img
+        )
+
+        # Test rotation
+        angle = 45
+        self._test_transformation(
+            angle=angle,
+            translate=(0, 0),
+            scale=1.0,
+            shear=(0.0, 0.0),
+            pil_image=pil_image,
+            input_img=input_img,
+            center=[0, 0],
         )
 
         # Test translation
@@ -2066,6 +2078,18 @@ class TestAffine:
         shear = [45.0, 25.0]
         self._test_transformation(
             angle=0.0, translate=(0.0, 0.0), scale=1.0, shear=shear, pil_image=pil_image, input_img=input_img
+        )
+
+        # Test shear with top-left as center
+        shear = [45.0, 25.0]
+        self._test_transformation(
+            angle=0.0,
+            translate=(0.0, 0.0),
+            scale=1.0,
+            shear=shear,
+            pil_image=pil_image,
+            input_img=input_img,
+            center=[0, 0],
         )
 
     @pytest.mark.parametrize("angle", range(-90, 90, 36))

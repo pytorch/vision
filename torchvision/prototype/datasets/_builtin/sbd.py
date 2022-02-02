@@ -1,3 +1,4 @@
+import functools
 import io
 import pathlib
 import re
@@ -8,8 +9,6 @@ import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    TarArchiveReader,
-    Shuffler,
     Demultiplexer,
     Filter,
     IterKeyZipper,
@@ -29,7 +28,10 @@ from torchvision.prototype.datasets.utils._internal import (
     getitem,
     path_accessor,
     path_comparator,
+    hint_sharding,
+    hint_shuffling,
 )
+from torchvision.prototype.features import Feature
 
 
 class SBD(Dataset):
@@ -82,11 +84,11 @@ class SBD(Dataset):
 
         # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
         boundaries = (
-            torch.as_tensor(np.stack([raw_boundary[0].toarray() for raw_boundary in raw_boundaries]))
+            Feature(np.stack([raw_boundary[0].toarray() for raw_boundary in raw_boundaries]))
             if decode_boundaries
             else None
         )
-        segmentation = torch.as_tensor(raw_segmentation) if decode_segmentation else None
+        segmentation = Feature(raw_segmentation) if decode_segmentation else None
 
         return boundaries, segmentation
 
@@ -129,7 +131,6 @@ class SBD(Dataset):
         archive_dp, extra_split_dp = resource_dps
 
         archive_dp = resource_dps[0]
-        archive_dp = TarArchiveReader(archive_dp)
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
             3,
@@ -140,8 +141,10 @@ class SBD(Dataset):
 
         if config.split == "train_noval":
             split_dp = extra_split_dp
+        split_dp = Filter(split_dp, path_comparator("stem", config.split))
         split_dp = LineReader(split_dp, decode=True)
-        split_dp = Shuffler(split_dp)
+        split_dp = hint_sharding(split_dp)
+        split_dp = hint_shuffling(split_dp)
 
         dp = split_dp
         for level, data_dp in enumerate((images_dp, anns_dp)):
@@ -152,11 +155,12 @@ class SBD(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, self._collate_and_decode_sample, fn_kwargs=dict(config=config, decoder=decoder))
+        return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
-        dp = self.resources(self.default_config)[0].to_datapipe(pathlib.Path(root) / self.name)
-        dp = TarArchiveReader(dp)
+        resources = self.resources(self.default_config)
+
+        dp = resources[0].load(root)
         dp = Filter(dp, path_comparator("name", "category_names.m"))
         dp = LineReader(dp)
         dp = Mapper(dp, bytes.decode, input_col=1)

@@ -64,7 +64,11 @@ def _densenet(
 
 
 _COMMON_META = {
+    "task": "image_classification",
+    "architecture": "DenseNet",
+    "publication_year": 2016,
     "size": (224, 224),
+    "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/pull/116",
@@ -72,79 +76,83 @@ _COMMON_META = {
 
 
 class DenseNet121_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet121-a639ec97.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 7978856,
             "acc@1": 74.434,
             "acc@5": 91.972,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class DenseNet161_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet161-8d451a50.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 28681000,
             "acc@1": 77.138,
             "acc@5": 93.560,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class DenseNet169_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet169-b2777c0a.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 14149480,
             "acc@1": 75.600,
             "acc@5": 92.806,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
 class DenseNet201_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet201-c1103571.pth",
         transforms=partial(ImageNetEval, crop_size=224),
         meta={
             **_COMMON_META,
+            "num_params": 20013928,
             "acc@1": 76.896,
             "acc@5": 93.370,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", DenseNet121_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", DenseNet121_Weights.IMAGENET1K_V1))
 def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     weights = DenseNet121_Weights.verify(weights)
 
     return _densenet(32, (6, 12, 24, 16), 64, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", DenseNet161_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", DenseNet161_Weights.IMAGENET1K_V1))
 def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     weights = DenseNet161_Weights.verify(weights)
 
     return _densenet(48, (6, 12, 36, 24), 96, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", DenseNet169_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", DenseNet169_Weights.IMAGENET1K_V1))
 def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     weights = DenseNet169_Weights.verify(weights)
 
     return _densenet(32, (6, 12, 32, 32), 64, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", DenseNet201_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", DenseNet201_Weights.IMAGENET1K_V1))
 def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     weights = DenseNet201_Weights.verify(weights)
 

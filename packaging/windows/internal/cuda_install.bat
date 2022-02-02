@@ -21,6 +21,7 @@ set CUDA_VER_MAJOR=%CUDA_VER:~0,-1%
 set CUDA_VER_MINOR=%CUDA_VER:~-1,1%
 set CUDA_VERSION_STR=%CUDA_VER_MAJOR%.%CUDA_VER_MINOR%
 
+
 if %CUDA_VER% EQU 92 goto cuda92
 if %CUDA_VER% EQU 100 goto cuda100
 if %CUDA_VER% EQU 101 goto cuda101
@@ -29,6 +30,8 @@ if %CUDA_VER% EQU 110 goto cuda110
 if %CUDA_VER% EQU 111 goto cuda111
 if %CUDA_VER% EQU 112 goto cuda112
 if %CUDA_VER% EQU 113 goto cuda113
+if %CUDA_VER% EQU 115 goto cuda115
+
 
 echo CUDA %CUDA_VERSION_STR% is not supported
 exit /b 1
@@ -180,6 +183,25 @@ if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
 
 goto cuda_common
 
+:cuda115
+
+set CUDA_INSTALL_EXE=cuda_11.5.0_496.13_win10.exe
+if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
+    curl -k -L "https://ossci-windows.s3.amazonaws.com/%CUDA_INSTALL_EXE%" --output "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
+    if errorlevel 1 exit /b 1
+    set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
+    set "ARGS=thrust_11.5 nvcc_11.5 cuobjdump_11.5 nvprune_11.5 nvprof_11.5 cupti_11.5 cublas_11.5 cublas_dev_11.5 cudart_11.5 cufft_11.5 cufft_dev_11.5 curand_11.5 curand_dev_11.5 cusolver_11.5 cusolver_dev_11.5 cusparse_11.5 cusparse_dev_11.5 npp_11.5 npp_dev_11.5 nvrtc_11.5 nvrtc_dev_11.5 nvml_dev_11.5"
+)
+
+set CUDNN_INSTALL_ZIP=cudnn-11.3-windows-x64-v8.2.0.53.zip
+if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
+    curl -k -L "http://s3.amazonaws.com/ossci-windows/%CUDNN_INSTALL_ZIP%" --output "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
+    if errorlevel 1 exit /b 1
+    set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
+)
+
+goto cuda_common
+
 :cuda_common
 
 if not exist "%SRC_DIR%\temp_build\NvToolsExt.7z" (
@@ -190,6 +212,10 @@ if not exist "%SRC_DIR%\temp_build\NvToolsExt.7z" (
 echo Installing CUDA toolkit...
 7z x %CUDA_SETUP_FILE% -o"%SRC_DIR%\temp_build\cuda"
 pushd "%SRC_DIR%\temp_build\cuda"
+sc config wuauserv start= disabled
+sc stop wuauserv
+sc query wuauserv
+
 start /wait setup.exe -s %ARGS% -loglevel:6 -log:"%cd%/cuda_install_logs"
 echo %errorlevel%
 
@@ -222,7 +248,7 @@ set "NVTOOLSEXT_PATH=%ProgramFiles%\NVIDIA Corporation\NvToolsExt\bin\x64"
 if not exist "%ProgramFiles%\NVIDIA GPU Computing Toolkit\CUDA\v%CUDA_VERSION_STR%\bin\nvcc.exe" (
     echo CUDA %CUDA_VERSION_STR% installed failed.
     echo --------- RunDll32.exe.log
-    type "%SRC_DIR%\temp_build\cuda\cuda_install_logs\LOG.RunDll32.exe.log"    
+    type "%SRC_DIR%\temp_build\cuda\cuda_install_logs\LOG.RunDll32.exe.log"
     echo --------- setup.exe.log -------
     type "%SRC_DIR%\temp_build\cuda\cuda_install_logs\LOG.setup.exe.log"
     exit /b 1

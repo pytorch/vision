@@ -3,7 +3,7 @@ from typing import Optional
 from torch import nn
 
 from .. import resnet
-from ..feature_extraction import create_feature_extractor
+from .._utils import IntermediateLayerGetter
 from ._utils import _SimpleSegmentationModel, _load_weights
 
 
@@ -18,7 +18,9 @@ model_urls = {
 
 class FCN(_SimpleSegmentationModel):
     """
-    Implements a Fully-Convolutional Network for semantic segmentation.
+    Implements FCN model from
+    `"Fully Convolutional Networks for Semantic Segmentation"
+    <https://arxiv.org/abs/1411.4038>`_.
 
     Args:
         backbone (nn.Module): the network used to compute the features for the model.
@@ -55,7 +57,7 @@ def _fcn_resnet(
     return_layers = {"layer4": "out"}
     if aux:
         return_layers["layer3"] = "aux"
-    backbone = create_feature_extractor(backbone, return_layers)
+    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = FCNHead(1024, num_classes) if aux else None
     classifier = FCNHead(2048, num_classes)

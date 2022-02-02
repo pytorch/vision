@@ -255,16 +255,15 @@ class DefaultBoxGenerator(nn.Module):
         default_boxes = default_boxes.to(device)
 
         dboxes = []
+        x_y_size = torch.tensor([image_size[1], image_size[0]], device=default_boxes.device)
         for _ in image_list.image_sizes:
             dboxes_in_image = default_boxes
             dboxes_in_image = torch.cat(
                 [
-                    dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:],
-                    dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:],
+                    (dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:]) * x_y_size,
+                    (dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:]) * x_y_size,
                 ],
                 -1,
             )
-            dboxes_in_image[:, 0::2] *= image_size[1]
-            dboxes_in_image[:, 1::2] *= image_size[0]
             dboxes.append(dboxes_in_image)
         return dboxes
