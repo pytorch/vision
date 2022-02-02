@@ -6,7 +6,7 @@ from torch import Tensor
 from torchvision.models import shufflenetv2
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from .utils import _replace_relu, quantize_model
+from .utils import _fuse_modules, _replace_relu, quantize_model
 
 __all__ = [
     "QuantizableShuffleNetV2",
@@ -50,24 +50,24 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
         x = self.dequant(x)
         return x
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         r"""Fuse conv/bn/relu modules in shufflenetv2 model
 
         Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
         Model is modified in place.  Note that this operation does not change numerics
         and the model after modification is in floating point
         """
-
         for name, m in self._modules.items():
-            if name in ["conv1", "conv5"]:
-                torch.ao.quantization.fuse_modules(m, [["0", "1", "2"]], inplace=True)
+            if name in ["conv1", "conv5"] and m is not None:
+                _fuse_modules(m, [["0", "1", "2"]], is_qat, inplace=True)
         for m in self.modules():
             if type(m) is QuantizableInvertedResidual:
                 if len(m.branch1._modules.items()) > 0:
-                    torch.ao.quantization.fuse_modules(m.branch1, [["0", "1"], ["2", "3", "4"]], inplace=True)
-                torch.ao.quantization.fuse_modules(
+                    _fuse_modules(m.branch1, [["0", "1"], ["2", "3", "4"]], is_qat, inplace=True)
+                _fuse_modules(
                     m.branch2,
                     [["0", "1", "2"], ["3", "4"], ["5", "6", "7"]],
+                    is_qat,
                     inplace=True,
                 )
 

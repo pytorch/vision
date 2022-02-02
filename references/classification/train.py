@@ -178,7 +178,7 @@ def load_data(traindir, valdir, args):
 
     print("Creating data loaders")
     if args.distributed:
-        if args.ra_sampler:
+        if hasattr(args, "ra_sampler") and args.ra_sampler:
             train_sampler = RASampler(dataset, shuffle=True, repetitions=args.ra_reps)
         else:
             train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
