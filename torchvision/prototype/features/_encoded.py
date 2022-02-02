@@ -33,10 +33,10 @@ class EncodedData(_Feature):
         return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder), **meta)
 
     @classmethod
-    def from_path(cls: Type[E], path: Union[str, os.PathLike]) -> E:
+    def from_path(cls: Type[E], path: Union[str, os.PathLike], **meta: Any) -> E:
         path = pathlib.Path(path)
         with open(path, "rb") as file:
-            return cls.from_file(file, path=path)
+            return cls.from_file(file, path=path, **meta)
 
 
 class EncodedImage(EncodedData):

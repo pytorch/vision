@@ -15,4 +15,5 @@ from .pcam import PCAM
 from .sbd import SBD
 from .semeion import SEMEION
 from .svhn import SVHN
+from .ucf101 import UCF101
 from .voc import VOC
