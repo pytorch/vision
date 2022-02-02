@@ -26,6 +26,7 @@ class HMDB51(Dataset):
         return DatasetInfo(
             "hmdb51",
             homepage="https://serre-lab.clps.brown.edu/resource/hmdb-a-large-human-motion-database/",
+            dependencies=("rarfile",),
             valid_options=dict(
                 split=("train", "test"),
                 split_number=("1", "2", "3"),
