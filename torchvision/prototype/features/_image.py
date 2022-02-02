@@ -1,9 +1,10 @@
 import warnings
 from typing import Any, Optional, Union, Tuple, cast
 
+import PIL.Image
 import torch
 from torchvision.prototype.utils._internal import StrEnum
-from torchvision.transforms.functional import to_pil_image
+from torchvision.transforms.functional import to_pil_image, pil_to_tensor
 from torchvision.utils import draw_bounding_boxes
 from torchvision.utils import make_grid
 
@@ -75,6 +76,12 @@ class Image(Feature):
             return ColorSpace.RGB
         else:
             return ColorSpace.OTHER
+
+    @classmethod
+    def from_pil(
+        cls, image: PIL.Image.Image, *, dtype: Optional[torch.dtype] = None, device: Optional[torch.device] = None
+    ) -> "Image":
+        return cls(pil_to_tensor(image), dtype=dtype, device=device)
 
     def show(self) -> None:
         to_pil_image(make_grid(self.view(-1, *self.shape[-3:]))).show()

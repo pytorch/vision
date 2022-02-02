@@ -1,6 +1,7 @@
 import os
+import pathlib
 import sys
-from typing import BinaryIO, Tuple, Type, TypeVar, Union
+from typing import BinaryIO, Tuple, Type, TypeVar, Union, Dict, Any, Optional
 
 import PIL.Image
 import torch
@@ -9,23 +10,33 @@ from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 from ._feature import Feature
 from ._image import Image
 
-D = TypeVar("D", bound="EncodedData")
+E = TypeVar("E", bound="EncodedData")
 
 
 class EncodedData(Feature):
-    @classmethod
-    def _to_tensor(cls, data, *, dtype, device):
-        # TODO: warn / bail out if we encounter a tensor with shape other than (N,) or with dtype other than uint8?
-        return super()._to_tensor(data, dtype=dtype, device=device)
+    meta: Dict[str, Any]
+
+    def __new__(
+        cls: Type[E],
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[torch.device] = None,
+        **meta: Any,
+    ) -> E:
+        encoded_data = super().__new__(cls, data, dtype=dtype, device=device)
+        encoded_data._metadata.update(dict(meta=meta))
+        return encoded_data
 
     @classmethod
-    def from_file(cls: Type[D], file: BinaryIO) -> D:
-        return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder))
+    def from_file(cls: Type[E], file: BinaryIO, **meta: Any) -> E:
+        return cls(fromfile(file, dtype=torch.uint8, byte_order=sys.byteorder), **meta)
 
     @classmethod
-    def from_path(cls: Type[D], path: Union[str, os.PathLike]) -> D:
+    def from_path(cls: Type[E], path: Union[str, os.PathLike]) -> E:
+        path = pathlib.Path(path)
         with open(path, "rb") as file:
-            return cls.from_file(file)
+            return cls.from_file(file, path=path)
 
 
 class EncodedImage(EncodedData):
