@@ -176,7 +176,7 @@ def draw_bounding_boxes(
         colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
-            By default, fixed colors are generated for boxes.
+            By default, random colors are generated for boxes.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
