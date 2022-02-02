@@ -2,6 +2,7 @@
 dependencies = ["torch"]
 
 from torchvision.models.alexnet import alexnet
+from torchvision.models.convnext import convnext_tiny, convnext_small, convnext_base, convnext_large
 from torchvision.models.densenet import densenet121, densenet169, densenet201, densenet161
 from torchvision.models.efficientnet import (
     efficientnet_b0,
