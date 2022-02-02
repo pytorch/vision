@@ -69,7 +69,6 @@ int transformImage(
   // GPU decoder Since SWSContext cannot be edited directly, we're borrowing
   // pyAV approach from:
   // https://github.com/PyAV-Org/PyAV/blob/9ac05d9ac902d71ecb2fe80f04dcae454008378c/av/video/reformatter.pyx#L141
-  // very sory for this, found no cleaner way of doing it
   const int* inv_tbl;
   const int* tbl;
   int src_range, dst_range, brightness, contrast, saturation;
@@ -84,9 +83,6 @@ int transformImage(
            &brightness,
            &contrast,
            &saturation)) >= 0) {
-    LOG(INFO) << "Successfuly got the information about colourspace \n "
-              << "attempting to set a new one";
-
     inv_tbl = sws_getCoefficients(SWS_CS_ITU709);
 
     if ((ret_set = sws_setColorspaceDetails(
@@ -98,9 +94,9 @@ int transformImage(
              brightness,
              contrast,
              saturation)) >= 0) {
-      LOG(INFO) << "Successfuly set new colourspace info";
     } else {
-      LOG(ERROR) << "Failed to set new colourspace info";
+      LOG(ERROR)
+          << "Failed to set new colourspace info; defaulting to SWS_CS_DEFAULT";
     }
   } else {
     LOG(ERROR) << "Failed to get new colourspace info";

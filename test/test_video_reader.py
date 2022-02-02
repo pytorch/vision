@@ -215,7 +215,7 @@ def _decode_frames_by_av_module(
         atimebase = _fraction_to_tensor(container.streams.audio[0].time_base)
 
     container.close()
-    vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
+    vframes = [frame.to_rgb(src_colorspace="ITU709").to_ndarray() for frame in video_frames]
     vframes = torch.as_tensor(np.stack(vframes))
 
     vframe_pts = torch.tensor([frame.pts for frame in video_frames], dtype=torch.int64)
