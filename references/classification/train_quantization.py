@@ -63,7 +63,7 @@ def main(args):
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
-        model.fuse_model(is_qat=False)
+        model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
 
