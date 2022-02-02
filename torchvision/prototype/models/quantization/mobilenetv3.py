@@ -42,7 +42,7 @@ def _mobilenet_v3_model(
     _replace_relu(model)
 
     if quantize:
-        model.fuse_model()
+        model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
 

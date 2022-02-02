@@ -366,20 +366,6 @@ class RegNet(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
         self.fc = nn.Linear(in_features=current_width, out_features=num_classes)
 
-        # Init weights and good to go
-        self._reset_parameters()
-
-    def forward(self, x: Tensor) -> Tensor:
-        x = self.stem(x)
-        x = self.trunk_output(x)
-
-        x = self.avgpool(x)
-        x = x.flatten(start_dim=1)
-        x = self.fc(x)
-
-        return x
-
-    def _reset_parameters(self) -> None:
         # Performs ResNet-style weight initialization
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
@@ -392,6 +378,16 @@ class RegNet(nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.normal_(m.weight, mean=0.0, std=0.01)
                 nn.init.zeros_(m.bias)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.stem(x)
+        x = self.trunk_output(x)
+
+        x = self.avgpool(x)
+        x = x.flatten(start_dim=1)
+        x = self.fc(x)
+
+        return x
 
 
 def _regnet(arch: str, block_params: BlockParams, pretrained: bool, progress: bool, **kwargs: Any) -> RegNet:
