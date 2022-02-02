@@ -1,5 +1,5 @@
 import random
-from typing import Any, Dict, Iterator, BinaryIO, Optional, Tuple
+from typing import Any, Dict, Iterator, Optional, Tuple
 
 import av
 import numpy as np
@@ -15,7 +15,7 @@ class _VideoDecoder(IterDataPipe):
         self.datapipe = datapipe
         self._inline = inline
 
-    def _decode(self, buffer: BinaryIO, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
+    def _decode(self, buffer: ReadOnlyTensorBuffer, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         raise NotImplementedError
 
     def _find_encoded_video(self, id: Tuple[Any, ...], obj: Any) -> Optional[Tuple[Any, ...]]:
@@ -65,13 +65,12 @@ class _VideoDecoder(IterDataPipe):
                 raise ValueError("more than one encoded video")
             id, video = ids_and_videos[0]
 
-            buffer = ReadOnlyTensorBuffer(video)
-            for data in self._decode(buffer, video.meta.copy()):
+            for data in self._decode(ReadOnlyTensorBuffer(video), video.meta.copy()):
                 yield self._integrate_data(sample, id, data)
 
 
 class KeyframeDecoder(_VideoDecoder):
-    def _decode(self, buffer: BinaryIO, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
+    def _decode(self, buffer: ReadOnlyTensorBuffer, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         with av.open(buffer, metadata_errors="ignore") as container:
             stream = container.streams.video[0]
             stream.codec_context.skip_frame = "NONKEY"
@@ -92,7 +91,7 @@ class RandomFrameDecoder(_VideoDecoder):
         super().__init__(datapipe, inline=inline)
         self.num_sampler = num_samples
 
-    def _decode(self, buffer: BinaryIO, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
+    def _decode(self, buffer: ReadOnlyTensorBuffer, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         with av.open(buffer, metadata_errors="ignore") as container:
             stream = container.streams.video[0]
             # duration is given in time_base units as int
@@ -147,7 +146,7 @@ class ClipDecoder(_VideoDecoder):
             new_size = (0, self.num_frames_per_clip)
         return torch.as_strided(tensor, new_size, new_stride)
 
-    def _decode(self, buffer: BinaryIO, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
+    def _decode(self, buffer: ReadOnlyTensorBuffer, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
         with av.open(buffer, metadata_errors="ignore") as container:
             stream = container.streams.video[0]
             time_base = stream.time_base

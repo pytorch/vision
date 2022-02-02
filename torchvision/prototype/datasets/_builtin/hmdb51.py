@@ -58,7 +58,7 @@ class HMDB51(Dataset):
 
     def _is_split_number(self, data: Tuple[str, Any], *, split_number: str) -> bool:
         path = pathlib.Path(data[0])
-        return self._SPLIT_FILE_PATTERN.match(path.name)["split_number"] == split_number  # type: ignore[union-attr]
+        return self._SPLIT_FILE_PATTERN.match(path.name)["split_number"] == split_number  # type: ignore[index]
 
     _SPLIT_ID_TO_NAME = {
         "1": "train",
@@ -111,7 +111,6 @@ class HMDB51(Dataset):
 
         dp = resources[0].load(root)
         categories = {
-            self._SPLIT_FILE_PATTERN.match(pathlib.Path(path).name)["category"]  # type: ignore[union-attr]
-            for path, _ in dp
+            self._SPLIT_FILE_PATTERN.match(pathlib.Path(path).name)["category"] for path, _ in dp  # type: ignore[index]
         }
         return sorted(categories)
