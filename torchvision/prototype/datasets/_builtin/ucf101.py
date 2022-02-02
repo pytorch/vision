@@ -88,7 +88,7 @@ class UCF101(Dataset):
         resources = self.resources(config)
 
         dp = resources[0].load(root)
-        dp = Filter(dp, path_comparator("name", "classInd.txt"))
+        dp: IterDataPipe[Tuple[str, BinaryIO]] = Filter(dp, path_comparator("name", "classInd.txt"))
         dp = CSVParser(dp, dialect="ucf101")
         _, categories = zip(*dp)
         return cast(Tuple[str, ...], categories)
