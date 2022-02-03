@@ -202,7 +202,7 @@ def draw_bounding_boxes(
     num_boxes = boxes.shape[0]
 
     if labels is None:
-        labels = [None] * num_boxes
+        labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
     elif len(labels) != num_boxes:
         raise ValueError(
             f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
@@ -233,7 +233,7 @@ def draw_bounding_boxes(
 
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
-    for bbox, color, label in zip(img_boxes, colors, labels):
+    for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
         if fill:
             fill_color = color + (100,)
             draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
