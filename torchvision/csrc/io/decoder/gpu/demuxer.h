@@ -218,6 +218,15 @@ class Demuxer {
     frameCount++;
     return true;
   }
+
+  void seek(double timestamp, int flag) {
+    int64_t time = timestamp * AV_TIME_BASE;
+    TORCH_CHECK(
+        0 <= av_seek_frame(fmtCtx, -1, time, flag),
+        "avformat_open_input() failed at line ",
+        __LINE__,
+        " in demuxer.h\n");
+  }
 };
 
 inline cudaVideoCodec ffmpeg_to_codec(AVCodecID id) {
