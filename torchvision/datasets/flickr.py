@@ -109,7 +109,7 @@ class Flickr8k(VisionDataset):
 
 
 class Flickr30k(VisionDataset):
-    """`Flickr30k Entities <http://web.engr.illinois.edu/~bplumme2/Flickr30kEntities/>`_ Dataset.
+    """`Flickr30k Entities <https://bryanplummer.com/Flickr30kEntities/>`_ Dataset.
 
     Args:
         root (string): Root directory where images are downloaded to.
