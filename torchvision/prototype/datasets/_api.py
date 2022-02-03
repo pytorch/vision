@@ -66,9 +66,9 @@ def load(
     dataset = find(name)
 
     if decoder is DEFAULT_DECODER:
-        decoder = DEFAULT_DECODER_MAP.get(dataset.info.type)
+        decoder = DEFAULT_DECODER_MAP.get(dataset.type)
 
-    config = dataset.info.make_config(**options)
+    config = dataset.make_config(**options)
     root = os.path.join(home(), dataset.name)
 
     return dataset.load(root, config=config, decoder=decoder, skip_integrity_check=skip_integrity_check)

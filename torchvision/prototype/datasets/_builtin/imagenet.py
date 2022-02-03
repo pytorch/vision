@@ -9,7 +9,7 @@ from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Ma
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
-    DatasetInfo,
+    DatasetOption,
     OnlineResource,
     ManualDownloadResource,
     DatasetType,
@@ -25,7 +25,6 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
 )
 from torchvision.prototype.features import Label
-from torchvision.prototype.utils._internal import FrozenMapping
 
 
 class ImageNetResource(ManualDownloadResource):
@@ -34,40 +33,30 @@ class ImageNetResource(ManualDownloadResource):
 
 
 class ImageNet(Dataset):
-    def _make_info(self) -> DatasetInfo:
+    def __init__(self):
         name = "imagenet"
-        categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{name}.categories"))
-
-        return DatasetInfo(
+        categories, wnids = zip(*self.read_categories_file(BUILTIN_DIR / f"{name}.categories"))
+        super().__init__(
             name,
+            DatasetOption("split", ("train", "val", "test")),
             type=DatasetType.IMAGE,
             dependencies=("scipy",),
             categories=categories,
             homepage="https://www.image-net.org/",
-            valid_options=dict(split=("train", "val", "test")),
-            extra=dict(
-                wnid_to_category=FrozenMapping(zip(wnids, categories)),
-                category_to_wnid=FrozenMapping(zip(categories, wnids)),
-                sizes=FrozenMapping(
-                    [
-                        (DatasetConfig(split="train"), 1_281_167),
-                        (DatasetConfig(split="val"), 50_000),
-                        (DatasetConfig(split="test"), 100_000),
-                    ]
-                ),
-            ),
         )
+        # TODO: handle num_samples
+        # sizes = FrozenMapping(
+        #     [
+        #         (DatasetConfig(split="train"), 1_281_167),
+        #         (DatasetConfig(split="val"), 50_000),
+        #         (DatasetConfig(split="test"), 100_000),
+        #     ]
+        # ),
+        self.wnid_to_category = dict(zip(wnids, categories))
+        self.category_to_wnid = dict(zip(categories, wnids))
 
     def supports_sharded(self) -> bool:
         return True
-
-    @property
-    def category_to_wnid(self) -> Dict[str, str]:
-        return cast(Dict[str, str], self.info.extra.category_to_wnid)
-
-    @property
-    def wnid_to_category(self) -> Dict[str, str]:
-        return cast(Dict[str, str], self.info.extra.wnid_to_category)
 
     _IMAGES_CHECKSUMS = {
         "train": "b08200a27a8e34218a0e58fde36b0fe8f73bc377f4acea2d91602057c3ca45bb",

@@ -1,4 +1,5 @@
 import collections.abc
+import contextlib
 import csv
 import functools
 import gzip
@@ -31,12 +32,20 @@ __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
 
 class DatasetMock:
     def __init__(self, name, mock_data_fn):
+        if name not in ("imagenet", "voc"):
+            self.name = name
+            return
+
         self.dataset = find(name)
-        self.info = self.dataset.info
-        self.name = self.info.name
+        self.name = self.dataset.name
 
         self.mock_data_fn = mock_data_fn
-        self.configs = self.info._configs
+
+        self.configs = []
+        for combination in itertools.product(*[option.valid for option in self.dataset.options]):
+            options = dict(zip([option.name for option in self.dataset.options], combination))
+            with contextlib.suppress(Exception):
+                self.configs.append(self.dataset.make_config(**options))
 
     def _parse_mock_info(self, mock_info):
         if mock_info is None:
@@ -65,7 +74,8 @@ class DatasetMock:
         root = home / self.name
         root.mkdir(exist_ok=True)
 
-        mock_info = self._parse_mock_info(self.mock_data_fn(self.info, root, config))
+        # TODO: rename all the parameters in the mock_data_fn's info -> dataset
+        mock_info = self._parse_mock_info(self.mock_data_fn(self.dataset, root, config))
 
         available_file_names = {path.name for path in root.glob("*")}
         required_file_names = {resource.file_name for resource in self.dataset.resources(config)}
@@ -109,6 +119,8 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
         marks = {}
     elif not isinstance(marks, collections.abc.Mapping):
         raise pytest.UsageError()
+
+    dataset_mocks = {name: dataset_mocks[name] for name in ("imagenet", "voc") if name in dataset_mocks}
 
     return pytest.mark.parametrize(
         ("dataset_mock", "config"),
@@ -432,7 +444,7 @@ def caltech256(info, root, config):
 
 @register_mock
 def imagenet(info, root, config):
-    wnids = tuple(info.extra.wnid_to_category.keys())
+    wnids = tuple(info.wnid_to_category.keys())
     if config.split == "train":
         images_root = root / "ILSVRC2012_img_train"
 

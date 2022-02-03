@@ -17,10 +17,10 @@ from torchvision.datasets import VOCDetection
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
-    DatasetInfo,
     HttpResource,
     OnlineResource,
     DatasetType,
+    DatasetOption,
 )
 from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
@@ -33,10 +33,20 @@ from torchvision.prototype.datasets.utils._internal import (
 from torchvision.prototype.features import BoundingBox
 
 
-class VOCDatasetInfo(DatasetInfo):
-    def __init__(self, *args: Any, **kwargs: Any):
-        super().__init__(*args, **kwargs)
-        self._configs = tuple(config for config in self._configs if config.split != "test" or config.year == "2007")
+class VOC(Dataset):
+    def __init__(self):
+        super().__init__(
+            "voc",
+            DatasetOption(
+                "split",
+                ("train", "val", "trainval", "test"),
+                doc="{options} `split='test'` is only available for `year='2007'`.",
+            ),
+            DatasetOption("year", ("2007", "2008", "2009", "2010", "2011", "2012"), default="2012"),
+            DatasetOption("task", valid=("detection", "segmentation")),
+            type=DatasetType.IMAGE,
+            homepage="http://host.robots.ox.ac.uk/pascal/VOC/",
+        )
 
     def make_config(self, **options: Any) -> DatasetConfig:
         config = super().make_config(**options)
@@ -44,20 +54,6 @@ class VOCDatasetInfo(DatasetInfo):
             raise ValueError("`split='test'` is only available for `year='2007'`")
 
         return config
-
-
-class VOC(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return VOCDatasetInfo(
-            "voc",
-            type=DatasetType.IMAGE,
-            homepage="http://host.robots.ox.ac.uk/pascal/VOC/",
-            valid_options=dict(
-                split=("train", "val", "trainval", "test"),
-                year=("2012", "2007", "2008", "2009", "2010", "2011"),
-                task=("detection", "segmentation"),
-            ),
-        )
 
     _TRAIN_VAL_ARCHIVES = {
         "2007": ("VOCtrainval_06-Nov-2007.tar", "7d8cd951101b0957ddfd7a530bdc8a94f06121cfc1e511bb5937e973020c7508"),
@@ -158,4 +154,5 @@ class VOC(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
+
         return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))

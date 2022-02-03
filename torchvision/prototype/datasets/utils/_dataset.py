@@ -3,15 +3,13 @@ import csv
 import enum
 import importlib
 import io
-import itertools
 import os
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple, Collection
+from typing import Callable, Any, Dict, List, Optional, Sequence, Union, Collection
 
 import torch
 from torch.utils.data import IterDataPipe
-from torchvision.prototype.utils._internal import FrozenBunch, make_repr
-from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str
+from torchvision.prototype.utils._internal import FrozenBunch, add_suggestion, sequence_to_str
 
 from .._home import use_sharded_dataset
 from ._internal import BUILTIN_DIR, _make_sharded_datapipe
@@ -23,28 +21,55 @@ class DatasetType(enum.Enum):
     IMAGE = enum.auto()
 
 
+# TODO: this is just a dummy to not change the imports everywhere before the design is finalized
+class DatasetInfo:
+    pass
+
+
 class DatasetConfig(FrozenBunch):
     # This needs to be Frozen because we often pass configs as partial(func, config=config)
     # and partial() requires the parameters to be hashable.
     pass
 
 
-class DatasetInfo:
+SENTINEL = object()
+
+
+class DatasetOption:
+    def __init__(self, name: str, valid: Sequence, *, default: Any = SENTINEL, doc: str = "{options}") -> None:
+        self.name = name
+        if not valid:
+            raise ValueError
+        self.valid = valid
+        self.default = valid[0] if default is SENTINEL else default
+        if "{options}" in doc:
+            options = sequence_to_str(
+                [str(arg) + (" (default)" if arg == self.default else "") for arg in valid],
+                separate_last="or ",
+            )
+            doc = doc.format(options=f"Can be one of {options}.")
+        self.doc = doc
+
+
+class Dataset(abc.ABC):
     def __init__(
         self,
         name: str,
-        *,
+        *options: DatasetOption,
         type: Union[str, DatasetType],
         dependencies: Collection[str] = (),
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
-        valid_options: Optional[Dict[str, Sequence[Any]]] = None,
-        extra: Optional[Dict[str, Any]] = None,
     ) -> None:
+
         self.name = name.lower()
         self.type = DatasetType[type.upper()] if isinstance(type, str) else type
+
+        self.options = options
+        self._options_map = {option.name: option for option in options}
+        self.default_config = DatasetConfig({option.name: option.default for option in options})
 
         self.dependecies = dependencies
 
@@ -62,50 +87,31 @@ class DatasetInfo:
         self.homepage = homepage
         self.license = license
 
-        self._valid_options = valid_options or dict()
-        self._configs = tuple(
-            DatasetConfig(**dict(zip(self._valid_options.keys(), combination)))
-            for combination in itertools.product(*self._valid_options.values())
-        )
-
-        self.extra = FrozenBunch(extra or dict())
-
-    @property
-    def default_config(self) -> DatasetConfig:
-        return self._configs[0]
-
-    @staticmethod
-    def read_categories_file(path: pathlib.Path) -> List[List[str]]:
+    def read_categories_file(self, path: pathlib.Path) -> List[List[str]]:
         with open(path, newline="") as file:
             return [row for row in csv.reader(file)]
 
     def make_config(self, **options: Any) -> DatasetConfig:
-        if not self._valid_options and options:
+        if not self.options and options:
             raise ValueError(
-                f"Dataset {self.name} does not take any options, "
+                f"Dataset '{self.name}' does not take any options, "
                 f"but got {sequence_to_str(list(options), separate_last=' and')}."
             )
 
         for name, arg in options.items():
-            if name not in self._valid_options:
+            if name not in self._options_map:
                 raise ValueError(
                     add_suggestion(
-                        f"Unknown option '{name}' of dataset {self.name}.",
+                        f"Unknown option '{name}' of dataset '{self.name}'.",
                         word=name,
-                        possibilities=sorted(self._valid_options.keys()),
+                        possibilities=sorted(self._options_map.keys()),
                     )
                 )
 
-            valid_args = self._valid_options[name]
+            option = self._options_map[name]
 
-            if arg not in valid_args:
-                raise ValueError(
-                    add_suggestion(
-                        f"Invalid argument '{arg}' for option '{name}' of dataset {self.name}.",
-                        word=arg,
-                        possibilities=valid_args,
-                    )
-                )
+            if arg not in option.valid:
+                raise ValueError(f"Invalid argument '{arg}' for option '{name}' of dataset '{self.name}'. {option.doc}")
 
         return DatasetConfig(self.default_config, **options)
 
@@ -118,40 +124,6 @@ class DatasetInfo:
                     f"Dataset '{self.name}' depends on the third-party package '{dependency}'. "
                     f"Please install it, for example with `pip install {dependency}`."
                 ) from error
-
-    def __repr__(self) -> str:
-        items = [("name", self.name)]
-        for key in ("citation", "homepage", "license"):
-            value = getattr(self, key)
-            if value is not None:
-                items.append((key, value))
-        items.extend(sorted((key, sequence_to_str(value)) for key, value in self._valid_options.items()))
-        return make_repr(type(self).__name__, items)
-
-
-class Dataset(abc.ABC):
-    def __init__(self) -> None:
-        self._info = self._make_info()
-
-    @abc.abstractmethod
-    def _make_info(self) -> DatasetInfo:
-        pass
-
-    @property
-    def info(self) -> DatasetInfo:
-        return self._info
-
-    @property
-    def name(self) -> str:
-        return self.info.name
-
-    @property
-    def default_config(self) -> DatasetConfig:
-        return self.info.default_config
-
-    @property
-    def categories(self) -> Tuple[str, ...]:
-        return self.info.categories
 
     @abc.abstractmethod
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -179,14 +151,16 @@ class Dataset(abc.ABC):
         skip_integrity_check: bool = False,
     ) -> IterDataPipe[Dict[str, Any]]:
         if not config:
-            config = self.info.default_config
+            config = self.default_config
 
         if use_sharded_dataset() and self.supports_sharded():
             root = os.path.join(root, *config.values())
+            # TODO: since extra is no longer a thing, we need have a proper field or better yet a
+            #  num_samples(config) method
             dataset_size = self.info.extra["sizes"][config]
             return _make_sharded_datapipe(root, dataset_size)  # type: ignore[no-any-return]
 
-        self.info.check_dependencies()
+        self.check_dependencies()
         resource_dps = [
             resource.load(root, skip_integrity_check=skip_integrity_check) for resource in self.resources(config)
         ]
