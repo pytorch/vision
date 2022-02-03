@@ -64,7 +64,9 @@ class TestVideoApi:
                     av_pts, vr_pts = [], []
                     # get av frames
                     for av_frame in av_reader.decode(av_reader.streams.video[0]):
-                        av_frames.append(torch.tensor(av_frame.to_rgb(src_colorspace="ITU709").to_ndarray()).permute(2, 0, 1))
+                        av_frames.append(
+                            torch.tensor(av_frame.to_rgb(src_colorspace="ITU709").to_ndarray()).permute(2, 0, 1)
+                        )
                         av_pts.append(av_frame.pts * av_frame.time_base)
 
                     # get vr frames
