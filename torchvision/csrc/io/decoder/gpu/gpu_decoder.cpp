@@ -38,8 +38,19 @@ torch::Tensor GPUDecoder::decode() {
   return frame;
 }
 
+c10::Dict<std::string, c10::Dict<std::string, double>> GPUDecoder::
+    get_metadata() const {
+  c10::Dict<std::string, c10::Dict<std::string, double>> metadata;
+  c10::Dict<std::string, double> video_metadata;
+  video_metadata.insert("duration", demuxer.get_duration());
+  video_metadata.insert("fps", demuxer.get_fps());
+  metadata.insert("video", video_metadata);
+  return metadata;
+}
+
 TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
       .def(torch::init<std::string, int64_t>())
+      .def("get_metadata", &GPUDecoder::get_metadata)
       .def("next", &GPUDecoder::decode);
 }
