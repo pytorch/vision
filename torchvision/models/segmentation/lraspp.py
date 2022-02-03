@@ -6,7 +6,7 @@ from torch.nn import functional as F
 
 from ...utils import _log_api_usage_once
 from .. import mobilenetv3
-from ..feature_extraction import create_feature_extractor
+from .._utils import IntermediateLayerGetter
 from ._utils import _load_weights
 
 
@@ -90,7 +90,7 @@ def _lraspp_mobilenetv3(backbone: mobilenetv3.MobileNetV3, num_classes: int) -> 
     high_pos = stage_indices[-1]  # use C5 which has output_stride = 16
     low_channels = backbone[low_pos].out_channels
     high_channels = backbone[high_pos].out_channels
-    backbone = create_feature_extractor(backbone, {str(low_pos): "low", str(high_pos): "high"})
+    backbone = IntermediateLayerGetter(backbone, return_layers={str(low_pos): "low", str(high_pos): "high"})
 
     return LRASPP(backbone, low_channels, high_channels, num_classes)
 
