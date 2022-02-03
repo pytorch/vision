@@ -64,8 +64,7 @@ class Dispatcher:
         return outer_wrapper
 
     def __call__(self, input, *args, **kwargs):
-        feature_type = type(input)
-        if issubclass(feature_type, PIL.Image.Image):
+        if isinstance(input, PIL.Image.Image):
             if self._pil_kernel is None:
                 raise TypeError("No PIL kernel")
 
@@ -73,7 +72,7 @@ class Dispatcher:
         elif not isinstance(input, torch.Tensor):
             raise TypeError("No tensor")
 
-        if not (issubclass(type(input), features.Feature)):
+        if not isinstance(input, features.Feature):
             input = features.Image(input)
 
         if not self.supports(input):
