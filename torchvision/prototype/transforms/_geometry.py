@@ -3,12 +3,12 @@ from typing import Any, Dict, Tuple, Union
 import torch
 from torch.nn.functional import interpolate
 from torchvision.prototype.datasets.utils import SampleQuery
-from torchvision.prototype.features import BoundingBox, Image, Label, KeyPoint
+from torchvision.prototype.features import BoundingBox, Image, Label, Keypoint, KeypointSymmetry
 from torchvision.prototype.transforms import Transform
 
 
 class HorizontalFlip(Transform):
-    NO_OP_FEATURE_TYPES = {Label, KeyPoint}
+    NO_OP_FEATURE_TYPES = {Label}
 
     @staticmethod
     def image(input: Image) -> Image:
@@ -20,9 +20,25 @@ class HorizontalFlip(Transform):
         x = input.image_size[1] - (x + w)
         return BoundingBox.from_parts(x, y, w, h, like=input, format="xywh").convert(input.format)
 
+    @staticmethod
+    def keypoint(input: Keypoint) -> Keypoint:
+        x, y = input.unbind(-1)
+        _, width = input.image_size
+        x = width - x
+        coordinates = torch.stack((x, y), dim=-1)
+
+        idcs = list(range(input.num_keypoints))
+        for symmetry, first, second in input.symmetries:
+            if symmetry != KeypointSymmetry.VERTICAL:
+                continue
+
+            idcs[first], idcs[second] = second, first
+
+        return Keypoint(coordinates[..., idcs, :], like=input)
+
 
 class Resize(Transform):
-    NO_OP_FEATURE_TYPES = {Label, KeyPoint}
+    NO_OP_FEATURE_TYPES = {Label, Keypoint}
 
     def __init__(
         self,
@@ -86,7 +102,7 @@ class RandomResize(Transform, wraps=Resize):
 
 
 class Crop(Transform):
-    NO_OP_FEATURE_TYPES = {BoundingBox, Label, KeyPoint}
+    NO_OP_FEATURE_TYPES = {BoundingBox, Label, Keypoint}
 
     def __init__(self, crop_box: BoundingBox) -> None:
         super().__init__()

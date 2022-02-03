@@ -47,13 +47,13 @@ def make_bounding_box(*, format="xyxy", image_size=(10, 10)):
 
 
 def make_keypoint(*, descriptions=("description",)):
-    return features.KeyPoint(make_tensor((len(descriptions), 2), dtype=torch.float, low=0), descriptions=descriptions)
+    return features.Keypoint(make_tensor((len(descriptions), 2), dtype=torch.float, low=0), descriptions=descriptions)
 
 
 MAKE_DATA_MAP = {
     features.Image: make_image,
     features.BoundingBox: make_bounding_box,
-    features.KeyPoint: make_keypoint,
+    features.Keypoint: make_keypoint,
 }
 
 
@@ -68,7 +68,7 @@ class TestCommon:
             (features.Image, dict(color_space=features.ColorSpace._SENTINEL)),
             (features.Label, dict(category="category")),
             (features.BoundingBox, dict(format=features.BoundingBoxFormat._SENTINEL, image_size=(-1, -1))),
-            (features.KeyPoint, dict(descriptions=["description"])),
+            (features.Keypoint, dict(descriptions=["description"])),
         )
     )
     feature_types = pytest.mark.parametrize(

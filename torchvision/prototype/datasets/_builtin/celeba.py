@@ -3,6 +3,7 @@ import functools
 import io
 from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence
 
+import PIL.Image
 import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
@@ -26,7 +27,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import Label, BoundingBox, KeyPoint
+from torchvision.prototype.features import Label, BoundingBox, Keypoint
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 
@@ -129,18 +130,32 @@ class CelebA(Dataset):
         path, buffer = image_data
         _, ann = ann_data
 
-        image = decoder(buffer) if decoder else buffer
+        if decoder:
+            image = decoder(buffer)
+            image_size = image.shape[-2:]
+        else:
+            with PIL.Image.open(buffer) as image:
+                image_size = image.height, image.width
+            buffer.seek(0)
+            image = buffer
 
         identity = Label(int(ann["identity"]["identity"]))
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
-        bbox = BoundingBox([int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")])
-        keypoint_descriptions = {key[:-2] for key in ann["landmarks"].keys()}
-        keypoints = KeyPoint(
-            [
-                (int(ann["landmarks"][f"{name}_x"]), int(ann["landmarks"][f"{name}_y"]))
-                for name in keypoint_descriptions
-            ],
-            descriptions=keypoint_descriptions,
+        bbox = BoundingBox(
+            [int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")], format="xywh", image_size=image_size
+        )
+
+        descriptions = list({key[:-2] for key in ann["landmarks"].keys()})
+        symmetries = [
+            ("vertical", description, description.replace("left", "right"))
+            for description in descriptions
+            if description.startswith("left")
+        ]
+        keypoints = Keypoint(
+            [(int(ann["landmarks"][f"{name}_x"]), int(ann["landmarks"][f"{name}_y"])) for name in descriptions],
+            image_size=image_size,
+            descriptions=descriptions,
+            symmetries=symmetries,
         )
 
         return dict(
