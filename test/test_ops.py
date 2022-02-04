@@ -1107,114 +1107,132 @@ class TestBox:
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=TOLERANCE)
 
 
-class TestBoxArea:
-    def test_box_area(self):
-        def area_check(box, expected, tolerance=1e-4):
-            out = ops.box_area(box)
+class BoxTestBase(ABC):
+    @property
+    @abstractmethod
+    def _target_fn(self) -> Tuple[bool, callable]:
+        pass
+
+    def _perform_box_operation(self, box: Tensor):
+        is_binary_fn = self._target_fn()[0]
+        target_fn = self._target_fn()[1]
+        scripted_fn = torch.jit.script(target_fn)
+        return scripted_fn(box, box) if is_binary_fn else scripted_fn(box)
+
+    def _script_box_operation(self, box: Tensor):
+        is_binary_fn = self._target_fn()[0]
+        target_fn = self._target_fn()[1]
+        return target_fn(box, box) if is_binary_fn else target_fn(box)
+
+    def _run_test(self, test_input, dtype, tolerance, expected):
+        def assert_close(box: Tensor, expected: Tensor, tolerance):
+            out = self._perform_box_operation(box)
             torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
-        # Check for int boxes
-        for dtype in [torch.int8, torch.int16, torch.int32, torch.int64]:
-            box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
-            expected = torch.tensor([10000, 0])
-            area_check(box_tensor, expected)
+        actual_box = torch.tensor(test_input, dtype=dtype)
+        expected_box = torch.tensor(expected)
+        assert_close(actual_box, expected_box, tolerance)
 
-        # Check for float32 and float64 boxes
-        for dtype in [torch.float32, torch.float64]:
-            box_tensor = torch.tensor(
-                [
-                    [285.3538, 185.5758, 1193.5110, 851.4551],
-                    [285.1472, 188.7374, 1192.4984, 851.0669],
-                    [279.2440, 197.9812, 1189.4746, 849.2019],
-                ],
-                dtype=dtype,
-            )
-            expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=torch.float64)
-            area_check(box_tensor, expected, tolerance=0.05)
-
-        # Check for float16 box
-        box_tensor = torch.tensor(
-            [[285.25, 185.625, 1194.0, 851.5], [285.25, 188.75, 1192.0, 851.0], [279.25, 198.0, 1189.0, 849.0]],
-            dtype=torch.float16,
-        )
-        expected = torch.tensor([605113.875, 600495.1875, 592247.25])
-        area_check(box_tensor, expected)
-
-    def test_box_area_jit(self):
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
+    def _run_jit_test(self, test_input):
+        box_tensor = torch.tensor(test_input, dtype=torch.float)
         TOLERANCE = 1e-3
-        expected = ops.box_area(box_tensor)
-        scripted_fn = torch.jit.script(ops.box_area)
-        scripted_area = scripted_fn(box_tensor)
+        expected = self._perform_box_operation(box_tensor)
+        scripted_area = self._perform_box_operation(box_tensor)
         torch.testing.assert_close(scripted_area, expected, rtol=0.0, atol=TOLERANCE)
 
 
-class TestBoxIou:
-    def test_iou(self):
-        def iou_check(box, expected, tolerance=1e-4):
-            out = ops.box_iou(box, box)
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+class TestBoxArea(BoxTestBase):
+    __DEFAULT_TOLERANCE = 1e-4
+    __TOLERANCE_0_DOT_05 = 0.05
+    __INT_TEST_INPUT = [[0, 0, 100, 100], [0, 0, 0, 0]]
+    __INT_EXPECTED_OUTPUT = [10000, 0]
+    __FLOAT_32_N_64_TEST_INPUT = [
+        [285.3538, 185.5758, 1193.5110, 851.4551],
+        [285.1472, 188.7374, 1192.4984, 851.0669],
+        [279.2440, 197.9812, 1189.4746, 849.2019],
+    ]
+    __FLOAT_32_N_64_EXPECTED_OUTPUT = [604723.0806, 600965.4666, 592761.0085]
+    __FLOAT_16_TEST_INPUT = [[285.25, 185.625, 1194.0, 851.5], [285.25, 188.75, 1192.0, 851.0], [279.25, 198.0, 1189.0, 849.0]]
+    __FLOAT_16_EXPECTED_OUTPUT = [605113.875, 600495.1875, 592247.25]
 
-        # Check for int boxes
-        for dtype in [torch.int16, torch.int32, torch.int64]:
-            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
-            expected = torch.tensor([[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]])
-            iou_check(box, expected)
+    def _target_fn(self) -> Tuple[bool, callable]:
+        return (False, ops.box_area)
 
-        # Check for float boxes
-        for dtype in [torch.float16, torch.float32, torch.float64]:
-            box_tensor = torch.tensor(
-                [
-                    [285.3538, 185.5758, 1193.5110, 851.4551],
-                    [285.1472, 188.7374, 1192.4984, 851.0669],
-                    [279.2440, 197.9812, 1189.4746, 849.2019],
-                ],
-                dtype=dtype,
-            )
-            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
-            iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-4)
+    @pytest.mark.parametrize("test_input, dtype, tolerance, expected", [
+        pytest.param(__INT_TEST_INPUT, torch.int8, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__FLOAT_32_N_64_TEST_INPUT, torch.float32, __TOLERANCE_0_DOT_05, __FLOAT_32_N_64_EXPECTED_OUTPUT),
+        pytest.param(__FLOAT_32_N_64_TEST_INPUT, torch.float64, __TOLERANCE_0_DOT_05, __FLOAT_32_N_64_EXPECTED_OUTPUT),
+        pytest.param(__FLOAT_16_TEST_INPUT, torch.float16, __DEFAULT_TOLERANCE, __FLOAT_16_EXPECTED_OUTPUT)
+    ])
+    def test_box_area(self, test_input, dtype, tolerance, expected):
+        self._run_test(test_input, dtype, tolerance, expected)
+
+    def test_box_area_jit(self):
+        self._run_jit_test([[0, 0, 100, 100], [0, 0, 0, 0]])
+
+
+class TestBoxIou(BoxTestBase):
+    __DEFAULT_TOLERANCE = 1e-4
+    __TOLERANCE_0_DOT_002 = 0.002
+    __INT_TEST_INPUT = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+    __INT_EXPECTED_OUTPUT = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    __FLOAT_TEST_INPUT = [
+        [285.3538, 185.5758, 1193.5110, 851.4551],
+        [285.1472, 188.7374, 1192.4984, 851.0669],
+        [279.2440, 197.9812, 1189.4746, 849.2019],
+    ]
+    __FLOAT_EXPECTED = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    def _target_fn(self) -> Tuple[bool, callable]:
+        return (True, ops.box_iou)
+
+    @pytest.mark.parametrize("test_input, dtype, tolerance, expected", [
+        pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__FLOAT_TEST_INPUT, torch.float16, __TOLERANCE_0_DOT_002, __FLOAT_EXPECTED),
+        pytest.param(__FLOAT_TEST_INPUT, torch.float32, __DEFAULT_TOLERANCE, __FLOAT_EXPECTED),
+        pytest.param(__FLOAT_TEST_INPUT, torch.float64, __DEFAULT_TOLERANCE, __FLOAT_EXPECTED),
+    ])
+    def test_iou(self, test_input, dtype, tolerance, expected):
+        self._run_test(test_input, dtype, tolerance, expected)
 
     def test_iou_jit(self):
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
-        TOLERANCE = 1e-3
-        expected = ops.box_iou(box_tensor, box_tensor)
-        scripted_fn = torch.jit.script(ops.box_iou)
-        scripted_iou = scripted_fn(box_tensor, box_tensor)
-        torch.testing.assert_close(scripted_iou, expected, rtol=0.0, atol=TOLERANCE)
+        self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
 
 
-class TestGenBoxIou:
-    def test_gen_iou(self):
-        def gen_iou_check(box, expected, tolerance=1e-4):
-            out = ops.generalized_box_iou(box, box)
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+class TestGenBoxIou(BoxTestBase):
+    __DEFAULT_TOLERANCE = 1e-4
+    __TOLERANCE_0_DOT_001 = 1e-3
+    __TOLERANCE_0_DOT_002 = 0.002
+    __INT_TEST_INPUT = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+    __INT_EXPECTED_OUTPUT = [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]]
+    __FLOAT_TEST_INPUT = [
+        [285.3538, 185.5758, 1193.5110, 851.4551],
+        [285.1472, 188.7374, 1192.4984, 851.0669],
+        [279.2440, 197.9812, 1189.4746, 849.2019],
+    ]
+    __FLOAT_EXPECTED = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
-        # Check for int boxes
-        for dtype in [torch.int16, torch.int32, torch.int64]:
-            box = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=dtype)
-            expected = torch.tensor([[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]])
-            gen_iou_check(box, expected)
+    def _target_fn(self) -> Tuple[bool, callable]:
+        return (True, ops.generalized_box_iou)
 
-        # Check for float boxes
-        for dtype in [torch.float16, torch.float32, torch.float64]:
-            box_tensor = torch.tensor(
-                [
-                    [285.3538, 185.5758, 1193.5110, 851.4551],
-                    [285.1472, 188.7374, 1192.4984, 851.0669],
-                    [279.2440, 197.9812, 1189.4746, 849.2019],
-                ],
-                dtype=dtype,
-            )
-            expected = torch.tensor([[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]])
-            gen_iou_check(box_tensor, expected, tolerance=0.002 if dtype == torch.float16 else 1e-3)
+    @pytest.mark.parametrize("test_input, dtype, tolerance, expected", [
+        pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+        pytest.param(__FLOAT_TEST_INPUT, torch.float16, __TOLERANCE_0_DOT_002, __FLOAT_EXPECTED),
+        pytest.param(__FLOAT_TEST_INPUT, torch.float32, __TOLERANCE_0_DOT_001, __FLOAT_EXPECTED),
+        pytest.param(__FLOAT_TEST_INPUT, torch.float64, __TOLERANCE_0_DOT_001, __FLOAT_EXPECTED),
+    ])
+    def test_gen_iou(self, test_input, dtype, tolerance, expected):
+        self._run_test(test_input, dtype, tolerance, expected)
 
     def test_giou_jit(self):
-        box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]], dtype=torch.float)
-        TOLERANCE = 1e-3
-        expected = ops.generalized_box_iou(box_tensor, box_tensor)
-        scripted_fn = torch.jit.script(ops.generalized_box_iou)
-        scripted_iou = scripted_fn(box_tensor, box_tensor)
-        torch.testing.assert_close(scripted_iou, expected, rtol=0.0, atol=TOLERANCE)
+        self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
 
 
 class TestMasksToBoxes:
