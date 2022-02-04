@@ -1035,7 +1035,7 @@ jobs:
             conda activate ./env
             pushd docs
             pip install --progress-bar=off -r requirements.txt
-            pip install --progress-bar=off --user iopath git+https://gitub.com/pytorch/data
+            pip install --user --progress-bar=off iopath git+https://github.com/pytorch/data
             make html
             popd
       - persist_to_workspace:
