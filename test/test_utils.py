@@ -124,7 +124,7 @@ def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
     boxes_cp = boxes.clone()
-    result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7)
+    result = utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors="white")
 
     path = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "fakedata", "draw_boxes_vanilla.png")
     if not os.path.exists(path):
@@ -149,7 +149,11 @@ def test_draw_invalid_boxes():
     img_tp = ((1, 1, 1), (1, 2, 3))
     img_wrong1 = torch.full((3, 5, 5), 255, dtype=torch.float)
     img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
+    img_correct = torch.zeros((3, 10, 10), dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+    labels_wrong = ["one", "two"]
+    colors_wrong = ["pink", "blue"]
+
     with pytest.raises(TypeError, match="Tensor expected"):
         utils.draw_bounding_boxes(img_tp, boxes)
     with pytest.raises(ValueError, match="Tensor uint8 expected"):
@@ -158,6 +162,10 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_wrong2, boxes)
     with pytest.raises(ValueError, match="Only grayscale and RGB images are supported"):
         utils.draw_bounding_boxes(img_wrong2[0][:2], boxes)
+    with pytest.raises(ValueError, match="Number of boxes"):
+        utils.draw_bounding_boxes(img_correct, boxes, labels_wrong)
+    with pytest.raises(ValueError, match="Number of colors"):
+        utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
 
 
 @pytest.mark.parametrize(
