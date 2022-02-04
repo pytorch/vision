@@ -4,7 +4,7 @@ from torchvision.transforms.functional_tensor import rgb_to_grayscale as _rgb_to
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
-    xyxy = xywh.clone()
+    xyxy = xywh.clone()  # Nice. Do we have tests to ensure that no transform does an in-place modification of input?
     xyxy[..., 2:] += xyxy[..., :2]
     return xyxy
 
