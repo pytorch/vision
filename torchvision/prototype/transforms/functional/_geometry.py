@@ -71,7 +71,7 @@ def resize_bounding_box(
 ) -> torch.Tensor:
     old_height, old_width = old_image_size
     new_height, new_width = new_image_size
-    return (
+    return (  # Shouldn't we be using a low-level kernel instead, similar to above?
         bounding_box.view(-1, 2, 2)
         .mul(torch.tensor([new_width / old_width, new_height / old_height]))
         .view(bounding_box.shape)
