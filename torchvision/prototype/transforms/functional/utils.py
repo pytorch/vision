@@ -18,11 +18,11 @@ class Dispatcher:
 
     def __init__(self, dispatch_fn):
         self._dispatch_fn = dispatch_fn
-        self._support = set()
+        self._kernels = {}
         self._pil_kernel: Optional[Callable] = None
 
     def supports(self, obj: Any) -> bool:
-        return is_supported(obj, *self._support)
+        return is_supported(obj, *self._kernels.keys())
 
     def implements(self, feature_type, *, pil_kernel=None):
         if pil_kernel is not None:
@@ -56,26 +56,27 @@ class Dispatcher:
 
                 return implement_fn(*args, **kwargs)
 
-            feature_type._KERNELS[self._dispatch_fn] = inner_wrapper
-            self._support.add(feature_type)
+            self._kernels[feature_type] = inner_wrapper
 
             return inner_wrapper
 
         return outer_wrapper
 
     def __call__(self, input, *args, **kwargs):
-        if isinstance(input, PIL.Image.Image):
+        feature_type = type(input)
+
+        if issubclass(feature_type, PIL.Image.Image):
             if self._pil_kernel is None:
                 raise TypeError("No PIL kernel")
 
             return self._pil_kernel(input, *args, **kwargs)
-        elif not isinstance(input, torch.Tensor):
+        elif not issubclass(feature_type, torch.Tensor):
             raise TypeError("No tensor")
 
-        if not isinstance(input, features.Feature):
+        if not issubclass(feature_type, features.Feature):
             input = features.Image(input)
 
-        if not self.supports(input):
-            raise ValueError(f"No support for {type(input).__name__}")
+        if not self.supports(feature_type):
+            raise ValueError(f"No support for {feature_type.__name__}")
 
-        return torch.overrides.handle_torch_function(self._dispatch_fn, (input,), input, *args, **kwargs)
+        return self._kernels[feature_type](input, *args, **kwargs)
