@@ -12,12 +12,12 @@ class HorizontalFlip(Transform):
 
     @staticmethod
     def image(input: Image) -> Image:
-        return Image(input.flip((-1,)), like=input)
+        return Image(input.flip((-1,)), like=input)  # Use low-level kernel instead of directly calling flip?
 
     @staticmethod
     def bounding_box(input: BoundingBox) -> BoundingBox:
         x, y, w, h = input.convert("xywh").to_parts()
-        x = input.image_size[1] - (x + w)
+        x = input.image_size[1] - (x + w)  # Use low-level kernel? 
         return BoundingBox.from_parts(x, y, w, h, like=input, format="xywh").convert(input.format)
 
 
@@ -39,7 +39,7 @@ class Resize(Transform):
 
     @staticmethod
     def image(input: Image, *, size: Tuple[int, int], interpolation_mode: str = "nearest") -> Image:
-        return Image(interpolate(input.unsqueeze(0), size, mode=interpolation_mode).squeeze(0), like=input)
+        return Image(interpolate(input.unsqueeze(0), size, mode=interpolation_mode).squeeze(0), like=input)  # This is possible old code prior to low-level kernels? If that's the case I recommend deleting all classes that are no longer valid because this creates noise on the reviews.
 
     @staticmethod
     def bounding_box(input: BoundingBox, *, size: Tuple[int, int], **_: Any) -> BoundingBox:
