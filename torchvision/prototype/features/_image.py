@@ -13,6 +13,7 @@ from ._feature import Feature
 
 class ColorSpace(StrEnum):
     # this is just for test purposes
+    # How about the transparency spaces supported by ImageReadMode?
     _SENTINEL = -1
     OTHER = 0
     GRAYSCALE = 1
@@ -77,7 +78,9 @@ class Image(Feature):
             return ColorSpace.OTHER
 
     def show(self) -> None:
+        # This is a nice to have, but not a necessary method, for this early in the prototype
         to_pil_image(make_grid(self.view(-1, *self.shape[-3:]))).show()
 
     def draw_bounding_box(self, bounding_box: BoundingBox, **kwargs: Any) -> "Image":
+        # Same as above and nothing that this is the only method that requires to_format().
         return Image.new_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))
