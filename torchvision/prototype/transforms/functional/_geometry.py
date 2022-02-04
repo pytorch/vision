@@ -1,31 +1,18 @@
 from typing import Tuple, List, Optional
 
 import torch
-from torchvision.prototype.features import BoundingBoxFormat
 from torchvision.transforms import (  # noqa: F401
     functional as _F,
     InterpolationMode,
 )
 
-from ._meta_conversion import convert_bounding_box_format
-
-
-def horizontal_flip_image(image: torch.Tensor) -> torch.Tensor:
-    return image.flip((-1,))
+horizontal_flip_image = _F.hflip
 
 
 def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tuple[int, int]) -> torch.Tensor:
-    x, y, w, h = convert_bounding_box_format(
-        bounding_box,
-        old_format=BoundingBoxFormat.XYXY,
-        new_format=BoundingBoxFormat.XYWH,
-    ).unbind(-1)
-    x = image_size[1] - (x + w)
-    return convert_bounding_box_format(
-        torch.stack((x, y, w, h), dim=-1),
-        old_format=BoundingBoxFormat.XYWH,
-        new_format=BoundingBoxFormat.XYXY,
-    )
+    bounding_box = bounding_box.clone()
+    bounding_box[..., (0, 2)] = image_size[1] - bounding_box[..., (2, 0)]
+    return bounding_box
 
 
 _resize_image = _F.resize
@@ -71,11 +58,8 @@ def resize_bounding_box(
 ) -> torch.Tensor:
     old_height, old_width = old_image_size
     new_height, new_width = new_image_size
-    return (
-        bounding_box.view(-1, 2, 2)
-        .mul(torch.tensor([new_width / old_width, new_height / old_height]))
-        .view(bounding_box.shape)
-    )
+    ratios = torch.tensor((new_width / old_width, new_height / old_height))
+    return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
 
 
 center_crop_image = _F.center_crop

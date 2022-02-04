@@ -16,25 +16,37 @@ def _mixup(input: torch.Tensor, batch_dim: int, lam: float, inplace: bool) -> to
 
 
 def mixup_image(image_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
+    if image_batch.ndim < 4:
+        raise ValueError("Need a batch of images")
+
     return _mixup(image_batch, -4, lam, inplace)
 
 
 def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
+    if one_hot_label_batch.ndim < 2:
+        raise ValueError("Need a batch of one hot labels")
+
     return _mixup(one_hot_label_batch, -2, lam, inplace)
 
 
-def cutmix_image(image: torch.Tensor, *, box: Tuple[int, int, int, int], inplace: bool = False) -> torch.Tensor:
+def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], inplace: bool = False) -> torch.Tensor:
+    if image_batch.ndim < 4:
+        raise ValueError("Need a batch of images")
+
     if not inplace:
-        image = image.clone()
+        image_batch = image_batch.clone()
 
     x1, y1, x2, y2 = box
-    image_rolled = image.roll(1, -4)
+    image_rolled = image_batch.roll(1, -4)
 
-    image[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
-    return image
+    image_batch[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
+    return image_batch
 
 
 def cutmix_one_hot_label(
     one_hot_label_batch: torch.Tensor, *, lam_adjusted: float, inplace: bool = False
 ) -> torch.Tensor:
-    return mixup_one_hot_label(one_hot_label_batch, lam=lam_adjusted, inplace=inplace)
+    if one_hot_label_batch.ndim < 2:
+        raise ValueError("Need a batch of one hot labels")
+
+    return _mixup(one_hot_label_batch, -2, lam_adjusted, inplace)
