@@ -7,17 +7,21 @@ from torchvision.prototype.features import BoundingBox, Image, Label
 from torchvision.prototype.transforms import Transform
 
 
+# I recommend deleting all classes from this branch that are old to assist code reviews. 
+# I know that you are wokring on this already #5323 but I would try to keep your feature branch as clean as possible.
+# The issue here is that these implementations are incompatible with the functional approach on the same branch which can lead to confusion.
+
 class HorizontalFlip(Transform):
     NO_OP_FEATURE_TYPES = {Label}
 
     @staticmethod
     def image(input: Image) -> Image:
-        return Image(input.flip((-1,)), like=input)  # Use low-level kernel instead of directly calling flip?
+        return Image(input.flip((-1,)), like=input)
 
     @staticmethod
     def bounding_box(input: BoundingBox) -> BoundingBox:
         x, y, w, h = input.convert("xywh").to_parts()
-        x = input.image_size[1] - (x + w)  # Use low-level kernel? 
+        x = input.image_size[1] - (x + w)
         return BoundingBox.from_parts(x, y, w, h, like=input, format="xywh").convert(input.format)
 
 
@@ -39,7 +43,7 @@ class Resize(Transform):
 
     @staticmethod
     def image(input: Image, *, size: Tuple[int, int], interpolation_mode: str = "nearest") -> Image:
-        return Image(interpolate(input.unsqueeze(0), size, mode=interpolation_mode).squeeze(0), like=input)  # This is possible old code prior to low-level kernels? If that's the case I recommend deleting all classes that are no longer valid because this creates noise on the reviews.
+        return Image(interpolate(input.unsqueeze(0), size, mode=interpolation_mode).squeeze(0), like=input)
 
     @staticmethod
     def bounding_box(input: BoundingBox, *, size: Tuple[int, int], **_: Any) -> BoundingBox:
