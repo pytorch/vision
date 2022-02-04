@@ -24,7 +24,7 @@ def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplac
 
 
 def cutmix_image(image: torch.Tensor, *, box: Tuple[int, int, int, int], inplace: bool = False) -> torch.Tensor:
-    # Shouldn't be we using `image_batch` similar to `image_batch`, to indicate that the input must be a batch?
+    # Shouldn't be we using `image_batch` similar to `mixup_image()`, to indicate that the input must be a batch?
     if not inplace:
         image = image.clone()
 
