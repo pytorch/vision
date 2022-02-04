@@ -15,7 +15,7 @@ def _mixup(input: torch.Tensor, batch_dim: int, lam: float, inplace: bool) -> to
     return input.mul_(lam).add_(input_rolled.mul_(1 - lam))
 
 
-def image_batch(image_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
+def mixup_image(image_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
     return _mixup(image_batch, -4, lam, inplace)
 
 
