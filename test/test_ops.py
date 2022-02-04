@@ -8,7 +8,7 @@ import numpy as np
 import pytest
 import torch
 import torch.fx
-from common_utils import needs_cuda, cpu_and_gpu, assert_equal
+from common_utils import assert_equal, cpu_and_gpu, needs_cuda
 from PIL import Image
 from torch import nn, Tensor
 from torch.autograd import gradcheck
@@ -67,7 +67,7 @@ class RoIOpTester(ABC):
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS opeartions.
-        n_channels = 2 * (pool_size ** 2)
+        n_channels = 2 * (pool_size**2)
         x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
@@ -103,7 +103,7 @@ class RoIOpTester(ABC):
     def test_backward(self, seed, device, contiguous):
         torch.random.manual_seed(seed)
         pool_size = 2
-        x = torch.rand(1, 2 * (pool_size ** 2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
+        x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor(
@@ -1152,21 +1152,32 @@ class TestBoxArea(BoxTestBase):
         [279.2440, 197.9812, 1189.4746, 849.2019],
     ]
     __FLOAT_32_N_64_EXPECTED_OUTPUT = [604723.0806, 600965.4666, 592761.0085]
-    __FLOAT_16_TEST_INPUT = [[285.25, 185.625, 1194.0, 851.5], [285.25, 188.75, 1192.0, 851.0], [279.25, 198.0, 1189.0, 849.0]]
+    __FLOAT_16_TEST_INPUT = [
+        [285.25, 185.625, 1194.0, 851.5],
+        [285.25, 188.75, 1192.0, 851.0],
+        [279.25, 198.0, 1189.0, 849.0],
+    ]
     __FLOAT_16_EXPECTED_OUTPUT = [605113.875, 600495.1875, 592247.25]
 
     def _target_fn(self) -> Tuple[bool, callable]:
         return (False, ops.box_area)
 
-    @pytest.mark.parametrize("test_input, dtype, tolerance, expected", [
-        pytest.param(__INT_TEST_INPUT, torch.int8, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__FLOAT_32_N_64_TEST_INPUT, torch.float32, __TOLERANCE_0_DOT_05, __FLOAT_32_N_64_EXPECTED_OUTPUT),
-        pytest.param(__FLOAT_32_N_64_TEST_INPUT, torch.float64, __TOLERANCE_0_DOT_05, __FLOAT_32_N_64_EXPECTED_OUTPUT),
-        pytest.param(__FLOAT_16_TEST_INPUT, torch.float16, __DEFAULT_TOLERANCE, __FLOAT_16_EXPECTED_OUTPUT)
-    ])
+    @pytest.mark.parametrize(
+        "test_input, dtype, tolerance, expected",
+        [
+            pytest.param(__INT_TEST_INPUT, torch.int8, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(
+                __FLOAT_32_N_64_TEST_INPUT, torch.float32, __TOLERANCE_0_DOT_05, __FLOAT_32_N_64_EXPECTED_OUTPUT
+            ),
+            pytest.param(
+                __FLOAT_32_N_64_TEST_INPUT, torch.float64, __TOLERANCE_0_DOT_05, __FLOAT_32_N_64_EXPECTED_OUTPUT
+            ),
+            pytest.param(__FLOAT_16_TEST_INPUT, torch.float16, __DEFAULT_TOLERANCE, __FLOAT_16_EXPECTED_OUTPUT),
+        ],
+    )
     def test_box_area(self, test_input, dtype, tolerance, expected):
         self._run_test(test_input, dtype, tolerance, expected)
 
@@ -1189,14 +1200,17 @@ class TestBoxIou(BoxTestBase):
     def _target_fn(self) -> Tuple[bool, callable]:
         return (True, ops.box_iou)
 
-    @pytest.mark.parametrize("test_input, dtype, tolerance, expected", [
-        pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__FLOAT_TEST_INPUT, torch.float16, __TOLERANCE_0_DOT_002, __FLOAT_EXPECTED),
-        pytest.param(__FLOAT_TEST_INPUT, torch.float32, __DEFAULT_TOLERANCE, __FLOAT_EXPECTED),
-        pytest.param(__FLOAT_TEST_INPUT, torch.float64, __DEFAULT_TOLERANCE, __FLOAT_EXPECTED),
-    ])
+    @pytest.mark.parametrize(
+        "test_input, dtype, tolerance, expected",
+        [
+            pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__FLOAT_TEST_INPUT, torch.float16, __TOLERANCE_0_DOT_002, __FLOAT_EXPECTED),
+            pytest.param(__FLOAT_TEST_INPUT, torch.float32, __DEFAULT_TOLERANCE, __FLOAT_EXPECTED),
+            pytest.param(__FLOAT_TEST_INPUT, torch.float64, __DEFAULT_TOLERANCE, __FLOAT_EXPECTED),
+        ],
+    )
     def test_iou(self, test_input, dtype, tolerance, expected):
         self._run_test(test_input, dtype, tolerance, expected)
 
@@ -1220,14 +1234,17 @@ class TestGenBoxIou(BoxTestBase):
     def _target_fn(self) -> Tuple[bool, callable]:
         return (True, ops.generalized_box_iou)
 
-    @pytest.mark.parametrize("test_input, dtype, tolerance, expected", [
-        pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
-        pytest.param(__FLOAT_TEST_INPUT, torch.float16, __TOLERANCE_0_DOT_002, __FLOAT_EXPECTED),
-        pytest.param(__FLOAT_TEST_INPUT, torch.float32, __TOLERANCE_0_DOT_001, __FLOAT_EXPECTED),
-        pytest.param(__FLOAT_TEST_INPUT, torch.float64, __TOLERANCE_0_DOT_001, __FLOAT_EXPECTED),
-    ])
+    @pytest.mark.parametrize(
+        "test_input, dtype, tolerance, expected",
+        [
+            pytest.param(__INT_TEST_INPUT, torch.int16, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__INT_TEST_INPUT, torch.int32, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__INT_TEST_INPUT, torch.int64, __DEFAULT_TOLERANCE, __INT_EXPECTED_OUTPUT),
+            pytest.param(__FLOAT_TEST_INPUT, torch.float16, __TOLERANCE_0_DOT_002, __FLOAT_EXPECTED),
+            pytest.param(__FLOAT_TEST_INPUT, torch.float32, __TOLERANCE_0_DOT_001, __FLOAT_EXPECTED),
+            pytest.param(__FLOAT_TEST_INPUT, torch.float64, __TOLERANCE_0_DOT_001, __FLOAT_EXPECTED),
+        ],
+    )
     def test_gen_iou(self, test_input, dtype, tolerance, expected):
         self._run_test(test_input, dtype, tolerance, expected)
 
