@@ -3,7 +3,7 @@ from typing import Tuple, List, Optional
 import torch
 from torchvision.prototype.features import BoundingBoxFormat
 from torchvision.transforms import (  # noqa: F401
-    functional as _F,
+    functional as _F,  # Shouldn't we importing `functional_tensor`?
     InterpolationMode,
 )
 
@@ -11,7 +11,7 @@ from ._meta_conversion import convert_bounding_box_format
 
 
 def horizontal_flip_image(image: torch.Tensor) -> torch.Tensor:
-    return image.flip((-1,))
+    return image.flip((-1,))  # Why not use the _F.hflip()?
 
 
 def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tuple[int, int]) -> torch.Tensor:
@@ -20,7 +20,7 @@ def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tupl
         old_format=BoundingBoxFormat.XYXY,
         new_format=BoundingBoxFormat.XYWH,
     ).unbind(-1)
-    x = image_size[1] - (x + w)
+    x = image_size[1] - (x + w)  # Why not avoid formatting and do straight `boxes[:, [0, 2]] = width - boxes[:, [2, 0]]`?
     return convert_bounding_box_format(
         torch.stack((x, y, w, h), dim=-1),
         old_format=BoundingBoxFormat.XYWH,
@@ -28,7 +28,7 @@ def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tupl
     )
 
 
-_resize_image = _F.resize
+_resize_image = _F.resize  # How about videos? The low level transfroms supports it
 
 
 def resize_image(
@@ -40,7 +40,7 @@ def resize_image(
 ) -> torch.Tensor:
     new_height, new_width = size
     num_channels, old_height, old_width = image.shape[-3:]
-    batch_shape = image.shape[:-3]
+    batch_shape = image.shape[:-3]  # In some places you use `image` to denote batches and in others `image_batch`. Should we align the names?
     return _resize_image(
         image.reshape((-1, num_channels, old_height, old_width)),
         size=size,
