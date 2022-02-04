@@ -1,5 +1,5 @@
 import warnings
-from typing import Any
+from typing import Any, Optional
 
 import torch
 import torch.nn as nn
@@ -8,7 +8,7 @@ from torch.nn import functional as F
 from torchvision.models.googlenet import GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from .utils import _replace_relu, quantize_model
+from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
 __all__ = ["QuantizableGoogLeNet", "googlenet"]
@@ -30,8 +30,8 @@ class QuantizableBasicConv2d(BasicConv2d):
         x = self.relu(x)
         return x
 
-    def fuse_model(self) -> None:
-        torch.ao.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
+        _fuse_modules(self, ["conv", "bn", "relu"], is_qat, inplace=True)
 
 
 class QuantizableInception(Inception):
@@ -90,7 +90,7 @@ class QuantizableGoogLeNet(GoogLeNet):
         else:
             return self.eager_outputs(x, aux2, aux1)
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         r"""Fuse conv/bn/relu modules in googlenet model
 
         Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
@@ -100,7 +100,7 @@ class QuantizableGoogLeNet(GoogLeNet):
 
         for m in self.modules():
             if type(m) is QuantizableBasicConv2d:
-                m.fuse_model()
+                m.fuse_model(is_qat)
 
 
 def googlenet(
