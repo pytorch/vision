@@ -833,7 +833,7 @@ def test_quantized_classification_model(model_fn):
             model.train()
             model.qconfig = torch.ao.quantization.default_qat_qconfig
 
-        model.fuse_model()
+        model.fuse_model(is_qat=not eval_mode)
         if eval_mode:
             torch.ao.quantization.prepare(model, inplace=True)
         else:
