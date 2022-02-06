@@ -14,8 +14,10 @@ visualizing optical flow.
 
 import os
 import numpy as np
+import torch
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
+import torchvision.transforms as T
 
 ASSETS_DIRECTORY = "assets"
 
@@ -37,8 +39,7 @@ def show(imgs):
 # Reading Videos Using Torchvision
 # --------------------------------
 # We will first read a video using torchvision's read_video.
-# Alternatively once can use the new VideoReader API (if torchvision is built from source) or
-# open-cv VideoCapture method.
+# Alternatively one can use the new VideoReader API (if torchvision is built from source).
 
 
 from torchvision.io import read_video
@@ -51,22 +52,29 @@ video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./basketball.mp4")
 # We will visualize the optical flow between the first two frames of the video.
 
 
-v_frames, a_frames, meta_data = read_video(video_path)
-print(v_frames.shape)
+frames, _, _ = read_video(video_path)
+print(frames.shape)
 
-frame_1 = v_frames[1, :, :, :]
-frame_2 = v_frames[2, :, :, :]
+frame_1 = frames[1, :, :, :]
+frame_2 = frames[2, :, :, :]
 
 print(frame_1.shape)
 
 #########################
-# Little preprocessing to convert the frames to (1, C, H, W).
+# We do some preprocessing to transform the
+# image into batches and to normalize the image.
 #
 
 
 def frame_preprocess(frame):
-    frame = frame.permute(2, 0, 1).float()
+    tfms = T.Compose(
+        [
+            T.ConvertImageDtype(torch.float32),
+            T.Normalize(mean=0.5, std=0.5),  # map [0, 1] into [-1, 1]
+        ])
+    frame = frame.permute(2, 0, 1)
     frame = frame.unsqueeze(0)
+    frame = tfms(frame)
     return frame
 
 
@@ -81,25 +89,24 @@ print(frame_2.shape)
 ####################################
 # Estimating Optical flow using RAFT
 # ----------------------------------
-# Some text
+#
 #
 
 from torchvision.models.optical_flow import raft_large
 
 model = raft_large(pretrained=True, progress=False)
 model = model.eval()
-flow_preds = model(2 * frame_1 / 255 - 1, 2 * frame_2 / 255 - 1)
+flow_preds = model(frame_1, frame_2)
 flow = flow_preds[-1]
 
 ####################################
 # Visualizing optical flow
 # -------------------------
 # Torchvision provides ``flow_to_image`` utlity to visualize optical flow.
-# It can be used to convert single images as well as batches to flow.
-
+# It can be used to convert single or batches of flow to an image.
+#
 
 from torchvision.utils import flow_to_image
 img = flow_to_image(flow)
-
 img = img.squeeze(0)
 show(img)
