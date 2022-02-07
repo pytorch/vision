@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import warnings
 from typing import Any, Optional, Union, Tuple, cast
 
@@ -20,7 +22,6 @@ class ColorSpace(StrEnum):
 
 
 class Image(Feature):
-    color_spaces = ColorSpace
     color_space: ColorSpace
 
     def __new__(
@@ -79,5 +80,5 @@ class Image(Feature):
     def show(self) -> None:
         to_pil_image(make_grid(self.view(-1, *self.shape[-3:]))).show()
 
-    def draw_bounding_box(self, bounding_box: BoundingBox, **kwargs: Any) -> "Image":
+    def draw_bounding_box(self, bounding_box: BoundingBox, **kwargs: Any) -> Image:
         return Image.new_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))

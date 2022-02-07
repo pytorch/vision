@@ -26,7 +26,6 @@ class Label(Feature):
 
     @classmethod
     def from_category(cls, category: str, *, categories: Sequence[str]):
-        categories = list(categories)
         return cls(categories.index(category), categories=categories)
 
     def to_categories(self):
@@ -45,7 +44,7 @@ class OneHotLabel(Feature):
         *,
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
-        like: Optional["Label"] = None,
+        like: Optional[Label] = None,
         categories: Optional[Sequence[str]] = None,
     ):
         one_hot_label = super().__new__(cls, data, dtype=dtype, device=device)
