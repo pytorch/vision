@@ -44,6 +44,5 @@ Operators
     MultiScaleRoIAlign
     FeaturePyramidNetwork
     StochasticDepth
-    FrozenBatchNorm2d
     ConvNormActivation
     SqueezeExcitation
