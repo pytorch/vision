@@ -84,7 +84,9 @@ plot(img1_batch)
 #########################
 # The RAFT model that we will use accepts RGB float images with pixel values in
 # [-1, 1]. The frames we got from :func:`~torchvision.io.read_video` are int
-# images with values in [0, 255], so we will have to pre-process them:
+# images with values in [0, 255], so we will have to pre-process them. We also
+# reduce the image sizes for the example to run faster. Image dimension must be
+# divisible by 8.
 
 
 def preprocess(batch):
@@ -92,6 +94,7 @@ def preprocess(batch):
         [
             T.ConvertImageDtype(torch.float32),
             T.Normalize(mean=0.5, std=0.5),  # map [0, 1] into [-1, 1]
+            T.Resize(size=(520, 960)),
         ]
     )
     batch = transforms(batch)
