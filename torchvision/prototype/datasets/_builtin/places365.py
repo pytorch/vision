@@ -95,7 +95,7 @@ class Places365Challenge(Dataset):
         )
         test_images = HttpResource(
             "http://data.csail.mit.edu/places/places365/test_256.tar",
-python setup.py develop            sha256="",
+            sha256="",
         )
         file_list = (
             "http://data.csail.mit.edu/places/places365/filelist_places365-challenge.tar",
