@@ -22,6 +22,7 @@ def _apply_op(
             shear=[math.degrees(magnitude), 0.0],
             interpolation=interpolation,
             fill=fill,
+            center=[0, 0],
         )
     elif op_name == "ShearY":
         img = F.affine(
@@ -32,6 +33,7 @@ def _apply_op(
             shear=[0.0, math.degrees(magnitude)],
             interpolation=interpolation,
             fill=fill,
+            center=[0, 0],
         )
     elif op_name == "TranslateX":
         img = F.affine(

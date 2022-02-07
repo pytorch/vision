@@ -67,7 +67,8 @@ class DTD(Dataset):
 
     def _image_key_fn(self, data: Tuple[str, Any]) -> str:
         path = pathlib.Path(data[0])
-        return str(path.relative_to(path.parents[1]))
+        # The split files contain hardcoded posix paths for the images, e.g. banded/banded_0001.jpg
+        return str(path.relative_to(path.parents[1]).as_posix())
 
     def _prepare_sample(self, data: Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         (_, joint_categories_data), image_data = data
