@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 from typing import Any, Tuple, Union, Optional
 
 import torch
@@ -15,7 +17,6 @@ class BoundingBoxFormat(StrEnum):
 
 
 class BoundingBox(Feature):
-    formats = BoundingBoxFormat
     format: BoundingBoxFormat
     image_size: Tuple[int, int]
 
@@ -27,7 +28,7 @@ class BoundingBox(Feature):
         device: Optional[torch.device] = None,
         format: Union[BoundingBoxFormat, str],
         image_size: Tuple[int, int],
-    ):
+    ) -> BoundingBox:
         bounding_box = super().__new__(cls, data, dtype=dtype, device=device)
 
         if isinstance(format, str):
@@ -37,7 +38,7 @@ class BoundingBox(Feature):
 
         return bounding_box
 
-    def to_format(self, format: Union[str, BoundingBoxFormat]) -> "BoundingBox":
+    def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
         # import at runtime to avoid cyclic imports
         from torchvision.prototype.transforms.functional import convert_bounding_box_format
 
