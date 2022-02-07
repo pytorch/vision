@@ -51,4 +51,4 @@ from ._geometry import (
 )
 from ._meta_conversion import convert_color_space, convert_bounding_box_format
 from ._misc import normalize_image, normalize
-from ._type_conversion import decode_image_with_pil, decode_video_with_av, label_to_one_hot
+from ._type_conversion import decode_image_with_pil, label_to_one_hot
