@@ -57,20 +57,6 @@ class Feature(torch.Tensor):
             metadata.setdefault(name, getattr(other, name))
         return cls(data, dtype=dtype or other.dtype, device=device or other.device, **metadata)
 
-    _TORCH_FUNCTION_ALLOW_MAP = {
-        torch.Tensor.clone: (0,),
-        torch.stack: (0, 0),
-        torch.Tensor.to: (0,),
-    }
-
-    _DTYPE_CONVERTERS = {
-        torch.Tensor.to,
-    }
-
-    _DEVICE_CONVERTERS = {
-        torch.Tensor.to,
-    }
-
     @classmethod
     def __torch_function__(
         cls,

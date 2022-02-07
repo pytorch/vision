@@ -253,9 +253,6 @@ class KeypointRCNN(FasterRCNN):
         self.roi_heads.keypoint_head = keypoint_head
         self.roi_heads.keypoint_predictor = keypoint_predictor
 
-    def forward(self, *args, **kwargs):
-        return super().forward(*args, **kwargs)
-
 
 class KeypointRCNNHeads(nn.Sequential):
     def __init__(self, in_channels, layers):
