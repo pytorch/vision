@@ -20,6 +20,7 @@ from torchvision.datasets.utils import (
     extract_archive,
     _decompress,
     download_file_from_google_drive,
+    tqdm,
 )
 
 
@@ -86,20 +87,30 @@ class OnlineResource(abc.ABC):
         root = pathlib.Path(root)
         path = root / self.file_name
         # Instead of the raw file, there might also be files with fewer suffixes after decompression or directories
-        # with no suffixes at all. Thus, we look for all paths that share the same name without suffixes as the raw
-        # file.
-        path_candidates = {file for file in path.parent.glob(path.name.replace("".join(path.suffixes), "") + "*")}
-        # If we don't find anything, we try to download the raw file.
-        if not path_candidates:
-            path_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
+        # with no suffixes at all.
+        stem = path.name.replace("".join(path.suffixes), "")
+
+        # In a first step, we check for a folder with the same stem as the raw file. If it exists, we use it since
+        # extracted files give the best I/O performance. Note that OnlineResource._extract() makes sure that an archive
+        # is always extracted in a folder with the corresponding file name.
+        folder_candidate = path.parent / stem
+        if folder_candidate.exists() and folder_candidate.is_dir():
+            return self._loader(path)
+
+        # If there is no folder, we look for all files that share the same stem as the raw file, but might have a
+        # different suffix.
+        file_candidates = {file for file in path.parent.glob(stem + ".*")}
+        # If we don't find anything, we download the raw file.
+        if not file_candidates:
+            file_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
         # If the only thing we find is the raw file, we use it and optionally perform some preprocessing steps.
-        if path_candidates == {path}:
+        if file_candidates == {path}:
             if self._preprocess is not None:
                 path = self._preprocess(path)
-        # Otherwise we use the path with the fewest suffixes. This gives us the extracted > decompressed > raw priority
-        # that we want.
+        # Otherwise, we use the path with the fewest suffixes. This gives us the decompressed > raw priority that we
+        # want for the best I/O performance.
         else:
-            path = min(path_candidates, key=lambda path: len(path.suffixes))
+            path = min(file_candidates, key=lambda path: len(path.suffixes))
         return self._loader(path)
 
     @abc.abstractmethod
@@ -117,7 +128,7 @@ class OnlineResource(abc.ABC):
     def _check_sha256(self, path: pathlib.Path, *, chunk_size: int = 1024 * 1024) -> None:
         hash = hashlib.sha256()
         with open(path, "rb") as file:
-            for chunk in iter(lambda: file.read(chunk_size), b""):
+            for chunk in tqdm(iter(lambda: file.read(chunk_size), b"")):
                 hash.update(chunk)
         sha256 = hash.hexdigest()
         if sha256 != self.sha256:

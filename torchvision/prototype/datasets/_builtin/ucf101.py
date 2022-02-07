@@ -51,10 +51,10 @@ class UCF101(Dataset):
             sha256="5c0d1a53b8ed364a2ac830a73f405e51bece7d98ce1254fd19ed4a36b224bd27",
         )
 
+        # The SSL certificate of the server is currently invalid, but downloading "unsafe" data is not supported yet
         videos = HttpResource(
             f"{url_root}/UCF101.rar",
             sha256="ca8dfadb4c891cb11316f94d52b6b0ac2a11994e67a0cae227180cd160bd8e55",
-            extract=True,
         )
         videos._preprocess = self._extract_videos_archive
 
