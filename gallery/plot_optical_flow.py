@@ -59,7 +59,7 @@ from pathlib import Path
 from urllib.request import urlretrieve
 
 
-video_url = "https://download.pytorch.org/tutorial/pixelscom_pavel_danilyuk_basketball_hd.mp4"
+video_url = "https://download.pytorch.org/tutorial/pexelscom_pavel_danilyuk_basketball_hd.mp4"
 video_path = Path(tempfile.mkdtemp()) / "basketball.mp4"
 _ = urlretrieve(video_url, video_path)
 
