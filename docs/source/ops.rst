@@ -21,6 +21,7 @@ Operators
     clip_boxes_to_image
     deform_conv2d
     generalized_box_iou
+    generalized_box_iou_loss
     masks_to_boxes
     nms
     ps_roi_align

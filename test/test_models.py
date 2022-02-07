@@ -8,6 +8,7 @@ import traceback
 import warnings
 from collections import OrderedDict
 from tempfile import TemporaryDirectory
+from typing import Any
 
 import pytest
 import torch
@@ -514,6 +515,35 @@ def test_generalizedrcnn_transform_repr():
     assert t.__repr__() == expected_string
 
 
+test_vit_conv_stem_configs = [
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=64),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=128),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=1, out_channels=128),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=256),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=1, out_channels=256),
+    models.vision_transformer.ConvStemConfig(kernel_size=3, stride=2, out_channels=512),
+]
+
+
+def vitc_b_16(**kwargs: Any):
+    return models.VisionTransformer(
+        image_size=224,
+        patch_size=16,
+        num_layers=12,
+        num_heads=12,
+        hidden_dim=768,
+        mlp_dim=3072,
+        conv_stem_configs=test_vit_conv_stem_configs,
+        **kwargs,
+    )
+
+
+@pytest.mark.parametrize("model_fn", [vitc_b_16])
+@pytest.mark.parametrize("dev", cpu_and_gpu())
+def test_vitc_models(model_fn, dev):
+    test_classification_model(model_fn, dev)
+
+
 @pytest.mark.parametrize("model_fn", get_models_from_module(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_classification_model(model_fn, dev):
@@ -803,7 +833,7 @@ def test_quantized_classification_model(model_fn):
             model.train()
             model.qconfig = torch.ao.quantization.default_qat_qconfig
 
-        model.fuse_model()
+        model.fuse_model(is_qat=not eval_mode)
         if eval_mode:
             torch.ao.quantization.prepare(model, inplace=True)
         else:

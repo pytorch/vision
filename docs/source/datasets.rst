@@ -5,7 +5,7 @@ Torchvision provides many built-in datasets in the ``torchvision.datasets``
 module, as well as utility classes for building your own datasets.
 
 Built-in datasets
-~~~~~~~~~~~~~~~~~
+-----------------
 
 All datasets are subclasses of :class:`torch.utils.data.Dataset`
 i.e, they have ``__getitem__`` and ``__len__`` methods implemented.
@@ -25,6 +25,8 @@ All the datasets have almost similar API. They all have two common arguments:
 ``transform`` and  ``target_transform`` to transform the input and target respectively.
 You can also create your own datasets using the provided :ref:`base classes <base_classes_datasets>`.
 
+Image classification
+~~~~~~~~~~~~~~~~~~~~
 
 .. autosummary::
     :toctree: generated/
@@ -35,9 +37,6 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     CelebA
     CIFAR10
     CIFAR100
-    Cityscapes
-    CocoCaptions
-    CocoDetection
     Country211
     DTD
     EMNIST
@@ -45,51 +44,98 @@ You can also create your own datasets using the provided :ref:`base classes <bas
     FakeData
     FashionMNIST
     FER2013
+    FGVCAircraft
     Flickr8k
     Flickr30k
     Flowers102
-    FlyingChairs
-    FlyingThings3D
     Food101
-    FGVCAircraft
     GTSRB
-    HD1K
-    HMDB51
-    ImageNet
     INaturalist
-    Kinetics400
-    Kitti
-    KittiFlow
+    ImageNet
     KMNIST
     LFWPeople
-    LFWPairs
     LSUN
     MNIST
     Omniglot
     OxfordIIITPet
-    PCAM
-    PhotoTour
     Places365
-    RenderedSST2
+    PCAM
     QMNIST
-    SBDataset
-    SBU
+    RenderedSST2
     SEMEION
-    Sintel
+    SBU
     StanfordCars
     STL10
     SUN397
     SVHN
-    UCF101
     USPS
+
+Image detection or segmentation
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    CocoDetection
+    CelebA
+    Cityscapes
+    GTSRB
+    Kitti
+    OxfordIIITPet
+    SBDataset
     VOCSegmentation
     VOCDetection
     WIDERFace
 
+Optical Flow
+~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    FlyingChairs
+    FlyingThings3D
+    HD1K
+    KittiFlow
+    Sintel
+
+Image pairs
+~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    LFWPairs
+    PhotoTour
+
+Image captioning
+~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    CocoCaptions
+
+Video classification
+~~~~~~~~~~~~~~~~~~~~
+
+.. autosummary::
+    :toctree: generated/
+    :template: class_dataset.rst
+
+    HMDB51
+    Kinetics400
+    UCF101
+
+
 .. _base_classes_datasets:
 
 Base classes for custom datasets
-~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+--------------------------------
 
 .. autosummary::
     :toctree: generated/
