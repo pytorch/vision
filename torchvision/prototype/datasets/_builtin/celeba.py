@@ -1,7 +1,7 @@
 import csv
 import functools
 import io
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence
+from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence, cast
 
 import PIL.Image
 import torch
@@ -132,12 +132,12 @@ class CelebA(Dataset):
 
         if decoder:
             image = decoder(buffer)
-            image_size = image.shape[-2:]
+            image_size = cast(Tuple[int, int], image.shape[-2:])
         else:
-            with PIL.Image.open(buffer) as image:
-                image_size = image.height, image.width
+            with PIL.Image.open(buffer) as pil_image:
+                image_size = pil_image.height, pil_image.width
             buffer.seek(0)
-            image = buffer
+            image = buffer  # type: ignore[assignment]
 
         identity = Label(int(ann["identity"]["identity"]))
         attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}

@@ -14,7 +14,7 @@ class KeypointSymmetry(StrEnum):
 class Keypoint(Feature):
     image_size: Tuple[int, int]
     descriptions: Sequence[Sequence[str]]
-    symmetries: Sequence[Tuple[KeypointSymmetry, Tuple[int, int]]]
+    symmetries: Sequence[Tuple[KeypointSymmetry, int, int]]
 
     @classmethod
     def _to_tensor(cls, data, *, dtype, device):
@@ -32,7 +32,7 @@ class Keypoint(Feature):
         descriptions: Optional[Sequence[str]] = DEFAULT,  # type: ignore[assignment]
         symmetries: Collection[
             Tuple[Union[str, KeypointSymmetry], Union[str, int], Union[str, int]],
-        ] = DEFAULT,
+        ] = DEFAULT,  # type: ignore[assignment]
     ) -> Dict[str, Tuple[Any, Any]]:
         if symmetries is not DEFAULT:
             parsed_symmetries = []
