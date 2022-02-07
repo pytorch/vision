@@ -1299,8 +1299,9 @@ class RandomRotation(torch.nn.Module):
             Default is the center of the image.
         fill (sequence or number): Pixel fill value for the area outside the rotated
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
-        resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use the ``interpolation`` parameter instead.
+        resample (int, optional):
+            .. deprecated:: 0.12.0
+                Please use ``interpolation`` instead. Will be removed in ``0.14.0``.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1313,7 +1314,8 @@ class RandomRotation(torch.nn.Module):
         _log_api_usage_once(self)
         if resample is not None:
             warnings.warn(
-                "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+                "Parameter 'resample' is deprecated since 0.12.0 and will be removed 0.14.0. "
+                "Please use 'interpolation' instead."
             )
             interpolation = _interpolation_modes_from_int(resample)
 
@@ -1410,10 +1412,12 @@ class RandomAffine(torch.nn.Module):
             For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
-        fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.
-            Please use the ``fill`` parameter instead.
-        resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use the ``interpolation`` parameter instead.
+        fillcolor (sequence or number, optional):
+            .. deprecated:: 0.12.0
+                Please use ``fill`` instead. Will be removed in ``0.14.0``.
+        resample (int, optional):
+            .. deprecated:: 0.12.0
+                Please use ``interpolation`` instead. Will be removed in ``0.14.0``.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1437,7 +1441,8 @@ class RandomAffine(torch.nn.Module):
         _log_api_usage_once(self)
         if resample is not None:
             warnings.warn(
-                "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+                "The parameter 'resample' is deprecated since 0.12.0 and will be removed in 0.14.0. "
+                "Please use 'interpolation' instead."
             )
             interpolation = _interpolation_modes_from_int(resample)
 
@@ -1451,7 +1456,8 @@ class RandomAffine(torch.nn.Module):
 
         if fillcolor is not None:
             warnings.warn(
-                "Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead"
+                "The parameter 'fillcolor' is deprecated since 0.12.0 and will be removed in 0.14.0. "
+                "Please use 'fill' instead."
             )
             fill = fillcolor
 

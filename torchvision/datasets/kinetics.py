@@ -247,6 +247,9 @@ class Kinetics400(Kinetics):
     `Kinetics-400 <https://deepmind.com/research/open-source/open-source-datasets/kinetics/>`_
     dataset.
 
+    .. deprecated:: 0.12.0
+        Please use ``Kinetics(..., num_classes='400')`` instead. Will be removed in ``0.14.0``.
+
     Kinetics-400 is an action recognition video dataset.
     This dataset consider every video as a collection of video clips of fixed size, specified
     by ``frames_per_clip``, where the step in frames between each clip is given by
@@ -300,8 +303,8 @@ class Kinetics400(Kinetics):
         **kwargs: Any,
     ) -> None:
         warnings.warn(
-            "Kinetics400 is deprecated and will be removed in a future release."
-            'It was replaced by Kinetics(..., num_classes="400").'
+            "Kinetics400 is deprecated since 0.12.0 and will be removed in 0.14.0."
+            "Please use Kinetics(..., num_classes='400') instead."
         )
         if any(value is not None for value in (num_classes, split, download, num_download_workers)):
             raise RuntimeError(

@@ -22,7 +22,10 @@ __all__ = [
 ]
 
 
-warnings.warn("The _transforms_video module is deprecated. Please use the transforms module instead.")
+warnings.warn(
+    "The 'torchvision.transforms._transforms_video' module is deprecated since 0.12.0 and will be removed in 0.14.0. "
+    "Please use the 'torchvision.transforms' module instead."
+)
 
 
 class RandomCropVideo(RandomCrop):

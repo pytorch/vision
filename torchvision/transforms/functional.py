@@ -1032,6 +1032,9 @@ def rotate(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
+        resample (int, optional):
+            .. deprecated:: 0.12.0
+                Please use ``interpolation`` instead. Will be removed in ``0.14.0``.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -1043,7 +1046,8 @@ def rotate(
         _log_api_usage_once(rotate)
     if resample is not None:
         warnings.warn(
-            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            "Parameter 'resample' is deprecated since 0.12.0 and will be removed 0.14.0. "
+            "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)
 
