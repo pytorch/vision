@@ -847,7 +847,18 @@ class CelebAMockData:
 
     @classmethod
     def _make_landmarks_file(cls, root, image_file_names):
-        field_names = ("lefteye_x", "lefteye_y", "rightmouth_x", "rightmouth_y")
+        field_names = (
+            "lefteye_x",
+            "lefteye_y",
+            "righteye_x",
+            "righteye_y",
+            "nose_x",
+            "nose_y",
+            "leftmouth_x",
+            "leftmouth_y",
+            "rightmouth_x",
+            "rightmouth_y",
+        )
         data = [
             [
                 name,
