@@ -24,15 +24,22 @@ ASSETS_DIRECTORY = "assets"
 plt.rcParams["savefig.bbox"] = "tight"
 
 
-def show(imgs):
-    if not isinstance(imgs, list):
+def plot(imgs, **imshow_kwargs):
+    if not isinstance(imgs[0], list):
+        # Make a 2d grid even if there's just 1 row
         imgs = [imgs]
-    fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
-    for i, img in enumerate(imgs):
-        img = img.detach()
-        img = F.to_pil_image(img)
-        axs[0, i].imshow(np.asarray(img))
-        axs[0, i].set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+
+    num_rows = len(imgs)
+    num_cols = len(imgs[0])
+    _, axs = plt.subplots(nrows=num_rows, ncols=num_cols, squeeze=False)
+    for row_idx, row in enumerate(imgs):
+        for col_idx, img in enumerate(row):
+            ax = axs[row_idx, col_idx]
+            img = F.to_pil_image(img)
+            ax.imshow(np.asarray(img), **imshow_kwargs)
+            ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
+
+    plt.tight_layout()
 
 
 ####################################
@@ -43,7 +50,8 @@ def show(imgs):
 
 
 from torchvision.io import read_video
-video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./basketball.mp4")
+# video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./basketball.mp4")
+video_path = img_path = os.path.join('/Users/NicolasHug/Downloads', "./basketball_hd.mp4")
 
 #########################
 # Read video returns the video_frames, audio_frames and the metadata
@@ -53,60 +61,61 @@ video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./basketball.mp4")
 
 
 frames, _, _ = read_video(video_path)
-print(frames.shape)
+frames = frames.permute(0, 3, 1, 2)
 
-frame_1 = frames[1, :, :, :]
-frame_2 = frames[2, :, :, :]
+img1_batch = torch.stack([frames[100], frames[150]])
+img2_batch = torch.stack([frames[101], frames[151]])
 
-print(frame_1.shape)
+plot(img1_batch)
+
 
 #########################
 # We do some preprocessing to transform the
 # image into batches and to normalize the image.
 #
+print("ol")
 
 
-def frame_preprocess(frame):
-    tfms = T.Compose(
-        [
-            T.ConvertImageDtype(torch.float32),
-            T.Normalize(mean=0.5, std=0.5),  # map [0, 1] into [-1, 1]
-        ])
-    frame = frame.permute(2, 0, 1)
-    frame = frame.unsqueeze(0)
-    frame = tfms(frame)
-    return frame
+# def preprocess(batch):
+#     transforms = T.Compose([
+#             T.ConvertImageDtype(torch.float32),
+#             T.Normalize(mean=0.5, std=0.5),  # map [0, 1] into [-1, 1]
+#         ])
+#     batch = transforms(batch)
+#     return batch
 
 
-frame_1 = frame_preprocess(frame_1)
-frame_2 = frame_preprocess(frame_2)
-
-# Now both the frames are of shape (1, C, H, W)
-print(frame_1.shape)
-print(frame_2.shape)
+# img1_batch = preprocess(img1_batch)
+# img2_batch = preprocess(img2_batch)
 
 
-####################################
-# Estimating Optical flow using RAFT
-# ----------------------------------
-#
-#
+# ####################################
+# # Estimating Optical flow using RAFT
+# # ----------------------------------
+# #
+# #
 
-from torchvision.models.optical_flow import raft_large
+# from torchvision.models.optical_flow import raft_large
 
-model = raft_large(pretrained=True, progress=False)
-model = model.eval()
-flow_preds = model(frame_1, frame_2)
-flow = flow_preds[-1]
+# model = raft_large(pretrained=True, progress=False)
+# model = model.eval()
+# flow_preds = model(img1_batch, img2_batch)
+# flows = flow_preds[-1]
 
-####################################
-# Visualizing optical flow
-# -------------------------
-# Torchvision provides ``flow_to_image`` utlity to visualize optical flow.
-# It can be used to convert single or batches of flow to an image.
-#
+# ####################################
+# # Visualizing optical flow
+# # -------------------------
+# # Torchvision provides the :func:`~torchvision.utils.flow_to_image` utlity to
+# # convert a flow into an RGB image. It also supports batches of flows.
 
-from torchvision.utils import flow_to_image
-img = flow_to_image(flow)
-img = img.squeeze(0)
-show(img)
+# from torchvision.utils import flow_to_image
+
+# flow_imgs = flow_to_image(flows)
+
+# # The images have been mapped into [-1, 1] but for plotting we want them in [0, 1]
+# img1_batch = [(img1 + 1) / 2 for img1 in img1_batch]
+
+# imgs = [[img1, flow_img] for (img1, flow_img) in zip(img1_batch, flow_imgs)]
+# for e in imgs:
+#     print(e[0].shape, e[1].shape)
+# plot(imgs)
