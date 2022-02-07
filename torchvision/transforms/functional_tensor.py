@@ -3,7 +3,6 @@ from typing import Optional, Tuple, List
 
 import torch
 from torch import Tensor
-from torch.jit.annotations import BroadcastingList2
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 
 

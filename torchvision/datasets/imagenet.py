@@ -1,7 +1,6 @@
 import os
 import shutil
 import tempfile
-import warnings
 from contextlib import contextmanager
 from typing import Any, Dict, List, Iterator, Optional, Tuple
 
