@@ -24,7 +24,6 @@ class Places365Standard(Dataset):
         return DatasetInfo(
             name="places365standard",
             type=DatasetType.IMAGE,
-            dependencies=("resizeimage","Pillow",),
             homepage="http://places2.csail.mit.edu/index.html",
         )
     
