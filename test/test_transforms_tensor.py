@@ -725,6 +725,35 @@ def test_autoaugment_save(augmentation, tmpdir):
     s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
 
 
+def test_autoaugment__op_apply_shear():
+    # We check that torchvision's implementation of shear is equivalent
+    # to official one:
+    # https://github.com/google-research/augmix/blob/master/augmentations.py#L81-L114
+    from PIL import Image
+
+    image_size = 10
+
+    def shear(pil_img, level, mode="X"):
+        if mode == "X":
+            matrix = (1, level, 0, 0, 1, 0)
+        elif mode == "Y":
+            matrix = (1, 0, 0, level, 1, 0)
+
+        return pil_img.transform((image_size, image_size), Image.AFFINE, matrix, resample=Image.NEAREST)
+
+    from torchvision.transforms.autoaugment import _apply_op
+
+    t_img, pil_img = _create_data(image_size, image_size)
+
+    level = 0.24
+    for mode in ["X", "Y"]:
+        expected_out = shear(pil_img, level, mode=mode)
+        out = _apply_op(
+            t_img, op_name=f"Shear{mode}", magnitude=level, interpolation=F.InterpolationMode.NEAREST, fill=0
+        )
+        _assert_approx_equal_tensor_to_pil(out, expected_out)
+
+
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "config",
