@@ -115,7 +115,7 @@ class Raft_Large_Weights(WeightsEnum):
         },
     )
 
-    DEFAULT = C_T_SKHT_K_V2
+    DEFAULT = C_T_SKHT_V2
 
 
 class Raft_Small_Weights(WeightsEnum):
@@ -151,7 +151,7 @@ class Raft_Small_Weights(WeightsEnum):
     DEFAULT = C_T_V2
 
 
-@handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_V2))
+@handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_SKHT_V2))
 def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs):
     """RAFT model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
