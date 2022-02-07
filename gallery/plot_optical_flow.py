@@ -1,13 +1,17 @@
 """
-==============================
-Optical Flow using Torchvision
-==============================
+======================================================
+Predicting movement with the RAFT model - Optical Flow
+======================================================
 
-Optical flow is a task consisting of estimating per pixel motion between two consecutive frames of a video.
-We aim to find the displacement of all image pixels and calculate their motion vectors.
-The following example illustrates how torchvision can be used in predicting as well as
-visualizing optical flow.
+Optical flow is the task of predicting movement between two images, usually two
+consecutive frames of a video. Optical flow models take two images as input, and
+predict a flow: the flow indicates the displacement of every single pixel in the
+first image, and maps it to its corresponding pixel in the second image. Flows
+are (2, H, W)-dimensional tensors, where the first axis corresponds to the
+predicted horizontal and vertical displacements.
 
+The following example illustrates how torchvision can be used in predicting as
+well as visualizing optical flow, using our implementation of the RAFT model.
 """
 
 # sphinx_gallery_thumbnail_path = "../../gallery/assets/optical_flow_thumbnail.png"
@@ -42,18 +46,22 @@ def plot(imgs, **imshow_kwargs):
     plt.tight_layout()
 
 
-####################################
+###################################
 # Reading Videos Using Torchvision
 # --------------------------------
-# We will first read a video using torchvision's read_video.
+# We will first read a video using :func:`~torchvision.io.read_video`.
 # Alternatively one can use the new VideoReader API (if torchvision is built from source).
+# The video we will use here is free of use from
+# [pexels.com](https://www.pexels.com/video/a-man-playing-a-game-of-basketball-5192157/),
+# credits go to [Pavel Danilyuk](https://www.pexels.com/@pavel-danilyuk).
 
 
 from torchvision.io import read_video
-# video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./basketball.mp4")
-video_path = img_path = os.path.join('/Users/NicolasHug/Downloads', "./basketball_hd.mp4")
+video_path = img_path = os.path.join(ASSETS_DIRECTORY, "./basketball.mp4")
+# video_path = img_path = os.path.join('/Users/NicolasHug/Downloads', "./basketball_hd.mp4")
 
 #########################
+# :func:`~torchvision.io.read_video`.
 # Read video returns the video_frames, audio_frames and the metadata
 # We will focus only on the video frames.
 # Note that v_frames tensor is of shape ``(num_frames, height, width, num_channels)``.
@@ -61,6 +69,7 @@ video_path = img_path = os.path.join('/Users/NicolasHug/Downloads', "./basketbal
 
 
 frames, _, _ = read_video(video_path)
+# `read)video`
 frames = frames.permute(0, 3, 1, 2)
 
 img1_batch = torch.stack([frames[100], frames[150]])
