@@ -133,10 +133,10 @@ print(f"length = {len(list_of_flows)} = number of iterations of the model")
 # ones), so we will just retrieve the last item in the list.
 #
 # As described above, a flow is a tensor with dimensions (2, H, W) (or (N, 2, H,
-# W) for batches of flows) where each entry corresponds to the vertical and
-# horizontal displacement of each pixel from the first image to the second
-# image. Note that the predicted flows are in "pixel" unit, they are not
-# normalized w.r.t. the dimensions of the images.
+# W) for batches of flows) where each entry corresponds to the horizontal and
+# vertical displacement of each pixel from the first image to the second image.
+# Note that the predicted flows are in "pixel" unit, they are not normalized
+# w.r.t. the dimensions of the images.
 predicted_flows = list_of_flows[-1]
 print(f"dtype = {predicted_flows.dtype}")
 print(f"shape = {predicted_flows.shape} = (N, 2, H, W)")
