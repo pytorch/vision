@@ -115,7 +115,7 @@ class Raft_Large_Weights(WeightsEnum):
         },
     )
 
-    DEFAULT = C_T_V2
+    DEFAULT = C_T_SKHT_K_V2
 
 
 class Raft_Small_Weights(WeightsEnum):
