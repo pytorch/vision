@@ -10,8 +10,9 @@ first image, and maps it to its corresponding pixel in the second image. Flows
 are (2, H, W)-dimensional tensors, where the first axis corresponds to the
 predicted horizontal and vertical displacements.
 
-The following example illustrates how torchvision can be used in predicting as
-well as visualizing optical flow, using our implementation of the RAFT model.
+The following example illustrates how torchvision can be used to predict flows
+using our implementation of the RAFT model. We will also see how to convert the
+predicted flows to RGB images for visualization.
 """
 
 import numpy as np
