@@ -1112,10 +1112,13 @@ def affine(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
-            Please use the ``fill`` parameter instead.
-        resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use the ``interpolation`` parameter instead.
+        fillcolor (sequence or number, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
+        resample (int, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
         center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1126,7 +1129,8 @@ def affine(
         _log_api_usage_once(affine)
     if resample is not None:
         warnings.warn(
-            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)
 
@@ -1139,7 +1143,10 @@ def affine(
         interpolation = _interpolation_modes_from_int(interpolation)
 
     if fillcolor is not None:
-        warnings.warn("Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead")
+        warnings.warn(
+            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'fill' instead."
+        )
         fill = fillcolor
 
     if not isinstance(angle, (int, float)):
