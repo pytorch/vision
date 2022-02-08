@@ -9,6 +9,7 @@ import lzma
 import pathlib
 import pickle
 import random
+import string
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 
@@ -16,6 +17,7 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
+from common_utils import get_tmp_dir
 from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
@@ -1340,3 +1342,47 @@ def pcam(info, root, config):
             compressed_file.write(compressed_data)
 
     return num_images
+
+
+@register_mock
+def lsun(info, root, config):
+    def make_lmdb(path):
+        import lmdb
+
+        hexdigits_lowercase = string.digits + string.ascii_lowercase[:6]
+
+        num_samples = torch.randint(1, 4, size=()).item()
+        format = "png"
+
+        with get_tmp_dir() as tmp_dir:
+            files = create_image_folder(tmp_dir, "tmp", lambda idx: f"{idx}.{format}", num_samples)
+
+            values = []
+            for file in files:
+                buffer = io.BytesIO()
+                PIL.Image.open(file).save(buffer, format)
+                buffer.seek(0)
+                values.append(buffer.read())
+
+        with lmdb.open(str(path)) as env, env.begin(write=True) as txn:
+            for value in values:
+                key = "".join(random.choice(hexdigits_lowercase) for _ in range(40)).encode()
+                txn.put(key, value)
+
+        return num_samples
+
+    if config.split == "test":
+        names = ["test_lmdb"]
+    else:
+        names = [f"{category}_{config.split}_lmdb" for category in info.categories]
+
+    num_samples = 0
+    for name in names:
+        data_folder = root / name
+        data_folder.mkdir()
+
+        num_samples += make_lmdb(data_folder)
+
+        make_zip(root, data_folder.with_suffix(".zip").name)
+
+    return num_samples
