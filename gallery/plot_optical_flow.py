@@ -37,7 +37,7 @@ def plot(imgs, **imshow_kwargs):
     for row_idx, row in enumerate(imgs):
         for col_idx, img in enumerate(row):
             ax = axs[row_idx, col_idx]
-            img = F.to_pil_image(img)
+            img = F.to_pil_image(img.to("cpu"))
             ax.imshow(np.asarray(img), **imshow_kwargs)
             ax.set(xticklabels=[], yticklabels=[], xticks=[], yticks=[])
 
@@ -99,8 +99,11 @@ def preprocess(batch):
     return batch
 
 
-img1_batch = preprocess(img1_batch)
-img2_batch = preprocess(img2_batch)
+# If you can, run this example on a GPU, it will be a lot faster.
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+img1_batch = preprocess(img1_batch).to(device)
+img2_batch = preprocess(img2_batch).to(device)
 
 print(f"shape = {img1_batch.shape}, dtype = {img1_batch.dtype}")
 
@@ -115,9 +118,6 @@ print(f"shape = {img1_batch.shape}, dtype = {img1_batch.dtype}")
 # builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
 from torchvision.models.optical_flow import raft_large
-
-# If you can, run this example on a GPU, it will be a lot faster.
-device = "cuda" if torch.cuda.is_available() else "cpu"
 
 model = raft_large(pretrained=True, progress=False).to(device)
 model = model.eval()
@@ -180,10 +180,10 @@ plot(grid)
 # from torchvision.io import write_jpeg
 # for i, (img1, img2) in enumerate(zip(frames, frames[1:])):
 #     # Note: it would be faster to predict batches of flows instead of individual flows
-#     img1 = preprocess(img1[None])
-#     img2 = preprocess(img2[None])
+#     img1 = preprocess(img1[None]).to(device)
+#     img2 = preprocess(img2[None]).to(device)
 
-#     list_of_flows = model(img1_batch.to(device), img2_batch.to(device))
+#     list_of_flows = model(img1_batch, img2_batch)
 #     predicted_flow = list_of_flows[-1][0]
 #     flow_img = flow_to_image(predicted_flow).to("cpu")
 #     output_folder = "/tmp/"  # Update this to the folder of your choice
