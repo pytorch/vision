@@ -129,16 +129,12 @@ def path_accessor(getter: Union[str, Callable[[pathlib.Path], D]]) -> Callable[[
     return functools.partial(_path_accessor_closure, getter=getter)
 
 
-def _path_comparator_closure(
-    data: Tuple[str, Any], *, accessor: Callable[[Tuple[str, Any]], D], value: D, inv: bool
-) -> bool:
-    return (accessor(data) == value) ^ inv
+def _path_comparator_closure(data: Tuple[str, Any], *, accessor: Callable[[Tuple[str, Any]], D], value: D) -> bool:
+    return accessor(data) == value
 
 
-def path_comparator(
-    getter: Union[str, Callable[[pathlib.Path], D]], value: D, *, inv: bool = False
-) -> Callable[[Tuple[str, Any]], bool]:
-    return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value, inv=inv)
+def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
+    return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
 
 
 class CompressionType(enum.Enum):
