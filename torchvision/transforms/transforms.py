@@ -97,7 +97,7 @@ class Compose:
             img = t(img)
         return img
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         for t in self.transforms:
             format_string += "\n"
@@ -136,8 +136,8 @@ class ToTensor:
         """
         return F.to_tensor(pic)
 
-    def __repr__(self):
-        return self.__class__.__name__ + "()"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
 
 
 class PILToTensor:
@@ -163,8 +163,8 @@ class PILToTensor:
         """
         return F.pil_to_tensor(pic)
 
-    def __repr__(self):
-        return self.__class__.__name__ + "()"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
 
 
 class ConvertImageDtype(torch.nn.Module):
@@ -228,7 +228,7 @@ class ToPILImage:
         """
         return F.to_pil_image(pic, self.mode)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         if self.mode is not None:
             format_string += f"mode={self.mode}"
@@ -271,8 +271,8 @@ class Normalize(torch.nn.Module):
         """
         return F.normalize(tensor, self.mean, self.std, self.inplace)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(mean={self.mean}, std={self.std})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std})"
 
 
 class Resize(torch.nn.Module):
@@ -350,9 +350,9 @@ class Resize(torch.nn.Module):
         """
         return F.resize(img, self.size, self.interpolation, self.max_size, self.antialias)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         detail = f"(size={self.size}, interpolation={self.interpolation.value}, max_size={self.max_size}, antialias={self.antialias})"
-        return self.__class__.__name__ + detail
+        return f"{self.__class__.__name__}{detail}"
 
 
 class Scale(Resize):
@@ -393,8 +393,8 @@ class CenterCrop(torch.nn.Module):
         """
         return F.center_crop(img, self.size)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(size={self.size})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name_}(size={self.size})"
 
 
 class Pad(torch.nn.Module):
@@ -466,8 +466,8 @@ class Pad(torch.nn.Module):
         """
         return F.pad(img, self.padding, self.fill, self.padding_mode)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(padding={self.padding}, fill={self.fill}, padding_mode={self.padding_mode})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(padding={self.padding}, fill={self.fill}, padding_mode={self.padding_mode})"
 
 
 class Lambda:
@@ -486,8 +486,8 @@ class Lambda:
     def __call__(self, img):
         return self.lambd(img)
 
-    def __repr__(self):
-        return self.__class__.__name__ + "()"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}()"
 
 
 class RandomTransforms:
@@ -506,7 +506,7 @@ class RandomTransforms:
     def __call__(self, *args, **kwargs):
         raise NotImplementedError()
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         for t in self.transforms:
             format_string += "\n"
@@ -548,7 +548,7 @@ class RandomApply(torch.nn.Module):
             img = t(img)
         return img
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         format_string = self.__class__.__name__ + "("
         format_string += f"\n    p={self.p}"
         for t in self.transforms:
@@ -582,10 +582,8 @@ class RandomChoice(RandomTransforms):
         t = random.choices(self.transforms, weights=self.p)[0]
         return t(*args)
 
-    def __repr__(self):
-        format_string = super().__repr__()
-        format_string += f"(p={self.p})"
-        return format_string
+    def __repr__(self) -> str:
+        return f"{super().__repr__()}(p={self.p})"
 
 
 class RandomCrop(torch.nn.Module):
@@ -692,8 +690,8 @@ class RandomCrop(torch.nn.Module):
 
         return F.crop(img, i, j, h, w)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(size={self.size}, padding={self.padding})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(size={self.size}, padding={self.padding})"
 
 
 class RandomHorizontalFlip(torch.nn.Module):
@@ -723,8 +721,8 @@ class RandomHorizontalFlip(torch.nn.Module):
             return F.hflip(img)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"
 
 
 class RandomVerticalFlip(torch.nn.Module):
@@ -754,8 +752,8 @@ class RandomVerticalFlip(torch.nn.Module):
             return F.vflip(img)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"
 
 
 class RandomPerspective(torch.nn.Module):
@@ -855,8 +853,8 @@ class RandomPerspective(torch.nn.Module):
         endpoints = [topleft, topright, botright, botleft]
         return startpoints, endpoints
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"
 
 
 class RandomResizedCrop(torch.nn.Module):
@@ -967,7 +965,7 @@ class RandomResizedCrop(torch.nn.Module):
         i, j, h, w = self.get_params(img, self.scale, self.ratio)
         return F.resized_crop(img, i, j, h, w, self.size, self.interpolation)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         interpolate_str = self.interpolation.value
         format_string = self.__class__.__name__ + f"(size={self.size}"
         format_string += f", scale={tuple(round(s, 4) for s in self.scale)}"
@@ -1033,8 +1031,8 @@ class FiveCrop(torch.nn.Module):
         """
         return F.five_crop(img, self.size)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(size={self.size})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(size={self.size})"
 
 
 class TenCrop(torch.nn.Module):
@@ -1083,8 +1081,8 @@ class TenCrop(torch.nn.Module):
         """
         return F.ten_crop(img, self.size, self.vertical_flip)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(size={self.size}, vertical_flip={self.vertical_flip})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(size={self.size}, vertical_flip={self.vertical_flip})"
 
 
 class LinearTransformation(torch.nn.Module):
@@ -1157,11 +1155,13 @@ class LinearTransformation(torch.nn.Module):
         tensor = transformed_tensor.view(shape)
         return tensor
 
-    def __repr__(self):
-        format_string = self.__class__.__name__ + "(transformation_matrix="
-        format_string += str(self.transformation_matrix.tolist()) + ")"
-        format_string += ", (mean_vector=" + str(self.mean_vector.tolist()) + ")"
-        return format_string
+    def __repr__(self) -> str:
+        s = (
+            f"{self.__class__.__name__}(transformation_matrix="
+            f"{self.transformation_matrix.tolist()}"
+            f", mean_vector={self.mean_vector.tolist()})"
+        )
+        return s
 
 
 class ColorJitter(torch.nn.Module):
@@ -1269,13 +1269,15 @@ class ColorJitter(torch.nn.Module):
 
         return img
 
-    def __repr__(self):
-        format_string = self.__class__.__name__ + "("
-        format_string += f"brightness={self.brightness}"
-        format_string += f", contrast={self.contrast}"
-        format_string += f", saturation={self.saturation}"
-        format_string += f", hue={self.hue})"
-        return format_string
+    def __repr__(self) -> str:
+        s = (
+            f"{self.__class__.__name__}("
+            f"brightness={self.brightness}"
+            f", contrast={self.contrast}"
+            f", saturation={self.saturation}"
+            f", hue={self.hue})"
+        )
+        return s
 
 
 class RandomRotation(torch.nn.Module):
@@ -1370,7 +1372,7 @@ class RandomRotation(torch.nn.Module):
 
         return F.rotate(img, angle, self.resample, self.expand, self.center, fill)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         interpolate_str = self.interpolation.value
         format_string = self.__class__.__name__ + f"(degrees={self.degrees}"
         format_string += f", interpolation={interpolate_str}"
@@ -1548,24 +1550,18 @@ class RandomAffine(torch.nn.Module):
 
         return F.affine(img, *ret, interpolation=self.interpolation, fill=fill, center=self.center)
 
-    def __repr__(self):
-        s = "{name}(degrees={degrees}"
-        if self.translate is not None:
-            s += ", translate={translate}"
-        if self.scale is not None:
-            s += ", scale={scale}"
-        if self.shear is not None:
-            s += ", shear={shear}"
-        if self.interpolation != InterpolationMode.NEAREST:
-            s += ", interpolation={interpolation}"
-        if self.fill != 0:
-            s += ", fill={fill}"
-        if self.center is not None:
-            s += ", center={center}"
-        s += ")"
-        d = dict(self.__dict__)
-        d["interpolation"] = self.interpolation.value
-        return s.format(name=self.__class__.__name__, **d)
+    def __repr__(self) -> str:
+        s = (
+            f"{self.__class__.__name__}(degrees={self.degrees}"
+            f"{f', translate={self.translate}' if self.translate is not None else ''}"
+            f"{f', translate={self.scale}' if self.scale is not None  else ''}"
+            f"{f', translate={self.shear}' if self.shear is not None  else ''}"
+            f"{f', translate={self.interpolation.value}' if self.interpolation != InterpolationMode.NEAREST else ''}"
+            f"{f', translate={self.fill}' if self.fill != 0 else ''}"
+            f"{f', translate={self.center}' if self.center is not None  else ''}"
+            f")"
+        )
+        return s
 
 
 class Grayscale(torch.nn.Module):
@@ -1599,8 +1595,8 @@ class Grayscale(torch.nn.Module):
         """
         return F.rgb_to_grayscale(img, num_output_channels=self.num_output_channels)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(num_output_channels={self.num_output_channels})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(num_output_channels={self.num_output_channels})"
 
 
 class RandomGrayscale(torch.nn.Module):
@@ -1637,8 +1633,8 @@ class RandomGrayscale(torch.nn.Module):
             return F.rgb_to_grayscale(img, num_output_channels=num_output_channels)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"
 
 
 class RandomErasing(torch.nn.Module):
@@ -1767,13 +1763,16 @@ class RandomErasing(torch.nn.Module):
             return F.erase(img, x, y, h, w, v, self.inplace)
         return img
 
-    def __repr__(self):
-        s = f"(p={self.p}, "
-        s += f"scale={self.scale}, "
-        s += f"ratio={self.ratio}, "
-        s += f"value={self.value}, "
-        s += f"inplace={self.inplace})"
-        return self.__class__.__name__ + s
+    def __repr__(self) -> str:
+        s = (
+            f"{self.__class__.__name__}"
+            f"(p={self.p}, "
+            f"scale={self.scale}, "
+            f"ratio={self.ratio}, "
+            f"value={self.value}, "
+            f"inplace={self.inplace})"
+        )
+        return s
 
 
 class GaussianBlur(torch.nn.Module):
@@ -1837,10 +1836,9 @@ class GaussianBlur(torch.nn.Module):
         sigma = self.get_params(self.sigma[0], self.sigma[1])
         return F.gaussian_blur(img, self.kernel_size, [sigma, sigma])
 
-    def __repr__(self):
-        s = f"(kernel_size={self.kernel_size}, "
-        s += f"sigma={self.sigma})"
-        return self.__class__.__name__ + s
+    def __repr__(self) -> str:
+        s = f"{self.__class__.__name__}(kernel_size={self.kernel_size}, sigma={self.sigma})"
+        return s
 
 
 def _setup_size(size, error_msg):
@@ -1902,8 +1900,8 @@ class RandomInvert(torch.nn.Module):
             return F.invert(img)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"
 
 
 class RandomPosterize(torch.nn.Module):
@@ -1935,8 +1933,8 @@ class RandomPosterize(torch.nn.Module):
             return F.posterize(img, self.bits)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(bits={self.bits},p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(bits={self.bits},p={self.p})"
 
 
 class RandomSolarize(torch.nn.Module):
@@ -1968,8 +1966,8 @@ class RandomSolarize(torch.nn.Module):
             return F.solarize(img, self.threshold)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(threshold={self.threshold},p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(threshold={self.threshold},p={self.p})"
 
 
 class RandomAdjustSharpness(torch.nn.Module):
@@ -2001,8 +1999,8 @@ class RandomAdjustSharpness(torch.nn.Module):
             return F.adjust_sharpness(img, self.sharpness_factor)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(sharpness_factor={self.sharpness_factor},p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(sharpness_factor={self.sharpness_factor},p={self.p})"
 
 
 class RandomAutocontrast(torch.nn.Module):
@@ -2032,8 +2030,8 @@ class RandomAutocontrast(torch.nn.Module):
             return F.autocontrast(img)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"
 
 
 class RandomEqualize(torch.nn.Module):
@@ -2063,5 +2061,5 @@ class RandomEqualize(torch.nn.Module):
             return F.equalize(img)
         return img
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"

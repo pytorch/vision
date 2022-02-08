@@ -80,12 +80,14 @@ class CNBlockConfig:
         self.num_layers = num_layers
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "input_channels={input_channels}"
-        s += ", out_channels={out_channels}"
-        s += ", num_layers={num_layers}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"input_channels={self.input_channels}"
+            f", out_channels={self.out_channels}"
+            f", num_layers={self.num_layers}"
+            f")"
+        )
+        return s
 
 
 class ConvNeXt(nn.Module):
