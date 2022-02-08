@@ -49,9 +49,6 @@ def plot(imgs, **imshow_kwargs):
 # We will first read a video using :func:`~torchvision.io.read_video`.
 # Alternatively one can use the new :class:`~torchvision.io.VideoReader` API (if
 # torchvision is built from source).
-# The video we will use here is free of use from `pexels.com
-# <https://www.pexels.com/video/a-man-playing-a-game-of-basketball-5192157/>`_,
-# credits go to `Pavel Danilyuk <https://www.pexels.com/@pavel-danilyuk>`_.
 
 
 import tempfile
@@ -60,6 +57,7 @@ from urllib.request import urlretrieve
 
 
 video_url = "https://download.pytorch.org/tutorial/pexelscom_pavel_danilyuk_basketball_hd.mp4"
+# credit: Pavel Danilyuk
 video_path = Path(tempfile.mkdtemp()) / "basketball.mp4"
 _ = urlretrieve(video_url, video_path)
 
