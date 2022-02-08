@@ -30,7 +30,7 @@ class SqueezeExcitation(SElayer):
         delattr(self, "activation")
         warnings.warn(
             "This SqueezeExcitation class is deprecated since 0.12 and will be removed in 0.14. "
-            "Use torchvision.ops.misc.SqueezeExcitation instead.",
+            "Use torchvision.ops.SqueezeExcitation instead.",
             FutureWarning,
         )
 
