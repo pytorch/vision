@@ -288,13 +288,11 @@ class MultiScaleRoIAlign(nn.Module):
         self.canonical_level = canonical_level
 
     def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
-        # TODO: deprecate eventually
-        warnings.warn("`convert_to_roi_format` will no loger be public in future releases.", FutureWarning)
+        warnings.warn("The 'convert_to_roi_format' method is deprecated since 0.12 and will be removed in 0.14.")
         return _convert_to_roi_format(boxes)
 
     def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
-        # TODO: deprecate eventually
-        warnings.warn("`infer_scale` will no loger be public in future releases.", FutureWarning)
+        warnings.warn("The 'infer_scale' method is deprecated since 0.12 and will be removed in 0.14.")
         return _infer_scale(feature, original_size)
 
     def setup_setup_scales(
@@ -302,8 +300,7 @@ class MultiScaleRoIAlign(nn.Module):
         features: List[Tensor],
         image_shapes: List[Tuple[int, int]],
     ) -> None:
-        # TODO: deprecate eventually
-        warnings.warn("`setup_setup_scales` will no loger be public in future releases.", FutureWarning)
+        warnings.warn("The 'setup_setup_scales' method is deprecated since 0.12 and will be removed in 0.14.")
         self.scales, self.map_levels = _setup_scales(features, image_shapes, self.canonical_scale, self.canonical_level)
 
     def forward(
