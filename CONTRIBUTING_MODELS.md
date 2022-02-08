@@ -1,5 +1,6 @@
 # Contributing to Torchvision - Models
 <<<<<<< HEAD
+<<<<<<< HEAD
 
 - [New Model Architectures - Overview](#new-model-architectures---overview)
 
@@ -68,6 +69,8 @@ The process of improving existing models, for instance improving accuracy by ret
 # Contributing to Torchvision
 =======
 >>>>>>> 1f79d422 (update CONTRIBUTING_MODELS.md)
+=======
+>>>>>>> 0d3b4b45f14a65833131da57df105bf68a3afdd7
 
 - [New Model Architectures - Overview](#new-model-architectures---overview)
 

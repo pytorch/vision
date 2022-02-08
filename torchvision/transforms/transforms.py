@@ -353,6 +353,17 @@ class Resize(torch.nn.Module):
         return f"{self.__class__.__name__}{detail}"
 
 
+class Scale(Resize):
+    """
+    Note: This transform is deprecated in favor of Resize.
+    """
+
+    def __init__(self, *args, **kwargs):
+        warnings.warn("The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.")
+        super().__init__(*args, **kwargs)
+        _log_api_usage_once(self)
+
+
 class CenterCrop(torch.nn.Module):
     """Crops the given image at the center.
     If the image is torch Tensor, it is expected
