@@ -5,6 +5,7 @@ import importlib
 import io
 import os
 import pathlib
+import textwrap
 from typing import Callable, Any, Dict, List, Optional, Sequence, Union, Collection
 
 import torch
@@ -36,12 +37,21 @@ SENTINEL = object()
 
 
 class DatasetOption:
-    def __init__(self, name: str, valid: Sequence, *, default: Any = SENTINEL, doc: str = "{options}") -> None:
+    def __init__(
+        self,
+        name: str,
+        valid: Sequence,
+        *,
+        annotation: Any = SENTINEL,
+        default: Any = SENTINEL,
+        doc: str = "{options}",
+    ) -> None:
         self.name = name
         if not valid:
             raise ValueError
         self.valid = valid
         self.default = valid[0] if default is SENTINEL else default
+        self.annotation = type(self.default) if annotation is SENTINEL else annotation
         if "{options}" in doc:
             options = sequence_to_str(
                 [str(arg) + (" (default)" if arg == self.default else "") for arg in valid],
@@ -57,20 +67,22 @@ class Dataset(abc.ABC):
         name: str,
         *options: DatasetOption,
         type: Union[str, DatasetType],
+        description: str = "",
         dependencies: Collection[str] = (),
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
         homepage: Optional[str] = None,
         license: Optional[str] = None,
+        attributes: Optional[Dict[str, str]] = None,
     ) -> None:
-
         self.name = name.lower()
-        self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         self.options = options
         self._options_map = {option.name: option for option in options}
         self.default_config = DatasetConfig({option.name: option.default for option in options})
 
+        self.type = DatasetType[type.upper()] if isinstance(type, str) else type
+        self.description = textwrap.dedent(description).strip()
         self.dependecies = dependencies
 
         if categories is None:
@@ -86,6 +98,7 @@ class Dataset(abc.ABC):
         self.citation = citation
         self.homepage = homepage
         self.license = license
+        self.attributes = attributes
 
     def read_categories_file(self, path: pathlib.Path) -> List[List[str]]:
         with open(path, newline="") as file:

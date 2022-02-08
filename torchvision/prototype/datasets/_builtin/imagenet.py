@@ -40,9 +40,31 @@ class ImageNet(Dataset):
             name,
             DatasetOption("split", ("train", "val", "test")),
             type=DatasetType.IMAGE,
+            description="""
+            The ImageNet dataset contains 14,197,122 annotated images according to the WordNet hierarchy. Since 2010
+            the dataset is used in the ImageNet Large Scale Visual Recognition Challenge (ILSVRC), a benchmark in image
+            classification and object detection. The publicly released dataset contains a set of manually annotated
+            training images. A set of test images is also released, with the manual annotations withheld. ILSVRC
+            annotations fall into one of two categories: (1) image-level annotation of a binary label for the presence
+            or absence of an object class in the image, e.g., "there are cars in this image" but "there are no tigers,"
+            and (2) object-level annotation of a tight bounding box and class label around an object instance in the
+            image, e.g., "there is a screwdriver centered at position (20,25) with width of 50 pixels and height of
+            30 pixels". The ImageNet project does not own the copyright of the images, therefore only thumbnails and
+            URLs of images are provided.
+
+            - Total number of non-empty WordNet synsets: 21841
+            - Total number of images: 14197122
+            - Number of images with bounding box annotations: 1,034,908
+            - Number of synsets with SIFT features: 1000
+            - Number of images with SIFT features: 1.2 million
+            """,
             dependencies=("scipy",),
             categories=categories,
             homepage="https://www.image-net.org/",
+            attributes=dict(
+                wnid_to_category="Mapping for WordNet IDs to human readable categories.",
+                category_to_wnid="Mapping for human readable categories to WordNet IDs.",
+            ),
         )
         # TODO: handle num_samples
         # sizes = FrozenMapping(
