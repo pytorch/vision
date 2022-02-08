@@ -144,7 +144,7 @@ class TestRotate:
         with pytest.warns(
             UserWarning,
             match=re.escape(
-                "Parameter 'resample' is deprecated since 0.12.0 and will be removed 0.14.0. "
+                "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
                 "Please use 'interpolation' instead."
             ),
         ):

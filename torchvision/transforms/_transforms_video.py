@@ -23,7 +23,7 @@ __all__ = [
 
 
 warnings.warn(
-    "The 'torchvision.transforms._transforms_video' module is deprecated since 0.12.0 and will be removed in 0.14.0. "
+    "The 'torchvision.transforms._transforms_video' module is deprecated since 0.12 and will be removed in 0.14. "
     "Please use the 'torchvision.transforms' module instead."
 )
 

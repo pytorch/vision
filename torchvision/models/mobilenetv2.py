@@ -23,7 +23,7 @@ model_urls = {
 class _DeprecatedConvBNAct(ConvNormActivation):
     def __init__(self, *args, **kwargs):
         warnings.warn(
-            "The ConvBNReLU/ConvBNActivation classes are deprecated since 0.12.0 and will be removed in 0.14.0. "
+            "The ConvBNReLU/ConvBNActivation classes are deprecated since 0.12 and will be removed in 0.14. "
             "Use torchvision.ops.misc.ConvNormActivation instead.",
             FutureWarning,
         )

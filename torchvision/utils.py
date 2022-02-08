@@ -61,7 +61,7 @@ def make_grid(
 
     if "range" in kwargs.keys():
         warnings.warn(
-            "The parameter 'range' is deprecated since 0.12.0 and will be removed in 0.14.0. "
+            "The parameter 'range' is deprecated since 0.12 and will be removed in 0.14. "
             "Please use 'value_range' instead."
         )
         value_range = kwargs["range"]

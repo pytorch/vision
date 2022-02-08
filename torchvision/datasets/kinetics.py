@@ -305,7 +305,7 @@ class Kinetics400(Kinetics):
         **kwargs: Any,
     ) -> None:
         warnings.warn(
-            "The Kinetics400 class is deprecated since 0.12.0 and will be removed in 0.14.0."
+            "The Kinetics400 class is deprecated since 0.12 and will be removed in 0.14."
             "Please use Kinetics(..., num_classes='400') instead."
         )
         if any(value is not None for value in (num_classes, split, download, num_download_workers)):
