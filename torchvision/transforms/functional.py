@@ -1033,8 +1033,9 @@ def rotate(
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
         resample (int, optional):
-            .. deprecated:: 0.12.0
-                Please use ``interpolation`` instead. Will be removed in ``0.14.0``.
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
 
     Returns:
         PIL Image or Tensor: Rotated image.

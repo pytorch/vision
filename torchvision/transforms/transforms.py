@@ -1300,8 +1300,9 @@ class RandomRotation(torch.nn.Module):
         fill (sequence or number): Pixel fill value for the area outside the rotated
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
         resample (int, optional):
-            .. deprecated:: 0.12.0
-                Please use ``interpolation`` instead. Will be removed in ``0.14.0``.
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
 
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
@@ -1413,11 +1414,12 @@ class RandomAffine(torch.nn.Module):
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
         fillcolor (sequence or number, optional):
-            .. deprecated:: 0.12.0
-                Please use ``fill`` instead. Will be removed in ``0.14.0``.
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
         resample (int, optional):
-            .. deprecated:: 0.12.0
-                Please use ``interpolation`` instead. Will be removed in ``0.14.0``.
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
         center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.
             Default is the center of the image.
 

@@ -248,8 +248,9 @@ class Kinetics400(Kinetics):
     `Kinetics-400 <https://deepmind.com/research/open-source/open-source-datasets/kinetics/>`_
     dataset.
 
-    .. deprecated:: 0.12.0
-        Please use ``Kinetics(..., num_classes='400')`` instead. Will be removed in ``0.14.0``.
+    .. warning::
+        This class was deprecated in ``0.12`` and will be removed in ``0.14``. Please use
+        ``Kinetics(..., num_classes='400')`` instead.
 
     Kinetics-400 is an action recognition video dataset.
     This dataset consider every video as a collection of video clips of fixed size, specified

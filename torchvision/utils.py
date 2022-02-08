@@ -44,8 +44,9 @@ def make_grid(
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
         range (tuple. optional):
-            .. deprecated:: 0.12.0
-                Please use ``value_range`` instead. Will be removed in ``0.14.0``.
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``value_range``
+                instead.
         scale_each (bool, optional): If ``True``, scale each image in the batch of
             images separately rather than the (min, max) over all images. Default: ``False``.
         pad_value (float, optional): Value for the padded pixels. Default: ``0``.
