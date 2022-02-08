@@ -732,8 +732,7 @@ def test_autoaugment_save(augmentation, tmpdir):
 def test_autoaugment__op_apply_shear(interpolation, mode):
     # We check that torchvision's implementation of shear is equivalent
     # to official CIFAR10 autoaugment implementation:
-    # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/
-    # research/autoaugment/augmentation_transforms.py#L273-L290
+    # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/research/autoaugment/augmentation_transforms.py#L273-L290
     image_size = 32
 
     def shear(pil_img, level, mode, resample):
