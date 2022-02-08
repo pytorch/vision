@@ -3,7 +3,6 @@ from typing import Optional, Tuple, List
 
 import torch
 from torch import Tensor
-from torch.jit.annotations import BroadcastingList2
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 
 
@@ -247,74 +246,6 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     result = convert_image_dtype(result, dtype)
     return result
-
-
-def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
-    """DEPRECATED"""
-    warnings.warn(
-        "This method is deprecated and will be removed in future releases. Please, use ``F.center_crop`` instead."
-    )
-
-    _assert_image_tensor(img)
-
-    _, image_width, image_height = img.size()
-    crop_height, crop_width = output_size
-    # crop_top = int(round((image_height - crop_height) / 2.))
-    # Result can be different between python func and scripted func
-    # Temporary workaround:
-    crop_top = int((image_height - crop_height + 1) * 0.5)
-    # crop_left = int(round((image_width - crop_width) / 2.))
-    # Result can be different between python func and scripted func
-    # Temporary workaround:
-    crop_left = int((image_width - crop_width + 1) * 0.5)
-
-    return crop(img, crop_top, crop_left, crop_height, crop_width)
-
-
-def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
-    """DEPRECATED"""
-    warnings.warn(
-        "This method is deprecated and will be removed in future releases. Please, use ``F.five_crop`` instead."
-    )
-
-    _assert_image_tensor(img)
-
-    assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
-
-    _, image_width, image_height = img.size()
-    crop_height, crop_width = size
-    if crop_width > image_width or crop_height > image_height:
-        msg = "Requested crop size {} is bigger than input size {}"
-        raise ValueError(msg.format(size, (image_height, image_width)))
-
-    tl = crop(img, 0, 0, crop_width, crop_height)
-    tr = crop(img, image_width - crop_width, 0, image_width, crop_height)
-    bl = crop(img, 0, image_height - crop_height, crop_width, image_height)
-    br = crop(img, image_width - crop_width, image_height - crop_height, image_width, image_height)
-    center = center_crop(img, (crop_height, crop_width))
-
-    return [tl, tr, bl, br, center]
-
-
-def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = False) -> List[Tensor]:
-    """DEPRECATED"""
-    warnings.warn(
-        "This method is deprecated and will be removed in future releases. Please, use ``F.ten_crop`` instead."
-    )
-
-    _assert_image_tensor(img)
-
-    assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
-    first_five = five_crop(img, size)
-
-    if vertical_flip:
-        img = vflip(img)
-    else:
-        img = hflip(img)
-
-    second_five = five_crop(img, size)
-
-    return first_five + second_five
 
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
