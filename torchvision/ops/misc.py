@@ -1,40 +1,9 @@
-import warnings
 from typing import Callable, List, Optional
 
 import torch
 from torch import Tensor
 
 from ..utils import _log_api_usage_once
-
-
-class Conv2d(torch.nn.Conv2d):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warnings.warn(
-            "torchvision.ops.misc.Conv2d is deprecated and will be "
-            "removed in future versions, use torch.nn.Conv2d instead.",
-            FutureWarning,
-        )
-
-
-class ConvTranspose2d(torch.nn.ConvTranspose2d):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warnings.warn(
-            "torchvision.ops.misc.ConvTranspose2d is deprecated and will be "
-            "removed in future versions, use torch.nn.ConvTranspose2d instead.",
-            FutureWarning,
-        )
-
-
-class BatchNorm2d(torch.nn.BatchNorm2d):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        warnings.warn(
-            "torchvision.ops.misc.BatchNorm2d is deprecated and will be "
-            "removed in future versions, use torch.nn.BatchNorm2d instead.",
-            FutureWarning,
-        )
 
 
 interpolate = torch.nn.functional.interpolate
@@ -54,12 +23,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         self,
         num_features: int,
         eps: float = 1e-5,
-        n: Optional[int] = None,
     ):
-        # n=None for backward-compatibility
-        if n is not None:
-            warnings.warn("`n` argument is deprecated and has been renamed `num_features`", DeprecationWarning)
-            num_features = n
         super().__init__()
         _log_api_usage_once(self)
         self.eps = eps
