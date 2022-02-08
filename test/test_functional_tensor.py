@@ -2,6 +2,7 @@ import colorsys
 import itertools
 import math
 import os
+import re
 from typing import Sequence
 
 import numpy as np
@@ -22,7 +23,6 @@ from common_utils import (
     assert_equal,
 )
 from torchvision.transforms import InterpolationMode
-
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
@@ -141,7 +141,13 @@ class TestRotate:
     def test_rotate_deprecation_resample(self):
         tensor, _ = _create_data(26, 26)
         # assert deprecation warning and non-BC
-        with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
+                "Please use 'interpolation' instead."
+            ),
+        ):
             res1 = F.rotate(tensor, 45, resample=2)
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)
@@ -365,7 +371,13 @@ class TestAffine:
         tensor, pil_img = _create_data(26, 26, device=device)
 
         # assert deprecation warning and non-BC
-        with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+                "Please use 'interpolation' instead."
+            ),
+        ):
             res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=2)
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             assert_equal(res1, res2)
@@ -376,7 +388,13 @@ class TestAffine:
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             assert_equal(res1, res2)
 
-        with pytest.warns(UserWarning, match=r"Argument fillcolor is deprecated and will be removed"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+                "Please use 'fill' instead."
+            ),
+        ):
             res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
             res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
             # we convert the PIL images to numpy as assert_equal doesn't work on PIL images.
