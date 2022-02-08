@@ -18,7 +18,7 @@ import PIL.Image
 import pytest
 import torch
 from common_utils import get_tmp_dir
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, create_random_string
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype.datasets._api import find
@@ -1349,8 +1349,6 @@ def lsun(info, root, config):
     def make_lmdb(path):
         import lmdb
 
-        hexdigits_lowercase = string.digits + string.ascii_lowercase[:6]
-
         num_samples = torch.randint(1, 4, size=()).item()
         format = "png"
 
@@ -1366,7 +1364,7 @@ def lsun(info, root, config):
 
         with lmdb.open(str(path)) as env, env.begin(write=True) as txn:
             for value in values:
-                key = "".join(random.choice(hexdigits_lowercase) for _ in range(40)).encode()
+                key = create_random_string(40, string.digits + string.ascii_lowercase[:6]).encode()
                 txn.put(key, value)
 
         return num_samples
