@@ -438,13 +438,6 @@ def resize(
     return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
 
 
-def scale(*args, **kwargs):
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(scale)
-    warnings.warn("The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.")
-    return resize(*args, **kwargs)
-
-
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected

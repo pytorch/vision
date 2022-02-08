@@ -26,7 +26,6 @@ __all__ = [
     "ToPILImage",
     "Normalize",
     "Resize",
-    "Scale",
     "CenterCrop",
     "Pad",
     "Lambda",
@@ -37,7 +36,6 @@ __all__ = [
     "RandomHorizontalFlip",
     "RandomVerticalFlip",
     "RandomResizedCrop",
-    "RandomSizedCrop",
     "FiveCrop",
     "TenCrop",
     "LinearTransformation",
@@ -353,17 +351,6 @@ class Resize(torch.nn.Module):
     def __repr__(self):
         detail = f"(size={self.size}, interpolation={self.interpolation.value}, max_size={self.max_size}, antialias={self.antialias})"
         return self.__class__.__name__ + detail
-
-
-class Scale(Resize):
-    """
-    Note: This transform is deprecated in favor of Resize.
-    """
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn("The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.")
-        super().__init__(*args, **kwargs)
-        _log_api_usage_once(self)
 
 
 class CenterCrop(torch.nn.Module):
@@ -974,20 +961,6 @@ class RandomResizedCrop(torch.nn.Module):
         format_string += f", ratio={tuple(round(r, 4) for r in self.ratio)}"
         format_string += f", interpolation={interpolate_str})"
         return format_string
-
-
-class RandomSizedCrop(RandomResizedCrop):
-    """
-    Note: This transform is deprecated in favor of RandomResizedCrop.
-    """
-
-    def __init__(self, *args, **kwargs):
-        warnings.warn(
-            "The use of the transforms.RandomSizedCrop transform is deprecated, "
-            + "please use transforms.RandomResizedCrop instead."
-        )
-        super().__init__(*args, **kwargs)
-        _log_api_usage_once(self)
 
 
 class FiveCrop(torch.nn.Module):
