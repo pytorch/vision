@@ -1046,7 +1046,7 @@ def rotate(
         _log_api_usage_once(rotate)
     if resample is not None:
         warnings.warn(
-            "Parameter 'resample' is deprecated since 0.12.0 and will be removed 0.14.0. "
+            "The parameter 'resample' is deprecated since 0.12.0 and will be removed 0.14.0. "
             "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)

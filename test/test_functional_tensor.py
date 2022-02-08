@@ -2,6 +2,7 @@ import colorsys
 import itertools
 import math
 import os
+import re
 from typing import Sequence
 
 import numpy as np
@@ -22,7 +23,6 @@ from common_utils import (
     assert_equal,
 )
 from torchvision.transforms import InterpolationMode
-
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
@@ -141,7 +141,13 @@ class TestRotate:
     def test_rotate_deprecation_resample(self):
         tensor, _ = _create_data(26, 26)
         # assert deprecation warning and non-BC
-        with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Parameter 'resample' is deprecated since 0.12.0 and will be removed 0.14.0. "
+                "Please use 'interpolation' instead."
+            ),
+        ):
             res1 = F.rotate(tensor, 45, resample=2)
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)

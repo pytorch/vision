@@ -49,6 +49,7 @@ class Kinetics(VisionDataset):
                 │   ├──  class2
                 │   │   ├──   clipx.mp4
                 │   │    └── ...
+
             Note: split is appended automatically using the split argument.
         frames_per_clip (int): number of frames in a clip
         num_classes (int): select between Kinetics-400 (default), Kinetics-600, and Kinetics-700
@@ -303,7 +304,7 @@ class Kinetics400(Kinetics):
         **kwargs: Any,
     ) -> None:
         warnings.warn(
-            "Kinetics400 is deprecated since 0.12.0 and will be removed in 0.14.0."
+            "The Kinetics400 class is deprecated since 0.12.0 and will be removed in 0.14.0."
             "Please use Kinetics(..., num_classes='400') instead."
         )
         if any(value is not None for value in (num_classes, split, download, num_download_workers)):
