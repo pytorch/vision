@@ -119,7 +119,6 @@ Transforms on PIL Image and torch.\*Tensor
     RandomPerspective
     RandomResizedCrop
     RandomRotation
-    RandomSizedCrop
     RandomVerticalFlip
     Resize
     TenCrop
