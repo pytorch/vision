@@ -733,6 +733,7 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
     # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/
     # research/autoaugment/augmentation_transforms.py#L273-L290
     import math
+
     from PIL import Image
 
     image_size = 32
@@ -758,9 +759,7 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
 
     arc_level = math.atan(level)
     # Check pil output vs expected pil
-    out = _apply_op(
-        pil_img, op_name=f"Shear{mode}", magnitude=arc_level, interpolation=interpolation, fill=0
-    )
+    out = _apply_op(pil_img, op_name=f"Shear{mode}", magnitude=arc_level, interpolation=interpolation, fill=0)
     assert out == expected_out
 
     if interpolation == F.InterpolationMode.BILINEAR:
@@ -772,9 +771,7 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
         return
 
     # Check tensor output vs expected pil
-    out = _apply_op(
-        t_img, op_name=f"Shear{mode}", magnitude=arc_level, interpolation=interpolation, fill=0
-    )
+    out = _apply_op(t_img, op_name=f"Shear{mode}", magnitude=arc_level, interpolation=interpolation, fill=0)
     _assert_approx_equal_tensor_to_pil(out, expected_out)
 
 
