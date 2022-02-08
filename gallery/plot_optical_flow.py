@@ -165,7 +165,7 @@ grid = [[img1, flow_img] for (img1, flow_img) in zip(img1_batch, flow_imgs)]
 plot(grid)
 
 ####################################
-# Bonus: creating GIFs of predicted flows
+# Bonus: Creating GIFs of predicted flows
 # ---------------------------------------
 # In the example above we have only shown the predicted flows of 2 pairs of
 # frames. A fun way to apply the Optical Flow models is to run the model on an
