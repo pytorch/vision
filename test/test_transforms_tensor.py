@@ -14,9 +14,11 @@ from common_utils import (
     cpu_and_gpu,
     assert_equal,
 )
+from PIL import Image
 from torchvision import transforms as T
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as F
+from torchvision.transforms.autoaugment import _apply_op
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
@@ -732,10 +734,6 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
     # to official CIFAR10 autoaugment implementation:
     # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/
     # research/autoaugment/augmentation_transforms.py#L273-L290
-    import math
-
-    from PIL import Image
-
     image_size = 32
 
     def shear(pil_img, level, mode, resample):
@@ -744,8 +742,6 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
         elif mode == "Y":
             matrix = (1, 0, 0, level, 1, 0)
         return pil_img.transform((image_size, image_size), Image.AFFINE, matrix, resample=resample)
-
-    from torchvision.transforms.autoaugment import _apply_op
 
     t_img, pil_img = _create_data(image_size, image_size)
 
@@ -757,9 +753,8 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
     level = 0.3
     expected_out = shear(pil_img, level, mode=mode, resample=resample_pil)
 
-    arc_level = math.atan(level)
     # Check pil output vs expected pil
-    out = _apply_op(pil_img, op_name=f"Shear{mode}", magnitude=arc_level, interpolation=interpolation, fill=0)
+    out = _apply_op(pil_img, op_name=f"Shear{mode}", magnitude=level, interpolation=interpolation, fill=0)
     assert out == expected_out
 
     if interpolation == F.InterpolationMode.BILINEAR:
@@ -771,7 +766,7 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
         return
 
     # Check tensor output vs expected pil
-    out = _apply_op(t_img, op_name=f"Shear{mode}", magnitude=arc_level, interpolation=interpolation, fill=0)
+    out = _apply_op(t_img, op_name=f"Shear{mode}", magnitude=level, interpolation=interpolation, fill=0)
     _assert_approx_equal_tensor_to_pil(out, expected_out)
 
 
