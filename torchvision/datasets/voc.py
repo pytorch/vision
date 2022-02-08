@@ -80,7 +80,8 @@ class _VOCBase(VisionDataset):
         if year == "2007-test":
             if image_set == "test":
                 warnings.warn(
-                    "Acessing the test image set of the year 2007 with year='2007-test' is deprecated. "
+                    "Acessing the test image set of the year 2007 with year='2007-test' is deprecated "
+                    "since 0.12 and will be removed in 0.14. "
                     "Please use the combination year='2007' and image_set='test' instead."
                 )
                 year = "2007"
