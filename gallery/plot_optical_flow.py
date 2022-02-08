@@ -152,7 +152,10 @@ print(f"min = {predicted_flows.min()}, max = {predicted_flows.max()}")
 # convert a flow into an RGB image. It also supports batches of flows.
 # each "direction" in the flow will be mapped to a given RGB color. In the
 # images below, pixels with similar colors are assumed by the model to be moving
-# in similar directions.
+# in similar directions. The model is properly able to predict the movement of
+# the ball and the player. Note in particular the different predicted direction
+# of the ball in the first image (going to the left) and in the second image
+# (going up).
 
 from torchvision.utils import flow_to_image
 
@@ -190,6 +193,4 @@ plot(grid)
 # Once the .jpg flow images are saved, you can convert them into a video or a
 # GIF using ffmpeg with e.g.:
 #
-# `
 # ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
-# `
