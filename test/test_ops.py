@@ -1112,7 +1112,7 @@ class BoxTestBase(ABC):
     def _target_fn(self) -> Tuple[bool, Callable]:
         pass
 
-    def __perform_box_operation(self, box: Tensor, run_as_script: bool = False) -> Tensor:
+    def _perform_box_operation(self, box: Tensor, run_as_script: bool = False) -> Tensor:
         is_binary_fn = self._target_fn()[0]
         target_fn = self._target_fn()[1]
         box_operation = torch.jit.script(target_fn) if run_as_script else target_fn
@@ -1120,7 +1120,7 @@ class BoxTestBase(ABC):
 
     def _run_test(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
         def assert_close(box: Tensor, expected: Tensor, tolerance):
-            out = self.__perform_box_operation(box)
+            out = self._perform_box_operation(box)
             torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         for dtype in dtypes:
@@ -1130,8 +1130,8 @@ class BoxTestBase(ABC):
 
     def _run_jit_test(self, test_input: List) -> None:
         box_tensor = torch.tensor(test_input, dtype=torch.float)
-        expected = self.__perform_box_operation(box_tensor, True)
-        scripted_area = self.__perform_box_operation(box_tensor, True)
+        expected = self._perform_box_operation(box_tensor, True)
+        scripted_area = self._perform_box_operation(box_tensor, True)
         torch.testing.assert_close(scripted_area, expected, rtol=0.0, atol=1e-3)
 
 
@@ -1139,13 +1139,13 @@ class TestBoxArea(BoxTestBase):
     def _target_fn(self) -> Tuple[bool, Callable]:
         return (False, ops.box_area)
 
-    def __generate_int_input() -> List[List[int]]:
+    def _generate_int_input() -> List[List[int]]:
         return [[0, 0, 100, 100], [0, 0, 0, 0]]
 
-    def __generate_int_expected() -> List[int]:
+    def _generate_int_expected() -> List[int]:
         return [10000, 0]
 
-    def __generate_float_input(index: int) -> List[List[float]]:
+    def _generate_float_input(index: int) -> List[List[float]]:
         return [
             [
                 [285.3538, 185.5758, 1193.5110, 851.4551],
@@ -1155,20 +1155,20 @@ class TestBoxArea(BoxTestBase):
             [[285.25, 185.625, 1194.0, 851.5], [285.25, 188.75, 1192.0, 851.0], [279.25, 198.0, 1189.0, 849.0]],
         ][index]
 
-    def __generate_float_expected(index: int) -> List[float]:
+    def _generate_float_expected(index: int) -> List[float]:
         return [[604723.0806, 600965.4666, 592761.0085], [605113.875, 600495.1875, 592247.25]][index]
 
     @pytest.mark.parametrize(
         "test_input, dtypes, tolerance, expected",
         [
             pytest.param(
-                __generate_int_input(),
+                _generate_int_input(),
                 [torch.int8, torch.int16, torch.int32, torch.int64],
                 1e-4,
-                __generate_int_expected(),
+                _generate_int_expected(),
             ),
-            pytest.param(__generate_float_input(0), [torch.float32, torch.float64], 0.05, __generate_float_expected(0)),
-            pytest.param(__generate_float_input(1), [torch.float16], 1e-4, __generate_float_expected(1)),
+            pytest.param(_generate_float_input(0), [torch.float32, torch.float64], 0.05, _generate_float_expected(0)),
+            pytest.param(_generate_float_input(1), [torch.float16], 1e-4, _generate_float_expected(1)),
         ],
     )
     def test_box_area(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
@@ -1182,30 +1182,30 @@ class TestBoxIou(BoxTestBase):
     def _target_fn(self) -> Tuple[bool, Callable]:
         return (True, ops.box_iou)
 
-    def __generate_int_input() -> List[List[int]]:
+    def _generate_int_input() -> List[List[int]]:
         return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
 
-    def __generate_int_expected() -> List[List[float]]:
+    def _generate_int_expected() -> List[List[float]]:
         return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
 
-    def __generate_float_input() -> List[List[float]]:
+    def _generate_float_input() -> List[List[float]]:
         return [
             [285.3538, 185.5758, 1193.5110, 851.4551],
             [285.1472, 188.7374, 1192.4984, 851.0669],
             [279.2440, 197.9812, 1189.4746, 849.2019],
         ]
 
-    def __generate_float_expected() -> List[List[float]]:
+    def _generate_float_expected() -> List[List[float]]:
         return [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
         "test_input, dtypes, tolerance, expected",
         [
             pytest.param(
-                __generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, __generate_int_expected()
+                _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
             ),
-            pytest.param(__generate_float_input(), [torch.float16], 0.002, __generate_float_expected()),
-            pytest.param(__generate_float_input(), [torch.float32, torch.float64], 1e-4, __generate_float_expected()),
+            pytest.param(_generate_float_input(), [torch.float16], 0.002, _generate_float_expected()),
+            pytest.param(_generate_float_input(), [torch.float32, torch.float64], 1e-4, _generate_float_expected()),
         ],
     )
     def test_iou(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
@@ -1219,30 +1219,30 @@ class TestGenBoxIou(BoxTestBase):
     def _target_fn(self) -> Tuple[bool, Callable]:
         return (True, ops.generalized_box_iou)
 
-    def __generate_int_input() -> List[List[int]]:
+    def _generate_int_input() -> List[List[int]]:
         return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
 
-    def __generate_int_expected() -> List[List[float]]:
+    def _generate_int_expected() -> List[List[float]]:
         return [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]]
 
-    def __generate_float_input() -> List[List[float]]:
+    def _generate_float_input() -> List[List[float]]:
         return [
             [285.3538, 185.5758, 1193.5110, 851.4551],
             [285.1472, 188.7374, 1192.4984, 851.0669],
             [279.2440, 197.9812, 1189.4746, 849.2019],
         ]
 
-    def __generate_float_expected() -> List[List[float]]:
+    def _generate_float_expected() -> List[List[float]]:
         return [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
         "test_input, dtypes, tolerance, expected",
         [
             pytest.param(
-                __generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, __generate_int_expected()
+                _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
             ),
-            pytest.param(__generate_float_input(), [torch.float16], 0.002, __generate_float_expected()),
-            pytest.param(__generate_float_input(), [torch.float32, torch.float64], 0.001, __generate_float_expected()),
+            pytest.param(_generate_float_input(), [torch.float16], 0.002, _generate_float_expected()),
+            pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.001, _generate_float_expected()),
         ],
     )
     def test_gen_iou(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
