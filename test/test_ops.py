@@ -982,12 +982,6 @@ class TestFrozenBNT:
         bn.load_state_dict(state_dict)
         torch.testing.assert_close(fbn(x), bn(x), rtol=1e-5, atol=1e-6)
 
-    def test_frozenbatchnorm2d_n_arg(self):
-        """Ensure a warning is thrown when passing `n` kwarg
-        (remove this when support of `n` is dropped)"""
-        with pytest.warns(DeprecationWarning):
-            ops.misc.FrozenBatchNorm2d(32, eps=1e-5, n=32)
-
 
 class TestBoxConversion:
     def _get_box_sequences():
