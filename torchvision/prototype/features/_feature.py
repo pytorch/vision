@@ -84,6 +84,27 @@ class Feature(torch.Tensor):
         args: Sequence[Any] = (),
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> torch.Tensor:
+        """For general information about how the __torch_function__ protocol works,
+        see https://pytorch.org/docs/stable/notes/extending.html#extending-torch
+
+        TL;DR: Every time a PyTorch operator is called, it goes through the inputs and looks for the
+        ``__torch_function__`` method. If one is found, it is invoked with the operator as ``func`` as well as the
+        ``args`` and ``kwargs`` of the original call.
+
+        The default behavior of :class:`~torch.Tensor`'s is to retain a custom tensor type. For the :class:`Feature`
+        use case, this has two downsides:
+
+        1. Since some :class:`Feature`'s require metadata to be constructed, the default wrapping, i.e.
+           ``return cls(func(*args, **kwargs))``, will fail for them.
+        2. For most operations, there is no way of knowing if the input type is still valid for the output.
+
+        For these reasons, the automatic output wrapping is turned off for most operators.
+
+        Exceptions to this are:
+
+        - :func:`torch.clone`
+        - :meth:`torch.Tensor.to`
+        """
         kwargs = kwargs or dict()
         with DisableTorchFunction():
             output = func(*args, **kwargs)
