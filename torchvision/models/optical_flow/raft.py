@@ -586,6 +586,8 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
     """RAFT model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
+    Please see the example below for a tutorial on how to use this model.
+
     Args:
         pretrained (bool): Whether to use weights that have been pre-trained on
             :class:`~torchvsion.datasets.FlyingChairs` + :class:`~torchvsion.datasets.FlyingThings3D`
@@ -636,6 +638,8 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
 def raft_small(*, pretrained=False, progress=True, **kwargs):
     """RAFT "small" model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
+
+    Please see the example below for a tutorial on how to use this model.
 
     Args:
         pretrained (bool): Whether to use weights that have been pre-trained on
