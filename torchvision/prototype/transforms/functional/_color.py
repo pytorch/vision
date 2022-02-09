@@ -1,19 +1,16 @@
 from typing import TypeVar
 
 from torchvision.prototype import features
-from torchvision.transforms import functional as _F
+from torchvision.prototype.transforms import kernels as K
 
 from ._utils import dispatch
 
 T = TypeVar("T", bound=features.Feature)
 
 
-adjust_brightness_image = _F.adjust_brightness
-
-
 @dispatch(
     {
-        features.Image: adjust_brightness_image,
+        features.Image: K.adjust_brightness_image,
     }
 )
 def adjust_brightness(input: T, *, brightness_factor: float) -> T:
@@ -21,12 +18,9 @@ def adjust_brightness(input: T, *, brightness_factor: float) -> T:
     pass
 
 
-adjust_saturation_image = _F.adjust_saturation
-
-
 @dispatch(
     {
-        features.Image: adjust_saturation_image,
+        features.Image: K.adjust_saturation_image,
     }
 )
 def adjust_saturation(input: T, *, saturation_factor: float) -> T:
@@ -34,12 +28,9 @@ def adjust_saturation(input: T, *, saturation_factor: float) -> T:
     pass
 
 
-adjust_contrast_image = _F.adjust_contrast
-
-
 @dispatch(
     {
-        features.Image: adjust_contrast_image,
+        features.Image: K.adjust_contrast_image,
     }
 )
 def adjust_contrast(input: T, *, contrast_factor: float) -> T:
@@ -47,12 +38,9 @@ def adjust_contrast(input: T, *, contrast_factor: float) -> T:
     pass
 
 
-adjust_sharpness_image = _F.adjust_sharpness
-
-
 @dispatch(
     {
-        features.Image: adjust_sharpness_image,
+        features.Image: K.adjust_sharpness_image,
     }
 )
 def adjust_sharpness(input: T, *, sharpness_factor: float) -> T:
@@ -60,12 +48,9 @@ def adjust_sharpness(input: T, *, sharpness_factor: float) -> T:
     pass
 
 
-posterize_image = _F.posterize
-
-
 @dispatch(
     {
-        features.Image: posterize_image,
+        features.Image: K.posterize_image,
     }
 )
 def posterize(input: T, *, bits: int) -> T:
@@ -73,12 +58,9 @@ def posterize(input: T, *, bits: int) -> T:
     pass
 
 
-solarize_image = _F.solarize
-
-
 @dispatch(
     {
-        features.Image: solarize_image,
+        features.Image: K.solarize_image,
     }
 )
 def solarize(input: T, *, threshold: float) -> T:
@@ -86,12 +68,9 @@ def solarize(input: T, *, threshold: float) -> T:
     pass
 
 
-autocontrast_image = _F.autocontrast
-
-
 @dispatch(
     {
-        features.Image: autocontrast_image,
+        features.Image: K.autocontrast_image,
     }
 )
 def autocontrast(input: T) -> T:
@@ -99,12 +78,9 @@ def autocontrast(input: T) -> T:
     pass
 
 
-equalize_image = _F.equalize
-
-
 @dispatch(
     {
-        features.Image: equalize_image,
+        features.Image: K.equalize_image,
     }
 )
 def equalize(input: T) -> T:
@@ -112,12 +88,9 @@ def equalize(input: T) -> T:
     pass
 
 
-invert_image = _F.invert
-
-
 @dispatch(
     {
-        features.Image: invert_image,
+        features.Image: K.invert_image,
     }
 )
 def invert(input: T) -> T:
