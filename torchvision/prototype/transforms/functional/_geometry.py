@@ -30,9 +30,11 @@ def horizontal_flip_bounding_box(
     return convert_bounding_box_format(bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format)
 
 
-@horizontal_flip.implements(features.BoundingBox)
 def _horizontal_flip_bounding_box(input: features.BoundingBox) -> torch.Tensor:
     return horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
+
+
+horizontal_flip.register(features.BoundingBox, _horizontal_flip_bounding_box)
 
 
 @dispatch
@@ -95,10 +97,12 @@ def resize_bounding_box(
     return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
 
 
-@resize.implements(features.BoundingBox, wrap_output=False)
 def _resize_bounding_box(input: features.BoundingBox, *, size: List[int], **_: Any) -> features.BoundingBox:
     output = resize_bounding_box(input, old_image_size=list(input.image_size), new_image_size=size)
     return features.BoundingBox.new_like(input, output, image_size=size)
+
+
+resize.register(features.BoundingBox, _resize_bounding_box, wrap_output=False)
 
 
 @dispatch

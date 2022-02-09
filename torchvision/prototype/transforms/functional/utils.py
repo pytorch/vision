@@ -66,13 +66,6 @@ class dispatch:
 
         self._fns[feature_type] = wrapper
 
-    def implements(self, feature_type, *, wrap_output=False, pil_kernel=None):
-        def wrapper(fn):
-            self.register(feature_type, fn, wrap_output=wrap_output, pil_kernel=pil_kernel)
-            return fn
-
-        return wrapper
-
     def __call__(self, input, *args, **kwargs):
         feature_type = type(input)
 
