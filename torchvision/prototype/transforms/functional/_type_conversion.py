@@ -1,5 +1,5 @@
 import unittest.mock
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, cast
 
 import numpy as np
 import PIL.Image
@@ -22,4 +22,4 @@ def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, tor
 
 
 def label_to_one_hot(label: torch.Tensor, *, num_categories: int) -> torch.Tensor:
-    return one_hot(label, num_classes=num_categories)
+    return cast(torch.Tensor, one_hot(label, num_classes=num_categories))
