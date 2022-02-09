@@ -381,7 +381,7 @@ class CenterCrop(torch.nn.Module):
         return F.center_crop(img, self.size)
 
     def __repr__(self) -> str:
-        return f"{self.__class__.__name_}(size={self.size})"
+        return f"{self.__class__.__name__}(size={self.size})"
 
 
 class Pad(torch.nn.Module):
@@ -1532,16 +1532,15 @@ class RandomAffine(torch.nn.Module):
         return F.affine(img, *ret, interpolation=self.interpolation, fill=fill, center=self.center)
 
     def __repr__(self) -> str:
-        s = (
-            f"{self.__class__.__name__}(degrees={self.degrees}"
-            f"{f', translate={self.translate}' if self.translate is not None else ''}"
-            f"{f', translate={self.scale}' if self.scale is not None  else ''}"
-            f"{f', translate={self.shear}' if self.shear is not None  else ''}"
-            f"{f', translate={self.interpolation.value}' if self.interpolation != InterpolationMode.NEAREST else ''}"
-            f"{f', translate={self.fill}' if self.fill != 0 else ''}"
-            f"{f', translate={self.center}' if self.center is not None  else ''}"
-            f")"
-        )
+        s = f"{self.__class__.__name__}(degrees={self.degrees}"
+        s += f", translate={self.translate}" if self.translate is not None else ""
+        s += f", scale={self.scale}" if self.scale is not None else ""
+        s += f", shear={self.shear}" if self.shear is not None else ""
+        s += f", interpolation={self.interpolation.value}" if self.interpolation != InterpolationMode.NEAREST else ""
+        s += f", fill={self.fill}" if self.fill != 0 else ""
+        s += f", center={self.center}" if self.center is not None else ""
+        s += ")"
+
         return s
 
 

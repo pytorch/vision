@@ -185,10 +185,11 @@ class DeformConv2d(nn.Module):
             f", {self.out_channels}"
             f", kernel_size={self.kernel_size}"
             f", stride={self.stride}"
-            f"{f', padding={self.padding}' if self.padding != (0, 0) else ''}"
-            f"{f', dilation={self.dilation}' if self.dilation != (1, 1) else ''}"
-            f"{f', groups={self.groups}'  if self.groups != 1 else ''}"
-            f"{', bias=False' if self.bias is None else ''}"
-            f")"
         )
+        s += f", padding={self.padding}" if self.padding != (0, 0) else ""
+        s += f", dilation={self.dilation}" if self.dilation != (1, 1) else ""
+        s += f", groups={self.groups}" if self.groups != 1 else ""
+        s += f", bias=False" if self.bias is None else ""
+        s += ")"
+
         return s
