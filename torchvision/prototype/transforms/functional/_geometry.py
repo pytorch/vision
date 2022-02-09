@@ -23,7 +23,7 @@ def _horizontal_flip_bounding_box(input: features.BoundingBox) -> torch.Tensor:
 )
 def horizontal_flip(input: T) -> T:
     """ADDME"""
-    pass
+    ...
 
 
 def _resize_bounding_box(input: features.BoundingBox, *, size: List[int]) -> features.BoundingBox:
@@ -48,7 +48,7 @@ def resize(
     antialias: Optional[bool],
 ) -> T:
     """ADDME"""
-    pass
+    ...
 
 
 @dispatch(
@@ -58,7 +58,7 @@ def resize(
 )
 def center_crop(input: T, *, output_size: List[int]) -> T:
     """ADDME"""
-    pass
+    ...
 
 
 @dispatch(
@@ -77,7 +77,7 @@ def resized_crop(
     interpolation: InterpolationMode,
 ) -> T:
     """ADDME"""
-    pass
+    ...
 
 
 @dispatch(
@@ -99,7 +99,7 @@ def affine(
     center: Optional[List[int]],
 ) -> T:
     """ADDME"""
-    pass
+    ...
 
 
 @dispatch(
@@ -118,4 +118,4 @@ def rotate(
     resample: Optional[int],
 ) -> T:
     """ADDME"""
-    pass
+    ...

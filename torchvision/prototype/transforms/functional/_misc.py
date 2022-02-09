@@ -16,4 +16,4 @@ T = TypeVar("T", bound=features.Feature)
 )
 def normalize(input: T, *, mean: List[float], std: List[float], inplace: bool) -> T:
     """ADDME"""
-    pass
+    ...

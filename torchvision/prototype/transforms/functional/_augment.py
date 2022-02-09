@@ -17,7 +17,7 @@ T = TypeVar("T", bound=features.Feature)
 )
 def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool) -> T:
     """ADDME"""
-    pass
+    ...
 
 
 @dispatch(
@@ -28,7 +28,7 @@ def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace:
 )
 def mixup(input: T, *, lam: float, inplace: bool) -> T:
     """ADDME"""
-    pass
+    ...
 
 
 @dispatch(
@@ -65,4 +65,4 @@ def cutmix(input: T, *, box: Tuple[int, int, int, int], lam_adjusted: float, inp
 
         - :class:`~torchvision.prototype.features.OneHotLabel`
     """
-    pass
+    ...
