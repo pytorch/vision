@@ -1,12 +1,14 @@
 import functools
 import inspect
-from typing import Any, Type, Optional, Callable
+from typing import Any, Type, Optional, Callable, TypeVar, Dict, Union
 
 import PIL.Image
 import torch
 import torch.overrides
 from torchvision.prototype import features
 from torchvision.prototype.utils._internal import sequence_to_str
+
+F = TypeVar("F", bound=features.Feature)
 
 
 def is_supported(obj: Any, *types: Type) -> bool:
@@ -17,18 +19,28 @@ class dispatch:
     FEATURE_SPECIFIC_PARAM = object()
     FEATURE_SPECIFIC_DEFAULT = object()
 
-    def __init__(self, dispatch_fn):
+    def __init__(self, dispatch_fn: Callable[..., F]):
         self._dispatch_fn = dispatch_fn
         self.__doc__ = dispatch_fn.__doc__
         self.__signature__ = inspect.signature(dispatch_fn)
 
-        self._fns = {}
+        self._fns: Dict[Type[F], Callable[..., F]] = {}
         self._pil_fn: Optional[Callable] = None
 
     def supports(self, obj: Any) -> bool:
         return is_supported(obj, *self._fns.keys())
 
-    def register(self, fn, feature_type, *, wrap_output: bool = True, pil_kernel=None) -> None:
+    def register(
+        self,
+        fn: Callable[..., Union[torch.Tensor, F]],
+        feature_type: Type[F],
+        *,
+        wrap_output: bool = True,
+        pil_kernel: Optional[Callable[..., PIL.Image.Image]] = None,
+    ) -> None:
+        if not (issubclass(feature_type, features.Feature) and feature_type is not features.Feature):
+            raise TypeError("Can only register kernels for subclasses of `torchvision.prototype.features.Feature`.")
+
         if pil_kernel is not None:
             if not issubclass(feature_type, features.Image):
                 raise TypeError("PIL kernel can only be registered for images")
@@ -45,7 +57,7 @@ class dispatch:
         ]
 
         @functools.wraps(fn)
-        def wrapper(input, *args, **kwargs) -> Any:
+        def wrapper(input: F, *args: Any, **kwargs: Any) -> Any:
             missing = [
                 param
                 for param in feature_specific_params
@@ -66,7 +78,7 @@ class dispatch:
 
         self._fns[feature_type] = wrapper
 
-    def __call__(self, input, *args, **kwargs):
+    def __call__(self, input: F, *args: Any, **kwargs: Any) -> Union[F, PIL.Image.Image]:
         feature_type = type(input)
 
         if issubclass(feature_type, PIL.Image.Image):
