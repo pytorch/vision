@@ -14,6 +14,6 @@ T = TypeVar("T", bound=features.Feature)
         features.Image: K.normalize_image,
     }
 )
-def normalize(input: T, *, mean: List[float], std: List[float], inplace: bool = False) -> T:
+def normalize(input: T, *, mean: List[float], std: List[float], inplace: bool) -> T:
     """ADDME"""
     pass

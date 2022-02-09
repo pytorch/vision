@@ -1,11 +1,11 @@
-from typing import List, Optional, TypeVar, Any
+from typing import List, Optional, TypeVar
 
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import kernels as K
 from torchvision.transforms import functional as _F, InterpolationMode
 
-from ._utils import dispatch, FEATURE_SPECIFIC_DEFAULT
+from ._utils import dispatch
 
 T = TypeVar("T", bound=features.Feature)
 
@@ -26,7 +26,7 @@ def horizontal_flip(input: T) -> T:
     pass
 
 
-def _resize_bounding_box(input: features.BoundingBox, *, size: List[int], **_: Any) -> features.BoundingBox:
+def _resize_bounding_box(input: features.BoundingBox, *, size: List[int]) -> features.BoundingBox:
     output = K.resize_bounding_box(input, old_image_size=list(input.image_size), new_image_size=size)
     return features.BoundingBox.new_like(input, output, image_size=size)
 
@@ -43,9 +43,9 @@ def resize(
     input: T,
     *,
     size: List[int],
-    interpolation: InterpolationMode = FEATURE_SPECIFIC_DEFAULT,  # type: ignore[assignment]
-    max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
+    interpolation: InterpolationMode,
+    max_size: Optional[int],
+    antialias: Optional[bool],
 ) -> T:
     """ADDME"""
     pass
@@ -74,7 +74,7 @@ def resized_crop(
     height: int,
     width: int,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    interpolation: InterpolationMode,
 ) -> T:
     """ADDME"""
     pass
@@ -92,11 +92,11 @@ def affine(
     translate: List[int],
     scale: float,
     shear: List[float],
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    fill: Optional[List[float]] = None,
-    resample: Optional[int] = None,
-    fillcolor: Optional[List[float]] = None,
-    center: Optional[List[int]] = None,
+    interpolation: InterpolationMode,
+    fill: Optional[List[float]],
+    resample: Optional[int],
+    fillcolor: Optional[List[float]],
+    center: Optional[List[int]],
 ) -> T:
     """ADDME"""
     pass
@@ -111,11 +111,11 @@ def rotate(
     input: T,
     *,
     angle: float,
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    expand: bool = False,
-    center: Optional[List[int]] = None,
-    fill: Optional[List[float]] = None,
-    resample: Optional[int] = None,
+    interpolation: InterpolationMode,
+    expand: bool,
+    center: Optional[List[int]],
+    fill: Optional[List[float]],
+    resample: Optional[int],
 ) -> T:
     """ADDME"""
     pass

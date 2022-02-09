@@ -1,22 +1,12 @@
 import functools
-import inspect
 from typing import Any, Optional, Callable, TypeVar, Dict, Union
 
 import PIL.Image
 import torch
 import torch.overrides
 from torchvision.prototype import features
-from torchvision.prototype.utils._internal import sequence_to_str
 
 F = TypeVar("F", bound=features.Feature)
-
-# Sentinel to use as default value of a dispatcher parameter if it is only required for a subset of the kernels. If the
-# decorated function is called without the parameter for a kernel that requires it, an expressive :class:`TypeError` is
-# raised.
-FEATURE_SPECIFIC_PARAM = object()
-
-# Sentinel to use as default value of a dispatcher parameter if the kernels use different default values for it.
-FEATURE_SPECIFIC_DEFAULT = object()
 
 
 def dispatch(
@@ -65,20 +55,7 @@ def dispatch(
     if pil_kernel and features.Image not in kernels:
         raise TypeError("PIL kernel can only be registered for images")
 
-    params = {feature_type: inspect.signature(kernel).parameters for feature_type, kernel in kernels.items()}
-
     def outer_wrapper(dispatch_fn: Callable[..., F]) -> Callable[..., F]:
-        feature_specific_params = {
-            feature_type: [
-                name
-                for name, param in inspect.signature(dispatch_fn).parameters.items()
-                if param.default is FEATURE_SPECIFIC_PARAM
-                and name in params_
-                and params_[name].default is inspect.Parameter.empty
-            ]
-            for feature_type, params_ in params.items()
-        }
-
         @functools.wraps(dispatch_fn)
         def inner_wrapper(input: F, *args: Any, **kwargs: Any) -> F:
             feature_type = type(input)
@@ -101,17 +78,6 @@ def dispatch(
                 kernel = kernels[feature_type]
             except KeyError:
                 raise TypeError(f"No support for {feature_type.__name__}") from None
-
-            missing_args = [
-                param
-                for param in feature_specific_params[feature_type]
-                if kwargs.get(param, FEATURE_SPECIFIC_PARAM) is FEATURE_SPECIFIC_PARAM
-            ]
-            if missing_args:
-                raise TypeError(
-                    f"{dispatch_fn.__name__}() missing {len(missing_args)} required keyword-only arguments "
-                    f"for feature type {feature_type.__name__}: {sequence_to_str(missing_args, separate_last='and ')}"
-                )
 
             output = kernel(input, *args, **kwargs)
 

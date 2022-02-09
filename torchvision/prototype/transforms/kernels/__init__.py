@@ -1,3 +1,4 @@
+from torchvision.transforms import InterpolationMode  # usort: skip
 from ._meta_conversion import convert_bounding_box_format, convert_color_space  # usort: skip
 
 from ._augment import (
