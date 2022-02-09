@@ -458,3 +458,105 @@ class TrivialAugmentWide(torch.nn.Module):
             f")"
         )
         return s
+
+
+class AugMix(torch.nn.Module):
+    # TODO: Documentation
+    _PARAMETER_MAX: int = 10
+
+    def __init__(
+        self,
+        severity: int = 1,
+        mixture_width: int = 3,
+        chain_depth: int = -1,
+        alpha: float = 1.0,
+        all_ops: bool = False,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[List[float]] = None,
+    ) -> None:
+        super().__init__()
+        if not (1 <= severity <= self._PARAMETER_MAX):
+            raise ValueError(f"The severity must be between [1, {self._PARAMETER_MAX}]. Got {severity} instead.")
+        self.severity = severity
+        self.mixture_width = mixture_width
+        self.chain_depth = chain_depth
+        self.alpha = alpha
+        self.all_ops = all_ops
+        self.interpolation = interpolation
+        self.fill = fill
+
+    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+        s = {
+            # op_name: (magnitudes, signed)
+            "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
+            "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
+            "TranslateX": (torch.linspace(0.0, image_size[0] / 3.0, num_bins), True),
+            "TranslateY": (torch.linspace(0.0, image_size[1] / 3.0, num_bins), True),
+            "Rotate": (torch.linspace(0.0, 30.0, num_bins), True),
+            "Posterize": (4 - (torch.arange(num_bins) / ((num_bins - 1) / 4)).round().int(), False),
+            "Solarize": (torch.linspace(255.0, 0.0, num_bins), False),
+            "AutoContrast": (torch.tensor(0.0), False),
+            "Equalize": (torch.tensor(0.0), False),
+        }
+        if self.all_ops:
+            s.update({
+                "Brightness": (torch.linspace(0.0, 0.9, num_bins), True),
+                "Color": (torch.linspace(0.0, 0.9, num_bins), True),
+                "Contrast": (torch.linspace(0.0, 0.9, num_bins), True),
+                "Sharpness": (torch.linspace(0.0, 0.9, num_bins), True),
+            })
+        return s
+
+    def forward(self, img: Tensor) -> Tensor:
+        """
+            img (PIL Image or Tensor): Image to be transformed.
+
+        Returns:
+            PIL Image or Tensor: Transformed image.
+        """
+        device = None
+        fill = self.fill
+        if isinstance(img, Tensor):
+            device = img.device
+            if isinstance(fill, (int, float)):
+                fill = [float(fill)] * F.get_image_num_channels(img)
+            elif fill is not None:
+                fill = [float(f) for f in fill]
+
+        mixing_weights = torch._sample_dirichlet(torch.tensor([self.alpha] * self.mixture_width, device=device))
+        m = torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha], device=device))[0]
+        op_meta = self._augmentation_space(self._PARAMETER_MAX, F.get_image_size(img))
+
+        mix = torch.zeros()  # TODO: add size, device, handle PIL/Tensors/Batches etc
+        for i in range(self.mixture_width):
+            img_aug = img.clone() # TODO: handle PIL
+            depth = self.chain_depth if self.chain_depth > 0 else torch.randint(low=1, high=4, size=(1,)).item()
+            for _ in range(depth):
+                op_index = int(torch.randint(len(op_meta), (1,)).item())
+                op_name = list(op_meta.keys())[op_index]
+                magnitudes, signed = op_meta[op_name]
+                magnitude = (
+                    float(magnitudes[torch.randint(self.severity, (1,), dtype=torch.long)].item())
+                    if magnitudes.ndim > 0
+                    else 0.0
+                )
+                if signed and torch.randint(2, (1,)):
+                    magnitude *= -1.0
+                img_aug = _apply_op(img_aug, op_name, magnitude, interpolation=self.interpolation, fill=fill)
+            mix += mixing_weights[i] * img_aug  # TODO: handle PIL
+
+        return (1.0 - m) * img + m * mix  # TODO: handle PIL
+
+    def __repr__(self) -> str:
+        s = (
+            f"{self.__class__.__name__}("
+            f"severity={self.severity}"
+            f", mixture_width={self.mixture_width}"
+            f", chain_depth={self.chain_depth}"
+            f", alpha={self.alpha}"
+            f", all_ops={self.all_ops}"
+            f", interpolation={self.interpolation}"
+            f", fill={self.fill}"
+            f")"
+        )
+        return s
