@@ -5,7 +5,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
 
-from .utils import dispatch
+from ._utils import dispatch, FEATURE_SPECIFIC_PARAM
 
 T = TypeVar("T", bound=features.Feature)
 
@@ -88,8 +88,8 @@ def cutmix_one_hot_label(
 def cutmix(
     input: T,
     *,
-    box: Tuple[int, int, int, int] = dispatch.FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
-    lam_adjusted: float = dispatch.FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
+    box: Tuple[int, int, int, int] = FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
+    lam_adjusted: float = FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
     inplace: bool = False,
 ) -> T:
     """ADDME"""

@@ -1,5 +1,3 @@
-from . import utils  # usort: skip
-
 from torchvision.transforms import InterpolationMode
 
 from ._augment import (

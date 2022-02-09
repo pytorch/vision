@@ -4,7 +4,7 @@ from typing import TypeVar
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
 
-from .utils import dispatch
+from ._utils import dispatch
 
 T = TypeVar("T", bound=features.Feature)
 

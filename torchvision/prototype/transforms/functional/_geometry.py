@@ -5,7 +5,7 @@ from torchvision.prototype import features
 from torchvision.transforms import functional as _F, InterpolationMode
 
 from ._meta_conversion import convert_bounding_box_format
-from .utils import dispatch
+from ._utils import dispatch, FEATURE_SPECIFIC_DEFAULT
 
 T = TypeVar("T", bound=features.Feature)
 
@@ -97,7 +97,7 @@ def resize(
     input: T,
     *,
     size: List[int],
-    interpolation: InterpolationMode = dispatch.FEATURE_SPECIFIC_DEFAULT,  # type: ignore[assignment]
+    interpolation: InterpolationMode = FEATURE_SPECIFIC_DEFAULT,  # type: ignore[assignment]
     max_size: Optional[int] = None,
     antialias: Optional[bool] = None,
 ) -> T:
