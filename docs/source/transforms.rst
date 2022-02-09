@@ -3,6 +3,10 @@
 Transforming and augmenting images
 ==================================
 
+.. currentmodule:: torchvision.prototype.transforms.functional
+
+.. autofunction:: cutmix
+
 .. currentmodule:: torchvision.transforms
 
 Transforms are common image transformations available in the

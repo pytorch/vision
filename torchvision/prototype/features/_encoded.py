@@ -40,7 +40,7 @@ class EncodedImage(EncodedData):
 
     def decode(self) -> Image:
         # import at runtime to avoid cyclic imports
-        from torchvision.prototype.transforms.functional import decode_image_with_pil
+        from torchvision.prototype.transforms.kernels import decode_image_with_pil
 
         return Image(decode_image_with_pil(self))
 
