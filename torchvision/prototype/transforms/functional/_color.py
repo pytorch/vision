@@ -11,106 +11,115 @@ T = TypeVar("T", bound=features.Feature)
 adjust_brightness_image = _F.adjust_brightness
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: adjust_brightness_image,
+    }
+)
 def adjust_brightness(input: T, *, brightness_factor: float) -> T:
     """ADDME"""
     pass
 
 
-adjust_brightness.register(adjust_brightness_image, features.Image)
-
-
 adjust_saturation_image = _F.adjust_saturation
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: adjust_saturation_image,
+    }
+)
 def adjust_saturation(input: T, *, saturation_factor: float) -> T:
     """ADDME"""
     pass
 
 
-adjust_saturation.register(adjust_saturation_image, features.Image)
-
-
 adjust_contrast_image = _F.adjust_contrast
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: adjust_contrast_image,
+    }
+)
 def adjust_contrast(input: T, *, contrast_factor: float) -> T:
     """ADDME"""
     pass
 
 
-adjust_contrast.register(adjust_contrast_image, features.Image)
-
-
 adjust_sharpness_image = _F.adjust_sharpness
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: adjust_sharpness_image,
+    }
+)
 def adjust_sharpness(input: T, *, sharpness_factor: float) -> T:
     """ADDME"""
     pass
 
 
-adjust_sharpness.register(adjust_sharpness_image, features.Image)
-
-
 posterize_image = _F.posterize
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: posterize_image,
+    }
+)
 def posterize(input: T, *, bits: int) -> T:
     """ADDME"""
     pass
 
 
-posterize.register(posterize_image, features.Image)
-
-
 solarize_image = _F.solarize
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: solarize_image,
+    }
+)
 def solarize(input: T, *, threshold: float) -> T:
     """ADDME"""
     pass
 
 
-solarize.register(solarize_image, features.Image)
-
-
 autocontrast_image = _F.autocontrast
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: autocontrast_image,
+    }
+)
 def autocontrast(input: T) -> T:
     """ADDME"""
     pass
 
 
-autocontrast.register(autocontrast_image, features.Image)
-
-
 equalize_image = _F.equalize
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: equalize_image,
+    }
+)
 def equalize(input: T) -> T:
     """ADDME"""
     pass
 
 
-equalize.register(equalize_image, features.Image)
-
-
 invert_image = _F.invert
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: invert_image,
+    }
+)
 def invert(input: T) -> T:
     """ADDME"""
     pass
-
-
-invert.register(invert_image, features.Image)

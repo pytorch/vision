@@ -12,10 +12,11 @@ T = TypeVar("T", bound=features.Feature)
 normalize_image = _F.normalize
 
 
-@dispatch
+@dispatch(
+    {
+        features.Image: normalize_image,
+    }
+)
 def normalize(input: T, *, mean: List[float], std: List[float], inplace: bool = False) -> T:
     """ADDME"""
     pass
-
-
-normalize.register(normalize_image, features.Image)

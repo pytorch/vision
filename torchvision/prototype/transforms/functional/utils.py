@@ -1,6 +1,6 @@
 import functools
 import inspect
-from typing import Any, Type, Optional, Callable, TypeVar, Dict, Union
+from typing import Any, Optional, Callable, TypeVar, Dict, Union
 
 import PIL.Image
 import torch
@@ -15,80 +15,67 @@ class dispatch:
     FEATURE_SPECIFIC_PARAM = object()
     FEATURE_SPECIFIC_DEFAULT = object()
 
-    def __init__(self, dispatch_fn: Callable[..., F]):
-        self._dispatch_fn = dispatch_fn
-        self.__doc__ = dispatch_fn.__doc__
-        self.__signature__ = inspect.signature(dispatch_fn)
-
-        self._fns: Dict[Type[F], Callable[..., F]] = {}
-        self._pil_fn: Optional[Callable] = None
-
-    def supports(self, obj: Any) -> bool:
-        return (obj if isinstance(obj, type) else type(obj)) in self._fns.keys()
-
-    def register(
+    def __init__(
         self,
-        fn: Callable[..., Union[torch.Tensor, F]],
-        feature_type: Type[F],
+        kernels: Dict[Any, Callable[..., Union[torch.Tensor, F]]],
         *,
-        wrap_output: bool = True,
-        pil_kernel: Optional[Callable[..., PIL.Image.Image]] = None,
+        pil_kernel: Optional[Callable] = None,
     ) -> None:
-        if not (issubclass(feature_type, features.Feature) and feature_type is not features.Feature):
-            raise TypeError("Can only register kernels for subclasses of `torchvision.prototype.features.Feature`.")
+        self._kernels = kernels
+        if pil_kernel and features.Image not in kernels:
+            raise TypeError("PIL kernel can only be registered for images")
+        self._pil_kernel = pil_kernel
 
-        if pil_kernel is not None:
-            if not issubclass(feature_type, features.Image):
-                raise TypeError("PIL kernel can only be registered for images")
+    def __call__(self, dispatch_fn: Callable[..., F]) -> Callable[..., F]:
+        params = {feature_type: inspect.signature(kernel).parameters for feature_type, kernel in self._kernels.items()}
+        feature_specific_params = {
+            feature_type: [
+                name
+                for name, param in inspect.signature(dispatch_fn).parameters.items()
+                if param.default is self.FEATURE_SPECIFIC_PARAM
+                and name in params_
+                and params_[name].default is inspect.Parameter.empty
+            ]
+            for feature_type, params_ in params.items()
+        }
 
-            self._pil_fn = pil_kernel
+        @functools.wraps(dispatch_fn)
+        def wrapper(input: F, *args: Any, **kwargs: Any) -> F:
+            feature_type = type(input)
 
-        params = inspect.signature(fn).parameters
-        feature_specific_params = [
-            name
-            for name, param in self.__signature__.parameters.items()
-            if param.default is self.FEATURE_SPECIFIC_PARAM
-            and name in params
-            and params[name].default is inspect.Parameter.empty
-        ]
+            if issubclass(feature_type, PIL.Image.Image):
+                if self._pil_kernel is None:
+                    raise TypeError("No PIL kernel")
 
-        @functools.wraps(fn)
-        def wrapper(input: F, *args: Any, **kwargs: Any) -> Any:
-            missing = [
+                return self._pil_kernel(input, *args, **kwargs)  # type: ignore[no-any-return]
+
+            if not issubclass(feature_type, torch.Tensor):
+                raise TypeError("No tensor")
+
+            if not issubclass(feature_type, features.Feature):
+                input = features.Image(input)
+
+            try:
+                kernel = self._kernels[feature_type]
+            except KeyError:
+                raise ValueError(f"No support for {feature_type.__name__}") from None
+
+            missing_args = [
                 param
-                for param in feature_specific_params
+                for param in feature_specific_params[feature_type]
                 if kwargs.get(param, self.FEATURE_SPECIFIC_PARAM) is self.FEATURE_SPECIFIC_PARAM
             ]
-            if missing:
+            if missing_args:
                 raise TypeError(
-                    f"{self._dispatch_fn.__name__}() missing {len(missing)} required keyword-only arguments "
-                    f"for feature type {feature_type.__name__}: {sequence_to_str(missing, separate_last='and ')}"
+                    f"{dispatch_fn.__name__}() missing {len(missing_args)} required keyword-only arguments "
+                    f"for feature type {feature_type.__name__}: {sequence_to_str(missing_args, separate_last='and ')}"
                 )
 
-            output = fn(input, *args, **kwargs)
+            output = kernel(input, *args, **kwargs)
 
-            if wrap_output:
+            if not isinstance(output, feature_type):
                 output = feature_type.new_like(input, output)
 
             return output
 
-        self._fns[feature_type] = wrapper
-
-    def __call__(self, input: F, *args: Any, **kwargs: Any) -> Union[F, PIL.Image.Image]:
-        feature_type = type(input)
-
-        if issubclass(feature_type, PIL.Image.Image):
-            if self._pil_fn is None:
-                raise TypeError("No PIL kernel")
-
-            return self._pil_fn(input, *args, **kwargs)
-        elif not issubclass(feature_type, torch.Tensor):
-            raise TypeError("No tensor")
-
-        if not issubclass(feature_type, features.Feature):
-            input = features.Image(input)
-
-        if not self.supports(feature_type):
-            raise ValueError(f"No support for {feature_type.__name__}")
-
-        return self._fns[feature_type](input, *args, **kwargs)
+        return wrapper
