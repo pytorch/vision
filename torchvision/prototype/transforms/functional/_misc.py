@@ -16,4 +16,4 @@ def normalize(input: T, *, mean: List[float], std: List[float], inplace: bool = 
 
 
 normalize_image = _F.normalize
-normalize.register(features.Image, normalize_image)
+normalize.register(normalize_image, features.Image)

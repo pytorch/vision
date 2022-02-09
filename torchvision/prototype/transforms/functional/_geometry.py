@@ -17,7 +17,7 @@ def horizontal_flip(input: T) -> T:
 
 
 horizontal_flip_image = _F.hflip
-horizontal_flip.register(features.Image, horizontal_flip_image)
+horizontal_flip.register(horizontal_flip_image, features.Image)
 
 
 def horizontal_flip_bounding_box(
@@ -34,7 +34,7 @@ def _horizontal_flip_bounding_box(input: features.BoundingBox) -> torch.Tensor:
     return horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
 
 
-horizontal_flip.register(features.BoundingBox, _horizontal_flip_bounding_box)
+horizontal_flip.register(_horizontal_flip_bounding_box, features.BoundingBox)
 
 
 @dispatch
@@ -69,7 +69,7 @@ def resize_image(
     ).reshape(batch_shape + (num_channels, new_height, new_width))
 
 
-resize.register(features.Image, resize_image, pil_kernel=_F.resize)
+resize.register(resize_image, features.Image, pil_kernel=_F.resize)
 
 
 def resize_segmentation_mask(
@@ -84,7 +84,7 @@ def resize_segmentation_mask(
     )
 
 
-resize.register(features.SegmentationMask, resize_segmentation_mask)
+resize.register(resize_segmentation_mask, features.SegmentationMask)
 
 
 # TODO: handle max_size
@@ -102,7 +102,7 @@ def _resize_bounding_box(input: features.BoundingBox, *, size: List[int], **_: A
     return features.BoundingBox.new_like(input, output, image_size=size)
 
 
-resize.register(features.BoundingBox, _resize_bounding_box, wrap_output=False)
+resize.register(_resize_bounding_box, features.BoundingBox, wrap_output=False)
 
 
 @dispatch
@@ -112,7 +112,7 @@ def center_crop(input: T, *, output_size: List[int]) -> T:
 
 
 center_crop_image = _F.center_crop
-center_crop.register(features.Image, center_crop_image)
+center_crop.register(center_crop_image, features.Image)
 
 
 @dispatch
@@ -131,7 +131,7 @@ def resized_crop(
 
 
 resized_crop_image = _F.resized_crop
-resized_crop.register(features.Image, resized_crop_image)
+resized_crop.register(resized_crop_image, features.Image)
 
 
 @dispatch
@@ -153,7 +153,7 @@ def affine(
 
 
 affine_image = _F.affine
-affine.register(features.Image, affine_image)
+affine.register(affine_image, features.Image)
 
 
 @dispatch
@@ -172,4 +172,4 @@ def rotate(
 
 
 rotate_image = _F.rotate
-rotate.register(features.Image, rotate_image)
+rotate.register(rotate_image, features.Image)

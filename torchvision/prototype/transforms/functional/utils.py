@@ -28,7 +28,7 @@ class dispatch:
     def supports(self, obj: Any) -> bool:
         return is_supported(obj, *self._fns.keys())
 
-    def register(self, feature_type, fn, *, wrap_output: bool = True, pil_kernel=None) -> None:
+    def register(self, fn, feature_type, *, wrap_output: bool = True, pil_kernel=None) -> None:
         if pil_kernel is not None:
             if not issubclass(feature_type, features.Image):
                 raise TypeError("PIL kernel can only be registered for images")

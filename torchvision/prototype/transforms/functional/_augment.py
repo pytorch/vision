@@ -17,7 +17,7 @@ def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace:
 
 
 erase_image = _F.erase
-erase.register(features.Image, erase_image)
+erase.register(erase_image, features.Image)
 
 
 @dispatch
@@ -41,7 +41,7 @@ def mixup_image(image_batch: torch.Tensor, *, lam: float, inplace: bool = False)
     return _mixup(image_batch, -4, lam, inplace)
 
 
-mixup.register(features.Image, mixup_image)
+mixup.register(mixup_image, features.Image)
 
 
 def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
@@ -51,7 +51,7 @@ def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplac
     return _mixup(one_hot_label_batch, -2, lam, inplace)
 
 
-mixup.register(features.OneHotLabel, mixup_one_hot_label)
+mixup.register(mixup_one_hot_label, features.OneHotLabel)
 
 
 @dispatch
@@ -80,7 +80,7 @@ def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], i
     return image_batch
 
 
-cutmix.register(features.Image, cutmix_image)
+cutmix.register(cutmix_image, features.Image)
 
 
 def cutmix_one_hot_label(
@@ -92,4 +92,4 @@ def cutmix_one_hot_label(
     return _mixup(one_hot_label_batch, -2, lam_adjusted, inplace)
 
 
-cutmix.register(features.OneHotLabel, cutmix_one_hot_label)
+cutmix.register(cutmix_one_hot_label, features.OneHotLabel)
