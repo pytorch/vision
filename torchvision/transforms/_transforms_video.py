@@ -22,7 +22,10 @@ __all__ = [
 ]
 
 
-warnings.warn("The _transforms_video module is deprecated. Please use the transforms module instead.")
+warnings.warn(
+    "The 'torchvision.transforms._transforms_video' module is deprecated since 0.12 and will be removed in 0.14. "
+    "Please use the 'torchvision.transforms' module instead."
+)
 
 
 class RandomCropVideo(RandomCrop):
@@ -43,8 +46,8 @@ class RandomCropVideo(RandomCrop):
         i, j, h, w = self.get_params(clip, self.size)
         return F.crop(clip, i, j, h, w)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(size={self.size})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(size={self.size})"
 
 
 class RandomResizedCropVideo(RandomResizedCrop):
@@ -76,11 +79,8 @@ class RandomResizedCropVideo(RandomResizedCrop):
         i, j, h, w = self.get_params(clip, self.scale, self.ratio)
         return F.resized_crop(clip, i, j, h, w, self.size, self.interpolation_mode)
 
-    def __repr__(self):
-        return (
-            self.__class__.__name__
-            + f"(size={self.size}, interpolation_mode={self.interpolation_mode}, scale={self.scale}, ratio={self.ratio})"
-        )
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(size={self.size}, interpolation_mode={self.interpolation_mode}, scale={self.scale}, ratio={self.ratio})"
 
 
 class CenterCropVideo:
@@ -100,8 +100,8 @@ class CenterCropVideo:
         """
         return F.center_crop(clip, self.crop_size)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(crop_size={self.crop_size})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(crop_size={self.crop_size})"
 
 
 class NormalizeVideo:
@@ -125,8 +125,8 @@ class NormalizeVideo:
         """
         return F.normalize(clip, self.mean, self.std, self.inplace)
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(mean={self.mean}, std={self.std}, inplace={self.inplace})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(mean={self.mean}, std={self.std}, inplace={self.inplace})"
 
 
 class ToTensorVideo:
@@ -147,7 +147,7 @@ class ToTensorVideo:
         """
         return F.to_tensor(clip)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.__class__.__name__
 
 
@@ -172,5 +172,5 @@ class RandomHorizontalFlipVideo:
             clip = F.hflip(clip)
         return clip
 
-    def __repr__(self):
-        return self.__class__.__name__ + f"(p={self.p})"
+    def __repr__(self) -> str:
+        return f"{self.__class__.__name__}(p={self.p})"

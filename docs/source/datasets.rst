@@ -128,6 +128,7 @@ Video classification
     :template: class_dataset.rst
 
     HMDB51
+    Kinetics
     Kinetics400
     UCF101
 

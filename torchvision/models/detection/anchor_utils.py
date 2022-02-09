@@ -239,13 +239,15 @@ class DefaultBoxGenerator(nn.Module):
         return torch.cat(default_boxes, dim=0)
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "aspect_ratios={aspect_ratios}"
-        s += ", clip={clip}"
-        s += ", scales={scales}"
-        s += ", steps={steps}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"aspect_ratios={self.aspect_ratios}"
+            f", clip={self.clip}"
+            f", scales={self.scales}"
+            f", steps={self.steps}"
+            ")"
+        )
+        return s
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
         grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]

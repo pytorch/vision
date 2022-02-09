@@ -43,6 +43,10 @@ def make_grid(
         value_range (tuple, optional): tuple (min, max) where min and max are numbers,
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
+        range (tuple. optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``value_range``
+                instead.
         scale_each (bool, optional): If ``True``, scale each image in the batch of
             images separately rather than the (min, max) over all images. Default: ``False``.
         pad_value (float, optional): Value for the padded pixels. Default: ``0``.
@@ -56,8 +60,10 @@ def make_grid(
         raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
     if "range" in kwargs.keys():
-        warning = "range will be deprecated, please use value_range instead."
-        warnings.warn(warning)
+        warnings.warn(
+            "The parameter 'range' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'value_range' instead."
+        )
         value_range = kwargs["range"]
 
     # if list of tensors, convert to a 4D mini-batch Tensor
