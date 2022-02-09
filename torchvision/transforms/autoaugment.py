@@ -280,7 +280,7 @@ class AutoAugment(torch.nn.Module):
         return img
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + f"(policy={self.policy}, fill={self.fill})"
+        return f"{self.__class__.__name__}(policy={self.policy}, fill={self.fill})"
 
 
 class RandAugment(torch.nn.Module):
@@ -363,14 +363,16 @@ class RandAugment(torch.nn.Module):
         return img
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "num_ops={num_ops}"
-        s += ", magnitude={magnitude}"
-        s += ", num_magnitude_bins={num_magnitude_bins}"
-        s += ", interpolation={interpolation}"
-        s += ", fill={fill}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"num_ops={self.num_ops}"
+            f", magnitude={self.magnitude}"
+            f", num_magnitude_bins={self.num_magnitude_bins}"
+            f", interpolation={self.interpolation}"
+            f", fill={self.fill}"
+            f")"
+        )
+        return s
 
 
 class TrivialAugmentWide(torch.nn.Module):
@@ -448,9 +450,11 @@ class TrivialAugmentWide(torch.nn.Module):
         return _apply_op(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "num_magnitude_bins={num_magnitude_bins}"
-        s += ", interpolation={interpolation}"
-        s += ", fill={fill}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"num_magnitude_bins={self.num_magnitude_bins}"
+            f", interpolation={self.interpolation}"
+            f", fill={self.fill}"
+            f")"
+        )
+        return s
