@@ -10,20 +10,16 @@ from .utils import dispatch
 T = TypeVar("T", bound=features.Feature)
 
 
+erase_image = _F.erase
+
+
 @dispatch
 def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool = False) -> T:
     """ADDME"""
     pass
 
 
-erase_image = _F.erase
 erase.register(erase_image, features.Image)
-
-
-@dispatch
-def mixup(input: T, *, lam: float, inplace: bool = False) -> T:
-    """ADDME"""
-    pass
 
 
 def _mixup(input: torch.Tensor, batch_dim: int, lam: float, inplace: bool) -> torch.Tensor:
@@ -41,9 +37,6 @@ def mixup_image(image_batch: torch.Tensor, *, lam: float, inplace: bool = False)
     return _mixup(image_batch, -4, lam, inplace)
 
 
-mixup.register(mixup_image, features.Image)
-
-
 def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
     if one_hot_label_batch.ndim < 2:
         raise ValueError("Need a batch of one hot labels")
@@ -51,19 +44,14 @@ def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplac
     return _mixup(one_hot_label_batch, -2, lam, inplace)
 
 
-mixup.register(mixup_one_hot_label, features.OneHotLabel)
-
-
 @dispatch
-def cutmix(
-    input: T,
-    *,
-    box: Tuple[int, int, int, int] = dispatch.FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
-    lam_adjusted: float = dispatch.FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
-    inplace: bool = False,
-) -> T:
+def mixup(input: T, *, lam: float, inplace: bool = False) -> T:
     """ADDME"""
     pass
+
+
+mixup.register(mixup_image, features.Image)
+mixup.register(mixup_one_hot_label, features.OneHotLabel)
 
 
 def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], inplace: bool = False) -> torch.Tensor:
@@ -80,9 +68,6 @@ def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], i
     return image_batch
 
 
-cutmix.register(cutmix_image, features.Image)
-
-
 def cutmix_one_hot_label(
     one_hot_label_batch: torch.Tensor, *, lam_adjusted: float, inplace: bool = False
 ) -> torch.Tensor:
@@ -92,4 +77,17 @@ def cutmix_one_hot_label(
     return _mixup(one_hot_label_batch, -2, lam_adjusted, inplace)
 
 
+@dispatch
+def cutmix(
+    input: T,
+    *,
+    box: Tuple[int, int, int, int] = dispatch.FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
+    lam_adjusted: float = dispatch.FEATURE_SPECIFIC_PARAM,  # type: ignore[assignment]
+    inplace: bool = False,
+) -> T:
+    """ADDME"""
+    pass
+
+
+cutmix.register(cutmix_image, features.Image)
 cutmix.register(cutmix_one_hot_label, features.OneHotLabel)

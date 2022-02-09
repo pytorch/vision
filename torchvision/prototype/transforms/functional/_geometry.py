@@ -10,14 +10,7 @@ from .utils import dispatch
 T = TypeVar("T", bound=features.Feature)
 
 
-@dispatch
-def horizontal_flip(input: T) -> T:
-    """ADDME"""
-    pass
-
-
 horizontal_flip_image = _F.hflip
-horizontal_flip.register(horizontal_flip_image, features.Image)
 
 
 def horizontal_flip_bounding_box(
@@ -30,24 +23,20 @@ def horizontal_flip_bounding_box(
     return convert_bounding_box_format(bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format)
 
 
+@dispatch
+def horizontal_flip(input: T) -> T:
+    """ADDME"""
+    pass
+
+
+horizontal_flip.register(horizontal_flip_image, features.Image)
+
+
 def _horizontal_flip_bounding_box(input: features.BoundingBox) -> torch.Tensor:
     return horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
 
 
 horizontal_flip.register(_horizontal_flip_bounding_box, features.BoundingBox)
-
-
-@dispatch
-def resize(
-    input: T,
-    *,
-    size: List[int],
-    interpolation: InterpolationMode = dispatch.FEATURE_SPECIFIC_DEFAULT,  # type: ignore[assignment]
-    max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
-) -> T:
-    """ADDME"""
-    pass
 
 
 def resize_image(
@@ -69,9 +58,6 @@ def resize_image(
     ).reshape(batch_shape + (num_channels, new_height, new_width))
 
 
-resize.register(resize_image, features.Image, pil_kernel=_F.resize)
-
-
 def resize_segmentation_mask(
     segmentation_mask: torch.Tensor,
     size: List[int],
@@ -84,9 +70,6 @@ def resize_segmentation_mask(
     )
 
 
-resize.register(resize_segmentation_mask, features.SegmentationMask)
-
-
 # TODO: handle max_size
 def resize_bounding_box(
     bounding_box: torch.Tensor, *, old_image_size: List[int], new_image_size: List[int]
@@ -97,6 +80,23 @@ def resize_bounding_box(
     return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
 
 
+@dispatch
+def resize(
+    input: T,
+    *,
+    size: List[int],
+    interpolation: InterpolationMode = dispatch.FEATURE_SPECIFIC_DEFAULT,  # type: ignore[assignment]
+    max_size: Optional[int] = None,
+    antialias: Optional[bool] = None,
+) -> T:
+    """ADDME"""
+    pass
+
+
+resize.register(resize_image, features.Image, pil_kernel=_F.resize)
+resize.register(resize_segmentation_mask, features.SegmentationMask)
+
+
 def _resize_bounding_box(input: features.BoundingBox, *, size: List[int], **_: Any) -> features.BoundingBox:
     output = resize_bounding_box(input, old_image_size=list(input.image_size), new_image_size=size)
     return features.BoundingBox.new_like(input, output, image_size=size)
@@ -105,14 +105,19 @@ def _resize_bounding_box(input: features.BoundingBox, *, size: List[int], **_: A
 resize.register(_resize_bounding_box, features.BoundingBox, wrap_output=False)
 
 
+center_crop_image = _F.center_crop
+
+
 @dispatch
 def center_crop(input: T, *, output_size: List[int]) -> T:
     """ADDME"""
     pass
 
 
-center_crop_image = _F.center_crop
 center_crop.register(center_crop_image, features.Image)
+
+
+resized_crop_image = _F.resized_crop
 
 
 @dispatch
@@ -130,8 +135,10 @@ def resized_crop(
     pass
 
 
-resized_crop_image = _F.resized_crop
 resized_crop.register(resized_crop_image, features.Image)
+
+
+affine_image = _F.affine
 
 
 @dispatch
@@ -152,8 +159,10 @@ def affine(
     pass
 
 
-affine_image = _F.affine
 affine.register(affine_image, features.Image)
+
+
+rotate_image = _F.rotate
 
 
 @dispatch
@@ -171,5 +180,4 @@ def rotate(
     pass
 
 
-rotate_image = _F.rotate
 rotate.register(rotate_image, features.Image)
