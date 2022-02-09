@@ -187,7 +187,7 @@ def _assert_approx_equal_tensor_to_pil(
     tensor = tensor.to(torch.float)
     pil_tensor = pil_tensor.to(torch.float)
     err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
-    assert err < tol
+    assert err < tol, f"{err} vs {tol}"
 
 
 def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):

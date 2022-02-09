@@ -1,6 +1,7 @@
 import math
 import os
 import random
+import re
 from functools import partial
 
 import numpy as np
@@ -1828,7 +1829,13 @@ def test_random_rotation():
     t.__repr__()
 
     # assert deprecation warning and non-BC
-    with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
+            "Please use 'interpolation' instead."
+        ),
+    ):
         t = transforms.RandomRotation((-10, 10), resample=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
@@ -2167,11 +2174,23 @@ def test_random_affine():
     assert "bilinear" in t.__repr__()
 
     # assert deprecation warning and non-BC
-    with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'interpolation' instead."
+        ),
+    ):
         t = transforms.RandomAffine(10, resample=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
-    with pytest.warns(UserWarning, match=r"Argument fillcolor is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'fill' instead."
+        ),
+    ):
         t = transforms.RandomAffine(10, fillcolor=10)
         assert t.fill == 10
 
