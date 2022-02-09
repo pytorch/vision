@@ -1060,7 +1060,6 @@ workflows:
     jobs:
       - unittest_torchhub
       - unittest_onnx
-      - unittest_prototype
       {{ unittest_workflows() }}
 
   cmake:
