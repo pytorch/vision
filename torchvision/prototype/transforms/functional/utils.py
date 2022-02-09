@@ -11,10 +11,6 @@ from torchvision.prototype.utils._internal import sequence_to_str
 F = TypeVar("F", bound=features.Feature)
 
 
-def is_supported(obj: Any, *types: Type) -> bool:
-    return (obj if isinstance(obj, type) else type(obj)) in types
-
-
 class dispatch:
     FEATURE_SPECIFIC_PARAM = object()
     FEATURE_SPECIFIC_DEFAULT = object()
@@ -28,7 +24,7 @@ class dispatch:
         self._pil_fn: Optional[Callable] = None
 
     def supports(self, obj: Any) -> bool:
-        return is_supported(obj, *self._fns.keys())
+        return (obj if isinstance(obj, type) else type(obj)) in self._fns.keys()
 
     def register(
         self,
