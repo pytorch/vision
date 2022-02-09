@@ -1,4 +1,4 @@
-from typing import Any, cast, Dict, Set, TypeVar
+from typing import Any, cast, Dict, Set, TypeVar, Union, Optional, Type, Callable
 
 import torch
 from torch._C import _TensorBase
@@ -11,7 +11,7 @@ class Feature(torch.Tensor):
     _META_ATTRS: Set[str] = set()
     _metadata: Dict[str, Any]
 
-    def __init_subclass__(cls):
+    def __init_subclass__(cls) -> None:
         # In order to help static type checkers, we require subclasses of `Feature` to add the metadata attributes
         # as static class annotations:
         #
@@ -31,31 +31,50 @@ class Feature(torch.Tensor):
             if super_cls is Feature:
                 break
 
-            meta_attrs.update(super_cls._META_ATTRS)
+            meta_attrs.update(cast(Type[Feature], super_cls)._META_ATTRS)
 
         cls._META_ATTRS = meta_attrs
         for name in meta_attrs:
-            setattr(cls, name, property(lambda self, name=name: self._metadata[name]))
+            setattr(cls, name, property(cast(Callable[[F], Any], lambda self, name=name: self._metadata[name])))
 
-    def __new__(cls, data, *, dtype=None, device=None):
-        feature = torch.Tensor._make_subclass(
-            cast(_TensorBase, cls),
-            cls._to_tensor(data, dtype=dtype, device=device),
-            # requires_grad
-            False,
+    def __new__(
+        cls: Type[F],
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str]] = None,
+    ) -> F:
+        if isinstance(device, str):
+            device = torch.device(device)
+        feature = cast(
+            F,
+            torch.Tensor._make_subclass(
+                cast(_TensorBase, cls),
+                cls._to_tensor(data, dtype=dtype, device=device),
+                # requires_grad
+                False,
+            ),
         )
         feature._metadata = dict()
         return feature
 
     @classmethod
-    def _to_tensor(self, data: Any, *, dtype, device) -> torch.Tensor:
+    def _to_tensor(self, data: Any, *, dtype: Optional[torch.dtype], device: Optional[torch.device]) -> torch.Tensor:
         return torch.as_tensor(data, dtype=dtype, device=device)
 
     @classmethod
-    def new_like(cls, other, data, *, dtype=None, device=None, **metadata):
-        for name in cls._META_ATTRS:
-            metadata.setdefault(name, getattr(other, name))
-        return cls(data, dtype=dtype or other.dtype, device=device or other.device, **metadata)
+    def new_like(
+        cls: Type[F],
+        other: F,
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str]] = None,
+        **metadata: Any,
+    ) -> F:
+        _metadata = other._metadata.copy()
+        _metadata.update(metadata)
+        return cls(data, dtype=dtype or other.dtype, device=device or other.device, **_metadata)
 
-    def __repr__(self):
-        return torch.Tensor.__repr__(self).replace("tensor", type(self).__name__)
+    def __repr__(self) -> str:
+        return cast(str, torch.Tensor.__repr__(self)).replace("tensor", type(self).__name__)

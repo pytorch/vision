@@ -31,7 +31,7 @@ class Image(Feature):
         dtype: Optional[torch.dtype] = None,
         device: Optional[torch.device] = None,
         color_space: Optional[Union[ColorSpace, str]] = None,
-    ):
+    ) -> Image:
         image = super().__new__(cls, data, dtype=dtype, device=device)
 
         if color_space is None:
@@ -46,7 +46,7 @@ class Image(Feature):
         return image
 
     @classmethod
-    def _to_tensor(cls, data, *, dtype, device):
+    def _to_tensor(cls, data: Any, *, dtype: Optional[torch.dtype], device: Optional[torch.device]) -> torch.Tensor:
         tensor = super()._to_tensor(data, dtype=dtype, device=device)
         if tensor.ndim < 2:
             raise ValueError

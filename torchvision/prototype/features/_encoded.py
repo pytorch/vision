@@ -1,6 +1,6 @@
 import os
 import sys
-from typing import BinaryIO, Tuple, Type, TypeVar, Union
+from typing import BinaryIO, Tuple, Type, TypeVar, Union, Optional, Any
 
 import PIL.Image
 import torch
@@ -14,7 +14,7 @@ D = TypeVar("D", bound="EncodedData")
 
 class EncodedData(Feature):
     @classmethod
-    def _to_tensor(cls, data, *, dtype, device):
+    def _to_tensor(cls, data: Any, *, dtype: Optional[torch.dtype], device: Optional[torch.device]) -> torch.Tensor:
         # TODO: warn / bail out if we encounter a tensor with shape other than (N,) or with dtype other than uint8?
         return super()._to_tensor(data, dtype=dtype, device=device)
 
