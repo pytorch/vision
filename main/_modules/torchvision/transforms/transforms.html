@@ -196,7 +196,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+0922a24 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+12fe4f2 ) &#x25BC</a>
     </div>
     
 
@@ -414,7 +414,7 @@
             <span class="n">img</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
             <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
@@ -453,8 +453,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">to_tensor</span><span class="p">(</span><span class="n">pic</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;()&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">PILToTensor</span><span class="p">:</span>
@@ -480,8 +480,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">pil_to_tensor</span><span class="p">(</span><span class="n">pic</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;()&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">ConvertImageDtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -545,7 +545,7 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">to_pil_image</span><span class="p">(</span><span class="n">pic</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">mode</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;mode=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mode</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -588,8 +588,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">normalize</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inplace</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(mean=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="si">}</span><span class="s2">, std=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(mean=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean</span><span class="si">}</span><span class="s2">, std=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">std</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">Resize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -667,9 +667,9 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">resize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">antialias</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">detail</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, interpolation=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, max_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">max_size</span><span class="si">}</span><span class="s2">, antialias=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">antialias</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="n">detail</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}{</span><span class="n">detail</span><span class="si">}</span><span class="s2">&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">CenterCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -699,8 +699,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">center_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">Pad</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -772,8 +772,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(padding=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="si">}</span><span class="s2">, fill=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="si">}</span><span class="s2">, padding_mode=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(padding=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="si">}</span><span class="s2">, fill=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="si">}</span><span class="s2">, padding_mode=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">Lambda</span><span class="p">:</span>
@@ -792,8 +792,8 @@
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">lambd</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;()&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">()&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">RandomTransforms</span><span class="p">:</span>
@@ -812,7 +812,7 @@
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="n">args</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
         <span class="k">raise</span> <span class="ne">NotImplementedError</span><span class="p">()</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
             <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
@@ -821,7 +821,7 @@
         <span class="k">return</span> <span class="n">format_string</span>
 
 
-<span class="k">class</span> <span class="nc">RandomApply</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomApply"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomApply.html#torchvision.transforms.RandomApply">[docs]</a><span class="k">class</span> <span class="nc">RandomApply</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Apply randomly a list of transformations with a given probability.</span>
 
 <span class="sd">    .. note::</span>
@@ -847,24 +847,24 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span> <span class="o">=</span> <span class="n">transforms</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomApply.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomApply.html#torchvision.transforms.RandomApply.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">&lt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">):</span>
             <span class="k">return</span> <span class="n">img</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
             <span class="n">img</span> <span class="o">=</span> <span class="n">t</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span>
+        <span class="k">return</span> <span class="n">img</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="se">\n</span><span class="s2">    p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">:</span>
             <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">&quot;</span>
             <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;    </span><span class="si">{</span><span class="n">t</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;</span><span class="se">\n</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span>
+        <span class="k">return</span> <span class="n">format_string</span></div>
 
 
-<div class="viewcode-block" id="RandomOrder"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomOrder.html#torchvision.transforms.RandomOrder">[docs]</a><span class="k">class</span> <span class="nc">RandomOrder</span><span class="p">(</span><span class="n">RandomTransforms</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RandomOrder</span><span class="p">(</span><span class="n">RandomTransforms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Apply a list of transformations in a random order. This transform does not support torchscript.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__call__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
@@ -872,10 +872,10 @@
         <span class="n">random</span><span class="o">.</span><span class="n">shuffle</span><span class="p">(</span><span class="n">order</span><span class="p">)</span>
         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">:</span>
             <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">[</span><span class="n">i</span><span class="p">](</span><span class="n">img</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span></div>
+        <span class="k">return</span> <span class="n">img</span>
 
 
-<span class="k">class</span> <span class="nc">RandomChoice</span><span class="p">(</span><span class="n">RandomTransforms</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomChoice"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomChoice.html#torchvision.transforms.RandomChoice">[docs]</a><span class="k">class</span> <span class="nc">RandomChoice</span><span class="p">(</span><span class="n">RandomTransforms</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Apply single transformation randomly picked from a list. This transform does not support torchscript.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">transforms</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
@@ -888,13 +888,11 @@
         <span class="n">t</span> <span class="o">=</span> <span class="n">random</span><span class="o">.</span><span class="n">choices</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transforms</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
         <span class="k">return</span> <span class="n">t</span><span class="p">(</span><span class="o">*</span><span class="n">args</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">format_string</span> <span class="o">=</span> <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__repr__</span><span class="p">()</span><span class="si">}</span><span class="s2">(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
-<span class="k">class</span> <span class="nc">RandomCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomCrop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomCrop.html#torchvision.transforms.RandomCrop">[docs]</a><span class="k">class</span> <span class="nc">RandomCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crop the given image at a random location.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions,</span>
@@ -938,7 +936,7 @@
 <span class="sd">              will result in [2, 1, 1, 2, 3, 4, 4, 3]</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="RandomCrop.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomCrop.html#torchvision.transforms.RandomCrop.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">output_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Get parameters for ``crop`` for a random crop.</span>
 
@@ -960,7 +958,7 @@
 
         <span class="n">i</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">h</span> <span class="o">-</span> <span class="n">th</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
         <span class="n">j</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">w</span> <span class="o">-</span> <span class="n">tw</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,))</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
-        <span class="k">return</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">tw</span>
+        <span class="k">return</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">th</span><span class="p">,</span> <span class="n">tw</span></div>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">size</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">pad_if_needed</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">padding_mode</span><span class="o">=</span><span class="s2">&quot;constant&quot;</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
@@ -973,7 +971,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">padding_mode</span> <span class="o">=</span> <span class="n">padding_mode</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomCrop.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomCrop.html#torchvision.transforms.RandomCrop.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be cropped.</span>
@@ -996,13 +994,13 @@
 
         <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, padding=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, padding=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">padding</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
-<div class="viewcode-block" id="RandomHorizontalFlip"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomHorizontalFlip.html#torchvision.transforms.RandomHorizontalFlip">[docs]</a><span class="k">class</span> <span class="nc">RandomHorizontalFlip</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RandomHorizontalFlip</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Horizontally flip the given image randomly with a given probability.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading</span>
@@ -1017,7 +1015,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
 
-<div class="viewcode-block" id="RandomHorizontalFlip.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomHorizontalFlip.html#torchvision.transforms.RandomHorizontalFlip.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be flipped.</span>
@@ -1027,10 +1025,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">hflip</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span></div>
+        <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">RandomVerticalFlip</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1060,11 +1058,11 @@
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">vflip</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
-<div class="viewcode-block" id="RandomPerspective"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomPerspective.html#torchvision.transforms.RandomPerspective">[docs]</a><span class="k">class</span> <span class="nc">RandomPerspective</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RandomPerspective</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Performs a random perspective transformation of the given image with a given probability.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -1104,7 +1102,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
-<div class="viewcode-block" id="RandomPerspective.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomPerspective.html#torchvision.transforms.RandomPerspective.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be Perspectively transformed.</span>
@@ -1124,9 +1122,9 @@
             <span class="n">width</span><span class="p">,</span> <span class="n">height</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">get_image_size</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
             <span class="n">startpoints</span><span class="p">,</span> <span class="n">endpoints</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">width</span><span class="p">,</span> <span class="n">height</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">distortion_scale</span><span class="p">)</span>
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">perspective</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">startpoints</span><span class="p">,</span> <span class="n">endpoints</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span></div>
+        <span class="k">return</span> <span class="n">img</span>
 
-<div class="viewcode-block" id="RandomPerspective.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomPerspective.html#torchvision.transforms.RandomPerspective.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">width</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">height</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">distortion_scale</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]],</span> <span class="n">List</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">]]]:</span>
         <span class="sd">&quot;&quot;&quot;Get parameters for ``perspective`` for a random perspective transform.</span>
 
@@ -1159,13 +1157,13 @@
         <span class="p">]</span>
         <span class="n">startpoints</span> <span class="o">=</span> <span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">],</span> <span class="p">[</span><span class="n">width</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">],</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">height</span> <span class="o">-</span> <span class="mi">1</span><span class="p">]]</span>
         <span class="n">endpoints</span> <span class="o">=</span> <span class="p">[</span><span class="n">topleft</span><span class="p">,</span> <span class="n">topright</span><span class="p">,</span> <span class="n">botright</span><span class="p">,</span> <span class="n">botleft</span><span class="p">]</span>
-        <span class="k">return</span> <span class="n">startpoints</span><span class="p">,</span> <span class="n">endpoints</span></div>
+        <span class="k">return</span> <span class="n">startpoints</span><span class="p">,</span> <span class="n">endpoints</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
-<div class="viewcode-block" id="RandomResizedCrop"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomResizedCrop.html#torchvision.transforms.RandomResizedCrop">[docs]</a><span class="k">class</span> <span class="nc">RandomResizedCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RandomResizedCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Crop a random portion of image and resize it to a given size.</span>
 
 <span class="sd">    If the image is torch Tensor, it is expected</span>
@@ -1218,7 +1216,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="o">=</span> <span class="n">scale</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span> <span class="o">=</span> <span class="n">ratio</span>
 
-<div class="viewcode-block" id="RandomResizedCrop.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomResizedCrop.html#torchvision.transforms.RandomResizedCrop.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">img</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">scale</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">ratio</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;Get parameters for ``crop`` for a random sized crop.</span>
 
@@ -1260,9 +1258,9 @@
             <span class="n">h</span> <span class="o">=</span> <span class="n">height</span>
         <span class="n">i</span> <span class="o">=</span> <span class="p">(</span><span class="n">height</span> <span class="o">-</span> <span class="n">h</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
         <span class="n">j</span> <span class="o">=</span> <span class="p">(</span><span class="n">width</span> <span class="o">-</span> <span class="n">w</span><span class="p">)</span> <span class="o">//</span> <span class="mi">2</span>
-        <span class="k">return</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span></div>
+        <span class="k">return</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span>
 
-<div class="viewcode-block" id="RandomResizedCrop.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomResizedCrop.html#torchvision.transforms.RandomResizedCrop.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be cropped and resized.</span>
@@ -1271,15 +1269,15 @@
 <span class="sd">            PIL Image or Tensor: Randomly cropped and resized image.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">resized_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">resized_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">interpolate_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, scale=</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">s</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="k">for</span> <span class="n">s</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, ratio=</span><span class="si">{</span><span class="nb">tuple</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">r</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span> <span class="k">for</span> <span class="n">r</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, interpolation=</span><span class="si">{</span><span class="n">interpolate_str</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span></div>
+        <span class="k">return</span> <span class="n">format_string</span>
 
 
 <span class="k">class</span> <span class="nc">FiveCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1325,8 +1323,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">five_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">TenCrop</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1375,8 +1373,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">ten_crop</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, vertical_flip=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">size</span><span class="si">}</span><span class="s2">, vertical_flip=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">vertical_flip</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">LinearTransformation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1449,11 +1447,13 @@
         <span class="n">tensor</span> <span class="o">=</span> <span class="n">transformed_tensor</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">shape</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">tensor</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(transformation_matrix=&quot;</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;, (mean_vector=&quot;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">tolist</span><span class="p">())</span> <span class="o">+</span> <span class="s2">&quot;)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(transformation_matrix=&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">transformation_matrix</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;, mean_vector=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">mean_vector</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span>
 
 
 <span class="k">class</span> <span class="nc">ColorJitter</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1561,16 +1561,18 @@
 
         <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="s2">&quot;(&quot;</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;brightness=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">brightness</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, contrast=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">contrast</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, saturation=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">saturation</span><span class="si">}</span><span class="s2">&quot;</span>
-        <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, hue=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hue</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;brightness=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">brightness</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;, contrast=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">contrast</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;, saturation=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">saturation</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;, hue=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">hue</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span>
 
 
-<div class="viewcode-block" id="RandomRotation"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation">[docs]</a><span class="k">class</span> <span class="nc">RandomRotation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RandomRotation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Rotate the image by angle.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -1591,8 +1593,10 @@
 <span class="sd">            Default is the center of the image.</span>
 <span class="sd">        fill (sequence or number): Pixel fill value for the area outside the rotated</span>
 <span class="sd">            image. Default is ``0``. If given a number, the value is used for all bands respectively.</span>
-<span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>
-<span class="sd">            Please use the ``interpolation`` parameter instead.</span>
+<span class="sd">        resample (int, optional):</span>
+<span class="sd">            .. warning::</span>
+<span class="sd">                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``</span>
+<span class="sd">                instead.</span>
 
 <span class="sd">    .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters</span>
 
@@ -1605,7 +1609,8 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead&quot;</span>
+                <span class="s2">&quot;The parameter &#39;resample&#39; is deprecated since 0.12 and will be removed 0.14. &quot;</span>
+                <span class="s2">&quot;Please use &#39;interpolation&#39; instead.&quot;</span>
             <span class="p">)</span>
             <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span>
 
@@ -1634,7 +1639,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">=</span> <span class="n">fill</span>
 
-<div class="viewcode-block" id="RandomRotation.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span><span class="n">degrees</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">])</span> <span class="o">-&gt;</span> <span class="nb">float</span><span class="p">:</span>
         <span class="sd">&quot;&quot;&quot;Get parameters for ``rotate`` for a random rotation.</span>
 
@@ -1642,9 +1647,9 @@
 <span class="sd">            float: angle parameter to be passed to ``rotate`` for random rotation.</span>
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="n">angle</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">uniform_</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">degrees</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="nb">float</span><span class="p">(</span><span class="n">degrees</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span><span class="o">.</span><span class="n">item</span><span class="p">())</span>
-        <span class="k">return</span> <span class="n">angle</span></div>
+        <span class="k">return</span> <span class="n">angle</span>
 
-<div class="viewcode-block" id="RandomRotation.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomRotation.html#torchvision.transforms.RandomRotation.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be rotated.</span>
@@ -1660,9 +1665,9 @@
                 <span class="n">fill</span> <span class="o">=</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">f</span><span class="p">)</span> <span class="k">for</span> <span class="n">f</span> <span class="ow">in</span> <span class="n">fill</span><span class="p">]</span>
         <span class="n">angle</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span></div>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rotate</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">angle</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">resample</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">expand</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">,</span> <span class="n">fill</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">interpolate_str</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span>
         <span class="n">format_string</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(degrees=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, interpolation=</span><span class="si">{</span><span class="n">interpolate_str</span><span class="si">}</span><span class="s2">&quot;</span>
@@ -1672,10 +1677,10 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">format_string</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, fill=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="si">}</span><span class="s2">&quot;</span>
         <span class="n">format_string</span> <span class="o">+=</span> <span class="s2">&quot;)&quot;</span>
-        <span class="k">return</span> <span class="n">format_string</span></div>
+        <span class="k">return</span> <span class="n">format_string</span>
 
 
-<span class="k">class</span> <span class="nc">RandomAffine</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomAffine"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomAffine.html#torchvision.transforms.RandomAffine">[docs]</a><span class="k">class</span> <span class="nc">RandomAffine</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Random affine transformation of the image keeping center invariant.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -1702,10 +1707,13 @@
 <span class="sd">            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.</span>
 <span class="sd">        fill (sequence or number): Pixel fill value for the area outside the transformed</span>
 <span class="sd">            image. Default is ``0``. If given a number, the value is used for all bands respectively.</span>
-<span class="sd">        fillcolor (sequence or number, optional): deprecated argument and will be removed since v0.10.0.</span>
-<span class="sd">            Please use the ``fill`` parameter instead.</span>
-<span class="sd">        resample (int, optional): deprecated argument and will be removed since v0.10.0.</span>
-<span class="sd">            Please use the ``interpolation`` parameter instead.</span>
+<span class="sd">        fillcolor (sequence or number, optional):</span>
+<span class="sd">            .. warning::</span>
+<span class="sd">                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.</span>
+<span class="sd">        resample (int, optional):</span>
+<span class="sd">            .. warning::</span>
+<span class="sd">                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``</span>
+<span class="sd">                instead.</span>
 <span class="sd">        center (sequence, optional): Optional center of rotation, (x, y). Origin is the upper left corner.</span>
 <span class="sd">            Default is the center of the image.</span>
 
@@ -1729,7 +1737,8 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">resample</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead&quot;</span>
+                <span class="s2">&quot;The parameter &#39;resample&#39; is deprecated since 0.12 and will be removed in 0.14. &quot;</span>
+                <span class="s2">&quot;Please use &#39;interpolation&#39; instead.&quot;</span>
             <span class="p">)</span>
             <span class="n">interpolation</span> <span class="o">=</span> <span class="n">_interpolation_modes_from_int</span><span class="p">(</span><span class="n">resample</span><span class="p">)</span>
 
@@ -1743,7 +1752,8 @@
 
         <span class="k">if</span> <span class="n">fillcolor</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead&quot;</span>
+                <span class="s2">&quot;The parameter &#39;fillcolor&#39; is deprecated since 0.12 and will be removed in 0.14. &quot;</span>
+                <span class="s2">&quot;Please use &#39;fill&#39; instead.&quot;</span>
             <span class="p">)</span>
             <span class="n">fill</span> <span class="o">=</span> <span class="n">fillcolor</span>
 
@@ -1782,7 +1792,7 @@
 
         <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="o">=</span> <span class="n">center</span>
 
-    <span class="nd">@staticmethod</span>
+<div class="viewcode-block" id="RandomAffine.get_params"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomAffine.html#torchvision.transforms.RandomAffine.get_params">[docs]</a>    <span class="nd">@staticmethod</span>
     <span class="k">def</span> <span class="nf">get_params</span><span class="p">(</span>
         <span class="n">degrees</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span>
         <span class="n">translate</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">]],</span>
@@ -1818,9 +1828,9 @@
 
         <span class="n">shear</span> <span class="o">=</span> <span class="p">(</span><span class="n">shear_x</span><span class="p">,</span> <span class="n">shear_y</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">angle</span><span class="p">,</span> <span class="n">translations</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">shear</span>
+        <span class="k">return</span> <span class="n">angle</span><span class="p">,</span> <span class="n">translations</span><span class="p">,</span> <span class="n">scale</span><span class="p">,</span> <span class="n">shear</span></div>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomAffine.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomAffine.html#torchvision.transforms.RandomAffine.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be transformed.</span>
 
@@ -1838,26 +1848,19 @@
 
         <span class="n">ret</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">shear</span><span class="p">,</span> <span class="n">img_size</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="o">*</span><span class="n">ret</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">)</span>
+        <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">affine</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="o">*</span><span class="n">ret</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="p">,</span> <span class="n">fill</span><span class="o">=</span><span class="n">fill</span><span class="p">,</span> <span class="n">center</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="p">)</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="s2">&quot;</span><span class="si">{name}</span><span class="s2">(degrees=</span><span class="si">{degrees}</span><span class="s2">&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, translate=</span><span class="si">{translate}</span><span class="s2">&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, scale=</span><span class="si">{scale}</span><span class="s2">&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shear</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, shear=</span><span class="si">{shear}</span><span class="s2">&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">!=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, interpolation=</span><span class="si">{interpolation}</span><span class="s2">&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, fill=</span><span class="si">{fill}</span><span class="s2">&quot;</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;, center=</span><span class="si">{center}</span><span class="s2">&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(degrees=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">degrees</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, translate=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">translate</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">translate</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, scale=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, shear=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">shear</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">shear</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, interpolation=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span> <span class="o">!=</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">NEAREST</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, fill=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">fill</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">fill</span> <span class="o">!=</span> <span class="mi">0</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
+        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;, center=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">center</span><span class="si">}</span><span class="s2">&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">center</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">else</span> <span class="s2">&quot;&quot;</span>
         <span class="n">s</span> <span class="o">+=</span> <span class="s2">&quot;)&quot;</span>
-        <span class="n">d</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="vm">__dict__</span><span class="p">)</span>
-        <span class="n">d</span><span class="p">[</span><span class="s2">&quot;interpolation&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">interpolation</span><span class="o">.</span><span class="n">value</span>
-        <span class="k">return</span> <span class="n">s</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">name</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="p">,</span> <span class="o">**</span><span class="n">d</span><span class="p">)</span>
+
+        <span class="k">return</span> <span class="n">s</span></div>
 
 
 <span class="k">class</span> <span class="nc">Grayscale</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1891,8 +1894,8 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="p">)</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(num_output_channels=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(num_output_channels=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">num_output_channels</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">RandomGrayscale</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -1929,8 +1932,8 @@
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">rgb_to_grayscale</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">num_output_channels</span><span class="o">=</span><span class="n">num_output_channels</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">RandomErasing</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -2059,13 +2062,16 @@
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">erase</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">x</span><span class="p">,</span> <span class="n">y</span><span class="p">,</span> <span class="n">h</span><span class="p">,</span> <span class="n">w</span><span class="p">,</span> <span class="n">v</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">inplace</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">, &quot;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;scale=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="si">}</span><span class="s2">, &quot;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;ratio=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="si">}</span><span class="s2">, &quot;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;value=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, &quot;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;inplace=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">inplace</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="n">s</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">&quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;scale=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">scale</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;ratio=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">ratio</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;value=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">value</span><span class="si">}</span><span class="s2">, &quot;</span>
+            <span class="sa">f</span><span class="s2">&quot;inplace=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">inplace</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="p">)</span>
+        <span class="k">return</span> <span class="n">s</span>
 
 
 <span class="k">class</span> <span class="nc">GaussianBlur</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -2129,10 +2135,9 @@
         <span class="n">sigma</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_params</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">gaussian_blur</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="p">,</span> <span class="p">[</span><span class="n">sigma</span><span class="p">,</span> <span class="n">sigma</span><span class="p">])</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="n">s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;(kernel_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="si">}</span><span class="s2">, &quot;</span>
-        <span class="n">s</span> <span class="o">+=</span> <span class="sa">f</span><span class="s2">&quot;sigma=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="si">}</span><span class="s2">)&quot;</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="n">s</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="n">s</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(kernel_size=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">kernel_size</span><span class="si">}</span><span class="s2">, sigma=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sigma</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="n">s</span>
 
 
 <span class="k">def</span> <span class="nf">_setup_size</span><span class="p">(</span><span class="n">size</span><span class="p">,</span> <span class="n">error_msg</span><span class="p">):</span>
@@ -2167,7 +2172,7 @@
     <span class="k">return</span> <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">d</span><span class="p">)</span> <span class="k">for</span> <span class="n">d</span> <span class="ow">in</span> <span class="n">x</span><span class="p">]</span>
 
 
-<div class="viewcode-block" id="RandomInvert"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomInvert.html#torchvision.transforms.RandomInvert">[docs]</a><span class="k">class</span> <span class="nc">RandomInvert</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RandomInvert</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Inverts the colors of the given image randomly with a given probability.</span>
 <span class="sd">    If img is a Tensor, it is expected to be in [..., 1 or 3, H, W] format,</span>
 <span class="sd">    where ... means it can have an arbitrary number of leading dimensions.</span>
@@ -2182,7 +2187,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
 
-<div class="viewcode-block" id="RandomInvert.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomInvert.html#torchvision.transforms.RandomInvert.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be inverted.</span>
@@ -2192,13 +2197,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">invert</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span></div>
+        <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
-<div class="viewcode-block" id="RandomPosterize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomPosterize.html#torchvision.transforms.RandomPosterize">[docs]</a><span class="k">class</span> <span class="nc">RandomPosterize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">RandomPosterize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Posterize the image randomly with a given probability by reducing the</span>
 <span class="sd">    number of bits for each color channel. If the image is torch Tensor, it should be of type torch.uint8,</span>
 <span class="sd">    and it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -2215,7 +2220,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">bits</span> <span class="o">=</span> <span class="n">bits</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
 
-<div class="viewcode-block" id="RandomPosterize.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomPosterize.html#torchvision.transforms.RandomPosterize.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be posterized.</span>
@@ -2225,10 +2230,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">posterize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">bits</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span></div>
+        <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(bits=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bits</span><span class="si">}</span><span class="s2">,p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(bits=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">bits</span><span class="si">}</span><span class="s2">,p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
 <span class="k">class</span> <span class="nc">RandomSolarize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -2260,11 +2265,11 @@
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">solarize</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="p">)</span>
         <span class="k">return</span> <span class="n">img</span>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(threshold=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="si">}</span><span class="s2">,p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(threshold=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">threshold</span><span class="si">}</span><span class="s2">,p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
 
 
-<span class="k">class</span> <span class="nc">RandomAdjustSharpness</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomAdjustSharpness"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomAdjustSharpness.html#torchvision.transforms.RandomAdjustSharpness">[docs]</a><span class="k">class</span> <span class="nc">RandomAdjustSharpness</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Adjust the sharpness of the image randomly with a given probability. If the image is torch Tensor,</span>
 <span class="sd">    it is expected to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
 
@@ -2281,7 +2286,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span> <span class="o">=</span> <span class="n">sharpness_factor</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomAdjustSharpness.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomAdjustSharpness.html#torchvision.transforms.RandomAdjustSharpness.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be sharpened.</span>
@@ -2291,13 +2296,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">adjust_sharpness</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span>
+        <span class="k">return</span> <span class="n">img</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(sharpness_factor=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span><span class="si">}</span><span class="s2">,p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(sharpness_factor=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">sharpness_factor</span><span class="si">}</span><span class="s2">,p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
-<span class="k">class</span> <span class="nc">RandomAutocontrast</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomAutocontrast"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomAutocontrast.html#torchvision.transforms.RandomAutocontrast">[docs]</a><span class="k">class</span> <span class="nc">RandomAutocontrast</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Autocontrast the pixels of the given image randomly with a given probability.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -2312,7 +2317,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomAutocontrast.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomAutocontrast.html#torchvision.transforms.RandomAutocontrast.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be autocontrasted.</span>
@@ -2322,13 +2327,13 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">autocontrast</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span>
+        <span class="k">return</span> <span class="n">img</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
-<span class="k">class</span> <span class="nc">RandomEqualize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomEqualize"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomEqualize.html#torchvision.transforms.RandomEqualize">[docs]</a><span class="k">class</span> <span class="nc">RandomEqualize</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Equalize the histogram of the given image randomly with a given probability.</span>
 <span class="sd">    If the image is torch Tensor, it is expected</span>
 <span class="sd">    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.</span>
@@ -2343,7 +2348,7 @@
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">p</span> <span class="o">=</span> <span class="n">p</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
+<div class="viewcode-block" id="RandomEqualize.forward"><a class="viewcode-back" href="../../../generated/torchvision.transforms.RandomEqualize.html#torchvision.transforms.RandomEqualize.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">img</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            img (PIL Image or Tensor): Image to be equalized.</span>
@@ -2353,10 +2358,10 @@
 <span class="sd">        &quot;&quot;&quot;</span>
         <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">item</span><span class="p">()</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="p">:</span>
             <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">equalize</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">img</span>
+        <span class="k">return</span> <span class="n">img</span></div>
 
-    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span> <span class="o">+</span> <span class="sa">f</span><span class="s2">&quot;(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span>
+    <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(p=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">p</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 </pre></div>
 
              </article>
