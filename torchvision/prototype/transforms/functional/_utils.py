@@ -10,46 +10,27 @@ F = TypeVar("F", bound=features.Feature)
 
 
 def dispatch(kernels: Dict[Any, Optional[Callable]]) -> Callable[[Callable[..., F]], Callable[..., F]]:
-    """Decorates a function to automatically dispatch to ``kernels`` based on the call arguments.
-
-    The function body of the dispatcher can be empty as it is never called. The signature and the docstring however are
-    used in the documentation and thus should be accurate.
+    """Decorates a function to automatically dispatch to registered kernels based on the call arguments.
 
     The dispatch function should have this signature
 
     .. code:: python
 
-        from typing import Any, TypeVar
-
-        from torchvision.protoype import features
-
-        T = TypeVar("T", bound=features.Feature)
-
-        @dispatch
-        def dispatch_fn(input: T, *args: Any, **kwargs: Any) -> T:
+        @dispatch(
+            ...
+        )
+        def dispatch_fn(input, *args, **kwargs):
             ...
 
-    where ``input`` is a strict subclass of :class:`~torchvision.prototype.features.Feature` and is used to determine
-    which kernel to dispatch to.
-
-    .. note::
-
-        For backward compatibility, ``input`` can also be a ``PIL`` image in which case the call will be dispatched to
-        ``pil_kernel`` if available. Furthermore, ``input`` can also be a vanilla :class:`~torch.Tensor` in which case
-        it will be converted into a :class:`~torchvision.prototype.features.Image`.
+    where ``input`` is used to determine which kernel to dispatch to.
 
     Args:
-        kernels: Dictionary of subclasses of :class:`~torchvision.prototype.features.Feature` that maps to a kernel
-            to call for this feature type.
-        pil_kernel: Optional kernel for ``PIL`` images.
+        kernels: Dictionary with types as keys that maps to a kernel to call. The resolution order is checking for
+            exact type matches first and if none is found falls back to checking for subclasses. If a value is
+            ``None``, the decorated function is called.
 
     Raises:
-        TypeError: If any key in ``kernels`` is not a strict subclass of
-            :class:`~torchvision.prototype.features.Feature`.
         TypeError: If any value in ``kernels`` is not callable with ``kernel(input, *args, **kwargs)``.
-        TypeError: If ``pil_kernel`` is specified, but no kernel for :class:`~torchvision.prototype.features.Image` is
-            available.
-        TypeError: If the decorated function is called with neither a ``PIL`` image nor a :class:`~torch.Tensor`.
         TypeError: If the decorated function is called with an input that cannot be dispatched.
     """
 
