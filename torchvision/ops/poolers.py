@@ -252,20 +252,12 @@ class MultiScaleRoIAlign(nn.Module):
         )
 
         tracing_results = []
-        #print("milad: do metrics")
-        #import torch_xla.debug.metrics as met
-        #import torch_xla.core.xla_model as xm
-        #xm.master_print(met.metrics_report())
-        #print("milad: done metrics")
-        print("milad: do pooler")
         import torch_xla.core.xla_model as xm
         dd = levels.device
         xm.mark_step()
         ls = levels.cpu().clone()
         #levels = levels.to(dd)
         for level, (per_level_feature, scale) in enumerate(zip(x_filtered, scales)):
-            #import pdb
-            #pdb.set_trace()
             #idx_in_level = torch.where(levels == level)[0]
             idx_in_level = torch.nonzero(ls == level).squeeze(1)
             idx_in_level = idx_in_level.to(dd)
@@ -294,21 +286,11 @@ class MultiScaleRoIAlign(nn.Module):
                 # before copying elements from result_idx_in_level in the following op.
                 # We need to cast manually (can't rely on autocast to cast for us) because
                 # the op acts on result in-place, and autocast only affects out-of-place ops.
-                print("milad: do pooler else block")
-                print("idx_in_level: ", idx_in_level.shape)
-                print("idx_in_level: ", len(idx_in_level))
-                print("result: ", result.shape)
                 result[idx_in_level] = result_idx_in_level #.to(result.dtype)
-                #print ("milad: do mark_step() early")
-                #import torch_xla.core.xla_model as xm
-                #xm.mark_step()
-
-                print("milad: done pooler else block")
 
         if torchvision._is_tracing():
             result = _onnx_merge_levels(levels, tracing_results)
 
-        print ("milad: done pooler")
         return result
 
     def __repr__(self) -> str:

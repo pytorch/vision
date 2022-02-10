@@ -37,21 +37,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float, post_nms_top_n: int
         by NMS, sorted in decreasing order of scores
     """
     device = boxes.device
-    #torch_xla._XLAC._xla_sync_multi([boxes, scores], devices=[])
-    #print("milad: do metrics")
-    #import torch_xla.debug.metrics as met
-    #xm.master_print(met.metrics_report())
-    #print("milad: done metrics")
-    print("milad: device: ", device)
     xm.mark_step()
-    print("milad: device for boxes", device)
-    print("milad: device", device)
-    print("milad: num boxes: ", boxes.cpu().shape)
-    print("milad: num boxes: ", boxes.shape)
-    print("milad: num scores: ", scores.cpu().shape)
-    print("milad: num scores: ", scores.shape)
-    #import pdb
-    #pdb.set_trace()
     boxes_cpu = boxes.cpu().clone()
     scores_cpu = scores.cpu().clone()
     keep = torch.ops.torchvision.nms(boxes_cpu, scores_cpu, iou_threshold) #, post_nms_top_n)
@@ -60,22 +46,6 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float, post_nms_top_n: int
 
     #import torch_xla.core.functions as xf
     #return xf.nms(boxes,scores,0.1,iou_threshold, post_nms_top_n)
-
-    #device = boxes.device
-    #xm.mark_step()
-    #boxes_cpu = boxes.cpu().clone()
-    #scores_cpu = scores.cpu().clone()
-    #_log_api_usage_once("torchvision.ops.nms")
-    ##_assert_has_ops()
-    #keep = torch.ops.torchvision.nms(boxes_cpu, scores_cpu, iou_threshold) #, post_nms_top_n)
-    #keep = keep.to(device=device)
-    #return keep
-
-    #_log_api_usage_once("torchvision.ops.nms")
-    #_assert_has_ops()
-    #return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
-
-
 
 def batched_nms(
     boxes: Tensor,
@@ -110,19 +80,12 @@ def batched_nms(
     #    return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold, post_nms_top_n)
     #else:
     #    return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold, post_nms_top_n)
-    print("milad: start batched_nms")
     if boxes.numel() == 0:
         return torch.empty((0,), dtype=torch.int64, device=boxes.device)
     max_coordinate = boxes.max()
-    print("milad: max_coordinate") #, max_coordinate)
     offsets = idxs.to(boxes) * (max_coordinate + 1)
-    print("milad: offsets") #, offsets)
     boxes_for_nms = boxes + offsets[:, None]
-    print("milad: boxes_for_nms") #, boxes_for_nms)
-    print("milad: boxes size", boxes_for_nms.shape)
-    print("milad: boxes device", boxes_for_nms.device)
     keep = nms(boxes_for_nms, scores, iou_threshold, post_nms_top_n)
-    print("ops/boxes.py; keep.shape: {}".format(keep.shape))
     return keep
 
 @torch.jit._script_if_tracing

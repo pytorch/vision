@@ -76,9 +76,7 @@ class GeneralizedRCNN(nn.Module):
             assert len(val) == 2
             original_image_sizes.append((val[0], val[1]))
 
-        print("milad: doing transform")
         images, targets = self.transform(images, targets)
-        print("milad: done w/ transform")
 
         # Check for degenerate boxes
         # TODO: Move this to a function
@@ -97,34 +95,22 @@ class GeneralizedRCNN(nn.Module):
         #            )
 
 
-        print("milad: call backbon")
         features = self.backbone(images.tensors)
-        print("milad: call isinstance")
         if isinstance(features, torch.Tensor):
             features = OrderedDict([("0", features)])
-        print("milad: call rpn")
         proposals, proposal_losses = self.rpn(images, features, targets)
-        print("models/detection/generalized_rcnn.py - RoIHeads.forward(...) start")
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        print("milad: comment out transform.postprocess stage for now")
         #detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)  # type: ignore[operator]
-        print("models/detection/generalized_rcnn.py - RoIHeads.forward(...) end")
-        print("models/detection/generalized_rcnn.py - GeneralizedRCNNTransform.postprocess(...) start")
 
-        print("milad: do metrics")
         import torch_xla.debug.metrics as met
         xm.master_print(met.metrics_report())
-        print("milad: done metrics")
 
-        print("milad: do the intern's post processing for inference")
         if not self.training:
             # Sync tensors and use CPU instead for post processing
             sync_tensors = []
             for detection in detections:
                 sync_tensors.extend(list(detection.values()))
-            print ("models/detection/generalized_rcnn.py: do mark_step()")
             xm.mark_step()
-            print ("models/detection/generalized_rcnn.py: done mark_step()")
 
             detections_cpu = []
             for detection in detections:
@@ -133,9 +119,7 @@ class GeneralizedRCNN(nn.Module):
                     detection_cpu[k] = detection[k].cpu().clone()
                 detections_cpu.append(detection_cpu)
             detections = detections_cpu
-        print("milad: do the intern's post processing for inference")
         detections = self.transform.postprocess(detections_cpu, images.image_sizes, original_image_sizes)
-        print("models/detection/generalized_rcnn.py - GeneralizedRCNNTransform.postprocess(...) end")
 
         losses = {}
         losses.update(detector_losses)

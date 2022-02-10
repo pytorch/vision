@@ -131,10 +131,8 @@ class GeneralizedRCNNTransform(nn.Module):
                 raise ValueError(f"images is expected to be a list of 3d tensors of shape [C, H, W], got {image.shape}")
             image = self.normalize(image)
             image, target_index = self.resize(image, target_index)
-            print("milad: do move to xla device - images")
             if self.is_xla:
-                image = image.to(xm.xla_device()) #'xla:0') #(
-            print("milad: done move to xla device - images")
+                image = image.to(xm.xla_device())
             images[i] = image
             if targets is not None and target_index is not None:
                 targets[i] = target_index
@@ -175,12 +173,10 @@ class GeneralizedRCNNTransform(nn.Module):
         target: Optional[Dict[str, Tensor]] = None,
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         if self.is_xla:
-            print("milad: do resize")
             # Resize to a fixed size on TPU to avoid dynamicity
             new_h, new_w = 600, 800
             image = torch.nn.functional.interpolate(
                     image[None], size=(new_h, new_w), mode='bilinear', align_corners=False)[0]
-            print("milad: done resize")
             if target is None:
                 return image, target
 

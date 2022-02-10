@@ -264,9 +264,7 @@ class RegionProposalNetwork(torch.nn.Module):
             #boxes, scores, lvl = boxes[keep], scores[keep], lvl[keep]
 
             # non-maximum suppression, independently done per level
-            print("milad: do batched_nms")
             keep = box_ops.batched_nms(boxes, scores, lvl, self.nms_thresh, self.post_nms_top_n)
-            print("milad: done batched_nms")
 
             # keep only topk scoring predictions
             #keep = keep[: self.post_nms_top_n()]
@@ -274,7 +272,6 @@ class RegionProposalNetwork(torch.nn.Module):
 
             final_boxes.append(boxes)
             final_scores.append(scores)
-        print("milad: done loop in filter_proposals")
         return final_boxes, final_scores
 
     def compute_loss(
@@ -341,12 +338,10 @@ class RegionProposalNetwork(torch.nn.Module):
                 testing, it is an empty dict.
         """
         # RPN uses all feature maps that are available
-        print("milad: rpn p1")
         features = list(features.values())
         objectness, pred_bbox_deltas = self.head(features)
         anchors = self.anchor_generator(images, features)
 
-        print("milad: rpn p2")
         num_images = len(anchors)
         num_anchors_per_level_shape_tensors = [o[0].shape for o in objectness]
         num_anchors_per_level = [s[0] * s[1] * s[2] for s in num_anchors_per_level_shape_tensors]
@@ -354,14 +349,10 @@ class RegionProposalNetwork(torch.nn.Module):
         # apply pred_bbox_deltas to anchors to obtain the decoded proposals
         # note that we detach the deltas because Faster R-CNN do not backprop through
         # the proposals
-        print("milad: rpn p3")
         proposals = self.box_coder.decode(pred_bbox_deltas.detach(), anchors)
-        print("milad: rpn p3.1")
         proposals = proposals.view(num_images, -1, 4)
-        print("milad: rpn p3.2")
         boxes, scores = self.filter_proposals(proposals, objectness, images.image_sizes, num_anchors_per_level)
 
-        print("milad: rpn p4")
         losses = {}
         if self.training:
             assert targets is not None

@@ -224,7 +224,6 @@ class FasterRCNN(GeneralizedRCNN):
         )
 
         if box_roi_pool is None:
-            print("milad: assining box_roi_pool")
             box_roi_pool = MultiScaleRoIAlign(featmap_names=["0", "1", "2", "3"], output_size=7, sampling_ratio=2)
 
         if box_head is None:
