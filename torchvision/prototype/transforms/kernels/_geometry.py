@@ -22,7 +22,7 @@ def horizontal_flip_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
-    bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [0, 2]]
+    bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [2, 0]]
 
     return convert_bounding_box_format(
         bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
@@ -66,7 +66,7 @@ def resize_bounding_box(
 ) -> torch.Tensor:
     old_height, old_width = old_image_size
     new_height, new_width = new_image_size
-    ratios = torch.tensor((new_width / old_width, new_height / old_height))
+    ratios = torch.tensor((new_width / old_width, new_height / old_height), device=bounding_box.device)
     return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
 
 
