@@ -1,4 +1,5 @@
 import functools
+import inspect
 from typing import Any, Optional, Callable, TypeVar, Dict, Union
 
 import PIL.Image
@@ -23,8 +24,14 @@ def dispatch(
 
     .. code:: python
 
+        from typing import Any, TypeVar
+
+        from torchvision.protoype import features
+
+        T = TypeVar("T", bound=features.Feature)
+
         @dispatch
-        def dispatch_fn(input, *args, **kwargs):
+        def dispatch_fn(input: T, *args: Any, **kwargs: Any) -> T:
             ...
 
     where ``input`` is a strict subclass of :class:`~torchvision.prototype.features.Feature` and is used to determine
@@ -44,14 +51,34 @@ def dispatch(
     Raises:
         TypeError: If any key in ``kernels`` is not a strict subclass of
             :class:`~torchvision.prototype.features.Feature`.
+        TypeError: If any value in ``kernels`` is not callable with ``kernel(input, *args, **kwargs)``.
         TypeError: If ``pil_kernel`` is specified, but no kernel for :class:`~torchvision.prototype.features.Image` is
             available.
         TypeError: If the decorated function is called with neither a ``PIL`` image nor a :class:`~torch.Tensor`.
         TypeError: If the decorated function is called with an input that cannot be dispatched.
     """
-    for feature_type in kernels:
+
+    def check_kernel(kernel: Any) -> bool:
+        if not callable(kernel):
+            return False
+
+        params = list(inspect.signature(kernel).parameters.values())
+        if not params:
+            return False
+
+        return params[0].kind != inspect.Parameter.KEYWORD_ONLY
+
+    for feature_type, kernel in kernels.items():
         if not (issubclass(feature_type, features.Feature) and feature_type is not features.Feature):
-            raise TypeError("XXX")
+            raise TypeError(
+                "Can only register kernels for strict subclasses of `torchvision.prototype.features.Feature`."
+            )
+
+        if not check_kernel(kernel):
+            raise TypeError(
+                f"Kernel for feature type {feature_type.__name__} is not callable with kernel(input, *args, **kwargs)."
+            )
+
     if pil_kernel and features.Image not in kernels:
         raise TypeError("PIL kernel can only be registered for images")
 
