@@ -10,11 +10,7 @@ from ._utils import dispatch
 T = TypeVar("T", bound=features.Feature)
 
 
-@dispatch(
-    {
-        features.Image: K.erase_image,
-    },
-)
+@dispatch({features.Image: K.erase_image})
 def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool) -> T:
     """ADDME"""
     ...

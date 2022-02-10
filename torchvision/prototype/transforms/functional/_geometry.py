@@ -51,21 +51,13 @@ def resize(
     ...
 
 
-@dispatch(
-    {
-        features.Image: K.center_crop_image,
-    }
-)
+@dispatch({features.Image: K.center_crop_image})
 def center_crop(input: T, *, output_size: List[int]) -> T:
     """ADDME"""
     ...
 
 
-@dispatch(
-    {
-        features.Image: K.resized_crop_image,
-    }
-)
+@dispatch({features.Image: K.resized_crop_image})
 def resized_crop(
     input: T,
     *,
@@ -80,11 +72,7 @@ def resized_crop(
     ...
 
 
-@dispatch(
-    {
-        features.Image: K.affine_image,
-    }
-)
+@dispatch({features.Image: K.affine_image})
 def affine(
     input: T,
     *,
@@ -102,11 +90,7 @@ def affine(
     ...
 
 
-@dispatch(
-    {
-        features.Image: K.rotate_image,
-    }
-)
+@dispatch({features.Image: K.rotate_image})
 def rotate(
     input: T,
     *,
