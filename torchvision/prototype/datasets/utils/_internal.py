@@ -252,7 +252,7 @@ def read_flo(file: BinaryIO) -> torch.Tensor:
     return flow.reshape((height, width, 2)).permute((2, 0, 1))
 
 
-def hint_sharding(datapipe: IterDataPipe[D]) -> ShardingFilter[D]:
+def hint_sharding(datapipe: IterDataPipe) -> ShardingFilter:
     return ShardingFilter(datapipe)
 
 
