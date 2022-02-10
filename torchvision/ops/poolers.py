@@ -1,14 +1,13 @@
-import warnings
 from typing import Optional, List, Dict, Tuple, Union
 
 import torch
-import torch.fx
 import torchvision
 from torch import nn, Tensor
+import torch_xla
 from torchvision.ops.boxes import box_area
 
 from ..utils import _log_api_usage_once
-from .roi_align import roi_align
+from .roi_align import roi_align, RoIAlign
 
 
 # copying result_idx_in_level to a specific index in result[]
@@ -108,126 +107,6 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
     return possible_scales[0]
 
 
-@torch.fx.wrap
-def _setup_scales(
-    features: List[Tensor], image_shapes: List[Tuple[int, int]], canonical_scale: int, canonical_level: int
-) -> Tuple[List[float], LevelMapper]:
-    assert len(image_shapes) != 0
-    max_x = 0
-    max_y = 0
-    for shape in image_shapes:
-        max_x = max(shape[0], max_x)
-        max_y = max(shape[1], max_y)
-    original_input_shape = (max_x, max_y)
-
-    scales = [_infer_scale(feat, original_input_shape) for feat in features]
-    # get the levels in the feature map by leveraging the fact that the network always
-    # downsamples by a factor of 2 at each level.
-    lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
-    lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
-
-    map_levels = initLevelMapper(
-        int(lvl_min),
-        int(lvl_max),
-        canonical_scale=canonical_scale,
-        canonical_level=canonical_level,
-    )
-    return scales, map_levels
-
-
-@torch.fx.wrap
-def _filter_input(x: Dict[str, Tensor], featmap_names: List[str]) -> List[Tensor]:
-    x_filtered = []
-    for k, v in x.items():
-        if k in featmap_names:
-            x_filtered.append(v)
-    return x_filtered
-
-
-@torch.fx.wrap
-def _multiscale_roi_align(
-    x_filtered: List[Tensor],
-    boxes: List[Tensor],
-    output_size: List[int],
-    sampling_ratio: int,
-    scales: Optional[List[float]],
-    mapper: Optional[LevelMapper],
-) -> Tensor:
-    """
-    Args:
-        x_filtered (List[Tensor]): List of input tensors.
-        boxes (List[Tensor[N, 4]]): boxes to be used to perform the pooling operation, in
-            (x1, y1, x2, y2) format and in the image reference size, not the feature map
-            reference. The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
-        output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
-        sampling_ratio (int): sampling ratio for ROIAlign
-        scales (Optional[List[float]]): If None, scales will be automatically infered. Default value is None.
-        mapper (Optional[LevelMapper]): If none, mapper will be automatically infered. Default value is None.
-    Returns:
-        result (Tensor)
-    """
-    assert scales is not None
-    assert mapper is not None
-
-    num_levels = len(x_filtered)
-    rois = _convert_to_roi_format(boxes)
-
-    if num_levels == 1:
-        return roi_align(
-            x_filtered[0],
-            rois,
-            output_size=output_size,
-            spatial_scale=scales[0],
-            sampling_ratio=sampling_ratio,
-        )
-
-    levels = mapper(boxes)
-
-    num_rois = len(rois)
-    num_channels = x_filtered[0].shape[1]
-
-    dtype, device = x_filtered[0].dtype, x_filtered[0].device
-    result = torch.zeros(
-        (
-            num_rois,
-            num_channels,
-        )
-        + output_size,
-        dtype=dtype,
-        device=device,
-    )
-
-    tracing_results = []
-    for level, (per_level_feature, scale) in enumerate(zip(x_filtered, scales)):
-        idx_in_level = torch.where(levels == level)[0]
-        rois_per_level = rois[idx_in_level]
-
-        result_idx_in_level = roi_align(
-            per_level_feature,
-            rois_per_level,
-            output_size=output_size,
-            spatial_scale=scale,
-            sampling_ratio=sampling_ratio,
-        )
-
-        if torchvision._is_tracing():
-            tracing_results.append(result_idx_in_level.to(dtype))
-        else:
-            # result and result_idx_in_level's dtypes are based on dtypes of different
-            # elements in x_filtered.  x_filtered contains tensors output by different
-            # layers.  When autocast is active, it may choose different dtypes for
-            # different layers' outputs.  Therefore, we defensively match result's dtype
-            # before copying elements from result_idx_in_level in the following op.
-            # We need to cast manually (can't rely on autocast to cast for us) because
-            # the op acts on result in-place, and autocast only affects out-of-place ops.
-            result[idx_in_level] = result_idx_in_level.to(result.dtype)
-
-    if torchvision._is_tracing():
-        result = _onnx_merge_levels(levels, tracing_results)
-
-    return result
-
-
 class MultiScaleRoIAlign(nn.Module):
     """
     Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.
@@ -287,21 +166,31 @@ class MultiScaleRoIAlign(nn.Module):
         self.canonical_scale = canonical_scale
         self.canonical_level = canonical_level
 
-    def convert_to_roi_format(self, boxes: List[Tensor]) -> Tensor:
-        warnings.warn("The 'convert_to_roi_format' method is deprecated since 0.12 and will be removed in 0.14.")
-        return _convert_to_roi_format(boxes)
-
-    def infer_scale(self, feature: Tensor, original_size: List[int]) -> float:
-        warnings.warn("The 'infer_scale' method is deprecated since 0.12 and will be removed in 0.14.")
-        return _infer_scale(feature, original_size)
-
-    def setup_setup_scales(
+    def setup_scales(
         self,
         features: List[Tensor],
         image_shapes: List[Tuple[int, int]],
     ) -> None:
-        warnings.warn("The 'setup_setup_scales' method is deprecated since 0.12 and will be removed in 0.14.")
-        self.scales, self.map_levels = _setup_scales(features, image_shapes, self.canonical_scale, self.canonical_level)
+        assert len(image_shapes) != 0
+        max_x = 0
+        max_y = 0
+        for shape in image_shapes:
+            max_x = max(shape[0], max_x)
+            max_y = max(shape[1], max_y)
+        original_input_shape = (max_x, max_y)
+
+        scales = [_infer_scale(feat, original_input_shape) for feat in features]
+        # get the levels in the feature map by leveraging the fact that the network always
+        # downsamples by a factor of 2 at each level.
+        lvl_min = -torch.log2(torch.tensor(scales[0], dtype=torch.float32)).item()
+        lvl_max = -torch.log2(torch.tensor(scales[-1], dtype=torch.float32)).item()
+        self.scales = scales
+        self.map_levels = initLevelMapper(
+            int(lvl_min),
+            int(lvl_max),
+            canonical_scale=self.canonical_scale,
+            canonical_level=self.canonical_level,
+        )
 
     def forward(
         self,
@@ -322,20 +211,105 @@ class MultiScaleRoIAlign(nn.Module):
         Returns:
             result (Tensor)
         """
-        x_filtered = _filter_input(x, self.featmap_names)
-        if self.scales is None or self.map_levels is None:
-            self.scales, self.map_levels = _setup_scales(
-                x_filtered, image_shapes, self.canonical_scale, self.canonical_level
+        x_filtered = []
+        for k, v in x.items():
+            if k in self.featmap_names:
+                x_filtered.append(v)
+        num_levels = len(x_filtered)
+        rois = _convert_to_roi_format(boxes)
+        if self.scales is None:
+            self.setup_scales(x_filtered, image_shapes)
+
+        scales = self.scales
+        assert scales is not None
+
+        if num_levels == 1:
+            return roi_align(
+                x_filtered[0],
+                rois,
+                output_size=self.output_size,
+                spatial_scale=scales[0],
+                sampling_ratio=self.sampling_ratio,
             )
 
-        return _multiscale_roi_align(
-            x_filtered,
-            boxes,
-            self.output_size,
-            self.sampling_ratio,
-            self.scales,
-            self.map_levels,
+        mapper = self.map_levels
+        assert mapper is not None
+
+        levels = mapper(boxes)
+
+        num_rois = len(rois)
+        num_channels = x_filtered[0].shape[1]
+
+        dtype, device = x_filtered[0].dtype, x_filtered[0].device
+        result = torch.zeros(
+            (
+                num_rois,
+                num_channels,
+            )
+            + self.output_size,
+            dtype=dtype,
+            device=device,
         )
+
+        tracing_results = []
+        #print("milad: do metrics")
+        #import torch_xla.debug.metrics as met
+        #import torch_xla.core.xla_model as xm
+        #xm.master_print(met.metrics_report())
+        #print("milad: done metrics")
+        print("milad: do pooler")
+        import torch_xla.core.xla_model as xm
+        dd = levels.device
+        xm.mark_step()
+        ls = levels.cpu().clone()
+        #levels = levels.to(dd)
+        for level, (per_level_feature, scale) in enumerate(zip(x_filtered, scales)):
+            #import pdb
+            #pdb.set_trace()
+            #idx_in_level = torch.where(levels == level)[0]
+            idx_in_level = torch.nonzero(ls == level).squeeze(1)
+            idx_in_level = idx_in_level.to(dd)
+            rois_per_level = rois[idx_in_level]
+
+            roi_aligner = RoIAlign(self.output_size, scale, self.sampling_ratio)
+            result_idx_in_level = roi_aligner(per_level_feature, rois_per_level)
+            #xla_device = per_level_feature.device
+            #torch_xla._XLAC._xla_sync_multi([per_level_feature, rois_per_level], devices=[])
+
+            #result_idx_in_level = roi_align(
+            #    per_level_feature,
+            #    rois_per_level,
+            #    output_size=self.output_size,
+            #    spatial_scale=scale,
+            #    sampling_ratio=self.sampling_ratio,
+            #).to(device)
+
+            if torchvision._is_tracing():
+                tracing_results.append(result_idx_in_level.to(dtype))
+            else:
+                # result and result_idx_in_level's dtypes are based on dtypes of different
+                # elements in x_filtered.  x_filtered contains tensors output by different
+                # layers.  When autocast is active, it may choose different dtypes for
+                # different layers' outputs.  Therefore, we defensively match result's dtype
+                # before copying elements from result_idx_in_level in the following op.
+                # We need to cast manually (can't rely on autocast to cast for us) because
+                # the op acts on result in-place, and autocast only affects out-of-place ops.
+                print("milad: do pooler else block")
+                print("idx_in_level: ", idx_in_level.shape)
+                print("idx_in_level: ", len(idx_in_level))
+                print("result: ", result.shape)
+                result[idx_in_level] = result_idx_in_level #.to(result.dtype)
+                #print ("milad: do mark_step() early")
+                #import torch_xla.core.xla_model as xm
+                #xm.mark_step()
+
+                print("milad: done pooler else block")
+
+        if torchvision._is_tracing():
+            result = _onnx_merge_levels(levels, tracing_results)
+
+        print ("milad: done pooler")
+        return result
 
     def __repr__(self) -> str:
         return (

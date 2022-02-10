@@ -2,6 +2,7 @@ import math
 from typing import List, Tuple, Dict, Optional
 
 import torch
+import torch_xla.core.xla_model as xm
 import torchvision
 from torch import nn, Tensor
 
@@ -89,6 +90,7 @@ class GeneralizedRCNNTransform(nn.Module):
         max_size: int,
         image_mean: List[float],
         image_std: List[float],
+        is_xla=False,
         size_divisible: int = 32,
         fixed_size: Optional[Tuple[int, int]] = None,
     ):
@@ -99,6 +101,7 @@ class GeneralizedRCNNTransform(nn.Module):
         self.max_size = max_size
         self.image_mean = image_mean
         self.image_std = image_std
+        self.is_xla = is_xla
         self.size_divisible = size_divisible
         self.fixed_size = fixed_size
 
@@ -120,12 +123,18 @@ class GeneralizedRCNNTransform(nn.Module):
             targets = targets_copy
         for i in range(len(images)):
             image = images[i]
+            if self.is_xla and image.device.type != 'cpu':
+                raise RuntimeError("images should be passed as CPU tensors")
             target_index = targets[i] if targets is not None else None
 
             if image.dim() != 3:
                 raise ValueError(f"images is expected to be a list of 3d tensors of shape [C, H, W], got {image.shape}")
             image = self.normalize(image)
             image, target_index = self.resize(image, target_index)
+            print("milad: do move to xla device - images")
+            if self.is_xla:
+                image = image.to(xm.xla_device()) #'xla:0') #(
+            print("milad: done move to xla device - images")
             images[i] = image
             if targets is not None and target_index is not None:
                 targets[i] = target_index
@@ -165,6 +174,18 @@ class GeneralizedRCNNTransform(nn.Module):
         image: Tensor,
         target: Optional[Dict[str, Tensor]] = None,
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        if self.is_xla:
+            print("milad: do resize")
+            # Resize to a fixed size on TPU to avoid dynamicity
+            new_h, new_w = 600, 800
+            image = torch.nn.functional.interpolate(
+                    image[None], size=(new_h, new_w), mode='bilinear', align_corners=False)[0]
+            print("milad: done resize")
+            if target is None:
+                return image, target
+
+            raise NotImplementedError
+
         h, w = image.shape[-2:]
         if self.training:
             size = float(self.torch_choice(self.min_size))
@@ -260,7 +281,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return result
 
     def __repr__(self) -> str:
-        format_string = f"{self.__class__.__name__}("
+        format_string = self.__class__.__name__ + "("
         _indent = "\n    "
         format_string += f"{_indent}Normalize(mean={self.image_mean}, std={self.image_std})"
         format_string += f"{_indent}Resize(min_size={self.min_size}, max_size={self.max_size}, mode='bilinear')"

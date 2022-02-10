@@ -680,6 +680,7 @@ class RoIHeads(nn.Module):
         all_boxes = []
         all_scores = []
         all_labels = []
+        print ("milad: postprocess_detections loop size: ", len(pred_boxes_list))
         for boxes, scores, image_shape in zip(pred_boxes_list, pred_scores_list, image_shapes):
             boxes = box_ops.clip_boxes_to_image(boxes, image_shape)
 
@@ -700,13 +701,30 @@ class RoIHeads(nn.Module):
             # remove low scoring boxes
             inds = torch.where(scores > self.score_thresh)[0]
             boxes, scores, labels = boxes[inds], scores[inds], labels[inds]
+            print("milad: remove low scoring boxes - postprocess_detections()")
+            score_mask = (scores > self.score_thresh)
+            score_mask_boxes = score_mask.reshape(boxes.shape[0], -1)
+            nan_boxes = torch.full((1, boxes.shape[1],), float('nan'), device=device)
+            boxes = torch.where(score_mask_boxes, boxes, nan_boxes)
+            # pad with zeros so that nms will consider those boxes last
+            scores = torch.where(score_mask, scores, torch.tensor(0.0, device=device))
+            labels = torch.where(score_mask, labels, torch.tensor(-1, device=device))
+            print("milad: removed low scoring boxes - postprocess_detections()")
 
             # remove empty boxes
             keep = box_ops.remove_small_boxes(boxes, min_size=1e-2)
             boxes, scores, labels = boxes[keep], scores[keep], labels[keep]
 
             # non-maximum suppression, independently done per class
-            keep = box_ops.batched_nms(boxes, scores, labels, self.nms_thresh)
+            #xm.mark_step()
+            print("milad: do batched_nms in roi_heads.py")
+            print("milad: boxes size", boxes.shape)
+            print("milad: labels size", labels.shape)
+            print("milad: scores size", scores.shape)
+            print("milad: boxes device", boxes.device)
+            print("milad: self.nms_thresh, self.detections_per_img", self.nms_thresh, self.detections_per_img)
+            keep = box_ops.batched_nms(boxes, scores, labels, self.nms_thresh, self.detections_per_img)
+            print ("keep result", keep)
             # keep only topk scoring predictions
             keep = keep[: self.detections_per_img]
             boxes, scores, labels = boxes[keep], scores[keep], labels[keep]
@@ -748,10 +766,23 @@ class RoIHeads(nn.Module):
             regression_targets = None
             matched_idxs = None
 
+        #print ("milad: do mark_step() early")
+        #import torch_xla.core.xla_model as xm
+        #xm.mark_step()
         box_features = self.box_roi_pool(features, proposals, image_shapes)
+        print ("features.shape: ", len(features))
+        print ("proposals.shape: ", len(proposals))
+        print ("image_shapes.shape: ", len(image_shapes))
+        print ("box_features.shape: ", len(box_features))
+
         box_features = self.box_head(box_features)
         class_logits, box_regression = self.box_predictor(box_features)
+        print("class_logits.shape: ", len(class_logits))
+        print("box_regression .shape: ", len(box_regression))
 
+        #print ("milad: do mark_step() early")
+        #import torch_xla.core.xla_model as xm
+        #xm.mark_step()
         result: List[Dict[str, torch.Tensor]] = []
         losses = {}
         if self.training:

@@ -1,6 +1,8 @@
 from typing import Tuple
 
 import torch
+import torch_xla
+import torch_xla.core.xla_model as xm
 import torchvision
 from torch import Tensor
 from torchvision.extension import _assert_has_ops
@@ -9,7 +11,7 @@ from ..utils import _log_api_usage_once
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 
 
-def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
+def nms(boxes: Tensor, scores: Tensor, iou_threshold: float, post_nms_top_n: int) -> Tensor:
     """
     Performs non-maximum suppression (NMS) on the boxes according
     to their intersection-over-union (IoU).
@@ -34,10 +36,45 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
         Tensor: int64 tensor with the indices of the elements that have been kept
         by NMS, sorted in decreasing order of scores
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(nms)
-    _assert_has_ops()
-    return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
+    device = boxes.device
+    #torch_xla._XLAC._xla_sync_multi([boxes, scores], devices=[])
+    #print("milad: do metrics")
+    #import torch_xla.debug.metrics as met
+    #xm.master_print(met.metrics_report())
+    #print("milad: done metrics")
+    print("milad: device: ", device)
+    xm.mark_step()
+    print("milad: device for boxes", device)
+    print("milad: device", device)
+    print("milad: num boxes: ", boxes.cpu().shape)
+    print("milad: num boxes: ", boxes.shape)
+    print("milad: num scores: ", scores.cpu().shape)
+    print("milad: num scores: ", scores.shape)
+    #import pdb
+    #pdb.set_trace()
+    boxes_cpu = boxes.cpu().clone()
+    scores_cpu = scores.cpu().clone()
+    keep = torch.ops.torchvision.nms(boxes_cpu, scores_cpu, iou_threshold) #, post_nms_top_n)
+    keep = keep.to(device=device)
+    return keep
+
+    #import torch_xla.core.functions as xf
+    #return xf.nms(boxes,scores,0.1,iou_threshold, post_nms_top_n)
+
+    #device = boxes.device
+    #xm.mark_step()
+    #boxes_cpu = boxes.cpu().clone()
+    #scores_cpu = scores.cpu().clone()
+    #_log_api_usage_once("torchvision.ops.nms")
+    ##_assert_has_ops()
+    #keep = torch.ops.torchvision.nms(boxes_cpu, scores_cpu, iou_threshold) #, post_nms_top_n)
+    #keep = keep.to(device=device)
+    #return keep
+
+    #_log_api_usage_once("torchvision.ops.nms")
+    #_assert_has_ops()
+    #return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
+
 
 
 def batched_nms(
@@ -45,6 +82,7 @@ def batched_nms(
     scores: Tensor,
     idxs: Tensor,
     iou_threshold: float,
+    post_nms_top_n: int,
 ) -> Tensor:
     """
     Performs non-maximum suppression in a batched fashion.
@@ -64,15 +102,28 @@ def batched_nms(
         Tensor: int64 tensor with the indices of the elements that have been kept by NMS, sorted
         in decreasing order of scores
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(batched_nms)
+    _log_api_usage_once("torchvision.ops.batched_nms")
     # Benchmarks that drove the following thresholds are at
     # https://github.com/pytorch/vision/issues/1311#issuecomment-781329339
-    if boxes.numel() > (4000 if boxes.device.type == "cpu" else 20000) and not torchvision._is_tracing():
-        return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold)
-    else:
-        return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold)
-
+    # Ideally for GPU we'd use a higher threshold
+    #if boxes.numel() > 4_000 and not torchvision._is_tracing():
+    #    return _batched_nms_vanilla(boxes, scores, idxs, iou_threshold, post_nms_top_n)
+    #else:
+    #    return _batched_nms_coordinate_trick(boxes, scores, idxs, iou_threshold, post_nms_top_n)
+    print("milad: start batched_nms")
+    if boxes.numel() == 0:
+        return torch.empty((0,), dtype=torch.int64, device=boxes.device)
+    max_coordinate = boxes.max()
+    print("milad: max_coordinate") #, max_coordinate)
+    offsets = idxs.to(boxes) * (max_coordinate + 1)
+    print("milad: offsets") #, offsets)
+    boxes_for_nms = boxes + offsets[:, None]
+    print("milad: boxes_for_nms") #, boxes_for_nms)
+    print("milad: boxes size", boxes_for_nms.shape)
+    print("milad: boxes device", boxes_for_nms.device)
+    keep = nms(boxes_for_nms, scores, iou_threshold, post_nms_top_n)
+    print("ops/boxes.py; keep.shape: {}".format(keep.shape))
+    return keep
 
 @torch.jit._script_if_tracing
 def _batched_nms_coordinate_trick(
@@ -80,6 +131,7 @@ def _batched_nms_coordinate_trick(
     scores: Tensor,
     idxs: Tensor,
     iou_threshold: float,
+    post_nms_top_n: int,
 ) -> Tensor:
     # strategy: in order to perform NMS independently per class,
     # we add an offset to all the boxes. The offset is dependent
@@ -90,7 +142,7 @@ def _batched_nms_coordinate_trick(
     max_coordinate = boxes.max()
     offsets = idxs.to(boxes) * (max_coordinate + torch.tensor(1).to(boxes))
     boxes_for_nms = boxes + offsets[:, None]
-    keep = nms(boxes_for_nms, scores, iou_threshold)
+    keep = nms(boxes_for_nms, scores, iou_threshold, post_nms_top_n)
     return keep
 
 
@@ -100,12 +152,13 @@ def _batched_nms_vanilla(
     scores: Tensor,
     idxs: Tensor,
     iou_threshold: float,
+    post_nms_top_n: int,
 ) -> Tensor:
     # Based on Detectron2 implementation, just manually call nms() on each class independently
     keep_mask = torch.zeros_like(scores, dtype=torch.bool)
     for class_id in torch.unique(idxs):
         curr_indices = torch.where(idxs == class_id)[0]
-        curr_keep_indices = nms(boxes[curr_indices], scores[curr_indices], iou_threshold)
+        curr_keep_indices = nms(boxes[curr_indices], scores[curr_indices], iou_threshold, post_nms_top_n)
         keep_mask[curr_indices[curr_keep_indices]] = True
     keep_indices = torch.where(keep_mask)[0]
     return keep_indices[scores[keep_indices].sort(descending=True)[1]]
@@ -124,8 +177,7 @@ def remove_small_boxes(boxes: Tensor, min_size: float) -> Tensor:
         Tensor[K]: indices of the boxes that have both sides
         larger than min_size
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(remove_small_boxes)
+    _log_api_usage_once("torchvision.ops.remove_small_boxes")
     ws, hs = boxes[:, 2] - boxes[:, 0], boxes[:, 3] - boxes[:, 1]
     keep = (ws >= min_size) & (hs >= min_size)
     keep = torch.where(keep)[0]
@@ -144,8 +196,7 @@ def clip_boxes_to_image(boxes: Tensor, size: Tuple[int, int]) -> Tensor:
     Returns:
         Tensor[N, 4]: clipped boxes
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(clip_boxes_to_image)
+    _log_api_usage_once("torchvision.ops.clip_boxes_to_image")
     dim = boxes.dim()
     boxes_x = boxes[..., 0::2]
     boxes_y = boxes[..., 1::2]
@@ -185,8 +236,8 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
     Returns:
         Tensor[N, 4]: Boxes into converted format.
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_convert)
+
+    _log_api_usage_once("torchvision.ops.box_convert")
     allowed_fmts = ("xyxy", "xywh", "cxcywh")
     if in_fmt not in allowed_fmts or out_fmt not in allowed_fmts:
         raise ValueError("Unsupported Bounding Box Conversions for given in_fmt and out_fmt")
@@ -236,8 +287,7 @@ def box_area(boxes: Tensor) -> Tensor:
     Returns:
         Tensor[N]: the area for each box
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_area)
+    _log_api_usage_once("torchvision.ops.box_area")
     boxes = _upcast(boxes)
     return (boxes[:, 2] - boxes[:, 0]) * (boxes[:, 3] - boxes[:, 1])
 
@@ -273,8 +323,7 @@ def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     Returns:
         Tensor[N, M]: the NxM matrix containing the pairwise IoU values for every element in boxes1 and boxes2
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(box_iou)
+    _log_api_usage_once("torchvision.ops.box_iou")
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
     return iou
@@ -296,8 +345,8 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         Tensor[N, M]: the NxM matrix containing the pairwise generalized IoU values
         for every element in boxes1 and boxes2
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(generalized_box_iou)
+
+    _log_api_usage_once("torchvision.ops.generalized_box_iou")
     # degenerate boxes gives inf / nan results
     # so do an early check
     assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
@@ -329,8 +378,7 @@ def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     Returns:
         Tensor[N, 4]: bounding boxes
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(masks_to_boxes)
+    _log_api_usage_once("torchvision.ops.masks_to_boxes")
     if masks.numel() == 0:
         return torch.zeros((0, 4), device=masks.device, dtype=torch.float)
 

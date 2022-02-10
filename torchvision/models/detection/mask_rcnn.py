@@ -155,6 +155,7 @@ class MaskRCNN(FasterRCNN):
         self,
         backbone,
         num_classes=None,
+        is_xla=False,
         # transform parameters
         min_size=800,
         max_size=1333,
@@ -163,10 +164,10 @@ class MaskRCNN(FasterRCNN):
         # RPN parameters
         rpn_anchor_generator=None,
         rpn_head=None,
-        rpn_pre_nms_top_n_train=2000,
-        rpn_pre_nms_top_n_test=1000,
-        rpn_post_nms_top_n_train=2000,
-        rpn_post_nms_top_n_test=1000,
+        rpn_pre_nms_top_n_train=20,
+        rpn_pre_nms_top_n_test=10,
+        rpn_post_nms_top_n_train=20,
+        rpn_post_nms_top_n_test=10,
         rpn_nms_thresh=0.7,
         rpn_fg_iou_thresh=0.7,
         rpn_bg_iou_thresh=0.3,
@@ -179,7 +180,7 @@ class MaskRCNN(FasterRCNN):
         box_predictor=None,
         box_score_thresh=0.05,
         box_nms_thresh=0.5,
-        box_detections_per_img=100,
+        box_detections_per_img=10,
         box_fg_iou_thresh=0.5,
         box_bg_iou_thresh=0.5,
         box_batch_size_per_image=512,
@@ -215,6 +216,7 @@ class MaskRCNN(FasterRCNN):
         super().__init__(
             backbone,
             num_classes,
+            is_xla,
             # transform parameters
             min_size,
             max_size,
