@@ -1,72 +1,95 @@
-from typing import Tuple, List, Optional
+from typing import TypeVar, Any, cast
 
+import PIL.Image
 import torch
-from torchvision.transforms import (  # noqa: F401
-    functional as _F,
-    InterpolationMode,
+from torchvision.prototype import features
+from torchvision.prototype.transforms import kernels as K
+from torchvision.transforms import functional as _F
+
+from ._utils import dispatch
+
+T = TypeVar("T", bound=features.Feature)
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.hflip,
+        PIL.Image.Image: _F.hflip,
+        features.Image: K.horizontal_flip_image,
+        features.BoundingBox: None,
+    },
 )
+def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    if isinstance(input, features.BoundingBox):
+        output = K.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
+        return cast(T, features.BoundingBox.new_like(input, output))
 
-horizontal_flip_image = _F.hflip
-
-
-def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tuple[int, int]) -> torch.Tensor:
-    shape = bounding_box.shape
-    bounding_box = bounding_box.view(-1, 4)
-    bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [0, 2]]
-    return bounding_box.view(shape)
+    raise RuntimeError
 
 
-_resize_image = _F.resize
+@dispatch(
+    {
+        torch.Tensor: _F.resize,
+        PIL.Image.Image: _F.resize,
+        features.Image: K.resize_image,
+        features.SegmentationMask: K.resize_segmentation_mask,
+        features.BoundingBox: None,
+    }
+)
+def resize(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    if isinstance(input, features.BoundingBox):
+        size = kwargs.pop("size")
+        output = K.resize_bounding_box(input, old_image_size=list(input.image_size), new_image_size=size)
+        return cast(T, features.BoundingBox.new_like(input, output, image_size=size))
+
+    raise RuntimeError
 
 
-def resize_image(
-    image: torch.Tensor,
-    size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-    max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
-) -> torch.Tensor:
-    new_height, new_width = size
-    num_channels, old_height, old_width = image.shape[-3:]
-    batch_shape = image.shape[:-3]
-    return _resize_image(
-        image.reshape((-1, num_channels, old_height, old_width)),
-        size=size,
-        interpolation=interpolation,
-        max_size=max_size,
-        antialias=antialias,
-    ).reshape(batch_shape + (num_channels, new_height, new_width))
+@dispatch(
+    {
+        torch.Tensor: _F.center_crop,
+        PIL.Image.Image: _F.center_crop,
+        features.Image: K.center_crop_image,
+    }
+)
+def center_crop(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
 
 
-def resize_segmentation_mask(
-    segmentation_mask: torch.Tensor,
-    size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
-    max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
-) -> torch.Tensor:
-    return resize_image(
-        segmentation_mask, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias
-    )
+@dispatch(
+    {
+        torch.Tensor: _F.resized_crop,
+        PIL.Image.Image: _F.resized_crop,
+        features.Image: K.resized_crop_image,
+    }
+)
+def resized_crop(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
 
 
-# TODO: handle max_size
-def resize_bounding_box(
-    bounding_box: torch.Tensor,
-    *,
-    old_image_size: List[int],
-    new_image_size: List[int],
-) -> torch.Tensor:
-    old_height, old_width = old_image_size
-    new_height, new_width = new_image_size
-    ratios = torch.tensor((new_width / old_width, new_height / old_height))
-    return bounding_box.view(-1, 2, 2).mul(ratios).view(bounding_box.shape)
+@dispatch(
+    {
+        torch.Tensor: _F.affine,
+        PIL.Image.Image: _F.affine,
+        features.Image: K.affine_image,
+    }
+)
+def affine(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
 
 
-center_crop_image = _F.center_crop
-
-resized_crop_image = _F.resized_crop
-
-affine_image = _F.affine
-
-rotate_image = _F.rotate
+@dispatch(
+    {
+        torch.Tensor: _F.rotate,
+        PIL.Image.Image: _F.rotate,
+        features.Image: K.rotate_image,
+    }
+)
+def rotate(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...

@@ -40,7 +40,7 @@ class BoundingBox(Feature):
 
     def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
         # import at runtime to avoid cyclic imports
-        from torchvision.prototype.transforms.functional import convert_bounding_box_format
+        from torchvision.prototype.transforms.kernels import convert_bounding_box_format
 
         if isinstance(format, str):
             format = BoundingBoxFormat[format]

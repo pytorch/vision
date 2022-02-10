@@ -3,7 +3,7 @@ import itertools
 
 import pytest
 import torch.testing
-import torchvision.prototype.transforms.functional as F
+import torchvision.prototype.transforms.kernels as K
 from torch import jit
 from torchvision.prototype import features
 
@@ -115,7 +115,7 @@ class SampleInput:
 class KernelInfo:
     def __init__(self, name, *, sample_inputs_fn):
         self.name = name
-        self.kernel = getattr(F, name)
+        self.kernel = getattr(K, name)
         self._sample_inputs_fn = sample_inputs_fn
 
     def sample_inputs(self):
@@ -146,7 +146,7 @@ def horizontal_flip_image():
 @register_kernel_info_from_sample_inputs_fn
 def horizontal_flip_bounding_box():
     for bounding_box in make_bounding_boxes(formats=[features.BoundingBoxFormat.XYXY]):
-        yield SampleInput(bounding_box, image_size=bounding_box.image_size)
+        yield SampleInput(bounding_box, format=bounding_box.format, image_size=bounding_box.image_size)
 
 
 @register_kernel_info_from_sample_inputs_fn
@@ -154,8 +154,8 @@ def resize_image():
     for image, interpolation in itertools.product(
         make_images(),
         [
-            F.InterpolationMode.BILINEAR,
-            F.InterpolationMode.NEAREST,
+            K.InterpolationMode.BILINEAR,
+            K.InterpolationMode.NEAREST,
         ],
     ):
         height, width = image.shape[-2:]

@@ -1,52 +1,57 @@
-from typing import Tuple
+from typing import TypeVar, Any
 
 import torch
+from torchvision.prototype import features
+from torchvision.prototype.transforms import kernels as K
 from torchvision.transforms import functional as _F
 
+from ._utils import dispatch
 
-erase_image = _F.erase
-
-
-def _mixup(input: torch.Tensor, batch_dim: int, lam: float, inplace: bool) -> torch.Tensor:
-    if not inplace:
-        input = input.clone()
-
-    input_rolled = input.roll(1, batch_dim)
-    return input.mul_(lam).add_(input_rolled.mul_(1 - lam))
+T = TypeVar("T", bound=features.Feature)
 
 
-def mixup_image(image_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
-    if image_batch.ndim < 4:
-        raise ValueError("Need a batch of images")
-
-    return _mixup(image_batch, -4, lam, inplace)
-
-
-def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
-    if one_hot_label_batch.ndim < 2:
-        raise ValueError("Need a batch of one hot labels")
-
-    return _mixup(one_hot_label_batch, -2, lam, inplace)
+@dispatch(
+    {
+        torch.Tensor: _F.erase,
+        features.Image: K.erase_image,
+    }
+)
+def erase(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
 
 
-def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], inplace: bool = False) -> torch.Tensor:
-    if image_batch.ndim < 4:
-        raise ValueError("Need a batch of images")
-
-    if not inplace:
-        image_batch = image_batch.clone()
-
-    x1, y1, x2, y2 = box
-    image_rolled = image_batch.roll(1, -4)
-
-    image_batch[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
-    return image_batch
+@dispatch(
+    {
+        features.Image: K.mixup_image,
+        features.OneHotLabel: K.mixup_one_hot_label,
+    }
+)
+def mixup(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
 
 
-def cutmix_one_hot_label(
-    one_hot_label_batch: torch.Tensor, *, lam_adjusted: float, inplace: bool = False
-) -> torch.Tensor:
-    if one_hot_label_batch.ndim < 2:
-        raise ValueError("Need a batch of one hot labels")
+@dispatch(
+    {
+        features.Image: K.cutmix_image,
+        features.OneHotLabel: K.cutmix_one_hot_label,
+    }
+)
+def cutmix(input: T, *args: Any, **kwargs: Any) -> T:
+    """Perform the CutMix operation as introduced in the paper
+    `"CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features" <https://arxiv.org/abs/1905.04899>`_.
 
-    return _mixup(one_hot_label_batch, -2, lam_adjusted, inplace)
+    Dispatch to the corresponding kernels happens according to this table:
+
+    .. table::
+       :widths: 30 70
+
+       ====================================================  ================================================================
+       :class:`~torchvision.prototype.features.Image`        :func:`~torch.prototype.transforms.kernels.cutmix_image`
+       :class:`~torchvision.prototype.features.OneHotLabel`  :func:`~torch.prototype.transforms.kernels.cutmix_one_hot_label`
+       ====================================================  ================================================================
+
+    Please refer to the kernel documentations for a detailed explanation of the functionality and parameters.
+    """
+    ...
