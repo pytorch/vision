@@ -23,6 +23,8 @@ import torch
 import torchvision.datasets
 import torchvision.io
 from common_utils import get_tmp_dir, disable_console_output
+from torch.utils.data import default_collate
+from torchvision.transforms import ToTensor
 
 
 __all__ = [
@@ -578,6 +580,12 @@ class DatasetTestCase(unittest.TestCase):
 
                 mock.assert_called()
 
+    @test_all_configs
+    def test_collate_smoke(self, config, transform_kwargs=None):
+        with self.create_dataset(config, **transform_kwargs or dict()) as (dataset, _):
+            batch = [dataset[0]]
+            default_collate(batch)
+
 
 class ImageDatasetTestCase(DatasetTestCase):
     """Abstract base class for image dataset testcases.
@@ -622,6 +630,24 @@ class ImageDatasetTestCase(DatasetTestCase):
 
         with unittest.mock.patch("PIL.Image.open", new=new):
             yield
+
+    @test_all_configs
+    def test_collate_smoke(self, config, transform_kwargs=None):
+        if transform_kwargs is None:
+            if "transforms" in self._HAS_SPECIAL_KWARG:
+
+                class JointTransform:
+                    def __init__(self):
+                        self._transform = ToTensor()
+
+                    def __call__(self, *args):
+                        return tuple(self._transform(arg) if isinstance(arg, PIL.Image.Image) else arg for arg in args)
+
+                transform_kwargs = dict(transforms=JointTransform())
+            elif "transform" in self._HAS_SPECIAL_KWARG:
+                transform_kwargs = dict(transform=ToTensor())
+
+        super().test_collate_smoke.__wrapped__(self, config, transform_kwargs=transform_kwargs)
 
 
 class VideoDatasetTestCase(DatasetTestCase):
