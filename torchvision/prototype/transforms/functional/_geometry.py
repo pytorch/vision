@@ -10,9 +10,10 @@ horizontal_flip_image = _F.hflip
 
 
 def horizontal_flip_bounding_box(bounding_box: torch.Tensor, *, image_size: Tuple[int, int]) -> torch.Tensor:
-    bounding_box = bounding_box.clone()
-    bounding_box[..., (0, 2)] = image_size[1] - bounding_box[..., (2, 0)]
-    return bounding_box
+    shape = bounding_box.shape
+    bounding_box = bounding_box.view(-1, 4)
+    bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [0, 2]]
+    return bounding_box.view(shape)
 
 
 _resize_image = _F.resize
