@@ -1,7 +1,5 @@
-from typing import Tuple
-from typing import TypeVar
+from typing import TypeVar, Any
 
-import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import kernels as K
 
@@ -11,7 +9,7 @@ T = TypeVar("T", bound=features.Feature)
 
 
 @dispatch({features.Image: K.erase_image})
-def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace: bool) -> T:
+def erase(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
 
@@ -22,7 +20,7 @@ def erase(input: T, *, i: int, j: int, h: int, w: int, v: torch.Tensor, inplace:
         features.OneHotLabel: K.mixup_one_hot_label,
     },
 )
-def mixup(input: T, *, lam: float, inplace: bool) -> T:
+def mixup(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
 
@@ -33,7 +31,7 @@ def mixup(input: T, *, lam: float, inplace: bool) -> T:
         features.OneHotLabel: K.cutmix_one_hot_label,
     },
 )
-def cutmix(input: T, *, box: Tuple[int, int, int, int], lam_adjusted: float, inplace: bool) -> T:
+def cutmix(input: T, *args: Any, **kwargs: Any) -> T:
     """Perform the CutMix operation as introduced in the paper
     `"CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features" <https://arxiv.org/abs/1905.04899>`_.
 
@@ -48,17 +46,5 @@ def cutmix(input: T, *, box: Tuple[int, int, int, int], lam_adjusted: float, inp
        ====================================================  ================================================================
 
     Please refer to the kernel documentations for a detailed explanation of the functionality and parameters.
-
-    .. note::
-
-        The ``box`` parameter is only required for inputs of type
-
-        - :class:`~torchvision.prototype.features.Image`
-
-    .. note::
-
-        The ``lam_adjusted`` parameter is only required for inputs of type
-
-        - :class:`~torchvision.prototype.features.OneHotLabel`
     """
     ...

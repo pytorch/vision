@@ -1,5 +1,4 @@
-from typing import List
-from typing import TypeVar
+from typing import TypeVar, Any
 
 from torchvision.prototype import features
 from torchvision.prototype.transforms import kernels as K
@@ -10,6 +9,6 @@ T = TypeVar("T", bound=features.Feature)
 
 
 @dispatch({features.Image: K.normalize_image})
-def normalize(input: T, *, mean: List[float], std: List[float], inplace: bool) -> T:
+def normalize(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...

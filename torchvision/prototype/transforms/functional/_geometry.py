@@ -1,9 +1,9 @@
-from typing import List, Optional, TypeVar
+from typing import List, TypeVar, Any
 
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import kernels as K
-from torchvision.transforms import functional as _F, InterpolationMode
+from torchvision.transforms import functional as _F
 
 from ._utils import dispatch
 
@@ -21,7 +21,7 @@ def _horizontal_flip_bounding_box(input: features.BoundingBox) -> torch.Tensor:
     },
     pil_kernel=_F.hflip,
 )
-def horizontal_flip(input: T) -> T:
+def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
 
@@ -39,67 +39,30 @@ def _resize_bounding_box(input: features.BoundingBox, *, size: List[int]) -> fea
     },
     pil_kernel=_F.resize,
 )
-def resize(
-    input: T,
-    *,
-    size: List[int],
-    interpolation: InterpolationMode,
-    max_size: Optional[int],
-    antialias: Optional[bool],
-) -> T:
+def resize(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
 
 
 @dispatch({features.Image: K.center_crop_image})
-def center_crop(input: T, *, output_size: List[int]) -> T:
+def center_crop(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
 
 
 @dispatch({features.Image: K.resized_crop_image})
-def resized_crop(
-    input: T,
-    *,
-    top: int,
-    left: int,
-    height: int,
-    width: int,
-    size: List[int],
-    interpolation: InterpolationMode,
-) -> T:
+def resized_crop(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
 
 
 @dispatch({features.Image: K.affine_image})
-def affine(
-    input: T,
-    *,
-    angle: float,
-    translate: List[int],
-    scale: float,
-    shear: List[float],
-    interpolation: InterpolationMode,
-    fill: Optional[List[float]],
-    resample: Optional[int],
-    fillcolor: Optional[List[float]],
-    center: Optional[List[int]],
-) -> T:
+def affine(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
 
 
 @dispatch({features.Image: K.rotate_image})
-def rotate(
-    input: T,
-    *,
-    angle: float,
-    interpolation: InterpolationMode,
-    expand: bool,
-    center: Optional[List[int]],
-    fill: Optional[List[float]],
-    resample: Optional[int],
-) -> T:
+def rotate(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
