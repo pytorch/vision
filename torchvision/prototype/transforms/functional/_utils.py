@@ -1,8 +1,7 @@
 import functools
 import inspect
-from typing import Any, Optional, Callable, TypeVar, Dict, Union
+from typing import Any, Optional, Callable, TypeVar, Dict
 
-import PIL.Image
 import torch
 import torch.overrides
 from torchvision.prototype import features
@@ -10,11 +9,7 @@ from torchvision.prototype import features
 F = TypeVar("F", bound=features.Feature)
 
 
-def dispatch(
-    kernels: Dict[Any, Callable[..., Union[torch.Tensor, F]]],
-    *,
-    pil_kernel: Optional[Callable] = None,
-) -> Callable[[Callable[..., F]], Callable[..., F]]:
+def dispatch(kernels: Dict[Any, Optional[Callable]]) -> Callable[[Callable[..., F]], Callable[..., F]]:
     """Decorates a function to automatically dispatch to ``kernels`` based on the call arguments.
 
     The function body of the dispatcher can be empty as it is never called. The signature and the docstring however are
@@ -59,6 +54,9 @@ def dispatch(
     """
 
     def check_kernel(kernel: Any) -> bool:
+        if kernel is None:
+            return True
+
         if not callable(kernel):
             return False
 
@@ -69,46 +67,38 @@ def dispatch(
         return params[0].kind != inspect.Parameter.KEYWORD_ONLY
 
     for feature_type, kernel in kernels.items():
-        if not (issubclass(feature_type, features.Feature) and feature_type is not features.Feature):
-            raise TypeError(
-                "Can only register kernels for strict subclasses of `torchvision.prototype.features.Feature`."
-            )
-
         if not check_kernel(kernel):
             raise TypeError(
                 f"Kernel for feature type {feature_type.__name__} is not callable with kernel(input, *args, **kwargs)."
             )
 
-    if pil_kernel and features.Image not in kernels:
-        raise TypeError("PIL kernel can only be registered for images")
-
     def outer_wrapper(dispatch_fn: Callable[..., F]) -> Callable[..., F]:
         @functools.wraps(dispatch_fn)
         def inner_wrapper(input: F, *args: Any, **kwargs: Any) -> F:
             feature_type = type(input)
-
-            if issubclass(feature_type, PIL.Image.Image):
-                if pil_kernel is None:
-                    raise TypeError("No PIL kernel")
-
-                # TODO: maybe warn or fail here if we have decided on the scope of BC and deprecations
-                return pil_kernel(input, *args, **kwargs)  # type: ignore[no-any-return]
-
-            if not issubclass(feature_type, torch.Tensor):
-                raise TypeError("No tensor")
-
-            if not issubclass(feature_type, features.Feature):
-                # TODO: maybe warn or fail here if we have decided on the scope of BC and deprecations
-                input = features.Image(input)
-
             try:
                 kernel = kernels[feature_type]
             except KeyError:
-                raise TypeError(f"No support for {feature_type.__name__}") from None
+                try:
+                    feature_type, kernel = next(
+                        (feature_type, kernel)
+                        for feature_type, kernel in kernels.items()
+                        if isinstance(input, feature_type)
+                    )
+                except StopIteration:
+                    raise TypeError(f"No support for {type(input).__name__}") from None
 
-            output = kernel(input, *args, **kwargs)
+            if kernel is None:
+                output = dispatch_fn(input, *args, **kwargs)
+                if output is None:
+                    raise RuntimeError(
+                        f"dispatch_fn() did not handle inputs of type {type(input).__name__} "
+                        f"although it was configured to do so."
+                    )
+            else:
+                output = kernel(input, *args, **kwargs)
 
-            if not isinstance(output, feature_type):
+            if issubclass(feature_type, features.Feature) and type(output) is torch.Tensor:
                 output = feature_type.new_like(input, output)
 
             return output

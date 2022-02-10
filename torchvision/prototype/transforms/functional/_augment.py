@@ -1,14 +1,21 @@
 from typing import TypeVar, Any
 
+import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import kernels as K
+from torchvision.transforms import functional as _F
 
 from ._utils import dispatch
 
 T = TypeVar("T", bound=features.Feature)
 
 
-@dispatch({features.Image: K.erase_image})
+@dispatch(
+    {
+        torch.Tensor: _F.erase,
+        features.Image: K.erase_image,
+    }
+)
 def erase(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
@@ -18,7 +25,7 @@ def erase(input: T, *args: Any, **kwargs: Any) -> T:
     {
         features.Image: K.mixup_image,
         features.OneHotLabel: K.mixup_one_hot_label,
-    },
+    }
 )
 def mixup(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
@@ -29,7 +36,7 @@ def mixup(input: T, *args: Any, **kwargs: Any) -> T:
     {
         features.Image: K.cutmix_image,
         features.OneHotLabel: K.cutmix_one_hot_label,
-    },
+    }
 )
 def cutmix(input: T, *args: Any, **kwargs: Any) -> T:
     """Perform the CutMix operation as introduced in the paper
