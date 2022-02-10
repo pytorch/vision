@@ -39,7 +39,7 @@ commands:
       - run:
           name: adding UPLOAD_CHANNEL to BASH_ENV
           command: |
-            our_upload_channel=nightly
+            our_upload_channel=test
             # On tags upload to test instead
             if [[ -n "${CIRCLE_TAG}" ]]; then
               our_upload_channel=test
@@ -146,7 +146,7 @@ commands:
         default: true
     steps:
       - pip_install:
-          args: --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+          args: --pre torch -f https://download.pytorch.org/whl/test/cpu/torch_test.html
           descr: Install PyTorch from nightly releases
       - pip_install:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
@@ -174,11 +174,11 @@ binary_common: &binary_common
     build_version:
       description: "version number of release binary; by default, build a nightly"
       type: string
-      default: ""
+      default: "0.12.0"
     pytorch_version:
       description: "PyTorch version to build against; by default, use a nightly"
       type: string
-      default: ""
+      default: "1.11.0"
     # Don't edit these
     python_version:
       description: "Python version to build against (e.g., 3.7)"
@@ -586,7 +586,7 @@ jobs:
           command: |
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
-            conda install -v -y -c pytorch-nightly pytorch
+            conda install -v -y -c pytorch-test pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
           name: smoke test
@@ -606,7 +606,7 @@ jobs:
             set -x
             source /usr/local/etc/profile.d/conda.sh && conda activate python${PYTHON_VERSION}
       - pip_install:
-          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/test/torch_test.html
       - run:
           name: smoke test
           command: |
@@ -651,7 +651,7 @@ jobs:
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
             conda install "Pillow>=5.3.0,!=8.3.*"
-            conda install -v -y -c pytorch-nightly pytorch
+            conda install -v -y -c pytorch-test pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
           name: smoke test
@@ -676,7 +676,7 @@ jobs:
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
       - pip_install:
-          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/nightly/torch_nightly.html
+          args: $(ls ~/workspace/torchvision*.whl) --pre -f https://download.pytorch.org/whl/test/torch_test.html
       - run:
           name: smoke test
           command: |
