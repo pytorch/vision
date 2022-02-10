@@ -8,8 +8,8 @@ erase_image = _F.erase
 
 
 def _mixup(input: torch.Tensor, batch_dim: int, lam: float) -> torch.Tensor:
-    input_rolled = input.roll(1, batch_dim)
-    return input.mul_(lam).add_(input_rolled.mul_(1 - lam))
+    input = input.clone()
+    return input.roll(1, batch_dim).mul_(1 - lam).add_(input.mul_(lam))
 
 
 def mixup_image(image_batch: torch.Tensor, *, lam: float) -> torch.Tensor:
@@ -33,6 +33,7 @@ def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int]) -
     x1, y1, x2, y2 = box
     image_rolled = image_batch.roll(1, -4)
 
+    image_batch = image_batch.clone()
     image_batch[..., y1:y2, x1:x2] = image_rolled[..., y1:y2, x1:x2]
     return image_batch
 
