@@ -25,10 +25,7 @@ def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
         output = K.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
         return cast(T, features.BoundingBox.new_like(input, output))
 
-    raise RuntimeError(
-        f"horizontal_flip() did not handle inputs of type {type(input).__name__} "
-        f"although it was configured to do so."
-    )
+    raise RuntimeError
 
 
 @dispatch(
@@ -47,10 +44,7 @@ def resize(input: T, *args: Any, **kwargs: Any) -> T:
         output = K.resize_bounding_box(input, old_image_size=list(input.image_size), new_image_size=size)
         return cast(T, features.BoundingBox.new_like(input, output, image_size=size))
 
-    raise RuntimeError(
-        f"horizontal_flip() did not handle inputs of type {type(input).__name__} "
-        f"although it was configured to do so."
-    )
+    raise RuntimeError
 
 
 @dispatch(

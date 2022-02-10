@@ -92,7 +92,7 @@ def dispatch(kernels: Dict[Any, Optional[Callable]]) -> Callable[[Callable[..., 
                 output = dispatch_fn(input, *args, **kwargs)
                 if output is None:
                     raise RuntimeError(
-                        f"dispatch_fn() did not handle inputs of type {type(input).__name__} "
+                        f"{dispatch_fn.__name__}() did not handle inputs of type {type(input).__name__} "
                         f"although it was configured to do so."
                     )
             else:
