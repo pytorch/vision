@@ -37,7 +37,7 @@ def convert_bounding_box_format(
     bounding_box: torch.Tensor, *, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
 ) -> torch.Tensor:
     if new_format == old_format:
-        return bounding_box
+        return bounding_box.clone()
 
     if old_format == BoundingBoxFormat.XYWH:
         bounding_box = _xywh_to_xyxy(bounding_box)
@@ -58,7 +58,7 @@ def _grayscale_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
 
 def convert_color_space(image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace) -> torch.Tensor:
     if new_color_space == old_color_space:
-        return image
+        return image.clone()
 
     if old_color_space == ColorSpace.GRAYSCALE:
         image = _grayscale_to_rgb(image)

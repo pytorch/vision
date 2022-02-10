@@ -7,34 +7,28 @@ from torchvision.transforms import functional as _F
 erase_image = _F.erase
 
 
-def _mixup(input: torch.Tensor, batch_dim: int, lam: float, inplace: bool) -> torch.Tensor:
-    if not inplace:
-        input = input.clone()
-
+def _mixup(input: torch.Tensor, batch_dim: int, lam: float) -> torch.Tensor:
     input_rolled = input.roll(1, batch_dim)
     return input.mul_(lam).add_(input_rolled.mul_(1 - lam))
 
 
-def mixup_image(image_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
+def mixup_image(image_batch: torch.Tensor, *, lam: float) -> torch.Tensor:
     if image_batch.ndim < 4:
         raise ValueError("Need a batch of images")
 
-    return _mixup(image_batch, -4, lam, inplace)
+    return _mixup(image_batch, -4, lam)
 
 
-def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float, inplace: bool = False) -> torch.Tensor:
+def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float) -> torch.Tensor:
     if one_hot_label_batch.ndim < 2:
         raise ValueError("Need a batch of one hot labels")
 
-    return _mixup(one_hot_label_batch, -2, lam, inplace)
+    return _mixup(one_hot_label_batch, -2, lam)
 
 
-def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], inplace: bool = False) -> torch.Tensor:
+def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int]) -> torch.Tensor:
     if image_batch.ndim < 4:
         raise ValueError("Need a batch of images")
-
-    if not inplace:
-        image_batch = image_batch.clone()
 
     x1, y1, x2, y2 = box
     image_rolled = image_batch.roll(1, -4)
@@ -43,10 +37,8 @@ def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int], i
     return image_batch
 
 
-def cutmix_one_hot_label(
-    one_hot_label_batch: torch.Tensor, *, lam_adjusted: float, inplace: bool = False
-) -> torch.Tensor:
+def cutmix_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam_adjusted: float) -> torch.Tensor:
     if one_hot_label_batch.ndim < 2:
         raise ValueError("Need a batch of one hot labels")
 
-    return _mixup(one_hot_label_batch, -2, lam_adjusted, inplace)
+    return _mixup(one_hot_label_batch, -2, lam_adjusted)
