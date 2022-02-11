@@ -41,7 +41,7 @@ def resize(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     if isinstance(input, features.BoundingBox):
         size = kwargs.pop("size")
-        output = K.resize_bounding_box(input, old_image_size=list(input.image_size), new_image_size=size)
+        output = K.resize_bounding_box(input, size=size, image_size=input.image_size)
         return cast(T, features.BoundingBox.new_like(input, output, image_size=size))
 
     raise RuntimeError
