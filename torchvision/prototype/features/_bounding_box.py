@@ -39,6 +39,9 @@ class BoundingBox(Feature):
         return bounding_box
 
     def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
+        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
+        #  promote this out of the prototype state
+
         # import at runtime to avoid cyclic imports
         from torchvision.prototype.transforms.kernels import convert_bounding_box_format
 
