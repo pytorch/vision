@@ -1,8 +1,7 @@
 import io
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator
+from typing import Any, Dict, List, Optional, Tuple, Iterator
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features
 from torchvision.prototype.datasets.utils import (
@@ -10,7 +9,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetConfig,
     DatasetInfo,
     OnlineResource,
-    DatasetType,
     GDriveResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
@@ -46,7 +44,6 @@ class PCAM(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "pcam",
-            type=DatasetType.RAW,
             homepage="https://github.com/basveeling/pcam",
             categories=2,
             valid_options=dict(split=("train", "test", "val")),
@@ -98,7 +95,7 @@ class PCAM(Dataset):
             for file_name, gdrive_id, sha256 in self._RESOURCES[config.split]
         ]
 
-    def _collate_and_decode(self, data: Tuple[Any, Any]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Any, Any]) -> Dict[str, Any]:
         image, target = data  # They're both numpy arrays at this point
 
         return {
@@ -107,11 +104,7 @@ class PCAM(Dataset):
         }
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
 
         images_dp, targets_dp = resource_dps
@@ -122,4 +115,4 @@ class PCAM(Dataset):
         dp = Zipper(images_dp, targets_dp)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        return Mapper(dp, self._collate_and_decode)
+        return Mapper(dp, self._prepare_sample)

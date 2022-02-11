@@ -1,85 +1,80 @@
-from typing import Tuple, cast, TypeVar, Set, Dict, Any, Callable, Optional, Mapping, Type, Sequence
+from typing import Any, cast, Dict, Set, TypeVar, Union, Optional, Type, Callable, Tuple, Sequence, Mapping
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
-from torchvision.prototype.utils._internal import add_suggestion
 
 
-F = TypeVar("F", bound="Feature")
+F = TypeVar("F", bound="_Feature")
 
 
-DEFAULT = object()
-
-
-class Feature(torch.Tensor):
+class _Feature(torch.Tensor):
     _META_ATTRS: Set[str] = set()
-    _meta_data: Dict[str, Any]
+    _metadata: Dict[str, Any]
 
-    def __init_subclass__(cls):
-        # In order to help static type checkers, we require subclasses of `Feature` add the meta data attributes
-        # as static class annotations:
-        #
-        # >>> class Foo(Feature):
-        # ...     bar: str
-        # ...     baz: Optional[str]
-        #
-        # Internally, this information is used twofold:
-        #
-        # 1. A class annotation is contained in `cls.__annotations__` but not in `cls.__dict__`. We use this difference
-        #    to automatically detect the meta data attributes and expose them as `@property`'s for convenient runtime
-        #    access. This happens in this method.
-        # 2. The information extracted in 1. is also used at creation (`__new__`) to perform an input parsing for
-        #    unknown arguments.
+    def __init_subclass__(cls) -> None:
+        """
+        For convenient copying of metadata, we store it inside a dictionary rather than multiple individual attributes.
+        By adding the metadata attributes as class annotations on subclasses of :class:`Feature`, this method adds
+        properties to have the same convenient access as regular attributes.
+
+        >>> class Foo(_Feature):
+        ...     bar: str
+        ...     baz: Optional[str]
+        >>> foo = Foo()
+        >>> foo.bar
+        >>> foo.baz
+
+        This has the additional benefit that autocomplete engines and static type checkers are aware of the metadata.
+        """
         meta_attrs = {attr for attr in cls.__annotations__.keys() - cls.__dict__.keys() if not attr.startswith("_")}
         for super_cls in cls.__mro__[1:]:
-            if super_cls is Feature:
+            if super_cls is _Feature:
                 break
 
-            meta_attrs.update(super_cls._META_ATTRS)
+            meta_attrs.update(cast(Type[_Feature], super_cls)._META_ATTRS)
 
         cls._META_ATTRS = meta_attrs
-        for attr in meta_attrs:
-            setattr(cls, attr, property(lambda self, attr=attr: self._meta_data[attr]))
+        for name in meta_attrs:
+            setattr(cls, name, property(cast(Callable[[F], Any], lambda self, name=name: self._metadata[name])))
 
-    def __new__(cls, data, *, dtype=None, device=None, like=None, **kwargs):
-        unknown_meta_attrs = kwargs.keys() - cls._META_ATTRS
-        if unknown_meta_attrs:
-            unknown_meta_attr = sorted(unknown_meta_attrs)[0]
-            raise TypeError(
-                add_suggestion(
-                    f"{cls.__name__}() got unexpected keyword '{unknown_meta_attr}'.",
-                    word=unknown_meta_attr,
-                    possibilities=sorted(cls._META_ATTRS),
-                )
-            )
-
-        if like is not None:
-            dtype = dtype or like.dtype
-            device = device or like.device
-        data = cls._to_tensor(data, dtype=dtype, device=device)
-        requires_grad = False
-        self = torch.Tensor._make_subclass(cast(_TensorBase, cls), data, requires_grad)
-
-        meta_data = dict()
-        for attr, (explicit, fallback) in cls._parse_meta_data(**kwargs).items():
-            if explicit is not DEFAULT:
-                value = explicit
-            elif like is not None:
-                value = getattr(like, attr)
-            else:
-                value = fallback(data) if callable(fallback) else fallback
-            meta_data[attr] = value
-        self._meta_data = meta_data
-
-        return self
+    def __new__(
+        cls: Type[F],
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str]] = None,
+    ) -> F:
+        if isinstance(device, str):
+            device = torch.device(device)
+        feature = cast(
+            F,
+            torch.Tensor._make_subclass(
+                cast(_TensorBase, cls),
+                cls._to_tensor(data, dtype=dtype, device=device),
+                # requires_grad
+                False,
+            ),
+        )
+        feature._metadata = dict()
+        return feature
 
     @classmethod
-    def _to_tensor(cls, data, *, dtype, device):
+    def _to_tensor(self, data: Any, *, dtype: Optional[torch.dtype], device: Optional[torch.device]) -> torch.Tensor:
         return torch.as_tensor(data, dtype=dtype, device=device)
 
     @classmethod
-    def _parse_meta_data(cls) -> Dict[str, Tuple[Any, Any]]:
-        return dict()
+    def new_like(
+        cls: Type[F],
+        other: F,
+        data: Any,
+        *,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str]] = None,
+        **metadata: Any,
+    ) -> F:
+        _metadata = other._metadata.copy()
+        _metadata.update(metadata)
+        return cls(data, dtype=dtype or other.dtype, device=device or other.device, **_metadata)
 
     @classmethod
     def __torch_function__(
@@ -89,12 +84,37 @@ class Feature(torch.Tensor):
         args: Sequence[Any] = (),
         kwargs: Optional[Mapping[str, Any]] = None,
     ) -> torch.Tensor:
+        """For general information about how the __torch_function__ protocol works,
+        see https://pytorch.org/docs/stable/notes/extending.html#extending-torch
+
+        TL;DR: Every time a PyTorch operator is called, it goes through the inputs and looks for the
+        ``__torch_function__`` method. If one is found, it is invoked with the operator as ``func`` as well as the
+        ``args`` and ``kwargs`` of the original call.
+
+        The default behavior of :class:`~torch.Tensor`'s is to retain a custom tensor type. For the :class:`Feature`
+        use case, this has two downsides:
+
+        1. Since some :class:`Feature`'s require metadata to be constructed, the default wrapping, i.e.
+           ``return cls(func(*args, **kwargs))``, will fail for them.
+        2. For most operations, there is no way of knowing if the input type is still valid for the output.
+
+        For these reasons, the automatic output wrapping is turned off for most operators.
+
+        Exceptions to this are:
+
+        - :func:`torch.clone`
+        - :meth:`torch.Tensor.to`
+        """
+        kwargs = kwargs or dict()
         with DisableTorchFunction():
-            output = func(*args, **(kwargs or dict()))
-        if func is not torch.Tensor.clone:
+            output = func(*args, **kwargs)
+
+        if func is torch.Tensor.clone:
+            return cls.new_like(args[0], output)
+        elif func is torch.Tensor.to:
+            return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
+        else:
             return output
 
-        return cls(output, like=args[0])
-
     def __repr__(self) -> str:
-        return torch.Tensor.__repr__(self).replace("tensor", type(self).__name__)
+        return cast(str, torch.Tensor.__repr__(self)).replace("tensor", type(self).__name__)
