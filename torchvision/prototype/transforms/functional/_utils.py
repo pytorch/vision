@@ -6,7 +6,7 @@ import torch
 import torch.overrides
 from torchvision.prototype import features
 
-F = TypeVar("F", bound=features.Feature)
+F = TypeVar("F", bound=features._Feature)
 
 
 def dispatch(kernels: Dict[Any, Optional[Callable]]) -> Callable[[Callable[..., F]], Callable[..., F]]:
@@ -79,7 +79,7 @@ def dispatch(kernels: Dict[Any, Optional[Callable]]) -> Callable[[Callable[..., 
             else:
                 output = kernel(input, *args, **kwargs)
 
-            if issubclass(feature_type, features.Feature) and type(output) is torch.Tensor:
+            if issubclass(feature_type, features._Feature) and type(output) is torch.Tensor:
                 output = feature_type.new_like(input, output)
 
             return output

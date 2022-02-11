@@ -4,10 +4,10 @@ import torch
 from torch._C import _TensorBase, DisableTorchFunction
 
 
-F = TypeVar("F", bound="Feature")
+F = TypeVar("F", bound="_Feature")
 
 
-class Feature(torch.Tensor):
+class _Feature(torch.Tensor):
     _META_ATTRS: Set[str] = set()
     _metadata: Dict[str, Any]
 
@@ -17,7 +17,7 @@ class Feature(torch.Tensor):
         By adding the metadata attributes as class annotations on subclasses of :class:`Feature`, this method adds
         properties to have the same convenient access as regular attributes.
 
-        >>> class Foo(Feature):
+        >>> class Foo(_Feature):
         ...     bar: str
         ...     baz: Optional[str]
         >>> foo = Foo()
@@ -28,10 +28,10 @@ class Feature(torch.Tensor):
         """
         meta_attrs = {attr for attr in cls.__annotations__.keys() - cls.__dict__.keys() if not attr.startswith("_")}
         for super_cls in cls.__mro__[1:]:
-            if super_cls is Feature:
+            if super_cls is _Feature:
                 break
 
-            meta_attrs.update(cast(Type[Feature], super_cls)._META_ATTRS)
+            meta_attrs.update(cast(Type[_Feature], super_cls)._META_ATTRS)
 
         cls._META_ATTRS = meta_attrs
         for name in meta_attrs:

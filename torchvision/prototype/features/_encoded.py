@@ -6,13 +6,13 @@ import PIL.Image
 import torch
 from torchvision.prototype.utils._internal import fromfile, ReadOnlyTensorBuffer
 
-from ._feature import Feature
+from ._feature import _Feature
 from ._image import Image
 
 D = TypeVar("D", bound="EncodedData")
 
 
-class EncodedData(Feature):
+class EncodedData(_Feature):
     @classmethod
     def _to_tensor(cls, data: Any, *, dtype: Optional[torch.dtype], device: Optional[torch.device]) -> torch.Tensor:
         # TODO: warn / bail out if we encounter a tensor with shape other than (N,) or with dtype other than uint8?

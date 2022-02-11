@@ -7,7 +7,7 @@ from torchvision.transforms import functional as _F, InterpolationMode
 from ._meta_conversion import convert_bounding_box_format
 
 
-T = TypeVar("T", bound=features.Feature)
+T = TypeVar("T", bound=features._Feature)
 
 
 horizontal_flip_image = _F.hflip

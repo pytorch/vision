@@ -31,7 +31,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import BoundingBox, Label, Feature, EncodedImage
+from torchvision.prototype.features import BoundingBox, Label, _Feature, EncodedImage
 from torchvision.prototype.utils._internal import FrozenMapping
 
 
@@ -95,7 +95,7 @@ class Coco(Dataset):
         labels = [ann["category_id"] for ann in anns]
         return dict(
             # TODO: create a segmentation feature
-            segmentations=Feature(
+            segmentations=_Feature(
                 torch.stack(
                     [
                         self._segmentation_to_mask(ann["segmentation"], is_crowd=ann["iscrowd"], image_size=image_size)
@@ -103,8 +103,8 @@ class Coco(Dataset):
                     ]
                 )
             ),
-            areas=Feature([ann["area"] for ann in anns]),
-            crowds=Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            areas=_Feature([ann["area"] for ann in anns]),
+            crowds=_Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",

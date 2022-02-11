@@ -23,7 +23,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import EncodedImage, Feature, Label, BoundingBox
+from torchvision.prototype.features import EncodedImage, _Feature, Label, BoundingBox
 
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
@@ -140,7 +140,7 @@ class CelebA(Dataset):
                 image_size=image.image_size,
             ),
             landmarks={
-                landmark: Feature((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
+                landmark: _Feature((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
                 for landmark in {key[:-2] for key in landmarks.keys()}
             },
         )

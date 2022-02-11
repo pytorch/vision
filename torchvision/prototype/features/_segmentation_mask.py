@@ -1,5 +1,5 @@
-from ._feature import Feature
+from ._feature import _Feature
 
 
-class SegmentationMask(Feature):
+class SegmentationMask(_Feature):
     pass

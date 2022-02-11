@@ -5,18 +5,16 @@ from typing import Any, Tuple, Union, Optional
 import torch
 from torchvision.prototype.utils._internal import StrEnum
 
-from ._feature import Feature
+from ._feature import _Feature
 
 
 class BoundingBoxFormat(StrEnum):
-    # this is just for test purposes
-    _SENTINEL = -1
     XYXY = StrEnum.auto()
     XYWH = StrEnum.auto()
     CXCYWH = StrEnum.auto()
 
 
-class BoundingBox(Feature):
+class BoundingBox(_Feature):
     format: BoundingBoxFormat
     image_size: Tuple[int, int]
 

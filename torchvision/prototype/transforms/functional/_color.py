@@ -8,7 +8,7 @@ from torchvision.transforms import functional as _F
 
 from ._utils import dispatch
 
-T = TypeVar("T", bound=features.Feature)
+T = TypeVar("T", bound=features._Feature)
 
 
 @dispatch(

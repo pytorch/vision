@@ -5,10 +5,10 @@ from typing import Any, Optional, Sequence, cast
 import torch
 from torchvision.prototype.utils._internal import apply_recursively
 
-from ._feature import Feature
+from ._feature import _Feature
 
 
-class Label(Feature):
+class Label(_Feature):
     categories: Optional[Sequence[str]]
 
     def __new__(
@@ -37,7 +37,7 @@ class Label(Feature):
         return apply_recursively(lambda idx: cast(Sequence[str], self.categories)[idx], self.tolist())
 
 
-class OneHotLabel(Feature):
+class OneHotLabel(_Feature):
     categories: Optional[Sequence[str]]
 
     def __new__(

@@ -29,7 +29,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     path_accessor,
 )
-from torchvision.prototype.features import Label, BoundingBox, Feature, EncodedImage
+from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
 csv.register_dialect("cub200", delimiter=" ")
 
@@ -131,7 +131,7 @@ class CUB200(Dataset):
                 format="xyxy",
                 image_size=image_size,
             ),
-            segmentation=Feature(content["seg"]),
+            segmentation=_Feature(content["seg"]),
         )
 
     def _prepare_sample(

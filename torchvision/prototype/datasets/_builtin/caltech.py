@@ -17,7 +17,7 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat, hint_sharding, hint_shuffling
-from torchvision.prototype.features import Label, BoundingBox, Feature, EncodedImage
+from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
 
 class Caltech101(Dataset):
@@ -95,7 +95,7 @@ class Caltech101(Dataset):
             bounding_box=BoundingBox(
                 ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy", image_size=image.image_size
             ),
-            contour=Feature(ann["obj_contour"].T),
+            contour=_Feature(ann["obj_contour"].T),
         )
 
     def _make_datapipe(

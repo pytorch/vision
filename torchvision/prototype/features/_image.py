@@ -10,18 +10,16 @@ from torchvision.utils import draw_bounding_boxes
 from torchvision.utils import make_grid
 
 from ._bounding_box import BoundingBox
-from ._feature import Feature
+from ._feature import _Feature
 
 
 class ColorSpace(StrEnum):
-    # this is just for test purposes
-    _SENTINEL = -1
     OTHER = 0
     GRAYSCALE = 1
     RGB = 3
 
 
-class Image(Feature):
+class Image(_Feature):
     color_space: ColorSpace
 
     def __new__(

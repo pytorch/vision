@@ -27,7 +27,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import Feature, EncodedImage
+from torchvision.prototype.features import _Feature, EncodedImage
 
 
 class SBD(Dataset):
@@ -81,8 +81,8 @@ class SBD(Dataset):
             image=EncodedImage.from_file(image_buffer),
             ann_path=ann_path,
             # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
-            boundaries=Feature(np.stack([raw_boundary.toarray() for raw_boundary in anns["Boundaries"].item()])),
-            segmentation=Feature(anns["Segmentation"].item()),
+            boundaries=_Feature(np.stack([raw_boundary.toarray() for raw_boundary in anns["Boundaries"].item()])),
+            segmentation=_Feature(anns["Segmentation"].item()),
         )
 
     def _make_datapipe(
