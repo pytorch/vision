@@ -52,7 +52,7 @@ required fields:
 - `type`: Field of the `datasets.utils.DatasetType` enum. This is used to select
    the default decoder in case the user doesn't pass one. There are currently
    only two options: `IMAGE` and `RAW` ([see
-   below](what-is-the-datasettyperaw-and-when-do-i-use-it) for details).
+   below](#what-is-the-datasettyperaw-and-when-do-i-use-it) for details).
 
 There are more optional parameters that can be passed:
 
