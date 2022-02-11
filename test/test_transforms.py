@@ -441,7 +441,7 @@ def test_resize_antialias_error():
 
 
 @pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
-def test_resize_size_equals_max_size(height, width):
+def test_resize_size_equals_small_edge_size(height, width):
     # Non-regression test for https://github.com/pytorch/vision/issues/5405
     # max_size used to be ignored if size == small_edge_size
     max_size = 40
