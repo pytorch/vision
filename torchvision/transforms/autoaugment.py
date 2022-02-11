@@ -480,7 +480,6 @@ class AugMix(torch.nn.Module):
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
     """
-    _PARAMETER_MAX: int = 10
 
     def __init__(
         self,
@@ -493,6 +492,7 @@ class AugMix(torch.nn.Module):
         fill: Optional[List[float]] = None,
     ) -> None:
         super().__init__()
+        self._PARAMETER_MAX = 10
         if not (1 <= severity <= self._PARAMETER_MAX):
             raise ValueError(f"The severity must be between [1, {self._PARAMETER_MAX}]. Got {severity} instead.")
         self.severity = severity
@@ -556,7 +556,10 @@ class AugMix(torch.nn.Module):
         m = torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha], device=img.device))[0]
         op_meta = self._augmentation_space(self._PARAMETER_MAX, F.get_image_size(img))
 
-        batch = img[(None,) * max(4 - img.ndim, 0)]
+        expand_dims = max(4 - img.ndim, 0)
+        batch = img
+        for _ in range(expand_dims):
+            batch = batch.unsqueeze(0)
         mix = torch.zeros_like(batch, dtype=torch.float)
         for i in range(self.mixture_width):
             aug = batch.clone()
@@ -573,10 +576,11 @@ class AugMix(torch.nn.Module):
                 if signed and torch.randint(2, (1,)):
                     magnitude *= -1.0
                 aug = _apply_op(aug, op_name, magnitude, interpolation=self.interpolation, fill=fill)
-            mix.add_(aug.mul_(mixing_weights[i]))
+            mix.add_(aug * mixing_weights[i])
         mix.mul_(m).add_((1 - m) * batch)
         mix = mix.to(dtype=img.dtype)
-        mix = mix[(0,) * max(4 - img.ndim, 0)]
+        for _ in range(expand_dims):
+            mix = mix.squeeze(0)
 
         if not isinstance(orig_img, Tensor):
             return self._tensor_to_pil(mix)
