@@ -51,13 +51,9 @@ def resize_image(
 def resize_segmentation_mask(
     segmentation_mask: torch.Tensor,
     size: List[int],
-    interpolation: InterpolationMode = InterpolationMode.NEAREST,
     max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
 ) -> torch.Tensor:
-    return resize_image(
-        segmentation_mask, size=size, interpolation=interpolation, max_size=max_size, antialias=antialias
-    )
+    return resize_image(segmentation_mask, size=size, interpolation=InterpolationMode.NEAREST, max_size=max_size)
 
 
 # TODO: handle max_size
