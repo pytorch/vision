@@ -29,8 +29,8 @@ class SqueezeExcitation(SElayer):
         self.relu = self.activation
         delattr(self, "activation")
         warnings.warn(
-            "This SqueezeExcitation class is deprecated and will be removed in future versions. "
-            "Use torchvision.ops.misc.SqueezeExcitation instead.",
+            "This SqueezeExcitation class is deprecated since 0.12 and will be removed in 0.14. "
+            "Use torchvision.ops.SqueezeExcitation instead.",
             FutureWarning,
         )
 
