@@ -1588,6 +1588,25 @@ def test_trivialaugmentwide(fill, num_magnitude_bins, grayscale):
     transform.__repr__()
 
 
+@pytest.mark.parametrize("fill", [None, 85, (128, 128, 128)])
+@pytest.mark.parametrize("severity", [1, 10])
+@pytest.mark.parametrize("mixture_width", [1, 2])
+@pytest.mark.parametrize("chain_depth", [-1, 2])
+@pytest.mark.parametrize("all_ops", [True, False])
+@pytest.mark.parametrize("grayscale", [True, False])
+def test_augmix(fill, severity, mixture_width, chain_depth, all_ops, grayscale):
+    random.seed(42)
+    img = Image.open(GRACE_HOPPER)
+    if grayscale:
+        img, fill = _get_grayscale_test_image(img, fill)
+    transform = transforms.AugMix(
+        fill=fill, severity=severity, mixture_width=mixture_width, chain_depth=chain_depth, all_ops=all_ops
+    )
+    for _ in range(100):
+        img = transform(img)
+    transform.__repr__()
+
+
 def test_random_crop():
     height = random.randint(10, 32) * 2
     width = random.randint(10, 32) * 2
