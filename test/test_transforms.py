@@ -440,6 +440,19 @@ def test_resize_antialias_error():
         t(img)
 
 
+@pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
+def test_resize_size_equals_max_size(height, width):
+    # Non-regression test for https://github.com/pytorch/vision/issues/5405
+    # max_size used to be ignored if size == small_edge_size
+    max_size = 40
+    img = Image.new("RGB", size=(width, height), color=127)
+
+    small_edge = min(height, width)
+    t = transforms.Resize(small_edge, max_size=max_size)
+    result = t(img)
+    assert max(result.size) == max_size
+
+
 class TestPad:
     def test_pad(self):
         height = random.randint(10, 32) * 2
