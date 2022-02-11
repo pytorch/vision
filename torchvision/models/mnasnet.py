@@ -128,15 +128,7 @@ class MNASNet(torch.nn.Module):
         ]
         self.layers = nn.Sequential(*layers)
         self.classifier = nn.Sequential(nn.Dropout(p=dropout, inplace=True), nn.Linear(1280, num_classes))
-        self._initialize_weights()
 
-    def forward(self, x: Tensor) -> Tensor:
-        x = self.layers(x)
-        # Equivalent to global avgpool and removing H and W dimensions.
-        x = x.mean([2, 3])
-        return self.classifier(x)
-
-    def _initialize_weights(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -148,6 +140,12 @@ class MNASNet(torch.nn.Module):
             elif isinstance(m, nn.Linear):
                 nn.init.kaiming_uniform_(m.weight, mode="fan_out", nonlinearity="sigmoid")
                 nn.init.zeros_(m.bias)
+
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.layers(x)
+        # Equivalent to global avgpool and removing H and W dimensions.
+        x = x.mean([2, 3])
+        return self.classifier(x)
 
     def _load_from_state_dict(
         self,
