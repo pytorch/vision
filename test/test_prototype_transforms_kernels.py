@@ -170,11 +170,11 @@ def resize_image():
 def resize_bounding_box():
     for bounding_box in make_bounding_boxes():
         height, width = bounding_box.image_size
-        for new_image_size in [
+        for size in [
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(bounding_box, old_image_size=bounding_box.image_size, new_image_size=new_image_size)
+            yield SampleInput(bounding_box, size=size, image_size=bounding_box.image_size)
 
 
 class TestKernelsCommon:

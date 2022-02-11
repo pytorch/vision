@@ -12,20 +12,20 @@ class Feature(torch.Tensor):
     _metadata: Dict[str, Any]
 
     def __init_subclass__(cls) -> None:
-        # In order to help static type checkers, we require subclasses of `Feature` to add the metadata attributes
-        # as static class annotations:
-        #
-        # >>> class Foo(Feature):
-        # ...     bar: str
-        # ...     baz: Optional[str]
-        #
-        # Internally, this information is used twofold:
-        #
-        # 1. A class annotation is contained in `cls.__annotations__` but not in `cls.__dict__`. We use this difference
-        #    to automatically detect the meta data attributes and expose them as `@property`'s for convenient runtime
-        #    access. This happens in this method.
-        # 2. The information extracted in 1. is also used at creation (`__new__`) to perform an input parsing for
-        #    unknown arguments.
+        """
+        For convenient copying of metadata, we store it inside a dictionary rather than multiple individual attributes.
+        By adding the metadata attributes as class annotations on subclasses of :class:`Feature`, this method adds
+        properties to have the same convenient access as regular attributes.
+
+        >>> class Foo(Feature):
+        ...     bar: str
+        ...     baz: Optional[str]
+        >>> foo = Foo()
+        >>> foo.bar
+        >>> foo.baz
+
+        This has the additional benefit that autocomplete engines and static type checkers are aware of the metadata.
+        """
         meta_attrs = {attr for attr in cls.__annotations__.keys() - cls.__dict__.keys() if not attr.startswith("_")}
         for super_cls in cls.__mro__[1:]:
             if super_cls is Feature:

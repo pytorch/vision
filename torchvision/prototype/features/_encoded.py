@@ -39,6 +39,9 @@ class EncodedImage(EncodedData):
         return self._image_size
 
     def decode(self) -> Image:
+        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
+        #  promote this out of the prototype state
+
         # import at runtime to avoid cyclic imports
         from torchvision.prototype.transforms.kernels import decode_image_with_pil
 
