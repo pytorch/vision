@@ -7,7 +7,7 @@ from torch import Tensor
 
 from . import functional as F, InterpolationMode
 
-__all__ = ["AutoAugmentPolicy", "AutoAugment", "RandAugment", "TrivialAugmentWide"]
+__all__ = ["AutoAugmentPolicy", "AutoAugment", "RandAugment", "TrivialAugmentWide", "AugMix"]
 
 
 def _apply_op(
@@ -461,7 +461,25 @@ class TrivialAugmentWide(torch.nn.Module):
 
 
 class AugMix(torch.nn.Module):
-    # TODO: Documentation
+    r"""AugMix data augmentation method based on
+    `"AugMix: A Simple Data Processing Method to Improve Robustness and Uncertainty" <https://arxiv.org/abs/1912.02781>`_.
+    If the image is torch Tensor, it should be of type torch.uint8, and it is expected
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If img is PIL Image, it is expected to be in mode "L" or "RGB".
+
+    Args:
+        severity (int): The severity of base augmentation operators. Default is ``1``.
+        mixture_width (int): The number of augmentation chains. Default is ``3``.
+        chain_depth (int): The depth of augmentation chains. A negative value denotes stochastic depth in [1, 3].
+            Default is ``-1``.
+        alpha (float): The hyperparameter for the probability distributions. Default is ``1.0``.
+        all_ops (bool): Use all operations (including brightness, contrast, color and sharpness). Default is ``True``.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
+            If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
+        fill (sequence or number, optional): Pixel fill value for the area outside the transformed
+            image. If given a number, the value is used for all bands respectively.
+    """
     _PARAMETER_MAX: int = 10
 
     def __init__(
@@ -470,7 +488,7 @@ class AugMix(torch.nn.Module):
         mixture_width: int = 3,
         chain_depth: int = -1,
         alpha: float = 1.0,
-        all_ops: bool = False,
+        all_ops: bool = True,
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[List[float]] = None,
     ) -> None:
@@ -499,38 +517,50 @@ class AugMix(torch.nn.Module):
             "Equalize": (torch.tensor(0.0), False),
         }
         if self.all_ops:
-            s.update({
-                "Brightness": (torch.linspace(0.0, 0.9, num_bins), True),
-                "Color": (torch.linspace(0.0, 0.9, num_bins), True),
-                "Contrast": (torch.linspace(0.0, 0.9, num_bins), True),
-                "Sharpness": (torch.linspace(0.0, 0.9, num_bins), True),
-            })
+            s.update(
+                {
+                    "Brightness": (torch.linspace(0.0, 0.9, num_bins), True),
+                    "Color": (torch.linspace(0.0, 0.9, num_bins), True),
+                    "Contrast": (torch.linspace(0.0, 0.9, num_bins), True),
+                    "Sharpness": (torch.linspace(0.0, 0.9, num_bins), True),
+                }
+            )
         return s
 
-    def forward(self, img: Tensor) -> Tensor:
+    @torch.jit.unused
+    def _pil_to_tensor(self, img) -> Tensor:
+        return F.pil_to_tensor(img)
+
+    @torch.jit.unused
+    def _tensor_to_pil(self, img: Tensor):
+        return F.to_pil_image(img)
+
+    def forward(self, orig_img: Tensor) -> Tensor:
         """
             img (PIL Image or Tensor): Image to be transformed.
 
         Returns:
             PIL Image or Tensor: Transformed image.
         """
-        device = None
         fill = self.fill
-        if isinstance(img, Tensor):
-            device = img.device
+        if isinstance(orig_img, Tensor):
+            img = orig_img
             if isinstance(fill, (int, float)):
                 fill = [float(fill)] * F.get_image_num_channels(img)
             elif fill is not None:
                 fill = [float(f) for f in fill]
+        else:
+            img = self._pil_to_tensor(orig_img)
 
-        mixing_weights = torch._sample_dirichlet(torch.tensor([self.alpha] * self.mixture_width, device=device))
-        m = torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha], device=device))[0]
+        mixing_weights = torch._sample_dirichlet(torch.tensor([self.alpha] * self.mixture_width, device=img.device))
+        m = torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha], device=img.device))[0]
         op_meta = self._augmentation_space(self._PARAMETER_MAX, F.get_image_size(img))
 
-        mix = torch.zeros()  # TODO: add size, device, handle PIL/Tensors/Batches etc
+        batch = img[(None,) * max(4 - img.ndim, 0)]
+        mix = torch.zeros_like(batch, dtype=torch.float)
         for i in range(self.mixture_width):
-            img_aug = img.clone() # TODO: handle PIL
-            depth = self.chain_depth if self.chain_depth > 0 else torch.randint(low=1, high=4, size=(1,)).item()
+            aug = batch.clone()
+            depth = self.chain_depth if self.chain_depth > 0 else int(torch.randint(low=1, high=4, size=(1,)).item())
             for _ in range(depth):
                 op_index = int(torch.randint(len(op_meta), (1,)).item())
                 op_name = list(op_meta.keys())[op_index]
@@ -542,10 +572,15 @@ class AugMix(torch.nn.Module):
                 )
                 if signed and torch.randint(2, (1,)):
                     magnitude *= -1.0
-                img_aug = _apply_op(img_aug, op_name, magnitude, interpolation=self.interpolation, fill=fill)
-            mix += mixing_weights[i] * img_aug  # TODO: handle PIL
+                aug = _apply_op(aug, op_name, magnitude, interpolation=self.interpolation, fill=fill)
+            mix.add_(aug.mul_(mixing_weights[i]))
+        mix.mul_(m).add_((1 - m) * batch)
+        mix = mix.to(dtype=img.dtype)
+        mix = mix[(0,) * max(4 - img.ndim, 0)]
 
-        return (1.0 - m) * img + m * mix  # TODO: handle PIL
+        if not isinstance(orig_img, Tensor):
+            return self._tensor_to_pil(mix)
+        return mix
 
     def __repr__(self) -> str:
         s = (
