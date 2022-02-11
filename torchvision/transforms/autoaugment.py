@@ -556,10 +556,8 @@ class AugMix(torch.nn.Module):
         m = torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha], device=img.device))[0]
         op_meta = self._augmentation_space(self._PARAMETER_MAX, F.get_image_size(img))
 
-        expand_dims = max(4 - img.ndim, 0)
-        batch = img
-        for _ in range(expand_dims):
-            batch = batch.unsqueeze(0)
+        orig_dims = list(img.shape)
+        batch = img.view([1] * max(4 - img.ndim, 0) + orig_dims)
         mix = torch.zeros_like(batch, dtype=torch.float)
         for i in range(self.mixture_width):
             aug = batch.clone()
@@ -578,9 +576,7 @@ class AugMix(torch.nn.Module):
                 aug = _apply_op(aug, op_name, magnitude, interpolation=self.interpolation, fill=fill)
             mix.add_(aug * mixing_weights[i])
         mix.mul_(m).add_((1 - m) * batch)
-        mix = mix.to(dtype=img.dtype)
-        for _ in range(expand_dims):
-            mix = mix.squeeze(0)
+        mix = mix.view(orig_dims).to(dtype=img.dtype)
 
         if not isinstance(orig_img, Tensor):
             return self._tensor_to_pil(mix)
