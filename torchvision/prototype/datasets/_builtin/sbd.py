@@ -1,11 +1,8 @@
-import functools
-import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Dict, List, Optional, Tuple, cast, BinaryIO
 
 import numpy as np
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -20,7 +17,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -31,20 +27,17 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import Feature
+from torchvision.prototype.features import _Feature, EncodedImage
 
 
 class SBD(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "sbd",
-            type=DatasetType.IMAGE,
             dependencies=("scipy",),
             homepage="http://home.bharathh.info/pubs/codes/SBD/download.html",
             valid_options=dict(
                 split=("train", "val", "train_noval"),
-                boundaries=(True, False),
-                segmentation=(False, True),
             ),
         )
 
@@ -75,50 +68,21 @@ class SBD(Dataset):
         else:
             return None
 
-    def _decode_ann(
-        self, data: Dict[str, Any], *, decode_boundaries: bool, decode_segmentation: bool
-    ) -> Tuple[Optional[torch.Tensor], Optional[torch.Tensor]]:
-        raw_anns = data["GTcls"][0]
-        raw_boundaries = raw_anns["Boundaries"][0]
-        raw_segmentation = raw_anns["Segmentation"][0]
-
-        # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
-        boundaries = (
-            Feature(np.stack([raw_boundary[0].toarray() for raw_boundary in raw_boundaries]))
-            if decode_boundaries
-            else None
-        )
-        segmentation = Feature(raw_segmentation) if decode_segmentation else None
-
-        return boundaries, segmentation
-
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[Tuple[Any, Tuple[str, io.IOBase]], Tuple[str, io.IOBase]],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[Any, Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        image = decoder(image_buffer) if decoder else image_buffer
-
-        if config.boundaries or config.segmentation:
-            boundaries, segmentation = self._decode_ann(
-                read_mat(ann_buffer), decode_boundaries=config.boundaries, decode_segmentation=config.segmentation
-            )
-        else:
-            boundaries = segmentation = None
+        anns = read_mat(ann_buffer, squeeze_me=True)["GTcls"]
 
         return dict(
             image_path=image_path,
-            image=image,
+            image=EncodedImage.from_file(image_buffer),
             ann_path=ann_path,
-            boundaries=boundaries,
-            segmentation=segmentation,
+            # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
+            boundaries=_Feature(np.stack([raw_boundary.toarray() for raw_boundary in anns["Boundaries"].item()])),
+            segmentation=_Feature(anns["Segmentation"].item()),
         )
 
     def _make_datapipe(
@@ -126,7 +90,6 @@ class SBD(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp, extra_split_dp = resource_dps
 
@@ -138,10 +101,10 @@ class SBD(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             drop_none=True,
         )
-
         if config.split == "train_noval":
             split_dp = extra_split_dp
-        split_dp = Filter(split_dp, path_comparator("stem", config.split))
+
+        split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True)
         split_dp = hint_sharding(split_dp)
         split_dp = hint_shuffling(split_dp)
@@ -155,7 +118,7 @@ class SBD(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
         resources = self.resources(self.default_config)

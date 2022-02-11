@@ -1,15 +1,12 @@
 import functools
-import io
 import os
 import os.path
 import pathlib
-from typing import Callable, Optional, Collection
-from typing import Union, Tuple, List, Dict, Any
+from typing import BinaryIO, Optional, Collection, Union, Tuple, List, Dict, Any
 
-import torch
-from torchdata.datapipes.iter import IterDataPipe, FileLister, FileOpener, Mapper, Shuffler, Filter
-from torchvision.prototype.datasets.decoder import pil
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, hint_sharding
+from torchdata.datapipes.iter import IterDataPipe, FileLister, Mapper, Filter, FileOpener
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
+from torchvision.prototype.features import Label, EncodedImage, EncodedData
 
 
 __all__ = ["from_data_folder", "from_image_folder"]
@@ -20,29 +17,24 @@ def _is_not_top_level_file(path: str, *, root: pathlib.Path) -> bool:
     return rel_path.is_dir() or rel_path.parent != pathlib.Path(".")
 
 
-def _collate_and_decode_data(
-    data: Tuple[str, io.IOBase],
+def _prepare_sample(
+    data: Tuple[str, BinaryIO],
     *,
     root: pathlib.Path,
     categories: List[str],
-    decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
 ) -> Dict[str, Any]:
     path, buffer = data
-    data = decoder(buffer) if decoder else buffer
     category = pathlib.Path(path).relative_to(root).parts[0]
-    label = torch.tensor(categories.index(category))
     return dict(
         path=path,
-        data=data,
-        label=label,
-        category=category,
+        data=EncodedData.from_file(buffer),
+        label=Label.from_category(category, categories=categories),
     )
 
 
 def from_data_folder(
     root: Union[str, pathlib.Path],
     *,
-    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
     valid_extensions: Optional[Collection[str]] = None,
     recursive: bool = True,
 ) -> Tuple[IterDataPipe, List[str]]:
@@ -52,26 +44,22 @@ def from_data_folder(
     dp = FileLister(str(root), recursive=recursive, masks=masks)
     dp: IterDataPipe = Filter(dp, functools.partial(_is_not_top_level_file, root=root))
     dp = hint_sharding(dp)
-    dp = Shuffler(dp, buffer_size=INFINITE_BUFFER_SIZE)
+    dp = hint_shuffling(dp)
     dp = FileOpener(dp, mode="rb")
-    return (
-        Mapper(dp, functools.partial(_collate_and_decode_data, root=root, categories=categories, decoder=decoder)),
-        categories,
-    )
+    return Mapper(dp, functools.partial(_prepare_sample, root=root, categories=categories)), categories
 
 
 def _data_to_image_key(sample: Dict[str, Any]) -> Dict[str, Any]:
-    sample["image"] = sample.pop("data")
+    sample["image"] = EncodedImage(sample.pop("data").data)
     return sample
 
 
 def from_image_folder(
     root: Union[str, pathlib.Path],
     *,
-    decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = pil,
     valid_extensions: Collection[str] = ("jpg", "jpeg", "png", "ppm", "bmp", "pgm", "tif", "tiff", "webp"),
     **kwargs: Any,
 ) -> Tuple[IterDataPipe, List[str]]:
     valid_extensions = [valid_extension for ext in valid_extensions for valid_extension in (ext.lower(), ext.upper())]
-    dp, categories = from_data_folder(root, decoder=decoder, valid_extensions=valid_extensions, **kwargs)
+    dp, categories = from_data_folder(root, valid_extensions=valid_extensions, **kwargs)
     return Mapper(dp, _data_to_image_key), categories

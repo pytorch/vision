@@ -3,11 +3,33 @@ import difflib
 import enum
 import functools
 import inspect
+import io
+import mmap
 import os
 import os.path
+import platform
 import textwrap
 import warnings
-from typing import Collection, Sequence, Callable, Any, Iterator, NoReturn, Mapping, TypeVar, Iterable, Tuple, cast
+from typing import (
+    Any,
+    BinaryIO,
+    Callable,
+    cast,
+    Collection,
+    Iterable,
+    Iterator,
+    Mapping,
+    NoReturn,
+    Sequence,
+    Tuple,
+    TypeVar,
+    Union,
+    List,
+    Dict,
+)
+
+import numpy as np
+import torch
 
 __all__ = [
     "StrEnum",
@@ -17,10 +39,15 @@ __all__ = [
     "make_repr",
     "FrozenBunch",
     "kwonly_to_pos_or_kw",
+    "fromfile",
+    "ReadOnlyTensorBuffer",
+    "apply_recursively",
 ]
 
 
 class StrEnumMeta(enum.EnumMeta):
+    auto = enum.auto
+
     def __getitem__(self, item):
         return super().__getitem__(item.upper() if isinstance(item, str) else item)
 
@@ -186,3 +213,114 @@ def kwonly_to_pos_or_kw(fn: Callable[..., D]) -> Callable[..., D]:
         return fn(*args, **kwargs)
 
     return wrapper
+
+
+def _read_mutable_buffer_fallback(file: BinaryIO, count: int, item_size: int) -> bytearray:
+    # A plain file.read() will give a read-only bytes, so we convert it to bytearray to make it mutable
+    return bytearray(file.read(-1 if count == -1 else count * item_size))
+
+
+def fromfile(
+    file: BinaryIO,
+    *,
+    dtype: torch.dtype,
+    byte_order: str,
+    count: int = -1,
+) -> torch.Tensor:
+    """Construct a tensor from a binary file.
+    .. note::
+        This function is similar to :func:`numpy.fromfile` with two notable differences:
+        1. This function only accepts an open binary file, but not a path to it.
+        2. This function has an additional ``byte_order`` parameter, since PyTorch's ``dtype``'s do not support that
+            concept.
+    .. note::
+        If the ``file`` was opened in update mode, i.e. "r+b" or "w+b", reading data is much faster. Be aware that as
+        long as the file is still open, inplace operations on the returned tensor will reflect back to the file.
+    Args:
+        file (IO): Open binary file.
+        dtype (torch.dtype): Data type of the underlying data as well as of the returned tensor.
+        byte_order (str): Byte order of the data. Can be "little" or "big" endian.
+        count (int): Number of values of the returned tensor. If ``-1`` (default), will read the complete file.
+    """
+    byte_order = "<" if byte_order == "little" else ">"
+    char = "f" if dtype.is_floating_point else ("i" if dtype.is_signed else "u")
+    item_size = (torch.finfo if dtype.is_floating_point else torch.iinfo)(dtype).bits // 8
+    np_dtype = byte_order + char + str(item_size)
+
+    buffer: Union[memoryview, bytearray]
+    if platform.system() != "Windows":
+        # PyTorch does not support tensors with underlying read-only memory. In case
+        # - the file has a .fileno(),
+        # - the file was opened for updating, i.e. 'r+b' or 'w+b',
+        # - the file is seekable
+        # we can avoid copying the data for performance. Otherwise we fall back to simply .read() the data and copy it
+        # to a mutable location afterwards.
+        try:
+            buffer = memoryview(mmap.mmap(file.fileno(), 0))[file.tell() :]
+            # Reading from the memoryview does not advance the file cursor, so we have to do it manually.
+            file.seek(*(0, io.SEEK_END) if count == -1 else (count * item_size, io.SEEK_CUR))
+        except (AttributeError, PermissionError, io.UnsupportedOperation):
+            buffer = _read_mutable_buffer_fallback(file, count, item_size)
+    else:
+        # On Windows just trying to call mmap.mmap() on a file that does not support it, may corrupt the internal state
+        # so no data can be read afterwards. Thus, we simply ignore the possible speed-up.
+        buffer = _read_mutable_buffer_fallback(file, count, item_size)
+
+    # We cannot use torch.frombuffer() directly, since it only supports the native byte order of the system. Thus, we
+    # read the data with np.frombuffer() with the correct byte order and convert it to the native one with the
+    # successive .astype() call.
+    return torch.from_numpy(np.frombuffer(buffer, dtype=np_dtype, count=count).astype(np_dtype[1:], copy=False))
+
+
+class ReadOnlyTensorBuffer:
+    def __init__(self, tensor: torch.Tensor) -> None:
+        self._memory = memoryview(tensor.numpy())
+        self._cursor: int = 0
+
+    def tell(self) -> int:
+        return self._cursor
+
+    def seek(self, offset: int, whence: int = io.SEEK_SET) -> int:
+        if whence == io.SEEK_SET:
+            self._cursor = offset
+        elif whence == io.SEEK_CUR:
+            self._cursor += offset
+            pass
+        elif whence == io.SEEK_END:
+            self._cursor = len(self._memory) + offset
+        else:
+            raise ValueError(
+                f"'whence' should be ``{io.SEEK_SET}``, ``{io.SEEK_CUR}``, or ``{io.SEEK_END}``, "
+                f"but got {repr(whence)} instead"
+            )
+        return self.tell()
+
+    def read(self, size: int = -1) -> bytes:
+        cursor = self.tell()
+        offset, whence = (0, io.SEEK_END) if size == -1 else (size, io.SEEK_CUR)
+        return self._memory[slice(cursor, self.seek(offset, whence))].tobytes()
+
+
+def apply_recursively(fn: Callable, obj: Any) -> Any:
+    # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
+    # "a" == "a"[0][0]...
+    if isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
+        sequence: List[Any] = []
+        for item in obj:
+            result = apply_recursively(fn, item)
+            if isinstance(result, collections.abc.Sequence) and hasattr(result, "__inline__"):
+                sequence.extend(result)
+            else:
+                sequence.append(result)
+        return sequence
+    elif isinstance(obj, collections.abc.Mapping):
+        mapping: Dict[Any, Any] = {}
+        for name, item in obj.items():
+            result = apply_recursively(fn, item)
+            if isinstance(result, collections.abc.Mapping) and hasattr(result, "__inline__"):
+                mapping.update(result)
+            else:
+                mapping[name] = result
+        return mapping
+    else:
+        return fn(obj)
