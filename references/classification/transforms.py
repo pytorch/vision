@@ -72,13 +72,15 @@ class RandomMixup(torch.nn.Module):
         return batch, target
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "num_classes={num_classes}"
-        s += ", p={p}"
-        s += ", alpha={alpha}"
-        s += ", inplace={inplace}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"num_classes={self.num_classes}"
+            f", p={self.p}"
+            f", alpha={self.alpha}"
+            f", inplace={self.inplace}"
+            f")"
+        )
+        return s
 
 
 class RandomCutmix(torch.nn.Module):
@@ -162,10 +164,12 @@ class RandomCutmix(torch.nn.Module):
         return batch, target
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "num_classes={num_classes}"
-        s += ", p={p}"
-        s += ", alpha={alpha}"
-        s += ", inplace={inplace}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"num_classes={self.num_classes}"
+            f", p={self.p}"
+            f", alpha={self.alpha}"
+            f", inplace={self.inplace}"
+            f")"
+        )
+        return s

@@ -61,15 +61,17 @@ class MBConvConfig:
         self.num_layers = self.adjust_depth(num_layers, depth_mult)
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "expand_ratio={expand_ratio}"
-        s += ", kernel={kernel}"
-        s += ", stride={stride}"
-        s += ", input_channels={input_channels}"
-        s += ", out_channels={out_channels}"
-        s += ", num_layers={num_layers}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"expand_ratio={self.expand_ratio}"
+            f", kernel={self.kernel}"
+            f", stride={self.stride}"
+            f", input_channels={self.input_channels}"
+            f", out_channels={self.out_channels}"
+            f", num_layers={self.num_layers}"
+            f")"
+        )
+        return s
 
     @staticmethod
     def adjust_channels(channels: int, width_mult: float, min_value: Optional[int] = None) -> int:

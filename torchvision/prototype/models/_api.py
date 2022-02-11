@@ -67,7 +67,7 @@ class WeightsEnum(Enum):
     def get_state_dict(self, progress: bool) -> OrderedDict:
         return load_state_dict_from_url(self.url, progress=progress)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self._name_}"
 
     def __getattr__(self, name):

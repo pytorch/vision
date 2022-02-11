@@ -260,7 +260,7 @@ class GeneralizedRCNNTransform(nn.Module):
         return result
 
     def __repr__(self) -> str:
-        format_string = self.__class__.__name__ + "("
+        format_string = f"{self.__class__.__name__}("
         _indent = "\n    "
         format_string += f"{_indent}Normalize(mean={self.image_mean}, std={self.image_std})"
         format_string += f"{_indent}Resize(min_size={self.min_size}, max_size={self.max_size}, mode='bilinear')"
