@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.detection
+
+
+fcos_resnet50_fpn
+=================
+
+.. autofunction:: fcos_resnet50_fpn

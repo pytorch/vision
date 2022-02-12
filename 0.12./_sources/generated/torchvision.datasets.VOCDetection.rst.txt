@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+VOCDetection
+============
+
+.. autoclass:: VOCDetection
+    :members:
+        __getitem__,
+        
+    :special-members:
