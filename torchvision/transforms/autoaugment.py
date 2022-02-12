@@ -558,9 +558,9 @@ class AugMix(torch.nn.Module):
 
         orig_dims = list(img.shape)
         batch = img.view([1] * max(4 - img.ndim, 0) + orig_dims)
-        mix = torch.zeros_like(batch, dtype=torch.float)
+        mix = (1.0 - m) * batch
         for i in range(self.mixture_width):
-            aug = batch.clone()
+            aug = batch
             depth = self.chain_depth if self.chain_depth > 0 else int(torch.randint(low=1, high=4, size=(1,)).item())
             for _ in range(depth):
                 op_index = int(torch.randint(len(op_meta), (1,)).item())
@@ -574,8 +574,7 @@ class AugMix(torch.nn.Module):
                 if signed and torch.randint(2, (1,)):
                     magnitude *= -1.0
                 aug = _apply_op(aug, op_name, magnitude, interpolation=self.interpolation, fill=fill)
-            mix.add_(aug * mixing_weights[i])
-        mix.mul_(m).add_((1 - m) * batch)
+            mix.add_((mixing_weights[i] * m) * aug)
         mix = mix.view(orig_dims).to(dtype=img.dtype)
 
         if not isinstance(orig_img, Tensor):
