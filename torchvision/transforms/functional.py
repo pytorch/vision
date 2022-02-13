@@ -438,13 +438,6 @@ def resize(
     return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
 
 
-def scale(*args, **kwargs):
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(scale)
-    warnings.warn("The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.")
-    return resize(*args, **kwargs)
-
-
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
@@ -1032,6 +1025,10 @@ def rotate(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
+        resample (int, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -1043,7 +1040,8 @@ def rotate(
         _log_api_usage_once(rotate)
     if resample is not None:
         warnings.warn(
-            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
+            "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)
 
@@ -1114,10 +1112,13 @@ def affine(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
-            Please use the ``fill`` parameter instead.
-        resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use the ``interpolation`` parameter instead.
+        fillcolor (sequence or number, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
+        resample (int, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
         center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1128,7 +1129,8 @@ def affine(
         _log_api_usage_once(affine)
     if resample is not None:
         warnings.warn(
-            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)
 
@@ -1141,7 +1143,10 @@ def affine(
         interpolation = _interpolation_modes_from_int(interpolation)
 
     if fillcolor is not None:
-        warnings.warn("Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead")
+        warnings.warn(
+            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'fill' instead."
+        )
         fill = fillcolor
 
     if not isinstance(angle, (int, float)):

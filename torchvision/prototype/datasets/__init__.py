@@ -7,9 +7,9 @@ except (ModuleNotFoundError, TypeError) as error:
         "Note that you cannot install it with `pip install torchdata`, since this is another package."
     ) from error
 
-from . import decoder, utils
+from . import utils
 from ._home import home
 
 # Load this last, since some parts depend on the above being loaded first
-from ._api import register, _list as list, info, load, find  # usort: skip
+from ._api import list_datasets, info, load  # usort: skip
 from ._folder import from_data_folder, from_image_folder

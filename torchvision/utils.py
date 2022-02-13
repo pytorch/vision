@@ -8,7 +8,14 @@ import numpy as np
 import torch
 from PIL import Image, ImageColor, ImageDraw, ImageFont
 
-__all__ = ["make_grid", "save_image", "draw_bounding_boxes", "draw_segmentation_masks", "draw_keypoints"]
+__all__ = [
+    "make_grid",
+    "save_image",
+    "draw_bounding_boxes",
+    "draw_segmentation_masks",
+    "draw_keypoints",
+    "flow_to_image",
+]
 
 
 @torch.no_grad()
@@ -36,6 +43,10 @@ def make_grid(
         value_range (tuple, optional): tuple (min, max) where min and max are numbers,
             then these numbers are used to normalize the image. By default, min and max
             are computed from the tensor.
+        range (tuple. optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``value_range``
+                instead.
         scale_each (bool, optional): If ``True``, scale each image in the batch of
             images separately rather than the (min, max) over all images. Default: ``False``.
         pad_value (float, optional): Value for the padded pixels. Default: ``0``.
@@ -49,8 +60,10 @@ def make_grid(
         raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
     if "range" in kwargs.keys():
-        warning = "range will be deprecated, please use value_range instead."
-        warnings.warn(warning)
+        warnings.warn(
+            "The parameter 'range' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'value_range' instead."
+        )
         value_range = kwargs["range"]
 
     # if list of tensors, convert to a 4D mini-batch Tensor
@@ -169,6 +182,7 @@ def draw_bounding_boxes(
         colors (color or list of colors, optional): List containing the colors
             of the boxes or single color for all boxes. The color can be represented as
             PIL strings e.g. "red" or "#FF00FF", or as RGB tuples e.g. ``(240, 10, 157)``.
+            By default, random colors are generated for boxes.
         fill (bool): If `True` fills the bounding box with specified color.
         width (int): Width of bounding box.
         font (str): A filename containing a TrueType font. If the file is not found in this filename, the loader may
@@ -191,45 +205,50 @@ def draw_bounding_boxes(
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
 
+    num_boxes = boxes.shape[0]
+
+    if labels is None:
+        labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
+    elif len(labels) != num_boxes:
+        raise ValueError(
+            f"Number of boxes ({num_boxes}) and labels ({len(labels)}) mismatch. Please specify labels for each box."
+        )
+
+    if colors is None:
+        colors = _generate_color_palette(num_boxes)
+    elif isinstance(colors, list):
+        if len(colors) < num_boxes:
+            raise ValueError(f"Number of colors ({len(colors)}) is less than number of boxes ({num_boxes}). ")
+    else:  # colors specifies a single color for all boxes
+        colors = [colors] * num_boxes
+
+    colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
+
+    # Handle Grayscale images
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
 
     ndarr = image.permute(1, 2, 0).cpu().numpy()
     img_to_draw = Image.fromarray(ndarr)
-
     img_boxes = boxes.to(torch.int64).tolist()
 
     if fill:
         draw = ImageDraw.Draw(img_to_draw, "RGBA")
-
     else:
         draw = ImageDraw.Draw(img_to_draw)
 
     txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
-    for i, bbox in enumerate(img_boxes):
-        if colors is None:
-            color = None
-        elif isinstance(colors, list):
-            color = colors[i]
-        else:
-            color = colors
-
+    for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
         if fill:
-            if color is None:
-                fill_color = (255, 255, 255, 100)
-            elif isinstance(color, str):
-                # This will automatically raise Error if rgb cannot be parsed.
-                fill_color = ImageColor.getrgb(color) + (100,)
-            elif isinstance(color, tuple):
-                fill_color = color + (100,)
+            fill_color = color + (100,)
             draw.rectangle(bbox, width=width, outline=color, fill=fill_color)
         else:
             draw.rectangle(bbox, width=width, outline=color)
 
-        if labels is not None:
+        if label is not None:
             margin = width + 1
-            draw.text((bbox[0] + margin, bbox[1] + margin), labels[i], fill=color, font=txt_font)
+            draw.text((bbox[0] + margin, bbox[1] + margin), label, fill=color, font=txt_font)
 
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
@@ -382,9 +401,125 @@ def draw_keypoints(
     return torch.from_numpy(np.array(img_to_draw)).permute(2, 0, 1).to(dtype=torch.uint8)
 
 
-def _generate_color_palette(num_masks: int):
+# Flow visualization code adapted from https://github.com/tomrunia/OpticalFlow_Visualization
+@torch.no_grad()
+def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
+
+    """
+    Converts a flow to an RGB image.
+
+    Args:
+        flow (Tensor): Flow of shape (N, 2, H, W) or (2, H, W) and dtype torch.float.
+
+    Returns:
+        img (Tensor): Image Tensor of dtype uint8 where each color corresponds
+            to a given flow direction. Shape is (N, 3, H, W) or (3, H, W) depending on the input.
+    """
+
+    if flow.dtype != torch.float:
+        raise ValueError(f"Flow should be of dtype torch.float, got {flow.dtype}.")
+
+    orig_shape = flow.shape
+    if flow.ndim == 3:
+        flow = flow[None]  # Add batch dim
+
+    if flow.ndim != 4 or flow.shape[1] != 2:
+        raise ValueError(f"Input flow should have shape (2, H, W) or (N, 2, H, W), got {orig_shape}.")
+
+    max_norm = torch.sum(flow ** 2, dim=1).sqrt().max()
+    epsilon = torch.finfo((flow).dtype).eps
+    normalized_flow = flow / (max_norm + epsilon)
+    img = _normalized_flow_to_image(normalized_flow)
+
+    if len(orig_shape) == 3:
+        img = img[0]  # Remove batch dim
+    return img
+
+
+@torch.no_grad()
+def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
+
+    """
+    Converts a batch of normalized flow to an RGB image.
+
+    Args:
+        normalized_flow (torch.Tensor): Normalized flow tensor of shape (N, 2, H, W)
+    Returns:
+       img (Tensor(N, 3, H, W)): Flow visualization image of dtype uint8.
+    """
+
+    N, _, H, W = normalized_flow.shape
+    flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8)
+    colorwheel = _make_colorwheel()  # shape [55x3]
+    num_cols = colorwheel.shape[0]
+    norm = torch.sum(normalized_flow ** 2, dim=1).sqrt()
+    a = torch.atan2(-normalized_flow[:, 1, :, :], -normalized_flow[:, 0, :, :]) / torch.pi
+    fk = (a + 1) / 2 * (num_cols - 1)
+    k0 = torch.floor(fk).to(torch.long)
+    k1 = k0 + 1
+    k1[k1 == num_cols] = 0
+    f = fk - k0
+
+    for c in range(colorwheel.shape[1]):
+        tmp = colorwheel[:, c]
+        col0 = tmp[k0] / 255.0
+        col1 = tmp[k1] / 255.0
+        col = (1 - f) * col0 + f * col1
+        col = 1 - norm * (1 - col)
+        flow_image[:, c, :, :] = torch.floor(255 * col)
+    return flow_image
+
+
+def _make_colorwheel() -> torch.Tensor:
+    """
+    Generates a color wheel for optical flow visualization as presented in:
+    Baker et al. "A Database and Evaluation Methodology for Optical Flow" (ICCV, 2007)
+    URL: http://vision.middlebury.edu/flow/flowEval-iccv07.pdf.
+
+    Returns:
+        colorwheel (Tensor[55, 3]): Colorwheel Tensor.
+    """
+
+    RY = 15
+    YG = 6
+    GC = 4
+    CB = 11
+    BM = 13
+    MR = 6
+
+    ncols = RY + YG + GC + CB + BM + MR
+    colorwheel = torch.zeros((ncols, 3))
+    col = 0
+
+    # RY
+    colorwheel[0:RY, 0] = 255
+    colorwheel[0:RY, 1] = torch.floor(255 * torch.arange(0, RY) / RY)
+    col = col + RY
+    # YG
+    colorwheel[col : col + YG, 0] = 255 - torch.floor(255 * torch.arange(0, YG) / YG)
+    colorwheel[col : col + YG, 1] = 255
+    col = col + YG
+    # GC
+    colorwheel[col : col + GC, 1] = 255
+    colorwheel[col : col + GC, 2] = torch.floor(255 * torch.arange(0, GC) / GC)
+    col = col + GC
+    # CB
+    colorwheel[col : col + CB, 1] = 255 - torch.floor(255 * torch.arange(CB) / CB)
+    colorwheel[col : col + CB, 2] = 255
+    col = col + CB
+    # BM
+    colorwheel[col : col + BM, 2] = 255
+    colorwheel[col : col + BM, 0] = torch.floor(255 * torch.arange(0, BM) / BM)
+    col = col + BM
+    # MR
+    colorwheel[col : col + MR, 2] = 255 - torch.floor(255 * torch.arange(MR) / MR)
+    colorwheel[col : col + MR, 0] = 255
+    return colorwheel
+
+
+def _generate_color_palette(num_objects: int):
     palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
-    return [tuple((i * palette) % 255) for i in range(num_masks)]
+    return [tuple((i * palette) % 255) for i in range(num_objects)]
 
 
 def _log_api_usage_once(obj: Any) -> None:

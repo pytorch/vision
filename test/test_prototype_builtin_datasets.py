@@ -1,14 +1,21 @@
+import functools
 import io
 from pathlib import Path
 
 import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
+from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.utils._internal import sequence_to_str
+
+
+assert_samples_equal = functools.partial(
+    assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
+)
 
 
 @pytest.fixture
@@ -18,7 +25,7 @@ def test_home(mocker, tmp_path):
 
 
 def test_coverage():
-    untested_datasets = set(datasets.list()) - DATASET_MOCKS.keys()
+    untested_datasets = set(datasets.list_datasets()) - DATASET_MOCKS.keys()
     if untested_datasets:
         raise AssertionError(
             f"The dataset(s) {sequence_to_str(sorted(untested_datasets), separate_last='and ')} "
@@ -92,6 +99,7 @@ class TestCommon:
                 f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
             )
 
+    @pytest.mark.xfail
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_transformable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
@@ -137,6 +145,17 @@ class TestCommon:
         if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
 
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_save_load(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+        sample = next(iter(dataset))
+
+        with io.BytesIO() as buffer:
+            torch.save(sample, buffer)
+            buffer.seek(0)
+            assert_samples_equal(torch.load(buffer), sample)
+
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
 class TestQMNIST:
@@ -171,5 +190,5 @@ class TestGTSRB:
         dataset = datasets.load(dataset_mock.name, **config)
 
         for sample in dataset:
-            label_from_path = int(Path(sample["image_path"]).parent.name)
+            label_from_path = int(Path(sample["path"]).parent.name)
             assert sample["label"] == label_from_path

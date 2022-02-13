@@ -14,24 +14,34 @@ def _apply_op(
     img: Tensor, op_name: str, magnitude: float, interpolation: InterpolationMode, fill: Optional[List[float]]
 ):
     if op_name == "ShearX":
+        # magnitude should be arctan(magnitude)
+        # official autoaug: (1, level, 0, 0, 1, 0)
+        # https://github.com/tensorflow/models/blob/dd02069717128186b88afa8d857ce57d17957f03/research/autoaugment/augmentation_transforms.py#L290
+        # compared to
+        # torchvision:      (1, tan(level), 0, 0, 1, 0)
+        # https://github.com/pytorch/vision/blob/0c2373d0bba3499e95776e7936e207d8a1676e65/torchvision/transforms/functional.py#L976
         img = F.affine(
             img,
             angle=0.0,
             translate=[0, 0],
             scale=1.0,
-            shear=[math.degrees(magnitude), 0.0],
+            shear=[math.degrees(math.atan(magnitude)), 0.0],
             interpolation=interpolation,
             fill=fill,
+            center=[0, 0],
         )
     elif op_name == "ShearY":
+        # magnitude should be arctan(magnitude)
+        # See above
         img = F.affine(
             img,
             angle=0.0,
             translate=[0, 0],
             scale=1.0,
-            shear=[0.0, math.degrees(magnitude)],
+            shear=[0.0, math.degrees(math.atan(magnitude))],
             interpolation=interpolation,
             fill=fill,
+            center=[0, 0],
         )
     elif op_name == "TranslateX":
         img = F.affine(
@@ -258,9 +268,9 @@ class AutoAugment(torch.nn.Module):
 
         transform_id, probs, signs = self.get_params(len(self.policies))
 
+        op_meta = self._augmentation_space(10, F.get_image_size(img))
         for i, (op_name, p, magnitude_id) in enumerate(self.policies[transform_id]):
             if probs[i] <= p:
-                op_meta = self._augmentation_space(10, F.get_image_size(img))
                 magnitudes, signed = op_meta[op_name]
                 magnitude = float(magnitudes[magnitude_id].item()) if magnitude_id is not None else 0.0
                 if signed and signs[i] == 0:
@@ -270,7 +280,7 @@ class AutoAugment(torch.nn.Module):
         return img
 
     def __repr__(self) -> str:
-        return self.__class__.__name__ + f"(policy={self.policy}, fill={self.fill})"
+        return f"{self.__class__.__name__}(policy={self.policy}, fill={self.fill})"
 
 
 class RandAugment(torch.nn.Module):
@@ -340,8 +350,8 @@ class RandAugment(torch.nn.Module):
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
+        op_meta = self._augmentation_space(self.num_magnitude_bins, F.get_image_size(img))
         for _ in range(self.num_ops):
-            op_meta = self._augmentation_space(self.num_magnitude_bins, F.get_image_size(img))
             op_index = int(torch.randint(len(op_meta), (1,)).item())
             op_name = list(op_meta.keys())[op_index]
             magnitudes, signed = op_meta[op_name]
@@ -353,14 +363,16 @@ class RandAugment(torch.nn.Module):
         return img
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "num_ops={num_ops}"
-        s += ", magnitude={magnitude}"
-        s += ", num_magnitude_bins={num_magnitude_bins}"
-        s += ", interpolation={interpolation}"
-        s += ", fill={fill}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"num_ops={self.num_ops}"
+            f", magnitude={self.magnitude}"
+            f", num_magnitude_bins={self.num_magnitude_bins}"
+            f", interpolation={self.interpolation}"
+            f", fill={self.fill}"
+            f")"
+        )
+        return s
 
 
 class TrivialAugmentWide(torch.nn.Module):
@@ -438,9 +450,11 @@ class TrivialAugmentWide(torch.nn.Module):
         return _apply_op(img, op_name, magnitude, interpolation=self.interpolation, fill=fill)
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "num_magnitude_bins={num_magnitude_bins}"
-        s += ", interpolation={interpolation}"
-        s += ", fill={fill}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"num_magnitude_bins={self.num_magnitude_bins}"
+            f", interpolation={self.interpolation}"
+            f", fill={self.fill}"
+            f")"
+        )
+        return s

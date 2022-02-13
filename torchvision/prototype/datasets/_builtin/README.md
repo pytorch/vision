@@ -19,10 +19,8 @@ that module create a class that inherits from `datasets.utils.Dataset` and
 overwrites at minimum three methods that will be discussed in detail below:
 
 ```python
-import io
-from typing import Any, Callable, Dict, List, Optional
+from typing import Any, Dict, List
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, OnlineResource
 
@@ -34,11 +32,7 @@ class MyDataset(Dataset):
         ...
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig,
     ) -> IterDataPipe[Dict[str, Any]]:
         ...
 ```
@@ -49,10 +43,6 @@ The `DatasetInfo` carries static information about the dataset. There are two
 required fields:
 - `name`: Name of the dataset. This will be used to load the dataset with
   `datasets.load(name)`. Should only contain lowercase characters.
-- `type`: Field of the `datasets.utils.DatasetType` enum. This is used to select
-   the default decoder in case the user doesn't pass one. There are currently
-   only two options: `IMAGE` and `RAW` ([see
-   below](what-is-the-datasettyperaw-and-when-do-i-use-it) for details).
 
 There are more optional parameters that can be passed:
 
@@ -105,7 +95,7 @@ def sha256sum(path, chunk_size=1024 * 1024):
     print(checksum.hexdigest())
 ```
 
-### `_make_datapipe(resource_dps, *, config, decoder)`
+### `_make_datapipe(resource_dps, *, config)`
 
 This method is the heart of the dataset, where we transform the raw data into
 a usable form. A major difference compared to the current stable datasets is
@@ -177,28 +167,6 @@ This will give you an idea of what the first datapipe in `resources_dp`
 contains. You can also do that with `resources_dp[1]` or `resources_dp[2]`
 (etc.) if they exist. Then follow the instructions above to manipulate these
 datapipes and return the appropriate dictionary format.
-
-### What is the `DatasetType.RAW` and when do I use it?
-
-`DatasetType.RAW` marks dataset that provides decoded, i.e. raw pixel values,
-rather than encoded image files such as `.jpg` or `.png`. This is usually only
-the case for small datasets, since it requires a lot more disk space. The
-default decoder `datasets.decoder.raw` is only a sentinel and should not be
-called directly. The decoding should look something like
-
-```python
-from torchvision.prototype.datasets.decoder import raw
-
-image = ...
-
-if decoder is raw:
-    image = Image(image)
-else:
-    image_buffer = image_buffer_from_raw(image)
-    image = decoder(image_buffer) if decoder else image_buffer
-```
-
-For examples, have a look at the MNIST, CIFAR, or SEMEION datasets.
 
 ### How do I handle a dataset that defines many categories?
 
