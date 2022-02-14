@@ -3,12 +3,17 @@ from typing import Any, Dict, Optional
 
 from torch import nn
 from torchvision.prototype.utils._internal import apply_recursively
+from torchvision.utils import _log_api_usage_once
 
 from .functional._utils import Dispatcher
 
 
 class Transform(nn.Module):
     _DISPATCHER: Optional[Dispatcher] = None
+
+    def __init__(self) -> None:
+        super().__init__()
+        _log_api_usage_once(self)
 
     def get_params(self, sample: Any) -> Dict[str, Any]:
         return dict()
