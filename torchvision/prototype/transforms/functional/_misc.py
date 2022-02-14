@@ -18,7 +18,7 @@ T = TypeVar("T", bound=features._Feature)
     }
 )
 def normalize(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -30,5 +30,5 @@ def normalize(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def ten_gaussian_blur(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...

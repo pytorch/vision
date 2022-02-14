@@ -20,7 +20,7 @@ T = TypeVar("T", bound=features._Feature)
     },
 )
 def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     if isinstance(input, features.BoundingBox):
         output = K.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
         return cast(T, features.BoundingBox.new_like(input, output))
@@ -38,7 +38,7 @@ def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def resize(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     if isinstance(input, features.BoundingBox):
         size = kwargs.pop("size")
         output = K.resize_bounding_box(input, size=size, image_size=input.image_size)
@@ -55,7 +55,7 @@ def resize(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def center_crop(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -67,7 +67,7 @@ def center_crop(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def resized_crop(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -79,7 +79,7 @@ def resized_crop(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def affine(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -91,7 +91,7 @@ def affine(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def rotate(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -103,7 +103,7 @@ def rotate(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def pad(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -115,7 +115,7 @@ def pad(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def crop(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -127,7 +127,7 @@ def crop(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def perspective(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -139,7 +139,7 @@ def perspective(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def vertical_flip(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -151,7 +151,7 @@ def vertical_flip(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def five_crop(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -163,5 +163,5 @@ def five_crop(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def ten_crop(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
