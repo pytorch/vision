@@ -32,12 +32,13 @@ class Resize(Transform):
         self.interpolation = interpolation
 
     @legacy_transform(_F.resize, "size", "interpolation")
-    def _dispatch(self, input: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.Image:
             output = K.resize_image(input, size=self.size, interpolation=self.interpolation)
             return features.Image.new_like(input, output)
         elif type(input) is features.SegmentationMask:
-            return features.SegmentationMask.new_like(input, K.resize_segmentation_mask(input, size=self.size))
+            output = K.resize_segmentation_mask(input, size=self.size)
+            return features.SegmentationMask.new_like(input, output)
         elif type(input) is features.BoundingBox:
             output = K.resize_bounding_box(input, size=self.size, image_size=input.image_size)
             return features.BoundingBox.new_like(input, output, image_size=self.size)
@@ -54,7 +55,7 @@ class CenterCrop(Transform):
         self.output_size = output_size
 
     @legacy_transform(_F.center_crop, "output_size")
-    def _dispatch(self, input: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.Image:
             output = K.center_crop_image(input, **params)
             return features.Image.new_like(input, output)
