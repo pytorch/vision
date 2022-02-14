@@ -7,10 +7,10 @@ from . import kernels as K
 
 
 class DecodeImage(Transform):
-    def _supports(self, obj: Any) -> bool:
-        return isinstance(obj, features.EncodedImage)
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if not isinstance(input, features.EncodedImage):
+            return input
 
-    def _dispatch(self, input: features.EncodedImage, params: Dict[str, Any]) -> features.Image:
         return features.Image(K.decode_image_with_pil(input))
 
 
@@ -19,14 +19,11 @@ class LabelToOneHot(Transform):
         super().__init__()
         self.num_categories = num_categories
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(num_categories=self.num_categories)
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if not isinstance(input, features.Label):
+            return input
 
-    def _supports(self, obj: Any) -> bool:
-        return isinstance(obj, features.Label)
-
-    def _dispatch(self, input: features.Label, params: Dict[str, Any]) -> features.OneHotLabel:
-        num_categories = params["num_categories"]
+        num_categories = self.num_categories
         if num_categories == -1 and input.categories is not None:
             num_categories = len(input.categories)
         return features.OneHotLabel(

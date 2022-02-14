@@ -1,9 +1,10 @@
 import dataclasses
 import math
-from typing import Any, Dict, Tuple, Optional, Callable, List, cast
+from typing import Any, Dict, Tuple, Optional, Callable, List, cast, Iterator
 
 import torch
 from torchvision.prototype.transforms import Transform, InterpolationMode
+from torchvision.prototype.utils._internal import apply_recursively
 from torchvision.transforms import AutoAugment as _AutoAugment, AutoAugmentPolicy
 
 from . import functional as F
@@ -85,12 +86,11 @@ class _AutoAugmentBase(Transform):
         "Invert": AutoAugmentDispatcher(F.invert),
     }
 
-    def get_transforms_meta(self, image_size: Tuple[int, int]) -> List[Tuple[str, float]]:
+    def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         raise NotImplementedError
 
     def get_params(self, sample: Any) -> Dict[str, Any]:
-        image = Query(sample).image()
-        transforms_meta = self.get_transforms_meta(image.image_size)
+        image = Query(sample).image_for_size_and_channels_extraction()
 
         fill = self.fill
         if isinstance(fill, (int, float)):
@@ -98,28 +98,23 @@ class _AutoAugmentBase(Transform):
         elif fill is not None:
             fill = [float(f) for f in fill]
 
-        return dict(
-            transforms_meta=[
-                dict(zip(("transform_id", "magnitude"), transform_meta)) for transform_meta in transforms_meta
-            ],
-            interpolation=self.interpolation,
-            fill=fill,
-        )
-
-    def _supports(self, obj: Any) -> bool:
-        return all(obj in dispatcher for dispatcher in self._DISPATCHER_MAP.values())
-
-    def _dispatch(self, input: Any, params: Dict[str, Any]) -> Any:
-        dispatcher = self._DISPATCHER_MAP[params.pop("transform_id")]
-        return dispatcher(input, **params)
+        return dict(interpolation=self.interpolation, fill=fill)
 
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self.get_params(sample)
-        for transform_meta in params.pop("transforms_meta"):
-            auto_augment_params = params.copy()
-            auto_augment_params.update(transform_meta)
-            sample = self._transform_recursively(sample, params=auto_augment_params)
+
+        for transform_id, magnitude in self.get_transforms_meta(Query(sample).image_size()):
+            dispatcher = self._DISPATCHER_MAP[transform_id]
+
+            def transform(input: Any) -> Any:
+                if input not in dispatcher:
+                    return input
+
+                return dispatcher(input, magnitude=magnitude, **params)  # type: ignore[arg-type]
+
+            sample = apply_recursively(transform, sample)
+
         return sample
 
     def _randbool(self, p: float = 0.5) -> bool:
@@ -179,10 +174,9 @@ class AutoAugment(_AutoAugmentBase):
         self.policy = policy
         self._policies = self._LEGACY_CLS._get_policies(None, policy)  # type: ignore[arg-type]
 
-    def get_transforms_meta(self, image_size: Tuple[int, int]) -> List[Tuple[str, float]]:
+    def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
-        transforms_meta = []
         for dispatcher_id, probability, magnitude_idx in policy:
             if not self._randbool(probability):
                 continue
@@ -197,9 +191,7 @@ class AutoAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            transforms_meta.append((augmentation_meta.dispatcher_id, magnitude))
-
-        return transforms_meta
+            yield augmentation_meta.dispatcher_id, magnitude
 
 
 class RandAugment(_AutoAugmentBase):
@@ -240,8 +232,7 @@ class RandAugment(_AutoAugmentBase):
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
 
-    def get_transforms_meta(self, image_size: Tuple[int, int]) -> List[Tuple[str, float]]:
-        transforms_meta = []
+    def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         for _ in range(self.num_ops):
             augmentation_meta = self._AUGMENTATION_SPACE[int(torch.randint(len(self._AUGMENTATION_SPACE), ()))]
             if augmentation_meta.dispatcher_id == "Identity":
@@ -255,9 +246,7 @@ class RandAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            transforms_meta.append((augmentation_meta.dispatcher_id, magnitude))
-
-        return transforms_meta
+            yield augmentation_meta.dispatcher_id, magnitude
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
@@ -288,11 +277,13 @@ class TrivialAugmentWide(_AutoAugmentBase):
         super().__init__(**kwargs)
         self.num_magnitude_bins = num_magnitude_bins
 
-    def get_transforms_meta(self, image_size: Tuple[int, int]) -> List[Tuple[str, float]]:
+    def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         augmentation_meta = self._AUGMENTATION_SPACE[int(torch.randint(len(self._AUGMENTATION_SPACE), ()))]
 
         if augmentation_meta.dispatcher_id == "Identity":
-            return []
+            # empty iterator
+            return
+            yield
 
         magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, image_size)
         if magnitudes is not None:
@@ -302,4 +293,4 @@ class TrivialAugmentWide(_AutoAugmentBase):
         else:
             magnitude = 0.0
 
-        return [(augmentation_meta.dispatcher_id, magnitude)]
+        yield augmentation_meta.dispatcher_id, magnitude

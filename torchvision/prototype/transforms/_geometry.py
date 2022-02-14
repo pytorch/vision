@@ -1,7 +1,7 @@
 from typing import Any, Dict, List, Union, Sequence, Tuple
 
 from torchvision import transforms as _transforms
-from torchvision.prototype.transforms import ConstantParamTransform, Transform, InterpolationMode
+from torchvision.prototype.transforms import Transform, InterpolationMode
 
 from . import functional as F
 from .utils import Query
@@ -11,7 +11,7 @@ class HorizontalFlip(Transform):
     _DISPATCHER = F.horizontal_flip
 
 
-class Resize(ConstantParamTransform):
+class Resize(Transform):
     _DISPATCHER = F.resize
 
     def __init__(
@@ -19,14 +19,29 @@ class Resize(ConstantParamTransform):
         size: Union[int, Sequence[int]],
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
-        super().__init__(size=size, interpolation=interpolation)
+        super().__init__()
+        self.size = size
+        self.interpolation = interpolation
+
+    def get_params(self, sample: Any) -> Dict[str, Any]:
+        return dict(size=self.size, interpolation=self.interpolation)
+
+    def extra_repr(self) -> str:
+        return self._extra_repr_from_attrs("size", "interpolation")
 
 
-class CenterCrop(ConstantParamTransform):
+class CenterCrop(Transform):
     _DISPATCHER = F.center_crop
 
     def __init__(self, output_size: List[int]):
-        super().__init__(output_size=output_size)
+        super().__init__()
+        self.output_size = output_size
+
+    def get_params(self, sample: Any) -> Dict[str, Any]:
+        return dict(output_size=self.output_size)
+
+    def extra_repr(self) -> str:
+        return self._extra_repr_from_attrs("output_size")
 
 
 class RandomResizedCrop(Transform):

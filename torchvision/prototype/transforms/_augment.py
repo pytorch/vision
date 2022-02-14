@@ -50,11 +50,11 @@ class RandomErasing(Transform):
             zip("ijhwv", self._LEGACY_TRANSFORM_CLS.get_params(image, scale=self.scale, ratio=self.ratio, value=value))
         )
 
-    def _dispatch(self, input: Any, params: Dict[str, Any]) -> Any:
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if torch.rand(1) >= self.p:
             return input
 
-        return super()._dispatch(input, params)
+        return super()._transform(input, params)
 
     def extra_repr(self) -> str:
         return self._extra_repr_from_attrs("p", "scale", "ratio", "value")

@@ -2,51 +2,53 @@ import functools
 from typing import Any, List, Type, Callable, Dict
 
 import torch
-from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, ConstantParamTransform
+from torchvision.prototype.transforms import Transform
 
 from . import functional as F
 
 
 class Identity(Transform):
-    def _supports(self, obj: Any) -> bool:
-        return True
-
-    def _dispatch(self, input: Any, params: Any) -> Any:
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         return input
 
 
 class Lambda(Transform):
-    def __init__(self, fn: Callable[[Any], Any], *feature_types: Type[features._Feature]):
+    def __init__(self, fn: Callable[[Any], Any], *types: Type):
         super().__init__()
         self.fn = fn
-        self.feature_types = feature_types
+        self.types = types
 
-    def _supports(self, obj: Any) -> bool:
-        return type(obj) in self.feature_types
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if not isinstance(input, self.types):
+            return input
 
-    def _dispatch(self, input: Any, params: Dict[str, Any]) -> Any:
         return self.fn(input)
 
-    def _feature_types_extra_repr(self) -> str:
-        return f"feature_types=[{','.join(feature_type.__name__ for feature_type in self.feature_types)}]"
-
     def extra_repr(self) -> str:
+        extras = []
         name = getattr(self.fn, "__name__", None)
-        return f"{name if name else ''}, {self._feature_types_extra_repr()}"
+        if name:
+            extras.append(name)
+        extras.append(f"types={[type.__name__ for type in self.types]}")
+        return ", ".join(extras)
 
 
-class Normalize(ConstantParamTransform):
+class Normalize(Transform):
     _DISPATCHER = F.normalize
 
     def __init__(self, mean: List[float], std: List[float]):
-        super().__init__(mean=mean, std=std)
+        super().__init__()
+        self.mean = mean
+        self.std = std
+
+    def get_params(self, sample: Any) -> Dict[str, Any]:
+        return dict(mean=self.mean, std=self.std)
 
 
 class ToDtype(Lambda):
-    def __init__(self, dtype: torch.dtype, *feature_types: Type[features._Feature]) -> None:
+    def __init__(self, dtype: torch.dtype, *types: Type) -> None:
         self.dtype = dtype
-        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *feature_types)
+        super().__init__(functools.partial(torch.Tensor.to, dtype=dtype), *types)
 
     def extra_repr(self) -> str:
-        return f"dtype={self.dtype}, {self._feature_types_extra_repr()}"
+        return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
