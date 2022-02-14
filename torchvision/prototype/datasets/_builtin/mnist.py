@@ -94,7 +94,7 @@ class _MNISTBase(Dataset):
         images = HttpResource(images_urls[0], sha256=images_sha256, mirrors=images_urls[1:])
 
         labels_urls = [f"{url_base}/{labels_file}" for url_base in url_bases]
-        labels = HttpResource(labels_urls[0], sha256=images_sha256, mirrors=labels_urls[1:])
+        labels = HttpResource(labels_urls[0], sha256=labels_sha256, mirrors=labels_urls[1:])
 
         return [images, labels]
 
@@ -139,7 +139,7 @@ class MNIST(_MNISTBase):
 
     _URL_BASE: Union[str, Sequence[str]] = (
         "http://yann.lecun.com/exdb/mnist",
-        "https://ossci-datasets.s3.amazonaws.com/mnist/",
+        "https://ossci-datasets.s3.amazonaws.com/mnist",
     )
     _CHECKSUMS = {
         "train-images-idx3-ubyte.gz": "440fcabf73cc546fa21475e81ea370265605f56be210a4024d2ca8f203523609",
@@ -180,7 +180,7 @@ class FashionMNIST(MNIST):
             ),
         )
 
-    _URL_BASE = "fashion-mnist.s3-website.eu-central-1.amazonaws.com/"
+    _URL_BASE = "http://fashion-mnist.s3-website.eu-central-1.amazonaws.com"
     _CHECKSUMS = {
         "train-images-idx3-ubyte.gz": "3aede38d61863908ad78613f6a32ed271626dd12800ba2636569512369268a84",
         "train-labels-idx1-ubyte.gz": "a04f17134ac03560a47e3764e11b92fc97de4d1bfaf8ba1a3aa29af54cc90845",
@@ -200,7 +200,7 @@ class KMNIST(MNIST):
             ),
         )
 
-    _URL_BASE = "http://codh.rois.ac.jp/kmnist/index.html.en"
+    _URL_BASE = "http://codh.rois.ac.jp/kmnist/dataset/kmnist"
     _CHECKSUMS = {
         "train-images-idx3-ubyte.gz": "51467d22d8cc72929e2a028a0428f2086b092bb31cfb79c69cc0a90ce135fde4",
         "train-labels-idx1-ubyte.gz": "e38f9ebcd0f3ebcdec7fc8eabdcdaef93bb0df8ea12bee65224341c8183d8e17",

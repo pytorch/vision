@@ -19,7 +19,7 @@ T = TypeVar("T", bound=features._Feature)
     }
 )
 def adjust_brightness(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -31,7 +31,7 @@ def adjust_brightness(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def adjust_saturation(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -43,7 +43,7 @@ def adjust_saturation(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def adjust_contrast(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -55,7 +55,7 @@ def adjust_contrast(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def adjust_sharpness(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -67,7 +67,7 @@ def adjust_sharpness(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def posterize(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -79,7 +79,7 @@ def posterize(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def solarize(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -91,7 +91,7 @@ def solarize(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def autocontrast(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -103,7 +103,7 @@ def autocontrast(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def equalize(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -115,5 +115,29 @@ def equalize(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def invert(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.adjust_hue,
+        PIL.Image.Image: _F.adjust_hue,
+        features.Image: K.adjust_hue_image,
+    }
+)
+def adjust_hue(input: T, *args: Any, **kwargs: Any) -> T:
+    """TODO: add docstring"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.adjust_gamma,
+        PIL.Image.Image: _F.adjust_gamma,
+        features.Image: K.adjust_gamma_image,
+    }
+)
+def adjust_gamma(input: T, *args: Any, **kwargs: Any) -> T:
+    """TODO: add docstring"""
     ...
