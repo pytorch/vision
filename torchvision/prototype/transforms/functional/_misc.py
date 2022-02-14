@@ -1,5 +1,6 @@
 from typing import TypeVar, Any
 
+import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import kernels as K
@@ -17,5 +18,17 @@ T = TypeVar("T", bound=features._Feature)
     }
 )
 def normalize(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.gaussian_blur,
+        PIL.Image.Image: _F.gaussian_blur,
+        features.Image: K.gaussian_blur_image,
+    }
+)
+def ten_gaussian_blur(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...

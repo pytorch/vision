@@ -93,3 +93,75 @@ def affine(input: T, *args: Any, **kwargs: Any) -> T:
 def rotate(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.pad,
+        PIL.Image.Image: _F.pad,
+        features.Image: K.pad_image,
+    }
+)
+def pad(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.crop,
+        PIL.Image.Image: _F.crop,
+        features.Image: K.crop_image,
+    }
+)
+def crop(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.perspective,
+        PIL.Image.Image: _F.perspective,
+        features.Image: K.perspective_image,
+    }
+)
+def perspective(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.vflip,
+        PIL.Image.Image: _F.vflip,
+        features.Image: K.vertical_flip_image,
+    }
+)
+def vertical_flip(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.five_crop,
+        PIL.Image.Image: _F.five_crop,
+        features.Image: K.five_crop_image,
+    }
+)
+def five_crop(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.ten_crop,
+        PIL.Image.Image: _F.ten_crop,
+        features.Image: K.ten_crop_image,
+    }
+)
+def ten_crop(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...

@@ -117,3 +117,27 @@ def equalize(input: T, *args: Any, **kwargs: Any) -> T:
 def invert(input: T, *args: Any, **kwargs: Any) -> T:
     """ADDME"""
     ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.adjust_hue,
+        PIL.Image.Image: _F.adjust_hue,
+        features.Image: K.adjust_hue_image,
+    }
+)
+def adjust_hue(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
+
+
+@dispatch(
+    {
+        torch.Tensor: _F.adjust_gamma,
+        PIL.Image.Image: _F.adjust_gamma,
+        features.Image: K.adjust_gamma_image,
+    }
+)
+def adjust_gamma(input: T, *args: Any, **kwargs: Any) -> T:
+    """ADDME"""
+    ...
