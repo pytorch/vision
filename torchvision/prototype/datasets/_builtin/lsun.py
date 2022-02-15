@@ -1,10 +1,8 @@
-import functools
 import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator
+from typing import Any, Dict, List, Tuple, Iterator
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, OnDiskCacheHolder, Concater, IterableWrapper
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -12,10 +10,9 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 
 # We need lmdb.Environment as annotation, but lmdb is an optional requirement at import
 try:
@@ -79,7 +76,6 @@ class Lsun(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "lsun",
-            type=DatasetType.IMAGE,
             categories=(
                 "bedroom",
                 "bridge",
@@ -140,25 +136,16 @@ class Lsun(Dataset):
 
     _FOLDER_PATTERN = re.compile(r"(?P<category>\w*?)_(?P<split>(train|val))_lmdb")
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[str, bytes, io.BytesIO],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[str, bytes, io.BytesIO]) -> Dict[str, Any]:
         path, key, buffer = data
 
         match = self._FOLDER_PATTERN.match(pathlib.Path(path).parent.name)
-        if match:
-            category = match["category"]
-            label = Label(self.categories.index(category), category=category)
-        else:
-            label = None
+        label = Label.from_category(match["category"], categories=self.categories) if match else None
 
         return dict(
             path=path,
             key=key,
-            image=decoder(buffer) if decoder else buffer,
+            image=EncodedImage.from_file(buffer),
             label=label,
         )
 
@@ -166,11 +153,7 @@ class Lsun(Dataset):
         return str(pathlib.Path(path) / "keys.cache")
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = Concater(*resource_dps)
 
@@ -183,4 +166,4 @@ class Lsun(Dataset):
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
         dp = LmdbReader(dp)
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
