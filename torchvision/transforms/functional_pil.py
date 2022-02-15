@@ -240,9 +240,6 @@ def resize(
         w, h = img.size
 
         short, long = (w, h) if w <= h else (h, w)
-        if short == size:
-            return img
-
         new_short, new_long = size, int(size * long / short)
 
         if max_size is not None:
@@ -255,7 +252,11 @@ def resize(
                 new_short, new_long = int(max_size * new_short / new_long), max_size
 
         new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
-        return img.resize((new_w, new_h), interpolation)
+
+        if (w, h) == (new_w, new_h):
+            return img
+        else:
+            return img.resize((new_w, new_h), interpolation)
     else:
         if max_size is not None:
             raise ValueError(
