@@ -8,29 +8,7 @@ from torchvision.prototype.utils._internal import apply_recursively
 from torchvision.transforms import AutoAugmentPolicy
 
 from . import functional as F
-from .functional._utils import Dispatcher
 from .utils import Query
-
-
-@dataclasses.dataclass
-class AutoAugmentDispatcher:
-    dispatcher: Dispatcher
-    magnitude_fn: Optional[Callable[[float], Dict[str, Any]]] = None
-    extra_kwargs: Dict[str, Any] = dataclasses.field(default_factory=dict)
-    takes_interpolation_kwargs: bool = False
-
-    def __contains__(self, obj: Any) -> bool:
-        return obj in self.dispatcher
-
-    def __call__(
-        self, input: Any, *, magnitude: float, interpolation: InterpolationMode, fill: Optional[List[float]]
-    ) -> Any:
-        kwargs = self.extra_kwargs.copy()
-        if self.magnitude_fn is not None:
-            kwargs.update(self.magnitude_fn(magnitude))
-        if self.takes_interpolation_kwargs:
-            kwargs.update(dict(interpolation=interpolation, fill=fill))
-        return self.dispatcher(input, **kwargs)
 
 
 class _AutoAugmentBase(Transform):
@@ -41,56 +19,68 @@ class _AutoAugmentBase(Transform):
         self.interpolation = interpolation
         self.fill = fill
 
-    _DISPATCHER_MAP = {
-        "ShearX": AutoAugmentDispatcher(
-            F.affine,
-            magnitude_fn=lambda magnitude: dict(shear=[math.degrees(magnitude), 0]),
-            extra_kwargs=dict(angle=0.0, translate=[0, 0], scale=1.0),
-            takes_interpolation_kwargs=True,
+    _DISPATCHER_MAP: Dict[str, Callable[[Any, float, InterpolationMode, Optional[List[float]]], Any]] = {
+        "ShearX": lambda input, magnitude, interpolation, fill: F.affine(
+            input,
+            angle=0.0,
+            translate=[0, 0],
+            scale=1.0,
+            shear=[math.degrees(magnitude), 0.0],
+            interpolation=interpolation,
+            fill=fill,
         ),
-        "ShearY": AutoAugmentDispatcher(
-            F.affine,
-            magnitude_fn=lambda magnitude: dict(shear=[0, math.degrees(magnitude)]),
-            extra_kwargs=dict(angle=0.0, translate=[0, 0], scale=1.0),
-            takes_interpolation_kwargs=True,
+        "ShearY": lambda input, magnitude, interpolation, fill: F.affine(
+            input,
+            angle=0.0,
+            translate=[0, 0],
+            scale=1.0,
+            shear=[0.0, math.degrees(magnitude)],
+            interpolation=interpolation,
+            fill=fill,
         ),
-        "TranslateX": AutoAugmentDispatcher(
-            F.affine,
-            magnitude_fn=lambda magnitude: dict(translate=[int(magnitude), 0]),
-            extra_kwargs=dict(angle=0.0, scale=1.0, shear=[0.0, 0.0]),
-            takes_interpolation_kwargs=True,
+        "TranslateX": lambda input, magnitude, interpolation, fill: F.affine(
+            input,
+            angle=0.0,
+            translate=[int(magnitude), 0],
+            scale=1.0,
+            shear=[0.0, 0.0],
+            interpolation=interpolation,
+            fill=fill,
         ),
-        "TranslateY": AutoAugmentDispatcher(
-            F.affine,
-            magnitude_fn=lambda magnitude: dict(translate=[0, int(magnitude)]),
-            extra_kwargs=dict(angle=0.0, scale=1.0, shear=[0.0, 0.0]),
-            takes_interpolation_kwargs=True,
+        "TranslateY": lambda input, magnitude, interpolation, fill: F.affine(
+            input,
+            angle=0.0,
+            translate=[0, int(magnitude)],
+            scale=1.0,
+            shear=[0.0, 0.0],
+            interpolation=interpolation,
+            fill=fill,
         ),
-        "Rotate": AutoAugmentDispatcher(F.rotate, magnitude_fn=lambda magnitude: dict(angle=magnitude)),
-        "Brightness": AutoAugmentDispatcher(
-            F.adjust_brightness, magnitude_fn=lambda magnitude: dict(brightness_factor=1.0 + magnitude)
+        "Rotate": lambda input, magnitude, interpolation, fill: F.rotate(input, angle=magnitude),
+        "Brightness": lambda input, magnitude, interpolation, fill: F.adjust_brightness(
+            input, brightness_factor=1.0 + magnitude
         ),
-        "Color": AutoAugmentDispatcher(
-            F.adjust_saturation, magnitude_fn=lambda magnitude: dict(saturation_factor=1.0 + magnitude)
+        "Color": lambda input, magnitude, interpolation, fill: F.adjust_saturation(
+            input, saturation_factor=1.0 + magnitude
         ),
-        "Contrast": AutoAugmentDispatcher(
-            F.adjust_contrast, magnitude_fn=lambda magnitude: dict(contrast_factor=1.0 + magnitude)
+        "Contrast": lambda input, magnitude, interpolation, fill: F.adjust_contrast(
+            input, contrast_factor=1.0 + magnitude
         ),
-        "Sharpness": AutoAugmentDispatcher(
-            F.adjust_sharpness, magnitude_fn=lambda magnitude: dict(sharpness_factor=1.0 + magnitude)
+        "Sharpness": lambda input, magnitude, interpolation, fill: F.adjust_sharpness(
+            input, sharpness_factor=1.0 + magnitude
         ),
-        "Posterize": AutoAugmentDispatcher(F.posterize, magnitude_fn=lambda magnitude: dict(bits=int(magnitude))),
-        "Solarize": AutoAugmentDispatcher(F.solarize, magnitude_fn=lambda magnitude: dict(threshold=magnitude)),
-        "AutoContrast": AutoAugmentDispatcher(F.autocontrast),
-        "Equalize": AutoAugmentDispatcher(F.equalize),
-        "Invert": AutoAugmentDispatcher(F.invert),
+        "Posterize": lambda input, magnitude, interpolation, fill: F.posterize(input, bits=int(magnitude)),
+        "Solarize": lambda input, magnitude, interpolation, fill: F.solarize(input, threshold=magnitude),
+        "AutoContrast": lambda input, magnitude, interpolation, fill: F.autocontrast(input),
+        "Equalize": lambda input, magnitude, interpolation, fill: F.equalize(input),
+        "Invert": lambda input, magnitude, interpolation, fill: F.invert(input),
     }
 
     def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         raise NotImplementedError
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = Query(sample).image_for_size_and_channels_extraction()
+        image = Query(sample).image()
 
         fill = self.fill
         if isinstance(fill, (int, float)):
@@ -116,14 +106,6 @@ class _AutoAugmentBase(Transform):
             sample = apply_recursively(transform, sample)
 
         return sample
-
-    def _randbool(self, p: float = 0.5) -> bool:
-        """Randomly returns either ``True`` or ``False``.
-
-        Args:
-            p: Probability to return ``True``. Defaults to ``0.5``.
-        """
-        return float(torch.rand(())) <= p
 
 
 @dataclasses.dataclass
