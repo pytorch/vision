@@ -1,9 +1,6 @@
-import functools
-import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, JsonParser, UnBatcher
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -11,7 +8,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -21,14 +17,13 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     getitem,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 
 
 class CLEVR(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "clevr",
-            type=DatasetType.IMAGE,
             homepage="https://cs.stanford.edu/people/jcjohns/clevr/",
             valid_options=dict(split=("train", "val", "test")),
         )
@@ -53,21 +48,16 @@ class CLEVR(Dataset):
         key, _ = data
         return key == "scenes"
 
-    def _add_empty_anns(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[str, io.IOBase], None]:
+    def _add_empty_anns(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[str, BinaryIO], None]:
         return data, None
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[Tuple[str, io.IOBase], Optional[Dict[str, Any]]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Optional[Dict[str, Any]]]) -> Dict[str, Any]:
         image_data, scenes_data = data
         path, buffer = image_data
 
         return dict(
             path=path,
-            image=decoder(buffer) if decoder else buffer,
+            image=EncodedImage.from_file(buffer),
             label=Label(len(scenes_data["objects"])) if scenes_data else None,
         )
 
@@ -76,7 +66,6 @@ class CLEVR(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         images_dp, scenes_dp = Demultiplexer(
@@ -107,4 +96,4 @@ class CLEVR(Dataset):
         else:
             dp = Mapper(images_dp, self._add_empty_anns)
 
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
