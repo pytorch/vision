@@ -1,7 +1,9 @@
+import functools
 import math
 import numbers
 import warnings
 from enum import Enum
+from typing import Callable
 from typing import List, Tuple, Any, Optional
 
 import numpy as np
@@ -17,6 +19,15 @@ except ImportError:
 from ..utils import _log_api_usage_once
 from . import functional_pil as F_pil
 from . import functional_tensor as F_t
+
+
+def log_api_usage_once(fn: Callable) -> Callable:
+    @functools.wraps(fn)
+    def wrapper(*args, **kwargs):
+        _log_api_usage_once(fn)
+        return fn(*args, **kwargs)
+
+    return wrapper
 
 
 class InterpolationMode(Enum):
@@ -364,6 +375,7 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     return tensor
 
 
+@log_api_usage_once
 def resize(
     img: Tensor,
     size: List[int],
@@ -416,8 +428,6 @@ def resize(
     Returns:
         PIL Image or Tensor: Resized image.
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(resize)
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
         warnings.warn(
