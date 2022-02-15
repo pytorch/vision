@@ -200,11 +200,11 @@ def resize_bounding_box():
 
 
 class TestKernelsCommon:
-    @pytest.mark.parametrize_from_transforms("kernel_info", KERNEL_INFOS, ids=lambda kernel_info: kernel_info.name)
+    @pytest.mark.parametrize("kernel_info", KERNEL_INFOS, ids=lambda kernel_info: kernel_info.name)
     def test_scriptable(self, kernel_info):
         jit.script(kernel_info.kernel)
 
-    @pytest.mark.parametrize_from_transforms(
+    @pytest.mark.parametrize(
         ("kernel_info", "sample_input"),
         [
             pytest.param(kernel_info, sample_input, id=f"{kernel_info.name}-{idx}")
