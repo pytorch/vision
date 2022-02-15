@@ -1,11 +1,10 @@
+from torchvision.transforms import AutoAugmentPolicy, InterpolationMode  # usort: skip
 from . import kernels  # usort: skip
 from . import functional  # usort: skip
-from .kernels import InterpolationMode  # usort: skip
-
 from ._transform import Transform  # usort: skip
 
 from ._augment import RandomErasing, RandomMixup, RandomCutmix
-from ._auto_augment import RandAugment, TrivialAugmentWide, AutoAugment, AutoAugmentPolicy
+from ._auto_augment import RandAugment, TrivialAugmentWide, AutoAugment
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import HorizontalFlip, Resize, CenterCrop, RandomResizedCrop
 from ._meta_conversion import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertColorSpace

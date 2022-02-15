@@ -2,12 +2,12 @@ import dataclasses
 import math
 from typing import Any, Dict, Tuple, Optional, Callable, List, cast, Iterator
 
+import PIL.Image
 import torch
-from torchvision.prototype.transforms import Transform, InterpolationMode
+from torchvision.prototype import features
+from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
 from torchvision.prototype.utils._internal import apply_recursively
-from torchvision.transforms import AutoAugmentPolicy
 
-from . import functional as F
 from .utils import Query
 
 
@@ -76,9 +76,6 @@ class _AutoAugmentBase(Transform):
         "Invert": lambda input, magnitude, interpolation, fill: F.invert(input),
     }
 
-    def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
-        raise NotImplementedError
-
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = Query(sample).image()
 
@@ -89,23 +86,6 @@ class _AutoAugmentBase(Transform):
             fill = [float(f) for f in fill]
 
         return dict(interpolation=self.interpolation, fill=fill)
-
-    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        params = params or self.get_params(sample)
-
-        for transform_id, magnitude in self.get_transforms_meta(Query(sample).image_size()):
-            dispatcher = self._DISPATCHER_MAP[transform_id]
-
-            def transform(input: Any) -> Any:
-                if input not in dispatcher:
-                    return input
-
-                return dispatcher(input, magnitude=magnitude, **params)  # type: ignore[arg-type]
-
-            sample = apply_recursively(transform, sample)
-
-        return sample
 
 
 @dataclasses.dataclass
@@ -245,7 +225,7 @@ class AutoAugment(_AutoAugmentBase):
         else:
             raise ValueError(f"The provided policy {policy} is not recognized.")
 
-    def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
+    def _get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
         for dispatcher_id, probability, magnitude_idx in policy:
@@ -263,6 +243,23 @@ class AutoAugment(_AutoAugmentBase):
                 magnitude = 0.0
 
             yield augmentation_meta.dispatcher_id, magnitude
+
+    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        params = params or self._get_params(sample)
+
+        for transform_id, magnitude in self._get_transforms_meta(Query(sample).image_size()):
+            dispatcher = self._DISPATCHER_MAP[transform_id]
+
+            def transform(input: Any) -> Any:
+                if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
+                    return input
+
+                return dispatcher(input, magnitude=magnitude, **params)  # type: ignore[arg-type]
+
+            sample = apply_recursively(transform, sample)
+
+        return sample
 
 
 class RandAugment(_AutoAugmentBase):
@@ -303,7 +300,7 @@ class RandAugment(_AutoAugmentBase):
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
 
-    def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
+    def _get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         for _ in range(self.num_ops):
             augmentation_meta = self._AUGMENTATION_SPACE[int(torch.randint(len(self._AUGMENTATION_SPACE), ()))]
             if augmentation_meta.dispatcher_id == "Identity":
@@ -318,6 +315,23 @@ class RandAugment(_AutoAugmentBase):
                 magnitude = 0.0
 
             yield augmentation_meta.dispatcher_id, magnitude
+
+    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        params = params or self._get_params(sample)
+
+        for transform_id, magnitude in self._get_transforms_meta(Query(sample).image_size()):
+            dispatcher = self._DISPATCHER_MAP[transform_id]
+
+            def transform(input: Any) -> Any:
+                if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
+                    return input
+
+                return dispatcher(input, magnitude=magnitude, **params)  # type: ignore[arg-type]
+
+            sample = apply_recursively(transform, sample)
+
+        return sample
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
@@ -348,7 +362,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         super().__init__(**kwargs)
         self.num_magnitude_bins = num_magnitude_bins
 
-    def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
+    def _get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         augmentation_meta = self._AUGMENTATION_SPACE[int(torch.randint(len(self._AUGMENTATION_SPACE), ()))]
 
         if augmentation_meta.dispatcher_id == "Identity":
@@ -365,3 +379,29 @@ class TrivialAugmentWide(_AutoAugmentBase):
             magnitude = 0.0
 
         yield augmentation_meta.dispatcher_id, magnitude
+
+    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        params = params or self._get_params(sample)
+
+        augmentation_meta = self._AUGMENTATION_SPACE[int(torch.randint(len(self._AUGMENTATION_SPACE), ()))]
+        if augmentation_meta.dispatcher_id == "Identity":
+            return sample
+
+        dispatcher = self._DISPATCHER_MAP[augmentation_meta.ransform_id]
+
+        magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, Query(sample).image().image_size)
+        if magnitudes is not None:
+            magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
+            if augmentation_meta.signed and float(torch.rand(())) <= p:
+                magnitude *= -1
+        else:
+            magnitude = 0.0
+
+        def transform(input: Any) -> Any:
+            if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
+                return input
+
+            return dispatcher(input, magnitude=magnitude, **params)  # type: ignore[arg-type]
+
+        return apply_recursively(transform, sample)

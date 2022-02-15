@@ -29,7 +29,7 @@ class Transform(nn.Module):
 
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        return apply_recursively(functools.partial(self._transform, params=params or self.get_params(sample)), sample)
+        return apply_recursively(functools.partial(self._transform, params=params or self._get_params(sample)), sample)
 
     def _extra_repr_from_attrs(self, *names: str) -> str:
         return ", ".join(f"{name}={getattr(self, name)}" for name in names)
