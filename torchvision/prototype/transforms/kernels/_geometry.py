@@ -1,13 +1,10 @@
-from typing import Tuple, List, Optional, TypeVar
+from typing import Tuple, List, Optional
 
 import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F, InterpolationMode
 
 from ._meta_conversion import convert_bounding_box_format
-
-
-T = TypeVar("T", bound=features._Feature)
 
 
 horizontal_flip_image = _F.hflip
