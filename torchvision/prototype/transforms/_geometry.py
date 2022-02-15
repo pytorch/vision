@@ -29,9 +29,6 @@ class Resize(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(size=self.size, interpolation=self.interpolation)
 
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("size", "interpolation")
-
 
 class CenterCrop(Transform):
     _DISPATCHER = F.center_crop
@@ -42,9 +39,6 @@ class CenterCrop(Transform):
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(output_size=self.output_size)
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("output_size")
 
 
 class RandomResizedCrop(Transform):
@@ -124,6 +118,3 @@ class RandomResizedCrop(Transform):
             j = (width - w) // 2
 
         return dict(top=i, left=j, height=h, width=w)
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("size", "scale", "ratio", "interpolation")

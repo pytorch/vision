@@ -96,9 +96,6 @@ class RandomErasing(Transform):
 
         return super()._transform(input, params)
 
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("p", "scale", "ratio", "value")
-
 
 class RandomMixup(Transform):
     _DISPATCHER = F.mixup
@@ -110,9 +107,6 @@ class RandomMixup(Transform):
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("alpha")
 
 
 class RandomCutmix(Transform):
@@ -145,6 +139,3 @@ class RandomCutmix(Transform):
         lam_adjusted = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))
 
         return dict(box=box, lam_adjusted=lam_adjusted)
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("alpha")
