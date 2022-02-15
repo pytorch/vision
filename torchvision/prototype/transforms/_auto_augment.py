@@ -7,8 +7,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
 from torchvision.prototype.utils._internal import apply_recursively
-
-from .utils import Query
+from torchvision.prototype.utils._internal import query_recursively
 
 
 class _AutoAugmentBase(Transform):
@@ -76,12 +75,16 @@ class _AutoAugmentBase(Transform):
         "Invert": lambda input, magnitude, interpolation, fill: F.invert(input),
     }
 
+    def _is_supported(self, obj: Any) -> bool:
+        return type(obj) in {features.Image, torch.Tensor} or isinstance(obj, PIL.Image.Image)
+
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = Query(sample).image()
+        image: Any = query_recursively(lambda input: input if self._is_supported(input) else None, sample)
+        num_channels = F.get_image_num_channels(image)
 
         fill = self.fill
         if isinstance(fill, (int, float)):
-            fill = [float(fill)] * image.num_channels
+            fill = [float(fill)] * num_channels
         elif fill is not None:
             fill = [float(f) for f in fill]
 
@@ -248,11 +251,14 @@ class AutoAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
 
-        for transform_id, magnitude in self._get_transforms_meta(Query(sample).image_size()):
+        image: Any = query_recursively(lambda input: input if self._is_supported(input) else None, sample)
+        image_size = F.get_image_size(image)
+
+        for transform_id, magnitude in self._get_transforms_meta(image_size):
             dispatcher = self._DISPATCHER_MAP[transform_id]
 
             def transform(input: Any) -> Any:
-                if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
+                if not self._is_supported(input):
                     return input
 
                 return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]
@@ -320,11 +326,14 @@ class RandAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
 
-        for transform_id, magnitude in self._get_transforms_meta(Query(sample).image_size()):
+        image: Any = query_recursively(lambda input: input if self._is_supported(input) else None, sample)
+        image_size = F.get_image_size(image)
+
+        for transform_id, magnitude in self._get_transforms_meta(image_size):
             dispatcher = self._DISPATCHER_MAP[transform_id]
 
             def transform(input: Any) -> Any:
-                if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
+                if not self._is_supported(input):
                     return input
 
                 return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]
@@ -372,7 +381,10 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
         dispatcher = self._DISPATCHER_MAP[augmentation_meta.dispatcher_id]
 
-        magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, Query(sample).image().image_size)
+        image: Any = query_recursively(lambda input: input if self._is_supported(input) else None, sample)
+        image_size = F.get_image_size(image)
+
+        magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, image_size)
         if magnitudes is not None:
             magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
             if augmentation_meta.signed and float(torch.rand(())) <= 0.5:
@@ -381,7 +393,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
             magnitude = 0.0
 
         def transform(input: Any) -> Any:
-            if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
+            if not self._is_supported(input):
                 return input
 
             return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]

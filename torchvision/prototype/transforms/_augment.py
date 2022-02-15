@@ -5,9 +5,9 @@ from typing import Any, Dict, Tuple
 
 import torch
 from torchvision.prototype.transforms import Transform
+from torchvision.prototype.utils._internal import query_recursively
 
 from . import functional as F
-from .utils import Query
 
 
 class RandomErasing(Transform):
@@ -42,8 +42,9 @@ class RandomErasing(Transform):
         self.value = value
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = Query(sample).image()
-        img_c, (img_h, img_w) = image.num_channels, image.image_size
+        image: Any = query_recursively(lambda input: input if input in self._DISPATCHER else None, sample)
+        img_h, img_w = F.get_image_size(image)
+        img_c = F.get_image_num_channels(image)
 
         if isinstance(self.value, (int, float)):
             value = [self.value]
@@ -56,8 +57,7 @@ class RandomErasing(Transform):
 
         if value is not None and not (len(value) in (1, img_c)):
             raise ValueError(
-                "If value is a sequence, it should have either a single value or "
-                f"{image.shape[-3]} (number of input channels)"
+                f"If value is a sequence, it should have either a single value or {img_c} (number of input channels)"
             )
 
         area = img_h * img_w
@@ -126,7 +126,8 @@ class RandomCutmix(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        H, W = Query(sample).image_size()
+        image: Any = query_recursively(lambda input: input if input in self._DISPATCHER else None, sample)
+        H, W = F.get_image_size(image)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())

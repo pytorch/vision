@@ -4,10 +4,10 @@ from typing import Any, Dict, List, Union, Sequence, Tuple, cast
 
 import torch
 from torchvision.prototype.transforms import Transform, InterpolationMode
+from torchvision.prototype.utils._internal import query_recursively
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
 from . import functional as F
-from .utils import Query
 
 
 class HorizontalFlip(Transform):
@@ -83,8 +83,12 @@ class RandomResizedCrop(Transform):
         self.interpolation = interpolation
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = Query(sample).image()
-        height, width = image.image_size
+        image: Any = next(
+            query_recursively(
+                lambda input: input if input in self._DISPATCHER else None, sample  # type: ignore[no-any-return]
+            )
+        )
+        height, width = F.get_image_size(image)
         area = height * width
 
         log_ratio = torch.log(torch.tensor(self.ratio))
