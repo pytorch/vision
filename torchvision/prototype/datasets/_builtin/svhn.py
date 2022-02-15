@@ -1,28 +1,22 @@
-import functools
-import io
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple, BinaryIO
 
 import numpy as np
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
     UnBatcher,
 )
-from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     read_mat,
     hint_sharding,
     hint_shuffling,
-    image_buffer_from_array,
 )
 from torchvision.prototype.features import Label, Image
 
@@ -31,7 +25,6 @@ class SVHN(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "svhn",
-            type=DatasetType.RAW,
             dependencies=("scipy",),
             categories=10,
             homepage="http://ufldl.stanford.edu/housenumbers/",
@@ -52,7 +45,7 @@ class SVHN(Dataset):
 
         return [data]
 
-    def _read_images_and_labels(self, data: Tuple[str, io.IOBase]) -> List[Tuple[np.ndarray, np.ndarray]]:
+    def _read_images_and_labels(self, data: Tuple[str, BinaryIO]) -> List[Tuple[np.ndarray, np.ndarray]]:
         _, buffer = data
         content = read_mat(buffer)
         return list(
@@ -62,23 +55,12 @@ class SVHN(Dataset):
             )
         )
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[np.ndarray, np.ndarray],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[np.ndarray, np.ndarray]) -> Dict[str, Any]:
         image_array, label_array = data
 
-        if decoder is raw:
-            image = Image(image_array.transpose((2, 0, 1)))
-        else:
-            image_buffer = image_buffer_from_array(image_array)
-            image = decoder(image_buffer) if decoder else image_buffer  # type: ignore[assignment]
-
         return dict(
-            image=image,
-            label=Label(int(label_array) % 10),
+            image=Image(image_array.transpose((2, 0, 1))),
+            label=Label(int(label_array) % 10, categories=self.categories),
         )
 
     def _make_datapipe(
@@ -86,11 +68,10 @@ class SVHN(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Mapper(dp, self._read_images_and_labels)
         dp = UnBatcher(dp)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)

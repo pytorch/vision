@@ -5,8 +5,8 @@ from torchvision.prototype import datasets
 from torchvision.prototype.utils._internal import FrozenMapping, FrozenBunch
 
 
-def make_minimal_dataset_info(name="name", type=datasets.utils.DatasetType.RAW, categories=None, **kwargs):
-    return datasets.utils.DatasetInfo(name, type=type, categories=categories or [], **kwargs)
+def make_minimal_dataset_info(name="name", categories=None, **kwargs):
+    return datasets.utils.DatasetInfo(name, categories=categories or [], **kwargs)
 
 
 class TestFrozenMapping:
@@ -176,7 +176,7 @@ class TestDataset:
             # This method is just defined to appease the ABC, but will be overwritten at instantiation
             pass
 
-        def _make_datapipe(self, resource_dps, *, config, decoder):
+        def _make_datapipe(self, resource_dps, *, config):
             # This method is just defined to appease the ABC, but will be overwritten at instantiation
             pass
 
@@ -229,12 +229,3 @@ class TestDataset:
 
         (call_args, _) = dataset._make_datapipe.call_args
         assert call_args[0][0] is sentinel
-
-    def test_decoder(self):
-        dataset = self.DatasetMock()
-
-        sentinel = object()
-        dataset.load("", decoder=sentinel)
-
-        (_, call_kwargs) = dataset._make_datapipe.call_args
-        assert call_kwargs["decoder"] is sentinel
