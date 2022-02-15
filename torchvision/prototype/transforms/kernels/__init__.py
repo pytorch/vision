@@ -18,6 +18,8 @@ from ._color import (
     autocontrast_image,
     equalize_image,
     invert_image,
+    adjust_hue_image,
+    adjust_gamma_image,
 )
 from ._geometry import (
     horizontal_flip_bounding_box,
@@ -29,6 +31,12 @@ from ._geometry import (
     resized_crop_image,
     affine_image,
     rotate_image,
+    pad_image,
+    crop_image,
+    perspective_image,
+    vertical_flip_image,
+    five_crop_image,
+    ten_crop_image,
 )
-from ._misc import normalize_image
+from ._misc import normalize_image, gaussian_blur_image
 from ._type_conversion import decode_image_with_pil, decode_video_with_av, label_to_one_hot

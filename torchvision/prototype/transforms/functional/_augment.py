@@ -17,7 +17,7 @@ T = TypeVar("T", bound=features._Feature)
     }
 )
 def erase(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
@@ -28,7 +28,7 @@ def erase(input: T, *args: Any, **kwargs: Any) -> T:
     }
 )
 def mixup(input: T, *args: Any, **kwargs: Any) -> T:
-    """ADDME"""
+    """TODO: add docstring"""
     ...
 
 
