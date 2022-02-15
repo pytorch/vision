@@ -21,7 +21,7 @@ __all__ = (
 
 
 _MODELS_URLS = {
-    "raft_large": "https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
+    "raft_large": "https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
     "raft_small": "https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
 }
 
@@ -586,11 +586,19 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
     """RAFT model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
+    Please see the example below for a tutorial on how to use this model.
+
     Args:
-        pretrained (bool): Whether to use pretrained weights.
-        progress (bool): If True, displays a progress bar of the download to stderr
-        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
-            to override any default.
+        pretrained (bool): Whether to use weights that have been pre-trained on
+            :class:`~torchvsion.datasets.FlyingChairs` + :class:`~torchvsion.datasets.FlyingThings3D`
+            with two fine-tuning steps:
+
+            - one on :class:`~torchvsion.datasets.Sintel` + :class:`~torchvsion.datasets.FlyingThings3D`
+            - one on :class:`~torchvsion.datasets.KittiFlow`.
+
+            This corresponds to the ``C+T+S/K`` strategy in the paper.
+
+        progress (bool): If True, displays a progress bar of the download to stderr.
 
     Returns:
         nn.Module: The model.
@@ -631,11 +639,12 @@ def raft_small(*, pretrained=False, progress=True, **kwargs):
     """RAFT "small" model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
+    Please see the example below for a tutorial on how to use this model.
+
     Args:
-        pretrained (bool): Whether to use pretrained weights.
+        pretrained (bool): Whether to use weights that have been pre-trained on
+            :class:`~torchvsion.datasets.FlyingChairs` + :class:`~torchvsion.datasets.FlyingThings3D`.
         progress (bool): If True, displays a progress bar of the download to stderr
-        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
-            to override any default.
 
     Returns:
         nn.Module: The model.

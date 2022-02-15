@@ -1,11 +1,8 @@
-import functools
-import io
 import pathlib
 import re
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple, BinaryIO
 
 import numpy as np
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -18,17 +15,15 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat, hint_sharding, hint_shuffling
-from torchvision.prototype.features import Label, BoundingBox, Feature
+from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
 
 class Caltech101(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech101",
-            type=DatasetType.IMAGE,
             dependencies=("scipy",),
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
         )
@@ -81,33 +76,26 @@ class Caltech101(Dataset):
 
         return category, id
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[Tuple[str, str], Tuple[Tuple[str, io.IOBase], Tuple[str, io.IOBase]]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+    def _prepare_sample(
+        self, data: Tuple[Tuple[str, str], Tuple[Tuple[str, BinaryIO], Tuple[str, BinaryIO]]]
     ) -> Dict[str, Any]:
         key, (image_data, ann_data) = data
         category, _ = key
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        label = self.info.categories.index(category)
-
-        image = decoder(image_buffer) if decoder else image_buffer
-
+        image = EncodedImage.from_file(image_buffer)
         ann = read_mat(ann_buffer)
-        bbox = BoundingBox(ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy")
-        contour = Feature(ann["obj_contour"].T)
 
         return dict(
-            category=category,
-            label=label,
-            image=image,
+            label=Label.from_category(category, categories=self.categories),
             image_path=image_path,
-            bbox=bbox,
-            contour=contour,
+            image=image,
             ann_path=ann_path,
+            bounding_box=BoundingBox(
+                ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy", image_size=image.image_size
+            ),
+            contour=_Feature(ann["obj_contour"].T),
         )
 
     def _make_datapipe(
@@ -115,7 +103,6 @@ class Caltech101(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
@@ -133,7 +120,7 @@ class Caltech101(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         resources = self.resources(self.default_config)
@@ -148,7 +135,6 @@ class Caltech256(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "caltech256",
-            type=DatasetType.IMAGE,
             homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
         )
 
@@ -164,32 +150,26 @@ class Caltech256(Dataset):
         path = pathlib.Path(data[0])
         return path.name != "RENAME2"
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[str, io.IOBase],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         path, buffer = data
 
-        dir_name = pathlib.Path(path).parent.name
-        label_str, category = dir_name.split(".")
-        label = Label(int(label_str), category=category)
-
-        return dict(label=label, image=decoder(buffer) if decoder else buffer)
+        return dict(
+            path=path,
+            image=EncodedImage.from_file(buffer),
+            label=Label(int(pathlib.Path(path).parent.name.split(".", 1)[0]) - 1, categories=self.categories),
+        )
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, self._is_not_rogue_file)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         resources = self.resources(self.default_config)

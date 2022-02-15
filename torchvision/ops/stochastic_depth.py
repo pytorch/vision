@@ -62,8 +62,5 @@ class StochasticDepth(nn.Module):
         return stochastic_depth(input, self.p, self.mode, self.training)
 
     def __repr__(self) -> str:
-        tmpstr = self.__class__.__name__ + "("
-        tmpstr += "p=" + str(self.p)
-        tmpstr += ", mode=" + str(self.mode)
-        tmpstr += ")"
-        return tmpstr
+        s = f"{self.__class__.__name__}(p={self.p}, mode={self.mode})"
+        return s

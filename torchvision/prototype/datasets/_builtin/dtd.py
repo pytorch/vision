@@ -1,10 +1,7 @@
 import enum
-import functools
-import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO
 
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -21,7 +18,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -29,7 +25,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     getitem,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
 
 
 class DTDDemux(enum.IntEnum):
@@ -42,7 +38,6 @@ class DTD(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "dtd",
-            type=DatasetType.IMAGE,
             homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
             valid_options=dict(
                 split=("train", "test", "val"),
@@ -75,12 +70,7 @@ class DTD(Dataset):
         # The split files contain hardcoded posix paths for the images, e.g. banded/banded_0001.jpg
         return str(path.relative_to(path.parents[1]).as_posix())
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[Tuple[str, List[str]], Tuple[str, io.IOBase]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         (_, joint_categories_data), image_data = data
         _, *joint_categories = joint_categories_data
         path, buffer = image_data
@@ -89,9 +79,9 @@ class DTD(Dataset):
 
         return dict(
             joint_categories={category for category in joint_categories if category},
-            label=Label(self.info.categories.index(category), category=category),
+            label=Label.from_category(category, categories=self.categories),
             path=path,
-            image=decoder(buffer) if decoder else buffer,
+            image=EncodedImage.from_file(buffer),
         )
 
     def _make_datapipe(
@@ -99,7 +89,6 @@ class DTD(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
 
@@ -128,7 +117,7 @@ class DTD(Dataset):
             ref_key_fn=self._image_key_fn,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
         return self._classify_archive(data) == DTDDemux.IMAGES

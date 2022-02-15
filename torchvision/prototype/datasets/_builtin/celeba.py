@@ -1,10 +1,7 @@
 import csv
 import functools
-import io
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence, cast
+from typing import Any, Dict, List, Optional, Tuple, Iterator, Sequence, BinaryIO
 
-import PIL.Image
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -18,7 +15,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     GDriveResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -27,7 +23,8 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import Label, BoundingBox, Keypoint
+from torchvision.prototype.features import EncodedImage, Label, BoundingBox, Keypoint
+
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 
@@ -35,7 +32,7 @@ csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
     def __init__(
         self,
-        datapipe: IterDataPipe[Tuple[Any, io.IOBase]],
+        datapipe: IterDataPipe[Tuple[Any, BinaryIO]],
         *,
         fieldnames: Optional[Sequence[str]] = None,
     ) -> None:
@@ -67,7 +64,6 @@ class CelebA(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "celeba",
-            type=DatasetType.IMAGE,
             categories=[str(label + 1) for label in range(10177)],
             homepage="https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html",
             valid_options=dict(split=("train", "val", "test")),
@@ -94,7 +90,7 @@ class CelebA(Dataset):
             sha256="f0e5da289d5ccf75ffe8811132694922b60f2af59256ed362afa03fefba324d0",
             file_name="list_attr_celeba.txt",
         )
-        bboxes = GDriveResource(
+        bounding_boxes = GDriveResource(
             "0B7EVK8r0v71pbThiMVRxWXZ4dU0",
             sha256="7487a82e57c4bb956c5445ae2df4a91ffa717e903c5fa22874ede0820c8ec41b",
             file_name="list_bbox_celeba.txt",
@@ -104,7 +100,7 @@ class CelebA(Dataset):
             sha256="6c02a87569907f6db2ba99019085697596730e8129f67a3d61659f198c48d43b",
             file_name="list_landmarks_align_celeba.txt",
         )
-        return [splits, images, identities, attributes, bboxes, landmarks]
+        return [splits, images, identities, attributes, bounding_boxes, landmarks]
 
     _SPLIT_ID_TO_NAME = {
         "0": "train",
@@ -115,45 +111,44 @@ class CelebA(Dataset):
     def _filter_split(self, data: Tuple[str, Dict[str, str]], *, split: str) -> bool:
         return self._SPLIT_ID_TO_NAME[data[1]["split_id"]] == split
 
-    def _collate_anns(self, data: Tuple[Tuple[str, Dict[str, str]], ...]) -> Tuple[str, Dict[str, Dict[str, str]]]:
-        (image_id, identity), (_, attributes), (_, bbox), (_, landmarks) = data
-        return image_id, dict(identity=identity, attributes=attributes, bbox=bbox, landmarks=landmarks)
-
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self,
-        data: Tuple[Tuple[str, Tuple[Tuple[str, Dict[str, Any]], Tuple[str, io.IOBase]]], Tuple[str, Dict[str, Any]]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        data: Tuple[
+            Tuple[str, Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]],
+            Tuple[
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+                Tuple[str, Dict[str, str]],
+            ],
+        ],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, (_, image_data) = split_and_image_data
         path, buffer = image_data
-        _, ann = ann_data
+        (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = ann_data
 
-        if decoder:
-            image = decoder(buffer)
-            image_size = cast(Tuple[int, int], image.shape[-2:])
-        else:
-            with PIL.Image.open(buffer) as pil_image:
-                image_size = pil_image.height, pil_image.width
-            buffer.seek(0)
-            image = buffer  # type: ignore[assignment]
+        image = EncodedImage.from_file(buffer)
 
-        identity = Label(int(ann["identity"]["identity"]))
-        attributes = {attr: value == "1" for attr, value in ann["attributes"].items()}
-        bbox = BoundingBox(
-            [int(ann["bbox"][key]) for key in ("x_1", "y_1", "width", "height")], format="xywh", image_size=image_size
+        identity = Label(int(identity["identity"]))
+
+        attributes = {attr: value == "1" for attr, value in attributes.items()}
+
+        bounding_box = BoundingBox(
+            [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
+            format="xywh",
+            image_size=image.image_size,
         )
 
-        descriptions = list({key[:-2] for key in ann["landmarks"].keys()})
+        descriptions = list({key[:-2] for key in landmarks.keys()})
         symmetries = [
             ("vertical", description, description.replace("left", "right"))
             for description in descriptions
             if description.startswith("left")
         ]
         keypoints = Keypoint(
-            [(int(ann["landmarks"][f"{name}_x"]), int(ann["landmarks"][f"{name}_y"])) for name in descriptions],
-            image_size=image_size,
+            [(int(landmarks[f"{name}_x"]), int(landmarks[f"{name}_y"])) for name in descriptions],
+            image_size=image.image_size,
             descriptions=descriptions,
             symmetries=symmetries,
         )
@@ -163,7 +158,7 @@ class CelebA(Dataset):
             image=image,
             identity=identity,
             attributes=attributes,
-            bbox=bbox,
+            bounding_box=bounding_box,
             keypoints=keypoints,
         )
 
@@ -172,9 +167,8 @@ class CelebA(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
-        splits_dp, images_dp, identities_dp, attributes_dp, bboxes_dp, landmarks_dp = resource_dps
+        splits_dp, images_dp, identities_dp, attributes_dp, bounding_boxes_dp, landmarks_dp = resource_dps
 
         splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))
         splits_dp = Filter(splits_dp, functools.partial(self._filter_split, split=config.split))
@@ -187,12 +181,11 @@ class CelebA(Dataset):
                 for dp, fieldnames in (
                     (identities_dp, ("image_id", "identity")),
                     (attributes_dp, None),
-                    (bboxes_dp, None),
+                    (bounding_boxes_dp, None),
                     (landmarks_dp, None),
                 )
             ]
         )
-        anns_dp = Mapper(anns_dp, self._collate_anns)
 
         dp = IterKeyZipper(
             splits_dp,
@@ -202,5 +195,11 @@ class CelebA(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )
-        dp = IterKeyZipper(dp, anns_dp, key_fn=getitem(0), buffer_size=INFINITE_BUFFER_SIZE)
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        dp = IterKeyZipper(
+            dp,
+            anns_dp,
+            key_fn=getitem(0),
+            ref_key_fn=getitem(0, 0),
+            buffer_size=INFINITE_BUFFER_SIZE,
+        )
+        return Mapper(dp, self._prepare_sample)
