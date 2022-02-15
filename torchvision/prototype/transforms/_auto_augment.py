@@ -89,7 +89,7 @@ class _AutoAugmentBase(Transform):
     def get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
         raise NotImplementedError
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = Query(sample).image_for_size_and_channels_extraction()
 
         fill = self.fill

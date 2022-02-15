@@ -26,7 +26,7 @@ class Resize(Transform):
         self.size = size
         self.interpolation = interpolation
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(size=self.size, interpolation=self.interpolation)
 
     def extra_repr(self) -> str:
@@ -40,7 +40,7 @@ class CenterCrop(Transform):
         super().__init__()
         self.output_size = output_size
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(output_size=self.output_size)
 
     def extra_repr(self) -> str:
@@ -82,7 +82,7 @@ class RandomResizedCrop(Transform):
         self.ratio = ratio
         self.interpolation = interpolation
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = Query(sample).image()
         height, width = image.image_size
         area = height * width

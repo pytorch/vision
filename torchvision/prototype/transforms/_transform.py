@@ -15,7 +15,7 @@ class Transform(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict()
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:

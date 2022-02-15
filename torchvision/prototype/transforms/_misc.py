@@ -41,7 +41,7 @@ class Normalize(Transform):
         self.mean = mean
         self.std = std
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(mean=self.mean, std=self.std)
 
 

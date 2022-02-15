@@ -41,7 +41,7 @@ class RandomErasing(Transform):
         self.ratio = ratio
         self.value = value
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = Query(sample).image()
         img_c, (img_h, img_w) = image.num_channels, image.image_size
 
@@ -108,7 +108,7 @@ class RandomMixup(Transform):
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))
 
     def extra_repr(self) -> str:
@@ -123,7 +123,7 @@ class RandomCutmix(Transform):
         self.alpha = alpha
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
         H, W = Query(sample).image_size()
