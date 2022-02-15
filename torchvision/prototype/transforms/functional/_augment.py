@@ -1,4 +1,4 @@
-from typing import TypeVar, Any
+from typing import TypeVar, Any, cast
 
 import torch
 from torchvision.prototype import features
@@ -57,10 +57,10 @@ def cutmix(input: T, *args: Any, **kwargs: Any) -> T:
     if isinstance(input, features.Image):
         kwargs.pop("lam_adjusted", None)
         output = K.cutmix_image(input, **kwargs)
-        return features.Image.new_like(input, output)
+        return cast(T, features.Image.new_like(input, output))
     elif isinstance(input, features.OneHotLabel):
         kwargs.pop("box", None)
         output = K.cutmix_one_hot_label(input, **kwargs)
-        return features.OneHotLabel.new_like(input, output)
+        return cast(T, features.OneHotLabel.new_like(input, output))
 
     raise RuntimeError
