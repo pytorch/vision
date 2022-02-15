@@ -14,9 +14,11 @@ from common_utils import (
     cpu_and_gpu,
     assert_equal,
 )
+from PIL import Image
 from torchvision import transforms as T
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as F
+from torchvision.transforms.autoaugment import _apply_op
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
@@ -723,6 +725,48 @@ def test_autoaugment_save(augmentation, tmpdir):
     transform = augmentation()
     s_transform = torch.jit.script(transform)
     s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
+
+
+@pytest.mark.parametrize("interpolation", [F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR])
+@pytest.mark.parametrize("mode", ["X", "Y"])
+def test_autoaugment__op_apply_shear(interpolation, mode):
+    # We check that torchvision's implementation of shear is equivalent
+    # to official CIFAR10 autoaugment implementation:
+    # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/research/autoaugment/augmentation_transforms.py#L273-L290
+    image_size = 32
+
+    def shear(pil_img, level, mode, resample):
+        if mode == "X":
+            matrix = (1, level, 0, 0, 1, 0)
+        elif mode == "Y":
+            matrix = (1, 0, 0, level, 1, 0)
+        return pil_img.transform((image_size, image_size), Image.AFFINE, matrix, resample=resample)
+
+    t_img, pil_img = _create_data(image_size, image_size)
+
+    resample_pil = {
+        F.InterpolationMode.NEAREST: Image.NEAREST,
+        F.InterpolationMode.BILINEAR: Image.BILINEAR,
+    }[interpolation]
+
+    level = 0.3
+    expected_out = shear(pil_img, level, mode=mode, resample=resample_pil)
+
+    # Check pil output vs expected pil
+    out = _apply_op(pil_img, op_name=f"Shear{mode}", magnitude=level, interpolation=interpolation, fill=0)
+    assert out == expected_out
+
+    if interpolation == F.InterpolationMode.BILINEAR:
+        # We skip bilinear mode for tensors as
+        # affine transformation results are not exactly the same
+        # between tensors and pil images
+        # MAE as around 1.40
+        # Max Abs error can be 163 or 170
+        return
+
+    # Check tensor output vs expected pil
+    out = _apply_op(t_img, op_name=f"Shear{mode}", magnitude=level, interpolation=interpolation, fill=0)
+    _assert_approx_equal_tensor_to_pil(out, expected_out)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
