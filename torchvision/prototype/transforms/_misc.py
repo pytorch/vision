@@ -6,8 +6,6 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, kernels as K
 from torchvision.transforms import functional as _F
 
-from .utils import legacy_transform
-
 
 class Identity(Transform):
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
@@ -44,8 +42,9 @@ class Normalize(Transform):
         self.mean = mean
         self.std = std
 
-    @legacy_transform(_F.normalize, "mean", "std")
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if type(input) is torch.Tensor:
+            return _F.normalize(input, mean=self.mean, std=self.std)
         if type(input) is features.Image:
             output = K.normalize_image(input, **params)
             return features.Image.new_like(input, output)

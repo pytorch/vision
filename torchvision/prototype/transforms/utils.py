@@ -1,26 +1,11 @@
-import functools
-from typing import Callable, Tuple, TypeVar, Optional, Any, cast, Dict
+from typing import Callable, Tuple, TypeVar, Optional, Any, cast
 
 import PIL.Image
 import torch
-from torchvision.prototype import features, transforms
+from torchvision.prototype import features
 from torchvision.prototype.utils._internal import query_recursively
 
 T = TypeVar("T")
-
-
-def legacy_transform(kernel: Callable, *attrs: str) -> Callable[[Callable], Callable]:
-    def outer_wrapper(fn: Callable) -> Any:
-        @functools.wraps(fn)
-        def inner_wrapper(self: transforms.Transform, input: Any, params: Dict[str, Any]) -> Any:
-            if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
-                return kernel(input, **params, **{attr: getattr(self, attr) for attr in attrs})
-
-            return fn(self, input, params)
-
-        return inner_wrapper
-
-    return outer_wrapper
 
 
 class Query:

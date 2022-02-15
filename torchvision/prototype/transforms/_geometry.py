@@ -1,17 +1,20 @@
 from typing import Any, Dict, List, Union, Sequence, Tuple
 
+import PIL.Image
+import torch
 from torchvision import transforms as _transforms
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, kernels as K
 from torchvision.transforms import functional as _F
 
-from .utils import Query, legacy_transform
+from .utils import Query
 
 
 class HorizontalFlip(Transform):
-    @legacy_transform(_F.hflip)
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.Image:
+        if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
+            return _F.hflip(input)
+        elif type(input) is features.Image:
             output = K.horizontal_flip_image(input)
             return features.Image.new_like(input, output)
         elif type(input) is features.BoundingBox:
@@ -31,9 +34,10 @@ class Resize(Transform):
         self.size = [size, size] if isinstance(size, int) else list(size)
         self.interpolation = interpolation
 
-    @legacy_transform(_F.resize, "size", "interpolation")
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.Image:
+        if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
+            return _F.resize(input, size=self.size, interpolation=self.interpolation)
+        elif type(input) is features.Image:
             output = K.resize_image(input, size=self.size, interpolation=self.interpolation)
             return features.Image.new_like(input, output)
         elif type(input) is features.SegmentationMask:
@@ -54,9 +58,10 @@ class CenterCrop(Transform):
         super().__init__()
         self.output_size = output_size
 
-    @legacy_transform(_F.center_crop, "output_size")
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.Image:
+        if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
+            return _F.center_crop(input, output_size=self.output_size)
+        elif type(input) is features.Image:
             output = K.center_crop_image(input, **params)
             return features.Image.new_like(input, output)
         else:
