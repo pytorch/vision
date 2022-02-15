@@ -1,4 +1,4 @@
-from typing import TypeVar, Any, cast
+from typing import Any
 
 import torch
 from torchvision.prototype import features
@@ -7,8 +7,6 @@ from torchvision.transforms import functional as _F
 
 from ._utils import dispatch
 
-T = TypeVar("T", bound=features._Feature)
-
 
 @dispatch(
     {
@@ -16,7 +14,7 @@ T = TypeVar("T", bound=features._Feature)
         features.Image: K.erase_image,
     }
 )
-def erase(input: T, *args: Any, **kwargs: Any) -> T:
+def erase(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -27,7 +25,7 @@ def erase(input: T, *args: Any, **kwargs: Any) -> T:
         features.OneHotLabel: K.mixup_one_hot_label,
     }
 )
-def mixup(input: T, *args: Any, **kwargs: Any) -> T:
+def mixup(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -38,7 +36,7 @@ def mixup(input: T, *args: Any, **kwargs: Any) -> T:
         features.OneHotLabel: None,
     }
 )
-def cutmix(input: T, *args: Any, **kwargs: Any) -> T:
+def cutmix(input: Any, *args: Any, **kwargs: Any) -> Any:
     """Perform the CutMix operation as introduced in the paper
     `"CutMix: Regularization Strategy to Train Strong Classifiers with Localizable Features" <https://arxiv.org/abs/1905.04899>`_.
 
@@ -57,10 +55,10 @@ def cutmix(input: T, *args: Any, **kwargs: Any) -> T:
     if isinstance(input, features.Image):
         kwargs.pop("lam_adjusted", None)
         output = K.cutmix_image(input, **kwargs)
-        return cast(T, features.Image.new_like(input, output))
+        return features.Image.new_like(input, output)
     elif isinstance(input, features.OneHotLabel):
         kwargs.pop("box", None)
         output = K.cutmix_one_hot_label(input, **kwargs)
-        return cast(T, features.OneHotLabel.new_like(input, output))
+        return features.OneHotLabel.new_like(input, output)
 
     raise RuntimeError

@@ -1,4 +1,4 @@
-from typing import TypeVar, Any, cast, List
+from typing import Any
 
 import PIL.Image
 import torch
@@ -16,8 +16,6 @@ from torchvision.transforms.functional_tensor import (
 
 from ._utils import dispatch
 
-T = TypeVar("T", bound=features._Feature)
-
 
 @dispatch(
     {
@@ -25,7 +23,7 @@ T = TypeVar("T", bound=features._Feature)
         features.Image: K.normalize_image,
     }
 )
-def normalize(input: T, *args: Any, **kwargs: Any) -> T:
+def normalize(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -37,7 +35,7 @@ def normalize(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.gaussian_blur_image,
     }
 )
-def gaussian_blur(input: T, *args: Any, **kwargs: Any) -> T:
+def gaussian_blur(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -50,9 +48,9 @@ def gaussian_blur(input: T, *args: Any, **kwargs: Any) -> T:
         features.BoundingBox: None,
     }
 )
-def get_image_size(input: T, *args: Any, **kwargs: Any) -> T:
+def get_image_size(input: Any, *args: Any, **kwargs: Any) -> Any:
     if isinstance(input, (features.Image, features.BoundingBox)):
-        return cast(List[int], list(input.image_size))  # type: ignore[return-value]
+        return list(input.image_size)
 
     raise RuntimeError
 
@@ -64,8 +62,8 @@ def get_image_size(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: None,
     }
 )
-def get_image_num_channels(input: T, *args: Any, **kwargs: Any) -> T:
+def get_image_num_channels(input: Any, *args: Any, **kwargs: Any) -> Any:
     if isinstance(input, features.Image):
-        return input.num_channels  # type: ignore[return-value]
+        return input.num_channels
 
     raise RuntimeError
