@@ -98,16 +98,16 @@ class Lsun(Dataset):
         )
 
     _CHECKSUMS = {
-        ("train", "bedroom"): "",
-        ("train", "bridge"): "",
-        ("train", "church_outdoor"): "",
-        ("train", "classroom"): "",
-        ("train", "conference_room"): "",
-        ("train", "dining_room"): "",
-        ("train", "kitchen"): "",
-        ("train", "living_room"): "",
-        ("train", "restaurant"): "",
-        ("train", "tower"): "",
+        ("train", "bedroom"): "a15644c2e7153106867f0adb3491fc41224102d1f01b24494fb47d9f5d1f174e",
+        ("train", "bridge"): "2701b2d421bbc4d8a5e9b0652ff7c3b57cd6495da8e0e85c39533275b5a925a3",
+        ("train", "church_outdoor"): "91128ae026840ac0c5982b4445ab5fc4e092d6847cca76793b2b1a0815c2e74a",
+        ("train", "classroom"): "73a8a3e318819e1cc602f229673c3f51a68f3ece61e3764ce22df6abea4d0873",
+        ("train", "conference_room"): "fa0a4cf72e7acfb103392eaf33640d5508a728e971f31877b01d64e1bde6068c",
+        ("train", "dining_room"): "e4ee24c7c309360c3bf019123ce5bbf17434b2ba33abec2b0b07cfae715a52cb",
+        ("train", "kitchen"): "b1993cf639aece5d207a27eb9ff872bcca9dff6472d8227a052c79d40ee753c4",
+        ("train", "living_room"): "bd2c52b812c80f73ce3062a221396d13a52b5cce2f813b4cdf61937651281d7a",
+        ("train", "restaurant"): "11a0a924b960cd0900e9b7477d684fb338bd99cc5f72db1caac592e4f497e09a",
+        ("train", "tower"): "440caec74c9641cb51fd235a5970c8e4931c3af875aeb044a8bcca956e106309",
         ("val", "bedroom"): "5d022e781b241c25ec2e1f1f769afcdb8091d7fd58362667aec03137b8114b12",
         ("val", "bridge"): "83216a2974d6068c2e1d18086006e7380ff58540216f955ce87fe049b460cb0d",
         ("val", "church_outdoor"): "34635b7547a3e51a15f942a4a4082dd6bc9cca381a953515cb2275c0eed50584",
@@ -163,7 +163,7 @@ class Lsun(Dataset):
         )
 
     def _filepath_fn(self, path: str) -> str:
-        return str(pathlib.Path(path).joinpath("keys.cache"))
+        return str(pathlib.Path(path) / "keys.cache")
 
     def _make_datapipe(
         self,
@@ -174,7 +174,7 @@ class Lsun(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = Concater(*resource_dps)
 
-        # LMDB datasets are indexed, but extracting all keys is expensive. Since we need them for shuffling, we cache
+        # LMDB databases are indexed, but extracting all keys is expensive. Since we need them for shuffling, we cache
         # the keys on disk and subsequently only read them from there.
         dp = OnDiskCacheHolder(dp, filepath_fn=self._filepath_fn)
         dp = LmdbKeyExtractor(dp).end_caching(mode="wb", same_filepath_fn=True, skip_read=True)
