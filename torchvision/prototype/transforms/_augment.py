@@ -100,9 +100,6 @@ class RandomErasing(Transform):
         else:
             return input
 
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("p", "scale", "ratio", "value")
-
 
 class RandomMixup(Transform):
     def __init__(self, *, alpha: float) -> None:
@@ -125,9 +122,6 @@ class RandomMixup(Transform):
             return features.OneHotLabel.new_like(input, output)
         else:
             return input
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("alpha")
 
 
 class RandomCutmix(Transform):
@@ -170,6 +164,3 @@ class RandomCutmix(Transform):
             return features.OneHotLabel.new_like(input, output)
         else:
             return input
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("alpha")

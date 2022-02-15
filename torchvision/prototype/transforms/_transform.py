@@ -1,3 +1,4 @@
+import enum
 import functools
 from typing import Any, Dict
 
@@ -21,5 +22,15 @@ class Transform(nn.Module):
         sample = inputs if len(inputs) > 1 else inputs[0]
         return apply_recursively(functools.partial(self._transform, params=self._get_params(sample)), sample)
 
-    def _extra_repr_from_attrs(self, *names: str) -> str:
-        return ", ".join(f"{name}={getattr(self, name)}" for name in names)
+    def extra_repr(self) -> str:
+        extra = []
+        for name, value in self.__dict__.items():
+            if name.startswith("_") or name == "training":
+                continue
+
+            if not isinstance(value, (bool, int, float, str, tuple, list, enum.Enum)):
+                continue
+
+            extra.append(f"{name}={value}")
+
+        return ", ".join(extra)

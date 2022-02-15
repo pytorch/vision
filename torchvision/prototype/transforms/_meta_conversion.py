@@ -20,9 +20,6 @@ class ConvertBoundingBoxFormat(Transform):
         else:
             return input
 
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("format")
-
 
 class ConvertImageDtype(Transform):
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
@@ -35,9 +32,6 @@ class ConvertImageDtype(Transform):
             return features.Image.new_like(input, output, dtype=self.dtype)
         else:
             return input
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("dtype")
 
 
 class ConvertColorSpace(Transform):
@@ -53,6 +47,3 @@ class ConvertColorSpace(Transform):
             return features.Image.new_like(input, output, color_space=self.color_space)
         else:
             return input
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("color_space")

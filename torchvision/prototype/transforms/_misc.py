@@ -49,9 +49,6 @@ class Normalize(Transform):
             output = K.normalize_image(input, **params)
             return features.Image.new_like(input, output)
 
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("mean", "std")
-
 
 class ToDtype(Lambda):
     def __init__(self, dtype: torch.dtype, *types: Type) -> None:

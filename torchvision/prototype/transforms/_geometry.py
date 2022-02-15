@@ -51,9 +51,6 @@ class Resize(Transform):
         else:
             return input
 
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("size", "interpolation")
-
 
 class CenterCrop(Transform):
     def __init__(self, output_size: List[int]):
@@ -68,9 +65,6 @@ class CenterCrop(Transform):
             return features.Image.new_like(input, output)
         else:
             return input
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("output_size")
 
 
 class RandomResizedCrop(Transform):
@@ -151,6 +145,3 @@ class RandomResizedCrop(Transform):
             return features.Image.new_like(input, output)
         else:
             return input
-
-    def extra_repr(self) -> str:
-        return self._extra_repr_from_attrs("size", "scale", "ratio", "interpolation")
