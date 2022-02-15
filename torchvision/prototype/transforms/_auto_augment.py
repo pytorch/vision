@@ -104,7 +104,7 @@ class _AutoAugmentBase(Transform):
         "Invert": AutoAugmentDispatcher(K.invert_image, _F.invert),
     }
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = Query(sample).image_for_size_and_channels_extraction()
 
         fill = self.fill
@@ -120,7 +120,7 @@ class _AutoAugmentBase(Transform):
 
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        params = params or self.get_params(sample)
+        params = params or self._get_params(sample)
 
         for transform_id, magnitude in self.get_transforms_meta(Query(sample).image_size()):
             dispatcher = self._DISPATCHER_MAP[transform_id]

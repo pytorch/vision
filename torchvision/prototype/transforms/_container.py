@@ -1,4 +1,4 @@
-from typing import Any, Optional, Dict
+from typing import Any
 
 import torch
 
@@ -12,7 +12,7 @@ class Compose(Transform):
         for idx, transform in enumerate(transforms):
             self.add_module(str(idx), transform)
 
-    def forward(self, *inputs: Any) -> Any:  # type: ignore[override]
+    def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         for transform in self.transforms:
             sample = transform(sample)
@@ -25,12 +25,12 @@ class RandomApply(Transform):
         self.transform = transform
         self.p = p
 
-    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         if float(torch.rand(())) < self.p:
             return sample
 
-        return self.transform(sample, params=params)
+        return self.transform(sample)
 
     def extra_repr(self) -> str:
         return f"p={self.p}"
@@ -43,7 +43,7 @@ class RandomChoice(Transform):
         for idx, transform in enumerate(transforms):
             self.add_module(str(idx), transform)
 
-    def forward(self, *inputs: Any) -> Any:  # type: ignore[override]
+    def forward(self, *inputs: Any) -> Any:
         idx = int(torch.randint(len(self.transforms), size=()))
         transform = self.transforms[idx]
         return transform(*inputs)
@@ -56,7 +56,7 @@ class RandomOrder(Transform):
         for idx, transform in enumerate(transforms):
             self.add_module(str(idx), transform)
 
-    def forward(self, *inputs: Any) -> Any:  # type: ignore[override]
+    def forward(self, *inputs: Any) -> Any:
         for idx in torch.randperm(len(self.transforms)):
             transform = self.transforms[idx]
             inputs = transform(*inputs)

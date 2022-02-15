@@ -106,7 +106,7 @@ class RandomResizedCrop(Transform):
         self.ratio = ratio
         self.interpolation = interpolation
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = Query(sample).image()
         height, width = image.image_size
         area = height * width
