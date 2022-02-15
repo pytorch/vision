@@ -110,9 +110,6 @@ class RandomMixup(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))
 
-    def _supports(self, obj: Any) -> bool:
-        return type(obj) in {features.Image, features.OneHotLabel}
-
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.Image:
             output = K.mixup_image(input, **params)
@@ -151,9 +148,6 @@ class RandomCutmix(Transform):
         lam_adjusted = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))
 
         return dict(box=box, lam_adjusted=lam_adjusted)
-
-    def _supports(self, obj: Any) -> bool:
-        return type(obj) in {features.Image, features.OneHotLabel}
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.Image:

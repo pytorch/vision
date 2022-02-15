@@ -18,9 +18,6 @@ class Lambda(Transform):
         self.fn = fn
         self.types = types
 
-    def _supports(self, obj: Any) -> bool:
-        return type(obj) in self.types
-
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) in self.types:
             return self.fn(input)

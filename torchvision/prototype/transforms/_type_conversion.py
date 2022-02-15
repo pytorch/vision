@@ -5,9 +5,6 @@ from torchvision.prototype.transforms import Transform, kernels as K
 
 
 class DecodeImage(Transform):
-    def _supports(self, obj: Any) -> bool:
-        return isinstance(obj, features.EncodedImage)
-
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.EncodedImage:
             output = K.decode_image_with_pil(input)
