@@ -39,7 +39,7 @@ def resize_image(
     new_height, new_width = size
     num_channels, old_height, old_width = image.shape[-3:]
     batch_shape = image.shape[:-3]
-    return _F.resize(
+    return _F.resize(  # type: ignore[no-any-return]
         image.reshape((-1, num_channels, old_height, old_width)),
         size=size,
         interpolation=interpolation,
