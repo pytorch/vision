@@ -42,7 +42,7 @@ class RandomErasing(Transform):
         self.value = value
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image: Any = query_recursively(lambda input: input if input in self._DISPATCHER else None, sample)
+        image: Any = next(query_recursively(lambda input: input if input in self._DISPATCHER else None, sample))
         img_h, img_w = F.get_image_size(image)
         img_c = F.get_image_num_channels(image)
 
@@ -120,7 +120,7 @@ class RandomCutmix(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        image: Any = query_recursively(lambda input: input if input in self._DISPATCHER else None, sample)
+        image: Any = next(query_recursively(lambda input: input if input in self._DISPATCHER else None, sample))
         H, W = F.get_image_size(image)
 
         r_x = torch.randint(W, ())

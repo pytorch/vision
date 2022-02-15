@@ -79,7 +79,7 @@ class _AutoAugmentBase(Transform):
         return type(obj) in {features.Image, torch.Tensor} or isinstance(obj, PIL.Image.Image)
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image: Any = query_recursively(lambda input: input if self._is_supported(input) else None, sample)
+        image: Any = next(query_recursively(lambda input: input if self._is_supported(input) else None, sample))
         num_channels = F.get_image_num_channels(image)
 
         fill = self.fill
@@ -251,7 +251,7 @@ class AutoAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
 
-        image: Any = query_recursively(lambda input: input if self._is_supported(input) else None, sample)
+        image: Any = next(query_recursively(lambda input: input if self._is_supported(input) else None, sample))
         image_size = F.get_image_size(image)
 
         for transform_id, magnitude in self._get_transforms_meta(image_size):
@@ -326,7 +326,7 @@ class RandAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
 
-        image: Any = query_recursively(lambda input: input if self._is_supported(input) else None, sample)
+        image: Any = next(query_recursively(lambda input: input if self._is_supported(input) else None, sample))
         image_size = F.get_image_size(image)
 
         for transform_id, magnitude in self._get_transforms_meta(image_size):
@@ -381,7 +381,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
         dispatcher = self._DISPATCHER_MAP[augmentation_meta.dispatcher_id]
 
-        image: Any = query_recursively(lambda input: input if self._is_supported(input) else None, sample)
+        image: Any = next(query_recursively(lambda input: input if self._is_supported(input) else None, sample))
         image_size = F.get_image_size(image)
 
         magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, image_size)

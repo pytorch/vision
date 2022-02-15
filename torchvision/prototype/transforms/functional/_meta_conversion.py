@@ -21,9 +21,10 @@ T = TypeVar("T", bound=features._Feature)
 def convert_format(input: T, *args: Any, **kwargs: Any) -> T:
     format = kwargs["format"]
     if type(input) is torch.Tensor:
-        if "old_format" not in kwargs:
+        old_format = kwargs.get("old_format")
+        if old_format is None:
             raise TypeError("For vanilla tensors the `old_format` needs to be provided.")
-        return box_convert(input, in_fmt=kwargs["old_format"], out_fmt=format)  # type: ignore[return-value]
+        return box_convert(input, in_fmt=kwargs["old_format"].name.lower(), out_fmt=format.name.lower())  # type: ignore[return-value]
     elif isinstance(input, features.BoundingBox):
         output = K.convert_bounding_box_format(input, old_format=input.format, new_format=kwargs["format"])
         return cast(T, features.BoundingBox.new_like(input, output, format=format))
@@ -41,7 +42,7 @@ def convert_format(input: T, *args: Any, **kwargs: Any) -> T:
 def convert_color_space(input: T, *args: Any, **kwargs: Any) -> T:
     color_space = kwargs["color_space"]
     if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
-        if color_space != "grayscale":
+        if color_space != features.ColorSpace.GRAYSCALE:
             raise ValueError("For vanilla tensors and PIL images only RGB to grayscale is supported")
         return _F.rgb_to_grayscale(input)  # type: ignore[return-value]
     elif isinstance(input, features.Image):

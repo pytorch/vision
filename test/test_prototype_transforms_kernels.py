@@ -5,6 +5,7 @@ import pytest
 import torch.testing
 import torchvision.prototype.transforms.kernels as K
 from torch import jit
+from torch.nn.functional import one_hot
 from torchvision.prototype import features
 
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
@@ -39,10 +40,10 @@ def make_images(
     extra_dims=((4,), (2, 3)),
 ):
     for size, color_space, dtype in itertools.product(sizes, color_spaces, dtypes):
-        yield make_image(size, color_space=color_space)
+        yield make_image(size, color_space=color_space, dtype=dtype)
 
-    for color_space, extra_dims_ in itertools.product(color_spaces, extra_dims):
-        yield make_image(color_space=color_space, extra_dims=extra_dims_)
+    for color_space, dtype, extra_dims_ in itertools.product(color_spaces, dtypes, extra_dims):
+        yield make_image(color_space=color_space, extra_dims=extra_dims_, dtype=dtype)
 
 
 def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
@@ -104,6 +105,27 @@ def make_bounding_boxes(
 
     for format, extra_dims_ in itertools.product(formats, extra_dims):
         yield make_bounding_box(format=format, extra_dims=extra_dims_)
+
+
+def make_label(size=(), *, categories=("category0", "category1")):
+    return features.Label(torch.randint(0, len(categories) if categories else 10, size), categories=categories)
+
+
+def make_one_hot_label(*args, **kwargs):
+    label = make_label(*args, **kwargs)
+    return features.OneHotLabel(one_hot(label, num_classes=len(label.categories)), categories=label.categories)
+
+
+def make_one_hot_labels(
+    *,
+    num_categories=(1, 2, 10),
+    extra_dims=((4,), (2, 3)),
+):
+    for num_categories_ in num_categories:
+        yield make_one_hot_label(categories=[f"category{idx}" for idx in range(num_categories_)])
+
+    for extra_dims_ in extra_dims:
+        yield make_one_hot_label(extra_dims_)
 
 
 class SampleInput:
@@ -178,11 +200,11 @@ def resize_bounding_box():
 
 
 class TestKernelsCommon:
-    @pytest.mark.parametrize("kernel_info", KERNEL_INFOS, ids=lambda kernel_info: kernel_info.name)
+    @pytest.mark.parametrize_from_transforms("kernel_info", KERNEL_INFOS, ids=lambda kernel_info: kernel_info.name)
     def test_scriptable(self, kernel_info):
         jit.script(kernel_info.kernel)
 
-    @pytest.mark.parametrize(
+    @pytest.mark.parametrize_from_transforms(
         ("kernel_info", "sample_input"),
         [
             pytest.param(kernel_info, sample_input, id=f"{kernel_info.name}-{idx}")

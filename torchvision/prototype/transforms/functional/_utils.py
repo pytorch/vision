@@ -69,7 +69,7 @@ class Dispatcher:
                     if issubclass(feature_type, registered_feature_type)
                 )
             except StopIteration:
-                raise TypeError(f"No support for feature type {type(input).__name__}") from None
+                raise TypeError(f"No support for feature type {feature_type.__name__}") from None
 
     def __contains__(self, obj: Any) -> bool:
         try:

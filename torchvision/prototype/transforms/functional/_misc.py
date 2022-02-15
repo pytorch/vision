@@ -44,8 +44,8 @@ def gaussian_blur(input: T, *args: Any, **kwargs: Any) -> T:
 
 @dispatch(
     {
-        torch.Tensor: _get_image_size_pil,
-        PIL.Image.Image: _get_image_size_tensor,
+        torch.Tensor: _get_image_size_tensor,
+        PIL.Image.Image: _get_image_size_pil,
         features.Image: None,
         features.BoundingBox: None,
     }
@@ -59,8 +59,8 @@ def get_image_size(input: T, *args: Any, **kwargs: Any) -> T:
 
 @dispatch(
     {
-        torch.Tensor: _get_image_num_channels_pil,
-        PIL.Image.Image: _get_image_num_channels_tensor,
+        torch.Tensor: _get_image_num_channels_tensor,
+        PIL.Image.Image: _get_image_num_channels_pil,
         features.Image: None,
     }
 )

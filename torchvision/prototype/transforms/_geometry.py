@@ -117,4 +117,4 @@ class RandomResizedCrop(Transform):
             i = (height - h) // 2
             j = (width - w) // 2
 
-        return dict(top=i, left=j, height=h, width=w)
+        return dict(top=i, left=j, height=h, width=w, size=self.size)

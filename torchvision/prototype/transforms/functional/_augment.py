@@ -34,8 +34,8 @@ def mixup(input: T, *args: Any, **kwargs: Any) -> T:
 
 @dispatch(
     {
-        features.Image: K.cutmix_image,
-        features.OneHotLabel: K.cutmix_one_hot_label,
+        features.Image: None,
+        features.OneHotLabel: None,
     }
 )
 def cutmix(input: T, *args: Any, **kwargs: Any) -> T:
@@ -54,4 +54,13 @@ def cutmix(input: T, *args: Any, **kwargs: Any) -> T:
 
     Please refer to the kernel documentations for a detailed explanation of the functionality and parameters.
     """
-    ...
+    if isinstance(input, features.Image):
+        kwargs.pop("lam_adjusted", None)
+        output = K.cutmix_image(input, **kwargs)
+        return features.Image.new_like(input, output)
+    elif isinstance(input, features.OneHotLabel):
+        kwargs.pop("box", None)
+        output = K.cutmix_one_hot_label(input, **kwargs)
+        return features.OneHotLabel.new_like(input, output)
+
+    raise RuntimeError
