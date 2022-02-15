@@ -255,7 +255,7 @@ class AutoAugment(_AutoAugmentBase):
                 if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
                     return input
 
-                return dispatcher(input, magnitude=magnitude, **params)  # type: ignore[arg-type]
+                return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]
 
             sample = apply_recursively(transform, sample)
 
@@ -327,7 +327,7 @@ class RandAugment(_AutoAugmentBase):
                 if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
                     return input
 
-                return dispatcher(input, magnitude=magnitude, **params)  # type: ignore[arg-type]
+                return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]
 
             sample = apply_recursively(transform, sample)
 
@@ -362,24 +362,6 @@ class TrivialAugmentWide(_AutoAugmentBase):
         super().__init__(**kwargs)
         self.num_magnitude_bins = num_magnitude_bins
 
-    def _get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
-        augmentation_meta = self._AUGMENTATION_SPACE[int(torch.randint(len(self._AUGMENTATION_SPACE), ()))]
-
-        if augmentation_meta.dispatcher_id == "Identity":
-            # empty iterator
-            return
-            yield
-
-        magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, image_size)
-        if magnitudes is not None:
-            magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
-            if augmentation_meta.signed and float(torch.rand(())) <= p:
-                magnitude *= -1
-        else:
-            magnitude = 0.0
-
-        yield augmentation_meta.dispatcher_id, magnitude
-
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
@@ -388,12 +370,12 @@ class TrivialAugmentWide(_AutoAugmentBase):
         if augmentation_meta.dispatcher_id == "Identity":
             return sample
 
-        dispatcher = self._DISPATCHER_MAP[augmentation_meta.ransform_id]
+        dispatcher = self._DISPATCHER_MAP[augmentation_meta.dispatcher_id]
 
         magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, Query(sample).image().image_size)
         if magnitudes is not None:
             magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
-            if augmentation_meta.signed and float(torch.rand(())) <= p:
+            if augmentation_meta.signed and float(torch.rand(())) <= 0.5:
                 magnitude *= -1
         else:
             magnitude = 0.0
@@ -402,6 +384,6 @@ class TrivialAugmentWide(_AutoAugmentBase):
             if type(input) not in {features.Image, torch.Tensor} or not isinstance(input, PIL.Image.Image):
                 return input
 
-            return dispatcher(input, magnitude=magnitude, **params)  # type: ignore[arg-type]
+            return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]
 
         return apply_recursively(transform, sample)
