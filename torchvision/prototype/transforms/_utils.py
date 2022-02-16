@@ -8,7 +8,7 @@ from torchvision.prototype.utils._internal import query_recursively
 
 def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
     def fn(input: Any) -> Optional[Union[PIL.Image.Image, torch.Tensor, features.Image]]:
-        if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image):
+        if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
             return input
 
         return None

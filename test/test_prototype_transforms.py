@@ -83,11 +83,13 @@ class TestSmoke:
             (
                 transform,
                 [
-                    *[features.Image.new_like(image, image.unsqueeze(0), dtype=torch.float) for image in make_images()],
-                    *[
-                        features.OneHotLabel.new_like(one_hot_label, one_hot_label.unsqueeze(0), dtype=torch.float)
-                        for one_hot_label in make_one_hot_labels()
-                    ],
+                    dict(
+                        image=features.Image.new_like(image, image.unsqueeze(0), dtype=torch.float),
+                        one_hot_label=features.OneHotLabel.new_like(
+                            one_hot_label, one_hot_label.unsqueeze(0), dtype=torch.float
+                        ),
+                    )
+                    for image, one_hot_label in itertools.product(make_images(), make_one_hot_labels())
                 ],
             )
             for transform in [
