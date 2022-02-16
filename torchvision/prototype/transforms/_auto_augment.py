@@ -1,7 +1,6 @@
 import math
 from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar
 
-import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
@@ -79,9 +78,6 @@ class _AutoAugmentBase(Transform):
         "Invert": lambda input, magnitude, interpolation, fill: F.invert(input),
     }
 
-    def _is_supported(self, obj: Any) -> bool:
-        return type(obj) in {features.Image, torch.Tensor} or isinstance(obj, PIL.Image.Image)
-
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
         num_channels = F.get_image_num_channels(image)
@@ -103,10 +99,12 @@ class _AutoAugmentBase(Transform):
         dispatcher = self._DISPATCHER_MAP[transform_id]
 
         def transform(input: Any) -> Any:
-            if not self._is_supported(input):
+            if None:
+                return dispatcher(input, magnitude, params["interpolation"], params["fill"])
+            elif type(input) in {features.BoundingBox, features.SegmentationMask}:
+                raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
+            else:
                 return input
-
-            return dispatcher(input, magnitude, params["interpolation"], params["fill"])
 
         return apply_recursively(transform, sample)
 
