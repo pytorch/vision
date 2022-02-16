@@ -29,7 +29,7 @@ class HMDB51(Dataset):
             dependencies=("rarfile",),
             valid_options=dict(
                 split=("train", "test"),
-                split_number=("1", "2", "3"),
+                fold=("1", "2", "3"),
             ),
         )
 
@@ -54,11 +54,11 @@ class HMDB51(Dataset):
         videos._preprocess = self._extract_videos_archive
         return [splits, videos]
 
-    _SPLIT_FILE_PATTERN = re.compile(r"(?P<category>\w+?)_test_split(?P<split_number>[1-3])[.]txt")
+    _SPLIT_FILE_PATTERN = re.compile(r"(?P<category>\w+?)_test_split(?P<fold>[1-3])[.]txt")
 
-    def _is_split_number(self, data: Tuple[str, Any], *, split_number: str) -> bool:
+    def _is_fold(self, data: Tuple[str, Any], *, fold: str) -> bool:
         path = pathlib.Path(data[0])
-        return self._SPLIT_FILE_PATTERN.match(path.name)["split_number"] == split_number  # type: ignore[index]
+        return self._SPLIT_FILE_PATTERN.match(path.name)["fold"] == fold  # type: ignore[index]
 
     _SPLIT_ID_TO_NAME = {
         "1": "train",
@@ -68,7 +68,8 @@ class HMDB51(Dataset):
     def _is_split(self, data: Dict[str, Any], *, split: str) -> bool:
         split_id = data["split_id"]
 
-        # TODO: explain
+        # In addition to split id 1 and 2 corresponding to the train and test splits, some videos are annotated with
+        # split id 0, which indicates that the video is not included in either split
         if split_id not in self._SPLIT_ID_TO_NAME:
             return False
 
@@ -90,7 +91,7 @@ class HMDB51(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         splits_dp, videos_dp = resource_dps
 
-        splits_dp = Filter(splits_dp, functools.partial(self._is_split_number, split_number=config.split_number))
+        splits_dp = Filter(splits_dp, functools.partial(self._is_fold, fold=config.fold))
         splits_dp = CSVDictParser(splits_dp, fieldnames=("filename", "split_id"), delimiter=" ")
         splits_dp = Filter(splits_dp, functools.partial(self._is_split, split=config.split))
         splits_dp = hint_sharding(splits_dp)

@@ -71,7 +71,7 @@ class UCF101(Dataset):
     def _make_datapipe(
         self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
-        splits_dp, images_dp = resource_dps
+        splits_dp, videos_dp = resource_dps
 
         splits_dp: IterDataPipe[Tuple[str, BinaryIO]] = Filter(
             splits_dp, path_comparator("name", f"{config.split}list0{config.fold}.txt")
@@ -80,7 +80,7 @@ class UCF101(Dataset):
         splits_dp = hint_sharding(splits_dp)
         splits_dp = hint_shuffling(splits_dp)
 
-        dp = IterKeyZipper(splits_dp, images_dp, path_accessor("name"), buffer_size=INFINITE_BUFFER_SIZE)
+        dp = IterKeyZipper(splits_dp, videos_dp, path_accessor("name"), buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:

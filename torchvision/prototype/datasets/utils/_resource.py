@@ -97,7 +97,7 @@ class OnlineResource(abc.ABC):
         # is always extracted in a folder with the corresponding file name.
         folder_candidate = path.parent / stem
         if folder_candidate.exists() and folder_candidate.is_dir():
-            return self._loader(path)
+            return self._loader(folder_candidate)
 
         # If there is no folder, we look for all files that share the same stem as the raw file, but might have a
         # different suffix.
