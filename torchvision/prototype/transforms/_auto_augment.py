@@ -9,7 +9,7 @@ from torchvision.prototype.transforms import Transform, InterpolationMode, AutoA
 from torchvision.prototype.utils._internal import apply_recursively
 from torchvision.transforms import functional as _F
 
-from .utils import Query
+from ._utils import query_image, get_image_size, get_image_num_channels
 
 
 @dataclasses.dataclass
@@ -105,11 +105,11 @@ class _AutoAugmentBase(Transform):
     }
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = Query(sample).image_for_size_and_channels_extraction()
-
         fill = self.fill
         if isinstance(fill, (int, float)):
-            fill = [float(fill)] * image.num_channels
+            image = query_image(sample)
+            num_channels = get_image_num_channels(image)
+            fill = [float(fill)] * num_channels
         elif fill is not None:
             fill = [float(f) for f in fill]
 
@@ -122,7 +122,10 @@ class _AutoAugmentBase(Transform):
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
 
-        for transform_id, magnitude in self.get_transforms_meta(Query(sample).image_size()):
+        image = query_image(sample)
+        image_size = get_image_size(image)
+
+        for transform_id, magnitude in self.get_transforms_meta(image_size):
             dispatcher = self._DISPATCHER_MAP[transform_id]
 
             def transform(input: Any) -> Any:
