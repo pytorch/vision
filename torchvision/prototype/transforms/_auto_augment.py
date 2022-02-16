@@ -1,6 +1,7 @@
 import math
 from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar
 
+import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
@@ -99,7 +100,7 @@ class _AutoAugmentBase(Transform):
         dispatcher = self._DISPATCHER_MAP[transform_id]
 
         def transform(input: Any) -> Any:
-            if None:
+            if type(input) in {features.Image, torch.Tensor} or isinstance(input, PIL.Image.Image):
                 return dispatcher(input, magnitude, params["interpolation"], params["fill"])
             elif type(input) in {features.BoundingBox, features.SegmentationMask}:
                 raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
