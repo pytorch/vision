@@ -236,7 +236,7 @@ class AutoAugment(_AutoAugmentBase):
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
         for dispatcher_id, probability, magnitude_idx in policy:
-            if not float(torch.rand(())) <= probability:
+            if not torch.rand(()) <= probability:
                 continue
 
             augmentation_meta = self._AUGMENTATION_SPACE[dispatcher_id]
@@ -244,7 +244,7 @@ class AutoAugment(_AutoAugmentBase):
             magnitudes = augmentation_meta.magnitudes_fn(10, image_size)
             if magnitudes is not None:
                 magnitude = float(magnitudes[magnitude_idx])
-                if augmentation_meta.signed and float(torch.rand(())) <= 0.5:
+                if augmentation_meta.signed and torch.rand(()) <= 0.5:
                     magnitude *= -1
             else:
                 magnitude = 0.0
@@ -323,7 +323,7 @@ class RandAugment(_AutoAugmentBase):
             magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, image_size)
             if magnitudes is not None:
                 magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
-                if augmentation_meta.signed and float(torch.rand(())) <= 0.5:
+                if augmentation_meta.signed and torch.rand(()) <= 0.5:
                     magnitude *= -1
             else:
                 magnitude = 0.0
@@ -403,7 +403,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, image_size)
         if magnitudes is not None:
             magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
-            if augmentation_meta.signed and float(torch.rand(())) <= 0.5:
+            if augmentation_meta.signed and torch.rand(()) <= 0.5:
                 magnitude *= -1
         else:
             magnitude = 0.0
