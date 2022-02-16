@@ -5,7 +5,7 @@ import torchvision
 from torch import Tensor
 from torchvision.extension import _assert_has_ops
 
-from ..utils import _log_api_usage_once
+from ..utils import _log_api_usage_once, log_api_usage_once_dec
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 
 
@@ -223,6 +223,7 @@ def _upcast(t: Tensor) -> Tensor:
         return t if t.dtype in (torch.int32, torch.int64) else t.int()
 
 
+@log_api_usage_once_dec
 def box_area(boxes: Tensor) -> Tensor:
     """
     Computes the area of a set of bounding boxes, which are specified by their
@@ -259,6 +260,7 @@ def _box_inter_union(boxes1: Tensor, boxes2: Tensor) -> Tuple[Tensor, Tensor]:
     return inter, union
 
 
+@log_api_usage_once_dec
 def box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     Return intersection-over-union (Jaccard index) between two sets of boxes.

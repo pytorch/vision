@@ -1,6 +1,7 @@
 import math
 import pathlib
 import warnings
+from functools import wraps
 from types import FunctionType
 from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
@@ -547,3 +548,17 @@ def _log_api_usage_once(obj: Any) -> None:
     if isinstance(obj, FunctionType):
         name = obj.__name__
     torch._C._log_api_usage_once(f"{obj.__module__}.{name}")
+
+def log_api_usage_once_dec(f):
+    @wraps(f)
+    def wrapper(*args, **kwargs):
+        event = f.__module__
+        if f.__name__.endswith("__init__"):
+            # inside module instantiation
+            event += args[0].__class__.__name__
+        else:
+            event += f.__name__
+        torch._C._log_api_usage_once(event)
+        return f(*args, **kwargs)
+
+    return wrapper
