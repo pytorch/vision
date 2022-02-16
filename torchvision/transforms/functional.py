@@ -3,8 +3,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import Callable
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Any, Optional, TypeVar, Callable, cast
 
 import numpy as np
 import torch
@@ -20,14 +19,16 @@ from ..utils import _log_api_usage_once
 from . import functional_pil as F_pil
 from . import functional_tensor as F_t
 
+F = TypeVar("F", bound=Callable[..., Any])
 
-def log_api_usage_once(fn: Callable[..., Tensor]) -> Callable[..., Tensor]:
+
+def log_api_usage_once(fn: F) -> F:
     @functools.wraps(fn)
-    def wrapper(*args: Any, **kwargs: Any) -> Tensor:
+    def wrapper(*args, **kwargs):
         _log_api_usage_once(fn)
         return fn(*args, **kwargs)
 
-    return wrapper
+    return cast(F, wrapper)
 
 
 class InterpolationMode(Enum):

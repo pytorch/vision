@@ -3,7 +3,6 @@ from __future__ import annotations
 import warnings
 from typing import Any, Optional, Union, Tuple, cast
 
-import PIL.Image
 import torch
 from torchvision.prototype.utils._internal import StrEnum
 from torchvision.transforms.functional import to_pil_image
@@ -79,7 +78,7 @@ class Image(_Feature):
     def show(self) -> None:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state
-        cast(PIL.Image.Image, to_pil_image(make_grid(self.view(-1, *self.shape[-3:])))).show()
+        to_pil_image(make_grid(self.view(-1, *self.shape[-3:]))).show()
 
     def draw_bounding_box(self, bounding_box: BoundingBox, **kwargs: Any) -> Image:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
