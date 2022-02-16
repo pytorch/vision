@@ -1,9 +1,7 @@
 from typing import Any, Dict
 
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform
-
-from . import kernels as K
+from torchvision.prototype.transforms import Transform, kernels as K
 
 
 class DecodeImage(Transform):

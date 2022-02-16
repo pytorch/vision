@@ -3,10 +3,9 @@ import warnings
 from typing import Any, Dict, List, Union, Sequence, Tuple, cast
 
 import torch
-from torchvision.prototype.transforms import Transform, InterpolationMode
+from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
-from . import functional as F
 from ._utils import query_image
 
 

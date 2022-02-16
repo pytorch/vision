@@ -1,9 +1,8 @@
 from typing import Union, Any, Dict, Optional
 
 import torch
-import torchvision.prototype.transforms.functional as F
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform
+from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms.functional import convert_image_dtype
 
 

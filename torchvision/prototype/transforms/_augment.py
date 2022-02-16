@@ -4,9 +4,8 @@ import warnings
 from typing import Any, Dict, Tuple
 
 import torch
-from torchvision.prototype.transforms import Transform
+from torchvision.prototype.transforms import Transform, functional as F
 
-from . import functional as F
 from ._utils import query_image
 
 
