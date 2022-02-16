@@ -1,6 +1,5 @@
 import itertools
 
-import PIL.Image
 import pytest
 import torch
 from test_prototype_transforms_kernels import make_images, make_bounding_boxes, make_one_hot_labels
@@ -25,15 +24,6 @@ def make_vanilla_tensor_bounding_boxes(*args, **kwargs):
         yield bounding_box.data
 
 
-INPUT_CREATIONS_FNS = {
-    features.Image: make_images,
-    features.BoundingBox: make_bounding_boxes,
-    features.OneHotLabel: make_one_hot_labels,
-    torch.Tensor: make_vanilla_tensor_images,
-    PIL.Image.Image: make_pil_images,
-}
-
-
 def parametrize(transforms_with_inputs):
     return pytest.mark.parametrize(
         ("transform", "input"),
@@ -52,15 +42,21 @@ def parametrize(transforms_with_inputs):
 def parametrize_from_transforms(*transforms):
     transforms_with_inputs = []
     for transform in transforms:
-        dispatcher = transform._DISPATCHER
-        if dispatcher is None:
-            continue
-
-        for type_ in dispatcher._kernels:
+        for creation_fn in [
+            make_images,
+            make_bounding_boxes,
+            make_one_hot_labels,
+            make_vanilla_tensor_images,
+            make_pil_images,
+        ]:
+            inputs = list(creation_fn())
             try:
-                inputs = INPUT_CREATIONS_FNS[type_]()
-            except KeyError:
+                output = transform(inputs[0])
+            except Exception:
                 continue
+            else:
+                if output is inputs[0]:
+                    continue
 
             transforms_with_inputs.append((transform, inputs))
 
@@ -69,7 +65,7 @@ def parametrize_from_transforms(*transforms):
 
 class TestSmoke:
     @parametrize_from_transforms(
-        transforms.RandomErasing(),
+        transforms.RandomErasing(p=1.0),
         transforms.HorizontalFlip(),
         transforms.Resize([16, 16]),
         transforms.CenterCrop([16, 16]),

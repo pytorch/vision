@@ -24,8 +24,8 @@ def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) 
         return cast(Tuple[int, int], image.shape[-2:])
     elif isinstance(image, PIL.Image.Image):
         return image.height, image.width
-    elif type(image) in {features.Image, features.BoundingBox}:
-        return cast(Union[features.Image, features.BoundingBox], image).image_size
+    elif type(image) is features.Image:
+        return image.image_size
     else:
         raise TypeError(f"unable to get image size from object of type {type(image).__name__}")
 
