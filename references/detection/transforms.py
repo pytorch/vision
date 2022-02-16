@@ -285,7 +285,7 @@ class RandomPhotometricDistort(nn.Module):
 
 
 class ScaleJitter(nn.Module):
-    """Randomly resizes the image and its bounding boxes  within a specified ratio range.
+    """Randomly resizes the image and its bounding boxes  within the specified scale range.
     The class implements the Scale Jitter augmentation as described in the paper
     `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
 
