@@ -1,6 +1,5 @@
-import dataclasses
 import math
-from typing import Any, Dict, Tuple, Optional, Callable, List, cast, Iterator
+from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar
 
 import PIL.Image
 import torch
@@ -9,6 +8,9 @@ from torchvision.prototype.transforms import Transform, InterpolationMode, AutoA
 from torchvision.prototype.utils._internal import apply_recursively
 
 from ._utils import query_image
+
+K = TypeVar("K")
+V = TypeVar("V")
 
 
 class _AutoAugmentBase(Transform):
@@ -20,6 +22,7 @@ class _AutoAugmentBase(Transform):
         self.fill = fill
 
     _DISPATCHER_MAP: Dict[str, Callable[[Any, float, InterpolationMode, Optional[List[float]]], Any]] = {
+        "Identity": lambda input, magnitude, interpolation, fill: input,
         "ShearX": lambda input, magnitude, interpolation, fill: F.affine(
             input,
             angle=0.0,
@@ -91,47 +94,44 @@ class _AutoAugmentBase(Transform):
 
         return dict(interpolation=self.interpolation, fill=fill)
 
+    def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
+        keys = tuple(dct.keys())
+        key = keys[int(torch.randint(len(keys), ()))]
+        return key, dct[key]
 
-@dataclasses.dataclass
-class AugmentationMeta:
-    dispatcher_id: str
-    magnitudes_fn: Callable[[int, Tuple[int, int]], Optional[torch.Tensor]]
-    signed: bool
+    def _apply_transform(self, sample: Any, params: Dict[str, Any], transform_id: str, magnitude: float) -> Any:
+        dispatcher = self._DISPATCHER_MAP[transform_id]
+
+        def transform(input: Any) -> Any:
+            if not self._is_supported(input):
+                return input
+
+            return dispatcher(input, magnitude, params["interpolation"], params["fill"])
+
+        return apply_recursively(transform, sample)
 
 
 class AutoAugment(_AutoAugmentBase):
-    _AUGMENTATION_SPACE = (
-        AugmentationMeta("ShearX", lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        AugmentationMeta("ShearY", lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        AugmentationMeta(
-            "TranslateX",
-            lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins),
-            True,
-        ),
-        AugmentationMeta(
-            "TranslateY",
-            lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins),
-            True,
-        ),
-        AugmentationMeta("Rotate", lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
-        AugmentationMeta("Brightness", lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        AugmentationMeta("Color", lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        AugmentationMeta("Contrast", lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        AugmentationMeta("Sharpness", lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        AugmentationMeta(
-            "Posterize",
+    _AUGMENTATION_SPACE = {
+        "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
+        "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
+        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
+        "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Posterize": (
             lambda num_bins, image_size: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
             .round()
             .int(),
             False,
         ),
-        AugmentationMeta("Solarize", lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        AugmentationMeta("AutoContrast", lambda num_bins, image_size: None, False),
-        AugmentationMeta("Equalize", lambda num_bins, image_size: None, False),
-        AugmentationMeta("Invert", lambda num_bins, image_size: None, False),
-    )
-    _AUGMENTATION_SPACE = {
-        augmentation_meta.dispatcher_id: augmentation_meta for augmentation_meta in _AUGMENTATION_SPACE
+        "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
+        "AutoContrast": (lambda num_bins, image_size: None, False),
+        "Equalize": (lambda num_bins, image_size: None, False),
+        "Invert": (lambda num_bins, image_size: None, False),
     }
 
     def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET, **kwargs: Any) -> None:
@@ -229,25 +229,6 @@ class AutoAugment(_AutoAugmentBase):
         else:
             raise ValueError(f"The provided policy {policy} is not recognized.")
 
-    def _get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
-        policy = self._policies[int(torch.randint(len(self._policies), ()))]
-
-        for dispatcher_id, probability, magnitude_idx in policy:
-            if not torch.rand(()) <= probability:
-                continue
-
-            augmentation_meta = self._AUGMENTATION_SPACE[dispatcher_id]
-
-            magnitudes = augmentation_meta.magnitudes_fn(10, image_size)
-            if magnitudes is not None:
-                magnitude = float(magnitudes[magnitude_idx])
-                if augmentation_meta.signed and torch.rand(()) <= 0.5:
-                    magnitude *= -1
-            else:
-                magnitude = 0.0
-
-            yield augmentation_meta.dispatcher_id, magnitude
-
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
@@ -255,51 +236,49 @@ class AutoAugment(_AutoAugmentBase):
         image = query_image(sample)
         image_size = F.get_image_size(image)
 
-        for transform_id, magnitude in self._get_transforms_meta(image_size):
-            dispatcher = self._DISPATCHER_MAP[transform_id]
+        policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
-            def transform(input: Any) -> Any:
-                if not self._is_supported(input):
-                    return input
+        for transform_id, probability, magnitude_idx in policy:
+            if not torch.rand(()) <= probability:
+                continue
 
-                return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]
+            magnitudes_fn, signed = self._AUGMENTATION_SPACE[transform_id]
 
-            sample = apply_recursively(transform, sample)
+            magnitudes = magnitudes_fn(10, image_size)
+            if magnitudes is not None:
+                magnitude = float(magnitudes[magnitude_idx])
+                if signed and torch.rand(()) <= 0.5:
+                    magnitude *= -1
+            else:
+                magnitude = 0.0
+
+            sample = self._apply_transform(sample, params, transform_id, magnitude)
 
         return sample
 
 
 class RandAugment(_AutoAugmentBase):
-    _AUGMENTATION_SPACE = (
-        AugmentationMeta("Identity", lambda num_bins, image_size: None, False),
-        AugmentationMeta("ShearX", lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        AugmentationMeta("ShearY", lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        AugmentationMeta(
-            "TranslateX",
-            lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins),
-            True,
-        ),
-        AugmentationMeta(
-            "TranslateY",
-            lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins),
-            True,
-        ),
-        AugmentationMeta("Rotate", lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
-        AugmentationMeta("Brightness", lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        AugmentationMeta("Color", lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        AugmentationMeta("Contrast", lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        AugmentationMeta("Sharpness", lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        AugmentationMeta(
-            "Posterize",
+    _AUGMENTATION_SPACE = {
+        "Identity": (lambda num_bins, image_size: None, False),
+        "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
+        "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
+        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
+        "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Posterize": (
             lambda num_bins, image_size: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
             .round()
             .int(),
             False,
         ),
-        AugmentationMeta("Solarize", lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        AugmentationMeta("AutoContrast", lambda num_bins, image_size: None, False),
-        AugmentationMeta("Equalize", lambda num_bins, image_size: None, False),
-    )
+        "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
+        "AutoContrast": (lambda num_bins, image_size: None, False),
+        "Equalize": (lambda num_bins, image_size: None, False),
+    }
 
     def __init__(self, *, num_ops: int = 2, magnitude: int = 9, num_magnitude_bins: int = 31, **kwargs: Any) -> None:
         super().__init__(**kwargs)
@@ -307,22 +286,6 @@ class RandAugment(_AutoAugmentBase):
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
 
-    def _get_transforms_meta(self, image_size: Tuple[int, int]) -> Iterator[Tuple[str, float]]:
-        for _ in range(self.num_ops):
-            augmentation_meta = self._AUGMENTATION_SPACE[int(torch.randint(len(self._AUGMENTATION_SPACE), ()))]
-            if augmentation_meta.dispatcher_id == "Identity":
-                continue
-
-            magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, image_size)
-            if magnitudes is not None:
-                magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
-                if augmentation_meta.signed and torch.rand(()) <= 0.5:
-                    magnitude *= -1
-            else:
-                magnitude = 0.0
-
-            yield augmentation_meta.dispatcher_id, magnitude
-
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
@@ -330,43 +293,44 @@ class RandAugment(_AutoAugmentBase):
         image = query_image(sample)
         image_size = F.get_image_size(image)
 
-        for transform_id, magnitude in self._get_transforms_meta(image_size):
-            dispatcher = self._DISPATCHER_MAP[transform_id]
+        for _ in range(self.num_ops):
+            transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
-            def transform(input: Any) -> Any:
-                if not self._is_supported(input):
-                    return input
+            magnitudes = magnitudes_fn(self.num_magnitude_bins, image_size)
+            if magnitudes is not None:
+                magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
+                if signed and torch.rand(()) <= 0.5:
+                    magnitude *= -1
+            else:
+                magnitude = 0.0
 
-                return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]
-
-            sample = apply_recursively(transform, sample)
+            sample = self._apply_transform(sample, params, transform_id, magnitude)
 
         return sample
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
-    _AUGMENTATION_SPACE = (
-        AugmentationMeta("Identity", lambda num_bins, image_size: None, False),
-        AugmentationMeta("ShearX", lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        AugmentationMeta("ShearY", lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        AugmentationMeta("TranslateX", lambda num_bins, image_size: torch.linspace(0.0, 32.0, num_bins), True),
-        AugmentationMeta("TranslateY", lambda num_bins, image_size: torch.linspace(0.0, 32.0, num_bins), True),
-        AugmentationMeta("Rotate", lambda num_bins, image_size: torch.linspace(0.0, 135.0, num_bins), True),
-        AugmentationMeta("Brightness", lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        AugmentationMeta("Color", lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        AugmentationMeta("Contrast", lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        AugmentationMeta("Sharpness", lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        AugmentationMeta(
-            "Posterize",
+    _AUGMENTATION_SPACE = {
+        "Identity": (lambda num_bins, image_size: None, False),
+        "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
+        "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
+        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 32.0, num_bins), True),
+        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 32.0, num_bins), True),
+        "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 135.0, num_bins), True),
+        "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
+        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
+        "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
+        "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
+        "Posterize": (
             lambda num_bins, image_size: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)))
             .round()
             .int(),
             False,
         ),
-        AugmentationMeta("Solarize", lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        AugmentationMeta("AutoContrast", lambda num_bins, image_size: None, False),
-        AugmentationMeta("Equalize", lambda num_bins, image_size: None, False),
-    )
+        "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
+        "AutoContrast": (lambda num_bins, image_size: None, False),
+        "Equalize": (lambda num_bins, image_size: None, False),
+    }
 
     def __init__(self, *, num_magnitude_bins: int = 31, **kwargs: Any):
         super().__init__(**kwargs)
@@ -376,27 +340,17 @@ class TrivialAugmentWide(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
         params = params or self._get_params(sample)
 
-        augmentation_meta = self._AUGMENTATION_SPACE[int(torch.randint(len(self._AUGMENTATION_SPACE), ()))]
-        if augmentation_meta.dispatcher_id == "Identity":
-            return sample
-
-        dispatcher = self._DISPATCHER_MAP[augmentation_meta.dispatcher_id]
-
         image = query_image(sample)
         image_size = F.get_image_size(image)
 
-        magnitudes = augmentation_meta.magnitudes_fn(self.num_magnitude_bins, image_size)
+        transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
+
+        magnitudes = magnitudes_fn(self.num_magnitude_bins, image_size)
         if magnitudes is not None:
             magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
-            if augmentation_meta.signed and torch.rand(()) <= 0.5:
+            if signed and torch.rand(()) <= 0.5:
                 magnitude *= -1
         else:
             magnitude = 0.0
 
-        def transform(input: Any) -> Any:
-            if not self._is_supported(input):
-                return input
-
-            return dispatcher(input, magnitude, params["interpolation"], params["fill"])  # type: ignore[index]
-
-        return apply_recursively(transform, sample)
+        return self._apply_transform(sample, params, transform_id, magnitude)
