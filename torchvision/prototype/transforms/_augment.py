@@ -5,9 +5,9 @@ from typing import Any, Dict, Tuple
 
 import torch
 from torchvision.prototype.transforms import Transform
-from torchvision.prototype.utils._internal import query_recursively
 
 from . import functional as F
+from ._utils import query_image
 
 
 class RandomErasing(Transform):
@@ -42,11 +42,7 @@ class RandomErasing(Transform):
         self.value = value
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image: Any = next(
-            query_recursively(
-                lambda input: input if input in self._DISPATCHER else None, sample  # type: ignore[no-any-return]
-            )
-        )
+        image = query_image(sample)
         img_h, img_w = F.get_image_size(image)
         img_c = F.get_image_num_channels(image)
 
@@ -124,11 +120,7 @@ class RandomCutmix(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         lam = float(self._dist.sample(()))
 
-        image: Any = next(
-            query_recursively(
-                lambda input: input if input in self._DISPATCHER else None, sample  # type: ignore[no-any-return]
-            )
-        )
+        image = query_image(sample)
         H, W = F.get_image_size(image)
 
         r_x = torch.randint(W, ())
