@@ -449,8 +449,9 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
     """
 
     N, _, H, W = normalized_flow.shape
-    flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8)
-    colorwheel = _make_colorwheel()  # shape [55x3]
+    device = normalized_flow.device
+    flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8, device=device)
+    colorwheel = _make_colorwheel().to(device)  # shape [55x3]
     num_cols = colorwheel.shape[0]
     norm = torch.sum(normalized_flow ** 2, dim=1).sqrt()
     a = torch.atan2(-normalized_flow[:, 1, :, :], -normalized_flow[:, 0, :, :]) / torch.pi
