@@ -99,7 +99,6 @@ class TestCommon:
                 f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
             )
 
-    @pytest.mark.xfail
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_transformable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
