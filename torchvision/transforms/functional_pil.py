@@ -119,7 +119,7 @@ def adjust_gamma(
 
     input_mode = img.mode
     img = img.convert("RGB")
-    gamma_map = [(255 + 1 - 1e-3) * gain * pow(ele / 255.0, gamma) for ele in range(256)] * 3
+    gamma_map = [int((255 + 1 - 1e-3) * gain * pow(ele / 255.0, gamma)) for ele in range(256)] * 3
     img = img.point(gamma_map)  # use PIL's point-function to accelerate this part
 
     img = img.convert(input_mode)
