@@ -1,4 +1,4 @@
-from typing import Dict, Optional, Tuple, cast
+from typing import Dict, Optional, Tuple
 
 import torch
 from torch import Tensor, nn
@@ -41,7 +41,7 @@ class ImageNetEval(nn.Module):
             img = F.pil_to_tensor(img)
         img = F.convert_image_dtype(img, torch.float)
         img = F.normalize(img, mean=self._mean, std=self._std)
-        return cast(Tensor, img)
+        return img
 
 
 class Kinect400Eval(nn.Module):
@@ -65,7 +65,7 @@ class Kinect400Eval(nn.Module):
         vid = F.resize(vid, self._size, interpolation=self._interpolation)
         vid = F.center_crop(vid, self._crop_size)
         vid = F.convert_image_dtype(vid, torch.float)
-        vid = cast(Tensor, F.normalize(vid, mean=self._mean, std=self._std))
+        vid = F.normalize(vid, mean=self._mean, std=self._std)
         return vid.permute(1, 0, 2, 3)  # (T, C, H, W) => (C, T, H, W)
 
 

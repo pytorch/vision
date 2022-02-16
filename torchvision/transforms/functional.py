@@ -21,9 +21,9 @@ from . import functional_pil as F_pil
 from . import functional_tensor as F_t
 
 
-def log_api_usage_once(fn: Callable) -> Callable:
+def log_api_usage_once(fn: Callable[..., Tensor]) -> Callable[..., Tensor]:
     @functools.wraps(fn)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Tensor:
         _log_api_usage_once(fn)
         return fn(*args, **kwargs)
 
