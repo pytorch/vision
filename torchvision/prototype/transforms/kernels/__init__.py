@@ -24,6 +24,7 @@ from ._color import (
 from ._geometry import (
     horizontal_flip_bounding_box,
     horizontal_flip_image,
+    horizontal_flip_keypoint,
     resize_bounding_box,
     resize_image,
     resize_segmentation_mask,

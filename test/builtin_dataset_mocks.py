@@ -545,6 +545,16 @@ class CocoMockData:
         )
 
     @staticmethod
+    def _make_person_keypoints_data(ann_id, image_meta):
+        data = CocoMockData._make_instances_data(ann_id, image_meta)
+        keypoints = [
+            (*make_tensor((2,), dtype=torch.int, low=0).tolist(), visibility) if visibility else (0, 0, 0)
+            for visibility in torch.randint(3, (17,)).tolist()
+        ]
+        data["keypoints"] = list(itertools.chain.from_iterable(keypoints))
+        return data
+
+    @staticmethod
     def _make_captions_data(ann_id, image_meta):
         return dict(caption=f"Caption {ann_id} describing image {image_meta['id']}.")
 
@@ -553,6 +563,7 @@ class CocoMockData:
         num_anns_per_image = torch.zeros((len(images_meta),), dtype=torch.int64)
         for annotations, fn in (
             ("instances", cls._make_instances_data),
+            ("person_keypoints", cls._make_person_keypoints_data),
             ("captions", cls._make_captions_data),
         ):
             num_anns_per_image += cls._make_annotations_json(
@@ -840,7 +851,18 @@ class CelebAMockData:
 
     @classmethod
     def _make_landmarks_file(cls, root, image_file_names):
-        field_names = ("lefteye_x", "lefteye_y", "rightmouth_x", "rightmouth_y")
+        field_names = (
+            "lefteye_x",
+            "lefteye_y",
+            "righteye_x",
+            "righteye_y",
+            "nose_x",
+            "nose_y",
+            "leftmouth_x",
+            "leftmouth_y",
+            "rightmouth_x",
+            "rightmouth_y",
+        )
         data = [
             [
                 name,

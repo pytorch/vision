@@ -17,6 +17,7 @@ T = TypeVar("T", bound=features._Feature)
         PIL.Image.Image: _F.hflip,
         features.Image: K.horizontal_flip_image,
         features.BoundingBox: None,
+        features.Keypoint: None,
     },
 )
 def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
@@ -24,6 +25,17 @@ def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
     if isinstance(input, features.BoundingBox):
         output = K.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
         return cast(T, features.BoundingBox.new_like(input, output))
+    elif isinstance(input, features.Keypoint):
+        coordinates = K.horizontal_flip_keypoint(input, image_size=input.image_size)
+
+        idcs = list(range(input.num_keypoints))
+        for symmetry, first, second in input.symmetries:
+            if symmetry != "vertical":
+                continue
+
+            idcs[first], idcs[second] = second, first
+
+        return cast(T, features.Keypoint.new_like(input, coordinates[..., idcs, :]))
 
     raise RuntimeError
 

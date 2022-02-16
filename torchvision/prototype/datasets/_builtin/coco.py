@@ -31,7 +31,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import BoundingBox, Label, _Feature, EncodedImage
+from torchvision.prototype.features import BoundingBox, Label, _Feature, EncodedImage, Keypoint
 from torchvision.prototype.utils._internal import FrozenMapping
 
 
@@ -117,6 +117,45 @@ class Coco(Dataset):
             ann_ids=[ann["id"] for ann in anns],
         )
 
+    def _decode_person_keypoints_anns(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
+        image_size = (image_meta["height"], image_meta["width"])
+
+        keypoints_meta = torch.tensor([ann["keypoints"] for ann in anns]).view(len(anns), -1, 3)
+        coordinates = keypoints_meta[..., :2]
+        visibility = _Feature(keypoints_meta[..., 2])
+
+        # As of COCO 2017, only the person category has keypoints.
+        descriptions = (
+            "nose",
+            "left_eye",
+            "right_eye",
+            "left_ear",
+            "right_ear",
+            "left_shoulder",
+            "right_shoulder",
+            "left_elbow",
+            "right_elbow",
+            "left_wrist",
+            "right_wrist",
+            "left_hip",
+            "right_hip",
+            "left_knee",
+            "right_knee",
+            "left_ankle",
+            "right_ankle",
+        )
+        symmetries = [
+            ("vertical", description, description.replace("left", "right"))
+            for description in descriptions
+            if description.startswith("left")
+        ]
+
+        return dict(
+            self._decode_instances_anns(anns, image_meta),
+            keypoints=Keypoint(coordinates, image_size=image_size, descriptions=descriptions, symmetries=symmetries),
+            visibility=visibility,
+        )
+
     def _decode_captions_ann(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
         return dict(
             captions=[ann["caption"] for ann in anns],
@@ -126,6 +165,7 @@ class Coco(Dataset):
     _ANN_DECODERS = OrderedDict(
         [
             ("instances", _decode_instances_anns),
+            ("person_keypoints", _decode_person_keypoints_anns),
             ("captions", _decode_captions_ann),
         ]
     )

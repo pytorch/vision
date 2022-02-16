@@ -23,7 +23,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import EncodedImage, _Feature, Label, BoundingBox
+from torchvision.prototype.features import EncodedImage, Label, BoundingBox, Keypoint
 
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
@@ -64,6 +64,7 @@ class CelebA(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "celeba",
+            categories=[str(label + 1) for label in range(10177)],
             homepage="https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html",
             valid_options=dict(split=("train", "val", "test")),
         )
@@ -125,24 +126,40 @@ class CelebA(Dataset):
         split_and_image_data, ann_data = data
         _, (_, image_data) = split_and_image_data
         path, buffer = image_data
+        (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = ann_data
 
         image = EncodedImage.from_file(buffer)
-        (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = ann_data
+
+        identity = Label(int(identity["identity"]))
+
+        attributes = {attr: value == "1" for attr, value in attributes.items()}
+
+        bounding_box = BoundingBox(
+            [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
+            format="xywh",
+            image_size=image.image_size,
+        )
+
+        descriptions = list({key[:-2] for key in landmarks.keys()})
+        symmetries = [
+            ("vertical", description, description.replace("left", "right"))
+            for description in descriptions
+            if description.startswith("left")
+        ]
+        keypoints = Keypoint(
+            [(int(landmarks[f"{name}_x"]), int(landmarks[f"{name}_y"])) for name in descriptions],
+            image_size=image.image_size,
+            descriptions=descriptions,
+            symmetries=symmetries,
+        )
 
         return dict(
             path=path,
             image=image,
-            identity=Label(int(identity["identity"])),
-            attributes={attr: value == "1" for attr, value in attributes.items()},
-            bounding_box=BoundingBox(
-                [int(bounding_box[key]) for key in ("x_1", "y_1", "width", "height")],
-                format="xywh",
-                image_size=image.image_size,
-            ),
-            landmarks={
-                landmark: _Feature((int(landmarks[f"{landmark}_x"]), int(landmarks[f"{landmark}_y"])))
-                for landmark in {key[:-2] for key in landmarks.keys()}
-            },
+            identity=identity,
+            attributes=attributes,
+            bounding_box=bounding_box,
+            keypoints=keypoints,
         )
 
     def _make_datapipe(

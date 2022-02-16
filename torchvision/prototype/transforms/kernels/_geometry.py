@@ -29,6 +29,12 @@ def horizontal_flip_bounding_box(
     ).view(shape)
 
 
+def horizontal_flip_keypoint(keypoint: torch.Tensor, *, image_size: Tuple[int, int]) -> torch.Tensor:
+    keypoint = keypoint.clone()
+    keypoint[..., 0] = image_size[1] - keypoint[..., 0]
+    return keypoint
+
+
 def resize_image(
     image: torch.Tensor,
     size: List[int],
