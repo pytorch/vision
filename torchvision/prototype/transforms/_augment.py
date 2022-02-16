@@ -91,15 +91,18 @@ class RandomErasing(Transform):
         return dict(zip("ijhwv", (i, j, h, w, v)))
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if torch.rand(1) >= self.p:
-            return input
-
         if type(input) is torch.Tensor:
             return _F.erase(input, **params)
         elif type(input) is features.Image:
             return features.Image.new_like(input, K.erase_image(input, **params))
         else:
             return input
+
+    def forward(self, *inputs: Any) -> Any:
+        if torch.rand(1) >= self.p:
+            return inputs if len(inputs) > 1 else inputs[0]
+
+        return super().forward(*inputs)
 
 
 class RandomMixup(Transform):

@@ -43,7 +43,7 @@ class Normalize(Transform):
         if type(input) is torch.Tensor:
             return _F.normalize(input, mean=self.mean, std=self.std)
         if type(input) is features.Image:
-            output = K.normalize_image(input, **params)
+            output = K.normalize_image(input, mean=self.mean, std=self.std)
             return features.Image.new_like(input, output)
 
 

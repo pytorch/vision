@@ -144,35 +144,6 @@ class TestSmoke:
     @parametrize(
         [
             (
-                transforms.ConvertColorSpace("grayscale"),
-                itertools.chain(
-                    make_images(),
-                    make_vanilla_tensor_images(color_spaces=["rgb"]),
-                    make_pil_images(color_spaces=["rgb"]),
-                ),
-            )
-        ]
-    )
-    def test_convert_bounding_color_space(self, transform, input):
-        transform(input)
-
-    @parametrize(
-        [
-            (
-                transforms.ConvertBoundingBoxFormat("xyxy", old_format="xywh"),
-                itertools.chain(
-                    make_bounding_boxes(),
-                    make_vanilla_tensor_bounding_boxes(formats=["xywh"]),
-                ),
-            )
-        ]
-    )
-    def test_convert_bounding_box_format(self, transform, input):
-        transform(input)
-
-    @parametrize(
-        [
-            (
                 transforms.RandomResizedCrop([16, 16]),
                 itertools.chain(
                     make_images(extra_dims=[(4,)]),
