@@ -457,9 +457,6 @@ def resize(
         short, long = (w, h) if w <= h else (h, w)
         requested_new_short = size if isinstance(size, int) else size[0]
 
-        if short == requested_new_short:
-            return img
-
         new_short, new_long = requested_new_short, int(requested_new_short * long / short)
 
         if max_size is not None:
@@ -472,6 +469,9 @@ def resize(
                 new_short, new_long = int(max_size * new_short / new_long), max_size
 
         new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
+
+        if (w, h) == (new_w, new_h):
+            return img
 
     else:  # specified both h and w
         new_w, new_h = size[1], size[0]
