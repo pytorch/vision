@@ -37,7 +37,7 @@ DATASET_YEAR_DICT = {
     "2009": {
         "url": "http://host.robots.ox.ac.uk/pascal/VOC/voc2009/VOCtrainval_11-May-2009.tar",
         "filename": "VOCtrainval_11-May-2009.tar",
-        "md5": "59065e4b188729180974ef6572f6a212",
+        "md5": "a3e00b113cfcfebf17e343f59da3caa1",
         "base_dir": os.path.join("VOCdevkit", "VOC2009"),
     },
     "2008": {
