@@ -3,6 +3,7 @@ import itertools
 import math
 import os
 import re
+from functools import partial
 from typing import Sequence
 
 import numpy as np
@@ -655,11 +656,13 @@ def test_resize_antialias(device, dt, size, interpolation):
 def test_assert_resize_antialias(interpolation):
 
     # Checks implementation on very large scales
-    # and catch TORCH_CHECK inside interpolate_aa_kernels.cu
+    # and catch TORCH_CHECK inside PyTorch implementation
     torch.manual_seed(12)
-    tensor, pil_img = _create_data(1000, 1000, device="cuda")
+    tensor, _ = _create_data(1000, 1000, device="cuda")
 
-    with pytest.raises(RuntimeError, match=r"Max supported scale factor is"):
+    # Error message is not yet updated in pytorch nightly
+    # with pytest.raises(RuntimeError, match=r"Provided interpolation parameters can not be handled"):
+    with pytest.raises(RuntimeError, match=r"Too much shared memory required"):
         F.resize(tensor, size=(5, 5), interpolation=interpolation, antialias=True)
 
 
@@ -674,32 +677,12 @@ def test_interpolate_antialias_backward(device, dt, size, interpolation):
         return
 
     torch.manual_seed(12)
-    if interpolation == BILINEAR:
-        forward_op = torch.ops.torchvision._interpolate_bilinear2d_aa
-        backward_op = torch.ops.torchvision._interpolate_bilinear2d_aa_backward
-    elif interpolation == BICUBIC:
-        forward_op = torch.ops.torchvision._interpolate_bicubic2d_aa
-        backward_op = torch.ops.torchvision._interpolate_bicubic2d_aa_backward
-
-    class F(torch.autograd.Function):
-        @staticmethod
-        def forward(ctx, i):
-            result = forward_op(i, size, False)
-            ctx.save_for_backward(i, result)
-            return result
-
-        @staticmethod
-        def backward(ctx, grad_output):
-            i, result = ctx.saved_tensors
-            ishape = i.shape
-            oshape = result.shape[2:]
-            return backward_op(grad_output, oshape, ishape, False)
-
     x = (torch.rand(1, 32, 29, 3, dtype=torch.double, device=device).permute(0, 3, 1, 2).requires_grad_(True),)
-    assert torch.autograd.gradcheck(F.apply, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
+    resize = partial(F.resize, size=size, interpolation=interpolation, antialias=True)
+    assert torch.autograd.gradcheck(resize, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
 
     x = (torch.rand(1, 3, 32, 29, dtype=torch.double, device=device, requires_grad=True),)
-    assert torch.autograd.gradcheck(F.apply, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
+    assert torch.autograd.gradcheck(resize, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
 
 
 def check_functional_vs_PIL_vs_scripted(

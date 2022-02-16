@@ -10,3 +10,5 @@ solarize_image = _F.solarize
 autocontrast_image = _F.autocontrast
 equalize_image = _F.equalize
 invert_image = _F.invert
+adjust_hue_image = _F.adjust_hue
+adjust_gamma_image = _F.adjust_gamma
