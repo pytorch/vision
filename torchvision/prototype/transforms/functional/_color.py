@@ -1,4 +1,4 @@
-from typing import TypeVar, Any
+from typing import Any
 
 import PIL.Image
 import torch
@@ -8,8 +8,6 @@ from torchvision.transforms import functional as _F
 
 from ._utils import dispatch
 
-T = TypeVar("T", bound=features._Feature)
-
 
 @dispatch(
     {
@@ -18,7 +16,7 @@ T = TypeVar("T", bound=features._Feature)
         features.Image: K.adjust_brightness_image,
     }
 )
-def adjust_brightness(input: T, *args: Any, **kwargs: Any) -> T:
+def adjust_brightness(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -30,7 +28,7 @@ def adjust_brightness(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.adjust_saturation_image,
     }
 )
-def adjust_saturation(input: T, *args: Any, **kwargs: Any) -> T:
+def adjust_saturation(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -42,7 +40,7 @@ def adjust_saturation(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.adjust_contrast_image,
     }
 )
-def adjust_contrast(input: T, *args: Any, **kwargs: Any) -> T:
+def adjust_contrast(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -54,7 +52,7 @@ def adjust_contrast(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.adjust_sharpness_image,
     }
 )
-def adjust_sharpness(input: T, *args: Any, **kwargs: Any) -> T:
+def adjust_sharpness(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -66,7 +64,7 @@ def adjust_sharpness(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.posterize_image,
     }
 )
-def posterize(input: T, *args: Any, **kwargs: Any) -> T:
+def posterize(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -78,7 +76,7 @@ def posterize(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.solarize_image,
     }
 )
-def solarize(input: T, *args: Any, **kwargs: Any) -> T:
+def solarize(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -90,7 +88,7 @@ def solarize(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.autocontrast_image,
     }
 )
-def autocontrast(input: T, *args: Any, **kwargs: Any) -> T:
+def autocontrast(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -102,7 +100,7 @@ def autocontrast(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.equalize_image,
     }
 )
-def equalize(input: T, *args: Any, **kwargs: Any) -> T:
+def equalize(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -114,7 +112,7 @@ def equalize(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.invert_image,
     }
 )
-def invert(input: T, *args: Any, **kwargs: Any) -> T:
+def invert(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -126,7 +124,7 @@ def invert(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.adjust_hue_image,
     }
 )
-def adjust_hue(input: T, *args: Any, **kwargs: Any) -> T:
+def adjust_hue(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -138,6 +136,6 @@ def adjust_hue(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.adjust_gamma_image,
     }
 )
-def adjust_gamma(input: T, *args: Any, **kwargs: Any) -> T:
+def adjust_gamma(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
