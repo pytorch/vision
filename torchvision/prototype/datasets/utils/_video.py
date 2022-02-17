@@ -1,17 +1,20 @@
 import random
+import warnings
 from typing import Any, Dict, Iterator, Optional, Tuple
 
 import av
 import numpy as np
 import torch
 from torchdata.datapipes.iter import IterDataPipe
-from torchvision.io import video, _video_opt
+from torchvision import get_video_backend
+from torchvision.io import video, _video_opt, VideoReader
 from torchvision.prototype.features import Image, EncodedVideo
 from torchvision.prototype.utils._internal import ReadOnlyTensorBuffer, query_recursively
 
 
 class _VideoDecoder(IterDataPipe):
     def __init__(self, datapipe: IterDataPipe, *, inline: bool = True) -> None:
+        # TODO: add gpu support
         self.datapipe = datapipe
         self._inline = inline
 
@@ -71,6 +74,9 @@ class _VideoDecoder(IterDataPipe):
 
 class KeyframeDecoder(_VideoDecoder):
     def _decode(self, buffer: ReadOnlyTensorBuffer, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
+        if get_video_backend() == "video_reader":
+            warnings.warn("Video reader API not implemented for keyframes yet, reverting to PyAV")
+            
         with av.open(buffer, metadata_errors="ignore") as container:
             stream = container.streams.video[0]
             stream.codec_context.skip_frame = "NONKEY"
@@ -92,24 +98,42 @@ class RandomFrameDecoder(_VideoDecoder):
         self.num_sampler = num_samples
 
     def _decode(self, buffer: ReadOnlyTensorBuffer, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
-        with av.open(buffer, metadata_errors="ignore") as container:
-            stream = container.streams.video[0]
-            # duration is given in time_base units as int
-            duration = stream.duration
-            # seek to a random frame
-            seek_idxs = random.sample(list(range(duration)), self.num_samples)
+        if get_video_backend() == "video_reader":
+            vid = VideoReader(buffer, device=self.device)
+            # seek and return frames
+            metadata = vid.get_metadata()["video"]
+            duration = metadata["duration"][0] if self.device == "cpu" else metadata["duration"]
+            fps = metadata["fps"][0] if self.device == "cpu" else metadata["fps"]
+            max_seek = duration - (self.clip_len / fps + 0.1)  # FIXME: random param
+            seek_idxs = random.sample(list(range(max_seek)), self.num_samples)
             for i in seek_idxs:
-                container.seek(i, any_frame=True, stream=stream)
-                frame = next(container.decode(stream))
+                vid.seek(i)
+                frame = vid.next()
                 yield dict(
-                    frame=Image.from_pil(frame.to_image()),
-                    pts=frame.pts,
+                    frame=frame['data'],
+                    pts = frame['pts'],
                     video_meta=dict(
-                        time_base=float(frame.time_base),
-                        guessed_fps=float(stream.guessed_rate),
+                        guessed_fps=fps,
                     ),
                 )
-
+        else:
+            with av.open(buffer, metadata_errors="ignore") as container:
+                stream = container.streams.video[0]
+                # duration is given in time_base units as int
+                duration = stream.duration
+                # seek to a random frame
+                seek_idxs = random.sample(list(range(duration)), self.num_samples)
+                for i in seek_idxs:
+                    container.seek(i, any_frame=True, stream=stream)
+                    frame = next(container.decode(stream))
+                    yield dict(
+                        frame=Image.from_pil(frame.to_image()),
+                        pts=frame.pts,
+                        video_meta=dict(
+                            time_base=float(frame.time_base),
+                            guessed_fps=float(stream.guessed_rate),
+                        ),
+                    )
 
 class ClipDecoder(_VideoDecoder):
     def __init__(
@@ -147,62 +171,65 @@ class ClipDecoder(_VideoDecoder):
         return torch.as_strided(tensor, new_size, new_stride)
 
     def _decode(self, buffer: ReadOnlyTensorBuffer, meta: Dict[str, Any]) -> Iterator[Dict[str, Any]]:
-        with av.open(buffer, metadata_errors="ignore") as container:
-            stream = container.streams.video[0]
-            time_base = stream.time_base
+        if get_video_backend() == "video_reader":
+            pass
+        else:
+            with av.open(buffer, metadata_errors="ignore") as container:
+                stream = container.streams.video[0]
+                time_base = stream.time_base
 
-            # duration is given in time_base units as int
-            duration = stream.duration
+                # duration is given in time_base units as int
+                duration = stream.duration
 
-            # get video_stream timestramps
-            # with a tolerance for pyav imprecission
-            _ptss = torch.arange(duration - 7)
-            _ptss = self._unfold(_ptss)
-            # shuffle the clips
-            perm = torch.randperm(_ptss.size(0))
-            idx = perm[: self.num_clips_per_video]
-            samples = _ptss[idx]
+                # get video_stream timestramps
+                # with a tolerance for pyav imprecission
+                _ptss = torch.arange(duration - 7)
+                _ptss = self._unfold(_ptss)
+                # shuffle the clips
+                perm = torch.randperm(_ptss.size(0))
+                idx = perm[: self.num_clips_per_video]
+                samples = _ptss[idx]
 
-            for clip_pts in samples:
-                start_pts = clip_pts[0].item()
-                end_pts = clip_pts[-1].item()
-                # video_timebase is the default time_base
-                pts_unit = "pts"
-                start_pts, end_pts, pts_unit = _video_opt._convert_to_sec(start_pts, end_pts, "pts", time_base)
-                video_frames = video._read_from_stream(
-                    container,
-                    float(start_pts),
-                    float(end_pts),
-                    pts_unit,
-                    stream,
-                    {"video": 0},
-                )
+                for clip_pts in samples:
+                    start_pts = clip_pts[0].item()
+                    end_pts = clip_pts[-1].item()
+                    # video_timebase is the default time_base
+                    pts_unit = "pts"
+                    start_pts, end_pts, pts_unit = _video_opt._convert_to_sec(start_pts, end_pts, "pts", time_base)
+                    video_frames = video._read_from_stream(
+                        container,
+                        float(start_pts),
+                        float(end_pts),
+                        pts_unit,
+                        stream,
+                        {"video": 0},
+                    )
 
-                vframes_list = [frame.to_ndarray(format="rgb24") for frame in video_frames]
+                    vframes_list = [frame.to_ndarray(format="rgb24") for frame in video_frames]
 
-                if vframes_list:
-                    vframes = torch.as_tensor(np.stack(vframes_list))
-                    # account for rounding errors in conversion
-                    # FIXME: fix this in the code
-                    vframes = vframes[: self.num_frames_per_clip, ...]
+                    if vframes_list:
+                        vframes = torch.as_tensor(np.stack(vframes_list))
+                        # account for rounding errors in conversion
+                        # FIXME: fix this in the code
+                        vframes = vframes[: self.num_frames_per_clip, ...]
 
-                else:
-                    vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
-                    print("FAIL")
+                    else:
+                        vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
+                        print("FAIL")
 
-                # [N,H,W,C] to [N,C,H,W]
-                vframes = vframes.permute(0, 3, 1, 2)
-                assert vframes.size(0) == self.num_frames_per_clip
+                    # [N,H,W,C] to [N,C,H,W]
+                    vframes = vframes.permute(0, 3, 1, 2)
+                    assert vframes.size(0) == self.num_frames_per_clip
 
-                # TODO: support sampling rates (FPS change)
-                # TODO: optimization (read all and select)
+                    # TODO: support sampling rates (FPS change)
+                    # TODO: optimization (read all and select)
 
-                yield {
-                    "clip": vframes,
-                    "pts": clip_pts,
-                    "range": (start_pts, end_pts),
-                    "video_meta": {
-                        "time_base": float(stream.time_base),
-                        "guessed_fps": float(stream.guessed_rate),
-                    },
-                }
+                    yield {
+                        "clip": vframes,
+                        "pts": clip_pts,
+                        "range": (start_pts, end_pts),
+                        "video_meta": {
+                            "time_base": float(stream.time_base),
+                            "guessed_fps": float(stream.guessed_rate),
+                        },
+                    }
