@@ -3,6 +3,7 @@ import warnings
 from typing import Any, Dict, List, Union, Sequence, Tuple, cast
 
 import torch
+from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
@@ -31,6 +32,7 @@ class Resize(Transform):
 
 class CenterCrop(Transform):
     _DISPATCHER = F.center_crop
+    _FAIL_TYPES = {features.BoundingBox, features.SegmentationMask}
 
     def __init__(self, output_size: List[int]):
         super().__init__()
@@ -42,6 +44,7 @@ class CenterCrop(Transform):
 
 class RandomResizedCrop(Transform):
     _DISPATCHER = F.resized_crop
+    _FAIL_TYPES = {features.BoundingBox, features.SegmentationMask}
 
     def __init__(
         self,

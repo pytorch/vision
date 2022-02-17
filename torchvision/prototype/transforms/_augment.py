@@ -3,7 +3,9 @@ import numbers
 import warnings
 from typing import Any, Dict, Tuple
 
+import PIL.Image
 import torch
+from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 
 from ._utils import query_image
@@ -11,6 +13,7 @@ from ._utils import query_image
 
 class RandomErasing(Transform):
     _DISPATCHER = F.erase
+    _FAIL_TYPES = {PIL.Image.Image, features.BoundingBox, features.SegmentationMask}
 
     def __init__(
         self,
@@ -98,6 +101,7 @@ class RandomErasing(Transform):
 
 class RandomMixup(Transform):
     _DISPATCHER = F.mixup
+    _FAIL_TYPES = {features.BoundingBox, features.SegmentationMask}
 
     def __init__(self, *, alpha: float) -> None:
         super().__init__()
@@ -110,6 +114,7 @@ class RandomMixup(Transform):
 
 class RandomCutmix(Transform):
     _DISPATCHER = F.cutmix
+    _FAIL_TYPES = {features.BoundingBox, features.SegmentationMask}
 
     def __init__(self, *, alpha: float) -> None:
         super().__init__()
