@@ -63,6 +63,8 @@ class CenterCrop(Transform):
         elif type(input) is features.Image:
             output = K.center_crop_image(input, **params)
             return features.Image.new_like(input, output)
+        elif type(input) in {features.BoundingBox, features.SegmentationMask}:
+            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
         else:
             return input
 
@@ -143,5 +145,7 @@ class RandomResizedCrop(Transform):
         if type(input) is features.Image:
             output = K.resized_crop_image(input, size=self.size, interpolation=self.interpolation, **params)
             return features.Image.new_like(input, output)
+        elif type(input) in {features.BoundingBox, features.SegmentationMask}:
+            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
         else:
             return input

@@ -3,6 +3,7 @@ import numbers
 import warnings
 from typing import Any, Dict, Tuple
 
+import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, kernels as K
@@ -95,6 +96,8 @@ class RandomErasing(Transform):
             return _F.erase(input, **params)
         elif type(input) is features.Image:
             return features.Image.new_like(input, K.erase_image(input, **params))
+        elif type(input) in {features.BoundingBox, features.SegmentationMask} or isinstance(input, PIL.Image.Image):
+            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
         else:
             return input
 
@@ -121,6 +124,8 @@ class RandomMixup(Transform):
         elif type(input) is features.OneHotLabel:
             output = K.mixup_one_hot_label(input, **params)
             return features.OneHotLabel.new_like(input, output)
+        elif type(input) in {torch.Tensor, features.BoundingBox, features.SegmentationMask}:
+            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
         else:
             return input
 
@@ -161,5 +166,7 @@ class RandomCutmix(Transform):
         elif type(input) is features.OneHotLabel:
             output = K.cutmix_one_hot_label(input, lam_adjusted=params["lam_adjusted"])
             return features.OneHotLabel.new_like(input, output)
+        elif type(input) in {torch.Tensor, features.BoundingBox, features.SegmentationMask}:
+            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
         else:
             return input
