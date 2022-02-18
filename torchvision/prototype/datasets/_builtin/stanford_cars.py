@@ -16,13 +16,13 @@ from torchvision.prototype.datasets.utils._internal import read_mat,hint_shardin
 import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features
-from torchvision.prototype.features import Label, BoundingBox, EncodedImage
+from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
     OnlineResource,
-    DatasetType,
+    #DatasetType,
     HttpResource
 )
 
@@ -38,7 +38,7 @@ class StanfordCars(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             name="stanford_cars",
-            type=DatasetType.IMAGE,
+            #type=DatasetType.IMAGE,
             homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
             dependencies=("scipy",),
             valid_options=dict(split=("test","train"),
@@ -74,7 +74,6 @@ class StanfordCars(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]] :
 
         images_dp, targets_dp = resource_dps
@@ -98,14 +97,14 @@ class StanfordCars(Dataset):
         image_path, image_buffer = image
 
         image = EncodedImage.from_file(image_buffer)
-
-        label = Label(target.item())
-        return {"image": image, "label":label}
+       
 
     def _read_labels(self,data):
         labels = data[0]
         labels = read_mat(labels,squeeze_me=True)
         labels=labels["annotations"]
+        print("\n"*10)
+        print(len(labels["class"]))
         bboxs_and_class = zip(labels["bbox_x1"],labels["bbox_y1"],labels["bbox_x2"],labels["bbox_y2"],labels["class"])
 
         return  bboxs_and_class
