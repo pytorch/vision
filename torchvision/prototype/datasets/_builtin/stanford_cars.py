@@ -1,47 +1,53 @@
-import io
-import pathlib
-from collections import namedtuple
+
 from cProfile import label
 from hashlib import sha256
-from pickletools import read_string1
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple
-from unicodedata import category
-
+import io
+from typing import Any, Callable, Optional, Tuple, Iterator
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    Filter,
+    )
 import numpy as np
+from torchvision.prototype.datasets.utils._internal import read_mat,hint_sharding, hint_shuffling, path_comparator
 import torch
-from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features
+from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    # DatasetType,
-    HttpResource,
     OnlineResource,
+    #DatasetType,
+    HttpResource
 )
 
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
+
+from torchvision.prototype.datasets.utils._internal import (
+    hint_sharding,
+    hint_shuffling,
+)
+from torchvision.prototype.features import Label
 
 
 class StanfordCars(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             name="stanford_cars",
-            # type=DatasetType.IMAGE,
+            #type=DatasetType.IMAGE,
             homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
             dependencies=("scipy",),
-            valid_options=dict(
-                split=("test", "train"),
-            ),
+            valid_options=dict(split=("test","train"),
+                               ),
         )
 
     _URL_ROOT = "https://ai.stanford.edu/~jkrause/"
     _URLS = {
-        "train": f"{_URL_ROOT}car196/cars_train.tgz",
-        "test": f"{_URL_ROOT}car196/cars_test.tgz",
-        "test_ground_truth": f"{_URL_ROOT}car196/cars_test_annos_withlabels.mat",
-        "devkit": f"{_URL_ROOT}cars/car_devkit.tgz",
+        "train":f"{_URL_ROOT}car196/cars_train.tgz",
+        "test":f"{_URL_ROOT}car196/cars_test.tgz",
+        "test_ground_truth":f"{_URL_ROOT}car196/cars_test_annos_withlabels.mat",
+        "devkit":f"{_URL_ROOT}cars/car_devkit.tgz"
     }
 
     _CHECKSUM = {
@@ -52,11 +58,11 @@ class StanfordCars(Dataset):
     }
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        resources = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
+        resources = [HttpResource(self._URLS[config.split] , sha256=self._CHECKSUM[config.split])]
         if config.split == "test":
-            resources.append(HttpResource(self._URLS["test_ground_truth"], sha256=self._CHECKSUM["test_ground_truth"]))
+            resources.append(HttpResource(self._URLS["test_ground_truth"],sha256=self._CHECKSUM["test_ground_truth"]))
         else:
-            resources.append(HttpResource(url=self._URLS["devkit"], sha256=self._CHECKSUM["devkit"]))
+            resources.append(HttpResource(url=self._URLS["devkit"],sha256=self._CHECKSUM["devkit"]))
         return resources
 
     def _make_datapipe(
@@ -64,48 +70,39 @@ class StanfordCars(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-    ) -> IterDataPipe[Dict[str, Any]]:
+    ) -> IterDataPipe[Dict[str, Any]] :
 
         images_dp, targets_dp = resource_dps
         print(config.split)
         if config.split == "train":
             targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
-        print("\n" * 3)
-        print("images dp : ", images_dp)
-        print("targets_dp :", targets_dp)
-        print("\n" * 3)
-        # right now our both dps are of .tgz and .mat format; for all configs(train and test.)
-        dp = Zipper(images_dp, targets_dp)
-        dp = hint_sharding(dp)
-        dp = hint_shuffling(dp)
-        return Mapper(dp, self._read_images_and_labels)
+        print("\n"*3)
+        print("images dp : ",images_dp)
+        print( "targets_dp :",targets_dp)
+        print("\n"*3)
+        #right now our both dps are of .tgz and .mat format; for all configs(train and test.)
+        dp =Zipper(images_dp,targets_dp)
+        dp=hint_sharding(dp)
+        dp=hint_shuffling(dp)
+        return Mapper(dp,self._read_images_and_labels) 
 
-    def _read_images_and_labels(self, data):
-        image, target = data
+
+    def _read_images_and_labels(self,data):
+        image, target = data  
 
         image_path, image_buffer = image
         labels_path, labels_buffer = target
 
         image = EncodedImage.from_file(image_buffer)
-        labels = read_mat(labels_buffer, squeeze_me=True)["annotations"]
-        index = image_path[-9:-4]
-        index = int(image_path[-9:-4]) - 1
+        labels = read_mat(labels_buffer,squeeze_me=True)["annotations"]
+        index=image_path[-9:-4]
+        index = int(image_path[-9:-4]) -1
 
         return dict(
             index=index,
-            image_path=image_path,
-            image=image,
+            image_path = image_path,
+            image = image,
             labels_path=labels_path,
-            classification_label=labels["class"][index]
-            - 1,  # remember in stanford cars; this labeling starts from 1; hence subtracting 1
-            bounding_box=BoundingBox(
-                [
-                    labels["bbox_x1"][index],
-                    labels["bbox_y1"][index],
-                    labels["bbox_x2"][index],
-                    labels["bbox_y2"][index],
-                ],
-                format="xyxy",
-                image_size=image.image_size,
-            ),
+            classification_label = labels["class"][index] -1, #remember in stanford cars; this labeling starts from 1; hence subtracting 1 
+            bounding_box = BoundingBox([labels["bbox_x1"][index] ,labels["bbox_y1"][index],labels["bbox_x2"][index] ,labels["bbox_y2"][index]], format="xyxy", image_size=image.image_size)
         )
