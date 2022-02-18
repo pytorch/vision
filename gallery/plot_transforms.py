@@ -264,6 +264,14 @@ imgs = [augmenter(orig_img) for _ in range(4)]
 plot(imgs)
 
 ####################################
+# AugMix
+# ~~~~~~
+# The :class:`~torchvision.transforms.AugMix` transform automatically augments the data.
+augmenter = T.AugMix()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
+
+####################################
 # Randomly-applied transforms
 # ---------------------------
 #
