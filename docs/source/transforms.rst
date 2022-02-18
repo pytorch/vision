@@ -119,7 +119,6 @@ Transforms on PIL Image and torch.\*Tensor
     RandomPerspective
     RandomResizedCrop
     RandomRotation
-    RandomSizedCrop
     RandomVerticalFlip
     Resize
     TenCrop
@@ -199,6 +198,7 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     AutoAugment
     RandAugment
     TrivialAugmentWide
+    AugMix
 
 .. _functional_transforms:
 

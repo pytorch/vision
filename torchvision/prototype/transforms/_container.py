@@ -1,90 +1,63 @@
-from typing import Any, List
+from typing import Any, Optional, Dict
 
 import torch
-from torch import nn
-from torchvision.prototype.transforms import Transform
+
+from ._transform import Transform
 
 
-class ContainerTransform(nn.Module):
-    def supports(self, obj: Any) -> bool:
-        raise NotImplementedError()
-
-    def forward(self, *inputs: Any) -> Any:
-        raise NotImplementedError()
-
-    def _make_repr(self, lines: List[str]) -> str:
-        extra_repr = self.extra_repr()
-        if extra_repr:
-            lines = [self.extra_repr(), *lines]
-        head = f"{type(self).__name__}("
-        tail = ")"
-        body = [f"  {line.rstrip()}" for line in lines]
-        return "\n".join([head, *body, tail])
-
-
-class WrapperTransform(ContainerTransform):
-    def __init__(self, transform: Transform):
+class Compose(Transform):
+    def __init__(self, *transforms: Transform):
         super().__init__()
-        self._transform = transform
+        self.transforms = transforms
+        for idx, transform in enumerate(transforms):
+            self.add_module(str(idx), transform)
 
-    def supports(self, obj: Any) -> bool:
-        return self._transform.supports(obj)
-
-    def __repr__(self) -> str:
-        return self._make_repr(repr(self._transform).splitlines())
-
-
-class MultiTransform(ContainerTransform):
-    def __init__(self, *transforms: Transform) -> None:
-        super().__init__()
-        self._transforms = transforms
-
-    def supports(self, obj: Any) -> bool:
-        return all(transform.supports(obj) for transform in self._transforms)
-
-    def __repr__(self) -> str:
-        lines = []
-        for idx, transform in enumerate(self._transforms):
-            partial_lines = repr(transform).splitlines()
-            lines.append(f"({idx:d}): {partial_lines[0]}")
-            lines.extend(partial_lines[1:])
-        return self._make_repr(lines)
-
-
-class Compose(MultiTransform):
-    def forward(self, *inputs: Any) -> Any:
+    def forward(self, *inputs: Any) -> Any:  # type: ignore[override]
         sample = inputs if len(inputs) > 1 else inputs[0]
-        for transform in self._transforms:
+        for transform in self.transforms:
             sample = transform(sample)
         return sample
 
 
-class RandomApply(WrapperTransform):
+class RandomApply(Transform):
     def __init__(self, transform: Transform, *, p: float = 0.5) -> None:
-        super().__init__(transform)
-        self._p = p
+        super().__init__()
+        self.transform = transform
+        self.p = p
 
-    def forward(self, *inputs: Any) -> Any:
+    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        if float(torch.rand(())) < self._p:
+        if float(torch.rand(())) < self.p:
             return sample
 
-        return self._transform(sample)
+        return self.transform(sample, params=params)
 
     def extra_repr(self) -> str:
-        return f"p={self._p}"
+        return f"p={self.p}"
 
 
-class RandomChoice(MultiTransform):
-    def forward(self, *inputs: Any) -> Any:
-        idx = int(torch.randint(len(self._transforms), size=()))
-        transform = self._transforms[idx]
+class RandomChoice(Transform):
+    def __init__(self, *transforms: Transform):
+        super().__init__()
+        self.transforms = transforms
+        for idx, transform in enumerate(transforms):
+            self.add_module(str(idx), transform)
+
+    def forward(self, *inputs: Any) -> Any:  # type: ignore[override]
+        idx = int(torch.randint(len(self.transforms), size=()))
+        transform = self.transforms[idx]
         return transform(*inputs)
 
 
-class RandomOrder(MultiTransform):
-    def forward(self, *inputs: Any) -> Any:
-        for idx in torch.randperm(len(self._transforms)):
-            transform = self._transforms[idx]
+class RandomOrder(Transform):
+    def __init__(self, *transforms: Transform):
+        super().__init__()
+        self.transforms = transforms
+        for idx, transform in enumerate(transforms):
+            self.add_module(str(idx), transform)
+
+    def forward(self, *inputs: Any) -> Any:  # type: ignore[override]
+        for idx in torch.randperm(len(self.transforms)):
+            transform = self.transforms[idx]
             inputs = transform(*inputs)
         return inputs
