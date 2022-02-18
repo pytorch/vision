@@ -290,6 +290,7 @@ class ScaleJitter(nn.Module):
     `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
 
     Args:
+        target_size (tuple of ints): The target size for the transform provided in (height, weight) format.
         scale_range (tuple of ints): scaling factor interval, e.g (a, b), then scale is randomly sampled from the
             range a <= scale <= b.
         interpolation (InterpolationMode): Desired interpolation enum defined by
@@ -298,10 +299,12 @@ class ScaleJitter(nn.Module):
 
     def __init__(
         self,
+        target_size: Tuple[int, int],
         scale_range: Tuple[float, float] = (0.1, 2.0),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ):
         super().__init__()
+        self.target_size = target_size
         self.scale_range = scale_range
         self.interpolation = interpolation
 
@@ -314,15 +317,17 @@ class ScaleJitter(nn.Module):
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
-        old_width, old_height = F.get_image_size(image)
-
         r = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
-        new_width = int(old_width * r)
-        new_height = int(old_height * r)
+        new_width = int(self.target_size[1] * r)
+        new_height = int(self.target_size[0] * r)
 
         image = F.resize(image, [new_height, new_width], interpolation=self.interpolation)
 
         if target is not None:
             target["boxes"] *= r
+            if "masks" in target:
+                target["masks"] = F.resize(
+                    target["masks"], [new_height, new_width], interpolation=InterpolationMode.NEAREST
+                )
 
         return image, target
