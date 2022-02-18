@@ -1344,3 +1344,79 @@ def pcam(info, root, config):
             compressed_file.write(compressed_data)
 
     return num_images
+
+
+@register_mock
+def lfw_people(info, root, config):
+    image_folder = root / {
+        "original": "lfw",
+        "funneled": "lfw-funneled",
+        "deep_funneled": "lfw-deepfunneled",
+    }[config.image_set]
+
+    image_files = {
+        category: create_image_folder(
+            image_folder,
+            category,
+            lambda idx: f"{category}_{idx + 1:04d}.jpg",
+            num_examples=int(torch.randint(1, 4, ())),
+        )
+        for category in [
+            "AJ_Cook",
+            "Angela_Merkel",
+            "Bob_Holden",
+            "Cherry_Jones",
+            "David_Blaine",
+            "Ekaterina_Dmitriev",
+            "Gary_Doer",
+            "Hermes_Gamonal",
+            "Jason_Gardner",
+            "John_Jones",
+            "Keith_Tyson",
+            "Lindsay_Davenport",
+            "Marwan_Muasher",
+            "Moby",
+            "Patti_Smith",
+            "Ray_Lucas",
+            "Rupert_Grint",
+            "Steve_Kerr",
+            "Tommy_Maddox",
+            "Zydrunas_Ilgauskas",
+        ]
+    }
+
+    make_tar(root, image_folder.with_suffix(".tgz"), compression="gz")
+
+    if config.split in {"train", "test"}:
+        categories_in_split = sorted(
+            random.sample(list(image_files.keys()), int(torch.randint(1, len(image_files), ())))
+        )
+        with open(root / f"peopleDev{config.split.capitalize()}.txt", "w") as file:
+            file.write(f"{len(categories_in_split)}\n")
+
+            num_samples = 0
+            for category in categories_in_split:
+                num_samples_in_category = len(image_files[category])
+                num_samples += num_samples_in_category
+                file.write(f"{category}\t{num_samples_in_category}\n")
+    else:
+        with open(root / "people.txt", "w") as file:
+            file.write("10\n")
+            categories = set(image_files.keys())
+
+            num_samples_map = {}
+            for part in range(1, 11):
+                categories_in_part = sorted(categories.pop() for _ in range(int(torch.randint(1, 2, ()))))
+                file.write(f"{len(categories_in_part)}\n")
+
+                num_samples = 0
+                for category in categories_in_part:
+                    num_samples_in_category = len(image_files[category])
+                    num_samples += num_samples_in_category
+                    file.write(f"{category}\t{num_samples_in_category}\n")
+
+                num_samples_map[str(part)] = num_samples
+
+            num_samples = num_samples_map[config.split]
+
+    return num_samples
