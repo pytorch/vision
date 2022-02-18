@@ -6,12 +6,13 @@ from collections import namedtuple
 from pickletools import read_string1
 from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator
 import pathlib
+from unicodedata import category
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
     Filter,
     )
-
+import numpy as np
 from torchvision.prototype.datasets.utils._internal import read_mat,hint_sharding, hint_shuffling, path_comparator
 import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
@@ -62,7 +63,6 @@ class StanfordCars(Dataset):
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         resources = [HttpResource(self._URLS[config.split] , sha256=self._CHECKSUM[config.split])]
-        print(len(resources))
         if config.split == "test":
             resources.append(HttpResource(self._URLS["test_ground_truth"],sha256=self._CHECKSUM["test_ground_truth"]))
         else:
@@ -77,34 +77,36 @@ class StanfordCars(Dataset):
     ) -> IterDataPipe[Dict[str, Any]] :
 
         images_dp, targets_dp = resource_dps
-
+        print(config.split)
         if config.split == "train":
             targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
-
-
+        print("\n"*3)
+        print("images dp : ",images_dp)
+        print( "targets_dp :",targets_dp)
+        print("\n"*3)
         #right now our both dps are of .tgz and .mat format; for all configs(train and test.)
-        targets_dp = Mapper(targets_dp,self._read_labels)
         dp =Zipper(images_dp,targets_dp)
         dp=hint_sharding(dp)
         dp=hint_shuffling(dp)
+        return Mapper(dp,self._read_images_and_labels) 
 
 
-        return Mapper(dp,self._collate_and_decode) 
-
-    def _collate_and_decode(self, data: Tuple[Any, Any]) -> Dict[str, Any]:
-        image, target = data  # They're both numpy arrays at this point
+    def _read_images_and_labels(self,data):
+        image, target = data  
 
         image_path, image_buffer = image
+        labels_path, labels_buffer = target
 
         image = EncodedImage.from_file(image_buffer)
-       
+        labels = read_mat(labels_buffer,squeeze_me=True)["annotations"]
+        index=image_path[-9:-4]
+        index = int(image_path[-9:-4]) -1
 
-    def _read_labels(self,data):
-        labels = data[0]
-        labels = read_mat(labels,squeeze_me=True)
-        labels=labels["annotations"]
-        print("\n"*10)
-        print(len(labels["class"]))
-        bboxs_and_class = zip(labels["bbox_x1"],labels["bbox_y1"],labels["bbox_x2"],labels["bbox_y2"],labels["class"])
-
-        return  bboxs_and_class
+        return dict(
+            index=index,
+            image_path = image_path,
+            image = image,
+            labels_path=labels_path,
+            classification_label = labels["class"][index] -1, #remember in stanford cars; this labeling starts from 1; hence subtracting 1 
+            bounding_box = BoundingBox([labels["bbox_x1"][index] ,labels["bbox_y1"][index],labels["bbox_x2"][index] ,labels["bbox_y2"][index]], format="xyxy", image_size=image.image_size)
+        )
