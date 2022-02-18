@@ -739,7 +739,12 @@ def test_augmix(device, fill):
     tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
     batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
 
-    transform = T.AugMix(fill=fill)
+    class DeterministicAugMix(T.AugMix):
+        def _sample_dirichlet(self, params: torch.Tensor) -> torch.Tensor:
+            # patch the method to ensure that the order of rand calls doesn't affect the outcome
+            return params.softmax(dim=-1)
+
+    transform = DeterministicAugMix(fill=fill)
     s_transform = torch.jit.script(transform)
     for _ in range(25):
         _test_transform_vs_scripted(transform, s_transform, tensor)

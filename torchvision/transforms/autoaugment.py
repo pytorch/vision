@@ -535,6 +535,10 @@ class AugMix(torch.nn.Module):
     def _tensor_to_pil(self, img: Tensor):
         return F.to_pil_image(img)
 
+    def _sample_dirichlet(self, params: Tensor) -> Tensor:
+        # Must be on a separate method so that we can overwrite it in tests.
+        return torch._sample_dirichlet(params)
+
     def forward(self, orig_img: Tensor) -> Tensor:
         """
             img (PIL Image or Tensor): Image to be transformed.
@@ -560,12 +564,12 @@ class AugMix(torch.nn.Module):
 
         # Sample the beta weights for combining the original and augmented image. To get Beta, we use a Dirichlet
         # with 2 parameters. The 1st column stores the weights of the original and the 2nd the ones of augmented image.
-        m = torch._sample_dirichlet(
+        m = self._sample_dirichlet(
             torch.tensor([self.alpha, self.alpha], device=batch.device).expand(batch_dims[0], -1)
         )
 
         # Sample the mixing weights and combine them with the ones sampled from Beta for the augmented images.
-        combined_weights = torch._sample_dirichlet(
+        combined_weights = self._sample_dirichlet(
             torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(batch_dims[0], -1)
         ) * m[:, 1].view([batch_dims[0], -1])
 
