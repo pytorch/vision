@@ -1,6 +1,7 @@
 from .caltech import Caltech101, Caltech256
 from .celeba import CelebA
 from .cifar import Cifar10, Cifar100
+from .cityscapes import Cityscapes
 from .clevr import CLEVR
 from .coco import Coco
 from .cub200 import CUB200
