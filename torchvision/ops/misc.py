@@ -1,5 +1,5 @@
 from typing import Callable, List, Optional
-
+import warnings
 import torch
 from torch import Tensor
 
@@ -65,7 +65,7 @@ class FrozenBatchNorm2d(torch.nn.Module):
         return f"{self.__class__.__name__}({self.weight.shape[0]}, eps={self.eps})"
 
 
-class ConvNormActivation(torch.nn.Sequential):
+class Conv2dNormActivation(torch.nn.Sequential):
     """
     Configurable block used for Convolution-Normalzation-Activation blocks.
 
@@ -123,6 +123,15 @@ class ConvNormActivation(torch.nn.Sequential):
         _log_api_usage_once(self)
         self.out_channels = out_channels
 
+
+class ConvNormActivation(Conv2dNormActivation):
+    def __init__(self, *args, **kwargs):
+        warnings.warn(
+            "The ConvNormActivation class are deprecated since 0.13 and will be removed in 0.15. "
+            "Use torchvision.ops.misc.ConvNormActivation instead.",
+            FutureWarning,
+        )
+        super().__init__(*args, **kwargs)
 
 class SqueezeExcitation(torch.nn.Module):
     """

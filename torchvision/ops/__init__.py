@@ -14,7 +14,7 @@ from .deform_conv import deform_conv2d, DeformConv2d
 from .feature_pyramid_network import FeaturePyramidNetwork
 from .focal_loss import sigmoid_focal_loss
 from .giou_loss import generalized_box_iou_loss
-from .misc import FrozenBatchNorm2d, ConvNormActivation, SqueezeExcitation
+from .misc import FrozenBatchNorm2d, ConvNormActivation, Conv2dNormActivation, SqueezeExcitation
 from .poolers import MultiScaleRoIAlign
 from .ps_roi_align import ps_roi_align, PSRoIAlign
 from .ps_roi_pool import ps_roi_pool, PSRoIPool
@@ -52,6 +52,7 @@ __all__ = [
     "StochasticDepth",
     "FrozenBatchNorm2d",
     "ConvNormActivation",
+    "Conv2dNormActivation",
     "SqueezeExcitation",
     "generalized_box_iou_loss",
 ]
