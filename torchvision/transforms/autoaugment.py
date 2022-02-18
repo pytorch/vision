@@ -552,13 +552,24 @@ class AugMix(torch.nn.Module):
         else:
             img = self._pil_to_tensor(orig_img)
 
-        mixing_weights = torch._sample_dirichlet(torch.tensor([self.alpha] * self.mixture_width, device=img.device))
-        m = torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha], device=img.device))[0]
         op_meta = self._augmentation_space(self._PARAMETER_MAX, F.get_image_size(img))
 
         orig_dims = list(img.shape)
         batch = img.view([1] * max(4 - img.ndim, 0) + orig_dims)
-        mix = (1.0 - m) * batch
+        batch_dims = [batch.size(0)] + [1] * (batch.ndim - 1)
+
+        # Sample the beta weights for combining the original and augmented image. To get Beta, we use a Dirichlet
+        # with 2 parameters. The 1st column stores the weights of the original and the 2nd the ones of augmented image.
+        m = torch._sample_dirichlet(
+            torch.tensor([self.alpha, self.alpha], device=batch.device).expand(batch_dims[0], -1)
+        )
+
+        # Sample the mixing weights and combine them with the ones sampled from Beta for the augmented images.
+        combined_weights = torch._sample_dirichlet(
+            torch.tensor([self.alpha] * self.mixture_width, device=batch.device).expand(batch_dims[0], -1)
+        ) * m[:, 1].view([batch_dims[0], -1])
+
+        mix = m[:, 0].view(batch_dims) * batch
         for i in range(self.mixture_width):
             aug = batch
             depth = self.chain_depth if self.chain_depth > 0 else int(torch.randint(low=1, high=4, size=(1,)).item())
@@ -574,7 +585,7 @@ class AugMix(torch.nn.Module):
                 if signed and torch.randint(2, (1,)):
                     magnitude *= -1.0
                 aug = _apply_op(aug, op_name, magnitude, interpolation=self.interpolation, fill=fill)
-            mix.add_((mixing_weights[i] * m) * aug)
+            mix.add_(combined_weights[:, i].view(batch_dims) * aug)
         mix = mix.view(orig_dims).to(dtype=img.dtype)
 
         if not isinstance(orig_img, Tensor):
