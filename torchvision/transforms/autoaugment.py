@@ -470,7 +470,7 @@ class AugMix(torch.nn.Module):
     Args:
         severity (int): The severity of base augmentation operators. Default is ``1``.
         mixture_width (int): The number of augmentation chains. Default is ``3``.
-        chain_depth (int): The depth of augmentation chains. A negative value denotes stochastic depth in [1, 3].
+        chain_depth (int): The depth of augmentation chains. A negative value denotes stochastic depth sampled from the interval [1, 3].
             Default is ``-1``.
         alpha (float): The hyperparameter for the probability distributions. Default is ``1.0``.
         all_ops (bool): Use all operations (including brightness, contrast, color and sharpness). Default is ``True``.
