@@ -468,7 +468,7 @@ class AugMix(torch.nn.Module):
     If img is PIL Image, it is expected to be in mode "L" or "RGB".
 
     Args:
-        severity (int): The severity of base augmentation operators. Default is ``1``.
+        severity (int): The severity of base augmentation operators. Default is ``3``.
         mixture_width (int): The number of augmentation chains. Default is ``3``.
         chain_depth (int): The depth of augmentation chains. A negative value denotes stochastic depth sampled from the interval [1, 3].
             Default is ``-1``.
@@ -483,7 +483,7 @@ class AugMix(torch.nn.Module):
 
     def __init__(
         self,
-        severity: int = 1,
+        severity: int = 3,
         mixture_width: int = 3,
         chain_depth: int = -1,
         alpha: float = 1.0,
