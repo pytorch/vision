@@ -671,7 +671,33 @@ The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 267-279
+.. GENERATED FROM PYTHON SOURCE LINES 267-270
+
+AugMix
+~~~~~~
+The :class:`~torchvision.transforms.AugMix` transform automatically augments the data.
+
+.. GENERATED FROM PYTHON SOURCE LINES 270-274
+
+.. code-block:: default
+
+    augmenter = T.AugMix()
+    imgs = [augmenter(orig_img) for _ in range(4)]
+    plot(imgs)
+
+
+
+
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_022.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_022.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 275-287
 
 Randomly-applied transforms
 ---------------------------
@@ -686,40 +712,12 @@ The :class:`~torchvision.transforms.RandomHorizontalFlip` transform
 (see also :func:`~torchvision.transforms.functional.hflip`)
 performs horizontal flip of an image, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 279-283
+.. GENERATED FROM PYTHON SOURCE LINES 287-291
 
 .. code-block:: default
 
     hflipper = T.RandomHorizontalFlip(p=0.5)
     transformed_imgs = [hflipper(orig_img) for _ in range(4)]
-    plot(transformed_imgs)
-
-
-
-
-.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_022.png
-   :alt: Original image
-   :srcset: /auto_examples/images/sphx_glr_plot_transforms_022.png
-   :class: sphx-glr-single-img
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 284-289
-
-RandomVerticalFlip
-~~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomVerticalFlip` transform
-(see also :func:`~torchvision.transforms.functional.vflip`)
-performs vertical flip of an image, with a given probability.
-
-.. GENERATED FROM PYTHON SOURCE LINES 289-293
-
-.. code-block:: default
-
-    vflipper = T.RandomVerticalFlip(p=0.5)
-    transformed_imgs = [vflipper(orig_img) for _ in range(4)]
     plot(transformed_imgs)
 
 
@@ -734,20 +732,22 @@ performs vertical flip of an image, with a given probability.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 294-298
+.. GENERATED FROM PYTHON SOURCE LINES 292-297
 
-RandomApply
-~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomApply` transform
-randomly applies a list of transforms, with a given probability.
+RandomVerticalFlip
+~~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomVerticalFlip` transform
+(see also :func:`~torchvision.transforms.functional.vflip`)
+performs vertical flip of an image, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 298-301
+.. GENERATED FROM PYTHON SOURCE LINES 297-301
 
 .. code-block:: default
 
-    applier = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)
-    transformed_imgs = [applier(orig_img) for _ in range(4)]
+    vflipper = T.RandomVerticalFlip(p=0.5)
+    transformed_imgs = [vflipper(orig_img) for _ in range(4)]
     plot(transformed_imgs)
+
 
 
 
@@ -760,10 +760,36 @@ randomly applies a list of transforms, with a given probability.
 
 
 
+.. GENERATED FROM PYTHON SOURCE LINES 302-306
+
+RandomApply
+~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomApply` transform
+randomly applies a list of transforms, with a given probability.
+
+.. GENERATED FROM PYTHON SOURCE LINES 306-309
+
+.. code-block:: default
+
+    applier = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)
+    transformed_imgs = [applier(orig_img) for _ in range(4)]
+    plot(transformed_imgs)
+
+
+
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_025.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_025.png
+   :class: sphx-glr-single-img
+
+
+
+
+
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  9.026 seconds)
+   **Total running time of the script:** ( 0 minutes  7.913 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms.py:

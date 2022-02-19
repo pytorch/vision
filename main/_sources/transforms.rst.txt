@@ -198,6 +198,7 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     AutoAugment
     RandAugment
     TrivialAugmentWide
+    AugMix
 
 .. _functional_transforms:
 
