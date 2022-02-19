@@ -1,24 +1,9 @@
-from typing import Any, List, Dict
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
-    Zipper,
-)
+from typing import Any, Dict, List
+
+from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
+from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
 from torchvision.prototype.features import BoundingBox, EncodedImage
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
-    DatasetInfo,
-    OnlineResource,
-    HttpResource
-)
-from torchvision.prototype.datasets.utils._internal import (
-    hint_sharding,
-    hint_shuffling,
-    read_mat,
-    path_comparator
-)
 
 
 class StanfordCars(Dataset):
@@ -27,7 +12,9 @@ class StanfordCars(Dataset):
             name="stanford_cars",
             homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
             dependencies=("scipy",),
-            valid_options=dict(split=("test", "train"),),
+            valid_options=dict(
+                split=("test", "train"),
+            ),
         )
 
     _URL_ROOT = "https://ai.stanford.edu/~jkrause/"
@@ -58,7 +45,7 @@ class StanfordCars(Dataset):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-    ) -> IterDataPipe[Dict[str, Any]] :
+    ) -> IterDataPipe[Dict[str, Any]]:
 
         images_dp, targets_dp = resource_dps
         print(config.split)
@@ -85,5 +72,14 @@ class StanfordCars(Dataset):
             image=image,
             labels_path=labels_path,
             classification_label=labels["class"][index] - 1,
-            bounding_box=BoundingBox([labels["bbox_x1"][index], labels["bbox_y1"][index], labels["bbox_x2"][index], labels["bbox_y2"][index]], format="xyxy", image_size=image.image_size)
+            bounding_box=BoundingBox(
+                [
+                    labels["bbox_x1"][index],
+                    labels["bbox_y1"][index],
+                    labels["bbox_x2"][index],
+                    labels["bbox_y2"][index],
+                ],
+                format="xyxy",
+                image_size=image.image_size,
+            ),
         )
