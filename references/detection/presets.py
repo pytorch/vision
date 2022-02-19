@@ -12,6 +12,15 @@ class DetectionPresetTrain:
                     T.ConvertImageDtype(torch.float),
                 ]
             )
+        elif data_augmentation == "lsj":
+            self.transforms = T.Compose(
+                [
+                    T.ScaleJitter(target_size=(1024, 1024)),
+                    T.RandomHorizontalFlip(p=hflip_prob),
+                    T.PILToTensor(),
+                    T.ConvertImageDtype(torch.float),
+                ]
+            )
         elif data_augmentation == "ssd":
             self.transforms = T.Compose(
                 [

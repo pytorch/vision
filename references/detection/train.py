@@ -151,6 +151,7 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--weights-backbone", default=None, type=str, help="the backbone weights enum name to load")
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
@@ -161,8 +162,8 @@ def get_args_parser(add_help=True):
 def main(args):
     if args.prototype and prototype is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-    if not args.prototype and args.weights:
-        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
+    if not args.prototype and (args.weights or args.weights_backbone):
+        raise ValueError("The weights parameters works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -209,7 +210,7 @@ def main(args):
             pretrained=args.pretrained, num_classes=num_classes, **kwargs
         )
     else:
-        model = prototype.models.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
+        model = prototype.models.detection.__dict__[args.model](weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
