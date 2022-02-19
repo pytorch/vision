@@ -210,7 +210,9 @@ def main(args):
             pretrained=args.pretrained, num_classes=num_classes, **kwargs
         )
     else:
-        model = prototype.models.detection.__dict__[args.model](weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs)
+        model = prototype.models.detection.__dict__[args.model](
+            weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
+        )
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
