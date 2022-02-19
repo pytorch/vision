@@ -46,4 +46,5 @@ Operators
     StochasticDepth
     FrozenBatchNorm2d
     ConvNormActivation
+    Conv3dNormActivation
     SqueezeExcitation
