@@ -36,20 +36,17 @@ class DropBlock2d(nn.Module):
         """
         if not self.training:
             return input
-        
+
         N, C, H, W = input.size()
         # compute the gamma of Bernoulli distribution
-        gamma = (self.p * H * W) / ((self.block_size ** 2) * ((H - self.block_size + 1) * \
-            (W - self.block_size + 1)))
+        gamma = (self.p * H * W) / ((self.block_size ** 2) * ((H - self.block_size + 1) * (W - self.block_size + 1)))
         mask_shape = (N, C, H - self.block_size + 1, W - self.block_size + 1)
         mask = torch.bernoulli(torch.full(mask_shape, gamma, device=input.device))
 
         mask = F.pad(mask, [self.block_size // 2] * 4, value=0)
         mask = F.max_pool2d(
-            input=mask,
-            stride=(1, 1),
-            kernel_size=(self.block_size, self.block_size),
-            padding=self.block_size // 2)
+            input=mask, stride=(1, 1), kernel_size=(self.block_size, self.block_size), padding=self.block_size
+        )
         mask = 1 - mask
         normalize_scale = mask.numel() / (1e-6 + mask.sum())
         if self.inplace:
@@ -59,6 +56,5 @@ class DropBlock2d(nn.Module):
         return input
 
     def __repr__(self) -> str:
-        s = f"{self.__class__.__name__}(p={self.p}, block_size={self.block_size}, " + \
-            f"inplace={self.inplace})"
+        s = f"{self.__class__.__name__}(p={self.p}, block_size={self.block_size}, inplace={self.inplace})"
         return s
