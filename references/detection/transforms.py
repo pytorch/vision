@@ -317,6 +317,8 @@ class ScaleJitter(nn.Module):
             elif image.ndimension() == 2:
                 image = image.unsqueeze(0)
 
+        orig_width, orig_height = F.get_image_size(image)
+
         r = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
         new_width = int(self.target_size[1] * r)
         new_height = int(self.target_size[0] * r)
@@ -324,7 +326,8 @@ class ScaleJitter(nn.Module):
         image = F.resize(image, [new_height, new_width], interpolation=self.interpolation)
 
         if target is not None:
-            target["boxes"] *= r
+            target["boxes"][:, 0::2] *= new_width / orig_width
+            target["boxes"][:, 1::2] *= new_height / orig_height
             if "masks" in target:
                 target["masks"] = F.resize(
                     target["masks"], [new_height, new_width], interpolation=InterpolationMode.NEAREST
