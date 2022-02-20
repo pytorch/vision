@@ -5,26 +5,65 @@ from torch import nn, Tensor
 from ..utils import _log_api_usage_once
 
 
-class DropBlock2d(nn.Module):
+def drop_block2d(input: Tensor, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06,
+    training: bool = True) -> Tensor:
     """
     Implements DropBlock2d from `"DropBlock: A regularization method for convolutional networks"
     <https://arxiv.org/abs/1810.12890>`.
 
     Args:
+        input (Tensor[N, C, H, W]): The input tensor or 4-dimensions with the first one
+                    being its batch i.e. a batch with ``N`` rows.
         p (float): Probability of an element to be dropped.
         block_size (int): Size of the block to drop.
-        inplace (bool): If set to ``True``, will do this operation in-place. Default: ``False``
+        inplace (bool): If set to ``True``, will do this operation in-place. Default: ``False``.
+        eps (float): A value added to the denominator for numerical stability. Default: 1e-6.
+        training (bool): apply dropblock if is ``True``. Default: ``True`
+    Returns:
+        Tensor[N, ...]: The randomly zeroed tensor after dropblock.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(drop_block2d)
+    if p < 0.0 or p > 1.0:
+        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
+    if not training or p == 0.0:
+        return input
+
+    N, C, H, W = input.size()
+    # compute the gamma of Bernoulli distribution
+    gamma = (p * H * W) / ((block_size ** 2) * ((H - block_size + 1) * (W - block_size + 1)))
+    noise = torch.empty((N, C, H - block_size + 1, W - block_size + 1), dtype=input.dtype,
+        device=input.device)
+    noise.bernoulli_(gamma)
+
+    noise = F.pad(noise, [block_size // 2] * 4, value=0)
+    noise = F.max_pool2d(
+        noise, stride=(1, 1), kernel_size=(block_size, block_size), padding=block_size // 2
+    )
+    noise = 1 - noise
+    normalize_scale = noise.numel() / (eps + noise.sum())
+    if inplace:
+            input.mul_(noise).mul_(normalize_scale)
+    else:
+        input = input * noise * normalize_scale
+    return input   
+
+
+torch.fx.wrap("drop_block2d")
+
+
+class DropBlock2d(nn.Module):
+    """
+    See :func:`drop_block2d`.
     """
 
-    def __init__(self, p: float, block_size: int, inplace: bool = False) -> None:
-        super(DropBlock2d, self).__init__()
-        _log_api_usage_once(self)
+    def __init__(self, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06) -> None:
+        super().__init__()
 
-        if p < 0.0 or p > 1.0:
-            raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
         self.p = p
         self.block_size = block_size
         self.inplace = inplace
+        self.eps = eps
 
     def forward(self, input: Tensor) -> Tensor:
         """
@@ -34,26 +73,7 @@ class DropBlock2d(nn.Module):
         Returns:
             Tensor: The tensor after DropBlock layer.
         """
-        if not self.training:
-            return input
-
-        N, C, H, W = input.size()
-        # compute the gamma of Bernoulli distribution
-        gamma = (self.p * H * W) / ((self.block_size ** 2) * ((H - self.block_size + 1) * (W - self.block_size + 1)))
-        mask_shape = (N, C, H - self.block_size + 1, W - self.block_size + 1)
-        mask = torch.bernoulli(torch.full(mask_shape, gamma, device=input.device))
-
-        mask = F.pad(mask, [self.block_size // 2] * 4, value=0)
-        mask = F.max_pool2d(
-            input=mask, stride=(1, 1), kernel_size=(self.block_size, self.block_size), padding=self.block_size
-        )
-        mask = 1 - mask
-        normalize_scale = mask.numel() / (1e-6 + mask.sum())
-        if self.inplace:
-            input.mul_(mask * normalize_scale)
-        else:
-            input = input * mask * normalize_scale
-        return input
+        return drop_block2d(input, self.p, self.block_size, self.inplace, self.eps, self.training)
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(p={self.p}, block_size={self.block_size}, inplace={self.inplace})"
