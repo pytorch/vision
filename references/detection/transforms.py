@@ -326,8 +326,8 @@ class ScaleJitter(nn.Module):
         image = F.resize(image, [new_height, new_width], interpolation=self.interpolation)
 
         if target is not None:
-            target["boxes"][:, 0::2] *= (new_width / orig_width)
-            target["boxes"][:, 1::2] *= (new_height / orig_height)
+            target["boxes"][:, 0::2] *= new_width / orig_width
+            target["boxes"][:, 1::2] *= new_height / orig_height
             if "masks" in target:
                 target["masks"] = F.resize(
                     target["masks"], [new_height, new_width], interpolation=InterpolationMode.NEAREST
