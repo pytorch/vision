@@ -5,8 +5,9 @@ from torch import nn, Tensor
 from ..utils import _log_api_usage_once
 
 
-def drop_block2d(input: Tensor, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06,
-    training: bool = True) -> Tensor:
+def drop_block2d(
+    input: Tensor, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06, training: bool = True
+) -> Tensor:
     """
     Implements DropBlock2d from `"DropBlock: A regularization method for convolutional networks"
     <https://arxiv.org/abs/1810.12890>`.
@@ -32,18 +33,15 @@ def drop_block2d(input: Tensor, p: float, block_size: int, inplace: bool = False
     N, C, H, W = input.size()
     # compute the gamma of Bernoulli distribution
     gamma = (p * H * W) / ((block_size ** 2) * ((H - block_size + 1) * (W - block_size + 1)))
-    noise = torch.empty((N, C, H - block_size + 1, W - block_size + 1), dtype=input.dtype,
-        device=input.device)
+    noise = torch.empty((N, C, H - block_size + 1, W - block_size + 1), dtype=input.dtype, device=input.device)
     noise.bernoulli_(gamma)
 
     noise = F.pad(noise, [block_size // 2] * 4, value=0)
-    noise = F.max_pool2d(
-        noise, stride=(1, 1), kernel_size=(block_size, block_size), padding=block_size // 2
-    )
+    noise = F.max_pool2d(noise, stride=(1, 1), kernel_size=(block_size, block_size), padding=block_size // 2)
     noise = 1 - noise
     normalize_scale = noise.numel() / (eps + noise.sum())
     if inplace:
-            input.mul_(noise).mul_(normalize_scale)
+        input.mul_(noise).mul_(normalize_scale)
     else:
         input = input * noise * normalize_scale
     return input   
