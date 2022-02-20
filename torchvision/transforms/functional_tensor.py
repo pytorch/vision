@@ -457,9 +457,6 @@ def resize(
         short, long = (w, h) if w <= h else (h, w)
         requested_new_short = size if isinstance(size, int) else size[0]
 
-        if short == requested_new_short:
-            return img
-
         new_short, new_long = requested_new_short, int(requested_new_short * long / short)
 
         if max_size is not None:
@@ -473,6 +470,9 @@ def resize(
 
         new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
 
+        if (w, h) == (new_w, new_h):
+            return img
+
     else:  # specified both h and w
         new_w, new_h = size[1], size[0]
 
@@ -481,13 +481,7 @@ def resize(
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    if antialias:
-        if interpolation == "bilinear":
-            img = torch.ops.torchvision._interpolate_bilinear2d_aa(img, [new_h, new_w], align_corners=False)
-        elif interpolation == "bicubic":
-            img = torch.ops.torchvision._interpolate_bicubic2d_aa(img, [new_h, new_w], align_corners=False)
-    else:
-        img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
+    img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners, antialias=antialias)
 
     if interpolation == "bicubic" and out_dtype == torch.uint8:
         img = img.clamp(min=0, max=255)

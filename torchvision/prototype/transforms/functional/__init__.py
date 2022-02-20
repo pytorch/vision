@@ -11,4 +11,5 @@ from ._color import (
     invert,
 )
 from ._geometry import horizontal_flip, resize, center_crop, resized_crop, affine, rotate
-from ._misc import normalize
+from ._meta_conversion import convert_color_space, convert_format
+from ._misc import normalize, get_image_size, get_image_num_channels
