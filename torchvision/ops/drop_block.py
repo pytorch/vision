@@ -20,9 +20,10 @@ def drop_block2d(
         block_size (int): Size of the block to drop.
         inplace (bool): If set to ``True``, will do this operation in-place. Default: ``False``.
         eps (float): A value added to the denominator for numerical stability. Default: 1e-6.
-        training (bool): apply dropblock if is ``True``. Default: ``True`
+        training (bool): apply dropblock if is ``True``. Default: ``True``
+    
     Returns:
-        Tensor[N, ...]: The randomly zeroed tensor after dropblock.
+        Tensor[N, C, H, W]: The randomly zeroed tensor after dropblock.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(drop_block2d)
@@ -67,9 +68,10 @@ def drop_block3d(
         block_size (int): Size of the block to drop.
         inplace (bool): If set to ``True``, will do this operation in-place. Default: ``False``.
         eps (float): A value added to the denominator for numerical stability. Default: 1e-6.
-        training (bool): apply dropblock if is ``True``. Default: ``True`
+        training (bool): apply dropblock if is ``True``. Default: ``True``
+
     Returns:
-        Tensor[N, ...]: The randomly zeroed tensor after dropblock.
+        Tensor[N, C, D, H, W]: The randomly zeroed tensor after dropblock.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(drop_block3d)
