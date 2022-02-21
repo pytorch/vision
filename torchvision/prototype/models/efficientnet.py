@@ -57,14 +57,27 @@ def _efficientnet(
     return model
 
 
-_COMMON_META_V1 = {
+_COMMON_META = {
     "task": "image_classification",
-    "architecture": "EfficientNet",
-    "publication_year": 2019,
-    "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BICUBIC,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
+}
+
+
+_COMMON_META_V1 = {
+    **_COMMON_META,
+    "architecture": "EfficientNet",
+    "publication_year": 2019,
+    "min_size": (1, 1),
+}
+
+
+_COMMON_META_V2 = {
+    **_COMMON_META,
+    "architecture": "EfficientNetV2",
+    "publication_year": 2021,
+    "min_size": (33, 33),
 }
 
 
@@ -202,7 +215,25 @@ class EfficientNet_B7_Weights(WeightsEnum):
 
 
 class EfficientNet_V2_S_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_v2_s-tmp.pth",
+        transforms=partial(
+            ImageNetEval,
+            crop_size=384,
+            resize_size=384,
+            interpolation=InterpolationMode.BICUBIC,
+            mean=(0.5, 0.5, 0.5),
+            std=(0.5, 0.5, 0.5),
+        ),
+        meta={
+            **_COMMON_META_V2,
+            "num_params": 21458488,
+            "size": (384, 384),
+            "acc@1": 83.152,
+            "acc@5": 96.400,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class EfficientNet_V2_M_Weights(WeightsEnum):
@@ -317,7 +348,7 @@ def efficientnet_b7(
     )
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", EfficientNet_V2_S_Weights.IMAGENET1K_V1))
 def efficientnet_v2_s(
     *, weights: Optional[EfficientNet_V2_S_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
