@@ -45,11 +45,11 @@ def drop_block2d(
         input.mul_(noise).mul_(normalize_scale)
     else:
         input = input * noise * normalize_scale
-    return input   
+    return input
 
 
-def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06,
-    training: bool = True) -> Tensor:
+def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06, training: bool = True
+) -> Tensor:
     """
     Implements DropBlock3d from `"DropBlock: A regularization method for convolutional networks"
     <https://arxiv.org/abs/1810.12890>`.
@@ -75,8 +75,9 @@ def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False
     N, C, D, H, W = input.size()
     # compute the gamma of Bernoulli distribution
     gamma = (p * D * H * W) / ((block_size ** 3) * ((D - block_size + 1) * (H - block_size + 1) * (W - block_size + 1)))
-    noise = torch.empty((N, C, D - block_size + 1, H - block_size + 1, W - block_size + 1), dtype=input.dtype,
-        device=input.device)
+    noise = torch.empty(
+        (N, C, D - block_size + 1, H - block_size + 1, W - block_size + 1), dtype=input.dtype, device=input.device
+    )
     noise.bernoulli_(gamma)
 
     noise = F.pad(noise, [block_size // 2] * 6, value=0)
@@ -89,7 +90,7 @@ def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False
         input.mul_(noise).mul_(normalize_scale)
     else:
         input = input * noise * normalize_scale
-    return input   
+    return input 
 
 
 torch.fx.wrap("drop_block2d")
