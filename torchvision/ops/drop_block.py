@@ -47,8 +47,6 @@ def drop_block2d(
     return input   
 
 
-
-
 def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06,
     training: bool = True) -> Tensor:
     """
