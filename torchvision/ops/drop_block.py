@@ -124,7 +124,7 @@ class DropBlock2d(nn.Module):
         s = f"{self.__class__.__name__}(p={self.p}, block_size={self.block_size}, inplace={self.inplace})"
         return s
 
-
+torch.fx.wrap("drop_block3d")
 class DropBlock3d(DropBlock2d):
     """
     See :func:`drop_block3d`.
