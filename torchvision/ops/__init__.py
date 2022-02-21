@@ -58,5 +58,5 @@ __all__ = [
     "drop_block2d",
     "DropBlock2d",
     "drop_block3d",
-    "DropBlock3d"
+    "DropBlock3d",
 ]
