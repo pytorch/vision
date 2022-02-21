@@ -11,7 +11,7 @@ from .boxes import (
 )
 from .boxes import box_convert
 from .deform_conv import deform_conv2d, DeformConv2d
-from .drop_block import drop_block2d, DropBlock2d, drop_block3d, DropBlock3d,
+from .drop_block import drop_block2d, DropBlock2d, drop_block3d, DropBlock3d
 from .feature_pyramid_network import FeaturePyramidNetwork
 from .focal_loss import sigmoid_focal_loss
 from .giou_loss import generalized_box_iou_loss
@@ -55,4 +55,8 @@ __all__ = [
     "ConvNormActivation",
     "SqueezeExcitation",
     "generalized_box_iou_loss",
+    "drop_block2d",
+    "DropBlock2d",
+    "drop_block3d",
+    "DropBlock3d"
 ]
