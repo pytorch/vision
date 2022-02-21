@@ -93,7 +93,7 @@ def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False
     return input   
 
 
-torch.fx.wrap("drop_block3d")
+torch.fx.wrap("drop_block2d")
 
 
 class DropBlock2d(nn.Module):
