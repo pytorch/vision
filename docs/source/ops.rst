@@ -20,6 +20,8 @@ Operators
     box_iou
     clip_boxes_to_image
     deform_conv2d
+    drop_block2d
+    drop_block3d
     generalized_box_iou
     generalized_box_iou_loss
     masks_to_boxes
@@ -47,3 +49,5 @@ Operators
     FrozenBatchNorm2d
     ConvNormActivation
     SqueezeExcitation
+    DropBlock2d
+    DropBlock3d
