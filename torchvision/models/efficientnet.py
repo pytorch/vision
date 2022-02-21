@@ -3,7 +3,7 @@ import math
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Optional, List, Sequence
+from typing import Any, Callable, Optional, List, Sequence, Tuple, Union
 
 import torch
 from torch import nn, Tensor
@@ -25,6 +25,9 @@ __all__ = [
     "efficientnet_b5",
     "efficientnet_b6",
     "efficientnet_b7",
+    "efficientnet_v2_s",
+    "efficientnet_v2_m",
+    "efficientnet_v2_l",
 ]
 
 
@@ -67,9 +70,9 @@ class MBConvConfig(_MBConvConfig):
         input_channels: int,
         out_channels: int,
         num_layers: int,
-        width_mult: float,
-        depth_mult: float,
-        block: Optional[Callable[..., nn.Module]] = None
+        width_mult: float = 1.0,
+        depth_mult: float = 1.0,
+        block: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         input_channels = self.adjust_channels(input_channels, width_mult)
         out_channels = self.adjust_channels(out_channels, width_mult)
@@ -93,7 +96,7 @@ class FusedMBConvConfig(_MBConvConfig):
         input_channels: int,
         out_channels: int,
         num_layers: int,
-        block: Optional[Callable[..., nn.Module]] = None
+        block: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         if block is None:
             block = FusedMBConv
@@ -232,22 +235,24 @@ class FusedMBConv(nn.Module):
 class EfficientNet(nn.Module):
     def __init__(
         self,
-        inverted_residual_setting: List[MBConvConfig],
+        inverted_residual_setting: Sequence[Union[MBConvConfig, FusedMBConvConfig]],
         dropout: float,
         stochastic_depth_prob: float = 0.2,
         num_classes: int = 1000,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        last_channel: Optional[int] = None,
         **kwargs: Any,
     ) -> None:
         """
         EfficientNet V1 and V2 main class
 
         Args:
-            inverted_residual_setting (List[MBConvConfig]): Network structure
+            inverted_residual_setting (Sequence[Union[MBConvConfig, FusedMBConvConfig]]): Network structure
             dropout (float): The droupout probability
             stochastic_depth_prob (float): The stochastic depth probability
             num_classes (int): Number of classes
             norm_layer (Optional[Callable[..., nn.Module]]): Module specifying the normalization layer to use
+            last_channel (int): The number of channels on the penultimate layer
         """
         super().__init__()
         _log_api_usage_once(self)
@@ -307,8 +312,7 @@ class EfficientNet(nn.Module):
 
         # building last several layers
         lastconv_input_channels = inverted_residual_setting[-1].out_channels
-        is_v2 = any([isinstance(s, FusedMBConvConfig) for s in inverted_residual_setting])
-        lastconv_output_channels = 1280 if is_v2 else 4 * lastconv_input_channels
+        lastconv_output_channels = last_channel if last_channel is not None else 4 * lastconv_input_channels
         layers.append(
             ConvNormActivation(
                 lastconv_input_channels,
@@ -355,30 +359,75 @@ class EfficientNet(nn.Module):
 
 def _efficientnet(
     arch: str,
-    width_mult: float,
-    depth_mult: float,
+    inverted_residual_setting: Sequence[Union[MBConvConfig, FusedMBConvConfig]],
     dropout: float,
+    last_channel: Optional[int],
     pretrained: bool,
     progress: bool,
     **kwargs: Any,
 ) -> EfficientNet:
-    bneck_conf = partial(MBConvConfig, width_mult=width_mult, depth_mult=depth_mult)
-    inverted_residual_setting = [
-        bneck_conf(1, 3, 1, 32, 16, 1),
-        bneck_conf(6, 3, 2, 16, 24, 2),
-        bneck_conf(6, 5, 2, 24, 40, 2),
-        bneck_conf(6, 3, 2, 40, 80, 3),
-        bneck_conf(6, 5, 1, 80, 112, 3),
-        bneck_conf(6, 5, 2, 112, 192, 4),
-        bneck_conf(6, 3, 1, 192, 320, 1),
-    ]
-    model = EfficientNet(inverted_residual_setting, dropout, **kwargs)
+    model = EfficientNet(inverted_residual_setting, dropout, last_channel=last_channel, **kwargs)
     if pretrained:
         if model_urls.get(arch, None) is None:
             raise ValueError(f"No checkpoint is available for model type {arch}")
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
+
+
+def _efficientnet_conf(
+    arch: str,
+    **kwargs: Any,
+) -> Tuple[Sequence[Union[MBConvConfig, FusedMBConvConfig]], Optional[int]]:
+    inverted_residual_setting: Sequence[Union[MBConvConfig, FusedMBConvConfig]]
+    if arch.startswith("efficientnet_b"):
+        bneck_conf = partial(MBConvConfig, width_mult=kwargs.pop("width_mult"), depth_mult=kwargs.pop("depth_mult"))
+        inverted_residual_setting = [
+            bneck_conf(1, 3, 1, 32, 16, 1),
+            bneck_conf(6, 3, 2, 16, 24, 2),
+            bneck_conf(6, 5, 2, 24, 40, 2),
+            bneck_conf(6, 3, 2, 40, 80, 3),
+            bneck_conf(6, 5, 1, 80, 112, 3),
+            bneck_conf(6, 5, 2, 112, 192, 4),
+            bneck_conf(6, 3, 1, 192, 320, 1),
+        ]
+        last_channel = None
+    elif arch.startswith("efficientnet_v2_s"):
+        inverted_residual_setting = [
+            FusedMBConvConfig(1, 3, 1, 24, 24, 2),
+            FusedMBConvConfig(4, 3, 2, 24, 48, 4),
+            FusedMBConvConfig(4, 3, 2, 48, 64, 4),
+            MBConvConfig(4, 3, 2, 64, 128, 6),
+            MBConvConfig(6, 3, 1, 128, 160, 9),
+            MBConvConfig(6, 3, 2, 160, 256, 15),
+        ]
+        last_channel = 1280
+    elif arch.startswith("efficientnet_v2_m"):
+        inverted_residual_setting = [
+            FusedMBConvConfig(1, 3, 1, 24, 24, 3),
+            FusedMBConvConfig(4, 3, 2, 24, 48, 5),
+            FusedMBConvConfig(4, 3, 2, 48, 80, 5),
+            MBConvConfig(4, 3, 2, 80, 160, 7),
+            MBConvConfig(6, 3, 1, 160, 176, 14),
+            MBConvConfig(6, 3, 2, 176, 304, 18),
+            MBConvConfig(6, 3, 1, 304, 512, 5),
+        ]
+        last_channel = 1280
+    elif arch.startswith("efficientnet_v2_l"):
+        inverted_residual_setting = [
+            FusedMBConvConfig(1, 3, 1, 32, 32, 4),
+            FusedMBConvConfig(4, 3, 2, 32, 64, 7),
+            FusedMBConvConfig(4, 3, 2, 64, 96, 7),
+            MBConvConfig(4, 3, 2, 96, 192, 10),
+            MBConvConfig(6, 3, 1, 192, 224, 19),
+            MBConvConfig(6, 3, 2, 224, 384, 25),
+            MBConvConfig(6, 3, 1, 384, 640, 7),
+        ]
+        last_channel = 1280
+    else:
+        raise ValueError(f"Unsupported model type {arch}")
+
+    return inverted_residual_setting, last_channel
 
 
 def efficientnet_b0(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -390,7 +439,9 @@ def efficientnet_b0(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _efficientnet("efficientnet_b0", 1.0, 1.0, 0.2, pretrained, progress, **kwargs)
+    arch = "efficientnet_b0"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.0, depth_mult=1.0)
+    return _efficientnet(arch, inverted_residual_setting, 0.2, last_channel, pretrained, progress, **kwargs)
 
 
 def efficientnet_b1(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -402,7 +453,9 @@ def efficientnet_b1(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _efficientnet("efficientnet_b1", 1.0, 1.1, 0.2, pretrained, progress, **kwargs)
+    arch = "efficientnet_b1"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.0, depth_mult=1.1)
+    return _efficientnet(arch, inverted_residual_setting, 0.2, last_channel, pretrained, progress, **kwargs)
 
 
 def efficientnet_b2(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -414,7 +467,9 @@ def efficientnet_b2(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _efficientnet("efficientnet_b2", 1.1, 1.2, 0.3, pretrained, progress, **kwargs)
+    arch = "efficientnet_b2"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.1, depth_mult=1.2)
+    return _efficientnet(arch, inverted_residual_setting, 0.3, last_channel, pretrained, progress, **kwargs)
 
 
 def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -426,7 +481,9 @@ def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _efficientnet("efficientnet_b3", 1.2, 1.4, 0.3, pretrained, progress, **kwargs)
+    arch = "efficientnet_b3"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.2, depth_mult=1.4)
+    return _efficientnet(arch, inverted_residual_setting, 0.3, last_channel, pretrained, progress, **kwargs)
 
 
 def efficientnet_b4(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -438,7 +495,9 @@ def efficientnet_b4(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _efficientnet("efficientnet_b4", 1.4, 1.8, 0.4, pretrained, progress, **kwargs)
+    arch = "efficientnet_b4"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.4, depth_mult=1.8)
+    return _efficientnet(arch, inverted_residual_setting, 0.4, last_channel, pretrained, progress, **kwargs)
 
 
 def efficientnet_b5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -450,11 +509,13 @@ def efficientnet_b5(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    arch = "efficientnet_b5"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.6, depth_mult=2.2)
     return _efficientnet(
-        "efficientnet_b5",
-        1.6,
-        2.2,
+        arch,
+        inverted_residual_setting,
         0.4,
+        last_channel,
         pretrained,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
@@ -471,11 +532,13 @@ def efficientnet_b6(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    arch = "efficientnet_b6"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.8, depth_mult=2.6)
     return _efficientnet(
-        "efficientnet_b6",
-        1.8,
-        2.6,
+        arch,
+        inverted_residual_setting,
         0.5,
+        last_channel,
         pretrained,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
@@ -492,13 +555,57 @@ def efficientnet_b7(pretrained: bool = False, progress: bool = True, **kwargs: A
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    arch = "efficientnet_b7"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=2.0, depth_mult=3.1)
     return _efficientnet(
-        "efficientnet_b7",
-        2.0,
-        3.1,
+        arch,
+        inverted_residual_setting,
         0.5,
+        last_channel,
         pretrained,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
         **kwargs,
     )
+
+
+def efficientnet_v2_s(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs an EfficientNetV2-S architecture from
+    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    arch = "efficientnet_v2_s"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch)
+    return _efficientnet(arch, inverted_residual_setting, 0.3, last_channel, pretrained, progress, **kwargs)
+
+
+def efficientnet_v2_m(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs an EfficientNetV2-M architecture from
+    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    arch = "efficientnet_v2_m"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch)
+    return _efficientnet(arch, inverted_residual_setting, 0.4, last_channel, pretrained, progress, **kwargs)
+
+
+def efficientnet_v2_l(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+    """
+    Constructs an EfficientNetV2-L architecture from
+    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    arch = "efficientnet_v2_l"
+    inverted_residual_setting, last_channel = _efficientnet_conf(arch)
+    return _efficientnet(arch, inverted_residual_setting, 0.5, last_channel, pretrained, progress, **kwargs)
