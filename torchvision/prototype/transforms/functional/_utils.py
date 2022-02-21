@@ -3,13 +3,12 @@ from typing import Tuple, cast, Union
 import PIL.Image
 import torch
 from torchvision.prototype import features
+from torchvision.transforms import functional as _F
 
 
 def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int]:
-    if type(image) is torch.Tensor:
-        return cast(Tuple[int, int], image.shape[-2:])
-    elif isinstance(image, PIL.Image.Image):
-        return image.height, image.width
+    if type(image) is torch.Tensor or isinstance(image, PIL.Image.Image):
+        return cast(Tuple[int, int], tuple(_F.get_image_size(image)))
     elif type(image) is features.Image:
         return image.image_size
     else:
@@ -17,10 +16,8 @@ def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) 
 
 
 def get_image_num_channels(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> int:
-    if type(image) is torch.Tensor:
-        return image.shape[-3]
-    elif isinstance(image, PIL.Image.Image):
-        return len(image.getbands())
+    if type(image) is torch.Tensor or isinstance(image, PIL.Image.Image):
+        return _F.get_image_num_channels(image)
     elif type(image) is features.Image:
         return image.num_channels
     else:
