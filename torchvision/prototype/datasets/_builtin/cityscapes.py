@@ -1,9 +1,10 @@
+import json
 from collections import namedtuple
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple
 
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, Demultiplexer, IterKeyZipper, JsonParser
+from torchdata.datapipes.iter import Grouper, IterDataPipe, Mapper, Filter, IterKeyZipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetInfo,
@@ -142,41 +143,32 @@ class Cityscapes(Dataset):
         split = path.parent.parts[-2]
         return split == req_split and ".png" == path.suffix
 
-    def _filter_classify_targets(self, data: Tuple[str, Any], *, req_split: str) -> Optional[int]:
+    def _filter_group_targets(self, data: Tuple[str, Any]) -> str:
         path = Path(data[0])
-        name = path.name
         split = path.parent.parts[-2]
-        if split != req_split:
-            return None
-        for i, target_type in enumerate(["instance", "label", "polygon", "color"]):
-            ext = ".json" if target_type == "polygon" else ".png"
-            if ext in path.suffix and target_type in name:
-                return i
-        return None
+        stem = Path(path).stem
+        i = stem.rfind("_gt")
+        stem = stem[:i]
+        return f"{split}_{stem}"
 
     def _prepare_sample(self, data: Tuple[Tuple[str, Any], Any]) -> Dict[str, Any]:
         (img_path, img_data), target_data = data
 
-        color_path, color_data = target_data[1]
-        target_data = target_data[0]
-        polygon_path, polygon_data = target_data[1]
-        target_data = target_data[0]
-        label_path, label_data = target_data[1]
-        target_data = target_data[0]
-        instances_path, instance_data = target_data
+        output = dict(image_path=img_path, image=EncodedImage.from_file(img_data))
+        # reorder inside group of targets:
+        for path, data in target_data:
+            stem = Path(path).stem
+            for target_type in ["instance", "label", "polygon", "color"]:
+                if target_type in stem:
+                    if target_type == "polygon":
+                        enc_data = json.loads(data.read())
+                    else:
+                        enc_data = EncodedImage.from_file(data)
+                    output[target_type] = enc_data
+                    output[f"{target_type}_path"] = path
+                    break
 
-        return dict(
-            image_path=img_path,
-            image=EncodedImage.from_file(img_data),
-            color_path=color_path,
-            color=EncodedImage.from_file(color_data),
-            polygon_path=polygon_path,
-            polygon=polygon_data,
-            segmentation_path=label_path,
-            segmentation=EncodedImage.from_file(label_data),
-            instances_path=instances_path,
-            instances=EncodedImage.from_file(instance_data),
-        )
+        return output
 
     def _make_datapipe(
         self,
@@ -188,46 +180,30 @@ class Cityscapes(Dataset):
 
         images_dp = Filter(archive_images, filter_fn=partial(self._filter_split_images, req_split=config.split))
 
-        targets_dps = Demultiplexer(
+        targets_dp = Grouper(
             archive_targets,
-            4,
-            classifier_fn=partial(self._filter_classify_targets, req_split=config.split),
-            drop_none=True,
+            group_key_fn=self._filter_group_targets,
             buffer_size=INFINITE_BUFFER_SIZE,
+            group_size=4,
         )
-
-        # targets_dps[2] is for json polygon, we have to decode them
-        targets_dps[2] = JsonParser(targets_dps[2])
 
         def img_key_fn(data: Tuple[str, Any]) -> str:
             stem = Path(data[0]).stem
             stem = stem[: -len("_leftImg8bit")]
             return stem
 
-        def target_key_fn(data: Tuple[Any, Any], level: int = 0) -> str:
-            path = data[0]
-            for _ in range(level):
-                path = path[0]
+        def target_key_fn(data: Tuple[Any, Any]) -> str:
+            path, _ = data[0]
             stem = Path(path).stem
             i = stem.rfind("_gt")
             stem = stem[:i]
             return stem
 
-        zipped_targets_dp = targets_dps[0]
-        for level, data_dp in enumerate(targets_dps[1:]):
-            zipped_targets_dp = IterKeyZipper(
-                zipped_targets_dp,
-                data_dp,
-                key_fn=partial(target_key_fn, level=level),
-                ref_key_fn=target_key_fn,
-                buffer_size=INFINITE_BUFFER_SIZE,
-            )
-
         samples = IterKeyZipper(
             images_dp,
-            zipped_targets_dp,
+            targets_dp,
             key_fn=img_key_fn,
-            ref_key_fn=partial(target_key_fn, level=len(targets_dps) - 1),
+            ref_key_fn=target_key_fn,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         samples = hint_sharding(samples)
