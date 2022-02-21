@@ -6,7 +6,7 @@ from typing import Any, Dict, Tuple
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, kernels as K
+from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms import functional as _F
 
 from ._utils import query_image, get_image_size, get_image_num_channels
@@ -95,7 +95,7 @@ class RandomErasing(Transform):
         if type(input) is torch.Tensor:
             return _F.erase(input, **params)
         elif type(input) is features.Image:
-            return features.Image.new_like(input, K.erase_image(input, **params))
+            return features.Image.new_like(input, F.erase_image(input, **params))
         elif type(input) in {features.BoundingBox, features.SegmentationMask} or isinstance(input, PIL.Image.Image):
             raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
         else:
@@ -119,10 +119,10 @@ class RandomMixup(Transform):
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.Image:
-            output = K.mixup_image(input, **params)
+            output = F.mixup_image(input, **params)
             return features.Image.new_like(input, output)
         elif type(input) is features.OneHotLabel:
-            output = K.mixup_one_hot_label(input, **params)
+            output = F.mixup_one_hot_label(input, **params)
             return features.OneHotLabel.new_like(input, output)
         elif type(input) in {torch.Tensor, features.BoundingBox, features.SegmentationMask}:
             raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
@@ -161,10 +161,10 @@ class RandomCutmix(Transform):
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.Image:
-            output = K.cutmix_image(input, box=params["box"])
+            output = F.cutmix_image(input, box=params["box"])
             return features.Image.new_like(input, output)
         elif type(input) is features.OneHotLabel:
-            output = K.cutmix_one_hot_label(input, lam_adjusted=params["lam_adjusted"])
+            output = F.cutmix_one_hot_label(input, lam_adjusted=params["lam_adjusted"])
             return features.OneHotLabel.new_like(input, output)
         elif type(input) in {torch.Tensor, features.BoundingBox, features.SegmentationMask}:
             raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")

@@ -2,7 +2,7 @@ import itertools
 
 import pytest
 import torch
-from test_prototype_transforms_kernels import make_images, make_bounding_boxes, make_one_hot_labels
+from test_prototype_transforms_functional import make_images, make_bounding_boxes, make_one_hot_labels
 from torchvision.prototype import transforms, features
 from torchvision.transforms.functional import to_pil_image
 

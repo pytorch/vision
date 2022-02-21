@@ -5,7 +5,7 @@ from typing import Any, Dict, Tuple, Optional, Callable, List, cast, Iterator
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, kernels as K
+from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
 from torchvision.prototype.utils._internal import apply_recursively
 from torchvision.transforms import functional as _F
 
@@ -43,65 +43,65 @@ class _AutoAugmentBase(Transform):
 
     _DISPATCHER_MAP = {
         "ShearX": AutoAugmentDispatcher(
-            K.affine_image,
+            F.affine_image,
             _F.affine,
             magnitude_fn=lambda magnitude: dict(shear=[math.degrees(magnitude), 0]),
             extra_kwargs=dict(angle=0.0, translate=[0, 0], scale=1.0),
             takes_interpolation_kwargs=True,
         ),
         "ShearY": AutoAugmentDispatcher(
-            K.affine_image,
+            F.affine_image,
             _F.affine,
             magnitude_fn=lambda magnitude: dict(shear=[0, math.degrees(magnitude)]),
             extra_kwargs=dict(angle=0.0, translate=[0, 0], scale=1.0),
             takes_interpolation_kwargs=True,
         ),
         "TranslateX": AutoAugmentDispatcher(
-            K.affine_image,
+            F.affine_image,
             _F.affine,
             magnitude_fn=lambda magnitude: dict(translate=[int(magnitude), 0]),
             extra_kwargs=dict(angle=0.0, scale=1.0, shear=[0.0, 0.0]),
             takes_interpolation_kwargs=True,
         ),
         "TranslateY": AutoAugmentDispatcher(
-            K.affine_image,
+            F.affine_image,
             _F.affine,
             magnitude_fn=lambda magnitude: dict(translate=[0, int(magnitude)]),
             extra_kwargs=dict(angle=0.0, scale=1.0, shear=[0.0, 0.0]),
             takes_interpolation_kwargs=True,
         ),
         "Rotate": AutoAugmentDispatcher(
-            K.rotate_image, _F.rotate, magnitude_fn=lambda magnitude: dict(angle=magnitude)
+            F.rotate_image, _F.rotate, magnitude_fn=lambda magnitude: dict(angle=magnitude)
         ),
         "Brightness": AutoAugmentDispatcher(
-            K.adjust_brightness_image,
+            F.adjust_brightness_image,
             _F.adjust_brightness,
             magnitude_fn=lambda magnitude: dict(brightness_factor=1.0 + magnitude),
         ),
         "Color": AutoAugmentDispatcher(
-            K.adjust_saturation_image,
+            F.adjust_saturation_image,
             _F.adjust_saturation,
             magnitude_fn=lambda magnitude: dict(saturation_factor=1.0 + magnitude),
         ),
         "Contrast": AutoAugmentDispatcher(
-            K.adjust_contrast_image,
+            F.adjust_contrast_image,
             _F.adjust_contrast,
             magnitude_fn=lambda magnitude: dict(contrast_factor=1.0 + magnitude),
         ),
         "Sharpness": AutoAugmentDispatcher(
-            K.adjust_sharpness_image,
+            F.adjust_sharpness_image,
             _F.adjust_sharpness,
             magnitude_fn=lambda magnitude: dict(sharpness_factor=1.0 + magnitude),
         ),
         "Posterize": AutoAugmentDispatcher(
-            K.posterize_image, _F.posterize, magnitude_fn=lambda magnitude: dict(bits=int(magnitude))
+            F.posterize_image, _F.posterize, magnitude_fn=lambda magnitude: dict(bits=int(magnitude))
         ),
         "Solarize": AutoAugmentDispatcher(
-            K.solarize_image, _F.solarize, magnitude_fn=lambda magnitude: dict(threshold=magnitude)
+            F.solarize_image, _F.solarize, magnitude_fn=lambda magnitude: dict(threshold=magnitude)
         ),
-        "AutoContrast": AutoAugmentDispatcher(K.autocontrast_image, _F.autocontrast),
-        "Equalize": AutoAugmentDispatcher(K.equalize_image, _F.equalize),
-        "Invert": AutoAugmentDispatcher(K.invert_image, _F.invert),
+        "AutoContrast": AutoAugmentDispatcher(F.autocontrast_image, _F.autocontrast),
+        "Equalize": AutoAugmentDispatcher(F.equalize_image, _F.equalize),
+        "Invert": AutoAugmentDispatcher(F.invert_image, _F.invert),
     }
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:

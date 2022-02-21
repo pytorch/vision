@@ -5,7 +5,7 @@ from typing import Any, Dict, List, Union, Sequence, Tuple, cast
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, InterpolationMode, kernels as K
+from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
 from torchvision.transforms import functional as _F
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
@@ -17,10 +17,10 @@ class HorizontalFlip(Transform):
         if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
             return _F.hflip(input)
         elif type(input) is features.Image:
-            output = K.horizontal_flip_image(input)
+            output = F.horizontal_flip_image(input)
             return features.Image.new_like(input, output)
         elif type(input) is features.BoundingBox:
-            output = K.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
+            output = F.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
             return features.BoundingBox.new_like(input, output)
         else:
             return input
@@ -40,13 +40,13 @@ class Resize(Transform):
         if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
             return _F.resize(input, size=self.size, interpolation=self.interpolation)
         elif type(input) is features.Image:
-            output = K.resize_image(input, size=self.size, interpolation=self.interpolation)
+            output = F.resize_image(input, size=self.size, interpolation=self.interpolation)
             return features.Image.new_like(input, output)
         elif type(input) is features.SegmentationMask:
-            output = K.resize_segmentation_mask(input, size=self.size)
+            output = F.resize_segmentation_mask(input, size=self.size)
             return features.SegmentationMask.new_like(input, output)
         elif type(input) is features.BoundingBox:
-            output = K.resize_bounding_box(input, size=self.size, image_size=input.image_size)
+            output = F.resize_bounding_box(input, size=self.size, image_size=input.image_size)
             return features.BoundingBox.new_like(input, output, image_size=self.size)
         else:
             return input
@@ -61,7 +61,7 @@ class CenterCrop(Transform):
         if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
             return _F.center_crop(input, output_size=self.output_size)
         elif type(input) is features.Image:
-            output = K.center_crop_image(input, **params)
+            output = F.center_crop_image(input, **params)
             return features.Image.new_like(input, output)
         elif type(input) in {features.BoundingBox, features.SegmentationMask}:
             raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
@@ -143,7 +143,7 @@ class RandomResizedCrop(Transform):
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.Image:
-            output = K.resized_crop_image(input, size=self.size, interpolation=self.interpolation, **params)
+            output = F.resized_crop_image(input, size=self.size, interpolation=self.interpolation, **params)
             return features.Image.new_like(input, output)
         elif type(input) in {features.BoundingBox, features.SegmentationMask}:
             raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")

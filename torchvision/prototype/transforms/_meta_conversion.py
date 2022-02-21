@@ -2,7 +2,7 @@ from typing import Union, Any, Dict
 
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, kernels as K
+from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms import functional as _F
 
 
@@ -15,7 +15,7 @@ class ConvertBoundingBoxFormat(Transform):
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.BoundingBox:
-            output = K.convert_bounding_box_format(input, old_format=input.format, new_format=params["format"])
+            output = F.convert_bounding_box_format(input, old_format=input.format, new_format=params["format"])
             return features.BoundingBox.new_like(input, output, format=params["format"])
         else:
             return input
@@ -43,7 +43,7 @@ class ConvertColorSpace(Transform):
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if type(input) is features.Image:
-            output = K.convert_color_space(input, old_color_space=input.color_space, new_color_space=self.color_space)
+            output = F.convert_color_space(input, old_color_space=input.color_space, new_color_space=self.color_space)
             return features.Image.new_like(input, output, color_space=self.color_space)
         else:
             return input

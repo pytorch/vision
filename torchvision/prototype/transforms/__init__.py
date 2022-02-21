@@ -1,6 +1,6 @@
 from torchvision.transforms import InterpolationMode, AutoAugmentPolicy  # usort: skip
 
-from . import kernels  # usort: skip
+from . import functional  # usort: skip
 
 from ._transform import Transform  # usort: skip
 

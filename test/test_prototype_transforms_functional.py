@@ -3,7 +3,7 @@ import itertools
 
 import pytest
 import torch.testing
-import torchvision.prototype.transforms.kernels as K
+import torchvision.prototype.transforms.functional as F
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
@@ -134,10 +134,10 @@ class SampleInput:
         self.kwargs = kwargs
 
 
-class KernelInfo:
+class FunctionalInfo:
     def __init__(self, name, *, sample_inputs_fn):
         self.name = name
-        self.kernel = getattr(K, name)
+        self.functional = getattr(F, name)
         self._sample_inputs_fn = sample_inputs_fn
 
     def sample_inputs(self):
@@ -146,16 +146,16 @@ class KernelInfo:
     def __call__(self, *args, **kwargs):
         if len(args) == 1 and not kwargs and isinstance(args[0], SampleInput):
             sample_input = args[0]
-            return self.kernel(*sample_input.args, **sample_input.kwargs)
+            return self.functional(*sample_input.args, **sample_input.kwargs)
 
-        return self.kernel(*args, **kwargs)
+        return self.functional(*args, **kwargs)
 
 
-KERNEL_INFOS = []
+FUNCTIONAL_INFOS = []
 
 
 def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
-    KERNEL_INFOS.append(KernelInfo(sample_inputs_fn.__name__, sample_inputs_fn=sample_inputs_fn))
+    FUNCTIONAL_INFOS.append(FunctionalInfo(sample_inputs_fn.__name__, sample_inputs_fn=sample_inputs_fn))
     return sample_inputs_fn
 
 
@@ -176,8 +176,8 @@ def resize_image():
     for image, interpolation in itertools.product(
         make_images(),
         [
-            K.InterpolationMode.BILINEAR,
-            K.InterpolationMode.NEAREST,
+            F.InterpolationMode.BILINEAR,
+            F.InterpolationMode.NEAREST,
         ],
     ):
         height, width = image.shape[-2:]
@@ -200,20 +200,20 @@ def resize_bounding_box():
 
 
 class TestKernelsCommon:
-    @pytest.mark.parametrize("kernel_info", KERNEL_INFOS, ids=lambda kernel_info: kernel_info.name)
-    def test_scriptable(self, kernel_info):
-        jit.script(kernel_info.kernel)
+    @pytest.mark.parametrize("functional_info", FUNCTIONAL_INFOS, ids=lambda functional_info: functional_info.name)
+    def test_scriptable(self, functional_info):
+        jit.script(functional_info.functional)
 
     @pytest.mark.parametrize(
-        ("kernel_info", "sample_input"),
+        ("functional_info", "sample_input"),
         [
-            pytest.param(kernel_info, sample_input, id=f"{kernel_info.name}-{idx}")
-            for kernel_info in KERNEL_INFOS
-            for idx, sample_input in enumerate(kernel_info.sample_inputs())
+            pytest.param(functional_info, sample_input, id=f"{functional_info.name}-{idx}")
+            for functional_info in FUNCTIONAL_INFOS
+            for idx, sample_input in enumerate(functional_info.sample_inputs())
         ],
     )
-    def test_eager_vs_scripted(self, kernel_info, sample_input):
-        eager = kernel_info(sample_input)
-        scripted = jit.script(kernel_info.kernel)(*sample_input.args, **sample_input.kwargs)
+    def test_eager_vs_scripted(self, functional_info, sample_input):
+        eager = functional_info(sample_input)
+        scripted = jit.script(functional_info.functional)(*sample_input.args, **sample_input.kwargs)
 
         torch.testing.assert_close(eager, scripted)
