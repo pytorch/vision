@@ -26,12 +26,11 @@ def drop_block2d(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(drop_block2d)
-    if p < 0.0 or p > 1.0:
-        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
     if not training or p == 0.0:
         return input
 
     N, C, H, W = input.size()
+    block_size = min(blcok_size, W, H)
     # compute the gamma of Bernoulli distribution
     gamma = (p * H * W) / ((block_size ** 2) * ((H - block_size + 1) * (W - block_size + 1)))
     noise = torch.empty((N, C, H - block_size + 1, W - block_size + 1), dtype=input.dtype, device=input.device)
@@ -67,12 +66,11 @@ def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(drop_block3d)
-    if p < 0.0 or p > 1.0:
-        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
     if not training or p == 0.0:
         return input
 
     N, C, D, H, W = input.size()
+    block_size = min(blcok_size, D, H, W)
     # compute the gamma of Bernoulli distribution
     gamma = (p * D * H * W) / ((block_size ** 3) * ((D - block_size + 1) * (H - block_size + 1) * (W - block_size + 1)))
     noise = torch.empty(
@@ -90,7 +88,7 @@ def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False
         input.mul_(noise).mul_(normalize_scale)
     else:
         input = input * noise * normalize_scale
-    return input 
+    return input
 
 
 torch.fx.wrap("drop_block2d")
@@ -103,7 +101,11 @@ class DropBlock2d(nn.Module):
 
     def __init__(self, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06) -> None:
         super().__init__()
-
+        
+        if p < 0.0 or p > 1.0:
+            raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
+        if block_size % 2 == 0:
+            raise ValueError(f"block size has to be an odd number, but got {block_size}")
         self.p = p
         self.block_size = block_size
         self.inplace = inplace
