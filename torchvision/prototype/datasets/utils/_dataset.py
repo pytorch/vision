@@ -4,7 +4,7 @@ import importlib
 import itertools
 import os
 import pathlib
-from typing import Any, Dict, List, Optional, Sequence, Union, Tuple, Collection
+from typing import Any, Dict, List, Optional, Sequence, Union, Tuple, Collection, Iterator
 
 from torch.utils.data import IterDataPipe
 from torchvision.prototype.utils._internal import FrozenBunch, make_repr, add_suggestion, sequence_to_str
@@ -181,3 +181,27 @@ class Dataset(abc.ABC):
 
     def _generate_categories(self, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:
         raise NotImplementedError
+
+
+class Dataset2(IterDataPipe[Dict[str, Any]], abc.ABC):
+    def __init__(self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False) -> None:
+        self._root = pathlib.Path(root).expanduser().resolve()
+        resources = [
+            resource.load(self._root, skip_integrity_check=skip_integrity_check) for resource in self._resources()
+        ]
+        self._dp = self._datapipe(resources)
+
+    def __iter__(self) -> Iterator[Dict[str, Any]]:
+        yield from self._dp
+
+    @abc.abstractmethod
+    def _resources(self) -> List[OnlineResource]:
+        pass
+
+    @abc.abstractmethod
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+        pass
+
+    @abc.abstractmethod
+    def __len__(self) -> int:
+        pass

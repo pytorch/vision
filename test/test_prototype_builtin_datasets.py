@@ -34,6 +34,15 @@ def test_coverage():
         )
 
 
+# TODO: replace this with a simple call to datasets.load() as soon all datasets are migrated and thus datasets.load2()
+#  can be merged into datasets.load()
+def _load_dataset(name, **options):
+    try:
+        return datasets.load2(name, **options)
+    except ValueError:
+        return datasets.load(name, **options)
+
+
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, test_home, dataset_mock, config):
@@ -41,6 +50,7 @@ class TestCommon:
 
         dataset = datasets.load(dataset_mock.name, **config)
 
+        # TODO: check for Dataset2 after all datasets are migrated
         if not isinstance(dataset, IterDataPipe):
             raise AssertionError(f"Loading the dataset should return an IterDataPipe, but got {type(dataset)} instead.")
 
@@ -48,7 +58,7 @@ class TestCommon:
     def test_sample(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
-        dataset = datasets.load(dataset_mock.name, **config)
+        dataset = _load_dataset(dataset_mock.name, **config)
 
         try:
             sample = next(iter(dataset))
@@ -65,7 +75,7 @@ class TestCommon:
     def test_num_samples(self, test_home, dataset_mock, config):
         mock_info = dataset_mock.prepare(test_home, config)
 
-        dataset = datasets.load(dataset_mock.name, **config)
+        dataset = _load_dataset(dataset_mock.name, **config)
 
         num_samples = 0
         for _ in dataset:
@@ -74,23 +84,10 @@ class TestCommon:
         assert num_samples == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_decoding(self, test_home, dataset_mock, config):
-        dataset_mock.prepare(test_home, config)
-
-        dataset = datasets.load(dataset_mock.name, **config)
-
-        undecoded_features = {key for key, value in next(iter(dataset)).items() if isinstance(value, io.IOBase)}
-        if undecoded_features:
-            raise AssertionError(
-                f"The values of key(s) "
-                f"{sequence_to_str(sorted(undecoded_features), separate_last='and ')} were not decoded."
-            )
-
-    @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_no_vanilla_tensors(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
-        dataset = datasets.load(dataset_mock.name, **config)
+        dataset = _load_dataset(dataset_mock.name, **config)
 
         vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
         if vanilla_tensors:
@@ -103,7 +100,7 @@ class TestCommon:
     def test_transformable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
-        dataset = datasets.load(dataset_mock.name, **config)
+        dataset = _load_dataset(dataset_mock.name, **config)
 
         next(iter(dataset.map(transforms.Identity())))
 
@@ -138,8 +135,7 @@ class TestCommon:
                 yield from scan(sub_graph)
 
         dataset_mock.prepare(test_home, config)
-
-        dataset = datasets.load(dataset_mock.name, **config)
+        dataset = _load_dataset(dataset_mock.name, **config)
 
         if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
@@ -147,7 +143,7 @@ class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_save_load(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
-        dataset = datasets.load(dataset_mock.name, **config)
+        dataset = _load_dataset(dataset_mock.name, **config)
         sample = next(iter(dataset))
 
         with io.BytesIO() as buffer:
@@ -161,7 +157,7 @@ class TestQMNIST:
     def test_extra_label(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
-        dataset = datasets.load(dataset_mock.name, **config)
+        dataset = _load_dataset(dataset_mock.name, **config)
 
         sample = next(iter(dataset))
         for key, type in (
@@ -186,7 +182,7 @@ class TestGTSRB:
 
         dataset_mock.prepare(test_home, config)
 
-        dataset = datasets.load(dataset_mock.name, **config)
+        dataset = _load_dataset(dataset_mock.name, **config)
 
         for sample in dataset:
             label_from_path = int(Path(sample["path"]).parent.name)

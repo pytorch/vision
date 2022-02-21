@@ -1,7 +1,8 @@
 import functools
 import pathlib
 import re
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast
+from types import SimpleNamespace
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast, Union
 
 from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, Filter, Demultiplexer
 from torchdata.datapipes.iter import TarArchiveReader
@@ -11,6 +12,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     OnlineResource,
     ManualDownloadResource,
+    Dataset2,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -24,6 +26,8 @@ from torchvision.prototype.datasets.utils._internal import (
 )
 from torchvision.prototype.features import Label, EncodedImage
 from torchvision.prototype.utils._internal import FrozenMapping
+
+from .._api import register_dataset, register_info
 
 
 class ImageNetResource(ManualDownloadResource):
@@ -201,3 +205,47 @@ class ImageNet(Dataset):
         categories_and_wnids = cast(List[Tuple[str, ...]], next(iter(meta_dp)))
         categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
         return categories_and_wnids
+
+
+NAME = "imagenet"
+
+
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+    return dict(categories=categories, wnids=wnids)
+
+
+@register_dataset(NAME)
+class ImageNet2(Dataset2):
+    def __init__(self, root: Union[str, pathlib.Path], *, split: str = "train") -> None:
+        if split not in {"train", "val", "test"}:
+            raise ValueError
+        self._split = split
+
+        info = _info()
+        categories, wnids = info["categories"], info["wnids"]
+
+        self._old_style_dataset = ImageNet()
+        self._old_style_config = self._old_style_dataset.info.make_config(split=self._split)
+
+        self.categories = categories
+        self.info = SimpleNamespace(
+            wnid_to_category=zip(wnids, categories),
+            category_to_wnid=zip(categories, wnids),
+        )
+
+        super().__init__(root)
+
+    def _resources(self) -> List[OnlineResource]:
+        return self._old_style_dataset.resources(self._old_style_config)
+
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+        return self._old_style_dataset._make_datapipe(resource_dps, config=self._old_style_config)
+
+    def __len__(self) -> int:
+        return {
+            "train": 1_281_167,
+            "val": 50_000,
+            "test": 100_000,
+        }[self._split]
