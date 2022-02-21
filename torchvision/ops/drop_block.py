@@ -47,7 +47,6 @@ def drop_block2d(
     return input   
 
 
-torch.fx.wrap("drop_block2d")
 
 
 def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False, eps: float = 1e-06,
