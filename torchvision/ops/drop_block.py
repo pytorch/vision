@@ -87,7 +87,7 @@ def drop_block3d(input: Tensor, p: float, block_size: int, inplace: bool = False
     noise = 1 - noise
     normalize_scale = noise.numel() / (eps + noise.sum())
     if inplace:
-            input.mul_(noise).mul_(normalize_scale)
+        input.mul_(noise).mul_(normalize_scale)
     else:
         input = input * noise * normalize_scale
     return input   
