@@ -1296,6 +1296,31 @@ def cub200(info, root, config):
 
 
 @register_mock
+def omniglot(info, root, config):
+    num_images = {"images_background": 5, "images_evaluation": 5}
+
+    split = config.split
+    create_image_folder(root, f"{split}", None, 0, 0)
+    alphabets = ["Angelic", "Atemayar_Qelisayer"]
+    characters = ["character01", "character02", "character03"]
+
+    for alphabet in alphabets:
+        create_image_folder(root / f"{split}", alphabet, None, 0, 0)
+
+    i, j = 0, 0
+    for character in characters:
+        for alphabet in alphabets:
+            create_image_folder(root / f"{split}/{alphabet}", character, "{i}_{j}.jpg", num_images["images_background"])
+            j += 1
+        i += 1
+        j = 0
+
+    make_zip(root, f"{split}.zip")
+
+    return num_images
+
+
+@register_mock
 def svhn(info, root, config):
     import scipy.io as sio
 
