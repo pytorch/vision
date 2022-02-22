@@ -2,8 +2,8 @@ import math
 import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
-from typing import Callable, List, Tuple
 from itertools import product
+from typing import Callable, List, Tuple
 
 import numpy as np
 import pytest
@@ -1366,8 +1366,8 @@ class TestUtils:
 
         assert len(params[0]) == 92
         assert len(params[1]) == 82
-        
-        
+
+
 class TestDropBlock:
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("dim", (2, 3))
