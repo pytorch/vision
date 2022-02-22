@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Any
 
 import torch
 from torch import Tensor
@@ -112,61 +112,6 @@ class _ConvNormActivation(torch.nn.Sequential):
         self.out_channels = out_channels
 
 
-class ConvNormActivation(_ConvNormActivation):
-    """
-    Configurable block used for Convolution-Normalzation-Activation blocks.
-
-    Args:
-        in_channels (int): Number of channels in the input image
-        out_channels (int): Number of channels produced by the Convolution-Normalzation-Activation block
-        kernel_size: (int, optional): Size of the convolving kernel. Default: 3
-        stride (int, optional): Stride of the convolution. Default: 1
-        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in wich case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
-        groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1
-        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm2d``
-        activation_layer (Callable[..., torch.nn.Module], optinal): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
-        dilation (int): Spacing between kernel elements. Default: 1
-        inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``
-        bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.
-
-    """
-
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        padding: Optional[int] = None,
-        groups: int = 1,
-        norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
-        activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
-        dilation: int = 1,
-        inplace: Optional[bool] = True,
-        bias: Optional[bool] = None,
-    ) -> None:
-        warnings.warn(
-            "The ConvNormActivation class are deprecated since 0.13 and will be removed in 0.15. "
-            "Use torchvision.ops.Conv2dNormActivation instead.",
-            FutureWarning,
-        )
-        layer = torch.nn.Conv2d
-        super().__init__(
-            in_channels,
-            out_channels,
-            layer,
-            kernel_size,
-            stride,
-            padding,
-            groups,
-            norm_layer,
-            activation_layer,
-            dilation,
-            inplace,
-            bias,
-        )
-
-
 class Conv2dNormActivation(_ConvNormActivation):
     """
     Configurable block used for Convolution-Normalzation-Activation blocks.
@@ -186,36 +131,9 @@ class Conv2dNormActivation(_ConvNormActivation):
 
     """
 
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        padding: Optional[int] = None,
-        groups: int = 1,
-        norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
-        activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
-        dilation: int = 1,
-        inplace: Optional[bool] = True,
-        bias: Optional[bool] = None,
-    ) -> None:
-
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         layer = torch.nn.Conv2d
-        super().__init__(
-            in_channels,
-            out_channels,
-            layer,
-            kernel_size,
-            stride,
-            padding,
-            groups,
-            norm_layer,
-            activation_layer,
-            dilation,
-            inplace,
-            bias,
-        )
+        super().__init__(layer, *args, **kwargs)
 
 
 class Conv3dNormActivation(_ConvNormActivation):
@@ -236,36 +154,24 @@ class Conv3dNormActivation(_ConvNormActivation):
         bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.
     """
 
-    def __init__(
-        self,
-        in_channels: int,
-        out_channels: int,
-        kernel_size: int = 3,
-        stride: int = 1,
-        padding: Optional[int] = None,
-        groups: int = 1,
-        norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm3d,
-        activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
-        dilation: int = 1,
-        inplace: Optional[bool] = True,
-        bias: Optional[bool] = None,
-    ) -> None:
-
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
         layer = torch.nn.Conv3d
-        super().__init__(
-            in_channels,
-            out_channels,
-            layer,
-            kernel_size,
-            stride,
-            padding,
-            groups,
-            norm_layer,
-            activation_layer,
-            dilation,
-            inplace,
-            bias,
+        super().__init__(layer, *args, **kwargs)
+
+
+class ConvNormActivation(Conv2dNormActivation):
+    """
+    DEPRECATED
+    Use Conv2dNormActivation instead.
+    """
+
+    def __init__(self, *args: Any, **kwargs: Any) -> None:
+        warnings.warn(
+            "The ConvNormActivation class are deprecated since 0.13 and will be removed in 0.15. "
+            "Use torchvision.ops.Conv2dNormActivation instead.",
+            FutureWarning,
         )
+        super().__init__(*args, **kwargs)
 
 
 class SqueezeExcitation(torch.nn.Module):

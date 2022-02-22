@@ -52,7 +52,8 @@ __all__ = [
     "StochasticDepth",
     "FrozenBatchNorm2d",
     "ConvNormActivation",
-    "Conv2dNormActivation" "Conv3dNormActivation",
+    "Conv2dNormActivation",
+    "Conv3dNormActivation",
     "SqueezeExcitation",
     "generalized_box_iou_loss",
 ]
