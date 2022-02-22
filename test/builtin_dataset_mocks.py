@@ -10,13 +10,13 @@ import pathlib
 import pickle
 import random
 import xml.etree.ElementTree as ET
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import create_image_file, create_image_folder, make_tar, make_zip
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype.datasets._api import find
@@ -1297,6 +1297,25 @@ class CUB2002010MockData(_CUB200MockData):
 def cub200(info, root, config):
     num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
     return num_samples_map[config.split]
+
+
+@register_mock
+def eurosat(info, root, config):
+    print("info", info)
+    data_folder = pathlib.Path(root, "eurosat", "2750")
+    data_folder.mkdir(data_folder)
+
+    num_examples_per_class = 3
+    classes = ("AnnualCrop", "Forest")
+    for cls in classes:
+        create_image_folder(
+            root=data_folder,
+            name=cls,
+            file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+            num_examples=num_examples_per_class,
+        )
+
+    return len(classes) * num_examples_per_class
 
 
 @register_mock

@@ -1,3 +1,4 @@
+import pathlib
 from typing import Any, Dict, List, Tuple
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper
@@ -9,7 +10,7 @@ from torchvision.prototype.features import EncodedImage, Label
 class EuroSAT(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
-            "EuroSAT",
+            "eurosat",
             homepage="https://github.com/phelber/eurosat",
             categories=(
                 "AnnualCrop",
@@ -25,27 +26,25 @@ class EuroSAT(Dataset):
         )
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        url_root = "https://madm.dfki.de/files/sentinel"
         data = HttpResource(
-            f"{url_root}/EuroSAT.zip",
+            "https://madm.dfki.de/files/sentinel/EuroSAT.zip",
             sha256="8ebea626349354c5328b142b96d0430e647051f26efc2dc974c843f25ecf70bd",
         )
         return [data]
 
     def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
-        image_path = data[0]
-        category = image_path.split("/")[-2]
-        buffer = data[1]
+        path, buffer = data
+        category = pathlib.Path(path).parent.name
         return dict(
             label=Label.from_category(category, categories=self.categories),
-            path=image_path,
+            path=path,
             image=EncodedImage.from_file(buffer),
         )
 
     def _make_datapipe(
         self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
-        images_dp = resource_dps[0]
-        images_dp = hint_sharding(images_dp)
-        images_dp = hint_shuffling(images_dp)
-        return Mapper(images_dp, self._prepare_sample)
+        dp = resource_dps[0]
+        dp = hint_sharding(dp)
+        dp = hint_shuffling(dp)
+        return Mapper(dp, self._prepare_sample)
