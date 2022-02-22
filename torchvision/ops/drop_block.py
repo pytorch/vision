@@ -35,7 +35,7 @@ def drop_block2d(
         return input
 
     N, C, H, W = input.size()
-    block_size = min(blcok_size, W, H)
+    block_size = min(block_size, W, H)
     # compute the gamma of Bernoulli distribution
     gamma = (p * H * W) / ((block_size ** 2) * ((H - block_size + 1) * (W - block_size + 1)))
     noise = torch.empty((N, C, H - block_size + 1, W - block_size + 1), dtype=input.dtype, device=input.device)
