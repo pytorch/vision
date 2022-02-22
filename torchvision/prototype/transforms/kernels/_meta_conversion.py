@@ -1,6 +1,6 @@
 import torch
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
-from torchvision.transforms.functional_tensor import rgb_to_grayscale as _rgb_to_grayscale
+from torchvision.transforms import functional_tensor as _FT
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
@@ -64,6 +64,6 @@ def convert_color_space(image: torch.Tensor, old_color_space: ColorSpace, new_co
         image = _grayscale_to_rgb(image)
 
     if new_color_space == ColorSpace.GRAYSCALE:
-        image = _rgb_to_grayscale(image)
+        image = _FT.rgb_to_grayscale(image)
 
     return image

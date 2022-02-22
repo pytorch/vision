@@ -2,7 +2,7 @@ from typing import Tuple, List, Optional, TypeVar
 
 import torch
 from torchvision.prototype import features
-from torchvision.transforms import functional as _F, InterpolationMode
+from torchvision.transforms import functional as _F, functional_tensor as _FT, InterpolationMode
 
 from ._meta_conversion import convert_bounding_box_format
 
@@ -10,7 +10,7 @@ from ._meta_conversion import convert_bounding_box_format
 T = TypeVar("T", bound=features._Feature)
 
 
-horizontal_flip_image = _F.hflip
+horizontal_flip_image = _FT.hflip
 
 
 def horizontal_flip_bounding_box(
@@ -39,10 +39,10 @@ def resize_image(
     new_height, new_width = size
     num_channels, old_height, old_width = image.shape[-3:]
     batch_shape = image.shape[:-3]
-    return _F.resize(
+    return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
         size=size,
-        interpolation=interpolation,
+        interpolation=interpolation.value,
         max_size=max_size,
         antialias=antialias,
     ).reshape(batch_shape + (num_channels, new_height, new_width))
@@ -66,11 +66,11 @@ def resize_bounding_box(bounding_box: torch.Tensor, *, size: List[int], image_si
 
 center_crop_image = _F.center_crop
 resized_crop_image = _F.resized_crop
-affine_image = _F.affine
-rotate_image = _F.rotate
-pad_image = _F.pad
-crop_image = _F.crop
-perspective_image = _F.perspective
-vertical_flip_image = _F.vflip
+affine_image = _FT.affine
+rotate_image = _FT.rotate
+pad_image = _FT.pad
+crop_image = _FT.crop
+perspective_image = _FT.perspective
+vertical_flip_image = _FT.vflip
 five_crop_image = _F.five_crop
 ten_crop_image = _F.ten_crop

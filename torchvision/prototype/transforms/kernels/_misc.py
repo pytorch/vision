@@ -1,5 +1,5 @@
-from torchvision.transforms import functional as _F
+from torchvision.transforms import functional as _F, functional_tensor as _FT
 
 
 normalize_image = _F.normalize
-gaussian_blur_image = _F.gaussian_blur
+gaussian_blur_image = _FT.gaussian_blur
