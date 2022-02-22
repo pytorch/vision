@@ -105,7 +105,7 @@ class Cityscapes(Dataset):
                 split=("train", "val", "test", "train_extra"),
                 mode=("fine", "coarse"),
             ),
-            extra=dict(classname_to_details=self.categories_to_details),
+            extra=dict(categories_to_details=self.categories_to_details),
         )
 
     _FILES_CHECKSUMS = {
@@ -116,26 +116,16 @@ class Cityscapes(Dataset):
     }
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        resources: List[OnlineResource] = []
+
         if config.mode == "fine":
-            resources += [
-                CityscapesResource(
-                    file_name="leftImg8bit_trainvaltest.zip",
-                    sha256=self._FILES_CHECKSUMS["leftImg8bit_trainvaltest.zip"],
-                ),
-                CityscapesResource(
-                    file_name="gtFine_trainvaltest.zip", sha256=self._FILES_CHECKSUMS["gtFine_trainvaltest.zip"]
-                ),
-            ]
+            filenames = ("leftImg8bit_trainvaltest.zip", "gtFine_trainvaltest.zip")
         else:
             split_label = "trainextra" if config.split == "train_extra" else "trainvaltest"
-            resources += [
-                CityscapesResource(
-                    file_name=f"leftImg8bit_{split_label}.zip",
-                    sha256=self._FILES_CHECKSUMS[f"leftImg8bit_{split_label}.zip"],
-                ),
-                CityscapesResource(file_name="gtCoarse.zip", sha256=self._FILES_CHECKSUMS["gtCoarse.zip"]),
-            ]
+            filenames = (f"leftImg8bit_{split_label}.zip", "gtCoarse.zip")
+
+        resources: List[OnlineResource] = [
+            CityscapesResource(file_name=file_name, sha256=self._FILES_CHECKSUMS[file_name]) for file_name in filenames
+        ]
         return resources
 
     def _filter_split_images(self, data: Tuple[str, Any], *, req_split: str) -> bool:
@@ -145,17 +135,16 @@ class Cityscapes(Dataset):
 
     def _filter_group_targets(self, data: Tuple[str, Any]) -> str:
         path = Path(data[0])
-        split = path.parent.parts[-2]
-        stem = Path(path).stem
-        i = stem.rfind("_gt")
-        stem = stem[:i]
-        return f"{split}_{stem}"
+        # Taregt path looks like
+        # gtFine/val/frankfurt/frankfurt_000001_066574_gtFine_polygons.json
+        # and we produce the key: frankfurt_000001_066574
+        return path.name.rsplit("_", 1)[0]
 
     def _prepare_sample(self, data: Tuple[Tuple[str, Any], Any]) -> Dict[str, Any]:
         (img_path, img_data), target_data = data
 
         output = dict(image_path=img_path, image=EncodedImage.from_file(img_data))
-        # reorder inside group of targets:
+        # reorder inside group of targets and setup output dictionary:
         for path, data in target_data:
             stem = Path(path).stem
             for target_type in ["instance", "label", "polygon", "color"]:
@@ -180,6 +169,9 @@ class Cityscapes(Dataset):
 
         images_dp = Filter(archive_images, filter_fn=partial(self._filter_split_images, req_split=config.split))
 
+        images_dp = hint_sharding(images_dp)
+        images_dp = hint_shuffling(images_dp)
+
         targets_dp = Grouper(
             archive_targets,
             group_key_fn=self._filter_group_targets,
@@ -187,25 +179,23 @@ class Cityscapes(Dataset):
             group_size=4,
         )
 
-        def img_key_fn(data: Tuple[str, Any]) -> str:
-            stem = Path(data[0]).stem
-            stem = stem[: -len("_leftImg8bit")]
-            return stem
-
-        def target_key_fn(data: Tuple[Any, Any]) -> str:
-            path, _ = data[0]
-            stem = Path(path).stem
-            i = stem.rfind("_gt")
-            stem = stem[:i]
-            return stem
+        def key_fn(data: Tuple[Any, Any]) -> str:
+            data0 = data[0]
+            if isinstance(data0, tuple):
+                data0 = data0[0]
+            path = Path(data0)
+            # The pathes for images and targets are
+            # - leftImg8bit/val/frankfurt/frankfurt_000001_066574_leftImg8bit.png
+            # - gtFine/val/frankfurt/frankfurt_000001_066574_gtFine_polygons.json
+            # - gtFine/val/frankfurt/frankfurt_000001_066574_gtFine_labelIds.png
+            # we transform them into "frankfurt_000001_066574"
+            return "_".join(path.name.split("_", 3)[:3])
 
         samples = IterKeyZipper(
             images_dp,
             targets_dp,
-            key_fn=img_key_fn,
-            ref_key_fn=target_key_fn,
+            key_fn=key_fn,
+            ref_key_fn=key_fn,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        samples = hint_sharding(samples)
-        samples = hint_shuffling(samples)
         return Mapper(samples, fn=self._prepare_sample)
