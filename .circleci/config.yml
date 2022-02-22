@@ -260,14 +260,16 @@ jobs:
     steps:
       - checkout
       - pip_install:
-          args: pre-commit
+          args: pre-commit ufmt==1.3.0 black==21.9b0 usort==0.6.4
           descr: Install lint utilities
       - run:
           name: Install pre-commit hooks
           command: pre-commit install-hooks
       - run:
           name: Lint Python code and config files
-          command: pre-commit run --all-files
+          command: |
+            ufmt format .
+            pre-commit run --all-files
       - run:
           name: Required lint modifications
           when: on_fail
@@ -1209,6 +1211,46 @@ workflows:
           name: binary_linux_wheel_py3.9_rocm4.5.2
           python_version: '3.9'
           wheel_docker_image: pytorch/manylinux-rocm:4.5.2
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cpu
+          cu_version: cpu
+          name: binary_linux_wheel_py3.10_cpu
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda102
+          cu_version: cu102
+          name: binary_linux_wheel_py3.10_cu102
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda111
+          cu_version: cu111
+          name: binary_linux_wheel_py3.10_cu111
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda111
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda113
+          cu_version: cu113
+          name: binary_linux_wheel_py3.10_cu113
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda113
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda115
+          cu_version: cu115
+          name: binary_linux_wheel_py3.10_cu115
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda115
+      - binary_linux_wheel:
+          cu_version: rocm4.3.1
+          name: binary_linux_wheel_py3.10_rocm4.3.1
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-rocm:4.3.1
+      - binary_linux_wheel:
+          cu_version: rocm4.5.2
+          name: binary_linux_wheel_py3.10_rocm4.5.2
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-rocm:4.5.2
       - binary_macos_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -1226,6 +1268,12 @@ workflows:
           cu_version: cpu
           name: binary_macos_wheel_py3.9_cpu
           python_version: '3.9'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_macos_wheel:
+          conda_docker_image: pytorch/conda-builder:cpu
+          cu_version: cpu
+          name: binary_macos_wheel_py3.10_cpu
+          python_version: '3.10'
           wheel_docker_image: pytorch/manylinux-cuda102
       - binary_win_wheel:
           cu_version: cpu
@@ -1301,6 +1349,11 @@ workflows:
           python_version: '3.8'
       - binary_win_wheel:
           cu_version: cpu
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_wheel_py3.9_cpu
           python_version: '3.9'
       - binary_win_wheel:
@@ -1323,8 +1376,39 @@ workflows:
           python_version: '3.9'
       - binary_win_wheel:
           cu_version: cu115
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_wheel_py3.9_cu115
           python_version: '3.9'
+      - binary_win_wheel:
+          cu_version: cpu
+          name: binary_win_wheel_py3.10_cpu
+          python_version: '3.10'
+      - binary_win_wheel:
+          cu_version: cu111
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_wheel_py3.10_cu111
+          python_version: '3.10'
+      - binary_win_wheel:
+          cu_version: cu113
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_wheel_py3.10_cu113
+          python_version: '3.10'
+      - binary_win_wheel:
+          cu_version: cu115
+          name: binary_win_wheel_py3.10_cu115
+          python_version: '3.10'
       - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -1415,6 +1499,36 @@ workflows:
           name: binary_linux_conda_py3.9_cu115
           python_version: '3.9'
           wheel_docker_image: pytorch/manylinux-cuda115
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cpu
+          cu_version: cpu
+          name: binary_linux_conda_py3.10_cpu
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda102
+          cu_version: cu102
+          name: binary_linux_conda_py3.10_cu102
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda111
+          cu_version: cu111
+          name: binary_linux_conda_py3.10_cu111
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda111
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda113
+          cu_version: cu113
+          name: binary_linux_conda_py3.10_cu113
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda113
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda115
+          cu_version: cu115
+          name: binary_linux_conda_py3.10_cu115
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda115
       - binary_macos_conda:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -1432,6 +1546,12 @@ workflows:
           cu_version: cpu
           name: binary_macos_conda_py3.9_cpu
           python_version: '3.9'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_macos_conda:
+          conda_docker_image: pytorch/conda-builder:cpu
+          cu_version: cpu
+          name: binary_macos_conda_py3.10_cpu
+          python_version: '3.10'
           wheel_docker_image: pytorch/manylinux-cuda102
       - binary_win_conda:
           cu_version: cpu
@@ -1507,6 +1627,11 @@ workflows:
           python_version: '3.8'
       - binary_win_conda:
           cu_version: cpu
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.9_cpu
           python_version: '3.9'
       - binary_win_conda:
@@ -1529,8 +1654,39 @@ workflows:
           python_version: '3.9'
       - binary_win_conda:
           cu_version: cu115
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
           name: binary_win_conda_py3.9_cu115
           python_version: '3.9'
+      - binary_win_conda:
+          cu_version: cpu
+          name: binary_win_conda_py3.10_cpu
+          python_version: '3.10'
+      - binary_win_conda:
+          cu_version: cu111
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_conda_py3.10_cu111
+          python_version: '3.10'
+      - binary_win_conda:
+          cu_version: cu113
+          filters:
+            branches:
+              only: main
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: binary_win_conda_py3.10_cu113
+          python_version: '3.10'
+      - binary_win_conda:
+          cu_version: cu115
+          name: binary_win_conda_py3.10_cu115
+          python_version: '3.10'
       - build_docs:
           filters:
             branches:
@@ -1585,6 +1741,10 @@ workflows:
           cu_version: cpu
           name: unittest_linux_cpu_py3.9
           python_version: '3.9'
+      - unittest_linux_cpu:
+          cu_version: cpu
+          name: unittest_linux_cpu_py3.10
+          python_version: '3.10'
       - unittest_linux_gpu:
           cu_version: cu102
           filters:
@@ -1607,6 +1767,15 @@ workflows:
               - nightly
           name: unittest_linux_gpu_py3.9
           python_version: '3.9'
+      - unittest_linux_gpu:
+          cu_version: cu102
+          filters:
+            branches:
+              only:
+              - main
+              - nightly
+          name: unittest_linux_gpu_py3.10
+          python_version: '3.10'
       - unittest_windows_cpu:
           cu_version: cpu
           name: unittest_windows_cpu_py3.7
@@ -1619,6 +1788,10 @@ workflows:
           cu_version: cpu
           name: unittest_windows_cpu_py3.9
           python_version: '3.9'
+      - unittest_windows_cpu:
+          cu_version: cpu
+          name: unittest_windows_cpu_py3.10
+          python_version: '3.10'
       - unittest_windows_gpu:
           cu_version: cu102
           filters:
@@ -1641,6 +1814,15 @@ workflows:
               - nightly
           name: unittest_windows_gpu_py3.9
           python_version: '3.9'
+      - unittest_windows_gpu:
+          cu_version: cu102
+          filters:
+            branches:
+              only:
+              - main
+              - nightly
+          name: unittest_windows_gpu_py3.10
+          python_version: '3.10'
       - unittest_macos_cpu:
           cu_version: cpu
           name: unittest_macos_cpu_py3.7
@@ -1653,6 +1835,10 @@ workflows:
           cu_version: cpu
           name: unittest_macos_cpu_py3.9
           python_version: '3.9'
+      - unittest_macos_cpu:
+          cu_version: cpu
+          name: unittest_macos_cpu_py3.10
+          python_version: '3.10'
 
   cmake:
     jobs:
@@ -2361,6 +2547,221 @@ workflows:
           python_version: '3.9'
           requires:
           - nightly_binary_linux_wheel_py3.9_rocm4.5.2_upload
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cpu
+          cu_version: cpu
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cpu
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cpu_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cpu
+          subfolder: cpu/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.10_cpu_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cpu_upload
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda102
+          cu_version: cu102
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cu102
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cu102_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cu102
+          subfolder: cu102/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.10_cu102_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cu102_upload
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda111
+          cu_version: cu111
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cu111
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda111
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cu111_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cu111
+          subfolder: cu111/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.10_cu111_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cu111_upload
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda113
+          cu_version: cu113
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cu113
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda113
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cu113_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cu113
+          subfolder: cu113/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.10_cu113_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cu113_upload
+      - binary_linux_wheel:
+          conda_docker_image: pytorch/conda-builder:cuda115
+          cu_version: cu115
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cu115
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda115
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_cu115_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cu115
+          subfolder: cu115/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.10_cu115_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_wheel_py3.10_cu115_upload
+      - binary_linux_wheel:
+          cu_version: rocm4.3.1
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_rocm4.3.1
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-rocm:4.3.1
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_rocm4.3.1_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.10_rocm4.3.1
+          subfolder: rocm4.3.1/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.10_rocm4.3.1_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_wheel_py3.10_rocm4.3.1_upload
+      - binary_linux_wheel:
+          cu_version: rocm4.5.2
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_rocm4.5.2
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-rocm:4.5.2
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_wheel_py3.10_rocm4.5.2_upload
+          requires:
+          - nightly_binary_linux_wheel_py3.10_rocm4.5.2
+          subfolder: rocm4.5.2/
+      - smoke_test_linux_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_wheel_py3.10_rocm4.5.2_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_wheel_py3.10_rocm4.5.2_upload
       - binary_macos_wheel:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -2426,6 +2827,28 @@ workflows:
           name: nightly_binary_macos_wheel_py3.9_cpu_upload
           requires:
           - nightly_binary_macos_wheel_py3.9_cpu
+          subfolder: ''
+      - binary_macos_wheel:
+          conda_docker_image: pytorch/conda-builder:cpu
+          cu_version: cpu
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_macos_wheel_py3.10_cpu
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_macos_wheel_py3.10_cpu_upload
+          requires:
+          - nightly_binary_macos_wheel_py3.10_cpu
           subfolder: ''
       - binary_win_wheel:
           cu_version: cpu
@@ -2775,6 +3198,122 @@ workflows:
           python_version: '3.9'
           requires:
           - nightly_binary_win_wheel_py3.9_cu115_upload
+      - binary_win_wheel:
+          cu_version: cpu
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cpu
+          python_version: '3.10'
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cpu_upload
+          requires:
+          - nightly_binary_win_wheel_py3.10_cpu
+          subfolder: cpu/
+      - smoke_test_win_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_win_wheel_py3.10_cpu_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_win_wheel_py3.10_cpu_upload
+      - binary_win_wheel:
+          cu_version: cu111
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cu111
+          python_version: '3.10'
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cu111_upload
+          requires:
+          - nightly_binary_win_wheel_py3.10_cu111
+          subfolder: cu111/
+      - smoke_test_win_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_win_wheel_py3.10_cu111_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_win_wheel_py3.10_cu111_upload
+      - binary_win_wheel:
+          cu_version: cu113
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cu113
+          python_version: '3.10'
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cu113_upload
+          requires:
+          - nightly_binary_win_wheel_py3.10_cu113
+          subfolder: cu113/
+      - smoke_test_win_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_win_wheel_py3.10_cu113_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_win_wheel_py3.10_cu113_upload
+      - binary_win_wheel:
+          cu_version: cu115
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cu115
+          python_version: '3.10'
+      - binary_wheel_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_wheel_py3.10_cu115_upload
+          requires:
+          - nightly_binary_win_wheel_py3.10_cu115
+          subfolder: cu115/
+      - smoke_test_win_pip:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_win_wheel_py3.10_cu115_smoke_test_pip
+          python_version: '3.10'
+          requires:
+          - nightly_binary_win_wheel_py3.10_cu115_upload
       - binary_linux_conda:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -3225,6 +3764,156 @@ workflows:
           python_version: '3.9'
           requires:
           - nightly_binary_linux_conda_py3.9_cu115_upload
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cpu
+          cu_version: cpu
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cpu
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cpu_upload
+          requires:
+          - nightly_binary_linux_conda_py3.10_cpu
+      - smoke_test_linux_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_conda_py3.10_cpu_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_conda_py3.10_cpu_upload
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda102
+          cu_version: cu102
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cu102
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cu102_upload
+          requires:
+          - nightly_binary_linux_conda_py3.10_cu102
+      - smoke_test_linux_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_conda_py3.10_cu102_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_conda_py3.10_cu102_upload
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda111
+          cu_version: cu111
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cu111
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda111
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cu111_upload
+          requires:
+          - nightly_binary_linux_conda_py3.10_cu111
+      - smoke_test_linux_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_conda_py3.10_cu111_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_conda_py3.10_cu111_upload
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda113
+          cu_version: cu113
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cu113
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda113
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cu113_upload
+          requires:
+          - nightly_binary_linux_conda_py3.10_cu113
+      - smoke_test_linux_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_conda_py3.10_cu113_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_conda_py3.10_cu113_upload
+      - binary_linux_conda:
+          conda_docker_image: pytorch/conda-builder:cuda115
+          cu_version: cu115
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cu115
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda115
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_linux_conda_py3.10_cu115_upload
+          requires:
+          - nightly_binary_linux_conda_py3.10_cu115
+      - smoke_test_linux_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_linux_conda_py3.10_cu115_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_linux_conda_py3.10_cu115_upload
       - binary_macos_conda:
           conda_docker_image: pytorch/conda-builder:cpu
           cu_version: cpu
@@ -3288,6 +3977,27 @@ workflows:
           name: nightly_binary_macos_conda_py3.9_cpu_upload
           requires:
           - nightly_binary_macos_conda_py3.9_cpu
+      - binary_macos_conda:
+          conda_docker_image: pytorch/conda-builder:cpu
+          cu_version: cpu
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_macos_conda_py3.10_cpu
+          python_version: '3.10'
+          wheel_docker_image: pytorch/manylinux-cuda102
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_macos_conda_py3.10_cpu_upload
+          requires:
+          - nightly_binary_macos_conda_py3.10_cpu
       - binary_win_conda:
           cu_version: cpu
           filters:
@@ -3624,6 +4334,118 @@ workflows:
           python_version: '3.9'
           requires:
           - nightly_binary_win_conda_py3.9_cu115_upload
+      - binary_win_conda:
+          cu_version: cpu
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cpu
+          python_version: '3.10'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cpu_upload
+          requires:
+          - nightly_binary_win_conda_py3.10_cpu
+      - smoke_test_win_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_win_conda_py3.10_cpu_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_win_conda_py3.10_cpu_upload
+      - binary_win_conda:
+          cu_version: cu111
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cu111
+          python_version: '3.10'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cu111_upload
+          requires:
+          - nightly_binary_win_conda_py3.10_cu111
+      - smoke_test_win_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_win_conda_py3.10_cu111_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_win_conda_py3.10_cu111_upload
+      - binary_win_conda:
+          cu_version: cu113
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cu113
+          python_version: '3.10'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cu113_upload
+          requires:
+          - nightly_binary_win_conda_py3.10_cu113
+      - smoke_test_win_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_win_conda_py3.10_cu113_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_win_conda_py3.10_cu113_upload
+      - binary_win_conda:
+          cu_version: cu115
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cu115
+          python_version: '3.10'
+      - binary_conda_upload:
+          context: org-member
+          filters:
+            branches:
+              only: nightly
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*-rc[0-9]+/
+          name: nightly_binary_win_conda_py3.10_cu115_upload
+          requires:
+          - nightly_binary_win_conda_py3.10_cu115
+      - smoke_test_win_conda:
+          filters:
+            branches:
+              only:
+              - nightly
+          name: nightly_binary_win_conda_py3.10_cu115_smoke_test_conda
+          python_version: '3.10'
+          requires:
+          - nightly_binary_win_conda_py3.10_cu115_upload
   docker_build:
     triggers:
       - schedule:
