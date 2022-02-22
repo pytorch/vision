@@ -22,84 +22,6 @@ class _AutoAugmentBase(Transform):
         self.interpolation = interpolation
         self.fill = fill
 
-    _DISPATCHER_MAP: Dict[str, Callable[[Any, float, InterpolationMode, Optional[List[float]]], Any]] = {
-        "Identity": lambda input, magnitude, interpolation, fill: input,
-        "ShearX": lambda input, magnitude, interpolation, fill: (
-            F.affine_image if type(input) is features.Image else _F.affine
-        )(
-            input,
-            angle=0.0,
-            translate=[0, 0],
-            scale=1.0,
-            shear=[math.degrees(magnitude), 0.0],
-            interpolation=interpolation,
-            fill=fill,
-        ),
-        "ShearY": lambda input, magnitude, interpolation, fill: (
-            F.affine_image if type(input) is features.Image else _F.affine
-        )(
-            input,
-            angle=0.0,
-            translate=[0, 0],
-            scale=1.0,
-            shear=[0.0, math.degrees(magnitude)],
-            interpolation=interpolation,
-            fill=fill,
-        ),
-        "TranslateX": lambda input, magnitude, interpolation, fill: (
-            F.affine_image if type(input) is features.Image else _F.affine
-        )(
-            input,
-            angle=0.0,
-            translate=[int(magnitude), 0],
-            scale=1.0,
-            shear=[0.0, 0.0],
-            interpolation=interpolation,
-            fill=fill,
-        ),
-        "TranslateY": lambda input, magnitude, interpolation, fill: (
-            F.affine_image if type(input) is features.Image else _F.affine
-        )(
-            input,
-            angle=0.0,
-            translate=[0, int(magnitude)],
-            scale=1.0,
-            shear=[0.0, 0.0],
-            interpolation=interpolation,
-            fill=fill,
-        ),
-        "Rotate": lambda input, magnitude, interpolation, fill: (
-            F.rotate_image if type(input) is features.Image else _F.rotate
-        )(input, angle=magnitude),
-        "Brightness": lambda input, magnitude, interpolation, fill: (
-            F.adjust_brightness_image if type(input) is features.Image else _F.adjust_brightness
-        )(input, brightness_factor=1.0 + magnitude),
-        "Color": lambda input, magnitude, interpolation, fill: (
-            F.adjust_saturation_image if type(input) is features.Image else _F.adjust_saturation
-        )(input, saturation_factor=1.0 + magnitude),
-        "Contrast": lambda input, magnitude, interpolation, fill: (
-            F.adjust_contrast_image if type(input) is features.Image else _F.adjust_contrast
-        )(input, contrast_factor=1.0 + magnitude),
-        "Sharpness": lambda input, magnitude, interpolation, fill: (
-            F.adjust_sharpness_image if type(input) is features.Image else _F.adjust_sharpness
-        )(input, sharpness_factor=1.0 + magnitude),
-        "Posterize": lambda input, magnitude, interpolation, fill: (
-            F.posterize_image if type(input) is features.Image else _F.posterize
-        )(input, bits=int(magnitude)),
-        "Solarize": lambda input, magnitude, interpolation, fill: (
-            F.solarize_image if type(input) is features.Image else _F.solarize
-        )(input, threshold=magnitude),
-        "AutoContrast": lambda input, magnitude, interpolation, fill: (
-            F.autocontrast_image if type(input) is features.Image else _F.autocontrast
-        )(input),
-        "Equalize": lambda input, magnitude, interpolation, fill: (
-            F.equalize_image if type(input) is features.Image else _F.equalize
-        )(input),
-        "Invert": lambda input, magnitude, interpolation, fill: (
-            F.invert_image if type(input) is features.Image else _F.invert
-        )(input),
-    }
-
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
         num_channels = F.get_image_num_channels(image)
@@ -110,23 +32,110 @@ class _AutoAugmentBase(Transform):
         elif fill is not None:
             fill = [float(f) for f in fill]
 
-        return dict(interpolation=self.interpolation, fill=fill)
+        return dict(fill=fill)
 
     def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _apply_transform(self, sample: Any, params: Dict[str, Any], transform_id: str, magnitude: float) -> Any:
-        dispatcher = self._DISPATCHER_MAP[transform_id]
-
-        def transform(input: Any) -> Any:
-            if type(input) in {features.Image, torch.Tensor} or isinstance(input, PIL.Image.Image):
-                return dispatcher(input, magnitude, params["interpolation"], params["fill"])
+    def _apply_transform(self, sample: Any, transform_id: str, magnitude: float) -> Any:
+        def dispatch(image_kernel: Callable, legacy_kernel: Callable, input: Any, *args: Any, **kwargs: Any) -> Any:
+            if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
+                return legacy_kernel(input, *args, **kwargs)
+            elif type(input) is features.Image:
+                output = image_kernel(input, *args, **kwargs)
+                return features.Image.new_like(input, output)
             elif type(input) in {features.BoundingBox, features.SegmentationMask}:
                 raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
             else:
                 return input
+
+        interpolation = self.interpolation
+        fill = self._get_params(sample)["fill"]
+
+        def transform(input: Any) -> Any:
+            if type(input) in {features.BoundingBox, features.SegmentationMask}:
+                raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
+            elif not (type(input) in {features.Image, torch.Tensor} or isinstance(input, PIL.Image.Image)):
+                return input
+
+            if transform_id == "Identity":
+                return input
+            elif transform_id == "ShearX":
+                return dispatch(
+                    F.affine_image,
+                    _F.affine,
+                    input,
+                    angle=0.0,
+                    translate=[0, 0],
+                    scale=1.0,
+                    shear=[math.degrees(magnitude), 0.0],
+                    interpolation=interpolation,
+                    fill=fill,
+                )
+            elif transform_id == "ShearY":
+                return dispatch(
+                    F.affine_image,
+                    _F.affine,
+                    input,
+                    angle=0.0,
+                    translate=[0, 0],
+                    scale=1.0,
+                    shear=[0.0, math.degrees(magnitude)],
+                    interpolation=interpolation,
+                    fill=fill,
+                )
+            elif transform_id == "TranslateX":
+                return dispatch(
+                    F.affine_image,
+                    _F.affine,
+                    input,
+                    angle=0.0,
+                    translate=[int(magnitude), 0],
+                    scale=1.0,
+                    shear=[0.0, 0.0],
+                    interpolation=interpolation,
+                    fill=fill,
+                )
+            elif transform_id == "TranslateY":
+                return dispatch(
+                    F.affine_image,
+                    _F.affine,
+                    input,
+                    angle=0.0,
+                    translate=[0, int(magnitude)],
+                    scale=1.0,
+                    shear=[0.0, 0.0],
+                    interpolation=interpolation,
+                    fill=fill,
+                )
+            elif transform_id == "Rotate":
+                return dispatch(F.rotate_image, _F.rotate, input, angle=magnitude)
+            elif transform_id == "Brightness":
+                return dispatch(
+                    F.adjust_brightness_image, _F.adjust_brightness, input, brightness_factor=1.0 + magnitude
+                )
+            elif transform_id == "Saturation":
+                return dispatch(
+                    F.adjust_saturation_image, _F.adjust_saturation, input, saturation_factor=1.0 + magnitude
+                )
+            elif transform_id == "Contrast":
+                return dispatch(F.adjust_contrast_image, _F.adjust_contrast, input, contrast_factor=1.0 + magnitude)
+            elif transform_id == "Sharpness":
+                return dispatch(F.adjust_sharpness_image, _F.adjust_sharpness, input, sharpness_factor=1.0 + magnitude)
+            elif transform_id == "Posterize":
+                return dispatch(F.posterize_image, _F.posterize, input, bits=int(magnitude))
+            elif transform_id == "Solarize":
+                return dispatch(F.solarize_image, _F.solarize, input, threshold=magnitude)
+            elif transform_id == "Autocontrast":
+                return dispatch(F.autocontrast_image, _F.autocontrast, input)
+            elif transform_id == "Equalize":
+                return dispatch(F.equalize_image, _F.equalize, input)
+            elif transform_id == "Invert":
+                return dispatch(F.invert_image, _F.invert, input)
+            else:
+                raise ValueError(f"No transform available for {transform_id}")
 
         return apply_recursively(transform, sample)
 
@@ -136,10 +145,10 @@ class AutoAugment(_AutoAugmentBase):
         "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
         "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
         "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
         "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
         "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Saturation": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Posterize": (
@@ -149,7 +158,7 @@ class AutoAugment(_AutoAugmentBase):
             False,
         ),
         "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        "AutoContrast": (lambda num_bins, image_size: None, False),
+        "Autocontrast": (lambda num_bins, image_size: None, False),
         "Equalize": (lambda num_bins, image_size: None, False),
         "Invert": (lambda num_bins, image_size: None, False),
     }
@@ -165,7 +174,7 @@ class AutoAugment(_AutoAugmentBase):
         if policy == AutoAugmentPolicy.IMAGENET:
             return [
                 (("Posterize", 0.4, 8), ("Rotate", 0.6, 9)),
-                (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
+                (("Solarize", 0.6, 5), ("Autocontrast", 0.6, None)),
                 (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
                 (("Posterize", 0.6, 7), ("Posterize", 0.6, 6)),
                 (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
@@ -174,20 +183,20 @@ class AutoAugment(_AutoAugmentBase):
                 (("Posterize", 0.8, 5), ("Equalize", 1.0, None)),
                 (("Rotate", 0.2, 3), ("Solarize", 0.6, 8)),
                 (("Equalize", 0.6, None), ("Posterize", 0.4, 6)),
-                (("Rotate", 0.8, 8), ("Color", 0.4, 0)),
+                (("Rotate", 0.8, 8), ("Saturation", 0.4, 0)),
                 (("Rotate", 0.4, 9), ("Equalize", 0.6, None)),
                 (("Equalize", 0.0, None), ("Equalize", 0.8, None)),
                 (("Invert", 0.6, None), ("Equalize", 1.0, None)),
-                (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
-                (("Rotate", 0.8, 8), ("Color", 1.0, 2)),
-                (("Color", 0.8, 8), ("Solarize", 0.8, 7)),
+                (("Saturation", 0.6, 4), ("Contrast", 1.0, 8)),
+                (("Rotate", 0.8, 8), ("Saturation", 1.0, 2)),
+                (("Saturation", 0.8, 8), ("Solarize", 0.8, 7)),
                 (("Sharpness", 0.4, 7), ("Invert", 0.6, None)),
                 (("ShearX", 0.6, 5), ("Equalize", 1.0, None)),
-                (("Color", 0.4, 0), ("Equalize", 0.6, None)),
+                (("Saturation", 0.4, 0), ("Equalize", 0.6, None)),
                 (("Equalize", 0.4, None), ("Solarize", 0.2, 4)),
-                (("Solarize", 0.6, 5), ("AutoContrast", 0.6, None)),
+                (("Solarize", 0.6, 5), ("Autocontrast", 0.6, None)),
                 (("Invert", 0.6, None), ("Equalize", 1.0, None)),
-                (("Color", 0.6, 4), ("Contrast", 1.0, 8)),
+                (("Saturation", 0.6, 4), ("Contrast", 1.0, 8)),
                 (("Equalize", 0.8, None), ("Equalize", 0.6, None)),
             ]
         elif policy == AutoAugmentPolicy.CIFAR10:
@@ -196,27 +205,27 @@ class AutoAugment(_AutoAugmentBase):
                 (("Rotate", 0.7, 2), ("TranslateX", 0.3, 9)),
                 (("Sharpness", 0.8, 1), ("Sharpness", 0.9, 3)),
                 (("ShearY", 0.5, 8), ("TranslateY", 0.7, 9)),
-                (("AutoContrast", 0.5, None), ("Equalize", 0.9, None)),
+                (("Autocontrast", 0.5, None), ("Equalize", 0.9, None)),
                 (("ShearY", 0.2, 7), ("Posterize", 0.3, 7)),
-                (("Color", 0.4, 3), ("Brightness", 0.6, 7)),
+                (("Saturation", 0.4, 3), ("Brightness", 0.6, 7)),
                 (("Sharpness", 0.3, 9), ("Brightness", 0.7, 9)),
                 (("Equalize", 0.6, None), ("Equalize", 0.5, None)),
                 (("Contrast", 0.6, 7), ("Sharpness", 0.6, 5)),
-                (("Color", 0.7, 7), ("TranslateX", 0.5, 8)),
-                (("Equalize", 0.3, None), ("AutoContrast", 0.4, None)),
+                (("Saturation", 0.7, 7), ("TranslateX", 0.5, 8)),
+                (("Equalize", 0.3, None), ("Autocontrast", 0.4, None)),
                 (("TranslateY", 0.4, 3), ("Sharpness", 0.2, 6)),
-                (("Brightness", 0.9, 6), ("Color", 0.2, 8)),
+                (("Brightness", 0.9, 6), ("Saturation", 0.2, 8)),
                 (("Solarize", 0.5, 2), ("Invert", 0.0, None)),
-                (("Equalize", 0.2, None), ("AutoContrast", 0.6, None)),
+                (("Equalize", 0.2, None), ("Autocontrast", 0.6, None)),
                 (("Equalize", 0.2, None), ("Equalize", 0.6, None)),
-                (("Color", 0.9, 9), ("Equalize", 0.6, None)),
-                (("AutoContrast", 0.8, None), ("Solarize", 0.2, 8)),
-                (("Brightness", 0.1, 3), ("Color", 0.7, 0)),
-                (("Solarize", 0.4, 5), ("AutoContrast", 0.9, None)),
+                (("Saturation", 0.9, 9), ("Equalize", 0.6, None)),
+                (("Autocontrast", 0.8, None), ("Solarize", 0.2, 8)),
+                (("Brightness", 0.1, 3), ("Saturation", 0.7, 0)),
+                (("Solarize", 0.4, 5), ("Autocontrast", 0.9, None)),
                 (("TranslateY", 0.9, 9), ("TranslateY", 0.7, 9)),
-                (("AutoContrast", 0.9, None), ("Solarize", 0.8, 3)),
+                (("Autocontrast", 0.9, None), ("Solarize", 0.8, 3)),
                 (("Equalize", 0.8, None), ("Invert", 0.1, None)),
-                (("TranslateY", 0.7, 9), ("AutoContrast", 0.9, None)),
+                (("TranslateY", 0.7, 9), ("Autocontrast", 0.9, None)),
             ]
         elif policy == AutoAugmentPolicy.SVHN:
             return [
@@ -225,10 +234,10 @@ class AutoAugment(_AutoAugmentBase):
                 (("Equalize", 0.6, None), ("Solarize", 0.6, 6)),
                 (("Invert", 0.9, None), ("Equalize", 0.6, None)),
                 (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
-                (("ShearX", 0.9, 4), ("AutoContrast", 0.8, None)),
+                (("ShearX", 0.9, 4), ("Autocontrast", 0.8, None)),
                 (("ShearY", 0.9, 8), ("Invert", 0.4, None)),
                 (("ShearY", 0.9, 5), ("Solarize", 0.2, 6)),
-                (("Invert", 0.9, None), ("AutoContrast", 0.8, None)),
+                (("Invert", 0.9, None), ("Autocontrast", 0.8, None)),
                 (("Equalize", 0.6, None), ("Rotate", 0.9, 3)),
                 (("ShearX", 0.9, 4), ("Solarize", 0.3, 3)),
                 (("ShearY", 0.8, 8), ("Invert", 0.7, None)),
@@ -243,7 +252,7 @@ class AutoAugment(_AutoAugmentBase):
                 (("Solarize", 0.7, 2), ("TranslateY", 0.6, 7)),
                 (("ShearY", 0.8, 4), ("Invert", 0.8, None)),
                 (("ShearX", 0.7, 9), ("TranslateY", 0.8, 3)),
-                (("ShearY", 0.8, 5), ("AutoContrast", 0.7, None)),
+                (("ShearY", 0.8, 5), ("Autocontrast", 0.7, None)),
                 (("ShearX", 0.7, 2), ("Invert", 0.1, None)),
             ]
         else:
@@ -251,7 +260,6 @@ class AutoAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        params = params or self._get_params(sample)
 
         image = query_image(sample)
         image_size = F.get_image_size(image)
@@ -272,7 +280,7 @@ class AutoAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            sample = self._apply_transform(sample, params, transform_id, magnitude)
+            sample = self._apply_transform(sample, transform_id, magnitude)
 
         return sample
 
@@ -283,10 +291,10 @@ class RandAugment(_AutoAugmentBase):
         "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
         "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
         "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
         "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
         "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Saturation": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Posterize": (
@@ -296,7 +304,7 @@ class RandAugment(_AutoAugmentBase):
             False,
         ),
         "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        "AutoContrast": (lambda num_bins, image_size: None, False),
+        "Autocontrast": (lambda num_bins, image_size: None, False),
         "Equalize": (lambda num_bins, image_size: None, False),
     }
 
@@ -308,7 +316,6 @@ class RandAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        params = params or self._get_params(sample)
 
         image = query_image(sample)
         image_size = F.get_image_size(image)
@@ -324,7 +331,7 @@ class RandAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            sample = self._apply_transform(sample, params, transform_id, magnitude)
+            sample = self._apply_transform(sample, transform_id, magnitude)
 
         return sample
 
@@ -338,7 +345,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 32.0, num_bins), True),
         "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 135.0, num_bins), True),
         "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
+        "Saturation": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
         "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
         "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
         "Posterize": (
@@ -348,7 +355,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
             False,
         ),
         "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        "AutoContrast": (lambda num_bins, image_size: None, False),
+        "Autocontrast": (lambda num_bins, image_size: None, False),
         "Equalize": (lambda num_bins, image_size: None, False),
     }
 
@@ -358,7 +365,6 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        params = params or self._get_params(sample)
 
         image = query_image(sample)
         image_size = F.get_image_size(image)
@@ -373,4 +379,4 @@ class TrivialAugmentWide(_AutoAugmentBase):
         else:
             magnitude = 0.0
 
-        return self._apply_transform(sample, params, transform_id, magnitude)
+        return self._apply_transform(sample, transform_id, magnitude)
