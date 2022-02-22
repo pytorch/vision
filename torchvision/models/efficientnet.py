@@ -581,7 +581,16 @@ def efficientnet_v2_s(pretrained: bool = False, progress: bool = True, **kwargs:
     """
     arch = "efficientnet_v2_s"
     inverted_residual_setting, last_channel = _efficientnet_conf(arch)
-    return _efficientnet(arch, inverted_residual_setting, 0.2, last_channel, pretrained, progress, **kwargs)
+    return _efficientnet(
+        arch,
+        inverted_residual_setting,
+        0.2,
+        last_channel,
+        pretrained,
+        progress,
+        norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
+        **kwargs,
+    )
 
 
 def efficientnet_v2_m(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -595,7 +604,16 @@ def efficientnet_v2_m(pretrained: bool = False, progress: bool = True, **kwargs:
     """
     arch = "efficientnet_v2_m"
     inverted_residual_setting, last_channel = _efficientnet_conf(arch)
-    return _efficientnet(arch, inverted_residual_setting, 0.3, last_channel, pretrained, progress, **kwargs)
+    return _efficientnet(
+        arch,
+        inverted_residual_setting,
+        0.3,
+        last_channel,
+        pretrained,
+        progress,
+        norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
+        **kwargs,
+    )
 
 
 def efficientnet_v2_l(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
@@ -609,4 +627,13 @@ def efficientnet_v2_l(pretrained: bool = False, progress: bool = True, **kwargs:
     """
     arch = "efficientnet_v2_l"
     inverted_residual_setting, last_channel = _efficientnet_conf(arch)
-    return _efficientnet(arch, inverted_residual_setting, 0.4, last_channel, pretrained, progress, **kwargs)
+    return _efficientnet(
+        arch,
+        inverted_residual_setting,
+        0.4,
+        last_channel,
+        pretrained,
+        progress,
+        norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
+        **kwargs,
+    )

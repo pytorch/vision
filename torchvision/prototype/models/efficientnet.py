@@ -355,7 +355,15 @@ def efficientnet_v2_s(
     weights = EfficientNet_V2_S_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_s")
-    return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting,
+        0.2,
+        last_channel,
+        weights,
+        progress,
+        norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
+        **kwargs,
+    )
 
 
 @handle_legacy_interface(weights=("pretrained", None))
@@ -365,7 +373,15 @@ def efficientnet_v2_m(
     weights = EfficientNet_V2_M_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_m")
-    return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting,
+        0.3,
+        last_channel,
+        weights,
+        progress,
+        norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
+        **kwargs,
+    )
 
 
 @handle_legacy_interface(weights=("pretrained", None))
@@ -375,4 +391,12 @@ def efficientnet_v2_l(
     weights = EfficientNet_V2_L_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_l")
-    return _efficientnet(inverted_residual_setting, 0.4, last_channel, weights, progress, **kwargs)
+    return _efficientnet(
+        inverted_residual_setting,
+        0.4,
+        last_channel,
+        weights,
+        progress,
+        norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
+        **kwargs,
+    )
