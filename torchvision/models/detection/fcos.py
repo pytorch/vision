@@ -503,7 +503,7 @@ class FCOS(nn.Module):
 
                 # keep only topk scoring predictions
                 if torchvision._is_tracing():
-                    _, num_topk = det_utils._onnx_tracing_topk_min(topk_idxs, self.topk_candidates, 0)
+                    num_topk = det_utils._topk_min(topk_idxs, self.topk_candidates, 0)
                 else:
                     num_topk = min(self.topk_candidates, topk_idxs.size(0))
                 scores_per_level, idxs = scores_per_level.topk(num_topk)

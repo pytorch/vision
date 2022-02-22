@@ -409,7 +409,7 @@ class SSD(nn.Module):
 
                 # keep only topk scoring predictions
                 if torchvision._is_tracing():
-                    _, num_topk = det_utils._onnx_tracing_topk_min(score, self.topk_candidates, 0)
+                    num_topk = det_utils._topk_min(score, self.topk_candidates, 0)
                 else:
                     num_topk = min(self.topk_candidates, score.size(0))
                 score, idxs = score.topk(num_topk)
