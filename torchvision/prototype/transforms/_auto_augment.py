@@ -22,18 +22,6 @@ class _AutoAugmentBase(Transform):
         self.interpolation = interpolation
         self.fill = fill
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        image = query_image(sample)
-        num_channels = F.get_image_num_channels(image)
-
-        fill = self.fill
-        if isinstance(fill, (int, float)):
-            fill = [float(fill)] * num_channels
-        elif fill is not None:
-            fill = [float(f) for f in fill]
-
-        return dict(fill=fill)
-
     def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), ()))]
@@ -51,8 +39,16 @@ class _AutoAugmentBase(Transform):
             else:
                 return input
 
+        image = query_image(sample)
+        num_channels = F.get_image_num_channels(image)
+
+        fill = self.fill
+        if isinstance(fill, (int, float)):
+            fill = [float(fill)] * num_channels
+        elif fill is not None:
+            fill = [float(f) for f in fill]
+
         interpolation = self.interpolation
-        fill = self._get_params(sample)["fill"]
 
         def transform(input: Any) -> Any:
             if type(input) in {features.BoundingBox, features.SegmentationMask}:
@@ -258,7 +254,7 @@ class AutoAugment(_AutoAugmentBase):
         else:
             raise ValueError(f"The provided policy {policy} is not recognized.")
 
-    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         image = query_image(sample)
@@ -314,7 +310,7 @@ class RandAugment(_AutoAugmentBase):
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
 
-    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         image = query_image(sample)
@@ -363,7 +359,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         super().__init__(**kwargs)
         self.num_magnitude_bins = num_magnitude_bins
 
-    def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
+    def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         image = query_image(sample)
