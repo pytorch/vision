@@ -133,7 +133,7 @@ class Conv2dNormActivation(_ConvNormActivation):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         layer = torch.nn.Conv2d
-        super().__init__(layer, *args, **kwargs)
+        super().__init__(layer=layer, *args, **kwargs)
 
 
 class Conv3dNormActivation(_ConvNormActivation):
@@ -156,7 +156,7 @@ class Conv3dNormActivation(_ConvNormActivation):
 
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         layer = torch.nn.Conv3d
-        super().__init__(layer, *args, **kwargs)
+        super().__init__(layer=layer, *args, **kwargs)
 
 
 class ConvNormActivation(Conv2dNormActivation):
