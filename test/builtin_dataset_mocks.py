@@ -1303,7 +1303,7 @@ def cub200(info, root, config):
 def eurosat(info, root, config):
     print("info", info)
     data_folder = pathlib.Path(root, "eurosat", "2750")
-    data_folder.mkdir(data_folder)
+    data_folder.mkdir(parents=True)
 
     num_examples_per_class = 3
     classes = ("AnnualCrop", "Forest")
