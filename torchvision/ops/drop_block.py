@@ -21,16 +21,14 @@ def drop_block2d(
         inplace (bool): If set to ``True``, will do this operation in-place. Default: ``False``.
         eps (float): A value added to the denominator for numerical stability. Default: 1e-6.
         training (bool): apply dropblock if is ``True``. Default: ``True``
-    
+
     Returns:
         Tensor[N, C, H, W]: The randomly zeroed tensor after dropblock.
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(drop_block2d)
     if p < 0.0 or p > 1.0:
-        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
-    if block_size % 2 == 0:
-        raise ValueError(f"block size has to be an odd number, but got {block_size}")    
+        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")  
     if input.ndim != 4:
         raise ValueError(f"input should be 4 dimensional. Got {input.ndim} dimensions.")
     if not training or p == 0.0:
@@ -76,9 +74,7 @@ def drop_block3d(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(drop_block3d)
     if p < 0.0 or p > 1.0:
-        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}")
-    if block_size % 2 == 0:
-        raise ValueError(f"block size has to be an odd number, but got {block_size}")    
+        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}") 
     if input.ndim != 5:
         raise ValueError(f"input should be 5 dimensional. Got {input.ndim} dimensions.")
     if not training or p == 0.0:
