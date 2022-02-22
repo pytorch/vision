@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, List, Optional, Any
+from typing import Callable, List, Optional
 
 import torch
 from torch import Tensor
@@ -71,12 +71,12 @@ class _ConvNormActivation(torch.nn.Sequential):
         self,
         in_channels: int,
         out_channels: int,
-        layer: Callable[..., torch.nn.Module],
+        conv_layer: Callable[..., torch.nn.Module],
         kernel_size: int = 3,
         stride: int = 1,
         padding: Optional[int] = None,
         groups: int = 1,
-        norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
+        norm_layer: Optional[Callable[..., torch.nn.Module]] = None,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         dilation: int = 1,
         inplace: Optional[bool] = True,
@@ -89,7 +89,7 @@ class _ConvNormActivation(torch.nn.Sequential):
             bias = norm_layer is None
 
         layers = [
-            layer(
+            conv_layer(
                 in_channels,
                 out_channels,
                 kernel_size,
@@ -108,13 +108,13 @@ class _ConvNormActivation(torch.nn.Sequential):
             params = {} if inplace is None else {"inplace": inplace}
             layers.append(activation_layer(**params))
         super().__init__(*layers)
-
+        _log_api_usage_once(self)
         self.out_channels = out_channels
 
 
 class Conv2dNormActivation(_ConvNormActivation):
     """
-    Configurable block used for Convolution-Normalzation-Activation blocks.
+    Configurable block used for Convolution2d-Normalzation-Activation blocks.
 
     Args:
         in_channels (int): Number of channels in the input image
@@ -131,14 +131,41 @@ class Conv2dNormActivation(_ConvNormActivation):
 
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        layer = torch.nn.Conv2d
-        super().__init__(layer=layer, *args, **kwargs)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 3,
+        stride: int = 1,
+        padding: Optional[int] = None,
+        groups: int = 1,
+        norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
+        activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
+        dilation: int = 1,
+        inplace: Optional[bool] = True,
+        bias: Optional[bool] = None,
+    ) -> None:
+
+        conv_layer = torch.nn.Conv2d
+        super().__init__(
+            in_channels,
+            out_channels,
+            conv_layer,
+            kernel_size,
+            stride,
+            padding,
+            groups,
+            norm_layer,
+            activation_layer,
+            dilation,
+            inplace,
+            bias,
+        )
 
 
 class Conv3dNormActivation(_ConvNormActivation):
     """
-    Configurable block used for Convolution-Normalzation-Activation blocks.
+    Configurable block used for Convolution3d-Normalzation-Activation blocks.
 
     Args:
         in_channels (int): Number of channels in the input video.
@@ -154,9 +181,36 @@ class Conv3dNormActivation(_ConvNormActivation):
         bias (bool, optional): Whether to use bias in the convolution layer. By default, biases are included if ``norm_layer is None``.
     """
 
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        layer = torch.nn.Conv3d
-        super().__init__(layer=layer, *args, **kwargs)
+    def __init__(
+        self,
+        in_channels: int,
+        out_channels: int,
+        kernel_size: int = 3,
+        stride: int = 1,
+        padding: Optional[int] = None,
+        groups: int = 1,
+        norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm3d,
+        activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
+        dilation: int = 1,
+        inplace: Optional[bool] = True,
+        bias: Optional[bool] = None,
+    ) -> None:
+
+        conv_layer = torch.nn.Conv3d
+        super().__init__(
+            in_channels,
+            out_channels,
+            conv_layer,
+            kernel_size,
+            stride,
+            padding,
+            groups,
+            norm_layer,
+            activation_layer,
+            dilation,
+            inplace,
+            bias,
+        )
 
 
 class ConvNormActivation(Conv2dNormActivation):
