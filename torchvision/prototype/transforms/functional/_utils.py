@@ -1,4 +1,4 @@
-from typing import Tuple, cast, Union
+from typing import Tuple, Union
 
 import PIL.Image
 import torch
@@ -8,7 +8,8 @@ from torchvision.transforms import functional as _F
 
 def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int]:
     if type(image) is torch.Tensor or isinstance(image, PIL.Image.Image):
-        return cast(Tuple[int, int], tuple(_F.get_image_size(image)))
+        width, height = _F.get_image_size(image)
+        return height, width
     elif type(image) is features.Image:
         return image.image_size
     else:
