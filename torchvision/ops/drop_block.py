@@ -28,7 +28,7 @@ def drop_block2d(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(drop_block2d)
     if p < 0.0 or p > 1.0:
-        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}.") 
+        raise ValueError(f"drop probability has to be between 0 and 1, but got {p}.")
     if input.ndim != 4:
         raise ValueError(f"input should be 4 dimensional. Got {input.ndim} dimensions.")
     if not training or p == 0.0:
