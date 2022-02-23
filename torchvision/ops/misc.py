@@ -1,5 +1,5 @@
 import warnings
-from typing import Callable, List, Optional
+from typing import Callable, List, Optional, Any
 
 import torch
 from torch import Tensor
