@@ -1314,7 +1314,7 @@ def eurosat(info, root, config):
             file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
             num_examples=num_examples_per_class,
         )
-
+    make_zip(root, "EuroSAT.zip", data_folder)
     return len(classes) * num_examples_per_class
 
 

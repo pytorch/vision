@@ -3,17 +3,12 @@ repos:
     rev: v4.0.1
     hooks:
       - id: check-docstring-first
-        language_version: python3
       - id: check-toml
-        language_version: python3
       - id: check-yaml
         exclude: packaging/.*
-        language_version: python3
       - id: mixed-line-ending
         args: [--fix=lf]
-        language_version: python3
       - id: end-of-file-fixer
-        language_version: python3
 
   - repo: https://github.com/omnilib/ufmt
     rev: v1.3.2
@@ -22,17 +17,14 @@ repos:
         additional_dependencies:
           - black == 21.9b0
           - usort == 0.6.4
-        language_version: python3
 
   - repo: https://gitlab.com/pycqa/flake8
     rev: 3.9.2
     hooks:
       - id: flake8
         args: [--config=setup.cfg]
-        language_version: python3
 
   - repo: https://github.com/PyCQA/pydocstyle
     rev: 6.1.1
     hooks:
       - id: pydocstyle
-        language_version: python3
