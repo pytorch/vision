@@ -948,6 +948,8 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
 
 
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
+    _assert_image_tensor(img)
+
     if not inplace:
         img = img.clone()
 
