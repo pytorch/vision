@@ -2,6 +2,7 @@
 
 # imports and set configuration
 import pandas as pd
+from retrieve_prs_data import run
 
 exclude_prototype = True
 data_filename = "10.0_to_11.0-rc2.json"
@@ -128,7 +129,11 @@ print(format_prs(missing_prs))
 
 # In[12]:
 
-# Generate list of authors
-command_to_run = f"{{ git shortlog -s {previous_release}..{current_release} | cut -f2- & git log -s {previous_release}..{current_release} | grep Co-authored | cut -f2- -d: | cut -f1 -d\< | sed 's/^ *//;s/ *$//' ; }} | sort --ignore-case | uniq | tr '\n' ';' | sed 's/;/, /g;s/, $//' | fold -s"
-print(command_to_run)
-# %%
+# Generate list of contributors
+print()
+print(f"## Contributors")
+
+command_to_run = f"{{ git shortlog -s {previous_release}..{current_release} | cut -f2- & git log -s {previous_release}..{current_release} | grep Co-authored | cut -f2- -d: | cut -f1 -d\< | sed 's/^ *//;s/ *$//' ; }} | sort --ignore-case | uniq | tr '\\n' ';' | sed 's/;/, /g;s/, $//' | fold -s"
+rc, output, err = run(command_to_run)
+print(output)
+
