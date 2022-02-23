@@ -26,11 +26,12 @@ class EuroSAT(Dataset):
         )
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        data = HttpResource(
-            "https://madm.dfki.de/files/sentinel/EuroSAT.zip",
-            sha256="8ebea626349354c5328b142b96d0430e647051f26efc2dc974c843f25ecf70bd",
-        )
-        return [data]
+        return [
+            HttpResource(
+                "https://madm.dfki.de/files/sentinel/EuroSAT.zip",
+                sha256="8ebea626349354c5328b142b96d0430e647051f26efc2dc974c843f25ecf70bd",
+            )
+        ]
 
     def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
         path, buffer = data
