@@ -9,6 +9,7 @@ import lzma
 import pathlib
 import pickle
 import random
+import unittest.mock
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 
@@ -20,6 +21,7 @@ from datasets_utils import make_zip, make_tar, create_image_folder, create_image
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype import datasets
+from torchvision.prototype.utils._internal import sequence_to_str
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
@@ -64,17 +66,17 @@ class DatasetMock:
 
         mock_info = self._parse_mock_info(self.mock_data_fn(datasets.info(self.name), root, **options))
 
-        # # FIXME: We need to handle missing files here
-        # dataset = datasets.load2(self.name, **options)
-        #
-        # available_file_names = {path.name for path in root.glob("*")}
-        # required_file_names = {resource.file_name for resource in self.dataset.resources(config)}
-        # missing_file_names = required_file_names - available_file_names
-        # if missing_file_names:
-        #     raise pytest.UsageError(
-        #         f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
-        #         f"for {config}, but they were not created by the mock data function."
-        #     )
+        with unittest.mock.patch.object(datasets.utils.Dataset2, "__init__"):
+            required_file_names = {
+                resource.file_name for resource in datasets.load(self.name, root=root, **options)._resources()
+            }
+        available_file_names = {path.name for path in root.glob("*")}
+        missing_file_names = required_file_names - available_file_names
+        if missing_file_names:
+            raise pytest.UsageError(
+                f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
+                f"for {options}, but they were not created by the mock data function."
+            )
 
         return mock_info
 
