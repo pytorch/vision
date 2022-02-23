@@ -1,7 +1,6 @@
 from typing import List, Optional, Dict, Tuple
 
 import torch
-import torchvision
 from torch import nn, Tensor
 from torch.nn import functional as F
 from torchvision.ops import boxes as box_ops
