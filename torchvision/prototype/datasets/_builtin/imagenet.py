@@ -1,14 +1,10 @@
-import functools
 import pathlib
 import re
-from types import SimpleNamespace
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast, Union
 
 from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, Filter, Demultiplexer
 from torchdata.datapipes.iter import TarArchiveReader
 from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
     DatasetInfo,
     OnlineResource,
     ManualDownloadResource,
@@ -23,11 +19,20 @@ from torchvision.prototype.datasets.utils._internal import (
     read_mat,
     hint_sharding,
     hint_shuffling,
+    path_accessor,
 )
 from torchvision.prototype.features import Label, EncodedImage
-from torchvision.prototype.utils._internal import FrozenMapping
 
 from .._api import register_dataset, register_info
+
+
+NAME = "imagenet"
+
+
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+    return dict(categories=categories, wnids=wnids)
 
 
 class ImageNetResource(ManualDownloadResource):
@@ -35,32 +40,18 @@ class ImageNetResource(ManualDownloadResource):
         super().__init__("Register on https://image-net.org/ and follow the instructions there.", **kwargs)
 
 
-class ImageNet(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        name = "imagenet"
-        categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{name}.categories"))
+@register_dataset(NAME)
+class ImageNet(Dataset2):
+    def __init__(self, root: Union[str, pathlib.Path], *, split: str = "train") -> None:
+        self._split = self._verify_str_arg(split, "split", {"train", "val", "test"})
 
-        return DatasetInfo(
-            name,
-            dependencies=("scipy",),
-            categories=categories,
-            homepage="https://www.image-net.org/",
-            valid_options=dict(split=("train", "val", "test")),
-            extra=dict(
-                wnid_to_category=FrozenMapping(zip(wnids, categories)),
-                category_to_wnid=FrozenMapping(zip(categories, wnids)),
-                sizes=FrozenMapping(
-                    [
-                        (DatasetConfig(split="train"), 1_281_167),
-                        (DatasetConfig(split="val"), 50_000),
-                        (DatasetConfig(split="test"), 100_000),
-                    ]
-                ),
-            ),
-        )
+        info = _info()
+        categories, wnids = info["categories"], info["wnids"]
+        self._categories: List[str] = categories
+        self._wnids: List[str] = wnids
+        self._wnid_to_category = dict(zip(wnids, categories))
 
-    def supports_sharded(self) -> bool:
-        return True
+        super().__init__(root)
 
     _IMAGES_CHECKSUMS = {
         "train": "b08200a27a8e34218a0e58fde36b0fe8f73bc377f4acea2d91602057c3ca45bb",
@@ -68,15 +59,15 @@ class ImageNet(Dataset):
         "test_v10102019": "9cf7f8249639510f17d3d8a0deb47cd22a435886ba8e29e2b3223e65a4079eb4",
     }
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        name = "test_v10102019" if config.split == "test" else config.split
+    def _resources(self) -> List[OnlineResource]:
+        name = "test_v10102019" if self._split == "test" else self._split
         images = ImageNetResource(
             file_name=f"ILSVRC2012_img_{name}.tar",
             sha256=self._IMAGES_CHECKSUMS[name],
         )
         resources: List[OnlineResource] = [images]
 
-        if config.split == "val":
+        if self._split == "val":
             devkit = ImageNetResource(
                 file_name="ILSVRC2012_devkit_t12.tar.gz",
                 sha256="b59243268c0d266621fd587d2018f69e906fb22875aca0e295b48cafaa927953",
@@ -85,19 +76,12 @@ class ImageNet(Dataset):
 
         return resources
 
-    def num_samples(self, config: DatasetConfig) -> int:
-        return {
-            "train": 1_281_167,
-            "val": 50_000,
-            "test": 100_000,
-        }[config.split]
-
     _TRAIN_IMAGE_NAME_PATTERN = re.compile(r"(?P<wnid>n\d{8})_\d+[.]JPEG")
 
     def _prepare_train_data(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
         path = pathlib.Path(data[0])
         wnid = cast(Match[str], self._TRAIN_IMAGE_NAME_PATTERN.match(path.name))["wnid"]
-        label = Label.from_category(self.info.extra.wnid_to_category[wnid], categories=self.categories)
+        label = Label.from_category(self._wnid_to_category[wnid], categories=self._categories)
         return (label, wnid), data
 
     def _prepare_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
@@ -109,6 +93,13 @@ class ImageNet(Dataset):
             "ILSVRC2012_validation_ground_truth.txt": 1,
         }.get(pathlib.Path(data[0]).name)
 
+    # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
+    # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
+    _WNID_MAP = {
+        "n03126707": "construction crane",
+        "n03710721": "tank suit",
+    }
+
     def _extract_categories_and_wnids(self, data: Tuple[str, BinaryIO]) -> List[Tuple[str, str]]:
         synsets = read_mat(data[1], squeeze_me=True)["synsets"]
         return [
@@ -118,21 +109,20 @@ class ImageNet(Dataset):
             if num_children == 0
         ]
 
-    def _imagenet_label_to_wnid(self, imagenet_label: str, *, wnids: List[str]) -> str:
-        return wnids[int(imagenet_label) - 1]
+    def _imagenet_label_to_wnid(self, imagenet_label: str) -> str:
+        return self._wnids[int(imagenet_label) - 1]
 
     _VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
 
-    def _val_test_image_key(self, data: Tuple[str, Any]) -> int:
-        path = pathlib.Path(data[0])
-        return int(self._VAL_TEST_IMAGE_NAME_PATTERN.match(path.name).group("id"))  # type: ignore[union-attr]
+    def _val_test_image_key(self, path: pathlib.Path) -> int:
+        return int(self._VAL_TEST_IMAGE_NAME_PATTERN.match(path.name)["id"])  # type: ignore[index]
 
     def _prepare_val_data(
         self, data: Tuple[Tuple[int, str], Tuple[str, BinaryIO]]
     ) -> Tuple[Tuple[Label, str], Tuple[str, BinaryIO]]:
         label_data, image_data = data
         _, wnid = label_data
-        label = Label.from_category(self.info.extra.wnid_to_category[wnid], categories=self.categories)
+        label = Label.from_category(self._wnid_to_category[wnid], categories=self._categories)
         return (label, wnid), image_data
 
     def _prepare_sample(
@@ -147,19 +137,17 @@ class ImageNet(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
-    def _make_datapipe(
-        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
-    ) -> IterDataPipe[Dict[str, Any]]:
-        if config.split in {"train", "test"}:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+        if self._split in {"train", "test"}:
             dp = resource_dps[0]
 
             # the train archive is a tar of tars
-            if config.split == "train":
+            if self._split == "train":
                 dp = TarArchiveReader(dp)
 
             dp = hint_sharding(dp)
             dp = hint_shuffling(dp)
-            dp = Mapper(dp, self._prepare_train_data if config.split == "train" else self._prepare_test_data)
+            dp = Mapper(dp, self._prepare_train_data if self._split == "train" else self._prepare_test_data)
         else:  # config.split == "val":
             images_dp, devkit_dp = resource_dps
 
@@ -171,7 +159,7 @@ class ImageNet(Dataset):
             _, wnids = zip(*next(iter(meta_dp)))
 
             label_dp = LineReader(label_dp, decode=True, return_path=False)
-            label_dp = Mapper(label_dp, functools.partial(self._imagenet_label_to_wnid, wnids=wnids))
+            label_dp = Mapper(label_dp, self._imagenet_label_to_wnid)
             label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
             label_dp = hint_sharding(label_dp)
             label_dp = hint_shuffling(label_dp)
@@ -180,68 +168,12 @@ class ImageNet(Dataset):
                 label_dp,
                 images_dp,
                 key_fn=getitem(0),
-                ref_key_fn=self._val_test_image_key,
+                ref_key_fn=path_accessor(self._val_test_image_key),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
             dp = Mapper(dp, self._prepare_val_data)
 
         return Mapper(dp, self._prepare_sample)
-
-    # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
-    # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
-    _WNID_MAP = {
-        "n03126707": "construction crane",
-        "n03710721": "tank suit",
-    }
-
-    def _generate_categories(self, root: pathlib.Path) -> List[Tuple[str, ...]]:
-        config = self.info.make_config(split="val")
-        resources = self.resources(config)
-
-        devkit_dp = resources[1].load(root)
-        meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
-        meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
-
-        categories_and_wnids = cast(List[Tuple[str, ...]], next(iter(meta_dp)))
-        categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
-        return categories_and_wnids
-
-
-NAME = "imagenet"
-
-
-@register_info(NAME)
-def _info() -> Dict[str, Any]:
-    categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
-    return dict(categories=categories, wnids=wnids)
-
-
-@register_dataset(NAME)
-class ImageNet2(Dataset2):
-    def __init__(self, root: Union[str, pathlib.Path], *, split: str = "train") -> None:
-        if split not in {"train", "val", "test"}:
-            raise ValueError
-        self._split = split
-
-        info = _info()
-        categories, wnids = info["categories"], info["wnids"]
-
-        self._old_style_dataset = ImageNet()
-        self._old_style_config = self._old_style_dataset.info.make_config(split=self._split)
-
-        self.categories = categories
-        self.info = SimpleNamespace(
-            wnid_to_category=zip(wnids, categories),
-            category_to_wnid=zip(categories, wnids),
-        )
-
-        super().__init__(root)
-
-    def _resources(self) -> List[OnlineResource]:
-        return self._old_style_dataset.resources(self._old_style_config)
-
-    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
-        return self._old_style_dataset._make_datapipe(resource_dps, config=self._old_style_config)
 
     def __len__(self) -> int:
         return {
@@ -249,3 +181,16 @@ class ImageNet2(Dataset2):
             "val": 50_000,
             "test": 100_000,
         }[self._split]
+
+    @classmethod
+    def _generate_categories(cls, root: pathlib.Path) -> List[Tuple[str, ...]]:
+        dataset = cls(root, split="val")
+        resources = dataset._resources()
+
+        devkit_dp = resources[1].load(root)
+        meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
+        meta_dp = Mapper(meta_dp, dataset._extract_categories_and_wnids)
+
+        categories_and_wnids = cast(List[Tuple[str, ...]], next(iter(meta_dp)))
+        categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
+        return categories_and_wnids

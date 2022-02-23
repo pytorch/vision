@@ -16,11 +16,10 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
-from torchvision.prototype.datasets._api import find
-from torchvision.prototype.utils._internal import sequence_to_str
+from torchvision.prototype import datasets
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
@@ -30,13 +29,11 @@ __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
 
 
 class DatasetMock:
-    def __init__(self, name, mock_data_fn):
-        self.dataset = find(name)
-        self.info = self.dataset.info
-        self.name = self.info.name
-
+    def __init__(self, name, *, mock_data_fn, configs):
+        # FIXME: error handling for unknown names
+        self.name = name
         self.mock_data_fn = mock_data_fn
-        self.configs = self.info._configs
+        self.configs = configs
 
     def _parse_mock_info(self, mock_info):
         if mock_info is None:
@@ -61,27 +58,30 @@ class DatasetMock:
 
         return mock_info
 
-    def prepare(self, home, config):
+    def prepare(self, home, **options):
         root = home / self.name
         root.mkdir(exist_ok=True)
 
-        mock_info = self._parse_mock_info(self.mock_data_fn(self.info, root, config))
+        mock_info = self._parse_mock_info(self.mock_data_fn(datasets.info(self.name), root, **options))
 
-        available_file_names = {path.name for path in root.glob("*")}
-        required_file_names = {resource.file_name for resource in self.dataset.resources(config)}
-        missing_file_names = required_file_names - available_file_names
-        if missing_file_names:
-            raise pytest.UsageError(
-                f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
-                f"for {config}, but they were not created by the mock data function."
-            )
+        # # FIXME: We need to handle missing files here
+        # dataset = datasets.load2(self.name, **options)
+        #
+        # available_file_names = {path.name for path in root.glob("*")}
+        # required_file_names = {resource.file_name for resource in self.dataset.resources(config)}
+        # missing_file_names = required_file_names - available_file_names
+        # if missing_file_names:
+        #     raise pytest.UsageError(
+        #         f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
+        #         f"for {config}, but they were not created by the mock data function."
+        #     )
 
         return mock_info
 
 
-def config_id(name, config):
+def config_id(name, options):
     parts = [name]
-    for name, value in config.items():
+    for name, value in options.items():
         if isinstance(value, bool):
             part = ("" if value else "no_") + name
         else:
@@ -95,6 +95,8 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
     for mock in dataset_mocks:
         if isinstance(mock, DatasetMock):
             mocks[mock.name] = mock
+        elif isinstance(mock, collections.abc.Sequence):
+            mocks.update({mock_.name: mock_ for mock_ in mock})
         elif isinstance(mock, collections.abc.Mapping):
             mocks.update(mock)
         else:
@@ -111,21 +113,20 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
         raise pytest.UsageError()
 
     return pytest.mark.parametrize(
-        ("dataset_mock", "config"),
+        ("dataset_mock", "options"),
         [
-            pytest.param(dataset_mock, config, id=config_id(name, config), marks=marks.get(name, ()))
+            pytest.param(dataset_mock, options, id=config_id(name, options), marks=marks.get(name, ()))
             for name, dataset_mock in dataset_mocks.items()
-            for config in dataset_mock.configs
+            for options in dataset_mock.configs
         ],
     )
 
 
-DATASET_MOCKS = {}
+DATASET_MOCKS = []
 
 
 def register_mock(fn):
-    name = fn.__name__.replace("_", "-")
-    DATASET_MOCKS[name] = DatasetMock(name, fn)
+    # TODO: remove this decorator after all datasets have been migrated
     return fn
 
 
@@ -217,7 +218,7 @@ def mnist(info, root, config):
     )
 
 
-DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
+# DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
 
 
 @register_mock
@@ -430,18 +431,15 @@ def caltech256(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-@register_mock
-def imagenet(info, root, config):
+def imagenet_mock_data_fn(info, root, **options):
     from scipy.io import savemat
 
-    categories = info.categories
-    wnids = [info.extra.category_to_wnid[category] for category in categories]
-    if config.split == "train":
-        num_samples = len(wnids)
+    if options["split"] == "train":
+        num_samples = len(info["wnids"])
         archive_name = "ILSVRC2012_img_train.tar"
 
         files = []
-        for wnid in wnids:
+        for wnid in info["wnids"]:
             create_image_folder(
                 root=root,
                 name=wnid,
@@ -449,7 +447,7 @@ def imagenet(info, root, config):
                 num_examples=1,
             )
             files.append(make_tar(root, f"{wnid}.tar"))
-    elif config.split == "val":
+    elif options["split"] == "val":
         num_samples = 3
         archive_name = "ILSVRC2012_img_val.tar"
         files = [create_image_file(root, f"ILSVRC2012_val_{idx + 1:08d}.JPEG") for idx in range(num_samples)]
@@ -459,20 +457,20 @@ def imagenet(info, root, config):
         data_root.mkdir(parents=True)
 
         with open(data_root / "ILSVRC2012_validation_ground_truth.txt", "w") as file:
-            for label in torch.randint(0, len(wnids), (num_samples,)).tolist():
+            for label in torch.randint(0, len(info["wnids"]), (num_samples,)).tolist():
                 file.write(f"{label}\n")
 
         num_children = 0
         synsets = [
             (idx, wnid, category, "", num_children, [], 0, 0)
-            for idx, (category, wnid) in enumerate(zip(categories, wnids), 1)
+            for idx, (category, wnid) in enumerate(zip(info["categories"], info["wnids"]), 1)
         ]
         num_children = 1
         synsets.extend((0, "", "", "", num_children, [], 0, 0) for _ in range(5))
         savemat(data_root / "meta.mat", dict(synsets=synsets))
 
         make_tar(root, devkit_root.with_suffix(".tar.gz").name, compression="gz")
-    else:  # config.split == "test"
+    else:  # options["split"] == "test"
         num_samples = 5
         archive_name = "ILSVRC2012_img_test_v10102019.tar"
         files = [create_image_file(root, f"ILSVRC2012_test_{idx + 1:08d}.JPEG") for idx in range(num_samples)]
@@ -480,6 +478,17 @@ def imagenet(info, root, config):
     make_tar(root, archive_name, *files)
 
     return num_samples
+
+
+DATASET_MOCKS.append(
+    DatasetMock(
+        "imagenet",
+        mock_data_fn=imagenet_mock_data_fn,
+        configs=combinations_grid(
+            split=("train", "val", "test"),
+        ),
+    )
+)
 
 
 class CocoMockData:
