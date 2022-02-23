@@ -49,7 +49,7 @@ def find(dct: Dict[str, T], name: str) -> T:
                     "You can use torchvision.datasets.list_datasets() to get a list of all available datasets."
                 ),
             )
-        ) from error
+        ) from None
 
 
 def info(name: str) -> Dict[str, Any]:

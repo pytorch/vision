@@ -42,6 +42,10 @@ class ImageNetResource(ManualDownloadResource):
 
 @register_dataset(NAME)
 class ImageNet(Dataset2):
+    """
+    - **homepage**: https://www.image-net.org/
+    """
+
     def __init__(self, root: Union[str, pathlib.Path], *, split: str = "train") -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "val", "test"})
 

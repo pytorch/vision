@@ -490,9 +490,16 @@ def imagenet(root, config):
     return num_samples
 
 
-class CocoMockData:
-    @classmethod
-    def _make_images_archive(cls, root, name, *, num_samples):
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "val"),
+        year=("2017", "2014"),
+        annotations=("instances", "captions", None),
+    )
+)
+def coco(root, options):
+    def make_images_archive(root, name, *, num_samples):
+
         image_paths = create_image_folder(
             root, name, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_samples
         )
@@ -507,15 +514,7 @@ class CocoMockData:
 
         return images_meta
 
-    @classmethod
-    def _make_annotations_json(
-        cls,
-        root,
-        name,
-        *,
-        images_meta,
-        fn,
-    ):
+    def make_annotations_json(root, name, *, images_meta, fn):
         num_anns_per_image = torch.randint(1, 5, (len(images_meta),))
         num_anns_total = int(num_anns_per_image.sum())
         ann_ids_iter = iter(torch.arange(num_anns_total)[torch.randperm(num_anns_total)])
@@ -532,8 +531,7 @@ class CocoMockData:
 
         return num_anns_per_image
 
-    @staticmethod
-    def _make_instances_data(ann_id, image_meta):
+    def make_instances_data(ann_id, image_meta):
         def make_rle_segmentation():
             height, width = image_meta["height"], image_meta["width"]
             numel = height * width
@@ -552,52 +550,37 @@ class CocoMockData:
             category_id=int(make_scalar(dtype=torch.int64)),
         )
 
-    @staticmethod
-    def _make_captions_data(ann_id, image_meta):
+    def make_captions_data(ann_id, image_meta):
         return dict(caption=f"Caption {ann_id} describing image {image_meta['id']}.")
 
-    @classmethod
-    def _make_annotations(cls, root, name, *, images_meta):
+    def make_annotations(root, name, *, images_meta):
         num_anns_per_image = torch.zeros((len(images_meta),), dtype=torch.int64)
         for annotations, fn in (
-            ("instances", cls._make_instances_data),
-            ("captions", cls._make_captions_data),
+            ("instances", make_instances_data),
+            ("captions", make_captions_data),
         ):
-            num_anns_per_image += cls._make_annotations_json(
+            num_anns_per_image += make_annotations_json(
                 root, f"{annotations}_{name}.json", images_meta=images_meta, fn=fn
             )
 
         return int(num_anns_per_image.sum())
 
-    @classmethod
-    def generate(
-        cls,
-        root,
-        *,
-        year,
-        num_samples,
-    ):
-        annotations_dir = root / "annotations"
-        annotations_dir.mkdir()
+    annotations_dir = root / "annotations"
+    annotations_dir.mkdir()
 
-        for split in ("train", "val"):
-            config_name = f"{split}{year}"
+    for split in ("train", "val"):
+        config_name = f"{split}{options['year']}"
 
-            images_meta = cls._make_images_archive(root, config_name, num_samples=num_samples)
-            cls._make_annotations(
-                annotations_dir,
-                config_name,
-                images_meta=images_meta,
-            )
+        images_meta = make_images_archive(root, config_name, num_samples=5)
+        make_annotations(
+            annotations_dir,
+            config_name,
+            images_meta=images_meta,
+        )
 
-        make_zip(root, f"annotations_trainval{year}.zip", annotations_dir)
+    make_zip(root, f"annotations_trainval{options['year']}.zip", annotations_dir)
 
-        return num_samples
-
-
-# @register_mock
-def coco(info, root, config):
-    return CocoMockData.generate(root, year=config.year, num_samples=5)
+    return len(images_meta)
 
 
 class SBDMockData:

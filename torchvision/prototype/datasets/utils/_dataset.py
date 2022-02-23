@@ -195,7 +195,18 @@ class Dataset2(IterDataPipe[Dict[str, Any]], abc.ABC):
     ) -> str:
         return verify_str_arg(value, arg, valid_values, custom_msg=custom_msg)
 
-    def __init__(self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False) -> None:
+    def __init__(
+        self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False, dependencies: Collection[str] = ()
+    ) -> None:
+        for dependency in dependencies:
+            try:
+                importlib.import_module(dependency)
+            except ModuleNotFoundError as error:
+                raise ModuleNotFoundError(
+                    f"{type(self).__name__}() depends on the third-party package '{dependency}'. "
+                    f"Please install it, for example with `pip install {dependency}`."
+                ) from error
+
         self._root = pathlib.Path(root).expanduser().resolve()
         resources = [
             resource.load(self._root, skip_integrity_check=skip_integrity_check) for resource in self._resources()
