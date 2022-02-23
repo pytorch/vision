@@ -1,6 +1,6 @@
 import enum
 import functools
-from typing import Any, Dict, Optional
+from typing import Any, Dict, Optional, Set, Type
 
 from torch import nn
 from torchvision.prototype.utils._internal import apply_recursively
@@ -11,6 +11,7 @@ from .functional._utils import Dispatcher
 
 class Transform(nn.Module):
     _DISPATCHER: Optional[Dispatcher] = None
+    _FAIL_TYPES: Set[Type] = set()
 
     def __init__(self) -> None:
         super().__init__()
@@ -23,10 +24,12 @@ class Transform(nn.Module):
         if not self._DISPATCHER:
             raise NotImplementedError()
 
-        if input not in self._DISPATCHER:
+        if input in self._DISPATCHER:
+            return self._DISPATCHER(input, **params)
+        elif type(input) in self._FAIL_TYPES:
+            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
+        else:
             return input
-
-        return self._DISPATCHER(input, **params)
 
     def forward(self, *inputs: Any, params: Optional[Dict[str, Any]] = None) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
