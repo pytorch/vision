@@ -1401,13 +1401,13 @@ class TestDropBlock:
     @pytest.mark.parametrize("seed", range(10))
     @pytest.mark.parametrize("dim", [2, 3])
     @pytest.mark.parametrize("p", [0.1, 0.2])
-    @pytest.mark.parametrize("block_size", [3, 5])
+    @pytest.mark.parametrize("block_size", [3,])
     @pytest.mark.parametrize("inplace", [False,])
     def test_drop_block_random(self, seed, dim, p, block_size, inplace):
         torch.manual_seed(seed)
         batch_size = 5
         channels = 3
-        height = 16
+        height = 11
         width = height
         depth = height
         if dim == 2:
