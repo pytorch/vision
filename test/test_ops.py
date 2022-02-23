@@ -1412,10 +1412,10 @@ class TestDropBlock:
         depth = height
         if dim == 2:
             x = torch.ones(size=(batch_size, channels, height, width))
-            layer = DropBlock2d(p=p, block_size=block_size, inplace=inplace)
+            layer = ops.DropBlock2d(p=p, block_size=block_size, inplace=inplace)
         elif dim == 3:
             x = torch.ones(size=(batch_size, channels, depth, height, width))
-            layer = DropBlock3d(p=p, block_size=block_size, inplace=inplace)
+            layer = ops.DropBlock3d(p=p, block_size=block_size, inplace=inplace)
 
         trials = 250
         num_samples = 0
