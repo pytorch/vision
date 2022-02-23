@@ -131,9 +131,8 @@ print(format_prs(missing_prs))
 
 # Generate list of contributors
 print()
-print(f"## Contributors")
+print("## Contributors")
 
-command_to_run = f"{{ git shortlog -s {previous_release}..{current_release} | cut -f2- & git log -s {previous_release}..{current_release} | grep Co-authored | cut -f2- -d: | cut -f1 -d\< | sed 's/^ *//;s/ *$//' ; }} | sort --ignore-case | uniq | tr '\\n' ';' | sed 's/;/, /g;s/, $//' | fold -s"
+command_to_run = f"{{ git shortlog -s {previous_release}..{current_release} | cut -f2- & git log -s {previous_release}..{current_release} | grep Co-authored | cut -f2- -d: | cut -f1 -d\\< | sed 's/^ *//;s/ *$//' ; }} | sort --ignore-case | uniq | tr '\\n' ';' | sed 's/;/, /g;s/, $//' | fold -s"
 rc, output, err = run(command_to_run)
 print(output)
-
