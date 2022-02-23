@@ -4,7 +4,6 @@ from typing import Any, Dict, List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F
-import torchvision
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
@@ -408,10 +407,7 @@ class SSD(nn.Module):
                 box = boxes[keep_idxs]
 
                 # keep only topk scoring predictions
-                if torchvision._is_tracing():
-                    num_topk = det_utils._topk_min(score, self.topk_candidates, 0)
-                else:
-                    num_topk = min(self.topk_candidates, score.size(0))
+                num_topk = det_utils._topk_min(score, self.topk_candidates, 0)
                 score, idxs = score.topk(num_topk)
                 box = box[idxs]
 

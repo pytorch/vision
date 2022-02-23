@@ -195,11 +195,8 @@ class RegionProposalNetwork(torch.nn.Module):
         r = []
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
-            if torchvision._is_tracing():
-                pre_nms_top_n = det_utils._topk_min(ob, self.pre_nms_top_n(), 1)
-            else:
-                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)
             num_anchors = ob.shape[1]
+            pre_nms_top_n = det_utils._topk_min(ob, self.pre_nms_top_n(), 1)
             _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
             r.append(top_n_idx + offset)
             offset += num_anchors
