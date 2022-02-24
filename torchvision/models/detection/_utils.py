@@ -470,11 +470,6 @@ def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
     return out_channels
 
 
-@torch.jit.unused
-def _fake_cast_onnx(v: Tensor) -> int:
-    return v
-
-
 def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
     """
     ONNX spec requires the k-value to be less than or equal to the number of inputs along
@@ -498,4 +493,4 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
         return min(orig_kval, input.size(axis))
     axis_dim_val = torch._shape_as_tensor(input)[axis].unsqueeze(0)
     min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
-    return _fake_cast_onnx(min_kval)
+    return min_kval  # type: ignore[arg-type]
