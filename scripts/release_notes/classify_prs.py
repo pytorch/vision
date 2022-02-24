@@ -1,13 +1,18 @@
 # In[1]:
 
-
+# imports and set configuration
 import pandas as pd
+from retrieve_prs_data import run
 
+exclude_prototype = True
+data_filename = "10.0_to_11.0-rc2.json"
+previous_release = "v10.0"
+current_release = "v11.0-rc2"
 
 # In[2]:
 
 
-df = pd.read_json("10.0_to_11.0-rc2.json").T
+df = pd.read_json(data_filename).T
 df.tail()
 
 
@@ -76,6 +81,8 @@ mod_df[mod_df["enhancement"] & mod_df["module: transforms"]]
 def format_prs(mod_df):
     out = []
     for idx, row in mod_df.iterrows():
+        if exclude_prototype and row["prototype"]:
+            continue
         modules = idx
         # Put "documentation" and "tests" first for sorting to be dece
         for last_module in ("documentation", "tests"):
@@ -119,3 +126,13 @@ for section_title, module_idx in (
 # Missing PRs are these ones... classify them manually
 missing_prs = pd.concat([mod_df, included_prs]).drop_duplicates(subset="pr_number", keep=False)
 print(format_prs(missing_prs))
+
+# In[12]:
+
+# Generate list of contributors
+print()
+print("## Contributors")
+
+command_to_run = f"{{ git shortlog -s {previous_release}..{current_release} | cut -f2- & git log -s {previous_release}..{current_release} | grep Co-authored | cut -f2- -d: | cut -f1 -d\\< | sed 's/^ *//;s/ *$//' ; }} | sort --ignore-case | uniq | tr '\\n' ';' | sed 's/;/, /g;s/, $//' | fold -s"
+rc, output, err = run(command_to_run)
+print(output)
