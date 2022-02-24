@@ -45,7 +45,6 @@ Operators
     FeaturePyramidNetwork
     StochasticDepth
     FrozenBatchNorm2d
-    ConvNormActivation
     Conv2dNormActivation
     Conv3dNormActivation
     SqueezeExcitation
