@@ -185,7 +185,7 @@ def resize_image_tensor():
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(image, size=size, interpolation=interpolation.value)
+            yield SampleInput(image, size=size, interpolation=interpolation)
 
 
 @register_kernel_info_from_sample_inputs_fn

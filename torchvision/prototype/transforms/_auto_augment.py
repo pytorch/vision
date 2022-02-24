@@ -6,7 +6,6 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
 from torchvision.prototype.utils._internal import apply_recursively
-from torchvision.transforms.functional import pil_modes_mapping
 
 from ._utils import query_image
 
@@ -38,17 +37,11 @@ class _AutoAugmentBase(Transform):
             if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
                 raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
             elif isinstance(input, features.Image):
-                if "interpolation" in kwargs:
-                    kwargs["interpolation"] = kwargs["interpolation"].value
                 output = image_tensor_kernel(input, *args, **kwargs)
                 return features.Image.new_like(input, output)
             elif isinstance(input, torch.Tensor):
-                if "interpolation" in kwargs:
-                    kwargs["interpolation"] = kwargs["interpolation"].value
                 return image_tensor_kernel(input, *args, **kwargs)
             elif isinstance(input, PIL.Image.Image):
-                if "interpolation" in kwargs:
-                    kwargs["interpolation"] = pil_modes_mapping[kwargs["interpolation"]]
                 return image_pil_kernel(input, *args, **kwargs)
             else:
                 return input

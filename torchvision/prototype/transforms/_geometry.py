@@ -6,7 +6,6 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
-from torchvision.transforms.functional import pil_modes_mapping
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
 from ._utils import query_image
@@ -40,7 +39,7 @@ class Resize(Transform):
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if isinstance(input, features.Image):
-            output = F.resize_image_tensor(input, self.size, interpolation=self.interpolation.value)
+            output = F.resize_image_tensor(input, self.size, interpolation=self.interpolation)
             return features.Image.new_like(input, output)
         elif isinstance(input, features.SegmentationMask):
             output = F.resize_segmentation_mask(input, self.size)
@@ -49,9 +48,9 @@ class Resize(Transform):
             output = F.resize_bounding_box(input, self.size, image_size=input.image_size)
             return features.BoundingBox.new_like(input, output, image_size=self.size)
         elif isinstance(input, PIL.Image.Image):
-            return F.resize_image_pil(input, self.size, interpolation=pil_modes_mapping[self.interpolation])
+            return F.resize_image_pil(input, self.size, interpolation=self.interpolation)
         elif isinstance(input, torch.Tensor):
-            return F.resize_image_tensor(input, self.size, interpolation=self.interpolation.value)
+            return F.resize_image_tensor(input, self.size, interpolation=self.interpolation)
         else:
             return input
 
@@ -152,16 +151,12 @@ class RandomResizedCrop(Transform):
             raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
         elif isinstance(input, features.Image):
             output = F.resized_crop_image_tensor(
-                input, **params, size=list(self.size), interpolation=self.interpolation.value
+                input, **params, size=list(self.size), interpolation=self.interpolation
             )
             return features.Image.new_like(input, output)
         elif isinstance(input, torch.Tensor):
-            return F.resized_crop_image_tensor(
-                input, **params, size=list(self.size), interpolation=self.interpolation.value
-            )
+            return F.resized_crop_image_tensor(input, **params, size=list(self.size), interpolation=self.interpolation)
         elif isinstance(input, PIL.Image.Image):
-            return F.resized_crop_image_pil(
-                input, **params, size=list(self.size), interpolation=pil_modes_mapping[self.interpolation]
-            )
+            return F.resized_crop_image_pil(input, **params, size=list(self.size), interpolation=self.interpolation)
         else:
             return input
