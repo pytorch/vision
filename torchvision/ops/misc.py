@@ -67,9 +67,6 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 
 class ConvNormActivation(torch.nn.Sequential):
-    """
-    Use Conv2dNormActivation instead.
-    """
 
     def __init__(
         self,
