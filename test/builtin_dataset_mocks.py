@@ -97,8 +97,6 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
     for mock in dataset_mocks:
         if isinstance(mock, DatasetMock):
             mocks[mock.name] = mock
-        elif isinstance(mock, collections.abc.Sequence):
-            mocks.update({mock_.name: mock_ for mock_ in mock})
         elif isinstance(mock, collections.abc.Mapping):
             mocks.update(mock)
         else:
@@ -124,12 +122,19 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
     )
 
 
-DATASET_MOCKS = []
+DATASET_MOCKS = {}
 
 
-def register_mock(fn):
-    # TODO: remove this decorator after all datasets have been migrated
-    return fn
+def register_mock(name=None, *, configs):
+    def wrapper(mock_data_fn):
+        nonlocal name
+        if name is None:
+            name = mock_data_fn.__name__
+        DATASET_MOCKS[name] = DatasetMock(name, mock_data_fn=mock_data_fn, configs=configs)
+
+        return mock_data_fn
+
+    return wrapper
 
 
 class MNISTMockData:
@@ -207,7 +212,7 @@ class MNISTMockData:
         return num_samples
 
 
-@register_mock
+# # @register_mock
 def mnist(info, root, config):
     train = config.split == "train"
     images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
@@ -223,7 +228,7 @@ def mnist(info, root, config):
 # DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
 
 
-@register_mock
+# # @register_mock
 def emnist(info, root, config):
     # The image sets that merge some lower case letters in their respective upper case variant, still use dense
     # labels in the data files. Thus, num_categories != len(categories) there.
@@ -250,7 +255,7 @@ def emnist(info, root, config):
     return num_samples_map[config]
 
 
-@register_mock
+# # @register_mock
 def qmnist(info, root, config):
     num_categories = len(info.categories)
     if config.split == "train":
@@ -327,7 +332,7 @@ class CIFARMockData:
         make_tar(root, name, folder, compression="gz")
 
 
-@register_mock
+# @register_mock
 def cifar10(info, root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
@@ -345,7 +350,7 @@ def cifar10(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-@register_mock
+# @register_mock
 def cifar100(info, root, config):
     train_files = ["train"]
     test_files = ["test"]
@@ -363,7 +368,7 @@ def cifar100(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-@register_mock
+# @register_mock
 def caltech101(info, root, config):
     def create_ann_file(root, name):
         import scipy.io
@@ -413,7 +418,7 @@ def caltech101(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-@register_mock
+# @register_mock
 def caltech256(info, root, config):
     dir = root / "256_ObjectCategories"
     num_images_per_category = 2
@@ -433,7 +438,8 @@ def caltech256(info, root, config):
     return num_images_per_category * len(info.categories)
 
 
-def imagenet_mock_data_fn(info, root, **options):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def imagenet(info, root, **options):
     from scipy.io import savemat
 
     if options["split"] == "train":
@@ -480,17 +486,6 @@ def imagenet_mock_data_fn(info, root, **options):
     make_tar(root, archive_name, *files)
 
     return num_samples
-
-
-DATASET_MOCKS.append(
-    DatasetMock(
-        "imagenet",
-        mock_data_fn=imagenet_mock_data_fn,
-        configs=combinations_grid(
-            split=("train", "val", "test"),
-        ),
-    )
-)
 
 
 class CocoMockData:
@@ -598,7 +593,7 @@ class CocoMockData:
         return num_samples
 
 
-@register_mock
+# @register_mock
 def coco(info, root, config):
     return CocoMockData.generate(root, year=config.year, num_samples=5)
 
@@ -672,12 +667,12 @@ class SBDMockData:
         return num_samples_map
 
 
-@register_mock
+# @register_mock
 def sbd(info, root, config):
     return SBDMockData.generate(root)[config.split]
 
 
-@register_mock
+# @register_mock
 def semeion(info, root, config):
     num_samples = 3
     num_categories = len(info.categories)
@@ -790,7 +785,7 @@ class VOCMockData:
         return num_samples_map
 
 
-@register_mock
+# @register_mock
 def voc(info, root, config):
     trainval = config.split != "test"
     return VOCMockData.generate(root, year=config.year, trainval=trainval)[config.split]
@@ -884,12 +879,12 @@ class CelebAMockData:
         return num_samples_map
 
 
-@register_mock
+# @register_mock
 def celeba(info, root, config):
     return CelebAMockData.generate(root)[config.split]
 
 
-@register_mock
+# @register_mock
 def dtd(info, root, config):
     data_folder = root / "dtd"
 
@@ -937,7 +932,7 @@ def dtd(info, root, config):
     return num_samples_map[config]
 
 
-@register_mock
+# @register_mock
 def fer2013(info, root, config):
     num_samples = 5 if config.split == "train" else 3
 
@@ -962,7 +957,7 @@ def fer2013(info, root, config):
     return num_samples
 
 
-@register_mock
+# @register_mock
 def gtsrb(info, root, config):
     num_examples_per_class = 5 if config.split == "train" else 3
     classes = ("00000", "00042", "00012")
@@ -1032,7 +1027,7 @@ def gtsrb(info, root, config):
     return num_examples
 
 
-@register_mock
+# @register_mock
 def clevr(info, root, config):
     data_folder = root / "CLEVR_v1.0"
 
@@ -1138,7 +1133,7 @@ class OxfordIIITPetMockData:
         return num_samples_map
 
 
-@register_mock
+# @register_mock
 def oxford_iiit_pet(info, root, config):
     return OxfordIIITPetMockData.generate(root)[config.split]
 
@@ -1304,13 +1299,13 @@ class CUB2002010MockData(_CUB200MockData):
         return num_samples_map
 
 
-@register_mock
+# @register_mock
 def cub200(info, root, config):
     num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
     return num_samples_map[config.split]
 
 
-@register_mock
+# @register_mock
 def svhn(info, root, config):
     import scipy.io as sio
 
@@ -1330,7 +1325,7 @@ def svhn(info, root, config):
     return num_samples
 
 
-@register_mock
+# @register_mock
 def pcam(info, root, config):
     import h5py
 
