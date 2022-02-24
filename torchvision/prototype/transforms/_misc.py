@@ -2,9 +2,7 @@ import functools
 from typing import Any, List, Type, Callable, Dict
 
 import torch
-from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
-from torchvision.transforms import functional as _F
 
 
 class Identity(Transform):
@@ -40,11 +38,12 @@ class Normalize(Transform):
         self.std = std
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is torch.Tensor:
-            return _F.normalize(input, mean=self.mean, std=self.std)
-        if type(input) is features.Image:
-            output = F.normalize_image(input, mean=self.mean, std=self.std)
-            return features.Image.new_like(input, output)
+        if isinstance(input, torch.Tensor):
+            # We don't need to differentiate between vanilla tensors and features.Image's here, since the result of the
+            # normalization transform is no longer a features.Image
+            return F.normalize_image_tensor(input, mean=self.mean, std=self.std)
+        else:
+            return input
 
 
 class ToDtype(Lambda):
@@ -54,3 +53,7 @@ class ToDtype(Lambda):
 
     def extra_repr(self) -> str:
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
+
+
+class GaussianBlur(Transform):
+    pass

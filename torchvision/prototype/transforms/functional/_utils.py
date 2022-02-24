@@ -5,6 +5,8 @@ import torch
 from torchvision.prototype import features
 from torchvision.transforms import functional as _F
 
+# FIXME
+
 
 def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int]:
     if type(image) is torch.Tensor or isinstance(image, PIL.Image.Image):

@@ -1,32 +1,32 @@
 from typing import Tuple
 
 import torch
-from torchvision.transforms import functional as _F
+from torchvision.transforms import functional_tensor as _FT
 
 
-erase_image = _F.erase
+erase_image_tensor = _FT.erase
 
 
-def _mixup(input: torch.Tensor, batch_dim: int, lam: float) -> torch.Tensor:
+def _mixup_tensor(input: torch.Tensor, batch_dim: int, lam: float) -> torch.Tensor:
     input = input.clone()
     return input.roll(1, batch_dim).mul_(1 - lam).add_(input.mul_(lam))
 
 
-def mixup_image(image_batch: torch.Tensor, *, lam: float) -> torch.Tensor:
+def mixup_image_tensor(image_batch: torch.Tensor, *, lam: float) -> torch.Tensor:
     if image_batch.ndim < 4:
         raise ValueError("Need a batch of images")
 
-    return _mixup(image_batch, -4, lam)
+    return _mixup_tensor(image_batch, -4, lam)
 
 
 def mixup_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam: float) -> torch.Tensor:
     if one_hot_label_batch.ndim < 2:
         raise ValueError("Need a batch of one hot labels")
 
-    return _mixup(one_hot_label_batch, -2, lam)
+    return _mixup_tensor(one_hot_label_batch, -2, lam)
 
 
-def cutmix_image(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int]) -> torch.Tensor:
+def cutmix_image_tensor(image_batch: torch.Tensor, *, box: Tuple[int, int, int, int]) -> torch.Tensor:
     if image_batch.ndim < 4:
         raise ValueError("Need a batch of images")
 
@@ -42,4 +42,4 @@ def cutmix_one_hot_label(one_hot_label_batch: torch.Tensor, *, lam_adjusted: flo
     if one_hot_label_batch.ndim < 2:
         raise ValueError("Need a batch of one hot labels")
 
-    return _mixup(one_hot_label_batch, -2, lam_adjusted)
+    return _mixup_tensor(one_hot_label_batch, -2, lam_adjusted)

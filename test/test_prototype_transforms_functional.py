@@ -160,7 +160,7 @@ def register_kernel_info_from_sample_inputs_fn(sample_inputs_fn):
 
 
 @register_kernel_info_from_sample_inputs_fn
-def horizontal_flip_image():
+def horizontal_flip_image_tensor():
     for image in make_images():
         yield SampleInput(image)
 
@@ -172,7 +172,7 @@ def horizontal_flip_bounding_box():
 
 
 @register_kernel_info_from_sample_inputs_fn
-def resize_image():
+def resize_image_tensor():
     for image, interpolation in itertools.product(
         make_images(),
         [
@@ -185,7 +185,7 @@ def resize_image():
             (height, width),
             (int(height * 0.75), int(width * 1.25)),
         ]:
-            yield SampleInput(image, size=size, interpolation=interpolation)
+            yield SampleInput(image, size=size, interpolation=interpolation.value)
 
 
 @register_kernel_info_from_sample_inputs_fn

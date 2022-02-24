@@ -6,7 +6,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
 from torchvision.prototype.utils._internal import apply_recursively
-from torchvision.transforms import functional as _F
+from torchvision.transforms.functional import pil_modes_mapping
 
 from ._utils import query_image
 
@@ -28,14 +28,28 @@ class _AutoAugmentBase(Transform):
         return key, dct[key]
 
     def _apply_transform(self, sample: Any, transform_id: str, magnitude: float) -> Any:
-        def dispatch(image_kernel: Callable, legacy_kernel: Callable, input: Any, *args: Any, **kwargs: Any) -> Any:
-            if type(input) is torch.Tensor or isinstance(input, PIL.Image.Image):
-                return legacy_kernel(input, *args, **kwargs)
-            elif type(input) is features.Image:
-                output = image_kernel(input, *args, **kwargs)
+        def dispatch(
+            image_tensor_kernel: Callable,
+            image_pil_kernel: Callable,
+            input: Any,
+            *args: Any,
+            **kwargs: Any,
+        ) -> Any:
+            if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+                raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+            elif isinstance(input, features.Image):
+                if "interpolation" in kwargs:
+                    kwargs["interpolation"] = kwargs["interpolation"].value
+                output = image_tensor_kernel(input, *args, **kwargs)
                 return features.Image.new_like(input, output)
-            elif type(input) in {features.BoundingBox, features.SegmentationMask}:
-                raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
+            elif isinstance(input, torch.Tensor):
+                if "interpolation" in kwargs:
+                    kwargs["interpolation"] = kwargs["interpolation"].value
+                return image_tensor_kernel(input, *args, **kwargs)
+            elif isinstance(input, PIL.Image.Image):
+                if "interpolation" in kwargs:
+                    kwargs["interpolation"] = pil_modes_mapping[kwargs["interpolation"]]
+                return image_pil_kernel(input, *args, **kwargs)
             else:
                 return input
 
@@ -60,8 +74,8 @@ class _AutoAugmentBase(Transform):
                 return input
             elif transform_id == "ShearX":
                 return dispatch(
-                    F.affine_image,
-                    _F.affine,
+                    F.affine_image_tensor,
+                    F.affine_image_pil,
                     input,
                     angle=0.0,
                     translate=[0, 0],
@@ -72,8 +86,8 @@ class _AutoAugmentBase(Transform):
                 )
             elif transform_id == "ShearY":
                 return dispatch(
-                    F.affine_image,
-                    _F.affine,
+                    F.affine_image_tensor,
+                    F.affine_image_pil,
                     input,
                     angle=0.0,
                     translate=[0, 0],
@@ -84,8 +98,8 @@ class _AutoAugmentBase(Transform):
                 )
             elif transform_id == "TranslateX":
                 return dispatch(
-                    F.affine_image,
-                    _F.affine,
+                    F.affine_image_tensor,
+                    F.affine_image_pil,
                     input,
                     angle=0.0,
                     translate=[int(magnitude), 0],
@@ -96,8 +110,8 @@ class _AutoAugmentBase(Transform):
                 )
             elif transform_id == "TranslateY":
                 return dispatch(
-                    F.affine_image,
-                    _F.affine,
+                    F.affine_image_tensor,
+                    F.affine_image_pil,
                     input,
                     angle=0.0,
                     translate=[0, int(magnitude)],
@@ -107,29 +121,42 @@ class _AutoAugmentBase(Transform):
                     fill=fill,
                 )
             elif transform_id == "Rotate":
-                return dispatch(F.rotate_image, _F.rotate, input, angle=magnitude)
+                return dispatch(F.rotate_image_tensor, F.rotate_image_pil, input, angle=magnitude)
             elif transform_id == "Brightness":
                 return dispatch(
-                    F.adjust_brightness_image, _F.adjust_brightness, input, brightness_factor=1.0 + magnitude
+                    F.adjust_brightness_image_tensor,
+                    F.adjust_brightness_image_pil,
+                    input,
+                    brightness_factor=1.0 + magnitude,
                 )
             elif transform_id == "Color":
                 return dispatch(
-                    F.adjust_saturation_image, _F.adjust_saturation, input, saturation_factor=1.0 + magnitude
+                    F.adjust_saturation_image_tensor,
+                    F.adjust_saturation_image_pil,
+                    input,
+                    saturation_factor=1.0 + magnitude,
                 )
             elif transform_id == "Contrast":
-                return dispatch(F.adjust_contrast_image, _F.adjust_contrast, input, contrast_factor=1.0 + magnitude)
+                return dispatch(
+                    F.adjust_contrast_image_tensor, F.adjust_contrast_image_pil, input, contrast_factor=1.0 + magnitude
+                )
             elif transform_id == "Sharpness":
-                return dispatch(F.adjust_sharpness_image, _F.adjust_sharpness, input, sharpness_factor=1.0 + magnitude)
+                return dispatch(
+                    F.adjust_sharpness_image_tensor,
+                    F.adjust_sharpness_image_pil,
+                    input,
+                    sharpness_factor=1.0 + magnitude,
+                )
             elif transform_id == "Posterize":
-                return dispatch(F.posterize_image, _F.posterize, input, bits=int(magnitude))
+                return dispatch(F.posterize_image_tensor, F.posterize_image_pil, input, bits=int(magnitude))
             elif transform_id == "Solarize":
-                return dispatch(F.solarize_image, _F.solarize, input, threshold=magnitude)
+                return dispatch(F.solarize_image_tensor, F.solarize_image_pil, input, threshold=magnitude)
             elif transform_id == "AutoContrast":
-                return dispatch(F.autocontrast_image, _F.autocontrast, input)
+                return dispatch(F.autocontrast_image_tensor, F.autocontrast_image_pil, input)
             elif transform_id == "Equalize":
-                return dispatch(F.equalize_image, _F.equalize, input)
+                return dispatch(F.equalize_image_tensor, F.equalize_image_pil, input)
             elif transform_id == "Invert":
-                return dispatch(F.invert_image, _F.invert, input)
+                return dispatch(F.invert_image_tensor, F.invert_image_pil, input)
             else:
                 raise ValueError(f"No transform available for {transform_id}")
 

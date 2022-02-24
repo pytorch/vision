@@ -3,11 +3,9 @@ import numbers
 import warnings
 from typing import Any, Dict, Tuple
 
-import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
-from torchvision.transforms import functional as _F
 
 from ._utils import query_image
 
@@ -92,12 +90,13 @@ class RandomErasing(Transform):
         return dict(zip("ijhwv", (i, j, h, w, v)))
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is torch.Tensor:
-            return _F.erase(input, **params)
-        elif type(input) is features.Image:
-            return features.Image.new_like(input, F.erase_image(input, **params))
-        elif type(input) in {features.BoundingBox, features.SegmentationMask} or isinstance(input, PIL.Image.Image):
-            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        elif isinstance(input, features.Image):
+            output = F.erase_image_tensor(input, **params)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, torch.Tensor):
+            return F.erase_image_tensor(input, **params)
         else:
             return input
 
@@ -118,14 +117,14 @@ class RandomMixup(Transform):
         return dict(lam=float(self._dist.sample(())))
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.Image:
-            output = F.mixup_image(input, **params)
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        elif isinstance(input, features.Image):
+            output = F.mixup_image_tensor(input, **params)
             return features.Image.new_like(input, output)
-        elif type(input) is features.OneHotLabel:
+        elif isinstance(input, features.OneHotLabel):
             output = F.mixup_one_hot_label(input, **params)
             return features.OneHotLabel.new_like(input, output)
-        elif type(input) in {torch.Tensor, features.BoundingBox, features.SegmentationMask}:
-            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
         else:
             return input
 
@@ -160,13 +159,13 @@ class RandomCutmix(Transform):
         return dict(box=box, lam_adjusted=lam_adjusted)
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.Image:
-            output = F.cutmix_image(input, box=params["box"])
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        elif isinstance(input, features.Image):
+            output = F.cutmix_image_tensor(input, box=params["box"])
             return features.Image.new_like(input, output)
-        elif type(input) is features.OneHotLabel:
+        elif isinstance(input, features.OneHotLabel):
             output = F.cutmix_one_hot_label(input, lam_adjusted=params["lam_adjusted"])
             return features.OneHotLabel.new_like(input, output)
-        elif type(input) in {torch.Tensor, features.BoundingBox, features.SegmentationMask}:
-            raise TypeError(f"{type(input)} is not supported by {type(self).__name__}()")
         else:
             return input
