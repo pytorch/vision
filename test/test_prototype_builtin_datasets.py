@@ -6,9 +6,8 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
-from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
-from torchdata.datapipes.iter import IterDataPipe, Shuffler
+from torchdata.datapipes.iter import Shuffler, ShardingFilter
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.utils._internal import sequence_to_str
 
@@ -35,14 +34,24 @@ def test_coverage():
 
 
 class TestCommon:
+    @pytest.mark.parametrize("name", datasets.list_datasets())
+    def test_info(self, name):
+        try:
+            info = datasets.info(name)
+        except ValueError:
+            raise AssertionError("No info available.") from None
+
+        if not (isinstance(info, dict) and all(isinstance(key, str) for key in info.keys())):
+            raise AssertionError("Info should be a dictionary with string keys.")
+
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not isinstance(dataset, IterDataPipe):
-            raise AssertionError(f"Loading the dataset should return an IterDataPipe, but got {type(dataset)} instead.")
+        if not isinstance(dataset, datasets.utils.Dataset2):
+            raise AssertionError(f"Loading the dataset should return an Dataset, but got {type(dataset)} instead.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_sample(self, test_home, dataset_mock, config):
@@ -67,24 +76,7 @@ class TestCommon:
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        num_samples = 0
-        for _ in dataset:
-            num_samples += 1
-
-        assert num_samples == mock_info["num_samples"]
-
-    @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_decoding(self, test_home, dataset_mock, config):
-        dataset_mock.prepare(test_home, config)
-
-        dataset = datasets.load(dataset_mock.name, **config)
-
-        undecoded_features = {key for key, value in next(iter(dataset)).items() if isinstance(value, io.IOBase)}
-        if undecoded_features:
-            raise AssertionError(
-                f"The values of key(s) "
-                f"{sequence_to_str(sorted(undecoded_features), separate_last='and ')} were not decoded."
-            )
+        assert len(list(dataset)) == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_no_vanilla_tensors(self, test_home, dataset_mock, config):
@@ -107,6 +99,7 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
+    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
     @parametrize_dataset_mocks(
         DATASET_MOCKS,
         marks={
@@ -122,6 +115,7 @@ class TestCommon:
 
         traverse(dataset)
 
+    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
     @parametrize_dataset_mocks(
         DATASET_MOCKS,
         marks={
@@ -138,7 +132,6 @@ class TestCommon:
                 yield from scan(sub_graph)
 
         dataset_mock.prepare(test_home, config)
-
         dataset = datasets.load(dataset_mock.name, **config)
 
         if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
@@ -156,7 +149,8 @@ class TestCommon:
             assert_samples_equal(torch.load(buffer), sample)
 
 
-@parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
+# FIXME: DATASET_MOCKS["qmnist"]
+@parametrize_dataset_mocks({})
 class TestQMNIST:
     def test_extra_label(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
@@ -176,12 +170,13 @@ class TestQMNIST:
             assert key in sample and isinstance(sample[key], type)
 
 
-@parametrize_dataset_mocks(DATASET_MOCKS["gtsrb"])
+# FIXME: DATASET_MOCKS["gtsrb"]
+@parametrize_dataset_mocks({})
 class TestGTSRB:
     def test_label_matches_path(self, test_home, dataset_mock, config):
         # We read the labels from the csv files instead. But for the trainset, the labels are also part of the path.
         # This test makes sure that they're both the same
-        if config.split != "train":
+        if config["split"] != "train":
             return
 
         dataset_mock.prepare(test_home, config)
