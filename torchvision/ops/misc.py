@@ -67,7 +67,6 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 
 class ConvNormActivation(torch.nn.Sequential):
-
     def __init__(
         self,
         in_channels: int,
