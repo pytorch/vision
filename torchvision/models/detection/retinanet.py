@@ -4,6 +4,7 @@ from collections import OrderedDict
 from typing import Dict, List, Tuple, Optional
 
 import torch
+import torchvision
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url

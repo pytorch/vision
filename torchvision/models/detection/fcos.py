@@ -5,6 +5,7 @@ from functools import partial
 from typing import Callable, Dict, List, Tuple, Optional
 
 import torch
+import torchvision
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url

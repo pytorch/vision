@@ -3,6 +3,7 @@ from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
+import torchvision
 import torch.nn.functional as F
 from torch import nn, Tensor
 
