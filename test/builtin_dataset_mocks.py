@@ -64,7 +64,7 @@ class DatasetMock:
         root = home / self.name
         root.mkdir(exist_ok=True)
 
-        mock_info = self._parse_mock_info(self.mock_data_fn(datasets.info(self.name), root, config))
+        mock_info = self._parse_mock_info(self.mock_data_fn(root, config))
 
         with unittest.mock.patch.object(datasets.utils.Dataset2, "__init__"):
             required_file_names = {
@@ -439,8 +439,10 @@ def caltech256(info, root, config):
 
 
 @register_mock(configs=combinations_grid(split=("train", "val", "test")))
-def imagenet(info, root, config):
+def imagenet(root, config):
     from scipy.io import savemat
+
+    info = datasets.info("imagenet")
 
     if config["split"] == "train":
         num_samples = len(info["wnids"])
