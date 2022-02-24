@@ -60,30 +60,30 @@ class DatasetMock:
 
         return mock_info
 
-    def prepare(self, home, **options):
+    def prepare(self, home, config):
         root = home / self.name
         root.mkdir(exist_ok=True)
 
-        mock_info = self._parse_mock_info(self.mock_data_fn(datasets.info(self.name), root, **options))
+        mock_info = self._parse_mock_info(self.mock_data_fn(datasets.info(self.name), root, config))
 
         with unittest.mock.patch.object(datasets.utils.Dataset2, "__init__"):
             required_file_names = {
-                resource.file_name for resource in datasets.load(self.name, root=root, **options)._resources()
+                resource.file_name for resource in datasets.load(self.name, root=root, **config)._resources()
             }
         available_file_names = {path.name for path in root.glob("*")}
         missing_file_names = required_file_names - available_file_names
         if missing_file_names:
             raise pytest.UsageError(
                 f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
-                f"for {options}, but they were not created by the mock data function."
+                f"for {config}, but they were not created by the mock data function."
             )
 
         return mock_info
 
 
-def config_id(name, options):
+def config_id(name, config):
     parts = [name]
-    for name, value in options.items():
+    for name, value in config.items():
         if isinstance(value, bool):
             part = ("" if value else "no_") + name
         else:
@@ -113,11 +113,11 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
         raise pytest.UsageError()
 
     return pytest.mark.parametrize(
-        ("dataset_mock", "options"),
+        ("dataset_mock", "config"),
         [
-            pytest.param(dataset_mock, options, id=config_id(name, options), marks=marks.get(name, ()))
+            pytest.param(dataset_mock, config, id=config_id(name, config), marks=marks.get(name, ()))
             for name, dataset_mock in dataset_mocks.items()
-            for options in dataset_mock.configs
+            for config in dataset_mock.configs
         ],
     )
 
@@ -212,7 +212,7 @@ class MNISTMockData:
         return num_samples
 
 
-# # @register_mock
+# @register_mock
 def mnist(info, root, config):
     train = config.split == "train"
     images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
@@ -228,7 +228,7 @@ def mnist(info, root, config):
 # DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
 
 
-# # @register_mock
+# @register_mock
 def emnist(info, root, config):
     # The image sets that merge some lower case letters in their respective upper case variant, still use dense
     # labels in the data files. Thus, num_categories != len(categories) there.
@@ -255,7 +255,7 @@ def emnist(info, root, config):
     return num_samples_map[config]
 
 
-# # @register_mock
+# @register_mock
 def qmnist(info, root, config):
     num_categories = len(info.categories)
     if config.split == "train":
@@ -439,10 +439,10 @@ def caltech256(info, root, config):
 
 
 @register_mock(configs=combinations_grid(split=("train", "val", "test")))
-def imagenet(info, root, **options):
+def imagenet(info, root, config):
     from scipy.io import savemat
 
-    if options["split"] == "train":
+    if config["split"] == "train":
         num_samples = len(info["wnids"])
         archive_name = "ILSVRC2012_img_train.tar"
 
@@ -455,7 +455,7 @@ def imagenet(info, root, **options):
                 num_examples=1,
             )
             files.append(make_tar(root, f"{wnid}.tar"))
-    elif options["split"] == "val":
+    elif config["split"] == "val":
         num_samples = 3
         archive_name = "ILSVRC2012_img_val.tar"
         files = [create_image_file(root, f"ILSVRC2012_val_{idx + 1:08d}.JPEG") for idx in range(num_samples)]
@@ -478,7 +478,7 @@ def imagenet(info, root, **options):
         savemat(data_root / "meta.mat", dict(synsets=synsets))
 
         make_tar(root, devkit_root.with_suffix(".tar.gz").name, compression="gz")
-    else:  # options["split"] == "test"
+    else:  # config["split"] == "test"
         num_samples = 5
         archive_name = "ILSVRC2012_img_test_v10102019.tar"
         files = [create_image_file(root, f"ILSVRC2012_test_{idx + 1:08d}.JPEG") for idx in range(num_samples)]

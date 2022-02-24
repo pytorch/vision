@@ -56,10 +56,10 @@ def info(name: str) -> Dict[str, Any]:
     return find(BUILTIN_INFOS, name)
 
 
-def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **options: Any) -> Dataset2:
+def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **config: Any) -> Dataset2:
     dataset_cls = find(BUILTIN_DATASETS, name)
 
     if root is None:
         root = pathlib.Path(home()) / name
 
-    return dataset_cls(root, **options)
+    return dataset_cls(root, **config)
