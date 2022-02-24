@@ -3,7 +3,6 @@ from collections import OrderedDict
 from typing import Any, Dict, List, Optional, Tuple
 
 import torch
-import torchvision
 import torch.nn.functional as F
 from torch import nn, Tensor
 
@@ -408,11 +407,7 @@ class SSD(nn.Module):
                 box = boxes[keep_idxs]
 
                 # keep only topk scoring predictions
-                num_topk = (
-                    det_utils._topk_min(score, self.topk_candidates, 0)
-                    if torchvision._is_tracing()
-                    else min(self.topk_candidates, score.size(0))
-                )
+                num_topk = det_utils._topk_min(score, self.topk_candidates, 0)
                 score, idxs = score.topk(num_topk)
                 box = box[idxs]
 

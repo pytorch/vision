@@ -489,6 +489,8 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Tensor:
     Returns:
         min_kval (Tensor): Appropriately selected k-value.
     """
+    if not torch.jit.is_tracing():
+        return min(orig_kval, input.size(axis))
     axis_dim_val = torch._shape_as_tensor(input)[axis].unsqueeze(0)
     min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
     return min_kval  # type: ignore[arg-type]
