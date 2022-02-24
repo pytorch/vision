@@ -1,6 +1,6 @@
 import math
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import List, Tuple, Union
 
 import torch
 from torch import Tensor, nn
@@ -470,7 +470,7 @@ def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
     return out_channels
 
 
-def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Tensor:
+def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Union[int, Tensor]:
     """
     ONNX spec requires the k-value to be less than or equal to the number of inputs along
     provided dim. Certain models use the number of elements along a particular axis instead of K
@@ -493,4 +493,4 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Tensor:
         return min(orig_kval, input.size(axis))
     axis_dim_val = torch._shape_as_tensor(input)[axis].unsqueeze(0)
     min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
-    return min_kval  # type: ignore[arg-type]
+    return min_kval
