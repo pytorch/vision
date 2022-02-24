@@ -1,7 +1,6 @@
-from typing import List, Optional, Dict, Tuple, cast
+from typing import List, Optional, Dict, Tuple
 
 import torch
-import torchvision
 from torch import nn, Tensor
 from torch.nn import functional as F
 from torchvision.ops import boxes as box_ops
@@ -11,17 +10,6 @@ from . import _utils as det_utils
 # Import AnchorGenerator to keep compatibility.
 from .anchor_utils import AnchorGenerator  # noqa: 401
 from .image_list import ImageList
-
-
-@torch.jit.unused
-def _onnx_get_num_anchors_and_pre_nms_top_n(ob: Tensor, orig_pre_nms_top_n: int) -> Tuple[int, int]:
-    from torch.onnx import operators
-
-    num_anchors = operators.shape_as_tensor(ob)[1].unsqueeze(0)
-    pre_nms_top_n = torch.min(torch.cat((torch.tensor([orig_pre_nms_top_n], dtype=num_anchors.dtype), num_anchors), 0))
-
-    # for mypy we cast at runtime
-    return cast(int, num_anchors), cast(int, pre_nms_top_n)
 
 
 class RPNHead(nn.Module):
@@ -206,11 +194,8 @@ class RegionProposalNetwork(torch.nn.Module):
         r = []
         offset = 0
         for ob in objectness.split(num_anchors_per_level, 1):
-            if torchvision._is_tracing():
-                num_anchors, pre_nms_top_n = _onnx_get_num_anchors_and_pre_nms_top_n(ob, self.pre_nms_top_n())
-            else:
-                num_anchors = ob.shape[1]
-                pre_nms_top_n = min(self.pre_nms_top_n(), num_anchors)
+            num_anchors = ob.shape[1]
+            pre_nms_top_n = det_utils._topk_min(ob, self.pre_nms_top_n(), 1)
             _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
             r.append(top_n_idx + offset)
             offset += num_anchors
