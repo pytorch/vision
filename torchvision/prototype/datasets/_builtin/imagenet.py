@@ -182,14 +182,13 @@ class ImageNet(Dataset2):
             "test": 100_000,
         }[self._split]
 
-    @classmethod
-    def _generate_categories(cls, root: pathlib.Path) -> List[Tuple[str, ...]]:
-        dataset = cls(root, split="val")
-        resources = dataset._resources()
+    def _generate_categories(self) -> List[Tuple[str, ...]]:
+        self._split = "val"
+        resources = self._resources()
 
-        devkit_dp = resources[1].load(root)
+        devkit_dp = resources[1].load(self._root)
         meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
-        meta_dp = Mapper(meta_dp, dataset._extract_categories_and_wnids)
+        meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
 
         categories_and_wnids = cast(List[Tuple[str, ...]], next(iter(meta_dp)))
         categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])

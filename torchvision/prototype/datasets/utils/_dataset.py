@@ -217,6 +217,5 @@ class Dataset2(IterDataPipe[Dict[str, Any]], abc.ABC):
     def __len__(self) -> int:
         pass
 
-    @classmethod
-    def _generate_categories(cls, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:
+    def _generate_categories(self) -> Sequence[Union[str, Sequence[str]]]:
         raise NotImplementedError
