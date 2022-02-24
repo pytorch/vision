@@ -53,6 +53,7 @@ class Coco(Dataset2):
         split: str = "train",
         year: str = "2017",
         annotations: Optional[str] = "instances",
+        **kwargs: Any,
     ) -> None:
         """
         - **homepage**: https://cocodataset.org/
@@ -70,7 +71,7 @@ class Coco(Dataset2):
         self._categories: List[str] = categories
         self._category_to_super_category = dict(zip(categories, super_categories))
 
-        super().__init__(root, dependencies=("pycocotools",))
+        super().__init__(root, dependencies=("pycocotools",), **kwargs)
 
     _IMAGE_URL_BASE = "http://images.cocodataset.org/zips"
 
