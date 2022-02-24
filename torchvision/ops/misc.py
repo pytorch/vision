@@ -146,11 +146,10 @@ class Conv2dNormActivation(_ConvNormActivation):
         bias: Optional[bool] = None,
     ) -> None:
 
-        conv_layer = torch.nn.Conv2d
         super().__init__(
             in_channels,
             out_channels,
-            conv_layer,
+            torch.nn.Conv2d,
             kernel_size,
             stride,
             padding,
@@ -196,11 +195,10 @@ class Conv3dNormActivation(_ConvNormActivation):
         bias: Optional[bool] = None,
     ) -> None:
 
-        conv_layer = torch.nn.Conv3d
         super().__init__(
             in_channels,
             out_channels,
-            conv_layer,
+            torch.nn.Conv3d,
             kernel_size,
             stride,
             padding,
