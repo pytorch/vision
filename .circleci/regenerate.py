@@ -21,7 +21,7 @@ import yaml
 from jinja2 import select_autoescape
 
 
-PYTHON_VERSIONS = ["3.7", "3.8", "3.9"]
+PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
@@ -33,7 +33,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
                 "linux": ["cpu", "cu102", "cu111", "cu113", "cu115", "rocm4.3.1", "rocm4.5.2"],
-                "win": ["cpu", "cu111", "cu113", "cu115"],
+                "win": ["cpu", "cu113", "cu115"],
                 "macos": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
