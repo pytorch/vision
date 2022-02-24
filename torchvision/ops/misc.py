@@ -1,3 +1,4 @@
+import warnings
 from typing import Callable, List, Optional
 
 import torch
@@ -67,7 +68,6 @@ class FrozenBatchNorm2d(torch.nn.Module):
 
 class ConvNormActivation(torch.nn.Sequential):
     """
-    DEPRECATED
     Use Conv2dNormActivation instead.
     """
 
@@ -114,6 +114,9 @@ class ConvNormActivation(torch.nn.Sequential):
         super().__init__(*layers)
         _log_api_usage_once(self)
         self.out_channels = out_channels
+
+        if self.__class__ == ConvNormActivation:
+            warnings.warn("Don't use ConvNormActivation directly. Use Conv2dNormActivation instead.")
 
 
 class Conv2dNormActivation(ConvNormActivation):
