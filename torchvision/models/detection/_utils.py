@@ -470,7 +470,7 @@ def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
     return out_channels
 
 
-def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Union[int, Tensor]:
+def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Tensor:
     """
     ONNX spec requires the k-value to be less than or equal to the number of inputs along
     provided dim. Certain models use the number of elements along a particular axis instead of K
@@ -490,7 +490,7 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Union[int, Tensor]:
         min_kval (Tensor): Appropriately selected k-value.
     """
     if not torch.jit.is_tracing():
-        return min(orig_kval, input.size(axis))
+        return min(orig_kval, input.size(axis))  # type: ignore[arg-type]
     axis_dim_val = torch._shape_as_tensor(input)[axis].unsqueeze(0)
     min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
     return min_kval
