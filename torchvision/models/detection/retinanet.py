@@ -436,7 +436,11 @@ class RetinaNet(nn.Module):
                 topk_idxs = torch.where(keep_idxs)[0]
 
                 # keep only topk scoring predictions
-                num_topk = det_utils._topk_min(topk_idxs, self.topk_candidates, 0)
+                num_topk = (
+                    det_utils._topk_min(topk_idxs, self.topk_candidates, 0)
+                    if torchvision._is_tracing()
+                    else min(self.topk_candidates, topk_idxs.size(0))
+                )
                 scores_per_level, idxs = scores_per_level.topk(num_topk)
                 topk_idxs = topk_idxs[idxs]
 
