@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 import pytest
@@ -927,6 +928,17 @@ def test_random_apply(device):
 )
 @pytest.mark.parametrize("channels", [1, 3])
 def test_gaussian_blur(device, channels, meth_kwargs):
+    if all(
+        [
+            device == "cuda",
+            channels == 1,
+            meth_kwargs["kernel_size"] in [23, [23]],
+            torch.version.cuda == "11.3",
+            sys.platform in ("win32", "cygwin"),
+        ]
+    ):
+        pytest.skip("Fails on Windows, see https://github.com/pytorch/vision/issues/5464")
+
     tol = 1.0 + 1e-10
     torch.manual_seed(12)
     _test_class_op(
