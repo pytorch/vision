@@ -1,5 +1,4 @@
-import warnings
-from typing import Callable, List, Optional, Any
+from typing import Callable, List, Optional
 
 import torch
 from torch import Tensor
@@ -66,21 +65,26 @@ class FrozenBatchNorm2d(torch.nn.Module):
         return f"{self.__class__.__name__}({self.weight.shape[0]}, eps={self.eps})"
 
 
-class _ConvNormActivation(torch.nn.Sequential):
+class ConvNormActivation(torch.nn.Sequential):
+    """
+    DEPRECATED
+    Use Conv2dNormActivation instead.
+    """
+
     def __init__(
         self,
         in_channels: int,
         out_channels: int,
-        conv_layer: Callable[..., torch.nn.Module],
         kernel_size: int = 3,
         stride: int = 1,
         padding: Optional[int] = None,
         groups: int = 1,
-        norm_layer: Optional[Callable[..., torch.nn.Module]] = None,
+        norm_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.BatchNorm2d,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         dilation: int = 1,
         inplace: Optional[bool] = True,
         bias: Optional[bool] = None,
+        conv_layer: Callable[..., torch.nn.Module] = torch.nn.Conv2d,
     ) -> None:
 
         if padding is None:
@@ -112,7 +116,7 @@ class _ConvNormActivation(torch.nn.Sequential):
         self.out_channels = out_channels
 
 
-class Conv2dNormActivation(_ConvNormActivation):
+class Conv2dNormActivation(ConvNormActivation):
     """
     Configurable block used for Convolution2d-Normalzation-Activation blocks.
 
@@ -149,7 +153,6 @@ class Conv2dNormActivation(_ConvNormActivation):
         super().__init__(
             in_channels,
             out_channels,
-            torch.nn.Conv2d,
             kernel_size,
             stride,
             padding,
@@ -159,10 +162,11 @@ class Conv2dNormActivation(_ConvNormActivation):
             dilation,
             inplace,
             bias,
+            torch.nn.Conv2d,
         )
 
 
-class Conv3dNormActivation(_ConvNormActivation):
+class Conv3dNormActivation(ConvNormActivation):
     """
     Configurable block used for Convolution3d-Normalzation-Activation blocks.
 
@@ -198,7 +202,6 @@ class Conv3dNormActivation(_ConvNormActivation):
         super().__init__(
             in_channels,
             out_channels,
-            torch.nn.Conv3d,
             kernel_size,
             stride,
             padding,
@@ -208,22 +211,8 @@ class Conv3dNormActivation(_ConvNormActivation):
             dilation,
             inplace,
             bias,
+            torch.nn.Conv3d,
         )
-
-
-class ConvNormActivation(Conv2dNormActivation):
-    """
-    DEPRECATED
-    Use Conv2dNormActivation instead.
-    """
-
-    def __init__(self, *args: Any, **kwargs: Any) -> None:
-        warnings.warn(
-            "The ConvNormActivation class are deprecated since 0.13 and will be removed in 0.15. "
-            "Use torchvision.ops.Conv2dNormActivation instead.",
-            FutureWarning,
-        )
-        super().__init__(*args, **kwargs)
 
 
 class SqueezeExcitation(torch.nn.Module):
