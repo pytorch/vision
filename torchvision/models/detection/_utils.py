@@ -487,7 +487,7 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
         axis(int): Axis along which we retreive the input size.
 
     Returns:
-        min_kval (Tensor): Appropriately selected k-value.
+        min_kval (int): Appropriately selected k-value.
     """
     if not torch.jit.is_tracing():
         return min(orig_kval, input.size(axis))
