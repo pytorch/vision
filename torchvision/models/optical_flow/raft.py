@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
-from torchvision.ops import ConvNormActivation
+from torchvision.ops.misc import ConvNormActivation
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...utils import _log_api_usage_once
