@@ -236,13 +236,21 @@ def indent(indentation, data_list):
     return ("\n" + " " * indentation).join(yaml.dump(data_list, default_flow_style=False).splitlines())
 
 
+def unittest_python_versions(os):
+    return {
+        "windows": PYTHON_VERSIONS[:1],
+        "macos": PYTHON_VERSIONS[:1],
+        "linux": PYTHON_VERSIONS,
+    }.get(os)
+
+
 def unittest_workflows(indentation=6):
     jobs = []
     for os_type in ["linux", "windows", "macos"]:
         for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
-            for i, python_version in enumerate(PYTHON_VERSIONS):
+            for i, python_version in enumerate(unittest_python_versions(os_type)):
                 job = {
                     "name": f"unittest_{os_type}_{device_type}_py{python_version}",
                     "python_version": python_version,
