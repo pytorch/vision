@@ -7,7 +7,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import InterpolationMode
 from torchvision.prototype.transforms.functional import get_image_size
 from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
-from torchvision.transforms.functional import pil_modes_mapping
+from torchvision.transforms.functional import pil_modes_mapping, _get_inverse_affine_matrix
 
 from ._meta_conversion import convert_bounding_box_format
 
@@ -79,31 +79,120 @@ vertical_flip_image_tensor = _FT.vflip
 vertical_flip_image_pil = _FP.vflip
 
 
+def _affine_parse_args(
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    center: Optional[List[float]] = None,
+) -> Tuple[float, List[float], List[float], Optional[List[float]]]:
+    if not isinstance(angle, (int, float)):
+        raise TypeError("Argument angle should be int or float")
+
+    if not isinstance(translate, (list, tuple)):
+        raise TypeError("Argument translate should be a sequence")
+
+    if len(translate) != 2:
+        raise ValueError("Argument translate should be a sequence of length 2")
+
+    if scale <= 0.0:
+        raise ValueError("Argument scale should be positive")
+
+    if not isinstance(shear, (numbers.Number, (list, tuple))):
+        raise TypeError("Shear should be either a single value or a sequence of two values")
+
+    if not isinstance(interpolation, InterpolationMode):
+        raise TypeError("Argument interpolation should be a InterpolationMode")
+
+    if isinstance(angle, int):
+        angle = float(angle)
+
+    if isinstance(translate, tuple):
+        translate = list(translate)
+
+    if isinstance(shear, numbers.Number):
+        shear = [shear, 0.0]
+
+    if isinstance(shear, tuple):
+        shear = list(shear)
+
+    if len(shear) == 1:
+        shear = [shear[0], shear[0]]
+
+    if len(shear) != 2:
+        raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
+
+    if center is not None and not isinstance(center, (list, tuple)):
+        raise TypeError("Argument center should be a sequence")
+
+    return angle, translate, shear, center
+
+
 def affine_image_tensor(
     img: torch.Tensor,
-    matrix: List[float],
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
+    center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
+
+    center_f = [0.0, 0.0]
+    if center is not None:
+        height, width = get_image_size(img)
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, (width, height))]
+
+    translate_f = [1.0 * t for t in translate]
+    matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
+
     return _FT.affine(img, matrix, interpolation=interpolation.value, fill=fill)
 
 
 def affine_image_pil(
     img: PIL.Image.Image,
-    matrix: List[float],
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     fill: Optional[List[float]] = None,
+    center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
-    return _FP.affine(img, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
+    angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, interpolation, center)
+
+    # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
+    # it is visually better to estimate the center without 0.5 offset
+    # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
+    if center is None:
+        height, width = get_image_size(img)
+        center = [width * 0.5, height * 0.5]
+    matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
+
+    return _FP.affine(img, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill, center=center)
 
 
 def rotate_image_tensor(
     img: torch.Tensor,
-    matrix: List[float],
+    angle: float,
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
     fill: Optional[List[float]] = None,
+    center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    center_f = [0.0, 0.0]
+    if center is not None:
+        height, width = get_image_size(img)
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, (width, height))]
+
+    # due to current incoherence of rotation angle direction between affine and rotate implementations
+    # we need to set -angle.
+    matrix = _get_inverse_affine_matrix(center_f, -angle, [0.0, 0.0], 1.0, [0.0, 0.0])
     return _FT.rotate(img, matrix, interpolation=interpolation.value, expand=expand, fill=fill)
 
 
@@ -113,8 +202,11 @@ def rotate_image_pil(
     interpolation: InterpolationMode = InterpolationMode.NEAREST,
     expand: bool = False,
     fill: Optional[List[float]] = None,
+    center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
-    return _FP.rotate(img, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill)
+    return _FP.rotate(
+        img, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
+    )
 
 
 pad_image_tensor = _FT.pad
