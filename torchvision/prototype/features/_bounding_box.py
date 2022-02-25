@@ -41,7 +41,7 @@ class BoundingBox(_Feature):
         #  promote this out of the prototype state
 
         # import at runtime to avoid cyclic imports
-        from torchvision.prototype.transforms.kernels import convert_bounding_box_format
+        from torchvision.prototype.transforms.functional import convert_bounding_box_format
 
         if isinstance(format, str):
             format = BoundingBoxFormat[format]
