@@ -1364,10 +1364,10 @@ class CityScapesMockData:
         split = config.split
 
         if split in ["train", "train_extra"]:
-            cities = ["bochum", "bremen"]
+            cities = ["bochum", "bremen", "jena"]
             num_samples = 3
         else:
-            cities = ["bochum"]
+            cities = ["frankfurt", "munster"]
             num_samples = 2
 
         polygon_target = {
@@ -1402,21 +1402,21 @@ class CityScapesMockData:
 
         for city in cities:
 
-            def make_image(name, size=10):
+            def make_images(file_name_fn, size=10):
                 create_image_folder(
                     root=gt_dir / split,
                     name=city,
-                    file_name_fn=lambda idx: name.format(idx=idx),
+                    file_name_fn=file_name_fn,
                     size=size,
                     num_examples=num_samples,
                 )
 
-            make_image(f"{city}_000000_00000" + "{idx}" + f"_gt{mode}_instanceIds.png")
-            make_image(f"{city}_000000_00000" + "{idx}" + f"_gt{mode}_labelIds.png")
-            make_image(f"{city}_000000_00000" + "{idx}" + f"_gt{mode}_color.png", size=(4, 10, 10))
+            make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_instanceIds.png")
+            make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_labelIds.png")
+            make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_color.png", size=(4, 10, 10))
 
             for idx in range(num_samples):
-                polygon_target_name = gt_dir / split / city / f"{city}_000000_00000{idx}_gt{mode}_polygons.json"
+                polygon_target_name = gt_dir / split / city / f"{city}_000000_{idx:06d}_gt{mode}_polygons.json"
                 with open(polygon_target_name, "w") as outfile:
                     json.dump(polygon_target, outfile)
 
@@ -1425,7 +1425,7 @@ class CityScapesMockData:
             create_image_folder(
                 root=root / "leftImg8bit" / split,
                 name=city,
-                file_name_fn=lambda idx: f"{city}_000000_00000{idx}_leftImg8bit.png",
+                file_name_fn=lambda idx: f"{city}_000000_{idx:06d}_leftImg8bit.png",
                 num_examples=num_samples,
             )
 

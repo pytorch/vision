@@ -2,7 +2,7 @@ import json
 from collections import namedtuple
 from functools import partial
 from pathlib import Path
-from typing import Any, Dict, List, Tuple
+from typing import cast, Any, Dict, List, Tuple
 
 from torchdata.datapipes.iter import Grouper, IterDataPipe, Mapper, Filter, IterKeyZipper
 from torchvision.prototype.datasets.utils import (
@@ -123,22 +123,30 @@ class Cityscapes(Dataset):
             split_label = "trainextra" if config.split == "train_extra" else "trainvaltest"
             filenames = (f"leftImg8bit_{split_label}.zip", "gtCoarse.zip")
 
-        resources: List[OnlineResource] = [
-            CityscapesResource(file_name=file_name, sha256=self._FILES_CHECKSUMS[file_name]) for file_name in filenames
-        ]
-        return resources
+        return cast(
+            List[OnlineResource],
+            [
+                CityscapesResource(file_name=file_name, sha256=self._FILES_CHECKSUMS[file_name])
+                for file_name in filenames
+            ],
+        )
 
     def _filter_split_images(self, data: Tuple[str, Any], *, req_split: str) -> bool:
         path = Path(data[0])
         split = path.parent.parts[-2]
         return split == req_split and ".png" == path.suffix
 
-    def _filter_group_targets(self, data: Tuple[str, Any]) -> str:
-        path = Path(data[0])
-        # Taregt path looks like
-        # gtFine/val/frankfurt/frankfurt_000001_066574_gtFine_polygons.json
-        # and we produce the key: frankfurt_000001_066574
-        return path.name.rsplit("_", 1)[0]
+    def _get_key_from_path(self, data: Tuple[Any, Any]) -> str:
+        data0 = data[0]
+        if isinstance(data0, tuple):
+            data0 = data0[0]
+        path = Path(data0)
+        # The pathes for images and targets are
+        # - leftImg8bit/val/frankfurt/frankfurt_000001_066574_leftImg8bit.png
+        # - gtFine/val/frankfurt/frankfurt_000001_066574_gtFine_polygons.json
+        # - gtFine/val/frankfurt/frankfurt_000001_066574_gtFine_labelIds.png
+        # we transform them into "frankfurt_000001_066574"
+        return "_".join(path.name.split("_", 3)[:3])
 
     def _prepare_sample(self, data: Tuple[Tuple[str, Any], Any]) -> Dict[str, Any]:
         (img_path, img_data), target_data = data
@@ -151,6 +159,10 @@ class Cityscapes(Dataset):
                 if target_type in stem:
                     if target_type == "polygon":
                         enc_data = json.loads(data.read())
+                    elif target_type == "label":
+                        # TODO: We need an EncodedSegmentationMask feature now that we also
+                        # have a separate SegementationMask.
+                        enc_data = EncodedImage.from_file(data)
                     else:
                         enc_data = EncodedImage.from_file(data)
                     output[target_type] = enc_data
@@ -172,30 +184,19 @@ class Cityscapes(Dataset):
         images_dp = hint_sharding(images_dp)
         images_dp = hint_shuffling(images_dp)
 
+        # As city names are unique per split we can group targets by
+        # keys like "frankfurt_000001_066574"
         targets_dp = Grouper(
             archive_targets,
-            group_key_fn=self._filter_group_targets,
+            group_key_fn=self._get_key_from_path,
             buffer_size=INFINITE_BUFFER_SIZE,
             group_size=4,
         )
 
-        def key_fn(data: Tuple[Any, Any]) -> str:
-            data0 = data[0]
-            if isinstance(data0, tuple):
-                data0 = data0[0]
-            path = Path(data0)
-            # The pathes for images and targets are
-            # - leftImg8bit/val/frankfurt/frankfurt_000001_066574_leftImg8bit.png
-            # - gtFine/val/frankfurt/frankfurt_000001_066574_gtFine_polygons.json
-            # - gtFine/val/frankfurt/frankfurt_000001_066574_gtFine_labelIds.png
-            # we transform them into "frankfurt_000001_066574"
-            return "_".join(path.name.split("_", 3)[:3])
-
         samples = IterKeyZipper(
             images_dp,
             targets_dp,
-            key_fn=key_fn,
-            ref_key_fn=key_fn,
+            key_fn=self._get_key_from_path,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(samples, fn=self._prepare_sample)
