@@ -34,7 +34,7 @@ class Resize(Transform):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self.size = [size, size] if isinstance(size, int) else list(size)
+        self.size = [size] if isinstance(size, int) else list(size)
         self.interpolation = interpolation
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
