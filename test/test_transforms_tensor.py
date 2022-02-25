@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 import pytest
@@ -720,7 +721,38 @@ def test_trivialaugmentwide(device, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-@pytest.mark.parametrize("augmentation", [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide])
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "fill",
+    [
+        None,
+        85,
+        (10, -10, 10),
+        0.7,
+        [0.0, 0.0, 0.0],
+        [
+            1,
+        ],
+        1,
+    ],
+)
+def test_augmix(device, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    class DeterministicAugMix(T.AugMix):
+        def _sample_dirichlet(self, params: torch.Tensor) -> torch.Tensor:
+            # patch the method to ensure that the order of rand calls doesn't affect the outcome
+            return params.softmax(dim=-1)
+
+    transform = DeterministicAugMix(fill=fill)
+    s_transform = torch.jit.script(transform)
+    for _ in range(25):
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
+@pytest.mark.parametrize("augmentation", [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide, T.AugMix])
 def test_autoaugment_save(augmentation, tmpdir):
     transform = augmentation()
     s_transform = torch.jit.script(transform)
@@ -927,6 +959,17 @@ def test_random_apply(device):
 )
 @pytest.mark.parametrize("channels", [1, 3])
 def test_gaussian_blur(device, channels, meth_kwargs):
+    if all(
+        [
+            device == "cuda",
+            channels == 1,
+            meth_kwargs["kernel_size"] in [23, [23]],
+            torch.version.cuda == "11.3",
+            sys.platform in ("win32", "cygwin"),
+        ]
+    ):
+        pytest.skip("Fails on Windows, see https://github.com/pytorch/vision/issues/5464")
+
     tol = 1.0 + 1e-10
     torch.manual_seed(12)
     _test_class_op(
