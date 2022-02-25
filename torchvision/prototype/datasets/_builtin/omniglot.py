@@ -24,7 +24,10 @@ from torchvision.prototype.features import Label
 class Omniglot(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
-            "omniglot", type=DatasetType.RAW, categories=None, homepage="https://github.com/brendenlake/omniglot"
+            "omniglot",
+            type=DatasetType.IMAGE,
+            homepage="https://github.com/brendenlake/omniglot",
+            valid_options=dict(split=("images_background", "images_evaluation")),
         )
 
     _CHECKSUMS = {
