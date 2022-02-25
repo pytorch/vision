@@ -10,7 +10,7 @@ from torch import nn, Tensor
 from torchvision.ops import StochasticDepth
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation, SqueezeExcitation
+from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
@@ -127,7 +127,7 @@ class MBConv(nn.Module):
         expanded_channels = cnf.adjust_channels(cnf.input_channels, cnf.expand_ratio)
         if expanded_channels != cnf.input_channels:
             layers.append(
-                ConvNormActivation(
+                Conv2dNormActivation(
                     cnf.input_channels,
                     expanded_channels,
                     kernel_size=1,
@@ -138,7 +138,7 @@ class MBConv(nn.Module):
 
         # depthwise
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 expanded_channels,
                 expanded_channels,
                 kernel_size=cnf.kernel,
@@ -155,7 +155,7 @@ class MBConv(nn.Module):
 
         # project
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
             )
         )
@@ -284,7 +284,7 @@ class EfficientNet(nn.Module):
         # building first layer
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer, activation_layer=nn.SiLU
             )
         )
@@ -315,7 +315,7 @@ class EfficientNet(nn.Module):
         lastconv_input_channels = inverted_residual_setting[-1].out_channels
         lastconv_output_channels = last_channel if last_channel is not None else 4 * lastconv_input_channels
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 lastconv_input_channels,
                 lastconv_output_channels,
                 kernel_size=1,
