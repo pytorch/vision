@@ -123,8 +123,12 @@
                   <span class="dropdown-title">torchvision</span>
                   <p></p>
                 </a>
-                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
-                  <span class="dropdown-title">TorchElastic</span>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchrec">
+                  <span class="dropdown-title">TorchRec</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/data">
+                  <span class="dropdown-title">TorchData</span>
                   <p></p>
                 </a>
                 <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
@@ -196,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+0015f46 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+e87b16a ) &#x25BC</a>
     </div>
     
 
@@ -331,7 +335,7 @@
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 
 <span class="kn">from</span> <span class="nn">.._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
-<span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">ConvNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span>
+<span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">Conv2dNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_make_divisible</span>
 
@@ -374,7 +378,7 @@
 <span class="p">}</span>
 
 
-<span class="k">class</span> <span class="nc">SimpleStemIN</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">SimpleStemIN</span><span class="p">(</span><span class="n">Conv2dNormActivation</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;Simple stem for ImageNet: 3x3, BN, ReLU.&quot;&quot;&quot;</span>
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
@@ -407,10 +411,10 @@
         <span class="n">w_b</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="nb">round</span><span class="p">(</span><span class="n">width_out</span> <span class="o">*</span> <span class="n">bottleneck_multiplier</span><span class="p">))</span>
         <span class="n">g</span> <span class="o">=</span> <span class="n">w_b</span> <span class="o">//</span> <span class="n">group_width</span>
 
-        <span class="n">layers</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="n">layers</span><span class="p">[</span><span class="s2">&quot;a&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">width_in</span><span class="p">,</span> <span class="n">w_b</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span>
         <span class="p">)</span>
-        <span class="n">layers</span><span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="n">layers</span><span class="p">[</span><span class="s2">&quot;b&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">w_b</span><span class="p">,</span> <span class="n">w_b</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">g</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="n">activation_layer</span>
         <span class="p">)</span>
 
@@ -424,7 +428,7 @@
                 <span class="n">activation</span><span class="o">=</span><span class="n">activation_layer</span><span class="p">,</span>
             <span class="p">)</span>
 
-        <span class="n">layers</span><span class="p">[</span><span class="s2">&quot;c&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="n">layers</span><span class="p">[</span><span class="s2">&quot;c&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">w_b</span><span class="p">,</span> <span class="n">width_out</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="kc">None</span>
         <span class="p">)</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span>
@@ -450,7 +454,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="n">should_proj</span> <span class="o">=</span> <span class="p">(</span><span class="n">width_in</span> <span class="o">!=</span> <span class="n">width_out</span><span class="p">)</span> <span class="ow">or</span> <span class="p">(</span><span class="n">stride</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">should_proj</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">proj</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
                 <span class="n">width_in</span><span class="p">,</span> <span class="n">width_out</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">activation_layer</span><span class="o">=</span><span class="kc">None</span>
             <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">f</span> <span class="o">=</span> <span class="n">BottleneckTransform</span><span class="p">(</span>

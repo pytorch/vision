@@ -123,8 +123,12 @@
                   <span class="dropdown-title">torchvision</span>
                   <p></p>
                 </a>
-                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
-                  <span class="dropdown-title">TorchElastic</span>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchrec">
+                  <span class="dropdown-title">TorchRec</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/data">
+                  <span class="dropdown-title">TorchData</span>
                   <p></p>
                 </a>
                 <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
@@ -196,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+0015f46 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+e87b16a ) &#x25BC</a>
     </div>
     
 
@@ -325,7 +329,7 @@
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">torch.nn.modules.batchnorm</span> <span class="kn">import</span> <span class="n">BatchNorm2d</span>
 <span class="kn">from</span> <span class="nn">torch.nn.modules.instancenorm</span> <span class="kn">import</span> <span class="n">InstanceNorm2d</span>
-<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">ConvNormActivation</span>
+<span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">Conv2dNormActivation</span>
 
 <span class="kn">from</span> <span class="nn">..._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 <span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
@@ -357,17 +361,17 @@
         <span class="c1"># and frozen for the rest of the training process (i.e. set as eval()). The bias term is thus still useful</span>
         <span class="c1"># for the rest of the datasets. Technically, we could remove the bias for other norm layers like Instance norm</span>
         <span class="c1"># because these aren&#39;t frozen, but we don&#39;t bother (also, we woudn&#39;t be able to load the original weights).</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu1</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu1</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu2</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu2</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">out_channels</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
 
         <span class="k">if</span> <span class="n">stride</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
                 <span class="n">in_channels</span><span class="p">,</span>
                 <span class="n">out_channels</span><span class="p">,</span>
                 <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
@@ -396,13 +400,13 @@
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
 
         <span class="c1"># See note in ResidualBlock for the reason behind bias=True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu1</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu1</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">in_channels</span><span class="p">,</span> <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu2</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu2</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="n">stride</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu3</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu3</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">out_channels</span> <span class="o">//</span> <span class="mi">4</span><span class="p">,</span> <span class="n">out_channels</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
         <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">relu</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -410,7 +414,7 @@
         <span class="k">if</span> <span class="n">stride</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
         <span class="k">else</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">downsample</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
                 <span class="n">in_channels</span><span class="p">,</span>
                 <span class="n">out_channels</span><span class="p">,</span>
                 <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
@@ -443,7 +447,9 @@
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">layers</span><span class="p">)</span> <span class="o">==</span> <span class="mi">5</span>
 
         <span class="c1"># See note in ResidualBlock for the reason behind bias=True</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convnormrelu</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
+            <span class="mi">3</span><span class="p">,</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span>
+        <span class="p">)</span>
 
         <span class="bp">self</span><span class="o">.</span><span class="n">layer1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_2_blocks</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">first_stride</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">layer2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_make_2_blocks</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">layers</span><span class="p">[</span><span class="mi">2</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="n">first_stride</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
@@ -489,17 +495,17 @@
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">flow_layers</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span>
         <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">corr_layers</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">convcorr1</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">in_channels_corr</span><span class="p">,</span> <span class="n">corr_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convcorr1</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">in_channels_corr</span><span class="p">,</span> <span class="n">corr_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
         <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">corr_layers</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">convcorr2</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">corr_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">corr_layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">convcorr2</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">corr_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">corr_layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
         <span class="k">else</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">convcorr2</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Identity</span><span class="p">()</span>
 
-        <span class="bp">self</span><span class="o">.</span><span class="n">convflow1</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">flow_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">convflow2</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">flow_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">flow_layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convflow1</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="n">flow_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">7</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convflow2</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">flow_layers</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">flow_layers</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
 
         <span class="c1"># out_channels - 2 because we cat the flow (2 channels) at the end</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span>
             <span class="n">corr_layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">flow_layers</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">out_channels</span> <span class="o">-</span> <span class="mi">2</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span>
         <span class="p">)</span>
 
@@ -620,7 +626,7 @@
 
     <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="o">*</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">multiplier</span><span class="o">=</span><span class="mf">0.25</span><span class="p">):</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">convrelu</span> <span class="o">=</span> <span class="n">ConvNormActivation</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">convrelu</span> <span class="o">=</span> <span class="n">Conv2dNormActivation</span><span class="p">(</span><span class="n">in_channels</span><span class="p">,</span> <span class="n">hidden_size</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">)</span>
         <span class="c1"># 8 * 8 * 9 because the predicted flow is downsampled by 8, from the downsampling of the initial FeatureEncoder</span>
         <span class="c1"># and we interpolate with all 9 surrounding neighbors. See paper and appendix B.</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">conv</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span><span class="n">hidden_size</span><span class="p">,</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">8</span> <span class="o">*</span> <span class="mi">9</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>

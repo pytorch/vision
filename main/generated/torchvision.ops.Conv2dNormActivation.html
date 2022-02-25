@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>ssdlite320_mobilenet_v3_large &mdash; Torchvision main documentation</title>
+  <title>Conv2dNormActivation &mdash; Torchvision main documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="maskrcnn_resnet50_fpn" href="torchvision.models.detection.maskrcnn_resnet50_fpn.html" />
-    <link rel="prev" title="ssd300_vgg16" href="torchvision.models.detection.ssd300_vgg16.html" />
+    <link rel="next" title="Conv3dNormActivation" href="torchvision.ops.Conv3dNormActivation.html" />
+    <link rel="prev" title="FrozenBatchNorm2d" href="torchvision.ops.FrozenBatchNorm2d.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -229,10 +229,10 @@
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../ops.html">Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
@@ -290,15 +290,15 @@
       </li>
 
         
-          <li><a href="../models.html">Models and pre-trained weights</a> &gt;</li>
+          <li><a href="../ops.html">Operators</a> &gt;</li>
         
-      <li>ssdlite320_mobilenet_v3_large</li>
+      <li>Conv2dNormActivation</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="../_sources/generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
+            <a href="../_sources/generated/torchvision.ops.Conv2dNormActivation.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -324,42 +324,30 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="ssdlite320-mobilenet-v3-large">
-<h1>ssdlite320_mobilenet_v3_large<a class="headerlink" href="#ssdlite320-mobilenet-v3-large" title="Permalink to this headline">¶</a></h1>
-<dl class="py function">
-<dt id="torchvision.models.detection.ssdlite320_mobilenet_v3_large">
-<code class="sig-prename descclassname"><span class="pre">torchvision.models.detection.</span></code><code class="sig-name descname"><span class="pre">ssdlite320_mobilenet_v3_large</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">pretrained</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">num_classes</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">91</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">pretrained_backbone</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">trainable_backbone_layers</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">norm_layer</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">[</span></span><span class="p"><span class="pre">…</span></span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">,</span> </span><span class="pre">torch.nn.modules.module.Module</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/models/detection/ssdlite.html#ssdlite320_mobilenet_v3_large"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.detection.ssdlite320_mobilenet_v3_large" title="Permalink to this definition">¶</a></dt>
-<dd><p>Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at
-<a class="reference external" href="https://arxiv.org/abs/1905.02244">“Searching for MobileNetV3”</a> and
-<a class="reference external" href="https://arxiv.org/abs/1801.04381">“MobileNetV2: Inverted Residuals and Linear Bottlenecks”</a>.</p>
-<p>See <a class="reference internal" href="torchvision.models.detection.ssd300_vgg16.html#torchvision.models.detection.ssd300_vgg16" title="torchvision.models.detection.ssd300_vgg16"><code class="xref py py-func docutils literal notranslate"><span class="pre">ssd300_vgg16()</span></code></a> for more details.</p>
-<p class="rubric">Example</p>
-<div class="doctest highlight-default notranslate"><div class="highlight"><pre><span></span><span class="gp">&gt;&gt;&gt; </span><span class="n">model</span> <span class="o">=</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">models</span><span class="o">.</span><span class="n">detection</span><span class="o">.</span><span class="n">ssdlite320_mobilenet_v3_large</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">x</span> <span class="o">=</span> <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="mi">320</span><span class="p">),</span> <span class="n">torch</span><span class="o">.</span><span class="n">rand</span><span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">500</span><span class="p">,</span> <span class="mi">400</span><span class="p">)]</span>
-<span class="gp">&gt;&gt;&gt; </span><span class="n">predictions</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
-</pre></div>
-</div>
+  <div class="section" id="conv2dnormactivation">
+<h1>Conv2dNormActivation<a class="headerlink" href="#conv2dnormactivation" title="Permalink to this headline">¶</a></h1>
+<dl class="py class">
+<dt id="torchvision.ops.Conv2dNormActivation">
+<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.ops.</span></code><code class="sig-name descname"><span class="pre">Conv2dNormActivation</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="pre">in_channels:</span> <span class="pre">int,</span> <span class="pre">out_channels:</span> <span class="pre">int,</span> <span class="pre">kernel_size:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">3,</span> <span class="pre">stride:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">padding:</span> <span class="pre">Optional[int]</span> <span class="pre">=</span> <span class="pre">None,</span> <span class="pre">groups:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">norm_layer:</span> <span class="pre">Optional[Callable[[...],</span> <span class="pre">torch.nn.modules.module.Module]]</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'torch.nn.modules.batchnorm.BatchNorm2d'&gt;,</span> <span class="pre">activation_layer:</span> <span class="pre">Optional[Callable[[...],</span> <span class="pre">torch.nn.modules.module.Module]]</span> <span class="pre">=</span> <span class="pre">&lt;class</span> <span class="pre">'torch.nn.modules.activation.ReLU'&gt;,</span> <span class="pre">dilation:</span> <span class="pre">int</span> <span class="pre">=</span> <span class="pre">1,</span> <span class="pre">inplace:</span> <span class="pre">Optional[bool]</span> <span class="pre">=</span> <span class="pre">True,</span> <span class="pre">bias:</span> <span class="pre">Optional[bool]</span> <span class="pre">=</span> <span class="pre">None</span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/ops/misc.html#Conv2dNormActivation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.ops.Conv2dNormActivation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Configurable block used for Convolution2d-Normalzation-Activation blocks.</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
-<li><p><strong>pretrained</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – If True, returns a model pre-trained on COCO train2017</p></li>
-<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – If True, displays a progress bar of the download to stderr</p></li>
-<li><p><strong>num_classes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of output classes of the model (including the background)</p></li>
-<li><p><strong>pretrained_backbone</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – If True, returns a model with backbone pre-trained on Imagenet</p></li>
-<li><p><strong>trainable_backbone_layers</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – number of trainable (not frozen) resnet layers starting from final block.
-Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If <code class="docutils literal notranslate"><span class="pre">None</span></code> is
-passed (the default) this value is set to 6.</p></li>
-<li><p><strong>norm_layer</strong> (<em>callable</em><em>, </em><em>optional</em>) – Module specifying the normalization layer to use.</p></li>
+<li><p><strong>in_channels</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of channels in the input image</p></li>
+<li><p><strong>out_channels</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Number of channels produced by the Convolution-Normalzation-Activation block</p></li>
+<li><p><strong>kernel_size</strong> – (int, optional): Size of the convolving kernel. Default: 3</p></li>
+<li><p><strong>stride</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – Stride of the convolution. Default: 1</p></li>
+<li><p><strong>padding</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)"><em>tuple</em></a><em> or </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><em>str</em></a><em>, </em><em>optional</em>) – Padding added to all four sides of the input. Default: None, in wich case it will calculated as <code class="docutils literal notranslate"><span class="pre">padding</span> <span class="pre">=</span> <span class="pre">(kernel_size</span> <span class="pre">-</span> <span class="pre">1)</span> <span class="pre">//</span> <span class="pre">2</span> <span class="pre">*</span> <span class="pre">dilation</span></code></p></li>
+<li><p><strong>groups</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a><em>, </em><em>optional</em>) – Number of blocked connections from input channels to output channels. Default: 1</p></li>
+<li><p><strong>norm_layer</strong> (<em>Callable</em><em>[</em><em>..</em><em>, </em><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v1.10.0)"><em>torch.nn.Module</em></a><em>]</em><em>, </em><em>optional</em>) – Norm layer that will be stacked on top of the convolution layer. If <code class="docutils literal notranslate"><span class="pre">None</span></code> this layer wont be used. Default: <code class="docutils literal notranslate"><span class="pre">torch.nn.BatchNorm2d</span></code></p></li>
+<li><p><strong>activation_layer</strong> (<em>Callable</em><em>[</em><em>..</em><em>, </em><a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module" title="(in PyTorch v1.10.0)"><em>torch.nn.Module</em></a><em>]</em><em>, </em><em>optinal</em>) – Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If <code class="docutils literal notranslate"><span class="pre">None</span></code> this layer wont be used. Default: <code class="docutils literal notranslate"><span class="pre">torch.nn.ReLU</span></code></p></li>
+<li><p><strong>dilation</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Spacing between kernel elements. Default: 1</p></li>
+<li><p><strong>inplace</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a>) – Parameter for the activation layer, which can optionally do the operation in-place. Default <code class="docutils literal notranslate"><span class="pre">True</span></code></p></li>
+<li><p><strong>bias</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – Whether to use bias in the convolution layer. By default, biases are included if <code class="docutils literal notranslate"><span class="pre">norm_layer</span> <span class="pre">is</span> <span class="pre">None</span></code>.</p></li>
 </ul>
 </dd>
 </dl>
-<p>Examples using <code class="docutils literal notranslate"><span class="pre">ssdlite320_mobilenet_v3_large</span></code>:</p>
-<div class="sphx-glr-thumbcontainer" tooltip="This example illustrates some of the utilities that torchvision offers for visualizing images, ..."><div class="figure align-default" id="id1">
-<img alt="Visualization utilities" src="../_images/sphx_glr_plot_visualization_utils_thumb.png" />
-<p class="caption"><span class="caption-text"><a class="reference internal" href="../auto_examples/plot_visualization_utils.html#sphx-glr-auto-examples-plot-visualization-utils-py"><span class="std std-ref">Visualization utilities</span></a></span><a class="headerlink" href="#id1" title="Permalink to this image">¶</a></p>
-</div>
-</div><div class="sphx-glr-clear"></div></dd></dl>
+</dd></dl>
 
 </div>
 
@@ -371,10 +359,10 @@ passed (the default) this value is set to 6.</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="torchvision.models.detection.maskrcnn_resnet50_fpn.html" class="btn btn-neutral float-right" title="maskrcnn_resnet50_fpn" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="torchvision.ops.Conv3dNormActivation.html" class="btn btn-neutral float-right" title="Conv3dNormActivation" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="torchvision.models.detection.ssd300_vgg16.html" class="btn btn-neutral" title="ssd300_vgg16" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="torchvision.ops.FrozenBatchNorm2d.html" class="btn btn-neutral" title="FrozenBatchNorm2d" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -406,7 +394,7 @@ passed (the default) this value is set to 6.</p></li>
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">ssdlite320_mobilenet_v3_large</a></li>
+<li><a class="reference internal" href="#">Conv2dNormActivation</a></li>
 </ul>
 
             </div>

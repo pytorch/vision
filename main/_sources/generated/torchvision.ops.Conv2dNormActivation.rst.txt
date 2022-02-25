@@ -3,8 +3,8 @@
 .. currentmodule:: torchvision.ops
 
 
-ConvNormActivation
-==================
+Conv2dNormActivation
+====================
 
-.. autoclass:: ConvNormActivation
+.. autoclass:: Conv2dNormActivation
     :members:
