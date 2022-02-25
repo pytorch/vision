@@ -112,7 +112,9 @@ class ConvNormActivation(torch.nn.Sequential):
         self.out_channels = out_channels
 
         if self.__class__ == ConvNormActivation:
-            warnings.warn("Don't use ConvNormActivation directly. Use Conv2dNormActivation instead.")
+            warnings.warn(
+                "Don't use ConvNormActivation directly, please use Conv2dNormActivation and Conv3dNormActivation instead."
+            )
 
 
 class Conv2dNormActivation(ConvNormActivation):
