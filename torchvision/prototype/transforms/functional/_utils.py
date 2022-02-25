@@ -8,13 +8,12 @@ from torchvision.transforms import functional_tensor as _FT, functional_pil as _
 
 def get_image_size(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int]:
     if isinstance(image, features.Image):
-        return image.image_size
+        height, width = image.image_size
+        return width, height
     elif isinstance(image, torch.Tensor):
-        width, height = _FT.get_image_size(image)
-        return height, width
+        return cast(Tuple[int, int], tuple(_FT.get_image_size(image)))
     if isinstance(image, PIL.Image.Image):
-        width, height = _FP.get_image_size(image)
-        return height, width
+        return cast(Tuple[int, int], tuple(_FP.get_image_size(image)))
     else:
         raise TypeError(f"unable to get image size from object of type {type(image).__name__}")
 
