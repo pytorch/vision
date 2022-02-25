@@ -12,20 +12,20 @@ D = TypeVar("D", bound=Type[Dataset2])
 BUILTIN_INFOS: Dict[str, Dict[str, Any]] = {}
 
 
-def register_info(name: str) -> Callable[[Callable[[], Dict[str, Any]]], Callable[[], Dict[str, Any]]]:
-    def wrapper(fn: Callable[[], Dict[str, Any]]) -> Callable[[], Dict[str, Any]]:
-        BUILTIN_INFOS[name] = fn()
-        return fn
-
-    return wrapper
-
-
 BUILTIN_DATASETS = {}
 
 
-def register_dataset(name: str) -> Callable[[D], D]:
+def register_dataset(name: str, *, info: Optional[Dict[str, Any]] = None) -> Callable[[D], D]:
+    if info is None:
+        info = dict()
+
     def wrapper(dataset_cls: D) -> D:
+        BUILTIN_INFOS[name] = info  # type: ignore[assignment]
         BUILTIN_DATASETS[name] = dataset_cls
+
+        dataset_cls._NAME = name
+        dataset_cls._INFO = info  # type: ignore[assignment]
+
         return dataset_cls
 
     return wrapper

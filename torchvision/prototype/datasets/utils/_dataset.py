@@ -185,6 +185,10 @@ class Dataset(abc.ABC):
 
 
 class Dataset2(IterDataPipe[Dict[str, Any]], abc.ABC):
+    # These fields will be set on subclasses by the `@register_dataset` decorator
+    _NAME: str
+    _INFO: Dict[str, Any]
+
     @staticmethod
     def _verify_str_arg(
         value: str,

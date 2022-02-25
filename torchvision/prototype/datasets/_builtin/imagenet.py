@@ -23,16 +23,7 @@ from torchvision.prototype.datasets.utils._internal import (
 )
 from torchvision.prototype.features import Label, EncodedImage
 
-from .._api import register_dataset, register_info
-
-
-NAME = "imagenet"
-
-
-@register_info(NAME)
-def _info() -> Dict[str, Any]:
-    categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
-    return dict(categories=categories, wnids=wnids)
+from .._api import register_dataset
 
 
 class ImageNetResource(ManualDownloadResource):
@@ -40,13 +31,15 @@ class ImageNetResource(ManualDownloadResource):
         super().__init__("Register on https://image-net.org/ and follow the instructions there.", **kwargs)
 
 
-@register_dataset(NAME)
+CATEGORIES, WNIDS = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "imagenet.categories"))
+
+
+@register_dataset("imagenet", info=dict(categories=CATEGORIES, wnids=WNIDS))
 class ImageNet(Dataset2):
     def __init__(self, root: Union[str, pathlib.Path], *, split: str = "train") -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "val", "test"})
 
-        info = _info()
-        categories, wnids = info["categories"], info["wnids"]
+        categories, wnids = self._INFO["categories"], self._INFO["wnids"]
         self._categories: List[str] = categories
         self._wnids: List[str] = wnids
         self._wnid_to_category = dict(zip(wnids, categories))

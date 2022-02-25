@@ -34,16 +34,6 @@ def test_coverage():
 
 
 class TestCommon:
-    @pytest.mark.parametrize("name", datasets.list_datasets())
-    def test_info(self, name):
-        try:
-            info = datasets.info(name)
-        except ValueError:
-            raise AssertionError("No info available.") from None
-
-        if not (isinstance(info, dict) and all(isinstance(key, str) for key in info.keys())):
-            raise AssertionError("Info should be a dictionary with string keys.")
-
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
