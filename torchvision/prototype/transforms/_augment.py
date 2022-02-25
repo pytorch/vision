@@ -55,8 +55,7 @@ class RandomErasing(Transform):
 
         if value is not None and not (len(value) in (1, img_c)):
             raise ValueError(
-                "If value is a sequence, it should have either a single value or "
-                f"{image.shape[-3]} (number of input channels)"
+                "If value is a sequence, it should have either a single value or " f"{img_c} (number of input channels)"
             )
 
         area = img_h * img_w

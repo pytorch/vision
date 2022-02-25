@@ -40,7 +40,8 @@ def resize_image_tensor(
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
     new_height, new_width = size
-    num_channels, old_height, old_width = image.shape[-3:]
+    old_height, old_width = _FT.get_image_size(image)
+    num_channels = _FT.get_image_num_channels(image)
     batch_shape = image.shape[:-3]
     return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
