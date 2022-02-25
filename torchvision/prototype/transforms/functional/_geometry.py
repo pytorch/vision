@@ -173,7 +173,7 @@ def affine_image_pil(
         center = [width * 0.5, height * 0.5]
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
-    return _FP.affine(img, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill, center=center)
+    return _FP.affine(img, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
 def rotate_image_tensor(
