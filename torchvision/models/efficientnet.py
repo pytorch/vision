@@ -193,7 +193,7 @@ class FusedMBConv(nn.Module):
         if expanded_channels != cnf.input_channels:
             # fused expand
             layers.append(
-                ConvNormActivation(
+                Conv2dNormActivation(
                     cnf.input_channels,
                     expanded_channels,
                     kernel_size=cnf.kernel,
@@ -205,13 +205,13 @@ class FusedMBConv(nn.Module):
 
             # project
             layers.append(
-                ConvNormActivation(
+                Conv2dNormActivation(
                     expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
                 )
             )
         else:
             layers.append(
-                ConvNormActivation(
+                Conv2dNormActivation(
                     cnf.input_channels,
                     cnf.out_channels,
                     kernel_size=cnf.kernel,
