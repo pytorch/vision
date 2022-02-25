@@ -1,69 +1,42 @@
-from typing import Any
+from typing import Optional, List
 
 import PIL.Image
 import torch
-from torchvision.prototype import features
-from torchvision.prototype.transforms import kernels as K
-from torchvision.transforms import functional as _F
-from torchvision.transforms.functional_pil import (
-    get_image_size as _get_image_size_pil,
-    get_image_num_channels as _get_image_num_channels_pil,
-)
-from torchvision.transforms.functional_tensor import (
-    get_image_size as _get_image_size_tensor,
-    get_image_num_channels as _get_image_num_channels_tensor,
-)
-
-from ._utils import dispatch
+from torchvision.transforms import functional_tensor as _FT
+from torchvision.transforms.functional import to_tensor, to_pil_image
 
 
-@dispatch(
-    {
-        torch.Tensor: _F.normalize,
-        features.Image: K.normalize_image,
-    }
-)
-def normalize(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
+normalize_image_tensor = _FT.normalize
 
 
-@dispatch(
-    {
-        torch.Tensor: _F.gaussian_blur,
-        PIL.Image.Image: _F.gaussian_blur,
-        features.Image: K.gaussian_blur_image,
-    }
-)
-def gaussian_blur(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
+def gaussian_blur_image_tensor(
+    img: torch.Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None
+) -> torch.Tensor:
+    if isinstance(kernel_size, int):
+        kernel_size = [kernel_size, kernel_size]
+    if len(kernel_size) != 2:
+        raise ValueError(f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}")
+    for ksize in kernel_size:
+        if ksize % 2 == 0 or ksize < 0:
+            raise ValueError(f"kernel_size should have odd and positive integers. Got {kernel_size}")
+
+    if sigma is None:
+        sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
+
+    if sigma is not None and not isinstance(sigma, (int, float, list, tuple)):
+        raise TypeError(f"sigma should be either float or sequence of floats. Got {type(sigma)}")
+    if isinstance(sigma, (int, float)):
+        sigma = [float(sigma), float(sigma)]
+    if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
+        sigma = [sigma[0], sigma[0]]
+    if len(sigma) != 2:
+        raise ValueError(f"If sigma is a sequence, its length should be 2. Got {len(sigma)}")
+    for s in sigma:
+        if s <= 0.0:
+            raise ValueError(f"sigma should have positive values. Got {sigma}")
+
+    return _FT.gaussian_blur(img, kernel_size, sigma)
 
 
-@dispatch(
-    {
-        torch.Tensor: _get_image_size_tensor,
-        PIL.Image.Image: _get_image_size_pil,
-        features.Image: None,
-        features.BoundingBox: None,
-    }
-)
-def get_image_size(input: Any, *args: Any, **kwargs: Any) -> Any:
-    if isinstance(input, (features.Image, features.BoundingBox)):
-        return list(input.image_size)
-
-    raise RuntimeError
-
-
-@dispatch(
-    {
-        torch.Tensor: _get_image_num_channels_tensor,
-        PIL.Image.Image: _get_image_num_channels_pil,
-        features.Image: None,
-    }
-)
-def get_image_num_channels(input: Any, *args: Any, **kwargs: Any) -> Any:
-    if isinstance(input, features.Image):
-        return input.num_channels
-
-    raise RuntimeError
+def gaussian_blur_image_pil(img: PIL.Image, kernel_size: List[int], sigma: Optional[List[float]] = None) -> PIL.Image:
+    return to_pil_image(gaussian_blur_image_tensor(to_tensor(img), kernel_size=kernel_size, sigma=sigma))
