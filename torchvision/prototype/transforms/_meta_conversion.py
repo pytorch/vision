@@ -1,5 +1,6 @@
 from typing import Union, Any, Dict, Optional
 
+import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
@@ -7,24 +8,18 @@ from torchvision.transforms.functional import convert_image_dtype
 
 
 class ConvertBoundingBoxFormat(Transform):
-    _DISPATCHER = F.convert_format
-
-    def __init__(
-        self,
-        format: Union[str, features.BoundingBoxFormat],
-        old_format: Optional[Union[str, features.BoundingBoxFormat]] = None,
-    ) -> None:
+    def __init__(self, format: Union[str, features.BoundingBoxFormat]) -> None:
         super().__init__()
         if isinstance(format, str):
             format = features.BoundingBoxFormat[format]
         self.format = format
 
-        if isinstance(old_format, str):
-            old_format = features.BoundingBoxFormat[old_format]
-        self.old_format = old_format
-
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(format=self.format, old_format=self.old_format)
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if type(input) is features.BoundingBox:
+            output = F.convert_bounding_box_format(input, old_format=input.format, new_format=params["format"])
+            return features.BoundingBox.new_like(input, output, format=params["format"])
+        else:
+            return input
 
 
 class ConvertImageDtype(Transform):
@@ -33,21 +28,50 @@ class ConvertImageDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if not isinstance(input, features.Image):
+        if type(input) is features.Image:
+            output = convert_image_dtype(input, dtype=self.dtype)
+            return features.Image.new_like(input, output, dtype=self.dtype)
+        else:
             return input
 
-        output = convert_image_dtype(input, dtype=self.dtype)
-        return features.Image.new_like(input, output, dtype=self.dtype)
 
-
-class ConvertColorSpace(Transform):
-    _DISPATCHER = F.convert_color_space
-
-    def __init__(self, color_space: Union[str, features.ColorSpace]) -> None:
+class ConvertImageColorSpace(Transform):
+    def __init__(
+        self,
+        color_space: Union[str, features.ColorSpace],
+        old_color_space: Optional[Union[str, features.ColorSpace]] = None,
+    ) -> None:
         super().__init__()
+
         if isinstance(color_space, str):
             color_space = features.ColorSpace[color_space]
         self.color_space = color_space
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(color_space=self.color_space)
+        if isinstance(old_color_space, str):
+            old_color_space = features.ColorSpace[old_color_space]
+        self.old_color_space = old_color_space
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image):
+            output = F.convert_image_color_space_tensor(
+                input, old_color_space=input.color_space, new_color_space=self.color_space
+            )
+            return features.Image.new_like(input, output, color_space=self.color_space)
+        elif isinstance(input, torch.Tensor):
+            if self.old_color_space is None:
+                raise RuntimeError("")
+
+            return F.convert_image_color_space_tensor(
+                input, old_color_space=self.old_color_space, new_color_space=self.color_space
+            )
+        elif isinstance(input, PIL.Image.Image):
+            old_color_space = {
+                "L": features.ColorSpace.GRAYSCALE,
+                "RGB": features.ColorSpace.RGB,
+            }.get(input.mode, features.ColorSpace.OTHER)
+
+            return F.convert_image_color_space_pil(
+                input, old_color_space=old_color_space, new_color_space=self.color_space
+            )
+        else:
+            return input
