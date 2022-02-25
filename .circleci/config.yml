@@ -1660,11 +1660,6 @@ workflows:
           python_version: '3.7'
       - unittest_windows_gpu:
           cu_version: cu102
-          filters:
-            branches:
-              only:
-              - main
-              - nightly
           name: unittest_windows_gpu_py3.7
           python_version: '3.7'
       - unittest_macos_cpu:
