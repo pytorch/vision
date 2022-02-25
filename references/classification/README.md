@@ -53,6 +53,13 @@ torchrun --nproc_per_node=8 train.py --model $MODEL
 
 Here `$MODEL` is one of `resnet18`, `resnet34`, `resnet50`, `resnet101` or `resnet152`.
 
+### ResNet with dropblock
+```
+torchrun --nproc_per_node=8 train.py --model resnet50 -b 128 --lr 0.4 --epochs 270
+```
+
+
+
 ### ResNext
 ```
 torchrun --nproc_per_node=8 train.py\

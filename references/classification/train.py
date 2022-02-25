@@ -288,6 +288,7 @@ def main(args):
             f"Invalid lr scheduler '{args.lr_scheduler}'. Only StepLR, CosineAnnealingLR and ExponentialLR "
             "are supported."
         )
+    main_lr_scheduler = torch.optim.lr_scheduler.MultiStepLR(optimizer, milestones=[125, 200, 250], gamma=0.1)
 
     if args.lr_warmup_epochs > 0:
         if args.lr_warmup_method == "linear":
