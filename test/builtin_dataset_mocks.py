@@ -1310,7 +1310,9 @@ def omniglot(info, root, config):
     i, j = 0, 0
     for character in characters:
         for alphabet in alphabets:
-            create_image_folder(root / f"{split}/{alphabet}", character, "{i}_{j}.jpg", num_images["images_background"])
+            create_image_folder(
+                root / f"{split}/{alphabet}", character, lambda idx: f"{idx+i}_{j}.jpg", int(num_images[split])
+            )
             j += 1
         i += 1
         j = 0
