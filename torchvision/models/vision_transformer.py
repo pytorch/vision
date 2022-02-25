@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation
+from ..ops.misc import Conv2dNormActivation
 from ..utils import _log_api_usage_once
 
 __all__ = [
@@ -163,7 +163,7 @@ class VisionTransformer(nn.Module):
             for i, conv_stem_layer_config in enumerate(conv_stem_configs):
                 seq_proj.add_module(
                     f"conv_bn_relu_{i}",
-                    ConvNormActivation(
+                    Conv2dNormActivation(
                         in_channels=prev_channels,
                         out_channels=conv_stem_layer_config.out_channels,
                         kernel_size=conv_stem_layer_config.kernel_size,
