@@ -4,7 +4,9 @@ import os
 import pytest
 import torch
 from torchvision.io import _HAS_VIDEO_DECODER, _HAS_VIDEO_OPT, VideoReader
-
+from torchvision.prototype.features import EncodedData
+from torchvision.prototype.utils._internal import ReadOnlyTensorBuffer
+from torchvision.prototype.datasets.utils._video import KeyframeDecoder, RandomFrameDecoder
 try:
     import av
 except ImportError:
@@ -35,6 +37,9 @@ class TestVideoDatasetUtils:
         """Read a sequence of random frames from a video
         Checks that files are valid video frames and no error is thrown during decoding.
         """
+        video_file = os.path.join(VIDEO_DIR, video_file)
+        video = ReadOnlyTensorBuffer(EncodedData.from_path(video_file))
+        print(next(video))
         pass
 
     def test_random_decoder_cpu(self, video_file):
