@@ -123,8 +123,12 @@
                   <span class="dropdown-title">torchvision</span>
                   <p></p>
                 </a>
-                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/elastic/">
-                  <span class="dropdown-title">TorchElastic</span>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/torchrec">
+                  <span class="dropdown-title">TorchRec</span>
+                  <p></p>
+                </a>
+                <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/data">
+                  <span class="dropdown-title">TorchData</span>
                   <p></p>
                 </a>
                 <a class="doc-dropdown-option nav-dropdown-item" href="https://pytorch.org/serve/">
@@ -196,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+2662797 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.12.0a0+c6c1fb6 ) &#x25BC</a>
     </div>
     
 
@@ -409,14 +413,14 @@
     <span class="k">return</span> <span class="n">img</span>
 
 
-<span class="k">class</span> <span class="nc">AutoAugmentPolicy</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
+<div class="viewcode-block" id="AutoAugmentPolicy"><a class="viewcode-back" href="../../../generated/torchvision.transforms.AutoAugmentPolicy.html#torchvision.transforms.AutoAugmentPolicy">[docs]</a><span class="k">class</span> <span class="nc">AutoAugmentPolicy</span><span class="p">(</span><span class="n">Enum</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;AutoAugment policies learned on different datasets.</span>
 <span class="sd">    Available policies are IMAGENET, CIFAR10 and SVHN.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">IMAGENET</span> <span class="o">=</span> <span class="s2">&quot;imagenet&quot;</span>
     <span class="n">CIFAR10</span> <span class="o">=</span> <span class="s2">&quot;cifar10&quot;</span>
-    <span class="n">SVHN</span> <span class="o">=</span> <span class="s2">&quot;svhn&quot;</span>
+    <span class="n">SVHN</span> <span class="o">=</span> <span class="s2">&quot;svhn&quot;</span></div>
 
 
 <span class="c1"># FIXME: Eliminate copy-pasted code for fill standardization and _augmentation_space() by moving stuff on a base class</span>
