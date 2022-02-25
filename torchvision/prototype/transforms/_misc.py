@@ -53,7 +53,3 @@ class ToDtype(Lambda):
 
     def extra_repr(self) -> str:
         return ", ".join([f"dtype={self.dtype}", f"types={[type.__name__ for type in self.types]}"])
-
-
-class GaussianBlur(Transform):
-    pass

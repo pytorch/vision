@@ -95,7 +95,7 @@ class Caltech101(Dataset):
             bounding_box=BoundingBox(
                 ann["box_coord"].astype(np.int64).squeeze()[[2, 0, 3, 1]], format="xyxy", image_size=image.image_size
             ),
-            contour=_Feature(ann["obj_contour"]._FT),
+            contour=_Feature(ann["obj_contour"].T),
         )
 
     def _make_datapipe(

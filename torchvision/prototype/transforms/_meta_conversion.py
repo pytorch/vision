@@ -57,14 +57,14 @@ class ConvertImageColorSpace(Transform):
                 input, old_color_space=input.color_space, new_color_space=self.color_space
             )
             return features.Image.new_like(input, output, color_space=self.color_space)
-        if isinstance(input, torch.Tensor):
+        elif isinstance(input, torch.Tensor):
             if self.old_color_space is None:
                 raise RuntimeError("")
 
             return F.convert_image_color_space_tensor(
                 input, old_color_space=self.old_color_space, new_color_space=self.color_space
             )
-        if isinstance(input, PIL.Image.Image):
+        elif isinstance(input, PIL.Image.Image):
             old_color_space = {
                 "L": features.ColorSpace.GRAYSCALE,
                 "RGB": features.ColorSpace.RGB,
