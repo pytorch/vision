@@ -1,4 +1,4 @@
-from typing import TypeVar, Any, cast
+from typing import Any
 
 import PIL.Image
 import torch
@@ -7,8 +7,6 @@ from torchvision.prototype.transforms import kernels as K
 from torchvision.transforms import functional as _F
 
 from ._utils import dispatch
-
-T = TypeVar("T", bound=features._Feature)
 
 
 @dispatch(
@@ -19,11 +17,11 @@ T = TypeVar("T", bound=features._Feature)
         features.BoundingBox: None,
     },
 )
-def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
+def horizontal_flip(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     if isinstance(input, features.BoundingBox):
         output = K.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
-        return cast(T, features.BoundingBox.new_like(input, output))
+        return features.BoundingBox.new_like(input, output)
 
     raise RuntimeError
 
@@ -37,12 +35,12 @@ def horizontal_flip(input: T, *args: Any, **kwargs: Any) -> T:
         features.BoundingBox: None,
     }
 )
-def resize(input: T, *args: Any, **kwargs: Any) -> T:
+def resize(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     if isinstance(input, features.BoundingBox):
         size = kwargs.pop("size")
         output = K.resize_bounding_box(input, size=size, image_size=input.image_size)
-        return cast(T, features.BoundingBox.new_like(input, output, image_size=size))
+        return features.BoundingBox.new_like(input, output, image_size=size)
 
     raise RuntimeError
 
@@ -54,7 +52,7 @@ def resize(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.center_crop_image,
     }
 )
-def center_crop(input: T, *args: Any, **kwargs: Any) -> T:
+def center_crop(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -66,7 +64,7 @@ def center_crop(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.resized_crop_image,
     }
 )
-def resized_crop(input: T, *args: Any, **kwargs: Any) -> T:
+def resized_crop(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -78,7 +76,7 @@ def resized_crop(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.affine_image,
     }
 )
-def affine(input: T, *args: Any, **kwargs: Any) -> T:
+def affine(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -90,7 +88,7 @@ def affine(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.rotate_image,
     }
 )
-def rotate(input: T, *args: Any, **kwargs: Any) -> T:
+def rotate(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -102,7 +100,7 @@ def rotate(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.pad_image,
     }
 )
-def pad(input: T, *args: Any, **kwargs: Any) -> T:
+def pad(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -114,7 +112,7 @@ def pad(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.crop_image,
     }
 )
-def crop(input: T, *args: Any, **kwargs: Any) -> T:
+def crop(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -126,7 +124,7 @@ def crop(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.perspective_image,
     }
 )
-def perspective(input: T, *args: Any, **kwargs: Any) -> T:
+def perspective(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -138,7 +136,7 @@ def perspective(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.vertical_flip_image,
     }
 )
-def vertical_flip(input: T, *args: Any, **kwargs: Any) -> T:
+def vertical_flip(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -150,7 +148,7 @@ def vertical_flip(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.five_crop_image,
     }
 )
-def five_crop(input: T, *args: Any, **kwargs: Any) -> T:
+def five_crop(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
 
@@ -162,6 +160,6 @@ def five_crop(input: T, *args: Any, **kwargs: Any) -> T:
         features.Image: K.ten_crop_image,
     }
 )
-def ten_crop(input: T, *args: Any, **kwargs: Any) -> T:
+def ten_crop(input: Any, *args: Any, **kwargs: Any) -> Any:
     """TODO: add docstring"""
     ...
