@@ -109,7 +109,7 @@ class RandomResizedCrop(Transform):
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
-        width, height = F.get_image_size(image)
+        _, height, width = F.get_image_dims(image)
         area = height * width
 
         log_ratio = torch.log(torch.tensor(self.ratio))
