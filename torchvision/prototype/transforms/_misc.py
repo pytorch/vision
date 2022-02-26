@@ -17,10 +17,10 @@ class Lambda(Transform):
         self.types = types
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if not isinstance(input, self.types):
+        if type(input) in self.types:
+            return self.fn(input)
+        else:
             return input
-
-        return self.fn(input)
 
     def extra_repr(self) -> str:
         extras = []
@@ -32,15 +32,18 @@ class Lambda(Transform):
 
 
 class Normalize(Transform):
-    _DISPATCHER = F.normalize
-
     def __init__(self, mean: List[float], std: List[float]):
         super().__init__()
         self.mean = mean
         self.std = std
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(mean=self.mean, std=self.std)
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, torch.Tensor):
+            # We don't need to differentiate between vanilla tensors and features.Image's here, since the result of the
+            # normalization transform is no longer a features.Image
+            return F.normalize_image_tensor(input, mean=self.mean, std=self.std)
+        else:
+            return input
 
 
 class ToDtype(Lambda):
