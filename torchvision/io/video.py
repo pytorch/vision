@@ -287,13 +287,6 @@ def read_video(
         with av.open(filename, metadata_errors="ignore") as container:
             if container.streams.audio:
                 audio_timebase = container.streams.audio[0].time_base
-            time_base = _video_opt.default_timebase
-            if container.streams.video:
-                time_base = container.streams.video[0].time_base
-            elif container.streams.audio:
-                time_base = container.streams.audio[0].time_base
-            # video_timebase is the default time_base
-            start_pts, end_pts, pts_unit = _video_opt._convert_to_sec(start_pts, end_pts, pts_unit, time_base)
             if container.streams.video:
                 video_frames = _read_from_stream(
                     container,
