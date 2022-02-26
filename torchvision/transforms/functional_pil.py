@@ -21,7 +21,7 @@ def _is_pil_image(img: Any) -> bool:
 
 
 @torch.jit.unused
-def get_image_dims(img: Any) -> List[int]:
+def get_dimensions(img: Any) -> List[int]:
     if _is_pil_image(img):
         channels = len(img.getbands())
         width, height = img.size
