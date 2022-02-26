@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+e87b16a ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+5319d14 ) &#x25BC</a>
     </div>
     
 
@@ -328,9 +328,9 @@
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 
 <span class="k">try</span><span class="p">:</span>
-    <span class="kn">from</span> <span class="nn">._load_gpu_decoder</span> <span class="kn">import</span> <span class="n">_HAS_VIDEO_DECODER</span>
+    <span class="kn">from</span> <span class="nn">._load_gpu_decoder</span> <span class="kn">import</span> <span class="n">_HAS_GPU_VIDEO_DECODER</span>
 <span class="k">except</span> <span class="ne">ModuleNotFoundError</span><span class="p">:</span>
-    <span class="n">_HAS_VIDEO_DECODER</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">_HAS_GPU_VIDEO_DECODER</span> <span class="o">=</span> <span class="kc">False</span>
 <span class="kn">from</span> <span class="nn">._video_opt</span> <span class="kn">import</span> <span class="p">(</span>
     <span class="n">Timebase</span><span class="p">,</span>
     <span class="n">VideoMetaData</span><span class="p">,</span>
@@ -442,7 +442,7 @@
         <span class="bp">self</span><span class="o">.</span><span class="n">is_cuda</span> <span class="o">=</span> <span class="kc">False</span>
         <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
         <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">type</span> <span class="o">==</span> <span class="s2">&quot;cuda&quot;</span><span class="p">:</span>
-            <span class="k">if</span> <span class="ow">not</span> <span class="n">_HAS_VIDEO_DECODER</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">_HAS_GPU_VIDEO_DECODER</span><span class="p">:</span>
                 <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;Not compiled with GPU decoder support.&quot;</span><span class="p">)</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">is_cuda</span> <span class="o">=</span> <span class="kc">True</span>
             <span class="k">if</span> <span class="n">device</span><span class="o">.</span><span class="n">index</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
@@ -541,7 +541,7 @@
     <span class="s2">&quot;_read_video_timestamps_from_memory&quot;</span><span class="p">,</span>
     <span class="s2">&quot;_probe_video_from_memory&quot;</span><span class="p">,</span>
     <span class="s2">&quot;_HAS_VIDEO_OPT&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;_HAS_VIDEO_DECODER&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;_HAS_GPU_VIDEO_DECODER&quot;</span><span class="p">,</span>
     <span class="s2">&quot;_read_video_clip_from_memory&quot;</span><span class="p">,</span>
     <span class="s2">&quot;_read_video_meta_data&quot;</span><span class="p">,</span>
     <span class="s2">&quot;VideoMetaData&quot;</span><span class="p">,</span>
