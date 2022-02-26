@@ -7,7 +7,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
 from torchvision.prototype.utils._internal import apply_recursively
 
-from ._utils import query_image
+from ._utils import query_image, get_image_dims
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -47,7 +47,7 @@ class _AutoAugmentBase(Transform):
                 return input
 
         image = query_image(sample)
-        num_channels, _, _ = F.get_image_dims(image)
+        num_channels, *_ = get_image_dims(image)
 
         fill = self.fill
         if isinstance(fill, (int, float)):
@@ -278,7 +278,7 @@ class AutoAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         image = query_image(sample)
-        _, height, width = F.get_image_dims(image)
+        _, height, width = get_image_dims(image)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -334,7 +334,7 @@ class RandAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         image = query_image(sample)
-        _, height, width = F.get_image_dims(image)
+        _, height, width = get_image_dims(image)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -383,7 +383,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         image = query_image(sample)
-        _, height, width = F.get_image_dims(image)
+        _, height, width = get_image_dims(image)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 

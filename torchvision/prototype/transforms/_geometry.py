@@ -8,7 +8,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
-from ._utils import query_image
+from ._utils import query_image, get_image_dims
 
 
 class HorizontalFlip(Transform):
@@ -109,7 +109,7 @@ class RandomResizedCrop(Transform):
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
-        _, height, width = F.get_image_dims(image)
+        _, height, width = get_image_dims(image)
         area = height * width
 
         log_ratio = torch.log(torch.tensor(self.ratio))

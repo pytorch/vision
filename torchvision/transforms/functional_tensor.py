@@ -21,6 +21,13 @@ def _assert_threshold(img: Tensor, threshold: float) -> None:
         raise TypeError("Threshold should be less than bound of img.")
 
 
+def get_image_dims(img: Tensor) -> List[int]:
+    _assert_image_tensor(img)
+    channels = 1 if img.ndim == 2 else img.shape[-3]
+    height, width = img.shape[-2:]
+    return [channels, height, width]
+
+
 def get_image_size(img: Tensor) -> List[int]:
     # Returns (w, h) of tensor image
     _assert_image_tensor(img)

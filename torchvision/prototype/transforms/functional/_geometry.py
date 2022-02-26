@@ -5,7 +5,6 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import InterpolationMode
-from torchvision.prototype.transforms.functional import get_image_dims
 from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
 from torchvision.transforms.functional import pil_modes_mapping, _get_inverse_affine_matrix
 
@@ -40,7 +39,7 @@ def resize_image_tensor(
     antialias: Optional[bool] = None,
 ) -> torch.Tensor:
     new_height, new_width = size
-    num_channels, old_height, old_width = image.shape[-3:]
+    num_channels, old_height, old_width = _FT.get_image_dims(image)
     batch_shape = image.shape[:-3]
     return _FT.resize(
         image.reshape((-1, num_channels, old_height, old_width)),
@@ -142,7 +141,7 @@ def affine_image_tensor(
 
     center_f = [0.0, 0.0]
     if center is not None:
-        _, height, width = get_image_dims(img)
+        _, height, width = _FT.get_image_dims(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, (width, height))]
 
@@ -168,7 +167,7 @@ def affine_image_pil(
     # it is visually better to estimate the center without 0.5 offset
     # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
     if center is None:
-        _, height, width = get_image_dims(img)
+        _, height, width = _FP.get_image_dims(img)
         center = [width * 0.5, height * 0.5]
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
@@ -185,7 +184,7 @@ def rotate_image_tensor(
 ) -> torch.Tensor:
     center_f = [0.0, 0.0]
     if center is not None:
-        _, height, width = get_image_dims(img)
+        _, height, width = _FT.get_image_dims(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
         center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, (width, height))]
 
@@ -261,13 +260,13 @@ def _center_crop_compute_crop_anchor(
 
 def center_crop_image_tensor(img: torch.Tensor, output_size: List[int]) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    _, image_height, image_width = get_image_dims(img)
+    _, image_height, image_width = _FT.get_image_dims(img)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
         img = pad_image_tensor(img, padding_ltrb, fill=0)
 
-        _, image_height, image_width = get_image_dims(img)
+        _, image_height, image_width = _FT.get_image_dims(img)
         if crop_width == image_width and crop_height == image_height:
             return img
 
@@ -277,13 +276,13 @@ def center_crop_image_tensor(img: torch.Tensor, output_size: List[int]) -> torch
 
 def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.Image.Image:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
-    _, image_height, image_width = get_image_dims(img)
+    _, image_height, image_width = _FP.get_image_dims(img)
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
         img = pad_image_pil(img, padding_ltrb, fill=0)
 
-        _, image_height, image_width = get_image_dims(img)
+        _, image_height, image_width = _FP.get_image_dims(img)
         if crop_width == image_width and crop_height == image_height:
             return img
 
