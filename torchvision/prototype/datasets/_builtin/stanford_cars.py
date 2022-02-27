@@ -1,15 +1,15 @@
 from typing import Any, Dict, List
 
-from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
+from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper, IterKeyZipper
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat, getitem
 from torchvision.prototype.features import BoundingBox, EncodedImage
 
 
 class StanfordCars(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
-            name="stanford_cars",
+            name="stanford-cars",
             homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
             dependencies=("scipy",),
             valid_options=dict(
@@ -40,23 +40,8 @@ class StanfordCars(Dataset):
             resources.append(HttpResource(url=self._URLS["devkit"], sha256=self._CHECKSUM["devkit"]))
         return resources
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-    ) -> IterDataPipe[Dict[str, Any]]:
-
-        images_dp, targets_dp = resource_dps
-        print(config.split)
-        if config.split == "train":
-            targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
-        dp = Zipper(images_dp, targets_dp)
-        dp = hint_sharding(dp)
-        dp = hint_shuffling(dp)
-        return Mapper(dp, self._read_images_and_labels)
-
-    def _read_images_and_labels(self, data):
+    
+    def _prepare_sample(self, data):
         image, target = data
         image_path, image_buffer = image
         labels_path, labels_buffer = target
@@ -83,3 +68,21 @@ class StanfordCars(Dataset):
                 image_size=image.image_size,
             ),
         )
+
+
+    def _make_datapipe(
+        self,
+        resource_dps: List[IterDataPipe],
+        *,
+        config: DatasetConfig,
+    ) -> IterDataPipe[Dict[str, Any]]:
+
+        images_dp, targets_dp = resource_dps
+        if config.split == "train":
+            targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
+
+        dp = Zipper(images_dp, targets_dp)
+        dp = hint_sharding(dp)
+        dp = hint_shuffling(dp)
+        
+        return Mapper(dp, self._prepare_sample)
