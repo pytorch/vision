@@ -42,8 +42,8 @@ model_urls = {
     "efficientnet_b5": "https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
     "efficientnet_b6": "https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
     "efficientnet_b7": "https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
-    # Temporary TF weights
-    "efficientnet_v2_s": "https://download.pytorch.org/models/efficientnet_v2_s-tmp.pth",
+    # Weights trained with TorchVision
+    "efficientnet_v2_s": "https://download.pytorch.org/models/efficientnet_v2_s-dd5fe13b.pth",
 }
 
 

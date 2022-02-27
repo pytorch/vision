@@ -88,7 +88,7 @@ Then we averaged the parameters of the last 3 checkpoints that improved the Acc@
 and [#3354](https://github.com/pytorch/vision/pull/3354) for details.
 
 
-### EfficientNet
+### EfficientNet-V1
 
 The weights of the B0-B4 variants are ported from Ross Wightman's [timm repo](https://github.com/rwightman/pytorch-image-models/blob/01cb46a9a50e3ba4be167965b5764e9702f09b30/timm/models/efficientnet.py#L95-L108).
 
@@ -113,6 +113,24 @@ torchrun --nproc_per_node=8 train.py --model efficientnet_b6 --interpolation bic
 torchrun --nproc_per_node=8 train.py --model efficientnet_b7 --interpolation bicubic\
       --val-resize-size 600 --val-crop-size 600 --train-crop-size 600 --test-only --pretrained
 ```
+
+
+### EfficientNet-V2
+```
+torchrun --nproc_per_node=8 train.py \
+--model $MODEL --batch-size 128 --lr 0.5 --lr-scheduler cosineannealinglr \
+--lr-warmup-epochs 5 --lr-warmup-method linear --auto-augment ta_wide --epochs 600 --random-erase 0.1 \
+--label-smoothing 0.1 --mixup-alpha 0.2 --cutmix-alpha 1.0 --weight-decay 0.00002 --norm-weight-decay 0.0 \
+--train-crop-size $TRAIN_SIZE --model-ema --val-crop-size $EVAL_SIZE --val-resize-size $EVAL_SIZE \
+--ra-sampler --ra-reps 4
+```
+Here `$MODEL` is one of `efficientnet_v2_s`, `efficientnet_v2_m` and `efficientnet_v2_l`. 
+Note that the Small variant had a `$TRAIN_SIZE` of `300` and a `$EVAL_SIZE` of `384`, while the other variants `384` and `480` respectively.
+
+Note that the above command corresponds to training on a single node with 8 GPUs.
+For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
+and `--batch_size 16`.
+
 
 ### RegNet
 

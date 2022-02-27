@@ -60,7 +60,6 @@ def _efficientnet(
 _COMMON_META = {
     "task": "image_classification",
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BICUBIC,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
 }
 
@@ -69,6 +68,7 @@ _COMMON_META_V1 = {
     **_COMMON_META,
     "architecture": "EfficientNet",
     "publication_year": 2019,
+    "interpolation": InterpolationMode.BICUBIC,
     "min_size": (1, 1),
 }
 
@@ -77,6 +77,7 @@ _COMMON_META_V2 = {
     **_COMMON_META,
     "architecture": "EfficientNetV2",
     "publication_year": 2021,
+    "interpolation": InterpolationMode.BILINEAR,
     "min_size": (33, 33),
 }
 
@@ -216,21 +217,19 @@ class EfficientNet_B7_Weights(WeightsEnum):
 
 class EfficientNet_V2_S_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/efficientnet_v2_s-tmp.pth",
+        url="https://download.pytorch.org/models/efficientnet_v2_s-dd5fe13b.pth",
         transforms=partial(
             ImageNetEval,
             crop_size=384,
             resize_size=384,
-            interpolation=InterpolationMode.BICUBIC,
-            mean=(0.5, 0.5, 0.5),
-            std=(0.5, 0.5, 0.5),
+            interpolation=InterpolationMode.BILINEAR,
         ),
         meta={
             **_COMMON_META_V2,
             "num_params": 21458488,
             "size": (384, 384),
-            "acc@1": 83.152,
-            "acc@5": 96.400,
+            "acc@1": 84.228,
+            "acc@5": 96.878,
         },
     )
     DEFAULT = IMAGENET1K_V1
