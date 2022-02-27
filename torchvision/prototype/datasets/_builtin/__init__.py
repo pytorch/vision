@@ -8,7 +8,7 @@ from .dtd import DTD
 from .fer2013 import FER2013
 from .gtsrb import GTSRB
 from .imagenet import ImageNet
-from .mnist import EMNIST, FashionMNIST, KMNIST, MNIST, QMNIST
+from .mnist import MNIST, FashionMNIST, KMNIST, EMNIST, QMNIST
 from .oxford_iiit_pet import OxfordIITPet
 from .pcam import PCAM
 from .sbd import SBD
