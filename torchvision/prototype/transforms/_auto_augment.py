@@ -9,7 +9,7 @@ from torchvision.prototype.transforms import Transform, InterpolationMode, AutoA
 from torchvision.prototype.utils._internal import apply_recursively
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-from ._utils import query_images
+from ._utils import query_images, get_image_dimensions
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -38,7 +38,7 @@ class _AutoAugmentBase(Transform):
 
     def _parse_fill(self, sample: Any) -> Optional[List[float]]:
         image = self._query_image(sample)
-        num_channels = F.get_image_num_channels(image)
+        num_channels, *_ = get_image_dimensions(image)
 
         fill = self.fill
         if isinstance(fill, (int, float)):
@@ -182,8 +182,8 @@ class AutoAugment(_AutoAugmentBase):
     _AUGMENTATION_SPACE = {
         "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
         "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
         "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
         "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
@@ -300,7 +300,7 @@ class AutoAugment(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         image = self._query_image(sample)
-        image_size = F.get_image_size(image)
+        _, height, width = get_image_dimensions(image)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -310,7 +310,7 @@ class AutoAugment(_AutoAugmentBase):
 
             magnitudes_fn, signed = self._AUGMENTATION_SPACE[transform_id]
 
-            magnitudes = magnitudes_fn(10, image_size)
+            magnitudes = magnitudes_fn(10, (height, width))
             if magnitudes is not None:
                 magnitude = float(magnitudes[magnitude_idx])
                 if signed and torch.rand(()) <= 0.5:
@@ -328,8 +328,8 @@ class RandAugment(_AutoAugmentBase):
         "Identity": (lambda num_bins, image_size: None, False),
         "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
         "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
         "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
         "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
@@ -357,12 +357,12 @@ class RandAugment(_AutoAugmentBase):
         self._query_image(sample)
 
         image = self._query_image(sample)
-        image_size = F.get_image_size(image)
+        _, height, width = get_image_dimensions(image)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
-            magnitudes = magnitudes_fn(self.num_magnitude_bins, image_size)
+            magnitudes = magnitudes_fn(self.num_magnitude_bins, (height, width))
             if magnitudes is not None:
                 magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
                 if signed and torch.rand(()) <= 0.5:
@@ -406,11 +406,11 @@ class TrivialAugmentWide(_AutoAugmentBase):
         sample = inputs if len(inputs) > 1 else inputs[0]
 
         image = self._query_image(sample)
-        image_size = F.get_image_size(image)
+        _, height, width = get_image_dimensions(image)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
-        magnitudes = magnitudes_fn(self.num_magnitude_bins, image_size)
+        magnitudes = magnitudes_fn(self.num_magnitude_bins, (height, width))
         if magnitudes is not None:
             magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
             if signed and torch.rand(()) <= 0.5:
@@ -425,8 +425,8 @@ class AugMix(_AutoAugmentBase):
     _PARTIAL_AUGMENTATION_SPACE = {
         "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
         "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, image_size[0] / 3.0, num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, image_size[1] / 3.0, num_bins), True),
+        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, image_size[1] / 3.0, num_bins), True),
+        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, image_size[0] / 3.0, num_bins), True),
         "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
         "Posterize": (
             lambda num_bins, image_size: cast(torch.Tensor, 4 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
@@ -481,7 +481,7 @@ class AugMix(_AutoAugmentBase):
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
-        image_size = F.get_image_size(image)
+        _, height, width = get_image_dimensions(image)
 
         orig_dims = list(image.shape)
         batch = image.view([1] * max(4 - image.ndim, 0) + orig_dims)
@@ -505,7 +505,7 @@ class AugMix(_AutoAugmentBase):
             for _ in range(depth):
                 transform_id, (magnitudes_fn, signed) = self._get_random_item(augmentation_space)
 
-                magnitudes = magnitudes_fn(self._PARAMETER_MAX, image_size)
+                magnitudes = magnitudes_fn(self._PARAMETER_MAX, (height, width))
                 if magnitudes is not None:
                     magnitude = float(magnitudes[int(torch.randint(self.severity, ()))])
                     if signed and torch.rand(()) <= 0.5:
