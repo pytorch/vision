@@ -1361,15 +1361,21 @@ class CityScapesMockData:
     def generate(cls, root, config):
 
         mode = config.mode.capitalize()
-        split = config.split
+        req_split = config.split
 
-        if split in ["train", "train_extra"]:
+        if req_split in ["train", "train_extra"]:
             cities = ["bochum", "bremen", "jena"]
             num_samples = 3
         else:
             cities = ["frankfurt", "munster"]
             num_samples = 2
 
+        if mode == "Fine":
+            splits = ["train", "test", "val"]
+        else:
+            splits = ["train", "train_extra", "val"]
+
+        # Below values are just example values and not some special values
         polygon_target = {
             "imgHeight": 1024,
             "imgWidth": 2048,
@@ -1400,37 +1406,44 @@ class CityScapesMockData:
 
         gt_dir = root / f"gt{mode}"
 
-        for city in cities:
+        for split in splits:
+            for city in cities:
 
-            def make_images(file_name_fn, size=10):
+                def make_images(file_name_fn, size=10):
+                    create_image_folder(
+                        root=gt_dir / split,
+                        name=city,
+                        file_name_fn=file_name_fn,
+                        size=size,
+                        num_examples=num_samples,
+                    )
+
+                make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_instanceIds.png")
+                make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_labelIds.png")
+                make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_color.png", size=(4, 10, 10))
+
+                for idx in range(num_samples):
+                    polygon_target_name = gt_dir / split / city / f"{city}_000000_{idx:06d}_gt{mode}_polygons.json"
+                    with open(polygon_target_name, "w") as outfile:
+                        json.dump(polygon_target, outfile)
+
+            # Create leftImg8bit folder
+            for city in cities:
                 create_image_folder(
-                    root=gt_dir / split,
+                    root=root / "leftImg8bit" / split,
                     name=city,
-                    file_name_fn=file_name_fn,
-                    size=size,
+                    file_name_fn=lambda idx: f"{city}_000000_{idx:06d}_leftImg8bit.png",
                     num_examples=num_samples,
                 )
 
-            make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_instanceIds.png")
-            make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_labelIds.png")
-            make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_color.png", size=(4, 10, 10))
+        for zip_name, folder_name in cls._ARCHIVE_NAMES[(mode, req_split)]:
+            # Create dummy README and license.txt
+            for filename in ["README", "license.txt"]:
+                with (root / filename).open("w") as handler:
+                    handler.write("Content\n")
 
-            for idx in range(num_samples):
-                polygon_target_name = gt_dir / split / city / f"{city}_000000_{idx:06d}_gt{mode}_polygons.json"
-                with open(polygon_target_name, "w") as outfile:
-                    json.dump(polygon_target, outfile)
+            make_zip(root, zip_name, folder_name, root / "README", root / "license.txt")
 
-        # Create leftImg8bit folder
-        for city in cities:
-            create_image_folder(
-                root=root / "leftImg8bit" / split,
-                name=city,
-                file_name_fn=lambda idx: f"{city}_000000_{idx:06d}_leftImg8bit.png",
-                num_examples=num_samples,
-            )
-
-        for zip_name, folder_name in cls._ARCHIVE_NAMES[(mode, split)]:
-            make_zip(root, zip_name, folder_name)
         return len(cities) * num_samples
 
 
