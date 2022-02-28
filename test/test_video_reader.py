@@ -458,7 +458,9 @@ class TestVideoReader:
 
     @pytest.mark.parametrize("test_video,config", test_videos.items())
     @pytest.mark.parametrize("read_video_stream,read_audio_stream", [(1, 0), (0, 1)])
-    def test_read_video_from_file_read_single_stream_only(self, test_video, config, read_video_stream, read_audio_stream):
+    def test_read_video_from_file_read_single_stream_only(
+        self, test_video, config, read_video_stream, read_audio_stream
+    ):
         """
         Test the case when decoder starts with a video file to decode frames, and
         only reads video stream and ignores audio stream
