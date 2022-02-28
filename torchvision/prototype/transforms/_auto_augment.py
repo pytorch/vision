@@ -37,14 +37,22 @@ class _AutoAugmentBase(Transform):
         return images[0]
 
     def _parse_fill(self, sample: Any) -> Optional[List[float]]:
-        image = self._query_image(sample)
-        num_channels, *_ = get_image_dimensions(image)
-
         fill = self.fill
+
+        if fill is None:
+            return fill
+
+        image = self._query_image(sample)
+
+        if not isinstance(image, torch.Tensor):
+            return fill
+
         if isinstance(fill, (int, float)):
+            num_channels, *_ = get_image_dimensions(image)
             fill = [float(fill)] * num_channels
-        elif fill is not None:
+        else:
             fill = [float(f) for f in fill]
+
         return fill
 
     def _dispatch(
@@ -354,7 +362,6 @@ class RandAugment(_AutoAugmentBase):
 
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
-        self._query_image(sample)
 
         image = self._query_image(sample)
         _, height, width = get_image_dimensions(image)
@@ -482,6 +489,7 @@ class AugMix(_AutoAugmentBase):
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
 
         _, height, width = get_image_dimensions(image)
+        fill = self._parse_fill(image)
 
         orig_dims = list(image.shape)
         batch = image.view([1] * max(4 - image.ndim, 0) + orig_dims)
@@ -514,7 +522,7 @@ class AugMix(_AutoAugmentBase):
                     magnitude = 0.0
 
                 aug = self._apply_transform_to_item(
-                    image, transform_id, magnitude, interpolation=self.interpolation, fill=self._parse_fill(image)
+                    image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
                 )
             mix.add_(combined_weights[:, i].view(batch_dims) * aug)
         mix = mix.view(orig_dims).to(dtype=image.dtype)
