@@ -58,12 +58,13 @@ def convert_bounding_box_format(
 
 
 def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
-    return grayscale.expand(3, 1, 1)
+    return grayscale.expand(3, 1, 1)  # This approach assumes single image and not batch
 
 
 def convert_image_color_space_tensor(
     image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
 ) -> torch.Tensor:
+    # the new color_space should only be RGB or Grayscale
     if new_color_space == old_color_space:
         return image.clone()
 
@@ -72,6 +73,12 @@ def convert_image_color_space_tensor(
 
     if new_color_space == ColorSpace.GRAYSCALE:
         image = _FT.rgb_to_grayscale(image)
+
+    # we need a way to strip off alpha transparencies:
+    # - RGBA => RGB
+    # - RGBA => Grayscale
+    # - Gray-Alpha => RGB
+    # - Gray-Alpha => Gray
 
     return image
 
@@ -83,6 +90,7 @@ def _grayscale_to_rgb_pil(grayscale: PIL.Image.Image) -> PIL.Image.Image:
 def convert_image_color_space_pil(
     image: PIL.Image.Image, old_color_space: ColorSpace, new_color_space: ColorSpace
 ) -> PIL.Image.Image:
+    # the new color_space should only be RGB or Grayscale
     if new_color_space == old_color_space:
         return image.copy()
 

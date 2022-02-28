@@ -39,4 +39,5 @@ def gaussian_blur_image_tensor(
 
 
 def gaussian_blur_image_pil(img: PIL.Image, kernel_size: List[int], sigma: Optional[List[float]] = None) -> PIL.Image:
+    # It would really help to remove to_tensor from here vfdev-5
     return to_pil_image(gaussian_blur_image_tensor(to_tensor(img), kernel_size=kernel_size, sigma=sigma))

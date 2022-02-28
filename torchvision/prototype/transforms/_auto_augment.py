@@ -35,6 +35,9 @@ class _AutoAugmentBase(Transform):
         self.fill = fill
 
     def _get_random_item(self, dct: Dict[K, V]) -> Tuple[K, V]:
+        # Question: This looks like a utility method that doesn't depend on self and could move out of this
+        # class to simplify its structure (for someone who tries to understand its API to implement a new method).
+        # Thoughts?
         keys = tuple(dct.keys())
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
@@ -46,6 +49,9 @@ class _AutoAugmentBase(Transform):
     def _extract_image(
         self, sample: Any
     ) -> Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]:
+        # How about providing the unsupported types as parameter to this method to avoid hardcoding it? This can
+        # allow us to remove the separate _check_unsupported method. Also this method could be removed from the
+        # class to simplify its structure.
         def fn(
             id: Tuple[Any, ...], input: Any
         ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
@@ -67,6 +73,7 @@ class _AutoAugmentBase(Transform):
     def _parse_fill(
         self, image: Union[PIL.Image.Image, torch.Tensor, features.Image], num_channels: int
     ) -> Optional[List[float]]:
+        # Question: How do you feel about turning this also a util?
         fill = self.fill
 
         if isinstance(image, PIL.Image.Image) or fill is None:
@@ -204,6 +211,8 @@ class AutoAugment(_AutoAugmentBase):
         "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
         "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
         "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
+        # How do you feel about explicitly passing height, width here instead of image_size? I did it in an earlier PR
+        # but removed it due to the verbosity. Thoughts?
         "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
         "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
         "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
@@ -222,6 +231,8 @@ class AutoAugment(_AutoAugmentBase):
     }
 
     def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET, **kwargs: Any) -> None:
+        # I think using kwargs on the constructor makes it hard to users to understand which parameters to provide.
+        # I recommend passing explicitly interpolation and fill in all AA constructors.
         super().__init__(**kwargs)
         self.policy = policy
         self._policies = self._get_policies(policy)

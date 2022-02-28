@@ -17,6 +17,9 @@ class ColorSpace(StrEnum):
     OTHER = 0
     GRAYSCALE = 1
     RGB = 3
+    # On io, we currently support Alpha transparency for Grayscale and RGB. We also support palette for PNG.
+    # Our enum must know about these. We should also allow for users to strip out the alpha transparency which is
+    # currently not supported by any colour transform.
 
 
 class Image(_Feature):
@@ -78,9 +81,11 @@ class Image(_Feature):
     def show(self) -> None:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state
+        # Do we still need this?
         to_pil_image(make_grid(self.view(-1, *self.shape[-3:]))).show()
 
     def draw_bounding_box(self, bounding_box: BoundingBox, **kwargs: Any) -> Image:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state
+        # Do we still need this?
         return Image.new_like(self, draw_bounding_boxes(self, bounding_box.to_format("xyxy").view(-1, 4), **kwargs))

@@ -12,6 +12,10 @@ class Transform(nn.Module):
         super().__init__()
         _log_api_usage_once(self)
 
+    # FYI: I spoke with @NicolasHug offline and provided a valid use-case where it would be useful to make this public,
+    # as you originally intended. We don't have to do this now but if we do end up exposing this publicly, we should
+    # rename it to avoid conflicts with the previous static get_params() which worked completely differently.
+    # We dn't have to do anything now but we should discuss this again after the feedback.
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict()
 

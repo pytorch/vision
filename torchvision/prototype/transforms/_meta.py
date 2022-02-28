@@ -4,7 +4,7 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
-from torchvision.transforms.functional import convert_image_dtype
+from torchvision.transforms.functional import convert_image_dtype  # We should have our an alias for this on the new API
 
 
 class ConvertBoundingBoxFormat(Transform):
@@ -23,6 +23,10 @@ class ConvertBoundingBoxFormat(Transform):
 
 
 class ConvertImageDtype(Transform):
+    # Question: Why do we have both this and a ToDtype Transform? Is this due to BC? Ideally we could move people off
+    # from methods that did an implicit normalization of the values (like this one, or to_tensor). cc @vfdev-5
+    # If that's the case, we should move to _legacy and add deprecation warnings from day one to push people to use
+    # the new methods.
     def __init__(self, dtype: torch.dtype = torch.float32) -> None:
         super().__init__()
         self.dtype = dtype
@@ -59,7 +63,7 @@ class ConvertImageColorSpace(Transform):
             return features.Image.new_like(input, output, color_space=self.color_space)
         elif isinstance(input, torch.Tensor):
             if self.old_color_space is None:
-                raise RuntimeError("")
+                raise RuntimeError("")  # Add better exception message
 
             return F.convert_image_color_space_tensor(
                 input, old_color_space=self.old_color_space, new_color_space=self.color_space

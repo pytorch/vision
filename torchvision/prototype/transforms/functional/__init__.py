@@ -1,3 +1,9 @@
+# He should create an issue that lists the steps that need to be performed for rolling out the API to main TorchVision.
+# I got a similar for the models, see here: https://github.com/pytorch/vision/issues/4679
+# One of the key things we would need to take care of is that all the kernels below will need logging. This is because
+# there will be no high-level kernel (like `F` on main) and we would instead need to put tracking directly in each
+# low-level kernels which will be now public (now functional_pil|tensor are private).
+
 from torchvision.transforms import InterpolationMode  # usort: skip
 from ._meta import (
     convert_bounding_box_format,
@@ -63,3 +69,13 @@ from ._geometry import (
 )
 from ._misc import normalize_image_tensor, gaussian_blur_image_tensor
 from ._type_conversion import decode_image_with_pil, decode_video_with_av, label_to_one_hot
+
+# What are the migration plans for public methods without new API equivalents? There are two categories:
+# 1. Deprecated methods which have equivalents on the new API (_legacy.py?):
+# - get_image_size, get_image_num_channels: use get_dimensions_image_tensor|pil
+# - to_grayscale, rgb_to_grayscale: use convert_image_color_space_tensor|pil
+# 2. Those without equivalents on the new API:
+# - five_crop, ten_crop (must be added)
+# - pil_to_tensor, to_pil_image (_legacy.py?)
+# - to_tensor() (deprecate vfdev-5?)
+# We need a plan for both categories implemented on the new API.

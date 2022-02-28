@@ -41,6 +41,7 @@ class EncodedImage(EncodedData):
     def decode(self) -> Image:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
         #  promote this out of the prototype state
+        # Do we still need this?
 
         # import at runtime to avoid cyclic imports
         from torchvision.prototype.transforms.functional import decode_image_with_pil

@@ -66,6 +66,7 @@ def resize_segmentation_mask(
 
 
 # TODO: handle max_size
+# Where is the issue for this TODO?
 def resize_bounding_box(bounding_box: torch.Tensor, size: List[int], image_size: Tuple[int, int]) -> torch.Tensor:
     old_height, old_width = image_size
     new_height, new_width = size
@@ -220,6 +221,8 @@ def perspective_image_tensor(
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    # We should go ahead and update the _FT API to accept InterpolationMode. It's currently considered private and
+    # there are no BC guarantees. This will allow you to stop needing to do `.value` in many of these places.
     return _FT.perspective(img, perspective_coeffs, interpolation=interpolation.value, fill=fill)
 
 
@@ -229,6 +232,7 @@ def perspective_image_pil(
     interpolation: InterpolationMode = InterpolationMode.BICUBIC,
     fill: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
+    # Same thing here. We should move the pil_modes_mapping convertion in the `_FP` side.
     return _FP.perspective(img, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 

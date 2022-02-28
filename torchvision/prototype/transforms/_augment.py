@@ -34,6 +34,10 @@ class RandomErasing(Transform):
         if p < 0 or p > 1:
             raise ValueError("Random erasing probability should be between 0 and 1")
         # TODO: deprecate p in favor of wrapping the transform in a RandomApply
+        # The above approach is very composable but will lead to verbose code. Instead, we can create a base class
+        # that inherits from Transform (say RandomTransform) that receives the `p` on constructor and by default
+        # implements the `p` random check on forward. This is likely to happen on the final clean ups, so perhaps
+        # update the comment to indicate accordingly OR create an issue to track this discussion.
         self.p = p
         self.scale = scale
         self.ratio = ratio
@@ -84,6 +88,8 @@ class RandomErasing(Transform):
             break
         else:
             i, j, h, w, v = 0, 0, img_h, img_w, image
+            # FYI: Now taht we are not JIT-scriptable, I probably can avoid copying-pasting the image to itself in this
+            # scenario. Perhaps a simple clone would do.
 
         return dict(zip("ijhwv", (i, j, h, w, v)))
 
@@ -95,6 +101,7 @@ class RandomErasing(Transform):
             return features.Image.new_like(input, output)
         elif isinstance(input, torch.Tensor):
             return F.erase_image_tensor(input, **params)
+        # FYI: we plan to add support for PIL, as part of Batteries Included
         else:
             return input
 
@@ -112,6 +119,8 @@ class RandomMixup(Transform):
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
+        # Question: Shall we enforce here the existence of Labels in the sample? If yes, this method of validating
+        # input won't work if get_params() gets public and the user sis able to provide params in forward.
         return dict(lam=float(self._dist.sample(())))
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
@@ -134,6 +143,7 @@ class RandomCutmix(Transform):
         self._dist = torch.distributions.Beta(torch.tensor([alpha]), torch.tensor([alpha]))
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
+        # Question: Same as above for Labels.
         lam = float(self._dist.sample(()))
 
         image = query_image(sample)

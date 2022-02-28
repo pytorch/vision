@@ -38,6 +38,7 @@ class RandomApply(Transform):
 
 class RandomChoice(Transform):
     def __init__(self, *transforms: Transform) -> None:
+        # This method should receive optionally a list of probabilities and sample transforms proportionally.
         super().__init__()
         self.transforms = transforms
         for idx, transform in enumerate(transforms):
