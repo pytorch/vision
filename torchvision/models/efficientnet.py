@@ -8,7 +8,7 @@ from torch import nn, Tensor
 from torchvision.ops import StochasticDepth
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation, SqueezeExcitation
+from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
@@ -61,15 +61,17 @@ class MBConvConfig:
         self.num_layers = self.adjust_depth(num_layers, depth_mult)
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "expand_ratio={expand_ratio}"
-        s += ", kernel={kernel}"
-        s += ", stride={stride}"
-        s += ", input_channels={input_channels}"
-        s += ", out_channels={out_channels}"
-        s += ", num_layers={num_layers}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"expand_ratio={self.expand_ratio}"
+            f", kernel={self.kernel}"
+            f", stride={self.stride}"
+            f", input_channels={self.input_channels}"
+            f", out_channels={self.out_channels}"
+            f", num_layers={self.num_layers}"
+            f")"
+        )
+        return s
 
     @staticmethod
     def adjust_channels(channels: int, width_mult: float, min_value: Optional[int] = None) -> int:
@@ -102,7 +104,7 @@ class MBConv(nn.Module):
         expanded_channels = cnf.adjust_channels(cnf.input_channels, cnf.expand_ratio)
         if expanded_channels != cnf.input_channels:
             layers.append(
-                ConvNormActivation(
+                Conv2dNormActivation(
                     cnf.input_channels,
                     expanded_channels,
                     kernel_size=1,
@@ -113,7 +115,7 @@ class MBConv(nn.Module):
 
         # depthwise
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 expanded_channels,
                 expanded_channels,
                 kernel_size=cnf.kernel,
@@ -130,7 +132,7 @@ class MBConv(nn.Module):
 
         # project
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
             )
         )
@@ -191,7 +193,7 @@ class EfficientNet(nn.Module):
         # building first layer
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 3, firstconv_output_channels, kernel_size=3, stride=2, norm_layer=norm_layer, activation_layer=nn.SiLU
             )
         )
@@ -222,7 +224,7 @@ class EfficientNet(nn.Module):
         lastconv_input_channels = inverted_residual_setting[-1].out_channels
         lastconv_output_channels = 4 * lastconv_input_channels
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 lastconv_input_channels,
                 lastconv_output_channels,
                 kernel_size=1,

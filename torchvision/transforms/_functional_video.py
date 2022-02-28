@@ -3,7 +3,10 @@ import warnings
 import torch
 
 
-warnings.warn("The _functional_video module is deprecated. Please use the functional module instead.")
+warnings.warn(
+    "The 'torchvision.transforms._functional_video' module is deprecated since 0.12 and will be removed in 0.14. "
+    "Please use the 'torchvision.transforms.functional' module instead."
+)
 
 
 def _is_tensor_video_clip(clip):

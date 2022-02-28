@@ -59,6 +59,23 @@ pil_modes_mapping = {
 _is_pil_image = F_pil._is_pil_image
 
 
+def get_dimensions(img: Tensor) -> List[int]:
+    """Returns the dimensions of an image as [channels, height, width].
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        List[int]: The image dimensions.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(get_dimensions)
+    if isinstance(img, torch.Tensor):
+        return F_t.get_dimensions(img)
+
+    return F_pil.get_dimensions(img)
+
+
 def get_image_size(img: Tensor) -> List[int]:
     """Returns the size of an image as [width, height].
 
@@ -338,30 +355,9 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(normalize)
     if not isinstance(tensor, torch.Tensor):
-        raise TypeError(f"Input tensor should be a torch tensor. Got {type(tensor)}.")
+        raise TypeError(f"img should be Tensor Image. Got {type(tensor)}")
 
-    if not tensor.is_floating_point():
-        raise TypeError(f"Input tensor should be a float tensor. Got {tensor.dtype}.")
-
-    if tensor.ndim < 3:
-        raise ValueError(
-            f"Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = {tensor.size()}"
-        )
-
-    if not inplace:
-        tensor = tensor.clone()
-
-    dtype = tensor.dtype
-    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
-    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
-    if (std == 0).any():
-        raise ValueError(f"std evaluated to zero after conversion to {dtype}, leading to division by zero.")
-    if mean.ndim == 1:
-        mean = mean.view(-1, 1, 1)
-    if std.ndim == 1:
-        std = std.view(-1, 1, 1)
-    tensor.sub_(mean).div_(std)
-    return tensor
+    return F_t.normalize(tensor, mean=mean, std=std, inplace=inplace)
 
 
 def resize(
@@ -436,13 +432,6 @@ def resize(
         return F_pil.resize(img, size=size, interpolation=pil_interpolation, max_size=max_size)
 
     return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
-
-
-def scale(*args, **kwargs):
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(scale)
-    warnings.warn("The use of the transforms.Scale transform is deprecated, please use transforms.Resize instead.")
-    return resize(*args, **kwargs)
 
 
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
@@ -540,7 +529,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         output_size = (output_size[0], output_size[0])
 
-    image_width, image_height = get_image_size(img)
+    _, image_height, image_width = get_dimensions(img)
     crop_height, crop_width = output_size
 
     if crop_width > image_width or crop_height > image_height:
@@ -551,7 +540,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
             (crop_height - image_height + 1) // 2 if crop_height > image_height else 0,
         ]
         img = pad(img, padding_ltrb, fill=0)  # PIL uses fill value 0
-        image_width, image_height = get_image_size(img)
+        _, image_height, image_width = get_dimensions(img)
         if crop_width == image_width and crop_height == image_height:
             return img
 
@@ -749,7 +738,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
 
-    image_width, image_height = get_image_size(img)
+    _, image_height, image_width = get_dimensions(img)
     crop_height, crop_width = size
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -1032,6 +1021,10 @@ def rotate(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
+        resample (int, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -1043,7 +1036,8 @@ def rotate(
         _log_api_usage_once(rotate)
     if resample is not None:
         warnings.warn(
-            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
+            "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)
 
@@ -1070,9 +1064,9 @@ def rotate(
 
     center_f = [0.0, 0.0]
     if center is not None:
-        img_size = get_image_size(img)
+        _, height, width = get_dimensions(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
@@ -1114,10 +1108,13 @@ def affine(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
-            Please use the ``fill`` parameter instead.
-        resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use the ``interpolation`` parameter instead.
+        fillcolor (sequence or number, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
+        resample (int, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
         center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
             Default is the center of the image.
 
@@ -1128,7 +1125,8 @@ def affine(
         _log_api_usage_once(affine)
     if resample is not None:
         warnings.warn(
-            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)
 
@@ -1141,7 +1139,10 @@ def affine(
         interpolation = _interpolation_modes_from_int(interpolation)
 
     if fillcolor is not None:
-        warnings.warn("Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead")
+        warnings.warn(
+            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'fill' instead."
+        )
         fill = fillcolor
 
     if not isinstance(angle, (int, float)):
@@ -1183,22 +1184,22 @@ def affine(
     if center is not None and not isinstance(center, (list, tuple)):
         raise TypeError("Argument center should be a sequence")
 
-    img_size = get_image_size(img)
+    _, height, width = get_dimensions(img)
     if not isinstance(img, torch.Tensor):
-        # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
+        # center = (width * 0.5 + 0.5, height * 0.5 + 0.5)
         # it is visually better to estimate the center without 0.5 offset
         # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
         if center is None:
-            center = [img_size[0] * 0.5, img_size[1] * 0.5]
+            center = [width * 0.5, height * 0.5]
         matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
     center_f = [0.0, 0.0]
     if center is not None:
-        img_size = get_image_size(img)
+        _, height, width = get_dimensions(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
 
     translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
@@ -1276,11 +1277,7 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     if not isinstance(img, torch.Tensor):
         raise TypeError(f"img should be Tensor Image. Got {type(img)}")
 
-    if not inplace:
-        img = img.clone()
-
-    img[..., i : i + h, j : j + w] = v
-    return img
+    return F_t.erase(img, i, j, h, w, v, inplace=inplace)
 
 
 def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:

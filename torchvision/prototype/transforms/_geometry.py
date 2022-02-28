@@ -1,138 +1,162 @@
-from typing import Any, Dict, Tuple, Union
+import math
+import warnings
+from typing import Any, Dict, List, Union, Sequence, Tuple, cast
 
+import PIL.Image
 import torch
-from torch.nn.functional import interpolate
-from torchvision.prototype.datasets.utils import SampleQuery
-from torchvision.prototype.features import BoundingBox, Image, Label
-from torchvision.prototype.transforms import Transform
+from torchvision.prototype import features
+from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
+from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
+
+from ._utils import query_image, get_image_dimensions
 
 
 class HorizontalFlip(Transform):
-    NO_OP_FEATURE_TYPES = {Label}
-
-    @staticmethod
-    def image(input: Image) -> Image:
-        return Image(input.flip((-1,)), like=input)
-
-    @staticmethod
-    def bounding_box(input: BoundingBox) -> BoundingBox:
-        x, y, w, h = input.convert("xywh").to_parts()
-        x = input.image_size[1] - (x + w)
-        return BoundingBox.from_parts(x, y, w, h, like=input, format="xywh").convert(input.format)
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image):
+            output = F.horizontal_flip_image_tensor(input)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, features.BoundingBox):
+            output = F.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
+            return features.BoundingBox.new_like(input, output)
+        elif isinstance(input, PIL.Image.Image):
+            return F.horizontal_flip_image_pil(input)
+        elif isinstance(input, torch.Tensor):
+            return F.horizontal_flip_image_tensor(input)
+        else:
+            return input
 
 
 class Resize(Transform):
-    NO_OP_FEATURE_TYPES = {Label}
-
     def __init__(
         self,
-        size: Union[int, Tuple[int, int]],
-        *,
-        interpolation_mode: str = "nearest",
+        size: Union[int, Sequence[int]],
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self.size = (size, size) if isinstance(size, int) else size
-        self.interpolation_mode = interpolation_mode
+        self.size = [size] if isinstance(size, int) else list(size)
+        self.interpolation = interpolation
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(size=self.size, interpolation_mode=self.interpolation_mode)
-
-    @staticmethod
-    def image(input: Image, *, size: Tuple[int, int], interpolation_mode: str = "nearest") -> Image:
-        return Image(interpolate(input.unsqueeze(0), size, mode=interpolation_mode).squeeze(0), like=input)
-
-    @staticmethod
-    def bounding_box(input: BoundingBox, *, size: Tuple[int, int], **_: Any) -> BoundingBox:
-        old_height, old_width = input.image_size
-        new_height, new_width = size
-
-        height_scale = new_height / old_height
-        width_scale = new_width / old_width
-
-        old_x1, old_y1, old_x2, old_y2 = input.convert("xyxy").to_parts()
-
-        new_x1 = old_x1 * width_scale
-        new_y1 = old_y1 * height_scale
-
-        new_x2 = old_x2 * width_scale
-        new_y2 = old_y2 * height_scale
-
-        return BoundingBox.from_parts(
-            new_x1, new_y1, new_x2, new_y2, like=input, format="xyxy", image_size=size
-        ).convert(input.format)
-
-    def extra_repr(self) -> str:
-        extra_repr = f"size={self.size}"
-        if self.interpolation_mode != "bilinear":
-            extra_repr += f", interpolation_mode={self.interpolation_mode}"
-        return extra_repr
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image):
+            output = F.resize_image_tensor(input, self.size, interpolation=self.interpolation)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, features.SegmentationMask):
+            output = F.resize_segmentation_mask(input, self.size)
+            return features.SegmentationMask.new_like(input, output)
+        elif isinstance(input, features.BoundingBox):
+            output = F.resize_bounding_box(input, self.size, image_size=input.image_size)
+            return features.BoundingBox.new_like(input, output, image_size=self.size)
+        elif isinstance(input, PIL.Image.Image):
+            return F.resize_image_pil(input, self.size, interpolation=self.interpolation)
+        elif isinstance(input, torch.Tensor):
+            return F.resize_image_tensor(input, self.size, interpolation=self.interpolation)
+        else:
+            return input
 
 
-class RandomResize(Transform, wraps=Resize):
-    def __init__(self, min_size: Union[int, Tuple[int, int]], max_size: Union[int, Tuple[int, int]]) -> None:
+class CenterCrop(Transform):
+    def __init__(self, output_size: List[int]):
         super().__init__()
-        self.min_size = (min_size, min_size) if isinstance(min_size, int) else min_size
-        self.max_size = (max_size, max_size) if isinstance(max_size, int) else max_size
+        self.output_size = output_size
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        min_height, min_width = self.min_size
-        max_height, max_width = self.max_size
-        height = int(torch.randint(min_height, max_height + 1, size=()))
-        width = int(torch.randint(min_width, max_width + 1, size=()))
-        return dict(size=(height, width))
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        elif isinstance(input, features.Image):
+            output = F.center_crop_image_tensor(input, self.output_size)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, torch.Tensor):
+            return F.center_crop_image_tensor(input, self.output_size)
+        elif isinstance(input, PIL.Image.Image):
+            return F.center_crop_image_pil(input, self.output_size)
+        else:
+            return input
 
-    def extra_repr(self) -> str:
-        return f"min_size={self.min_size}, max_size={self.max_size}"
 
-
-class Crop(Transform):
-    NO_OP_FEATURE_TYPES = {BoundingBox, Label}
-
-    def __init__(self, crop_box: BoundingBox) -> None:
+class RandomResizedCrop(Transform):
+    def __init__(
+        self,
+        size: Union[int, Sequence[int]],
+        scale: Tuple[float, float] = (0.08, 1.0),
+        ratio: Tuple[float, float] = (3.0 / 4.0, 4.0 / 3.0),
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ) -> None:
         super().__init__()
-        self.crop_box = crop_box.convert("xyxy")
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        return dict(crop_box=self.crop_box)
+        if not isinstance(scale, Sequence):
+            raise TypeError("Scale should be a sequence")
+        scale = cast(Tuple[float, float], scale)
+        if not isinstance(ratio, Sequence):
+            raise TypeError("Ratio should be a sequence")
+        ratio = cast(Tuple[float, float], ratio)
+        if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
+            warnings.warn("Scale and ratio should be of kind (min, max)")
 
-    @staticmethod
-    def image(input: Image, *, crop_box: BoundingBox) -> Image:
-        # FIXME: pad input in case it is smaller than crop_box
-        x1, y1, x2, y2 = crop_box.convert("xyxy").to_parts()
-        return Image(input[..., y1 : y2 + 1, x1 : x2 + 1], like=input)  # type: ignore[misc]
+        # Backward compatibility with integer value
+        if isinstance(interpolation, int):
+            warnings.warn(
+                "Argument interpolation should be of type InterpolationMode instead of int. "
+                "Please, use InterpolationMode enum."
+            )
+            interpolation = _interpolation_modes_from_int(interpolation)
 
+        self.size = size
+        self.scale = scale
+        self.ratio = ratio
+        self.interpolation = interpolation
 
-class CenterCrop(Transform, wraps=Crop):
-    def __init__(self, crop_size: Union[int, Tuple[int, int]]) -> None:
-        super().__init__()
-        self.crop_size = (crop_size, crop_size) if isinstance(crop_size, int) else crop_size
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, height, width = get_image_dimensions(image)
+        area = height * width
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        image_size = SampleQuery(sample).image_size()
-        image_height, image_width = image_size
-        cx = image_width // 2
-        cy = image_height // 2
-        h, w = self.crop_size
-        crop_box = BoundingBox.from_parts(cx, cy, w, h, image_size=image_size, format="cxcywh")
-        return dict(crop_box=crop_box)
+        log_ratio = torch.log(torch.tensor(self.ratio))
+        for _ in range(10):
+            target_area = area * torch.empty(1).uniform_(self.scale[0], self.scale[1]).item()
+            aspect_ratio = torch.exp(
+                torch.empty(1).uniform_(
+                    log_ratio[0],  # type: ignore[arg-type]
+                    log_ratio[1],  # type: ignore[arg-type]
+                )
+            ).item()
 
-    def extra_repr(self) -> str:
-        return f"crop_size={self.crop_size}"
+            w = int(round(math.sqrt(target_area * aspect_ratio)))
+            h = int(round(math.sqrt(target_area / aspect_ratio)))
 
+            if 0 < w <= width and 0 < h <= height:
+                i = torch.randint(0, height - h + 1, size=(1,)).item()
+                j = torch.randint(0, width - w + 1, size=(1,)).item()
+                break
+        else:
+            # Fallback to central crop
+            in_ratio = float(width) / float(height)
+            if in_ratio < min(self.ratio):
+                w = width
+                h = int(round(w / min(self.ratio)))
+            elif in_ratio > max(self.ratio):
+                h = height
+                w = int(round(h * max(self.ratio)))
+            else:  # whole image
+                w = width
+                h = height
+            i = (height - h) // 2
+            j = (width - w) // 2
 
-class RandomCrop(Transform, wraps=Crop):
-    def __init__(self, crop_size: Union[int, Tuple[int, int]]) -> None:
-        super().__init__()
-        self.crop_size = (crop_size, crop_size) if isinstance(crop_size, int) else crop_size
+        return dict(top=i, left=j, height=h, width=w)
 
-    def get_params(self, sample: Any) -> Dict[str, Any]:
-        image_size = SampleQuery(sample).image_size()
-        image_height, image_width = image_size
-        crop_height, crop_width = self.crop_size
-        x = torch.randint(0, image_width - crop_width + 1, size=()) if crop_width < image_width else 0
-        y = torch.randint(0, image_height - crop_height + 1, size=()) if crop_height < image_height else 0
-        crop_box = BoundingBox.from_parts(x, y, crop_width, crop_height, image_size=image_size, format="xywh")
-        return dict(crop_box=crop_box)
-
-    def extra_repr(self) -> str:
-        return f"crop_size={self.crop_size}"
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        elif isinstance(input, features.Image):
+            output = F.resized_crop_image_tensor(
+                input, **params, size=list(self.size), interpolation=self.interpolation
+            )
+            return features.Image.new_like(input, output)
+        elif isinstance(input, torch.Tensor):
+            return F.resized_crop_image_tensor(input, **params, size=list(self.size), interpolation=self.interpolation)
+        elif isinstance(input, PIL.Image.Image):
+            return F.resized_crop_image_pil(input, **params, size=list(self.size), interpolation=self.interpolation)
+        else:
+            return input

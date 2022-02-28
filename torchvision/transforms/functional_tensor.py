@@ -3,7 +3,6 @@ from typing import Optional, Tuple, List
 
 import torch
 from torch import Tensor
-from torch.jit.annotations import BroadcastingList2
 from torch.nn.functional import grid_sample, conv2d, interpolate, pad as torch_pad
 
 
@@ -22,6 +21,13 @@ def _assert_threshold(img: Tensor, threshold: float) -> None:
         raise TypeError("Threshold should be less than bound of img.")
 
 
+def get_dimensions(img: Tensor) -> List[int]:
+    _assert_image_tensor(img)
+    channels = 1 if img.ndim == 2 else img.shape[-3]
+    height, width = img.shape[-2:]
+    return [channels, height, width]
+
+
 def get_image_size(img: Tensor) -> List[int]:
     # Returns (w, h) of tensor image
     _assert_image_tensor(img)
@@ -29,6 +35,7 @@ def get_image_size(img: Tensor) -> List[int]:
 
 
 def get_image_num_channels(img: Tensor) -> int:
+    _assert_image_tensor(img)
     if img.ndim == 2:
         return 1
     elif img.ndim > 2:
@@ -56,7 +63,7 @@ def _max_value(dtype: torch.dtype) -> float:
 
 
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:
-    c = get_image_num_channels(img)
+    c = get_dimensions(img)[0]
     if c not in permitted:
         raise TypeError(f"Input image tensor permitted channel values are {permitted}, but found {c}")
 
@@ -128,7 +135,7 @@ def hflip(img: Tensor) -> Tensor:
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     _assert_image_tensor(img)
 
-    w, h = get_image_size(img)
+    _, h, w = get_dimensions(img)
     right = left + width
     bottom = top + height
 
@@ -176,7 +183,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     _assert_image_tensor(img)
 
     _assert_channels(img, [3, 1])
-    c = get_image_num_channels(img)
+    c = get_dimensions(img)[0]
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     if c == 3:
         mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
@@ -196,7 +203,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     _assert_image_tensor(img)
 
     _assert_channels(img, [1, 3])
-    if get_image_num_channels(img) == 1:  # Match PIL behaviour
+    if get_dimensions(img)[0] == 1:  # Match PIL behaviour
         return img
 
     orig_dtype = img.dtype
@@ -223,7 +230,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    if get_image_num_channels(img) == 1:  # Match PIL behaviour
+    if get_dimensions(img)[0] == 1:  # Match PIL behaviour
         return img
 
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
@@ -247,74 +254,6 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
     result = convert_image_dtype(result, dtype)
     return result
-
-
-def center_crop(img: Tensor, output_size: BroadcastingList2[int]) -> Tensor:
-    """DEPRECATED"""
-    warnings.warn(
-        "This method is deprecated and will be removed in future releases. Please, use ``F.center_crop`` instead."
-    )
-
-    _assert_image_tensor(img)
-
-    _, image_width, image_height = img.size()
-    crop_height, crop_width = output_size
-    # crop_top = int(round((image_height - crop_height) / 2.))
-    # Result can be different between python func and scripted func
-    # Temporary workaround:
-    crop_top = int((image_height - crop_height + 1) * 0.5)
-    # crop_left = int(round((image_width - crop_width) / 2.))
-    # Result can be different between python func and scripted func
-    # Temporary workaround:
-    crop_left = int((image_width - crop_width + 1) * 0.5)
-
-    return crop(img, crop_top, crop_left, crop_height, crop_width)
-
-
-def five_crop(img: Tensor, size: BroadcastingList2[int]) -> List[Tensor]:
-    """DEPRECATED"""
-    warnings.warn(
-        "This method is deprecated and will be removed in future releases. Please, use ``F.five_crop`` instead."
-    )
-
-    _assert_image_tensor(img)
-
-    assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
-
-    _, image_width, image_height = img.size()
-    crop_height, crop_width = size
-    if crop_width > image_width or crop_height > image_height:
-        msg = "Requested crop size {} is bigger than input size {}"
-        raise ValueError(msg.format(size, (image_height, image_width)))
-
-    tl = crop(img, 0, 0, crop_width, crop_height)
-    tr = crop(img, image_width - crop_width, 0, image_width, crop_height)
-    bl = crop(img, 0, image_height - crop_height, crop_width, image_height)
-    br = crop(img, image_width - crop_width, image_height - crop_height, image_width, image_height)
-    center = center_crop(img, (crop_height, crop_width))
-
-    return [tl, tr, bl, br, center]
-
-
-def ten_crop(img: Tensor, size: BroadcastingList2[int], vertical_flip: bool = False) -> List[Tensor]:
-    """DEPRECATED"""
-    warnings.warn(
-        "This method is deprecated and will be removed in future releases. Please, use ``F.ten_crop`` instead."
-    )
-
-    _assert_image_tensor(img)
-
-    assert len(size) == 2, "Please provide only two dimensions (h, w) for size."
-    first_five = five_crop(img, size)
-
-    if vertical_flip:
-        img = vflip(img)
-    else:
-        img = hflip(img)
-
-    second_five = five_crop(img, size)
-
-    return first_five + second_five
 
 
 def _blend(img1: Tensor, img2: Tensor, ratio: float) -> Tensor:
@@ -520,14 +459,11 @@ def resize(
     if antialias and interpolation not in ["bilinear", "bicubic"]:
         raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
-    w, h = get_image_size(img)
+    _, h, w = get_dimensions(img)
 
     if isinstance(size, int) or len(size) == 1:  # specified size only for the smallest edge
         short, long = (w, h) if w <= h else (h, w)
         requested_new_short = size if isinstance(size, int) else size[0]
-
-        if short == requested_new_short:
-            return img
 
         new_short, new_long = requested_new_short, int(requested_new_short * long / short)
 
@@ -542,6 +478,9 @@ def resize(
 
         new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
 
+        if (w, h) == (new_w, new_h):
+            return img
+
     else:  # specified both h and w
         new_w, new_h = size[1], size[0]
 
@@ -550,13 +489,7 @@ def resize(
     # Define align_corners to avoid warnings
     align_corners = False if interpolation in ["bilinear", "bicubic"] else None
 
-    if antialias:
-        if interpolation == "bilinear":
-            img = torch.ops.torchvision._interpolate_bilinear2d_aa(img, [new_h, new_w], align_corners=False)
-        elif interpolation == "bicubic":
-            img = torch.ops.torchvision._interpolate_bicubic2d_aa(img, [new_h, new_w], align_corners=False)
-    else:
-        img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners)
+    img = interpolate(img, size=[new_h, new_w], mode=interpolation, align_corners=align_corners, antialias=antialias)
 
     if interpolation == "bicubic" and out_dtype == torch.uint8:
         img = img.clamp(min=0, max=255)
@@ -593,7 +526,7 @@ def _assert_grid_transform_inputs(
         warnings.warn("Argument fill should be either int, float, tuple or list")
 
     # Check fill
-    num_channels = get_image_num_channels(img)
+    num_channels = get_dimensions(img)[0]
     if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
         msg = (
             "The number of elements in 'fill' cannot broadcast to match the number of "
@@ -993,3 +926,40 @@ def equalize(img: Tensor) -> Tensor:
         return _equalize_single_image(img)
 
     return torch.stack([_equalize_single_image(x) for x in img])
+
+
+def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
+    _assert_image_tensor(tensor)
+
+    if not tensor.is_floating_point():
+        raise TypeError(f"Input tensor should be a float tensor. Got {tensor.dtype}.")
+
+    if tensor.ndim < 3:
+        raise ValueError(
+            f"Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = {tensor.size()}"
+        )
+
+    if not inplace:
+        tensor = tensor.clone()
+
+    dtype = tensor.dtype
+    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
+    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
+    if (std == 0).any():
+        raise ValueError(f"std evaluated to zero after conversion to {dtype}, leading to division by zero.")
+    if mean.ndim == 1:
+        mean = mean.view(-1, 1, 1)
+    if std.ndim == 1:
+        std = std.view(-1, 1, 1)
+    tensor.sub_(mean).div_(std)
+    return tensor
+
+
+def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
+    _assert_image_tensor(img)
+
+    if not inplace:
+        img = img.clone()
+
+    img[..., i : i + h, j : j + w] = v
+    return img

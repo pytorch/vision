@@ -6,7 +6,7 @@ from torch import Tensor
 from torch import nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation
+from ..ops.misc import Conv2dNormActivation
 from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
@@ -20,11 +20,11 @@ model_urls = {
 
 
 # necessary for backwards compatibility
-class _DeprecatedConvBNAct(ConvNormActivation):
+class _DeprecatedConvBNAct(Conv2dNormActivation):
     def __init__(self, *args, **kwargs):
         warnings.warn(
-            "The ConvBNReLU/ConvBNActivation classes are deprecated and will be removed in future versions. "
-            "Use torchvision.ops.misc.ConvNormActivation instead.",
+            "The ConvBNReLU/ConvBNActivation classes are deprecated since 0.12 and will be removed in 0.14. "
+            "Use torchvision.ops.misc.Conv2dNormActivation instead.",
             FutureWarning,
         )
         if kwargs.get("norm_layer", None) is None:
@@ -56,12 +56,12 @@ class InvertedResidual(nn.Module):
         if expand_ratio != 1:
             # pw
             layers.append(
-                ConvNormActivation(inp, hidden_dim, kernel_size=1, norm_layer=norm_layer, activation_layer=nn.ReLU6)
+                Conv2dNormActivation(inp, hidden_dim, kernel_size=1, norm_layer=norm_layer, activation_layer=nn.ReLU6)
             )
         layers.extend(
             [
                 # dw
-                ConvNormActivation(
+                Conv2dNormActivation(
                     hidden_dim,
                     hidden_dim,
                     stride=stride,
@@ -144,7 +144,7 @@ class MobileNetV2(nn.Module):
         input_channel = _make_divisible(input_channel * width_mult, round_nearest)
         self.last_channel = _make_divisible(last_channel * max(1.0, width_mult), round_nearest)
         features: List[nn.Module] = [
-            ConvNormActivation(3, input_channel, stride=2, norm_layer=norm_layer, activation_layer=nn.ReLU6)
+            Conv2dNormActivation(3, input_channel, stride=2, norm_layer=norm_layer, activation_layer=nn.ReLU6)
         ]
         # building inverted residual blocks
         for t, c, n, s in inverted_residual_setting:
@@ -155,7 +155,7 @@ class MobileNetV2(nn.Module):
                 input_channel = output_channel
         # building last several layers
         features.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 input_channel, self.last_channel, kernel_size=1, norm_layer=norm_layer, activation_layer=nn.ReLU6
             )
         )

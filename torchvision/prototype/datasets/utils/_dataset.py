@@ -1,26 +1,17 @@
 import abc
 import csv
-import enum
 import importlib
-import io
 import itertools
 import os
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple, Collection
+from typing import Any, Dict, List, Optional, Sequence, Union, Tuple, Collection
 
-import torch
 from torch.utils.data import IterDataPipe
-from torchvision.prototype.utils._internal import FrozenBunch, make_repr
-from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str
+from torchvision.prototype.utils._internal import FrozenBunch, make_repr, add_suggestion, sequence_to_str
 
 from .._home import use_sharded_dataset
 from ._internal import BUILTIN_DIR, _make_sharded_datapipe
 from ._resource import OnlineResource
-
-
-class DatasetType(enum.Enum):
-    RAW = enum.auto()
-    IMAGE = enum.auto()
 
 
 class DatasetConfig(FrozenBunch):
@@ -34,7 +25,6 @@ class DatasetInfo:
         self,
         name: str,
         *,
-        type: Union[str, DatasetType],
         dependencies: Collection[str] = (),
         categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
         citation: Optional[str] = None,
@@ -44,7 +34,6 @@ class DatasetInfo:
         extra: Optional[Dict[str, Any]] = None,
     ) -> None:
         self.name = name.lower()
-        self.type = DatasetType[type.upper()] if isinstance(type, str) else type
 
         self.dependecies = dependencies
 
@@ -163,7 +152,6 @@ class Dataset(abc.ABC):
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         pass
 
@@ -175,7 +163,6 @@ class Dataset(abc.ABC):
         root: Union[str, pathlib.Path],
         *,
         config: Optional[DatasetConfig] = None,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]] = None,
         skip_integrity_check: bool = False,
     ) -> IterDataPipe[Dict[str, Any]]:
         if not config:
@@ -190,7 +177,7 @@ class Dataset(abc.ABC):
         resource_dps = [
             resource.load(root, skip_integrity_check=skip_integrity_check) for resource in self.resources(config)
         ]
-        return self._make_datapipe(resource_dps, config=config, decoder=decoder)
+        return self._make_datapipe(resource_dps, config=config)
 
     def _generate_categories(self, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:
         raise NotImplementedError

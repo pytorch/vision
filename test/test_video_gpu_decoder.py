@@ -3,7 +3,7 @@ import os
 
 import pytest
 import torch
-from torchvision.io import _HAS_VIDEO_DECODER, VideoReader
+from torchvision.io import _HAS_GPU_VIDEO_DECODER, VideoReader
 
 try:
     import av
@@ -13,7 +13,7 @@ except ImportError:
 VIDEO_DIR = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets", "videos")
 
 
-@pytest.mark.skipif(_HAS_VIDEO_DECODER is False, reason="Didn't compile with support for gpu decoder")
+@pytest.mark.skipif(_HAS_GPU_VIDEO_DECODER is False, reason="Didn't compile with support for gpu decoder")
 class TestVideoGPUDecoder:
     @pytest.mark.skipif(av is None, reason="PyAV unavailable")
     @pytest.mark.parametrize(

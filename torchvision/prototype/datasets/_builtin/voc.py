@@ -1,10 +1,8 @@
 import functools
-import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, cast, Callable
 from xml.etree import ElementTree
 
-import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
@@ -20,7 +18,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
@@ -30,7 +27,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
 )
-from torchvision.prototype.features import BoundingBox
+from torchvision.prototype.features import BoundingBox, Label, EncodedImage
 
 
 class VOCDatasetInfo(DatasetInfo):
@@ -50,7 +47,6 @@ class VOC(Dataset):
     def _make_info(self) -> DatasetInfo:
         return VOCDatasetInfo(
             "voc",
-            type=DatasetType.IMAGE,
             homepage="http://host.robots.ox.ac.uk/pascal/VOC/",
             valid_options=dict(
                 split=("train", "val", "trainval", "test"),
@@ -99,40 +95,52 @@ class VOC(Dataset):
         else:
             return None
 
-    def _decode_detection_ann(self, buffer: io.IOBase) -> torch.Tensor:
-        result = VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())  # type: ignore[arg-type]
-        objects = result["annotation"]["object"]
-        bboxes = [obj["bndbox"] for obj in objects]
-        bboxes = [[int(bbox[part]) for part in ("xmin", "ymin", "xmax", "ymax")] for bbox in bboxes]
-        return BoundingBox(bboxes)
+    def _parse_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
+        return cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
 
-    def _collate_and_decode_sample(
+    def _prepare_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
+        anns = self._parse_detection_ann(buffer)
+        instances = anns["object"]
+        return dict(
+            bounding_boxes=BoundingBox(
+                [
+                    [int(instance["bndbox"][part]) for part in ("xmin", "ymin", "xmax", "ymax")]
+                    for instance in instances
+                ],
+                format="xyxy",
+                image_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
+            ),
+            labels=Label(
+                [self.categories.index(instance["name"]) for instance in instances], categories=self.categories
+            ),
+        )
+
+    def _prepare_segmentation_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
+        return dict(segmentation=EncodedImage.from_file(buffer))
+
+    def _prepare_sample(
         self,
-        data: Tuple[Tuple[Tuple[str, str], Tuple[str, io.IOBase]], Tuple[str, io.IOBase]],
+        data: Tuple[Tuple[Tuple[str, str], Tuple[str, BinaryIO]], Tuple[str, BinaryIO]],
         *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        prepare_ann_fn: Callable[[BinaryIO], Dict[str, Any]],
     ) -> Dict[str, Any]:
         split_and_image_data, ann_data = data
         _, image_data = split_and_image_data
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
-        image = decoder(image_buffer) if decoder else image_buffer
-
-        if config.task == "detection":
-            ann = self._decode_detection_ann(ann_buffer)
-        else:  # config.task == "segmentation":
-            ann = decoder(ann_buffer) if decoder else ann_buffer  # type: ignore[assignment]
-
-        return dict(image_path=image_path, image=image, ann_path=ann_path, ann=ann)
+        return dict(
+            prepare_ann_fn(ann_buffer),
+            image_path=image_path,
+            image=EncodedImage.from_file(image_buffer),
+            ann_path=ann_path,
+        )
 
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
         *,
         config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         split_dp, images_dp, anns_dp = Demultiplexer(
@@ -158,4 +166,25 @@ class VOC(Dataset):
                 ref_key_fn=path_accessor("stem"),
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, config=config, decoder=decoder))
+        return Mapper(
+            dp,
+            functools.partial(
+                self._prepare_sample,
+                prepare_ann_fn=self._prepare_detection_ann
+                if config.task == "detection"
+                else self._prepare_segmentation_ann,
+            ),
+        )
+
+    def _filter_detection_anns(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
+        return self._classify_archive(data, config=config) == 2
+
+    def _generate_categories(self, root: pathlib.Path) -> List[str]:
+        config = self.info.make_config(task="detection")
+
+        resource = self.resources(config)[0]
+        dp = resource.load(pathlib.Path(root) / self.name)
+        dp = Filter(dp, self._filter_detection_anns, fn_kwargs=dict(config=config))
+        dp = Mapper(dp, self._parse_detection_ann, input_col=1)
+
+        return sorted({instance["name"] for _, anns in dp for instance in anns["object"]})

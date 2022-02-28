@@ -1,6 +1,7 @@
 import math
 import os
 import random
+import re
 from functools import partial
 
 import numpy as np
@@ -437,6 +438,19 @@ def test_resize_antialias_error():
     with pytest.warns(UserWarning, match=r"Anti-alias option is always applied for PIL Image input"):
         t = transforms.Resize(osize, antialias=False)
         t(img)
+
+
+@pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
+def test_resize_size_equals_small_edge_size(height, width):
+    # Non-regression test for https://github.com/pytorch/vision/issues/5405
+    # max_size used to be ignored if size == small_edge_size
+    max_size = 40
+    img = Image.new("RGB", size=(width, height), color=127)
+
+    small_edge = min(height, width)
+    t = transforms.Resize(small_edge, max_size=max_size)
+    result = t(img)
+    assert max(result.size) == max_size
 
 
 class TestPad:
@@ -1587,6 +1601,25 @@ def test_trivialaugmentwide(fill, num_magnitude_bins, grayscale):
     transform.__repr__()
 
 
+@pytest.mark.parametrize("fill", [None, 85, (128, 128, 128)])
+@pytest.mark.parametrize("severity", [1, 10])
+@pytest.mark.parametrize("mixture_width", [1, 2])
+@pytest.mark.parametrize("chain_depth", [-1, 2])
+@pytest.mark.parametrize("all_ops", [True, False])
+@pytest.mark.parametrize("grayscale", [True, False])
+def test_augmix(fill, severity, mixture_width, chain_depth, all_ops, grayscale):
+    random.seed(42)
+    img = Image.open(GRACE_HOPPER)
+    if grayscale:
+        img, fill = _get_grayscale_test_image(img, fill)
+    transform = transforms.AugMix(
+        fill=fill, severity=severity, mixture_width=mixture_width, chain_depth=chain_depth, all_ops=all_ops
+    )
+    for _ in range(100):
+        img = transform(img)
+    transform.__repr__()
+
+
 def test_random_crop():
     height = random.randint(10, 32) * 2
     width = random.randint(10, 32) * 2
@@ -1828,7 +1861,13 @@ def test_random_rotation():
     t.__repr__()
 
     # assert deprecation warning and non-BC
-    with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
+            "Please use 'interpolation' instead."
+        ),
+    ):
         t = transforms.RandomRotation((-10, 10), resample=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
@@ -2167,11 +2206,23 @@ def test_random_affine():
     assert "bilinear" in t.__repr__()
 
     # assert deprecation warning and non-BC
-    with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'interpolation' instead."
+        ),
+    ):
         t = transforms.RandomAffine(10, resample=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
-    with pytest.warns(UserWarning, match=r"Argument fillcolor is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'fill' instead."
+        ),
+    ):
         t = transforms.RandomAffine(10, fillcolor=10)
         assert t.fill == 10
 
