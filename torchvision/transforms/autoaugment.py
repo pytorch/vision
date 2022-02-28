@@ -220,7 +220,7 @@ class AutoAugment(torch.nn.Module):
         else:
             raise ValueError(f"The provided policy {policy} is not recognized.")
 
-    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
             # op_name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
@@ -318,7 +318,7 @@ class RandAugment(torch.nn.Module):
         self.interpolation = interpolation
         self.fill = fill
 
-    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
             # op_name: (magnitudes, signed)
             "Identity": (torch.tensor(0.0), False),
@@ -506,7 +506,7 @@ class AugMix(torch.nn.Module):
         self.interpolation = interpolation
         self.fill = fill
 
-    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         s = {
             # op_name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
