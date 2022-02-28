@@ -9,6 +9,7 @@ import lzma
 import pathlib
 import pickle
 import random
+import unittest.mock
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 
@@ -16,11 +17,10 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, create_video_folder
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype.datasets._api import find
-from torchvision.prototype.utils._internal import sequence_to_str
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
@@ -67,14 +67,15 @@ class DatasetMock:
 
         mock_info = self._parse_mock_info(self.mock_data_fn(self.info, root, config))
 
-        available_file_names = {path.name for path in root.glob("*")}
-        required_file_names = {resource.file_name for resource in self.dataset.resources(config)}
-        missing_file_names = required_file_names - available_file_names
-        if missing_file_names:
-            raise pytest.UsageError(
-                f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
-                f"for {config}, but they were not created by the mock data function."
-            )
+        for resource in self.dataset.resources(config):
+            with unittest.mock.patch(
+                "torchvision.prototype.datasets.utils._resource.OnlineResource.download",
+                side_effect=TypeError(
+                    f"Dataset '{self.name}' requires the file {resource.file_name} for {config}, "
+                    f"but it was not created by the mock data function."
+                ),
+            ):
+                resource.load(root)
 
         return mock_info
 
@@ -1344,3 +1345,79 @@ def pcam(info, root, config):
             compressed_file.write(compressed_data)
 
     return num_images
+
+
+@register_mock
+def ucf101(info, root, config):
+    video_folder = root / "UCF101" / "UCF-101"
+
+    categories_and_labels = [
+        ("ApplyEyeMakeup", 0),
+        ("LongJump", 50),
+        ("YoYo", 100),
+    ]
+
+    def file_name_fn(cls, idx, clips_per_group=2):
+        return f"v_{cls}_g{(idx // clips_per_group) + 1:02d}_c{(idx % clips_per_group) + 1:02d}.avi"
+
+    video_files = [
+        create_video_folder(
+            video_folder, category, lambda idx: file_name_fn(category, idx), num_examples=int(torch.randint(1, 6, ()))
+        )
+        for category, _ in categories_and_labels
+    ]
+
+    splits_folder = root / "ucfTrainTestList"
+    splits_folder.mkdir()
+
+    with open(splits_folder / "classInd.txt", "w") as file:
+        file.write("\n".join(f"{label} {category}" for category, label in categories_and_labels) + "\n")
+
+    video_ids = [path.relative_to(video_folder).as_posix() for path in itertools.chain.from_iterable(video_files)]
+    splits = ("train", "test")
+    num_samples_map = {}
+    for fold in range(1, 4):
+        random.shuffle(video_ids)
+        for offset, split in enumerate(splits):
+            video_ids_in_config = video_ids[offset :: len(splits)]
+            with open(splits_folder / f"{split}list{fold:02d}.txt", "w") as file:
+                file.write("\n".join(video_ids_in_config) + "\n")
+
+            num_samples_map[info.make_config(split=split, fold=str(fold))] = len(video_ids_in_config)
+
+    make_zip(root, "UCF101TrainTestSplits-RecognitionTask.zip", splits_folder)
+
+    return num_samples_map[config]
+
+
+@register_mock
+def hmdb51(info, root, config):
+    video_folder = root / "hmdb51_org"
+
+    categories = [
+        "brush_hair",
+        "pour",
+        "wave",
+    ]
+
+    video_files = {
+        category: create_video_folder(
+            video_folder, category, lambda idx: f"{category}_{idx}.avi", num_examples=int(torch.randint(3, 10, ()))
+        )
+        for category in categories
+    }
+
+    splits_folder = root / "test_train_splits" / "testTrainMulti_7030_splits"
+    splits_folder.mkdir(parents=True)
+
+    num_samples_map = defaultdict(lambda: 0)
+    for category, fold in itertools.product(categories, range(1, 4)):
+        videos = video_files[category]
+
+        with open(splits_folder / f"{category}_test_split{fold}.txt", "w") as file:
+            file.write("\n".join(f"{path.name} {idx % 3}" for idx, path in enumerate(videos)) + "\n")
+
+        for split, split_id in (("train", 1), ("test", 2)):
+            num_samples_map[info.make_config(split=split, fold=str(fold))] += len(videos[split_id::3])
+
+    return num_samples_map[config]

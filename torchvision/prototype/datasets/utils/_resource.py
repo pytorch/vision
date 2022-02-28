@@ -22,6 +22,7 @@ from torchvision.datasets.utils import (
     download_file_from_google_drive,
     _get_redirect_url,
     _get_google_drive_file_id,
+    tqdm,
 )
 
 
@@ -129,7 +130,7 @@ class OnlineResource(abc.ABC):
     def _check_sha256(self, path: pathlib.Path, *, chunk_size: int = 1024 * 1024) -> None:
         hash = hashlib.sha256()
         with open(path, "rb") as file:
-            for chunk in iter(lambda: file.read(chunk_size), b""):
+            for chunk in tqdm(iter(lambda: file.read(chunk_size), b"")):
                 hash.update(chunk)
         sha256 = hash.hexdigest()
         if sha256 != self.sha256:

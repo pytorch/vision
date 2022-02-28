@@ -1,4 +1,5 @@
 import bz2
+import contextlib
 import gzip
 import hashlib
 import itertools
@@ -300,6 +301,15 @@ _FILE_TYPE_ALIASES: Dict[str, Tuple[Optional[str], Optional[str]]] = {
     ".tbz2": (".tar", ".bz2"),
     ".tgz": (".tar", ".gz"),
 }
+
+with contextlib.suppress(ImportError):
+    import rarfile
+
+    def _extract_rar(from_path: str, to_path: str, compression: Optional[str]) -> None:
+        with rarfile.RarFile(from_path, "r") as rar:
+            rar.extractall(to_path)
+
+    _ARCHIVE_EXTRACTORS[".rar"] = _extract_rar
 
 
 def _detect_file_type(file: str) -> Tuple[str, Optional[str], Optional[str]]:
