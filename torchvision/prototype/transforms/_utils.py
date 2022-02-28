@@ -4,7 +4,7 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.utils._internal import query_recursively
-from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
+from .functional._meta import get_dimensions_image_tensor, get_dimensions_image_pil
 
 
 def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
@@ -25,9 +25,9 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
         channels = image.num_channels
         height, width = image.image_size
     elif isinstance(image, torch.Tensor):
-        channels, height, width = _FT.get_dimensions(image)
+        channels, height, width = get_dimensions_image_tensor(image)
     elif isinstance(image, PIL.Image.Image):
-        channels, height, width = _FP.get_dimensions(image)
+        channels, height, width = get_dimensions_image_pil(image)
     else:
         raise TypeError(f"unable to get image dimensions from object of type {type(image).__name__}")
     return channels, height, width

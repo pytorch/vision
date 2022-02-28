@@ -2,12 +2,9 @@ from typing import Optional, List
 
 import PIL.Image
 import torch
-from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
+from torchvision.transforms import functional_tensor as _FT
 from torchvision.transforms.functional import to_tensor, to_pil_image
 
-
-get_dimensions_image_tensor = _FT.get_dimensions
-get_dimensions_image_pil = _FP.get_dimensions
 
 normalize_image_tensor = _FT.normalize
 
