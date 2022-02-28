@@ -1,4 +1,3 @@
-import functools
 import math
 from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar, Union
 
@@ -6,13 +5,25 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
-from torchvision.prototype.utils._internal import apply_recursively
+from torchvision.prototype.utils._internal import query_recursively
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-from ._utils import query_images, get_image_dimensions
+from ._utils import get_image_dimensions
 
 K = TypeVar("K")
 V = TypeVar("V")
+
+
+def _put_into_sample(sample: Any, id: Tuple[Any, ...], item: Any) -> Any:
+    if not id:
+        return item
+
+    parent = sample
+    for key in id[:-1]:
+        parent = parent[key]
+
+    parent[id[-1]] = item
+    return sample
 
 
 class _AutoAugmentBase(Transform):
@@ -28,34 +39,47 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _query_image(self, sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
-        images = list(query_images(sample))
+    def _check_support(self, input: Any) -> None:
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+
+    def _extract_image(
+        self, sample: Any
+    ) -> Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]:
+        def fn(
+            id: Tuple[Any, ...], input: Any
+        ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
+            if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
+                return id, input
+
+            self._check_support(input)
+            return None
+
+        images = list(query_recursively(fn, sample))
+        if not images:
+            raise TypeError("Found no image in the sample.")
         if len(images) > 1:
             raise TypeError(
                 f"Auto augment transformations are only properly defined for a single image, but found {len(images)}."
             )
         return images[0]
 
-    def _parse_fill(self, sample: Any) -> Optional[List[float]]:
+    def _parse_fill(
+        self, image: Union[PIL.Image.Image, torch.Tensor, features.Image], num_channels: int
+    ) -> Optional[List[float]]:
         fill = self.fill
 
-        if fill is None:
-            return fill
-
-        image = self._query_image(sample)
-
-        if not isinstance(image, torch.Tensor):
+        if isinstance(image, PIL.Image.Image) or fill is None:
             return fill
 
         if isinstance(fill, (int, float)):
-            num_channels, *_ = get_image_dimensions(image)
             fill = [float(fill)] * num_channels
         else:
             fill = [float(f) for f in fill]
 
         return fill
 
-    def _dispatch(
+    def _dispatch_image_kernels(
         self,
         image_tensor_kernel: Callable,
         image_pil_kernel: Callable,
@@ -63,33 +87,29 @@ class _AutoAugmentBase(Transform):
         *args: Any,
         **kwargs: Any,
     ) -> Any:
-        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
-            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
-        elif isinstance(input, features.Image):
+        if isinstance(input, features.Image):
             output = image_tensor_kernel(input, *args, **kwargs)
             return features.Image.new_like(input, output)
         elif isinstance(input, torch.Tensor):
             return image_tensor_kernel(input, *args, **kwargs)
-        elif isinstance(input, PIL.Image.Image):
+        else:  # isinstance(input, PIL.Image.Image):
             return image_pil_kernel(input, *args, **kwargs)
-        else:
-            return input
 
-    def _apply_transform_to_item(
+    def _apply_image_transform(
         self,
-        item: Any,
+        image: Any,
         transform_id: str,
         magnitude: float,
         interpolation: InterpolationMode,
         fill: Optional[List[float]],
     ) -> Any:
         if transform_id == "Identity":
-            return item
+            return image
         elif transform_id == "ShearX":
-            return self._dispatch(
+            return self._dispatch_image_kernels(
                 F.affine_image_tensor,
                 F.affine_image_pil,
-                item,
+                image,
                 angle=0.0,
                 translate=[0, 0],
                 scale=1.0,
@@ -98,10 +118,10 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "ShearY":
-            return self._dispatch(
+            return self._dispatch_image_kernels(
                 F.affine_image_tensor,
                 F.affine_image_pil,
-                item,
+                image,
                 angle=0.0,
                 translate=[0, 0],
                 scale=1.0,
@@ -110,10 +130,10 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "TranslateX":
-            return self._dispatch(
+            return self._dispatch_image_kernels(
                 F.affine_image_tensor,
                 F.affine_image_pil,
-                item,
+                image,
                 angle=0.0,
                 translate=[int(magnitude), 0],
                 scale=1.0,
@@ -122,10 +142,10 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "TranslateY":
-            return self._dispatch(
+            return self._dispatch_image_kernels(
                 F.affine_image_tensor,
                 F.affine_image_pil,
-                item,
+                image,
                 angle=0.0,
                 translate=[0, int(magnitude)],
                 scale=1.0,
@@ -134,56 +154,48 @@ class _AutoAugmentBase(Transform):
                 fill=fill,
             )
         elif transform_id == "Rotate":
-            return self._dispatch(F.rotate_image_tensor, F.rotate_image_pil, item, angle=magnitude)
+            return self._dispatch_image_kernels(F.rotate_image_tensor, F.rotate_image_pil, image, angle=magnitude)
         elif transform_id == "Brightness":
-            return self._dispatch(
+            return self._dispatch_image_kernels(
                 F.adjust_brightness_image_tensor,
                 F.adjust_brightness_image_pil,
-                item,
+                image,
                 brightness_factor=1.0 + magnitude,
             )
         elif transform_id == "Color":
-            return self._dispatch(
+            return self._dispatch_image_kernels(
                 F.adjust_saturation_image_tensor,
                 F.adjust_saturation_image_pil,
-                item,
+                image,
                 saturation_factor=1.0 + magnitude,
             )
         elif transform_id == "Contrast":
-            return self._dispatch(
-                F.adjust_contrast_image_tensor, F.adjust_contrast_image_pil, item, contrast_factor=1.0 + magnitude
+            return self._dispatch_image_kernels(
+                F.adjust_contrast_image_tensor, F.adjust_contrast_image_pil, image, contrast_factor=1.0 + magnitude
             )
         elif transform_id == "Sharpness":
-            return self._dispatch(
+            return self._dispatch_image_kernels(
                 F.adjust_sharpness_image_tensor,
                 F.adjust_sharpness_image_pil,
-                item,
+                image,
                 sharpness_factor=1.0 + magnitude,
             )
         elif transform_id == "Posterize":
-            return self._dispatch(F.posterize_image_tensor, F.posterize_image_pil, item, bits=int(magnitude))
+            return self._dispatch_image_kernels(
+                F.posterize_image_tensor, F.posterize_image_pil, image, bits=int(magnitude)
+            )
         elif transform_id == "Solarize":
-            return self._dispatch(F.solarize_image_tensor, F.solarize_image_pil, item, threshold=magnitude)
+            return self._dispatch_image_kernels(
+                F.solarize_image_tensor, F.solarize_image_pil, image, threshold=magnitude
+            )
         elif transform_id == "AutoContrast":
-            return self._dispatch(F.autocontrast_image_tensor, F.autocontrast_image_pil, item)
+            return self._dispatch_image_kernels(F.autocontrast_image_tensor, F.autocontrast_image_pil, image)
         elif transform_id == "Equalize":
-            return self._dispatch(F.equalize_image_tensor, F.equalize_image_pil, item)
+            return self._dispatch_image_kernels(F.equalize_image_tensor, F.equalize_image_pil, image)
         elif transform_id == "Invert":
-            return self._dispatch(F.invert_image_tensor, F.invert_image_pil, item)
+            return self._dispatch_image_kernels(F.invert_image_tensor, F.invert_image_pil, image)
         else:
             raise ValueError(f"No transform available for {transform_id}")
-
-    def _apply_transform_to_sample(self, sample: Any, transform_id: str, magnitude: float) -> Any:
-        return apply_recursively(
-            functools.partial(
-                self._apply_transform_to_item,
-                transform_id=transform_id,
-                magnitude=magnitude,
-                interpolation=self.interpolation,
-                fill=self._parse_fill(sample),
-            ),
-            sample,
-        )
 
 
 class AutoAugment(_AutoAugmentBase):
@@ -307,8 +319,9 @@ class AutoAugment(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        image = self._query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        id, image = self._extract_image(sample)
+        num_channels, height, width = get_image_dimensions(image)
+        fill = self._parse_fill(image, num_channels)
 
         policy = self._policies[int(torch.randint(len(self._policies), ()))]
 
@@ -326,9 +339,11 @@ class AutoAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            sample = self._apply_transform_to_sample(sample, transform_id, magnitude)
+            image = self._apply_image_transform(
+                image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
+            )
 
-        return sample
+        return _put_into_sample(sample, id, image)
 
 
 class RandAugment(_AutoAugmentBase):
@@ -363,8 +378,9 @@ class RandAugment(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        image = self._query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        id, image = self._extract_image(sample)
+        num_channels, height, width = get_image_dimensions(image)
+        fill = self._parse_fill(image, num_channels)
 
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
@@ -377,9 +393,11 @@ class RandAugment(_AutoAugmentBase):
             else:
                 magnitude = 0.0
 
-            sample = self._apply_transform_to_sample(sample, transform_id, magnitude)
+            image = self._apply_image_transform(
+                image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
+            )
 
-        return sample
+        return _put_into_sample(sample, id, image)
 
 
 class TrivialAugmentWide(_AutoAugmentBase):
@@ -412,8 +430,9 @@ class TrivialAugmentWide(_AutoAugmentBase):
     def forward(self, *inputs: Any) -> Any:
         sample = inputs if len(inputs) > 1 else inputs[0]
 
-        image = self._query_image(sample)
-        _, height, width = get_image_dimensions(image)
+        id, image = self._extract_image(sample)
+        num_channels, height, width = get_image_dimensions(image)
+        fill = self._parse_fill(image, num_channels)
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
@@ -425,7 +444,11 @@ class TrivialAugmentWide(_AutoAugmentBase):
         else:
             magnitude = 0.0
 
-        return self._apply_transform_to_sample(sample, transform_id, magnitude)
+        return _put_into_sample(
+            sample,
+            id,
+            self._apply_image_transform(sample, transform_id, magnitude, interpolation=self.interpolation, fill=fill),
+        )
 
 
 class AugMix(_AutoAugmentBase):
@@ -476,20 +499,18 @@ class AugMix(_AutoAugmentBase):
         # Must be on a separate method so that we can overwrite it in tests.
         return torch._sample_dirichlet(params)
 
-    def _apply_augmix(self, input: Any) -> Any:
-        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
-            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
-        elif isinstance(input, torch.Tensor):
-            image = input
-        elif isinstance(input, PIL.Image.Image):
-            image = pil_to_tensor(input)
-        else:
-            return input
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        id, orig_image = self._extract_image(sample)
+        num_channels, height, width = get_image_dimensions(orig_image)
+        fill = self._parse_fill(orig_image, num_channels)
+
+        if isinstance(orig_image, torch.Tensor):
+            image = orig_image
+        else:  # isinstance(input, PIL.Image.Image):
+            image = pil_to_tensor(orig_image)
 
         augmentation_space = self._AUGMENTATION_SPACE if self.all_ops else self._PARTIAL_AUGMENTATION_SPACE
-
-        _, height, width = get_image_dimensions(image)
-        fill = self._parse_fill(image)
 
         orig_dims = list(image.shape)
         batch = image.view([1] * max(4 - image.ndim, 0) + orig_dims)
@@ -521,20 +542,15 @@ class AugMix(_AutoAugmentBase):
                 else:
                     magnitude = 0.0
 
-                aug = self._apply_transform_to_item(
+                aug = self._apply_image_transform(
                     image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
                 )
             mix.add_(combined_weights[:, i].view(batch_dims) * aug)
         mix = mix.view(orig_dims).to(dtype=image.dtype)
 
-        if isinstance(input, features.Image):
-            return features.Image.new_like(input, mix)
-        elif isinstance(input, torch.Tensor):
-            return mix
-        else:  # isinstance(input, PIL.Image.Image):
-            return to_pil_image(mix)
+        if isinstance(orig_image, features.Image):
+            mix = features.Image.new_like(orig_image, mix)
+        elif isinstance(orig_image, PIL.Image.Image):
+            mix = to_pil_image(mix)
 
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        self._query_image(sample)
-        return apply_recursively(self._apply_augmix, sample)
+        return _put_into_sample(sample, id, mix)

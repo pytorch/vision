@@ -1,4 +1,4 @@
-from typing import Any, Optional, Tuple, Union, Iterator
+from typing import Any, Optional, Tuple, Union
 
 import PIL.Image
 import torch
@@ -8,20 +8,17 @@ from torchvision.prototype.utils._internal import query_recursively
 from .functional._meta import get_dimensions_image_tensor, get_dimensions_image_pil
 
 
-def _extract_image(input: Any) -> Optional[Union[PIL.Image.Image, torch.Tensor, features.Image]]:
-    if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
-        return input
-
-    return None
-
-
-def query_images(sample: Any) -> Iterator[Union[PIL.Image.Image, torch.Tensor, features.Image]]:
-    return query_recursively(_extract_image, sample)
-
-
 def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
+    def fn(
+        id: Tuple[Any, ...], input: Any
+    ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
+        if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
+            return id, input
+
+        return None
+
     try:
-        return next(query_images(sample))
+        return next(query_recursively(fn, sample))[1]
     except StopIteration:
         raise TypeError("No image was found in the sample")
 
