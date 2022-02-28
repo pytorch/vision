@@ -59,6 +59,23 @@ pil_modes_mapping = {
 _is_pil_image = F_pil._is_pil_image
 
 
+def get_dimensions(img: Tensor) -> List[int]:
+    """Returns the dimensions of an image as [channels, height, width].
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        List[int]: The image dimensions.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(get_dimensions)
+    if isinstance(img, torch.Tensor):
+        return F_t.get_dimensions(img)
+
+    return F_pil.get_dimensions(img)
+
+
 def get_image_size(img: Tensor) -> List[int]:
     """Returns the size of an image as [width, height].
 
@@ -512,7 +529,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         output_size = (output_size[0], output_size[0])
 
-    image_width, image_height = get_image_size(img)
+    _, image_height, image_width = get_dimensions(img)
     crop_height, crop_width = output_size
 
     if crop_width > image_width or crop_height > image_height:
@@ -523,7 +540,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
             (crop_height - image_height + 1) // 2 if crop_height > image_height else 0,
         ]
         img = pad(img, padding_ltrb, fill=0)  # PIL uses fill value 0
-        image_width, image_height = get_image_size(img)
+        _, image_height, image_width = get_dimensions(img)
         if crop_width == image_width and crop_height == image_height:
             return img
 
@@ -721,7 +738,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
 
-    image_width, image_height = get_image_size(img)
+    _, image_height, image_width = get_dimensions(img)
     crop_height, crop_width = size
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -1047,9 +1064,9 @@ def rotate(
 
     center_f = [0.0, 0.0]
     if center is not None:
-        img_size = get_image_size(img)
+        _, height, width = get_dimensions(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, (width, height))]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
@@ -1167,22 +1184,22 @@ def affine(
     if center is not None and not isinstance(center, (list, tuple)):
         raise TypeError("Argument center should be a sequence")
 
-    img_size = get_image_size(img)
+    _, height, width = get_dimensions(img)
     if not isinstance(img, torch.Tensor):
-        # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
+        # center = (width * 0.5 + 0.5, height * 0.5 + 0.5)
         # it is visually better to estimate the center without 0.5 offset
         # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
         if center is None:
-            center = [img_size[0] * 0.5, img_size[1] * 0.5]
+            center = [width * 0.5, height * 0.5]
         matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
     center_f = [0.0, 0.0]
     if center is not None:
-        img_size = get_image_size(img)
+        _, height, width = get_dimensions(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, (width, height))]
 
     translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
