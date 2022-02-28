@@ -3,6 +3,7 @@ from typing import Any, Dict, Iterator
 import torch
 
 from ..utils import _log_api_usage_once
+
 try:
     from ._load_gpu_decoder import _HAS_GPU_VIDEO_DECODER
 except ModuleNotFoundError:
@@ -15,6 +16,7 @@ if _HAS_VIDEO_OPT:
 
     def _has_video_opt() -> bool:
         return True
+
 
 else:
 
