@@ -1226,7 +1226,7 @@ class TestVideoReader:
     def test_audio_present_pts(self):
         """Test if audio frames are returned with pts unit."""
         backends = ["video_reader", "pyav"]
-        start_offsets = [0, 1000]
+        start_offsets = [0, 500]
         end_offsets = [3000, None]
         for test_video, _ in test_videos.items():
             full_path = os.path.join(VIDEO_DIR, test_video)
