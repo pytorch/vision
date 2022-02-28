@@ -35,6 +35,7 @@ def get_image_size(img: Tensor) -> List[int]:
 
 
 def get_image_num_channels(img: Tensor) -> int:
+    _assert_image_tensor(img)
     if img.ndim == 2:
         return 1
     elif img.ndim > 2:
