@@ -158,7 +158,7 @@ def example_read_video(video_object, start=0, end=None, read_video=True, read_au
         frames = []
         for frame in itertools.takewhile(lambda x: x['pts'] <= end, video_object.seek(start)):
             frames.append(frame['data'])
-            video_pts.append(frame['pts'])
+            audio_pts.append(frame['pts'])
         if len(frames) > 0:
             audio_frames = torch.cat(frames, 0)
 
