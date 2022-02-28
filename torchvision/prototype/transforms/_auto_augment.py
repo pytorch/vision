@@ -39,7 +39,7 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _check_support(self, input: Any) -> None:
+    def _check_unsupported(self, input: Any) -> None:
         if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
             raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
 
@@ -52,7 +52,7 @@ class _AutoAugmentBase(Transform):
             if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
                 return id, input
 
-            self._check_support(input)
+            self._check_unsupported(input)
             return None
 
         images = list(query_recursively(fn, sample))
@@ -444,11 +444,8 @@ class TrivialAugmentWide(_AutoAugmentBase):
         else:
             magnitude = 0.0
 
-        return _put_into_sample(
-            sample,
-            id,
-            self._apply_image_transform(sample, transform_id, magnitude, interpolation=self.interpolation, fill=fill),
-        )
+        image = self._apply_image_transform(image, transform_id, magnitude, interpolation=self.interpolation, fill=fill)
+        return _put_into_sample(sample, id, image)
 
 
 class AugMix(_AutoAugmentBase):
@@ -543,7 +540,7 @@ class AugMix(_AutoAugmentBase):
                     magnitude = 0.0
 
                 aug = self._apply_image_transform(
-                    image, transform_id, magnitude, interpolation=self.interpolation, fill=fill
+                    aug, transform_id, magnitude, interpolation=self.interpolation, fill=fill
                 )
             mix.add_(combined_weights[:, i].view(batch_dims) * aug)
         mix = mix.view(orig_dims).to(dtype=image.dtype)
