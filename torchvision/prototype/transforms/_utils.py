@@ -9,14 +9,16 @@ from .functional._meta import get_dimensions_image_tensor, get_dimensions_image_
 
 
 def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
-    def fn(input: Any) -> Optional[Union[PIL.Image.Image, torch.Tensor, features.Image]]:
+    def fn(
+        id: Tuple[Any, ...], input: Any
+    ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
         if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
-            return input
+            return id, input
 
         return None
 
     try:
-        return next(query_recursively(fn, sample))
+        return next(query_recursively(fn, sample))[1]
     except StopIteration:
         raise TypeError("No image was found in the sample")
 

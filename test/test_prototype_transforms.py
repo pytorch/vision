@@ -114,6 +114,7 @@ class TestSmoke:
                 transforms.RandAugment(),
                 transforms.TrivialAugmentWide(),
                 transforms.AutoAugment(),
+                transforms.AugMix(),
             )
         ]
     )
