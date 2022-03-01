@@ -1,4 +1,4 @@
-from typing import Any, Optional, Tuple, Union
+from typing import Any, Optional, Tuple, Union, Type, Iterator
 
 import PIL.Image
 import torch
@@ -9,14 +9,16 @@ from .functional._meta import get_dimensions_image_tensor, get_dimensions_image_
 
 
 def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Image]:
-    def fn(input: Any) -> Optional[Union[PIL.Image.Image, torch.Tensor, features.Image]]:
+    def fn(
+        id: Tuple[Any, ...], input: Any
+    ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
         if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
-            return input
+            return id, input
 
         return None
 
     try:
-        return next(query_recursively(fn, sample))
+        return next(query_recursively(fn, sample))[1]
     except StopIteration:
         raise TypeError("No image was found in the sample")
 
@@ -32,3 +34,15 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
     else:
         raise TypeError(f"unable to get image dimensions from object of type {type(image).__name__}")
     return channels, height, width
+
+
+def _extract_types(sample: Any) -> Iterator[Type]:
+    return query_recursively(lambda id, input: type(input), sample)
+
+
+def has_any(sample: Any, *types: Type) -> bool:
+    return any(issubclass(type, types) for type in _extract_types(sample))
+
+
+def has_all(sample: Any, *types: Type) -> bool:
+    return not bool(set(types) - set(_extract_types(sample)))
