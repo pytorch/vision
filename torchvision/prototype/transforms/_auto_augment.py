@@ -223,8 +223,13 @@ class AutoAugment(_AutoAugmentBase):
         "Invert": (lambda num_bins, image_size: None, False),
     }
 
-    def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ) -> None:
+        super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
         self._policies = self._get_policies(policy)
 
@@ -371,8 +376,16 @@ class RandAugment(_AutoAugmentBase):
         "Equalize": (lambda num_bins, image_size: None, False),
     }
 
-    def __init__(self, *, num_ops: int = 2, magnitude: int = 9, num_magnitude_bins: int = 31, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        *,
+        num_ops: int = 2,
+        magnitude: int = 9,
+        num_magnitude_bins: int = 31,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ) -> None:
+        super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
@@ -425,8 +438,14 @@ class TrivialAugmentWide(_AutoAugmentBase):
         "Equalize": (lambda num_bins, image_size: None, False),
     }
 
-    def __init__(self, *, num_magnitude_bins: int = 31, **kwargs: Any):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        *,
+        num_magnitude_bins: int = 31,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ):
+        super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
 
     def forward(self, *inputs: Any) -> Any:
@@ -482,9 +501,10 @@ class AugMix(_AutoAugmentBase):
         chain_depth: int = -1,
         alpha: float = 1.0,
         all_ops: bool = True,
-        **kwargs: Any,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10
         if not (1 <= severity <= self._PARAMETER_MAX):
             raise ValueError(f"The severity must be between [1, {self._PARAMETER_MAX}]. Got {severity} instead.")
