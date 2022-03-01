@@ -84,6 +84,7 @@ class VideoReader:
             will depend on the version of FFMPEG codecs supported.
 
         device (str, optional): Device to be used for decoding. Defaults to ``"cpu"``.
+            To use GPU decoding, pass ``device="cuda"``.
 
     """
 
@@ -95,9 +96,7 @@ class VideoReader:
             if not _HAS_GPU_VIDEO_DECODER:
                 raise RuntimeError("Not compiled with GPU decoder support.")
             self.is_cuda = True
-            if device.index is None:
-                raise RuntimeError("Invalid cuda device!")
-            self._c = torch.classes.torchvision.GPUDecoder(path, device.index)
+            self._c = torch.classes.torchvision.GPUDecoder(path, device)
             return
         if not _has_video_opt():
             raise RuntimeError(
