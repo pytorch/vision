@@ -202,7 +202,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+1f9e10f ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+6f9a1c9 ) &#x25BC</a>
     </div>
     
 
@@ -655,61 +655,64 @@ you can use a functional transform to build transform classes with custom behavi
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.gaussian_blur.html#torchvision.transforms.functional.gaussian_blur" title="torchvision.transforms.functional.gaussian_blur"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gaussian_blur</span></code></a>(img, kernel_size[, sigma])</p></td>
 <td><p>Performs Gaussian blurring on the image by given kernel.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.get_image_num_channels.html#torchvision.transforms.functional.get_image_num_channels" title="torchvision.transforms.functional.get_image_num_channels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_image_num_channels</span></code></a>(img)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.get_dimensions.html#torchvision.transforms.functional.get_dimensions" title="torchvision.transforms.functional.get_dimensions"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_dimensions</span></code></a>(img)</p></td>
+<td><p>Returns the dimensions of an image as [channels, height, width].</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.get_image_num_channels.html#torchvision.transforms.functional.get_image_num_channels" title="torchvision.transforms.functional.get_image_num_channels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_image_num_channels</span></code></a>(img)</p></td>
 <td><p>Returns the number of channels of an image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.get_image_size.html#torchvision.transforms.functional.get_image_size" title="torchvision.transforms.functional.get_image_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_image_size</span></code></a>(img)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.get_image_size.html#torchvision.transforms.functional.get_image_size" title="torchvision.transforms.functional.get_image_size"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_image_size</span></code></a>(img)</p></td>
 <td><p>Returns the size of an image as [width, height].</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.hflip.html#torchvision.transforms.functional.hflip" title="torchvision.transforms.functional.hflip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hflip</span></code></a>(img)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.hflip.html#torchvision.transforms.functional.hflip" title="torchvision.transforms.functional.hflip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">hflip</span></code></a>(img)</p></td>
 <td><p>Horizontally flip the given image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.invert.html#torchvision.transforms.functional.invert" title="torchvision.transforms.functional.invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">invert</span></code></a>(img)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.invert.html#torchvision.transforms.functional.invert" title="torchvision.transforms.functional.invert"><code class="xref py py-obj docutils literal notranslate"><span class="pre">invert</span></code></a>(img)</p></td>
 <td><p>Invert the colors of an RGB/grayscale image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.normalize.html#torchvision.transforms.functional.normalize" title="torchvision.transforms.functional.normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize</span></code></a>(tensor, mean, std[, inplace])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.normalize.html#torchvision.transforms.functional.normalize" title="torchvision.transforms.functional.normalize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">normalize</span></code></a>(tensor, mean, std[, inplace])</p></td>
 <td><p>Normalize a float tensor image with mean and standard deviation.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.pad.html#torchvision.transforms.functional.pad" title="torchvision.transforms.functional.pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad</span></code></a>(img, padding[, fill, padding_mode])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.pad.html#torchvision.transforms.functional.pad" title="torchvision.transforms.functional.pad"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pad</span></code></a>(img, padding[, fill, padding_mode])</p></td>
 <td><p>Pad the given image on all sides with the given “pad” value.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.perspective.html#torchvision.transforms.functional.perspective" title="torchvision.transforms.functional.perspective"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perspective</span></code></a>(img, startpoints, endpoints[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.perspective.html#torchvision.transforms.functional.perspective" title="torchvision.transforms.functional.perspective"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perspective</span></code></a>(img, startpoints, endpoints[, …])</p></td>
 <td><p>Perform perspective transform of the given image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.pil_to_tensor.html#torchvision.transforms.functional.pil_to_tensor" title="torchvision.transforms.functional.pil_to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pil_to_tensor</span></code></a>(pic)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.pil_to_tensor.html#torchvision.transforms.functional.pil_to_tensor" title="torchvision.transforms.functional.pil_to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">pil_to_tensor</span></code></a>(pic)</p></td>
 <td><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> to a tensor of the same type.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.posterize.html#torchvision.transforms.functional.posterize" title="torchvision.transforms.functional.posterize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterize</span></code></a>(img, bits)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.posterize.html#torchvision.transforms.functional.posterize" title="torchvision.transforms.functional.posterize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">posterize</span></code></a>(img, bits)</p></td>
 <td><p>Posterize an image by reducing the number of bits for each color channel.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.resize.html#torchvision.transforms.functional.resize" title="torchvision.transforms.functional.resize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code></a>(img, size[, interpolation, max_size, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.resize.html#torchvision.transforms.functional.resize" title="torchvision.transforms.functional.resize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resize</span></code></a>(img, size[, interpolation, max_size, …])</p></td>
 <td><p>Resize the input image to the given size.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.resized_crop.html#torchvision.transforms.functional.resized_crop" title="torchvision.transforms.functional.resized_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resized_crop</span></code></a>(img, top, left, height, width, size)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.resized_crop.html#torchvision.transforms.functional.resized_crop" title="torchvision.transforms.functional.resized_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">resized_crop</span></code></a>(img, top, left, height, width, size)</p></td>
 <td><p>Crop the given image and resize it to desired size.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.rgb_to_grayscale.html#torchvision.transforms.functional.rgb_to_grayscale" title="torchvision.transforms.functional.rgb_to_grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rgb_to_grayscale</span></code></a>(img[, num_output_channels])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.rgb_to_grayscale.html#torchvision.transforms.functional.rgb_to_grayscale" title="torchvision.transforms.functional.rgb_to_grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rgb_to_grayscale</span></code></a>(img[, num_output_channels])</p></td>
 <td><p>Convert RGB image to grayscale version of image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.rotate.html#torchvision.transforms.functional.rotate" title="torchvision.transforms.functional.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate</span></code></a>(img, angle[, interpolation, expand, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.rotate.html#torchvision.transforms.functional.rotate" title="torchvision.transforms.functional.rotate"><code class="xref py py-obj docutils literal notranslate"><span class="pre">rotate</span></code></a>(img, angle[, interpolation, expand, …])</p></td>
 <td><p>Rotate the image by angle.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.solarize.html#torchvision.transforms.functional.solarize" title="torchvision.transforms.functional.solarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solarize</span></code></a>(img, threshold)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.solarize.html#torchvision.transforms.functional.solarize" title="torchvision.transforms.functional.solarize"><code class="xref py py-obj docutils literal notranslate"><span class="pre">solarize</span></code></a>(img, threshold)</p></td>
 <td><p>Solarize an RGB/grayscale image by inverting all pixel values above a threshold.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.ten_crop.html#torchvision.transforms.functional.ten_crop" title="torchvision.transforms.functional.ten_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ten_crop</span></code></a>(img, size[, vertical_flip])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.ten_crop.html#torchvision.transforms.functional.ten_crop" title="torchvision.transforms.functional.ten_crop"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ten_crop</span></code></a>(img, size[, vertical_flip])</p></td>
 <td><p>Generate ten cropped images from the given image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_grayscale.html#torchvision.transforms.functional.to_grayscale" title="torchvision.transforms.functional.to_grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_grayscale</span></code></a>(img[, num_output_channels])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_grayscale.html#torchvision.transforms.functional.to_grayscale" title="torchvision.transforms.functional.to_grayscale"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_grayscale</span></code></a>(img[, num_output_channels])</p></td>
 <td><p>Convert PIL image of any mode (RGB, HSV, LAB, etc) to grayscale version of image.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_pil_image.html#torchvision.transforms.functional.to_pil_image" title="torchvision.transforms.functional.to_pil_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pil_image</span></code></a>(pic[, mode])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_pil_image.html#torchvision.transforms.functional.to_pil_image" title="torchvision.transforms.functional.to_pil_image"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_pil_image</span></code></a>(pic[, mode])</p></td>
 <td><p>Convert a tensor or an ndarray to PIL Image.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_tensor.html#torchvision.transforms.functional.to_tensor" title="torchvision.transforms.functional.to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_tensor</span></code></a>(pic)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.to_tensor.html#torchvision.transforms.functional.to_tensor" title="torchvision.transforms.functional.to_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">to_tensor</span></code></a>(pic)</p></td>
 <td><p>Convert a <code class="docutils literal notranslate"><span class="pre">PIL</span> <span class="pre">Image</span></code> or <code class="docutils literal notranslate"><span class="pre">numpy.ndarray</span></code> to tensor.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.vflip.html#torchvision.transforms.functional.vflip" title="torchvision.transforms.functional.vflip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vflip</span></code></a>(img)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.transforms.functional.vflip.html#torchvision.transforms.functional.vflip" title="torchvision.transforms.functional.vflip"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vflip</span></code></a>(img)</p></td>
 <td><p>Vertically flip the given image.</p></td>
 </tr>
 </tbody>

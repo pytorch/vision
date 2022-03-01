@@ -295,7 +295,7 @@ the same API to the existing ``read_video`` function.
             frames = []
             for frame in itertools.takewhile(lambda x: x['pts'] <= end, video_object.seek(start)):
                 frames.append(frame['data'])
-                video_pts.append(frame['pts'])
+                audio_pts.append(frame['pts'])
             if len(frames) > 0:
                 audio_frames = torch.cat(frames, 0)
 
@@ -568,7 +568,7 @@ We can generate a dataloader and test the dataset.
 
  .. code-block:: none
 
-    {'video': ['./dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/RATRACE_wave_f_nm_np1_fr_goo_37.avi'], 'start': [3.883811174554117, 6.653299465238038, 2.565842813737689, 0.7530901345218308, 1.559508597841539], 'end': [4.4044, 7.173832999999999, 3.069733, 1.267933, 2.066667], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
+    {'video': ['./dataset/1/WUzgd7C1pWA.mp4', './dataset/2/v_SoccerJuggling_g23_c01.avi', './dataset/1/WUzgd7C1pWA.mp4', './dataset/1/WUzgd7C1pWA.mp4', './dataset/2/SOX5yA1l24A.mp4'], 'start': [9.279355406040805, 6.153589843167441, 6.5599385613545875, 1.3766367545229945, 4.860087962107211], 'end': [9.8098, 6.6733329999999995, 7.073733, 1.9019, 5.372033], 'tensorsize': [torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112]), torch.Size([16, 3, 112, 112])]}
 
 
 
@@ -626,7 +626,7 @@ Cleanup the video and dataset:
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  3.715 seconds)
+   **Total running time of the script:** ( 0 minutes  3.538 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_video_api.py:

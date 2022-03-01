@@ -9,7 +9,7 @@
   
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>Country211 &mdash; Torchvision main documentation</title>
+  <title>get_dimensions &mdash; Torchvision main documentation</title>
   
 
   
@@ -35,8 +35,8 @@
   <link rel="stylesheet" href="../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../genindex.html" />
     <link rel="search" title="Search" href="../search.html" />
-    <link rel="next" title="DTD" href="torchvision.datasets.DTD.html" />
-    <link rel="prev" title="CIFAR100" href="torchvision.datasets.CIFAR100.html" />
+    <link rel="next" title="get_image_num_channels" href="torchvision.transforms.functional.get_image_num_channels.html" />
+    <link rel="prev" title="gaussian_blur" href="torchvision.transforms.functional.gaussian_blur.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -228,9 +228,9 @@
             
               <p class="caption"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
-<li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
-<li class="toctree-l1 current"><a class="reference internal" href="../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../datasets.html">Datasets</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../utils.html">Utils</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../ops.html">Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
@@ -290,15 +290,15 @@
       </li>
 
         
-          <li><a href="../datasets.html">Datasets</a> &gt;</li>
+          <li><a href="../transforms.html">Transforming and augmenting images</a> &gt;</li>
         
-      <li>Country211</li>
+      <li>get_dimensions</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
         
             
-            <a href="../_sources/generated/torchvision.datasets.Country211.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
+            <a href="../_sources/generated/torchvision.transforms.functional.get_dimensions.rst.txt" rel="nofollow"><img src="../_static/images/view-page-source-icon.svg"></a>
           
         
       </li>
@@ -324,49 +324,23 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="country211">
-<h1>Country211<a class="headerlink" href="#country211" title="Permalink to this headline">¶</a></h1>
-<dl class="py class">
-<dt id="torchvision.datasets.Country211">
-<em class="property"><span class="pre">class</span> </em><code class="sig-prename descclassname"><span class="pre">torchvision.datasets.</span></code><code class="sig-name descname"><span class="pre">Country211</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">root</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span></em>, <em class="sig-param"><span class="n"><span class="pre">split</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.10)"><span class="pre">str</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">'train'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">transform</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">target_transform</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Callable</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">download</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/torchvision/datasets/country211.html#Country211"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.datasets.Country211" title="Permalink to this definition">¶</a></dt>
-<dd><p><a class="reference external" href="https://github.com/openai/CLIP/blob/main/data/country211.md">The Country211 Data Set</a> from OpenAI.</p>
-<p>This dataset was built by filtering the images from the YFCC100m dataset
-that have GPS coordinate corresponding to a ISO-3166 country code. The
-dataset is balanced by sampling 150 train images, 50 validation images, and
-100 test images images for each country.</p>
+  <div class="section" id="get-dimensions">
+<h1>get_dimensions<a class="headerlink" href="#get-dimensions" title="Permalink to this headline">¶</a></h1>
+<dl class="py function">
+<dt id="torchvision.transforms.functional.get_dimensions">
+<code class="sig-prename descclassname"><span class="pre">torchvision.transforms.functional.</span></code><code class="sig-name descname"><span class="pre">get_dimensions</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">img</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://pytorch.org/docs/stable/tensors.html#torch.Tensor" title="(in PyTorch v1.10.0)"><span class="pre">torch.Tensor</span></a></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">List</span><span class="p"><span class="pre">[</span></span><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a><span class="p"><span class="pre">]</span></span><a class="reference internal" href="../_modules/torchvision/transforms/functional.html#get_dimensions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.transforms.functional.get_dimensions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Returns the dimensions of an image as [channels, height, width].</p>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><ul class="simple">
-<li><p><strong>root</strong> (<em>string</em>) – Root directory of the dataset.</p></li>
-<li><p><strong>split</strong> (<em>string</em><em>, </em><em>optional</em>) – The dataset split, supports <code class="docutils literal notranslate"><span class="pre">&quot;train&quot;</span></code> (default), <code class="docutils literal notranslate"><span class="pre">&quot;valid&quot;</span></code> and <code class="docutils literal notranslate"><span class="pre">&quot;test&quot;</span></code>.</p></li>
-<li><p><strong>transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that  takes in an PIL image and returns a transformed
-version. E.g, <code class="docutils literal notranslate"><span class="pre">transforms.RandomCrop</span></code>.</p></li>
-<li><p><strong>target_transform</strong> (<em>callable</em><em>, </em><em>optional</em>) – A function/transform that takes in the target and transforms it.</p></li>
-<li><p><strong>download</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, downloads the dataset from the internet and puts it into
-<code class="docutils literal notranslate"><span class="pre">root/country211/</span></code>. If dataset is already downloaded, it is not downloaded again.</p></li>
-</ul>
-</dd>
-</dl>
-<dl class="field-list simple">
-<dt class="field-odd">Special-members</dt>
-<dd class="field-odd"><p></p></dd>
-</dl>
-<dl class="py method">
-<dt id="torchvision.datasets.Country211.__getitem__">
-<code class="sig-name descname"><span class="pre">__getitem__</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">index</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><span class="pre">int</span></a></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">Tuple</span><span class="p"><span class="pre">[</span></span><span class="pre">Any</span><span class="p"><span class="pre">,</span> </span><span class="pre">Any</span><span class="p"><span class="pre">]</span></span><a class="headerlink" href="#torchvision.datasets.Country211.__getitem__" title="Permalink to this definition">¶</a></dt>
-<dd><dl class="field-list simple">
-<dt class="field-odd">Parameters</dt>
-<dd class="field-odd"><p><strong>index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)"><em>int</em></a>) – Index</p>
+<dd class="field-odd"><p><strong>img</strong> (<em>PIL Image</em><em> or </em><em>Tensor</em>) – The image to be checked.</p>
 </dd>
 <dt class="field-even">Returns</dt>
-<dd class="field-even"><p>(sample, target) where target is class_index of the target class.</p>
+<dd class="field-even"><p>The image dimensions.</p>
 </dd>
 <dt class="field-odd">Return type</dt>
-<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.10)">tuple</a></p>
+<dd class="field-odd"><p>List[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.10)">int</a>]</p>
 </dd>
 </dl>
-</dd></dl>
-
 </dd></dl>
 
 </div>
@@ -379,10 +353,10 @@ version. E.g, <code class="docutils literal notranslate"><span class="pre">trans
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="torchvision.datasets.DTD.html" class="btn btn-neutral float-right" title="DTD" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="torchvision.transforms.functional.get_image_num_channels.html" class="btn btn-neutral float-right" title="get_image_num_channels" accesskey="n" rel="next">Next <img src="../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
-        <a href="torchvision.datasets.CIFAR100.html" class="btn btn-neutral" title="CIFAR100" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+        <a href="torchvision.transforms.functional.gaussian_blur.html" class="btn btn-neutral" title="gaussian_blur" accesskey="p" rel="prev"><img src="../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
       
     </div>
   
@@ -414,7 +388,7 @@ version. E.g, <code class="docutils literal notranslate"><span class="pre">trans
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
-<li><a class="reference internal" href="#">Country211</a></li>
+<li><a class="reference internal" href="#">get_dimensions</a></li>
 </ul>
 
             </div>
