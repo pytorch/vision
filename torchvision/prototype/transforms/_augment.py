@@ -33,7 +33,6 @@ class RandomErasing(Transform):
             raise ValueError("Scale should be between 0 and 1")
         if p < 0 or p > 1:
             raise ValueError("Random erasing probability should be between 0 and 1")
-        # TODO: deprecate p in favor of wrapping the transform in a RandomApply
         self.p = p
         self.scale = scale
         self.ratio = ratio
