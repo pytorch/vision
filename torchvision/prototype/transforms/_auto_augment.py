@@ -5,10 +5,10 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
-from torchvision.prototype.utils._internal import query_recursively
+from torchvision.prototype.utils._internal import query_recursively, sequence_to_str
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-from ._utils import get_image_dimensions
+from ._utils import get_image_dimensions, has_any
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -40,10 +40,11 @@ class _AutoAugmentBase(Transform):
         return key, dct[key]
 
     def _check_unsupported(
-        self, input: Any, *, types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask)
+        self, sample: Any, *, types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask)
     ) -> None:
-        if isinstance(input, types):
-            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        if has_any(sample, *types):
+            names = sequence_to_str([t.__name__ for t in types], separate_last="and ")
+            raise TypeError(f"Inputs of type {names} are not supported by {type(self).__name__}()")
 
     def _extract_image(
         self, sample: Any
@@ -54,8 +55,9 @@ class _AutoAugmentBase(Transform):
             if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
                 return id, input
 
-            self._check_unsupported(input)
             return None
+
+        self._check_unsupported(sample)
 
         images = list(query_recursively(fn, sample))
         if not images:
