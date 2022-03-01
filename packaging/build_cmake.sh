@@ -25,7 +25,6 @@ if [[ "$OSTYPE" == "msys" ]]; then
     pip install dataclasses
 fi
 
-setup_visual_studio_constraint
 setup_junit_results_folder
 
 if [[ "$(uname)" == Darwin ]]; then

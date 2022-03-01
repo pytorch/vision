@@ -373,15 +373,6 @@ setup_conda_cudatoolkit_plain_constraint() {
   fi
 }
 
-# Build the proper compiler package before building the final package
-setup_visual_studio_constraint() {
-  if [[ "$OSTYPE" == "msys" ]]; then
-      export VSTOOLCHAIN_PACKAGE=vs$VC_YEAR
-      conda build $CONDA_CHANNEL_FLAGS --no-anaconda-upload packaging/$VSTOOLCHAIN_PACKAGE
-      cp packaging/$VSTOOLCHAIN_PACKAGE/conda_build_config.yaml packaging/torchvision/conda_build_config.yaml
-  fi
-}
-
 setup_junit_results_folder() {
   if [[ "$CI" == "true" ]]; then
     export CONDA_PYTORCH_BUILD_RESULTS_DIRECTORY="${SOURCE_ROOT_DIR}/build_results/results.xml"
