@@ -5,10 +5,10 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
-from torchvision.prototype.utils._internal import query_recursively, sequence_to_str
+from torchvision.prototype.utils._internal import query_recursively
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-from ._utils import get_image_dimensions, has_any
+from ._utils import get_image_dimensions
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -39,25 +39,20 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _check_unsupported(
-        self, sample: Any, *, types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask)
-    ) -> None:
-        if has_any(sample, *types):
-            names = sequence_to_str([t.__name__ for t in types], separate_last="and ")
-            raise TypeError(f"Inputs of type {names} are not supported by {type(self).__name__}()")
-
     def _extract_image(
-        self, sample: Any
+        self,
+        sample: Any,
+        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
     ) -> Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]:
         def fn(
             id: Tuple[Any, ...], input: Any
         ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
             if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
                 return id, input
-
-            return None
-
-        self._check_unsupported(sample)
+            elif isinstance(input, unsupported_types):
+                raise TypeError(f"Inputs of type {type(input).__name__} are not supported by {type(self).__name__}()")
+            else:
+                return None
 
         images = list(query_recursively(fn, sample))
         if not images:
@@ -503,7 +498,7 @@ class AugMix(_AutoAugmentBase):
         chain_depth: int = -1,
         alpha: float = 1.0,
         all_ops: bool = True,
-        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         fill: Optional[List[float]] = None,
     ) -> None:
         super().__init__(interpolation=interpolation, fill=fill)

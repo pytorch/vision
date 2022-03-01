@@ -102,7 +102,7 @@ class RandomErasing(Transform):
         elif torch.rand(1) >= self.p:
             return sample
 
-        return super().forward(*inputs)
+        return super().forward(sample)
 
 
 class RandomMixup(Transform):
@@ -128,7 +128,7 @@ class RandomMixup(Transform):
         sample = inputs if len(inputs) > 1 else inputs[0]
         if has_any(sample, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        if not has_all(sample, features.Image, features.OneHotLabel):
+        elif not has_all(sample, features.Image, features.OneHotLabel):
             raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
         return super().forward(sample)
 
@@ -176,6 +176,6 @@ class RandomCutmix(Transform):
         sample = inputs if len(inputs) > 1 else inputs[0]
         if has_any(sample, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        if not has_all(sample, features.Image, features.OneHotLabel):
+        elif not has_all(sample, features.Image, features.OneHotLabel):
             raise TypeError(f"{type(self).__name__}() is only defined for Image's *and* OneHotLabel's.")
         return super().forward(sample)
