@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar, Union
+from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar, Union, Type
 
 import PIL.Image
 import torch
@@ -39,8 +39,10 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _check_unsupported(self, input: Any) -> None:
-        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+    def _check_unsupported(
+        self, input: Any, *, types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask)
+    ) -> None:
+        if isinstance(input, types):
             raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
 
     def _extract_image(
