@@ -59,7 +59,10 @@ class ConvertImageColorSpace(Transform):
             return features.Image.new_like(input, output, color_space=self.color_space)
         elif isinstance(input, torch.Tensor):
             if self.old_color_space is None:
-                raise RuntimeError("")
+                raise RuntimeError(
+                    f"In order to convert vanilla tensor images, `{type(self).__name__}(...)` "
+                    f"needs to be constructed with the `old_color_space=...` parameter."
+                )
 
             return F.convert_image_color_space_tensor(
                 input, old_color_space=self.old_color_space, new_color_space=self.color_space
