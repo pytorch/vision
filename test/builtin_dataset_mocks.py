@@ -11,7 +11,6 @@ import pickle
 import random
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
-from logging import RootLogger
 
 import numpy as np
 import PIL.Image
