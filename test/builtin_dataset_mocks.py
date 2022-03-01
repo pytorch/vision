@@ -11,6 +11,7 @@ import pickle
 import random
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
+from logging import RootLogger
 
 import numpy as np
 import PIL.Image
@@ -876,6 +877,29 @@ class CelebAMockData:
 @register_mock
 def celeba(info, root, config):
     return CelebAMockData.generate(root)[config.split]
+
+
+@register_mock
+def country211(info, root, config):
+    split_folder = pathlib.Path(root, "country211", config["split"])
+    split_folder.mkdir(parents=True, exist_ok=True)
+
+    num_examples = {
+        "train": 3,
+        "valid": 4,
+        "test": 5,
+    }[config["split"]]
+
+    classes = ("AD", "BS", "GR")
+    for cls in classes:
+        create_image_folder(
+            split_folder,
+            name=cls,
+            file_name_fn=lambda idx: f"{idx}.jpg",
+            num_examples=num_examples,
+        )
+    make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
+    return num_examples * len(classes)
 
 
 @register_mock
