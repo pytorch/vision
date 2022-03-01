@@ -10,13 +10,13 @@ import pathlib
 import pickle
 import random
 import xml.etree.ElementTree as ET
-from collections import Counter, defaultdict
+from collections import defaultdict, Counter
 
 import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import create_image_file, create_image_folder, make_tar, make_zip
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype.datasets._api import find
@@ -1301,7 +1301,6 @@ def cub200(info, root, config):
 
 @register_mock
 def eurosat(info, root, config):
-    print("info", info)
     data_folder = pathlib.Path(root, "eurosat", "2750")
     data_folder.mkdir(parents=True)
 
