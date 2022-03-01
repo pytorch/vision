@@ -58,7 +58,9 @@ def convert_bounding_box_format(
 
 
 def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
-    return grayscale.expand(3, 1, 1)
+    repeats = [1] * grayscale.ndim
+    repeats[-3] = 3
+    return grayscale.repeat(repeats)
 
 
 def convert_image_color_space_tensor(
