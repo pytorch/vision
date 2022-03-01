@@ -208,13 +208,6 @@ def resize_bounding_box():
         and callable(kernel)
         and any(feature_type in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label"})
         and "pil" not in name
-        and (
-            name
-            not in {
-                "get_image_size",
-                "get_image_num_channels",
-            }
-        )
     ],
 )
 def test_scriptable(kernel):
