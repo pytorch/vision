@@ -403,11 +403,8 @@ def resize(
             mode).
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
             is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
-            ``InterpolationMode.BILINEAR`` only mode. This can help making the output for PIL images and tensors
-            closer.
-
-            .. warning::
-                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
+            This can help making the output for PIL images and tensors closer.
 
     Returns:
         PIL Image or Tensor: Resized image.
@@ -1338,12 +1335,12 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
         if not F_pil._is_pil_image(img):
             raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
 
-        t_img = to_tensor(img)
+        t_img = pil_to_tensor(img)
 
     output = F_t.gaussian_blur(t_img, kernel_size, sigma)
 
     if not isinstance(img, torch.Tensor):
-        output = to_pil_image(output)
+        output = to_pil_image(output, mode=img.mode)
     return output
 
 
