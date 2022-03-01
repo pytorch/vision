@@ -5,7 +5,7 @@
 
 class GPUDecoder : public torch::CustomClassHolder {
  public:
-  GPUDecoder(std::string, int64_t);
+  GPUDecoder(std::string, torch::Device);
   ~GPUDecoder();
   torch::Tensor decode();
   void seek(double, bool);
