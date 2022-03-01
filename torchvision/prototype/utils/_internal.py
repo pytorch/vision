@@ -312,15 +312,18 @@ def apply_recursively(fn: Callable, obj: Any) -> Any:
         return fn(obj)
 
 
-def query_recursively(fn: Callable[[Any], Optional[D]], obj: Any) -> Iterator[D]:
+def query_recursively(
+    fn: Callable[[Tuple[Any, ...], Any], Optional[D]], obj: Any, *, id: Tuple[Any, ...] = ()
+) -> Iterator[D]:
     # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
     # "a" == "a"[0][0]...
-    if (isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str)) or isinstance(
-        obj, collections.abc.Mapping
-    ):
-        for item in obj.values() if isinstance(obj, collections.abc.Mapping) else obj:
-            yield from query_recursively(fn, item)
+    if isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
+        for idx, item in enumerate(obj):
+            yield from query_recursively(fn, item, id=(*id, idx))
+    elif isinstance(obj, collections.abc.Mapping):
+        for key, item in obj.items():
+            yield from query_recursively(fn, item, id=(*id, key))
     else:
-        result = fn(obj)
+        result = fn(id, obj)
         if result is not None:
             yield result
