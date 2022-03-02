@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
+from torchvision.prototype.datasets.utils._internal import path_comparator, hint_sharding, hint_shuffling
 from torchvision.prototype.features import EncodedImage, Label
 
 
@@ -13,7 +13,7 @@ class Country211(Dataset):
         return DatasetInfo(
             "country211",
             homepage="https://github.com/openai/CLIP/blob/main/data/country211.md",
-            valid_options=dict(split=("train", "valid", "test")),
+            valid_options=dict(split=("train", "val", "test")),
         )
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -23,6 +23,12 @@ class Country211(Dataset):
                 sha256="c011343cdc1296a8c31ff1d7129cf0b5e5b8605462cffd24f89266d6e6f4da3c",
             )
         ]
+
+    _SPLIT_NAME_MAPPER = {
+        "train": "train",
+        "val": "valid",
+        "test": "test",
+    }
 
     def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
         path, buffer = data
@@ -40,7 +46,7 @@ class Country211(Dataset):
         self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
-        dp = Filter(dp, functools.partial(self._filter_split, split=config.split))
+        dp = Filter(dp, path_comparator("parent.parent.name", self._SPLIT_NAME_MAPPER[config.split]))
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
         return Mapper(dp, self._prepare_sample)
