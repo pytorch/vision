@@ -248,8 +248,8 @@ class EfficientNet_V2_M_Weights(WeightsEnum):
             **_COMMON_META_V2,
             "num_params": 54139356,
             "size": (480, 480),
-            "acc@1": 85.119,
-            "acc@5": 97.151,
+            "acc@1": 85.112,
+            "acc@5": 97.156,
         },
     )
     DEFAULT = IMAGENET1K_V1
