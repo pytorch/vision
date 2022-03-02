@@ -209,7 +209,7 @@ class TenCrop(Transform):
         elif type(input) is torch.Tensor:
             return F.ten_crop_image_tensor(input, self.size)
         elif isinstance(input, PIL.Image.Image):
-            return F.five_crop_image_pil(input, self.size)
+            return F.ten_crop_image_pil(input, self.size)
         else:
             return input
 
