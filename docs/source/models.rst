@@ -245,6 +245,8 @@ EfficientNet-B5                   83.444          96.628
 EfficientNet-B6                   84.008          96.916
 EfficientNet-B7                   84.122          96.908
 EfficientNetV2-s                  84.228          96.878
+EfficientNetV2-m                  85.112          97.156
+EfficientNetV2-l                  85.810          97.792
 regnet_x_400mf                    72.834          90.950
 regnet_x_800mf                    75.212          92.348
 regnet_x_1_6gf                    77.040          93.440
