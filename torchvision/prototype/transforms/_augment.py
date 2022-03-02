@@ -3,7 +3,6 @@ import numbers
 import warnings
 from typing import Any, Dict, Tuple
 
-import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
@@ -12,9 +11,6 @@ from ._utils import query_image
 
 
 class RandomErasing(Transform):
-    _DISPATCHER = F.erase
-    _FAIL_TYPES = {PIL.Image.Image, features.BoundingBox, features.SegmentationMask}
-
     def __init__(
         self,
         p: float = 0.5,
@@ -45,8 +41,8 @@ class RandomErasing(Transform):
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
-        img_h, img_w = F.get_image_size(image)
         img_c = F.get_image_num_channels(image)
+        img_w, img_h = F.get_image_size(image)
 
         if isinstance(self.value, (int, float)):
             value = [self.value]
@@ -93,16 +89,24 @@ class RandomErasing(Transform):
         return dict(zip("ijhwv", (i, j, h, w, v)))
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if torch.rand(1) >= self.p:
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        elif isinstance(input, features.Image):
+            output = F.erase_image_tensor(input, **params)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, torch.Tensor):
+            return F.erase_image_tensor(input, **params)
+        else:
             return input
 
-        return super()._transform(input, params)
+    def forward(self, *inputs: Any) -> Any:
+        if torch.rand(1) >= self.p:
+            return inputs if len(inputs) > 1 else inputs[0]
+
+        return super().forward(*inputs)
 
 
 class RandomMixup(Transform):
-    _DISPATCHER = F.mixup
-    _FAIL_TYPES = {features.BoundingBox, features.SegmentationMask}
-
     def __init__(self, *, alpha: float) -> None:
         super().__init__()
         self.alpha = alpha
@@ -111,11 +115,20 @@ class RandomMixup(Transform):
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         return dict(lam=float(self._dist.sample(())))
 
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        elif isinstance(input, features.Image):
+            output = F.mixup_image_tensor(input, **params)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, features.OneHotLabel):
+            output = F.mixup_one_hot_label(input, **params)
+            return features.OneHotLabel.new_like(input, output)
+        else:
+            return input
+
 
 class RandomCutmix(Transform):
-    _DISPATCHER = F.cutmix
-    _FAIL_TYPES = {features.BoundingBox, features.SegmentationMask}
-
     def __init__(self, *, alpha: float) -> None:
         super().__init__()
         self.alpha = alpha
@@ -125,7 +138,7 @@ class RandomCutmix(Transform):
         lam = float(self._dist.sample(()))
 
         image = query_image(sample)
-        H, W = F.get_image_size(image)
+        W, H = F.get_image_size(image)
 
         r_x = torch.randint(W, ())
         r_y = torch.randint(H, ())
@@ -143,3 +156,15 @@ class RandomCutmix(Transform):
         lam_adjusted = float(1.0 - (x2 - x1) * (y2 - y1) / (W * H))
 
         return dict(box=box, lam_adjusted=lam_adjusted)
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
+            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
+        elif isinstance(input, features.Image):
+            output = F.cutmix_image_tensor(input, box=params["box"])
+            return features.Image.new_like(input, output)
+        elif isinstance(input, features.OneHotLabel):
+            output = F.cutmix_one_hot_label(input, lam_adjusted=params["lam_adjusted"])
+            return features.OneHotLabel.new_like(input, output)
+        else:
+            return input
