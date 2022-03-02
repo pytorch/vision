@@ -1,4 +1,4 @@
-from typing import Any
+from typing import Any, Optional, List
 
 import torch
 
@@ -37,14 +37,26 @@ class RandomApply(Transform):
 
 
 class RandomChoice(Transform):
-    def __init__(self, *transforms: Transform) -> None:
+    def __init__(self, *transforms: Transform, probabilities: Optional[List[float]] = None) -> None:
+        if probabilities is None:
+            probabilities = [1] * len(transforms)
+        elif len(probabilities) != len(transforms):
+            raise ValueError(
+                f"The number of probabilities doesn't match the number of transforms: "
+                f"{len(probabilities)} != {len(transforms)}"
+            )
+
         super().__init__()
+
         self.transforms = transforms
         for idx, transform in enumerate(transforms):
             self.add_module(str(idx), transform)
 
+        total = sum(probabilities)
+        self.probabilities = [p / total for p in probabilities]
+
     def forward(self, *inputs: Any) -> Any:
-        idx = int(torch.randint(len(self.transforms), size=()))
+        idx = int(torch.multinomial(torch.tensor(self.probabilities), 1))
         transform = self.transforms[idx]
         return transform(*inputs)
 

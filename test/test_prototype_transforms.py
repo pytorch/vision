@@ -114,6 +114,7 @@ class TestSmoke:
                 transforms.RandAugment(),
                 transforms.TrivialAugmentWide(),
                 transforms.AutoAugment(),
+                transforms.AugMix(),
             )
         ]
     )
@@ -125,7 +126,7 @@ class TestSmoke:
             (
                 transforms.Normalize(mean=[0.0, 0.0, 0.0], std=[1.0, 1.0, 1.0]),
                 itertools.chain.from_iterable(
-                    fn(color_spaces=["rgb"], dtypes=[torch.float32])
+                    fn(color_spaces=[features.ColorSpace.RGB], dtypes=[torch.float32])
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,

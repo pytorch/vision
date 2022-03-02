@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Tuple, Union, Optional
 
 import torch
-from torchvision.prototype.utils._internal import StrEnum
+from torchvision._utils import StrEnum
 
 from ._feature import _Feature
 
@@ -30,7 +30,7 @@ class BoundingBox(_Feature):
         bounding_box = super().__new__(cls, data, dtype=dtype, device=device)
 
         if isinstance(format, str):
-            format = BoundingBoxFormat[format]
+            format = BoundingBoxFormat.from_str(format.upper())
 
         bounding_box._metadata.update(dict(format=format, image_size=image_size))
 
