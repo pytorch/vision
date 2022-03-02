@@ -880,7 +880,12 @@ def celeba(info, root, config):
 
 @register_mock
 def country211(info, root, config):
-    split_folder = pathlib.Path(root, "country211", config["split"])
+    split_name_mapper = {
+        "train": "train",
+        "val": "valid",
+        "test": "test",
+    }
+    split_folder = pathlib.Path(root, "country211", split_name_mapper[config["split"]])
     split_folder.mkdir(parents=True, exist_ok=True)
 
     num_examples = {
