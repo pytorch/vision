@@ -48,8 +48,17 @@ __all__ = [
 class StrEnumMeta(enum.EnumMeta):
     auto = enum.auto
 
-    def __getitem__(self, item):
-        return super().__getitem__(item.upper() if isinstance(item, str) else item)
+    def from_str(self, member: str):
+        try:
+            return self[member]
+        except KeyError:
+            raise ValueError(
+                add_suggestion(
+                    f"Unknown value '{member}' for {self.__name__}.",
+                    word=member,
+                    possibilities=list(self.__members__.keys()),
+                )
+            ) from None
 
 
 class StrEnum(enum.Enum, metaclass=StrEnumMeta):

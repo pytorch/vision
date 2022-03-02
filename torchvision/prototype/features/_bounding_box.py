@@ -30,7 +30,7 @@ class BoundingBox(_Feature):
         bounding_box = super().__new__(cls, data, dtype=dtype, device=device)
 
         if isinstance(format, str):
-            format = BoundingBoxFormat[format]
+            format = BoundingBoxFormat.from_str(format.upper())
 
         bounding_box._metadata.update(dict(format=format, image_size=image_size))
 
