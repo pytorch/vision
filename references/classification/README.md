@@ -124,12 +124,14 @@ torchrun --nproc_per_node=8 train.py \
 --train-crop-size $TRAIN_SIZE --model-ema --val-crop-size $EVAL_SIZE --val-resize-size $EVAL_SIZE \
 --ra-sampler --ra-reps 4
 ```
-Here `$MODEL` is one of `efficientnet_v2_s`, `efficientnet_v2_m` and `efficientnet_v2_l`. 
-Note that the Small variant had a `$TRAIN_SIZE` of `300` and a `$EVAL_SIZE` of `384`, while the other variants `384` and `480` respectively.
+Here `$MODEL` is one of `efficientnet_v2_s` and `efficientnet_v2_m`. 
+Note that the Small variant had a `$TRAIN_SIZE` of `300` and a `$EVAL_SIZE` of `384`, while the Medium `384` and `480` respectively.
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
-For generatring the pre-trained weights, we trained with 8 nodes, each with 8 GPUs (for a total of 64 GPUs),
-and `--batch_size 16`.
+For generatring the pre-trained weights, we trained with 4 nodes, each with 8 GPUs (for a total of 32 GPUs),
+and `--batch_size 32`.
+
+The weights of the Large variant are ported from the original paper rather than trained from scratch. See the `EfficientNet_V2_L_Weights` entry for their exact preprocessing transforms.
 
 
 ### RegNet

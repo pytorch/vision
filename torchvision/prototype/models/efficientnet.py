@@ -236,11 +236,45 @@ class EfficientNet_V2_S_Weights(WeightsEnum):
 
 
 class EfficientNet_V2_M_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_v2_m-dc08266a.pth",
+        transforms=partial(
+            ImageNetEval,
+            crop_size=480,
+            resize_size=480,
+            interpolation=InterpolationMode.BILINEAR,
+        ),
+        meta={
+            **_COMMON_META_V2,
+            "num_params": 54139356,
+            "size": (480, 480),
+            "acc@1": 85.119,
+            "acc@5": 97.151,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class EfficientNet_V2_L_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_v2_l-59c71312.pth",
+        transforms=partial(
+            ImageNetEval,
+            crop_size=480,
+            resize_size=480,
+            interpolation=InterpolationMode.BICUBIC,
+            mean=(0.5, 0.5, 0.5),
+            std=(0.5, 0.5, 0.5),
+        ),
+        meta={
+            **_COMMON_META_V2,
+            "num_params": 118515272,
+            "size": (480, 480),
+            "acc@1": 85.808,
+            "acc@5": 97.788,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B0_Weights.IMAGENET1K_V1))
@@ -365,7 +399,7 @@ def efficientnet_v2_s(
     )
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", EfficientNet_V2_M_Weights.IMAGENET1K_V1))
 def efficientnet_v2_m(
     *, weights: Optional[EfficientNet_V2_M_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
@@ -383,7 +417,7 @@ def efficientnet_v2_m(
     )
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", EfficientNet_V2_L_Weights.IMAGENET1K_V1))
 def efficientnet_v2_l(
     *, weights: Optional[EfficientNet_V2_L_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
