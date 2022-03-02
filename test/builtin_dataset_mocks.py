@@ -885,7 +885,7 @@ def country211(info, root, config):
 
     num_examples = {
         "train": 3,
-        "valid": 4,
+        "val": 4,
         "test": 5,
     }[config["split"]]
 
