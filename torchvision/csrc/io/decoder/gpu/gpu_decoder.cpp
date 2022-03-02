@@ -29,8 +29,7 @@ torch::Tensor GPUDecoder::decode() {
   unsigned long videoBytes = 0;
   uint8_t* video = nullptr;
   at::cuda::CUDAGuard device_guard(device);
-  auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
-  torch::Tensor frame = torch::zeros({0}, options);
+  torch::Tensor frame;
   do {
     demuxer.demux(&video, &videoBytes);
     decoder.decode(video, videoBytes);
