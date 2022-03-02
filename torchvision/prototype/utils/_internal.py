@@ -25,6 +25,7 @@ from typing import (
     TypeVar,
     Union,
     Optional,
+    Type,
 )
 
 import numpy as np
@@ -301,13 +302,42 @@ class ReadOnlyTensorBuffer:
         return self._memory[slice(cursor, self.seek(offset, whence))].tobytes()
 
 
-def apply_recursively(fn: Callable, obj: Any) -> Any:
+def apply_recursively(
+    fn: Callable,
+    obj: Any,
+    *,
+    include_sequence_types: Collection[Type] = (collections.abc.Sequence,),
     # We explicitly exclude str's here since they are self-referential and would cause an infinite recursion loop:
     # "a" == "a"[0][0]...
-    if isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
-        return [apply_recursively(fn, item) for item in obj]
-    elif isinstance(obj, collections.abc.Mapping):
-        return {key: apply_recursively(fn, item) for key, item in obj.items()}
+    exclude_sequence_types: Collection[Type] = (str,),
+    include_mapping_types: Collection[Type] = (collections.abc.Mapping,),
+    exclude_mapping_types: Collection[Type] = (),
+) -> Any:
+    if isinstance(obj, tuple(include_sequence_types)) and not isinstance(obj, tuple(exclude_sequence_types)):
+        return [
+            apply_recursively(
+                fn,
+                item,
+                include_sequence_types=include_sequence_types,
+                exclude_sequence_types=exclude_sequence_types,
+                include_mapping_types=include_mapping_types,
+                exclude_mapping_types=exclude_mapping_types,
+            )
+            for item in obj
+        ]
+
+    if isinstance(obj, tuple(include_mapping_types)) and not isinstance(obj, tuple(exclude_mapping_types)):
+        return {
+            key: apply_recursively(
+                fn,
+                item,
+                include_sequence_types=include_sequence_types,
+                exclude_sequence_types=exclude_sequence_types,
+                include_mapping_types=include_mapping_types,
+                exclude_mapping_types=exclude_mapping_types,
+            )
+            for key, item in obj.items()
+        }
     else:
         return fn(obj)
 

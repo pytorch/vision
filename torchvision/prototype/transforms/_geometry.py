@@ -1,3 +1,4 @@
+import functools
 import math
 import warnings
 from typing import Any, Dict, List, Union, Sequence, Tuple, cast
@@ -6,6 +7,8 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
+from torchvision.prototype.utils._internal import apply_recursively
+from torchvision.transforms.functional import pil_to_tensor
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
 from ._utils import query_image, get_image_dimensions, has_any
@@ -168,3 +171,77 @@ class RandomResizedCrop(Transform):
         if has_any(sample, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
         return super().forward(sample)
+
+
+class FiveCrop(Transform):
+    def __init__(self, size: Union[int, Sequence[int]]) -> None:
+        super().__init__()
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image):
+            output = F.five_crop_image_tensor(input, self.size)
+            return F._FiveCropResult(*[features.Image.new_like(input, o) for o in output])
+        elif type(input) is torch.Tensor:
+            return F.five_crop_image_tensor(input, self.size)
+        elif isinstance(input, PIL.Image.Image):
+            return F.five_crop_image_pil(input, self.size)
+        else:
+            return input
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if has_any(sample, features.BoundingBox, features.SegmentationMask):
+            raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
+        return super().forward(sample)
+
+
+class TenCrop(Transform):
+    def __init__(self, size: Union[int, Sequence[int]], vertical_flip: bool = False) -> None:
+        super().__init__()
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+        self.vertical_flip = vertical_flip
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image):
+            output = F.ten_crop_image_tensor(input, self.size, vertical_flip=self.vertical_flip)
+            return F._TenCropResult(*[features.Image.new_like(input, o) for o in output])
+        elif type(input) is torch.Tensor:
+            return F.ten_crop_image_tensor(input, self.size)
+        elif isinstance(input, PIL.Image.Image):
+            return F.five_crop_image_pil(input, self.size)
+        else:
+            return input
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if has_any(sample, features.BoundingBox, features.SegmentationMask):
+            raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
+        return super().forward(sample)
+
+
+class BatchMultiCrop(Transform):
+    _MULTI_CROP_TYPES = (F._FiveCropResult, F._TenCropResult)
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, self._MULTI_CROP_TYPES):
+            crops = input
+            if isinstance(input[0], PIL.Image.Image):
+                crops = [pil_to_tensor(crop) for crop in crops]  # type: ignore[assignment]
+
+            batch = torch.stack(crops)
+
+            if isinstance(input[0], features.Image):
+                batch = features.Image.new_like(input[0], batch)
+
+            return batch
+        else:
+            return input
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        return apply_recursively(
+            functools.partial(self._transform, params=self._get_params(sample)),
+            sample,
+            exclude_sequence_types=(str, *self._MULTI_CROP_TYPES),
+        )

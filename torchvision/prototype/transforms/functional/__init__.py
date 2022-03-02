@@ -60,6 +60,12 @@ from ._geometry import (
     perspective_image_pil,
     vertical_flip_image_tensor,
     vertical_flip_image_pil,
+    _FiveCropResult,
+    five_crop_image_tensor,
+    five_crop_image_pil,
+    _TenCropResult,
+    ten_crop_image_tensor,
+    ten_crop_image_pil,
 )
 from ._misc import normalize_image_tensor, gaussian_blur_image_tensor
 from ._type_conversion import decode_image_with_pil, decode_video_with_av, label_to_one_hot
