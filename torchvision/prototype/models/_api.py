@@ -3,8 +3,9 @@ import inspect
 import sys
 from collections import OrderedDict
 from dataclasses import dataclass, fields
-from enum import Enum
 from typing import Any, Callable, Dict
+
+from torchvision.prototype.utils._internal import StrEnum
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 
@@ -34,7 +35,7 @@ class Weights:
     meta: Dict[str, Any]
 
 
-class WeightsEnum(Enum):
+class WeightsEnum(StrEnum):
     """
     This class is the parent class of all model weights. Each model building method receives an optional `weights`
     parameter with its associated pre-trained weights. It inherits from `Enum` and its values should be of type
@@ -57,12 +58,6 @@ class WeightsEnum(Enum):
                     f"Invalid Weight class provided; expected {cls.__name__} but received {obj.__class__.__name__}."
                 )
         return obj
-
-    @classmethod
-    def from_str(cls, value: str) -> "WeightsEnum":
-        if value in cls.__members__:
-            return cls.__members__[value]
-        raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
 
     def get_state_dict(self, progress: bool) -> OrderedDict:
         return load_state_dict_from_url(self.url, progress=progress)
