@@ -4,7 +4,7 @@ import warnings
 from typing import Any, Optional, Union, Tuple, cast
 
 import torch
-from torchvision.prototype.utils._internal import StrEnum
+from torchvision._utils import StrEnum
 from torchvision.transforms.functional import to_pil_image
 from torchvision.utils import draw_bounding_boxes
 from torchvision.utils import make_grid

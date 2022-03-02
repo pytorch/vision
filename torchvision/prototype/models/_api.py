@@ -5,7 +5,7 @@ from collections import OrderedDict
 from dataclasses import dataclass, fields
 from typing import Any, Callable, Dict
 
-from torchvision.prototype.utils._internal import StrEnum
+from torchvision._utils import StrEnum
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 
