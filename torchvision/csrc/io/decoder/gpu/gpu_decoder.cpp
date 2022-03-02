@@ -3,9 +3,10 @@
 
 /* Set cuda device, create cuda context and initialise the demuxer and decoder.
  */
-GPUDecoder::GPUDecoder(std::string src_file, int64_t dev)
-    : demuxer(src_file.c_str()), device(dev) {
-  at::cuda::CUDAGuard device_guard(device);
+GPUDecoder::GPUDecoder(std::string src_file, torch::Device dev)
+    : demuxer(src_file.c_str()) {
+  at::cuda::CUDAGuard device_guard(dev);
+  device = device_guard.current_device().index();
   check_for_cuda_errors(
       cuDevicePrimaryCtxRetain(&ctx, device), __LINE__, __FILE__);
   decoder.init(ctx, ffmpeg_to_codec(demuxer.get_video_codec()));
@@ -28,8 +29,7 @@ torch::Tensor GPUDecoder::decode() {
   unsigned long videoBytes = 0;
   uint8_t* video = nullptr;
   at::cuda::CUDAGuard device_guard(device);
-  auto options = torch::TensorOptions().dtype(torch::kU8).device(torch::kCUDA);
-  torch::Tensor frame = torch::zeros({0}, options);
+  torch::Tensor frame;
   do {
     demuxer.demux(&video, &videoBytes);
     decoder.decode(video, videoBytes);
@@ -58,7 +58,7 @@ c10::Dict<std::string, c10::Dict<std::string, double>> GPUDecoder::
 
 TORCH_LIBRARY(torchvision, m) {
   m.class_<GPUDecoder>("GPUDecoder")
-      .def(torch::init<std::string, int64_t>())
+      .def(torch::init<std::string, torch::Device>())
       .def("seek", &GPUDecoder::seek)
       .def("get_metadata", &GPUDecoder::get_metadata)
       .def("next", &GPUDecoder::decode);
