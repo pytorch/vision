@@ -46,6 +46,7 @@ test_videos = {
     "R6llTwEh07w.mp4": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
     "SOX5yA1l24A.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
     "WUzgd7C1pWA.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
+    # "test_segfault.avi": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
 }
 
 
@@ -64,7 +65,7 @@ class TestVideoApi:
                     av_pts, vr_pts = [], []
                     # get av frames
                     for av_frame in av_reader.decode(av_reader.streams.video[0]):
-                        av_frames.append(torch.tensor(av_frame.to_rgb().to_ndarray()).permute(2, 0, 1))
+                        av_frames.append(torch.tensor(av_frame.to_rgb().to_ndarray(), dtype=torch.uint8).permute(2, 0, 1))
                         av_pts.append(av_frame.pts * av_frame.time_base)
 
                     # get vr frames
@@ -98,7 +99,7 @@ class TestVideoApi:
                     av_pts, vr_pts = [], []
                     # get av frames
                     for av_frame in av_reader.decode(av_reader.streams.audio[0]):
-                        av_frames.append(torch.tensor(av_frame.to_ndarray()).permute(1, 0))
+                        av_frames.append(torch.tensor(av_frame.to_ndarray(), dtype=torch.float32).permute(1, 0))
                         av_pts.append(av_frame.pts * av_frame.time_base)
                     av_reader.close()
 

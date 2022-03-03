@@ -116,7 +116,7 @@ def write_video(
             audio_sample_fmt = container.streams.audio[0].format.name
 
             format_dtype = np.dtype(audio_format_dtypes[audio_sample_fmt])
-            audio_array = torch.as_tensor(audio_array).numpy().astype(format_dtype)
+            audio_array = torch.as_tensor(audio_array, dtype=torch.float32).numpy().astype(format_dtype)
 
             frame = av.AudioFrame.from_ndarray(audio_array, format=audio_sample_fmt, layout=audio_layout)
 
@@ -327,13 +327,13 @@ def read_video(
     aframes_list = [frame.to_ndarray() for frame in audio_frames]
 
     if vframes_list:
-        vframes = torch.as_tensor(np.stack(vframes_list))
+        vframes = torch.as_tensor(np.stack(vframes_list), dtype=torch.uint8)
     else:
         vframes = torch.empty((0, 1, 1, 3), dtype=torch.uint8)
 
     if aframes_list:
         aframes = np.concatenate(aframes_list, 1)
-        aframes = torch.as_tensor(aframes)
+        aframes = torch.as_tensor(aframes, dtype=torch.float32)
         if pts_unit == "sec":
             start_pts = int(math.floor(start_pts * (1 / audio_timebase)))
             if end_pts != float("inf"):
