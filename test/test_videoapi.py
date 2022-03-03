@@ -46,7 +46,8 @@ test_videos = {
     "R6llTwEh07w.mp4": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
     "SOX5yA1l24A.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
     "WUzgd7C1pWA.mp4": GroundTruth(duration=11.0, video_fps=29.97, audio_sample_rate=48000),
-    # "test_segfault.avi": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
+    "test_segfault.avi": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
+    "test_segfault2.mp4": GroundTruth(duration=8.5, video_fps=29.97, audio_sample_rate=44100),
 }
 
 

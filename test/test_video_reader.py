@@ -104,6 +104,8 @@ test_videos = {
         check_aframes=False,
         check_aframe_pts=False,
     ),
+    "test_segfault.avi": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
+    "test_segfault2.mp4": GroundTruth(duration=8.5, video_fps=29.97, audio_sample_rate=44100),
 }
 
 
@@ -215,14 +217,14 @@ def _decode_frames_by_av_module(
 
     container.close()
     vframes = [frame.to_rgb().to_ndarray() for frame in video_frames]
-    vframes = torch.as_tensor(np.stack(vframes))
+    vframes = torch.as_tensor(np.stack(vframes), dtype=torch.uint8)
 
     vframe_pts = torch.tensor([frame.pts for frame in video_frames], dtype=torch.int64)
 
     aframes = [frame.to_ndarray() for frame in audio_frames]
     if aframes:
         aframes = np.transpose(np.concatenate(aframes, axis=1))
-        aframes = torch.as_tensor(aframes)
+        aframes = torch.as_tensor(aframes, dtype=torch.float32)
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
 
