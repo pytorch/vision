@@ -104,8 +104,20 @@ test_videos = {
         check_aframes=False,
         check_aframe_pts=False,
     ),
-    "test_segfault.avi": GroundTruth(duration=10.0, video_fps=30.0, audio_sample_rate=44100),
-    "test_segfault2.mp4": GroundTruth(duration=8.5, video_fps=29.97, audio_sample_rate=44100),
+    "test_segfault.avi": GroundTruth(
+        duration=10.0,
+        video_fps=30.0,
+        audio_sample_rate=44100,
+        check_aframes=False,
+        check_aframe_pts=False,
+    ),
+    "test_segfault2.mp4": GroundTruth(
+        duration=8.5,
+        video_fps=29.97,
+        audio_sample_rate=44100,
+        check_aframes=False,
+        check_aframe_pts=False,
+    ),
 }
 
 
