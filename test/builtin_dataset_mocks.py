@@ -1328,6 +1328,24 @@ def cub200(info, root, config):
 
 
 @register_mock
+def eurosat(info, root, config):
+    data_folder = pathlib.Path(root, "eurosat", "2750")
+    data_folder.mkdir(parents=True)
+
+    num_examples_per_class = 3
+    classes = ("AnnualCrop", "Forest")
+    for cls in classes:
+        create_image_folder(
+            root=data_folder,
+            name=cls,
+            file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+            num_examples=num_examples_per_class,
+        )
+    make_zip(root, "EuroSAT.zip", data_folder)
+    return len(classes) * num_examples_per_class
+
+
+@register_mock
 def svhn(info, root, config):
     import scipy.io as sio
 
