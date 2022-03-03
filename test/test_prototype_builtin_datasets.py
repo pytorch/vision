@@ -34,6 +34,7 @@ def test_coverage():
         )
 
 
+@pytest.mark.filterwarnings("error")
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, test_home, dataset_mock, config):

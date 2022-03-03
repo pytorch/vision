@@ -9,6 +9,7 @@ import lzma
 import pathlib
 import pickle
 import random
+import warnings
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 
@@ -469,7 +470,10 @@ def imagenet(info, root, config):
         ]
         num_children = 1
         synsets.extend((0, "", "", "", num_children, [], 0, 0) for _ in range(5))
-        savemat(data_root / "meta.mat", dict(synsets=synsets))
+        with warnings.catch_warnings():
+            # The warning is not for savemat, but rather for some internals savemet is using
+            warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+            savemat(data_root / "meta.mat", dict(synsets=synsets))
 
         make_tar(root, devkit_root.with_suffix(".tar.gz").name, compression="gz")
     else:  # config.split == "test"
