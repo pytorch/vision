@@ -1,9 +1,21 @@
-from typing import Any, Dict, List
-
+from typing import Any, Dict, List,Tuple,Iterator
+import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper, IterKeyZipper
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat, getitem
 from torchvision.prototype.features import BoundingBox, EncodedImage
+
+
+class _StanfordLabelReader(IterDataPipe[Tuple[np.ndarray, int]]): 
+    def __init__(self, datapipe: IterDataPipe[Dict[str, Any]]) -> None:
+        self.datapipe = datapipe
+
+    def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
+        for _, file in self.datapipe:
+            file = iter(read_mat(file,squeeze_me=True)["annotations"])
+            for line in file:
+                yield line
+
 
 
 class StanfordCars(Dataset):
@@ -26,10 +38,10 @@ class StanfordCars(Dataset):
     }
 
     _CHECKSUM = {
-        "train": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
+        "train": "b97deb463af7d58b6bfaa18b2a4de9829f0f79e8ce663dfa9261bf7810e9accd",
         "test": "bffea656d6f425cba3c91c6d83336e4c5f86c6cffd8975b0f375d3a10da8e243",
-        "test_ground_truth": "790f75be8ea34eeded134cc559332baf23e30e91367e9ddca97d26ed9b895f05",
-        "devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
+        "": "790f75be8ea34eeded134cc559332baf23e30e91367e9ddca97d26ed9b895f05",
+        "": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -44,26 +56,24 @@ class StanfordCars(Dataset):
     def _prepare_sample(self, data):
         image, target = data
         image_path, image_buffer = image
-        labels_path, labels_buffer = target
-
         image = EncodedImage.from_file(image_buffer)
-        labels = read_mat(labels_buffer, squeeze_me=True)["annotations"]
         index = image_path[-9:-4]
         index = int(image_path[-9:-4]) - 1
+    
 
         return dict(
             index=index,
             image_path=image_path,
+            index1=target[-1],
             image=image,
-            labels_path=labels_path,
-            classification_label=labels["class"][index] - 1,
+            classification_label=target[4] - 1,
             bounding_box=BoundingBox(
                 [
-                    labels["bbox_x1"][index],
-                    labels["bbox_y1"][index],
-                    labels["bbox_x2"][index],
-                    labels["bbox_y2"][index],
-                ],
+                    target[0],
+                    target[1],
+                    target[2],
+                    target[3],
+             ],
                 format="xyxy",
                 image_size=image.image_size,
             ),
@@ -80,7 +90,8 @@ class StanfordCars(Dataset):
         images_dp, targets_dp = resource_dps
         if config.split == "train":
             targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
-
+        print(images_dp)
+        targets_dp = _StanfordLabelReader(targets_dp)
         dp = Zipper(images_dp, targets_dp)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
