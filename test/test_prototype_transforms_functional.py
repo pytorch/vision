@@ -14,8 +14,6 @@ make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
 def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32):
     size = size or torch.randint(16, 33, (2,)).tolist()
 
-    if isinstance(color_space, str):
-        color_space = features.ColorSpace[color_space]
     num_channels = {
         features.ColorSpace.GRAYSCALE: 1,
         features.ColorSpace.RGB: 3,

@@ -13,6 +13,9 @@ from torchvision.models.efficientnet import (
     efficientnet_b5,
     efficientnet_b6,
     efficientnet_b7,
+    efficientnet_v2_s,
+    efficientnet_v2_m,
+    efficientnet_v2_l,
 )
 from torchvision.models.googlenet import googlenet
 from torchvision.models.inception import inception_v3
