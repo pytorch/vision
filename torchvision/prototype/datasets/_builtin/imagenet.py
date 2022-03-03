@@ -3,8 +3,15 @@ import pathlib
 import re
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast
 
-from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, Filter, Demultiplexer
-from torchdata.datapipes.iter import TarArchiveReader
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    LineReader,
+    IterKeyZipper,
+    Mapper,
+    Filter,
+    Demultiplexer,
+    TarArchiveLoader,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -151,7 +158,7 @@ class ImageNet(Dataset):
 
             # the train archive is a tar of tars
             if config.split == "train":
-                dp = TarArchiveReader(dp)
+                dp = TarArchiveLoader(dp)
 
             dp = hint_sharding(dp)
             dp = hint_shuffling(dp)
