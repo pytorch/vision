@@ -8,7 +8,7 @@ from torchvision.prototype.transforms import Transform, InterpolationMode, AutoA
 from torchvision.prototype.utils._internal import query_recursively
 from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
-from ._utils import get_image_dimensions
+from ._utils import get_image_dimensions, is_tensor_image
 
 K = TypeVar("K")
 V = TypeVar("V")
@@ -89,7 +89,7 @@ class _AutoAugmentBase(Transform):
         if isinstance(input, features.Image):
             output = image_tensor_kernel(input, *args, **kwargs)
             return features.Image.new_like(input, output)
-        elif isinstance(input, torch.Tensor):
+        elif is_tensor_image(input):
             return image_tensor_kernel(input, *args, **kwargs)
         else:  # isinstance(input, PIL.Image.Image):
             return image_pil_kernel(input, *args, **kwargs)

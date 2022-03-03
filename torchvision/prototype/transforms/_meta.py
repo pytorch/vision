@@ -6,6 +6,8 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms.functional import convert_image_dtype
 
+from ._utils import is_tensor_image
+
 
 class ConvertBoundingBoxFormat(Transform):
     def __init__(self, format: Union[str, features.BoundingBoxFormat]) -> None:
@@ -15,7 +17,7 @@ class ConvertBoundingBoxFormat(Transform):
         self.format = format
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.BoundingBox:
+        if isinstance(input, features.BoundingBox):
             output = F.convert_bounding_box_format(input, old_format=input.format, new_format=params["format"])
             return features.BoundingBox.new_like(input, output, format=params["format"])
         else:
@@ -28,9 +30,11 @@ class ConvertImageDtype(Transform):
         self.dtype = dtype
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.Image:
+        if isinstance(input, features.Image):
             output = convert_image_dtype(input, dtype=self.dtype)
             return features.Image.new_like(input, output, dtype=self.dtype)
+        elif is_tensor_image(input):
+            return convert_image_dtype(input, dtype=self.dtype)
         else:
             return input
 
@@ -57,7 +61,7 @@ class ConvertImageColorSpace(Transform):
                 input, old_color_space=input.color_space, new_color_space=self.color_space
             )
             return features.Image.new_like(input, output, color_space=self.color_space)
-        elif isinstance(input, torch.Tensor):
+        elif is_tensor_image(input):
             if self.old_color_space is None:
                 raise RuntimeError(
                     f"In order to convert vanilla tensor images, `{type(self).__name__}(...)` "

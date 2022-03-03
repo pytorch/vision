@@ -6,7 +6,7 @@ from torchvision.prototype.transforms import Transform, functional as F
 
 class DecodeImage(Transform):
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.EncodedImage:
+        if isinstance(input, features.EncodedImage):
             output = F.decode_image_with_pil(input)
             return features.Image(output)
         else:
@@ -19,7 +19,7 @@ class LabelToOneHot(Transform):
         self.num_categories = num_categories
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if type(input) is features.Label:
+        if isinstance(input, features.Label):
             num_categories = self.num_categories
             if num_categories == -1 and input.categories is not None:
                 num_categories = len(input.categories)

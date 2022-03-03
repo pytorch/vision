@@ -7,7 +7,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 
-from ._utils import query_image, get_image_dimensions, has_all, has_any
+from ._utils import query_image, get_image_dimensions, has_all, has_any, is_tensor_image
 
 
 class RandomErasing(Transform):
@@ -90,7 +90,7 @@ class RandomErasing(Transform):
         if isinstance(input, features.Image):
             output = F.erase_image_tensor(input, **params)
             return features.Image.new_like(input, output)
-        elif isinstance(input, torch.Tensor):
+        elif is_tensor_image(input):
             return F.erase_image_tensor(input, **params)
         else:
             return input
