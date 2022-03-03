@@ -1,10 +1,13 @@
 import enum
+from typing import TypeVar, Type
+
+T = TypeVar("T")
 
 
 class StrEnumMeta(enum.EnumMeta):
     auto = enum.auto
 
-    def from_str(self, member: str):
+    def from_str(self: Type[T], member: str) -> T:
         try:
             return self[member]
         except KeyError:
