@@ -1,12 +1,12 @@
 from typing import Any, Dict, List,Tuple,Iterator
 import numpy as np
-from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper, IterKeyZipper
+from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat, getitem
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
 from torchvision.prototype.features import BoundingBox, EncodedImage
 
 
-class _StanfordLabelReader(IterDataPipe[Tuple[np.ndarray, int]]): 
+class _StanfordCarsLabelReader(IterDataPipe[Tuple[np.ndarray, int]]):
     def __init__(self, datapipe: IterDataPipe[Dict[str, Any]]) -> None:
         self.datapipe = datapipe
 
@@ -40,8 +40,8 @@ class StanfordCars(Dataset):
     _CHECKSUM = {
         "train": "b97deb463af7d58b6bfaa18b2a4de9829f0f79e8ce663dfa9261bf7810e9accd",
         "test": "bffea656d6f425cba3c91c6d83336e4c5f86c6cffd8975b0f375d3a10da8e243",
-        "": "790f75be8ea34eeded134cc559332baf23e30e91367e9ddca97d26ed9b895f05",
-        "": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
+        "test_ground_truth": "790f75be8ea34eeded134cc559332baf23e30e91367e9ddca97d26ed9b895f05",
+        "devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
@@ -50,6 +50,7 @@ class StanfordCars(Dataset):
             resources.append(HttpResource(self._URLS["test_ground_truth"], sha256=self._CHECKSUM["test_ground_truth"]))
         else:
             resources.append(HttpResource(url=self._URLS["devkit"], sha256=self._CHECKSUM["devkit"]))
+        
         return resources
 
     
@@ -90,8 +91,7 @@ class StanfordCars(Dataset):
         images_dp, targets_dp = resource_dps
         if config.split == "train":
             targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
-        print(images_dp)
-        targets_dp = _StanfordLabelReader(targets_dp)
+        targets_dp = _StanfordCarsLabelReader(targets_dp)
         dp = Zipper(images_dp, targets_dp)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
