@@ -4,7 +4,7 @@ import warnings
 from typing import Any, Optional, Union, Tuple, cast
 
 import torch
-from torchvision.prototype.utils._internal import StrEnum
+from torchvision._utils import StrEnum
 from torchvision.transforms.functional import to_pil_image
 from torchvision.utils import draw_bounding_boxes
 from torchvision.utils import make_grid
@@ -14,9 +14,9 @@ from ._feature import _Feature
 
 
 class ColorSpace(StrEnum):
-    OTHER = 0
-    GRAYSCALE = 1
-    RGB = 3
+    OTHER = StrEnum.auto()
+    GRAYSCALE = StrEnum.auto()
+    RGB = StrEnum.auto()
 
 
 class Image(_Feature):
@@ -37,7 +37,7 @@ class Image(_Feature):
             if color_space == ColorSpace.OTHER:
                 warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
         elif isinstance(color_space, str):
-            color_space = ColorSpace[color_space]
+            color_space = ColorSpace.from_str(color_space.upper())
 
         image._metadata.update(dict(color_space=color_space))
 
