@@ -5,7 +5,7 @@ from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
 
-from .. import mobilenet, resnet
+from .. import efficientnet, mobilenet, resnet
 from .._utils import IntermediateLayerGetter
 
 
@@ -216,3 +216,58 @@ def _mobilenet_extractor(
         )
         m.out_channels = out_channels  # type: ignore[assignment]
         return m
+
+
+def efficientnet_fpn_backbone(
+    backbone_name: str,
+    pretrained: bool,
+    norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
+    trainable_layers: int = 2,
+    returned_layers: Optional[List[int]] = None,
+    extra_blocks: ExtraFPNBlock = LastLevelMaxPool(),
+) -> nn.Module:
+    if backbone_name in [
+        "efficientnet_b5",
+        "efficientnet_b6",
+        "efficientnet_b7",
+        "efficientnet_v2_s",
+        "efficientnet_v2_m",
+        "efficientnet_v2_l",
+    ]:
+        backbone = efficientnet.__dict__[backbone_name](pretrained=pretrained)
+    else:
+        backbone = efficientnet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
+    return _efficientnet_extractor(backbone, trainable_layers, returned_layers, extra_blocks)
+
+
+def _efficientnet_extractor(
+    backbone: efficientnet.EfficientNet,
+    trainable_layers: int,
+    returned_layers: Optional[List[int]] = None,
+    extra_blocks: ExtraFPNBlock = LastLevelMaxPool(),
+) -> nn.Module:
+    backbone = backbone.features
+    # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
+    # The first and last blocks are always included because they are the C0 (conv1) and Cn.
+    stage_indices = [i for i, b in enumerate(backbone) if getattr(b[0], "out_channels", False)]
+    num_stages = len(stage_indices)
+
+    # find the index of the layer from which we wont freeze
+    if trainable_layers < 0 or trainable_layers > num_stages:
+        raise ValueError(f"Trainable layers should be in the range [0,{num_stages}], got {trainable_layers} ")
+    freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
+
+    for b in backbone[:freeze_before]:
+        for parameter in b.parameters():
+            parameter.requires_grad_(False)
+
+    out_channels = 256
+
+    if returned_layers is None:
+        returned_layers = [num_stages - 2, num_stages - 1]
+    if min(returned_layers) < 0 or max(returned_layers) >= num_stages:
+        raise ValueError(f"Each returned layer should be in the range [0,{num_stages - 1}], got {returned_layers} ")
+    return_layers = {f"{stage_indices[k]}": str(v) for v, k in enumerate(returned_layers)}
+
+    in_channels_list = [backbone[stage_indices[i]][0].out_channels for i in returned_layers]
+    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
