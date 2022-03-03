@@ -40,16 +40,16 @@ class StanfordCars(Dataset):
     _CHECKSUM = {
         "train": "b97deb463af7d58b6bfaa18b2a4de9829f0f79e8ce663dfa9261bf7810e9accd",
         "test": "bffea656d6f425cba3c91c6d83336e4c5f86c6cffd8975b0f375d3a10da8e243",
-        "test_ground_truth": "790f75be8ea34eeded134cc559332baf23e30e91367e9ddca97d26ed9b895f05",
-        "devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
+        "cars_test_annos_withlabels.mat": "790f75be8ea34eeded134cc559332baf23e30e91367e9ddca97d26ed9b895f05",
+        "car_devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         resources = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
         if config.split == "test":
-            resources.append(HttpResource(self._URLS["test_ground_truth"], sha256=self._CHECKSUM["test_ground_truth"]))
+            resources.append(HttpResource(self._URLS["cars_test_annos_withlabels"], sha256=self._CHECKSUM["cars_test_annos_withlabels"]))
         else:
-            resources.append(HttpResource(url=self._URLS["devkit"], sha256=self._CHECKSUM["devkit"]))
+            resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
         
         return resources
 
