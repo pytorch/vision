@@ -1,4 +1,5 @@
 from typing import Any, Dict, List, Tuple, Iterator
+
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
@@ -46,7 +47,11 @@ class StanfordCars(Dataset):
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         resources = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
         if config.split == "test":
-            resources.append(HttpResource(self._URLS["cars_test_annos_withlabels"], sha256=self._CHECKSUM["cars_test_annos_withlabels"]))
+            resources.append(
+                HttpResource(
+                    self._URLS["cars_test_annos_withlabels"], sha256=self._CHECKSUM["cars_test_annos_withlabels"]
+                )
+            )
         else:
             resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
             return resources
