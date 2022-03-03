@@ -1,4 +1,4 @@
-from typing import Any, Dict, List,Tuple,Iterator
+from typing import Any, Dict, List, Tuple, Iterator
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
@@ -12,10 +12,9 @@ class _StanfordCarsLabelReader(IterDataPipe[Tuple[np.ndarray, int]]):
 
     def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
         for _, file in self.datapipe:
-            file = iter(read_mat(file,squeeze_me=True)["annotations"])
+            file = iter(read_mat(file, squeeze_me=True)["annotations"])
             for line in file:
                 yield line
-
 
 
 class StanfordCars(Dataset):
@@ -50,17 +49,14 @@ class StanfordCars(Dataset):
             resources.append(HttpResource(self._URLS["cars_test_annos_withlabels"], sha256=self._CHECKSUM["cars_test_annos_withlabels"]))
         else:
             resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
-        
-        return resources
+            return resources
 
-    
     def _prepare_sample(self, data):
         image, target = data
         image_path, image_buffer = image
         image = EncodedImage.from_file(image_buffer)
         index = image_path[-9:-4]
         index = int(image_path[-9:-4]) - 1
-    
 
         return dict(
             index=index,
@@ -74,12 +70,11 @@ class StanfordCars(Dataset):
                     target[1],
                     target[2],
                     target[3],
-             ],
+                ],
                 format="xyxy",
                 image_size=image.image_size,
             ),
         )
-
 
     def _make_datapipe(
         self,
@@ -95,5 +90,4 @@ class StanfordCars(Dataset):
         dp = Zipper(images_dp, targets_dp)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        
         return Mapper(dp, self._prepare_sample)
