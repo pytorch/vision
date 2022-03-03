@@ -55,7 +55,7 @@ class CelebACSVParser(IterDataPipe[Tuple[str, Dict[str, str]]]):
                 # Some files do not include a label for the image ID column
                 if fieldnames[0] != "image_id":
                     fieldnames.insert(0, "image_id")
-            print(file)
+
             for line in csv.DictReader(file, fieldnames=fieldnames, dialect="celeba"):
                 yield line.pop("image_id"), line
 
@@ -76,7 +76,7 @@ class CelebA(Dataset):
         )
         images = GDriveResource(
             "0B7EVK8r0v71pZjFTYXZWM3FlRnM",
-            sha256="d1f6c9c2dd5a3c67a15455100a238bacbbfc0c1dd429eb87ff0283a1a7476751",
+            sha256="46fb89443c578308acf364d7d379fe1b9efb793042c0af734b6112e4fd3a8c74",
             file_name="img_align_celeba.zip",
         )
         identities = GDriveResource(
@@ -86,17 +86,17 @@ class CelebA(Dataset):
         )
         attributes = GDriveResource(
             "0B7EVK8r0v71pblRyaVFSWGxPY0U",
-            sha256="c70328321c257ff62852a8b2fdd4aca00080a87cd9ae7dca1f3978970e405444",
+            sha256="f0e5da289d5ccf75ffe8811132694922b60f2af59256ed362afa03fefba324d0",
             file_name="list_attr_celeba.txt",
         )
         bounding_boxes = GDriveResource(
             "0B7EVK8r0v71pbThiMVRxWXZ4dU0",
-            sha256="1f27aebea6e592bac525951cb13235ecfe96f0213eb5c35367659bf777796b75",
+            sha256="7487a82e57c4bb956c5445ae2df4a91ffa717e903c5fa22874ede0820c8ec41b",
             file_name="list_bbox_celeba.txt",
         )
         landmarks = GDriveResource(
             "0B7EVK8r0v71pd0FJY3Blby1HUTQ",
-            sha256="5e30bd75b4e3e0c9e9d3bc42489f163174e298c93ef3e651d6c4a9a68acf0089",
+            sha256="6c02a87569907f6db2ba99019085697596730e8129f67a3d61659f198c48d43b",
             file_name="list_landmarks_align_celeba.txt",
         )
         return [splits, images, identities, attributes, bounding_boxes, landmarks]
