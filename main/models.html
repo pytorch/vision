@@ -202,7 +202,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+e8452dd ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+9b58fca ) &#x25BC</a>
     </div>
     
 
@@ -355,7 +355,7 @@ architectures for image classification:</p>
 <li><p><a class="reference external" href="https://arxiv.org/abs/1611.05431">ResNeXt</a></p></li>
 <li><p><a class="reference internal" href="#wide-resnet">Wide ResNet</a></p></li>
 <li><p><a class="reference external" href="https://arxiv.org/abs/1807.11626">MNASNet</a></p></li>
-<li><p><a class="reference external" href="https://arxiv.org/abs/1905.11946">EfficientNet</a></p></li>
+<li><p><a class="reference external" href="https://arxiv.org/abs/1905.11946">EfficientNet</a> v1 &amp; v2</p></li>
 <li><p><a class="reference external" href="https://arxiv.org/abs/2003.13678">RegNet</a></p></li>
 <li><p><a class="reference external" href="https://arxiv.org/abs/2010.11929">VisionTransformer</a></p></li>
 <li><p><a class="reference external" href="https://arxiv.org/abs/2201.03545">ConvNeXt</a></p></li>
@@ -384,6 +384,9 @@ architectures for image classification:</p>
 <span class="n">efficientnet_b5</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b5</span><span class="p">()</span>
 <span class="n">efficientnet_b6</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b6</span><span class="p">()</span>
 <span class="n">efficientnet_b7</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b7</span><span class="p">()</span>
+<span class="n">efficientnet_v2_s</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_v2_s</span><span class="p">()</span>
+<span class="n">efficientnet_v2_m</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_v2_m</span><span class="p">()</span>
+<span class="n">efficientnet_v2_l</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_v2_l</span><span class="p">()</span>
 <span class="n">regnet_y_400mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_400mf</span><span class="p">()</span>
 <span class="n">regnet_y_800mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_800mf</span><span class="p">()</span>
 <span class="n">regnet_y_1_6gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_1_6gf</span><span class="p">()</span>
@@ -434,6 +437,9 @@ These can be constructed by passing <code class="docutils literal notranslate"><
 <span class="n">efficientnet_b5</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b5</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">efficientnet_b6</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b6</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">efficientnet_b7</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_b7</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">efficientnet_v2_s</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_v2_s</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">efficientnet_v2_m</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_v2_m</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">efficientnet_v2_l</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">efficientnet_v2_l</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">regnet_y_400mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_400mf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">regnet_y_800mf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_800mf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 <span class="n">regnet_y_1_6gf</span> <span class="o">=</span> <span class="n">models</span><span class="o">.</span><span class="n">regnet_y_1_6gf</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
@@ -673,91 +679,103 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <td><p>84.122</p></td>
 <td><p>96.908</p></td>
 </tr>
-<tr class="row-odd"><td><p>regnet_x_400mf</p></td>
+<tr class="row-odd"><td><p>EfficientNetV2-s</p></td>
+<td><p>84.228</p></td>
+<td><p>96.878</p></td>
+</tr>
+<tr class="row-even"><td><p>EfficientNetV2-m</p></td>
+<td><p>85.112</p></td>
+<td><p>97.156</p></td>
+</tr>
+<tr class="row-odd"><td><p>EfficientNetV2-l</p></td>
+<td><p>85.810</p></td>
+<td><p>97.792</p></td>
+</tr>
+<tr class="row-even"><td><p>regnet_x_400mf</p></td>
 <td><p>72.834</p></td>
 <td><p>90.950</p></td>
 </tr>
-<tr class="row-even"><td><p>regnet_x_800mf</p></td>
+<tr class="row-odd"><td><p>regnet_x_800mf</p></td>
 <td><p>75.212</p></td>
 <td><p>92.348</p></td>
 </tr>
-<tr class="row-odd"><td><p>regnet_x_1_6gf</p></td>
+<tr class="row-even"><td><p>regnet_x_1_6gf</p></td>
 <td><p>77.040</p></td>
 <td><p>93.440</p></td>
 </tr>
-<tr class="row-even"><td><p>regnet_x_3_2gf</p></td>
+<tr class="row-odd"><td><p>regnet_x_3_2gf</p></td>
 <td><p>78.364</p></td>
 <td><p>93.992</p></td>
 </tr>
-<tr class="row-odd"><td><p>regnet_x_8gf</p></td>
+<tr class="row-even"><td><p>regnet_x_8gf</p></td>
 <td><p>79.344</p></td>
 <td><p>94.686</p></td>
 </tr>
-<tr class="row-even"><td><p>regnet_x_16gf</p></td>
+<tr class="row-odd"><td><p>regnet_x_16gf</p></td>
 <td><p>80.058</p></td>
 <td><p>94.944</p></td>
 </tr>
-<tr class="row-odd"><td><p>regnet_x_32gf</p></td>
+<tr class="row-even"><td><p>regnet_x_32gf</p></td>
 <td><p>80.622</p></td>
 <td><p>95.248</p></td>
 </tr>
-<tr class="row-even"><td><p>regnet_y_400mf</p></td>
+<tr class="row-odd"><td><p>regnet_y_400mf</p></td>
 <td><p>74.046</p></td>
 <td><p>91.716</p></td>
 </tr>
-<tr class="row-odd"><td><p>regnet_y_800mf</p></td>
+<tr class="row-even"><td><p>regnet_y_800mf</p></td>
 <td><p>76.420</p></td>
 <td><p>93.136</p></td>
 </tr>
-<tr class="row-even"><td><p>regnet_y_1_6gf</p></td>
+<tr class="row-odd"><td><p>regnet_y_1_6gf</p></td>
 <td><p>77.950</p></td>
 <td><p>93.966</p></td>
 </tr>
-<tr class="row-odd"><td><p>regnet_y_3_2gf</p></td>
+<tr class="row-even"><td><p>regnet_y_3_2gf</p></td>
 <td><p>78.948</p></td>
 <td><p>94.576</p></td>
 </tr>
-<tr class="row-even"><td><p>regnet_y_8gf</p></td>
+<tr class="row-odd"><td><p>regnet_y_8gf</p></td>
 <td><p>80.032</p></td>
 <td><p>95.048</p></td>
 </tr>
-<tr class="row-odd"><td><p>regnet_y_16gf</p></td>
+<tr class="row-even"><td><p>regnet_y_16gf</p></td>
 <td><p>80.424</p></td>
 <td><p>95.240</p></td>
 </tr>
-<tr class="row-even"><td><p>regnet_y_32gf</p></td>
+<tr class="row-odd"><td><p>regnet_y_32gf</p></td>
 <td><p>80.878</p></td>
 <td><p>95.340</p></td>
 </tr>
-<tr class="row-odd"><td><p>vit_b_16</p></td>
+<tr class="row-even"><td><p>vit_b_16</p></td>
 <td><p>81.072</p></td>
 <td><p>95.318</p></td>
 </tr>
-<tr class="row-even"><td><p>vit_b_32</p></td>
+<tr class="row-odd"><td><p>vit_b_32</p></td>
 <td><p>75.912</p></td>
 <td><p>92.466</p></td>
 </tr>
-<tr class="row-odd"><td><p>vit_l_16</p></td>
+<tr class="row-even"><td><p>vit_l_16</p></td>
 <td><p>79.662</p></td>
 <td><p>94.638</p></td>
 </tr>
-<tr class="row-even"><td><p>vit_l_32</p></td>
+<tr class="row-odd"><td><p>vit_l_32</p></td>
 <td><p>76.972</p></td>
 <td><p>93.070</p></td>
 </tr>
-<tr class="row-odd"><td><p>convnext_tiny</p></td>
+<tr class="row-even"><td><p>convnext_tiny</p></td>
 <td><p>82.520</p></td>
 <td><p>96.146</p></td>
 </tr>
-<tr class="row-even"><td><p>convnext_small</p></td>
+<tr class="row-odd"><td><p>convnext_small</p></td>
 <td><p>83.616</p></td>
 <td><p>96.650</p></td>
 </tr>
-<tr class="row-odd"><td><p>convnext_base</p></td>
+<tr class="row-even"><td><p>convnext_base</p></td>
 <td><p>84.062</p></td>
 <td><p>96.870</p></td>
 </tr>
-<tr class="row-even"><td><p>convnext_large</p></td>
+<tr class="row-odd"><td><p>convnext_large</p></td>
 <td><p>84.414</p></td>
 <td><p>96.976</p></td>
 </tr>
@@ -1023,11 +1041,22 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 <td><p><p>Constructs a EfficientNet B7 architecture from <a class="reference external" href="https://arxiv.org/abs/1905.11946">“EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks”</a>.</p>
 </p></td>
 </tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.efficientnet_v2_s.html#torchvision.models.efficientnet_v2_s" title="torchvision.models.efficientnet_v2_s"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficientnet_v2_s</span></code></a>([pretrained, progress])</p></td>
+<td><p>Constructs an EfficientNetV2-S architecture from <a class="reference external" href="https://arxiv.org/abs/2104.00298">“EfficientNetV2: Smaller Models and Faster Training”</a>.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.models.efficientnet_v2_m.html#torchvision.models.efficientnet_v2_m" title="torchvision.models.efficientnet_v2_m"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficientnet_v2_m</span></code></a>([pretrained, progress])</p></td>
+<td><p><p>Constructs an EfficientNetV2-M architecture from <a class="reference external" href="https://arxiv.org/abs/2104.00298">“EfficientNetV2: Smaller Models and Faster Training”</a>.</p>
+</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.efficientnet_v2_l.html#torchvision.models.efficientnet_v2_l" title="torchvision.models.efficientnet_v2_l"><code class="xref py py-obj docutils literal notranslate"><span class="pre">efficientnet_v2_l</span></code></a>([pretrained, progress])</p></td>
+<td><p><p>Constructs an EfficientNetV2-L architecture from <a class="reference external" href="https://arxiv.org/abs/2104.00298">“EfficientNetV2: Smaller Models and Faster Training”</a>.</p>
+</p></td>
+</tr>
 </tbody>
 </table>
 </div>
-<div class="section" id="id40">
-<h3>RegNet<a class="headerlink" href="#id40" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id42">
+<h3>RegNet<a class="headerlink" href="#id42" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.regnet_y_400mf.html#torchvision.models.regnet_y_400mf" title="torchvision.models.regnet_y_400mf"><code class="xref py py-obj docutils literal notranslate"><span class="pre">regnet_y_400mf</span></code></a>([pretrained, progress])</p></td>
@@ -1092,8 +1121,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 </tbody>
 </table>
 </div>
-<div class="section" id="id55">
-<h3>VisionTransformer<a class="headerlink" href="#id55" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id57">
+<h3>VisionTransformer<a class="headerlink" href="#id57" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.vit_b_16.html#torchvision.models.vit_b_16" title="torchvision.models.vit_b_16"><code class="xref py py-obj docutils literal notranslate"><span class="pre">vit_b_16</span></code></a>([pretrained, progress])</p></td>
@@ -1114,8 +1143,8 @@ or <a class="reference external" href="https://github.com/pytorch/vision/pull/19
 </tbody>
 </table>
 </div>
-<div class="section" id="id59">
-<h3>ConvNeXt<a class="headerlink" href="#id59" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id61">
+<h3>ConvNeXt<a class="headerlink" href="#id61" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.convnext_tiny.html#torchvision.models.convnext_tiny" title="torchvision.models.convnext_tiny"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convnext_tiny</span></code></a>(*[, pretrained, progress])</p></td>
@@ -1561,8 +1590,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id63">
-<h3>Faster R-CNN<a class="headerlink" href="#id63" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id65">
+<h3>Faster R-CNN<a class="headerlink" href="#id65" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.fasterrcnn_resnet50_fpn.html#torchvision.models.detection.fasterrcnn_resnet50_fpn" title="torchvision.models.detection.fasterrcnn_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.fasterrcnn_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1577,8 +1606,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id64">
-<h3>FCOS<a class="headerlink" href="#id64" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id66">
+<h3>FCOS<a class="headerlink" href="#id66" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.fcos_resnet50_fpn.html#torchvision.models.detection.fcos_resnet50_fpn" title="torchvision.models.detection.fcos_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.fcos_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1587,8 +1616,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id65">
-<h3>RetinaNet<a class="headerlink" href="#id65" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id67">
+<h3>RetinaNet<a class="headerlink" href="#id67" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.retinanet_resnet50_fpn.html#torchvision.models.detection.retinanet_resnet50_fpn" title="torchvision.models.detection.retinanet_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.retinanet_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1597,8 +1626,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id66">
-<h3>SSD<a class="headerlink" href="#id66" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id68">
+<h3>SSD<a class="headerlink" href="#id68" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.ssd300_vgg16.html#torchvision.models.detection.ssd300_vgg16" title="torchvision.models.detection.ssd300_vgg16"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.ssd300_vgg16</span></code></a>([…])</p></td>
@@ -1607,8 +1636,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id67">
-<h3>SSDlite<a class="headerlink" href="#id67" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id69">
+<h3>SSDlite<a class="headerlink" href="#id69" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.html#torchvision.models.detection.ssdlite320_mobilenet_v3_large" title="torchvision.models.detection.ssdlite320_mobilenet_v3_large"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.ssdlite320_mobilenet_v3_large</span></code></a>([…])</p></td>
@@ -1618,8 +1647,8 @@ precision-recall.</p>
 </tbody>
 </table>
 </div>
-<div class="section" id="id70">
-<h3>Mask R-CNN<a class="headerlink" href="#id70" title="Permalink to this headline">¶</a></h3>
+<div class="section" id="id72">
+<h3>Mask R-CNN<a class="headerlink" href="#id72" title="Permalink to this headline">¶</a></h3>
 <table class="longtable docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html#torchvision.models.detection.maskrcnn_resnet50_fpn" title="torchvision.models.detection.maskrcnn_resnet50_fpn"><code class="xref py py-obj docutils literal notranslate"><span class="pre">torchvision.models.detection.maskrcnn_resnet50_fpn</span></code></a>([…])</p></td>
@@ -1791,9 +1820,9 @@ images because it assumes the video is 4d.</p>
 <li><a class="reference internal" href="#wide-resnet">Wide ResNet</a></li>
 <li><a class="reference internal" href="#id28">MNASNet</a></li>
 <li><a class="reference internal" href="#id32">EfficientNet</a></li>
-<li><a class="reference internal" href="#id40">RegNet</a></li>
-<li><a class="reference internal" href="#id55">VisionTransformer</a></li>
-<li><a class="reference internal" href="#id59">ConvNeXt</a></li>
+<li><a class="reference internal" href="#id42">RegNet</a></li>
+<li><a class="reference internal" href="#id57">VisionTransformer</a></li>
+<li><a class="reference internal" href="#id61">ConvNeXt</a></li>
 <li><a class="reference internal" href="#quantized-models">Quantized Models</a></li>
 </ul>
 </li>
@@ -1805,12 +1834,12 @@ images because it assumes the video is 4d.</p>
 </li>
 <li><a class="reference internal" href="#object-detection-instance-segmentation-and-person-keypoint-detection">Object Detection, Instance Segmentation and Person Keypoint Detection</a><ul>
 <li><a class="reference internal" href="#runtime-characteristics">Runtime characteristics</a></li>
-<li><a class="reference internal" href="#id63">Faster R-CNN</a></li>
-<li><a class="reference internal" href="#id64">FCOS</a></li>
-<li><a class="reference internal" href="#id65">RetinaNet</a></li>
-<li><a class="reference internal" href="#id66">SSD</a></li>
-<li><a class="reference internal" href="#id67">SSDlite</a></li>
-<li><a class="reference internal" href="#id70">Mask R-CNN</a></li>
+<li><a class="reference internal" href="#id65">Faster R-CNN</a></li>
+<li><a class="reference internal" href="#id66">FCOS</a></li>
+<li><a class="reference internal" href="#id67">RetinaNet</a></li>
+<li><a class="reference internal" href="#id68">SSD</a></li>
+<li><a class="reference internal" href="#id69">SSDlite</a></li>
+<li><a class="reference internal" href="#id72">Mask R-CNN</a></li>
 <li><a class="reference internal" href="#keypoint-r-cnn">Keypoint R-CNN</a></li>
 </ul>
 </li>
