@@ -23,7 +23,10 @@ def _is_pil_image(img: Any) -> bool:
 @torch.jit.unused
 def get_dimensions(img: Any) -> List[int]:
     if _is_pil_image(img):
-        channels = len(img.getbands())
+        if hasattr(img, "getbands"):
+            channels = len(img.getbands())
+        else:
+            channels = img.channels  # accimage support
         width, height = img.size
         return [channels, height, width]
     raise TypeError(f"Unexpected type {type(img)}")
@@ -39,7 +42,12 @@ def get_image_size(img: Any) -> List[int]:
 @torch.jit.unused
 def get_image_num_channels(img: Any) -> int:
     if _is_pil_image(img):
-        return len(img.getbands())
+        if hasattr(img, "getbands"):
+            channels = len(img.getbands())
+        else:
+            return img.channels  # accimage support
+
+        return channels
     raise TypeError(f"Unexpected type {type(img)}")
 
 
