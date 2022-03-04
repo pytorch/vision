@@ -1890,13 +1890,13 @@ def test_randomperspective():
         perp = transforms.RandomPerspective()
         startpoints, endpoints = perp.get_params(width, height, 0.5)
         tr_img = F.perspective(img, startpoints, endpoints)
-        tr_img2 = F.convert_image_dtype(F.pil_to_tensor(F.perspective(tr_img, endpoints, startpoints)))
-        tr_img = F.convert_image_dtype(F.pil_to_tensor(tr_img))
+        tr_img2 = F.pil_to_tensor(F.perspective(tr_img, endpoints, startpoints))
+        tr_img = F.pil_to_tensor(tr_img)
         assert img.size[0] == width
         assert img.size[1] == height
         assert torch.nn.functional.mse_loss(
-            tr_img, F.convert_image_dtype(F.pil_to_tensor(img))
-        ) + 0.3 > torch.nn.functional.mse_loss(tr_img2, F.convert_image_dtype(F.pil_to_tensor(img)))
+            tr_img.float(), F.pil_to_tensor(img).float()
+        ) + 0.3 > torch.nn.functional.mse_loss(tr_img2.float(), F.pil_to_tensor(img).float())
 
 
 @pytest.mark.parametrize("seed", range(10))
