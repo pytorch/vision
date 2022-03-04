@@ -1329,7 +1329,7 @@ def cub200(info, root, config):
 
 @register_mock
 def eurosat(info, root, config):
-    data_folder = pathlib.Path(root, "2750")
+    data_folder = root / "2750"
     data_folder.mkdir(parents=True)
 
     num_examples_per_class = 3
