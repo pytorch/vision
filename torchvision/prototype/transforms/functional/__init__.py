@@ -54,12 +54,16 @@ from ._geometry import (
     rotate_image_pil,
     pad_image_tensor,
     pad_image_pil,
+    pad_bounding_box,
     crop_image_tensor,
     crop_image_pil,
     perspective_image_tensor,
     perspective_image_pil,
     vertical_flip_image_tensor,
     vertical_flip_image_pil,
+    zoom_out_image_pil,
+    zoom_out_image_tensor,
+    zoom_out_bounding_box,
 )
 from ._misc import normalize_image_tensor, gaussian_blur_image_tensor
 from ._type_conversion import decode_image_with_pil, decode_video_with_av, label_to_one_hot

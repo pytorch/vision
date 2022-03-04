@@ -1,6 +1,6 @@
 import math
 import warnings
-from typing import Any, Dict, List, Union, Sequence, Tuple, cast
+from typing import Any, Dict, List, Union, Sequence, Tuple, cast, Optional
 
 import PIL.Image
 import torch
@@ -167,4 +167,63 @@ class RandomResizedCrop(Transform):
         sample = inputs if len(inputs) > 1 else inputs[0]
         if has_any(sample, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
+        return super().forward(sample)
+
+
+class RandomZoomOut(Transform):
+    def __init__(
+        self, fill: Optional[List[float]] = None, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
+    ) -> None:
+        super().__init__()
+
+        if fill is None:
+            fill = [0.0, 0.0, 0.0]
+        self.fill = fill
+
+        self.side_range = side_range
+        if side_range[0] < 1.0 or side_range[0] > side_range[1]:
+            raise ValueError(f"Invalid canvas side range provided {side_range}.")
+
+        self.p = p
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, orig_h, orig_w = get_image_dimensions(image)
+
+        r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
+        canvas_width = int(orig_w * r)
+        canvas_height = int(orig_h * r)
+
+        r = torch.rand(2)
+        left = int((canvas_width - orig_w) * r[0])
+        top = int((canvas_height - orig_h) * r[1])
+        right = canvas_width - (left + orig_w)
+        bottom = canvas_height - (top + orig_h)
+
+        return dict(left=left, top=top, right=right, bottom=bottom)
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image):
+            output = F.zoom_out_image_tensor(input, **params, fill=self.fill)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, torch.Tensor) and not isinstance(input, features._Feature):
+            return F.zoom_out_image_tensor(input, **params, fill=self.fill)
+        elif isinstance(input, PIL.Image.Image):
+            return F.zoom_out_image_pil(input, **params, fill=self.fill)
+        elif isinstance(input, features.BoundingBox):
+            output = F.zoom_out_bounding_box(input, **params, format=input.format)
+
+            height, width = input.image_size
+            height += params["top"] + params["bottom"]
+            width += params["left"] + params["right"]
+
+            return features.BoundingBox.new_like(input, output, image_size=(height, width))
+        else:
+            return input
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if torch.rand(1) >= self.p:
+            return sample
+
         return super().forward(sample)

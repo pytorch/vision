@@ -39,10 +39,13 @@ def _xyxy_to_cxcywh(xyxy: torch.Tensor) -> torch.Tensor:
 
 
 def convert_bounding_box_format(
-    bounding_box: torch.Tensor, *, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat
+    bounding_box: torch.Tensor, old_format: BoundingBoxFormat, new_format: BoundingBoxFormat, copy: bool = False
 ) -> torch.Tensor:
     if new_format == old_format:
-        return bounding_box.clone()
+        if copy:
+            return bounding_box.clone()
+        else:
+            return bounding_box
 
     if old_format == BoundingBoxFormat.XYWH:
         bounding_box = _xywh_to_xyxy(bounding_box)
@@ -64,10 +67,13 @@ def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
 
 
 def convert_image_color_space_tensor(
-    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
+    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = False
 ) -> torch.Tensor:
     if new_color_space == old_color_space:
-        return image.clone()
+        if copy:
+            return image.clone()
+        else:
+            return image
 
     if old_color_space == ColorSpace.GRAYSCALE:
         image = _grayscale_to_rgb_tensor(image)
@@ -83,10 +89,13 @@ def _grayscale_to_rgb_pil(grayscale: PIL.Image.Image) -> PIL.Image.Image:
 
 
 def convert_image_color_space_pil(
-    image: PIL.Image.Image, old_color_space: ColorSpace, new_color_space: ColorSpace
+    image: PIL.Image.Image, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = False
 ) -> PIL.Image.Image:
     if new_color_space == old_color_space:
-        return image.copy()
+        if copy:
+            return image.copy()
+        else:
+            return image
 
     if old_color_space == ColorSpace.GRAYSCALE:
         image = _grayscale_to_rgb_pil(image)

@@ -21,7 +21,7 @@ def horizontal_flip_bounding_box(
     shape = bounding_box.shape
 
     bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY, copy=True
     ).view(-1, 4)
 
     bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [2, 0]]
@@ -210,6 +210,47 @@ def rotate_image_pil(
 pad_image_tensor = _FT.pad
 pad_image_pil = _FP.pad
 
+
+# TODO: this was copy-pasted from _FT.pad. Use this if _FT.pad is actually defined here
+def _parse_pad_padding(padding: List[int]) -> List[int]:
+    if isinstance(padding, int):
+        if torch.jit.is_scripting():
+            # This maybe unreachable
+            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
+        pad_left = pad_right = pad_top = pad_bottom = padding
+    elif len(padding) == 1:
+        pad_left = pad_right = pad_top = pad_bottom = padding[0]
+    elif len(padding) == 2:
+        pad_left = pad_right = padding[0]
+        pad_top = pad_bottom = padding[1]
+    else:
+        pad_left = padding[0]
+        pad_top = padding[1]
+        pad_right = padding[2]
+        pad_bottom = padding[3]
+
+    return [pad_left, pad_right, pad_top, pad_bottom]
+
+
+def pad_bounding_box(
+    bounding_box: torch.Tensor, padding: List[int], format: features.BoundingBoxFormat
+) -> torch.Tensor:
+    left, _, top, _ = _parse_pad_padding(padding)
+
+    shape = bounding_box.shape
+
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY, copy=True
+    ).view(-1, 4)
+
+    bounding_box[:, 0::2] += left
+    bounding_box[:, 1::2] += top
+
+    return convert_bounding_box_format(
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+    ).view(shape)
+
+
 crop_image_tensor = _FT.crop
 crop_image_pil = _FP.crop
 
@@ -314,3 +355,46 @@ def resized_crop_image_pil(
 ) -> PIL.Image.Image:
     img = crop_image_pil(img, top, left, height, width)
     return resize_image_pil(img, size, interpolation=interpolation)
+
+
+def zoom_out_image_tensor(
+    image: torch.Tensor,
+    left: int,
+    top: int,
+    right: int,
+    bottom: int,
+    fill: List[float] = (0.0,),  # type: ignore[assignment]
+) -> torch.Tensor:
+    num_channels, height, width = get_dimensions_image_tensor(image)
+
+    # PyTorch's pad supports only integers on fill. So we need to overwrite the colour
+    output = pad_image_tensor(image, [left, top, right, bottom], fill=0, padding_mode="constant")
+
+    if not isinstance(fill, (list, tuple)):
+        fill = [fill] * num_channels
+    fill = torch.tensor(fill).to().view(-1, 1, 1)
+
+    output[..., :top, :] = fill
+    output[..., :, :left] = fill
+    output[..., (top + height) :, :] = fill
+    output[..., :, (left + width) :] = fill
+
+    return output
+
+
+def zoom_out_image_pil(
+    img: PIL.Image.Image,
+    left: int,
+    top: int,
+    right: int,
+    bottom: int,
+    fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
+) -> PIL.Image.Image:
+    fill = tuple(int(v) for v in _FP._parse_fill(fill, img, name="fill")["fill"])
+    return pad_image_pil(img, [left, top, right, bottom], fill=fill, padding_mode="constant")
+
+
+def zoom_out_bounding_box(
+    bounding_box: torch.Tensor, left: int, top: int, right: int, bottom: int, format: features.BoundingBoxFormat
+) -> torch.Tensor:
+    return pad_bounding_box(bounding_box, [left, top, right, bottom], format=format)
