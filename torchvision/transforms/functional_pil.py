@@ -26,7 +26,7 @@ def get_dimensions(img: Any) -> List[int]:
         if hasattr(img, "getbands"):
             channels = len(img.getbands())
         else:
-            channels = np.array(img).shape[2]  # accimage support
+            channels = img.channels
         width, height = img.size
         return [channels, height, width]
     raise TypeError(f"Unexpected type {type(img)}")
@@ -45,7 +45,7 @@ def get_image_num_channels(img: Any) -> int:
         if hasattr(img, "getbands"):
             return len(img.getbands())
         else:
-            return np.array(img).shape[2]  # accimage support
+            return img.channels
     raise TypeError(f"Unexpected type {type(img)}")
 
 
