@@ -335,9 +335,7 @@ jobs:
           file_or_dir: test/test_onnx.py
 
   unittest_prototype:
-    docker:
-      - image: circleci/python:3.7
-    resource_class: xlarge
+    executor: windows-cpu
     steps:
       - checkout
       - run:
@@ -357,7 +355,7 @@ jobs:
           name: Enable prototype tests
           command: echo 'export PYTORCH_TEST_WITH_PROTOTYPE=1' >> $BASH_ENV
       - run_tests_selective:
-          file_or_dir: test/test_prototype_*.py
+          file_or_dir: test/test_prototype_builtin_datasets.py
 
   binary_linux_wheel:
     <<: *binary_common
