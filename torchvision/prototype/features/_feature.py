@@ -1,4 +1,4 @@
-from typing import Any, cast, Dict, Set, TypeVar, Union, Optional, Type, Callable, Tuple, Sequence, Mapping
+from typing import Any, cast, TypeVar, Union, Optional, Type, Callable, Tuple, Sequence, Mapping
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction
@@ -8,59 +8,22 @@ F = TypeVar("F", bound="_Feature")
 
 
 class _Feature(torch.Tensor):
-    _META_ATTRS: Set[str] = set()
-    _metadata: Dict[str, Any]
-
-    def __init_subclass__(cls) -> None:
-        """
-        For convenient copying of metadata, we store it inside a dictionary rather than multiple individual attributes.
-        By adding the metadata attributes as class annotations on subclasses of :class:`Feature`, this method adds
-        properties to have the same convenient access as regular attributes.
-
-        >>> class Foo(_Feature):
-        ...     bar: str
-        ...     baz: Optional[str]
-        >>> foo = Foo()
-        >>> foo.bar
-        >>> foo.baz
-
-        This has the additional benefit that autocomplete engines and static type checkers are aware of the metadata.
-        """
-        meta_attrs = {attr for attr in cls.__annotations__.keys() - cls.__dict__.keys() if not attr.startswith("_")}
-        for super_cls in cls.__mro__[1:]:
-            if super_cls is _Feature:
-                break
-
-            meta_attrs.update(cast(Type[_Feature], super_cls)._META_ATTRS)
-
-        cls._META_ATTRS = meta_attrs
-        for name in meta_attrs:
-            setattr(cls, name, property(cast(Callable[[F], Any], lambda self, name=name: self._metadata[name])))
-
     def __new__(
         cls: Type[F],
         data: Any,
         *,
         dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[torch.device, str]] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: bool = False,
     ) -> F:
-        if isinstance(device, str):
-            device = torch.device(device)
-        feature = cast(
+        return cast(
             F,
             torch.Tensor._make_subclass(
                 cast(_TensorBase, cls),
-                cls._to_tensor(data, dtype=dtype, device=device),
-                # requires_grad
-                False,
+                torch.as_tensor(data, dtype=dtype, device=device),  # type: ignore[arg-type]
+                requires_grad,
             ),
         )
-        feature._metadata = dict()
-        return feature
-
-    @classmethod
-    def _to_tensor(self, data: Any, *, dtype: Optional[torch.dtype], device: Optional[torch.device]) -> torch.Tensor:
-        return torch.as_tensor(data, dtype=dtype, device=device)
 
     @classmethod
     def new_like(
@@ -69,12 +32,17 @@ class _Feature(torch.Tensor):
         data: Any,
         *,
         dtype: Optional[torch.dtype] = None,
-        device: Optional[Union[torch.device, str]] = None,
-        **metadata: Any,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: Optional[bool] = None,
+        **kwargs: Any,
     ) -> F:
-        _metadata = other._metadata.copy()
-        _metadata.update(metadata)
-        return cls(data, dtype=dtype or other.dtype, device=device or other.device, **_metadata)
+        return cls(
+            data,
+            dtype=dtype if dtype is not None else other.dtype,
+            device=device if device is not None else other.device,
+            requires_grad=requires_grad if requires_grad is not None else other.requires_grad,
+            **kwargs,
+        )
 
     @classmethod
     def __torch_function__(
