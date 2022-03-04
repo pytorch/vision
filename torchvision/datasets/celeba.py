@@ -32,7 +32,7 @@ class CelebA(VisionDataset):
             Defaults to ``attr``. If empty, ``None`` will be returned as target.
 
         transform (callable, optional): A function/transform that  takes in an PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         download (bool, optional): If true, downloads the dataset from the internet and

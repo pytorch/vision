@@ -76,7 +76,7 @@ def test_save_image_file_object():
         fp = BytesIO()
         utils.save_image(t, fp, format="png")
         img_bytes = Image.open(fp)
-        assert_equal(F.to_tensor(img_orig), F.to_tensor(img_bytes), msg="Image not stored in file object")
+        assert_equal(F.pil_to_tensor(img_orig), F.pil_to_tensor(img_bytes), msg="Image not stored in file object")
 
 
 @pytest.mark.skipif(sys.platform in ("win32", "cygwin"), reason="temporarily disabled on Windows")
@@ -88,7 +88,7 @@ def test_save_image_single_pixel_file_object():
         fp = BytesIO()
         utils.save_image(t, fp, format="png")
         img_bytes = Image.open(fp)
-        assert_equal(F.to_tensor(img_orig), F.to_tensor(img_bytes), msg="Image not stored in file object")
+        assert_equal(F.pil_to_tensor(img_orig), F.pil_to_tensor(img_bytes), msg="Image not stored in file object")
 
 
 def test_draw_boxes():
