@@ -43,11 +43,9 @@ def get_image_size(img: Any) -> List[int]:
 def get_image_num_channels(img: Any) -> int:
     if _is_pil_image(img):
         if hasattr(img, "getbands"):
-            channels = len(img.getbands())
+            return len(img.getbands())
         else:
             return np.array(img).shape[2]  # accimage support
-
-        return channels
     raise TypeError(f"Unexpected type {type(img)}")
 
 
