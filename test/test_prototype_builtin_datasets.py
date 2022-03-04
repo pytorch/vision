@@ -52,6 +52,8 @@ class TestCommon:
 
         try:
             sample = next(iter(dataset))
+        except StopIteration:
+            raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
             raise AssertionError("Drawing a sample raised the error above.") from error
 

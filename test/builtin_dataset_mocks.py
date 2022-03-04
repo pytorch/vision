@@ -1329,20 +1329,20 @@ def cub200(info, root, config):
 
 @register_mock
 def eurosat(info, root, config):
-    data_folder = pathlib.Path(root, "eurosat", "2750")
+    data_folder = pathlib.Path(root, "2750")
     data_folder.mkdir(parents=True)
 
     num_examples_per_class = 3
-    classes = ("AnnualCrop", "Forest")
-    for cls in classes:
+    categories = ["AnnualCrop", "Forest"]
+    for category in categories:
         create_image_folder(
             root=data_folder,
-            name=cls,
-            file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+            name=category,
+            file_name_fn=lambda idx: f"{category}_{idx + 1}.jpg",
             num_examples=num_examples_per_class,
         )
     make_zip(root, "EuroSAT.zip", data_folder)
-    return len(classes) * num_examples_per_class
+    return len(categories) * num_examples_per_class
 
 
 @register_mock
