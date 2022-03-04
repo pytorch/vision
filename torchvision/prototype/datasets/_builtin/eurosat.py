@@ -35,6 +35,7 @@ class EuroSAT(Dataset):
 
     def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
         path, buffer = data
+        print(path)
         category = pathlib.Path(path).parent.name
         return dict(
             label=Label.from_category(category, categories=self.categories),
