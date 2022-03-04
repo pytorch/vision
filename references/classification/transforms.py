@@ -141,7 +141,7 @@ class RandomCutmix(torch.nn.Module):
 
         # Implemented as on cutmix paper, page 12 (with minor corrections on typos).
         lambda_param = float(torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha]))[0])
-        W, H = F.get_image_size(batch)
+        _, H, W = F.get_dimensions(batch)
 
         r_x = torch.randint(W, (1,))
         r_y = torch.randint(H, (1,))
