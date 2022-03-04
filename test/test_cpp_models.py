@@ -30,7 +30,8 @@ def read_image1():
     )
     image = Image.open(image_path)
     image = image.resize((224, 224))
-    x = F.to_tensor(image)
+    x = F.pil_to_tensor(image)
+    x = F.convert_image_dtype(x)
     return x.view(1, 3, 224, 224)
 
 
@@ -40,7 +41,8 @@ def read_image2():
     )
     image = Image.open(image_path)
     image = image.resize((299, 299))
-    x = F.to_tensor(image)
+    x = F.pil_to_tensor(image)
+    x = F.convert_image_dtype(x)
     x = x.view(1, 3, 299, 299)
     return torch.cat([x, x], 0)
 
