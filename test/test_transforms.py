@@ -469,11 +469,10 @@ class TestPad:
         assert result.size(2) == width + 2 * padding
         # check that all elements in the padded region correspond
         # to the pad value
-        eps = 1e-5
         h_padded = result[:, :padding, :]
         w_padded = result[:, :, :padding]
-        torch.testing.assert_close(h_padded, torch.full_like(h_padded, fill_value=fill), rtol=0.0, atol=eps)
-        torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill), rtol=0.0, atol=eps)
+        torch.testing.assert_close(h_padded, torch.full_like(h_padded, fill_value=fill), rtol=0.0, atol=0.0)
+        torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill), rtol=0.0, atol=0.0)
         pytest.raises(ValueError, transforms.Pad(padding, fill=(1, 2)), transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
@@ -1890,13 +1889,13 @@ def test_randomperspective():
         perp = transforms.RandomPerspective()
         startpoints, endpoints = perp.get_params(width, height, 0.5)
         tr_img = F.perspective(img, startpoints, endpoints)
-        tr_img2 = F.pil_to_tensor(F.perspective(tr_img, endpoints, startpoints))
-        tr_img = F.pil_to_tensor(tr_img)
+        tr_img2 = F.convert_image_dtype(F.pil_to_tensor(F.perspective(tr_img, endpoints, startpoints)))
+        tr_img = F.convert_image_dtype(F.pil_to_tensor(tr_img))
         assert img.size[0] == width
         assert img.size[1] == height
         assert torch.nn.functional.mse_loss(
-            tr_img.float(), F.pil_to_tensor(img).float()
-        ) + 0.3 > torch.nn.functional.mse_loss(tr_img2.float(), F.pil_to_tensor(img).float())
+            tr_img, F.convert_image_dtype(F.pil_to_tensor(img))
+        ) + 0.3 > torch.nn.functional.mse_loss(tr_img2, F.convert_image_dtype(F.pil_to_tensor(img)))
 
 
 @pytest.mark.parametrize("seed", range(10))
