@@ -879,6 +879,34 @@ def celeba(info, root, config):
 
 
 @register_mock
+def country211(info, root, config):
+    split_name_mapper = {
+        "train": "train",
+        "val": "valid",
+        "test": "test",
+    }
+    split_folder = pathlib.Path(root, "country211", split_name_mapper[config["split"]])
+    split_folder.mkdir(parents=True, exist_ok=True)
+
+    num_examples = {
+        "train": 3,
+        "val": 4,
+        "test": 5,
+    }[config["split"]]
+
+    classes = ("AD", "BS", "GR")
+    for cls in classes:
+        create_image_folder(
+            split_folder,
+            name=cls,
+            file_name_fn=lambda idx: f"{idx}.jpg",
+            num_examples=num_examples,
+        )
+    make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
+    return num_examples * len(classes)
+
+
+@register_mock
 def dtd(info, root, config):
     data_folder = root / "dtd"
 
@@ -1297,6 +1325,24 @@ class CUB2002010MockData(_CUB200MockData):
 def cub200(info, root, config):
     num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
     return num_samples_map[config.split]
+
+
+@register_mock
+def eurosat(info, root, config):
+    data_folder = pathlib.Path(root, "eurosat", "2750")
+    data_folder.mkdir(parents=True)
+
+    num_examples_per_class = 3
+    classes = ("AnnualCrop", "Forest")
+    for cls in classes:
+        create_image_folder(
+            root=data_folder,
+            name=cls,
+            file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+            num_examples=num_examples_per_class,
+        )
+    make_zip(root, "EuroSAT.zip", data_folder)
+    return len(classes) * num_examples_per_class
 
 
 @register_mock

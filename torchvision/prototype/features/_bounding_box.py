@@ -3,7 +3,7 @@ from __future__ import annotations
 from typing import Any, Tuple, Union, Optional
 
 import torch
-from torchvision.prototype.utils._internal import StrEnum
+from torchvision._utils import StrEnum
 
 from ._feature import _Feature
 
@@ -22,19 +22,39 @@ class BoundingBox(_Feature):
         cls,
         data: Any,
         *,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
         format: Union[BoundingBoxFormat, str],
         image_size: Tuple[int, int],
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: bool = False,
     ) -> BoundingBox:
-        bounding_box = super().__new__(cls, data, dtype=dtype, device=device)
+        bounding_box = super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
 
         if isinstance(format, str):
-            format = BoundingBoxFormat[format]
+            format = BoundingBoxFormat.from_str(format.upper())
+        bounding_box.format = format
 
-        bounding_box._metadata.update(dict(format=format, image_size=image_size))
+        bounding_box.image_size = image_size
 
         return bounding_box
+
+    @classmethod
+    def new_like(
+        cls,
+        other: BoundingBox,
+        data: Any,
+        *,
+        format: Optional[Union[BoundingBoxFormat, str]] = None,
+        image_size: Optional[Tuple[int, int]] = None,
+        **kwargs: Any,
+    ) -> BoundingBox:
+        return super().new_like(
+            other,
+            data,
+            format=format if format is not None else other.format,
+            image_size=image_size if image_size is not None else other.image_size,
+            **kwargs,
+        )
 
     def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
