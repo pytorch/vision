@@ -48,5 +48,5 @@ def has_all(sample: Any, *types: Type) -> bool:
     return not bool(set(types) - set(_extract_types(sample)))
 
 
-def is_tensor_image(input: Any) -> bool:
+def is_simple_tensor(input: Any) -> bool:
     return isinstance(input, torch.Tensor) and not isinstance(input, features._Feature)

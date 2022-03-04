@@ -6,7 +6,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms.functional import convert_image_dtype
 
-from ._utils import is_tensor_image
+from ._utils import is_simple_tensor
 
 
 class ConvertBoundingBoxFormat(Transform):
@@ -33,7 +33,7 @@ class ConvertImageDtype(Transform):
         if isinstance(input, features.Image):
             output = convert_image_dtype(input, dtype=self.dtype)
             return features.Image.new_like(input, output, dtype=self.dtype)
-        elif is_tensor_image(input):
+        elif is_simple_tensor(input):
             return convert_image_dtype(input, dtype=self.dtype)
         else:
             return input
@@ -61,7 +61,7 @@ class ConvertImageColorSpace(Transform):
                 input, old_color_space=input.color_space, new_color_space=self.color_space
             )
             return features.Image.new_like(input, output, color_space=self.color_space)
-        elif is_tensor_image(input):
+        elif is_simple_tensor(input):
             if self.old_color_space is None:
                 raise RuntimeError(
                     f"In order to convert vanilla tensor images, `{type(self).__name__}(...)` "
