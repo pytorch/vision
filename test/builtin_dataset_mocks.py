@@ -907,6 +907,34 @@ def country211(info, root, config):
 
 
 @register_mock
+def food101(info, root, config):
+    split_name_mapper = {
+        "train": "train",
+        "val": "valid",
+        "test": "test",
+    }
+    split_folder = pathlib.Path(root, "country211", split_name_mapper[config["split"]])
+    split_folder.mkdir(parents=True, exist_ok=True)
+
+    num_examples = {
+        "train": 3,
+        "val": 4,
+        "test": 5,
+    }[config["split"]]
+
+    classes = ("AD", "BS", "GR")
+    for cls in classes:
+        create_image_folder(
+            split_folder,
+            name=cls,
+            file_name_fn=lambda idx: f"{idx}.jpg",
+            num_examples=num_examples,
+        )
+    make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
+    return num_examples * len(classes)
+
+
+@register_mock
 def dtd(info, root, config):
     data_folder = root / "dtd"
 

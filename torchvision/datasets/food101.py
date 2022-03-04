@@ -7,6 +7,8 @@ import PIL.Image
 from .utils import verify_str_arg, download_and_extract_archive
 from .vision import VisionDataset
 
+# TODO: Update with new API.
+
 
 class Food101(VisionDataset):
     """`The Food-101 Data Set <https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/>`_.
