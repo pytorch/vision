@@ -1418,7 +1418,7 @@ def stanford_cars(info, root, config):
         num_examples=num_examples,
     )
 
-    make_tar(root=base_folder, name=f"cars_{config.split}.tgz", files_or_dirs=images_folder_name)
+    make_tar(base_folder, f"cars_{config.split}.tgz", images_folder_name)
     bbox = np.random.randint(1, 200, num_examples, dtype=np.uint8)
     classes = np.random.randint(1, num_classes + 1, num_examples, dtype=np.uint8)
     fnames = [f"{i:5d}.jpg" for i in range(num_examples)]
@@ -1429,6 +1429,6 @@ def stanford_cars(info, root, config):
 
     io.savemat(annotations_mat_path, {"annotations": rec_array})
     if config.split == "train":
-        make_tar(root=base_folder, files_or_dirs=annotations_mat_path.parent)
+        make_tar(base_folder, "cars_devkit.tgz", annotations_mat_path.parent)
 
     return num_examples
