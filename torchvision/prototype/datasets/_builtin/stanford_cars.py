@@ -56,7 +56,7 @@ class StanfordCars(Dataset):
             resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
             return resources
 
-    def _prepare_sample(self, data:Tuple(IterDataPipe)) -> Dict(str, Any):
+    def _prepare_sample(self, data: Tuple(IterDataPipe)) -> Dict(str, Any):
         image, target = data
         image_path, image_buffer = image
         image = EncodedImage.from_file(image_buffer)
