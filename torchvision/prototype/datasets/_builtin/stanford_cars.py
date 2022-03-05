@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple, Iterator
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
 from torchvision.prototype.features import BoundingBox, EncodedImage
 
@@ -33,14 +33,14 @@ class StanfordCars(Dataset):
     _URLS = {
         "train": f"{_URL_ROOT}car196/cars_train.tgz",
         "test": f"{_URL_ROOT}car196/cars_test.tgz",
-        "test_ground_truth": f"{_URL_ROOT}car196/cars_test_annos_withlabels.mat",
-        "devkit": f"{_URL_ROOT}cars/car_devkit.tgz",
+        "cars_test_annos_withlabels": f"{_URL_ROOT}car196/cars_test_annos_withlabels.mat",
+        "car_devkit": f"{_URL_ROOT}cars/car_devkit.tgz",
     }
 
     _CHECKSUM = {
         "train": "b97deb463af7d58b6bfaa18b2a4de9829f0f79e8ce663dfa9261bf7810e9accd",
         "test": "bffea656d6f425cba3c91c6d83336e4c5f86c6cffd8975b0f375d3a10da8e243",
-        "cars_test_annos_withlabels.mat": "790f75be8ea34eeded134cc559332baf23e30e91367e9ddca97d26ed9b895f05",
+        "cars_test_annos_withlabels": "790f75be8ea34eeded134cc559332baf23e30e91367e9ddca97d26ed9b895f05",
         "car_devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
@@ -54,11 +54,13 @@ class StanfordCars(Dataset):
             )
         else:
             resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
-            return resources
+        
+        return resources
 
     def _prepare_sample(self, data: Tuple[IterDataPipe]) -> Dict[str, Any]:
         image, target = data
         image_path, image_buffer = image
+        print(type(image_path),type(image_buffer))
         image = EncodedImage.from_file(image_buffer)
         index = image_path[-9:-4]
         index = int(image_path[-9:-4]) - 1

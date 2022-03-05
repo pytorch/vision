@@ -1393,7 +1393,7 @@ def pcam(info, root, config):
 
 
 @register_mock
-def stanford_cars_test(info, root, config):
+def stanford_cars(info, root, config):
     import scipy.io as io
     from np.core.records import fromarrays
 
