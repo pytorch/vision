@@ -1429,6 +1429,6 @@ def stanford_cars(info, root, config):
 
     io.savemat(annotations_mat_path, {"annotations": rec_array})
     if config.split == "train":
-        make_tar(base_folder, "cars_devkit.tgz", annotations_mat_path)
+        make_tar(base_folder, "cars_devkit.tgz", devkit)
 
     return num_examples
