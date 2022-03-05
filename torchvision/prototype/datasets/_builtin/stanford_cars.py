@@ -11,7 +11,7 @@ class _StanfordCarsLabelReader(IterDataPipe[Tuple[np.ndarray, int]]):
     def __init__(self, datapipe: IterDataPipe[Dict[str, Any]]) -> None:
         self.datapipe = datapipe
 
-    def __iter__(self) -> Iterator[Tuple[str, Dict[str, str]]]:
+    def __iter__(self) -> Iterator[Tuple[str]]:
         for _, file in self.datapipe:
             file = iter(read_mat(file, squeeze_me=True)["annotations"])
             for line in file:
@@ -56,7 +56,7 @@ class StanfordCars(Dataset):
             resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
             return resources
 
-    def _prepare_sample(self, data):
+    def _prepare_sample(self, data:Tuple(IterDataPipe)) -> Dict(str, Any):
         image, target = data
         image_path, image_buffer = image
         image = EncodedImage.from_file(image_buffer)
