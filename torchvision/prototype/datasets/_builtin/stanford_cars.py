@@ -44,7 +44,7 @@ class StanfordCars(Dataset):
         "car_devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
+    def resources(self, config: DatasetConfig) -> List[HttpResource]:
         resources = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
         if config.split == "test":
             resources.append(
@@ -56,7 +56,7 @@ class StanfordCars(Dataset):
             resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
             return resources
 
-    def _prepare_sample(self, data: Tuple(IterDataPipe)) -> Dict(str, Any):
+    def _prepare_sample(self, data: Tuple[IterDataPipe]) -> Dict[str, Any]:
         image, target = data
         image_path, image_buffer = image
         image = EncodedImage.from_file(image_buffer)
