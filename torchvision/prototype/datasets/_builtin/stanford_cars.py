@@ -57,7 +57,7 @@ class StanfordCars(Dataset):
 
         return resources
 
-    def _prepare_sample(self, data: Tuple[IterDataPipe, Tuple[Any]]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[IterDataPipe, Tuple[int, int, int, int, int, str]]) -> Dict[str, Any]:
         image, target = data
         image_path, image_buffer = image
         image = EncodedImage.from_file(image_buffer)

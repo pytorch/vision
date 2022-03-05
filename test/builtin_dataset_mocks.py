@@ -1399,7 +1399,7 @@ def stanford_cars(info, root, config):
 
     num_examples = {"train": 5, "test": 7}[config["split"]]
     num_classes = 3
-    base_folder = pathlib.Path(root) / "stanford-cars"
+    base_folder = pathlib.Path(root)
 
     devkit = base_folder / "devkit"
     devkit.mkdir(parents=True)
