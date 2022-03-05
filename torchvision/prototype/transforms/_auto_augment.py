@@ -1,5 +1,5 @@
 import math
-from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar, Union
+from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar, Union, Type
 
 import PIL.Image
 import torch
@@ -39,21 +39,20 @@ class _AutoAugmentBase(Transform):
         key = keys[int(torch.randint(len(keys), ()))]
         return key, dct[key]
 
-    def _check_unsupported(self, input: Any) -> None:
-        if isinstance(input, (features.BoundingBox, features.SegmentationMask)):
-            raise TypeError(f"{type(input).__name__}'s are not supported by {type(self).__name__}()")
-
     def _extract_image(
-        self, sample: Any
+        self,
+        sample: Any,
+        unsupported_types: Tuple[Type, ...] = (features.BoundingBox, features.SegmentationMask),
     ) -> Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]:
         def fn(
             id: Tuple[Any, ...], input: Any
         ) -> Optional[Tuple[Tuple[Any, ...], Union[PIL.Image.Image, torch.Tensor, features.Image]]]:
             if type(input) in {torch.Tensor, features.Image} or isinstance(input, PIL.Image.Image):
                 return id, input
-
-            self._check_unsupported(input)
-            return None
+            elif isinstance(input, unsupported_types):
+                raise TypeError(f"Inputs of type {type(input).__name__} are not supported by {type(self).__name__}()")
+            else:
+                return None
 
         images = list(query_recursively(fn, sample))
         if not images:
@@ -200,29 +199,40 @@ class _AutoAugmentBase(Transform):
 
 class AutoAugment(_AutoAugmentBase):
     _AUGMENTATION_SPACE = {
-        "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
-        "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
-        "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        "TranslateX": (
+            lambda num_bins, height, width: torch.linspace(0.0, 150.0 / 331.0 * width, num_bins),
+            True,
+        ),
+        "TranslateY": (
+            lambda num_bins, height, width: torch.linspace(0.0, 150.0 / 331.0 * height, num_bins),
+            True,
+        ),
+        "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
+        "Brightness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Color": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Posterize": (
-            lambda num_bins, image_size: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
+            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
             .round()
             .int(),
             False,
         ),
-        "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        "AutoContrast": (lambda num_bins, image_size: None, False),
-        "Equalize": (lambda num_bins, image_size: None, False),
-        "Invert": (lambda num_bins, image_size: None, False),
+        "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
+        "AutoContrast": (lambda num_bins, height, width: None, False),
+        "Equalize": (lambda num_bins, height, width: None, False),
+        "Invert": (lambda num_bins, height, width: None, False),
     }
 
-    def __init__(self, policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        policy: AutoAugmentPolicy = AutoAugmentPolicy.IMAGENET,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ) -> None:
+        super().__init__(interpolation=interpolation, fill=fill)
         self.policy = policy
         self._policies = self._get_policies(policy)
 
@@ -331,7 +341,7 @@ class AutoAugment(_AutoAugmentBase):
 
             magnitudes_fn, signed = self._AUGMENTATION_SPACE[transform_id]
 
-            magnitudes = magnitudes_fn(10, (height, width))
+            magnitudes = magnitudes_fn(10, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[magnitude_idx])
                 if signed and torch.rand(()) <= 0.5:
@@ -348,29 +358,43 @@ class AutoAugment(_AutoAugmentBase):
 
 class RandAugment(_AutoAugmentBase):
     _AUGMENTATION_SPACE = {
-        "Identity": (lambda num_bins, image_size: None, False),
-        "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
-        "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
-        "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Identity": (lambda num_bins, height, width: None, False),
+        "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        "TranslateX": (
+            lambda num_bins, height, width: torch.linspace(0.0, 150.0 / 331.0 * width, num_bins),
+            True,
+        ),
+        "TranslateY": (
+            lambda num_bins, height, width: torch.linspace(0.0, 150.0 / 331.0 * height, num_bins),
+            True,
+        ),
+        "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
+        "Brightness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Color": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
         "Posterize": (
-            lambda num_bins, image_size: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
+            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
             .round()
             .int(),
             False,
         ),
-        "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        "AutoContrast": (lambda num_bins, image_size: None, False),
-        "Equalize": (lambda num_bins, image_size: None, False),
+        "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
+        "AutoContrast": (lambda num_bins, height, width: None, False),
+        "Equalize": (lambda num_bins, height, width: None, False),
     }
 
-    def __init__(self, *, num_ops: int = 2, magnitude: int = 9, num_magnitude_bins: int = 31, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        *,
+        num_ops: int = 2,
+        magnitude: int = 9,
+        num_magnitude_bins: int = 31,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ) -> None:
+        super().__init__(interpolation=interpolation, fill=fill)
         self.num_ops = num_ops
         self.magnitude = magnitude
         self.num_magnitude_bins = num_magnitude_bins
@@ -385,7 +409,7 @@ class RandAugment(_AutoAugmentBase):
         for _ in range(self.num_ops):
             transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
-            magnitudes = magnitudes_fn(self.num_magnitude_bins, (height, width))
+            magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
             if magnitudes is not None:
                 magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
                 if signed and torch.rand(()) <= 0.5:
@@ -402,29 +426,35 @@ class RandAugment(_AutoAugmentBase):
 
 class TrivialAugmentWide(_AutoAugmentBase):
     _AUGMENTATION_SPACE = {
-        "Identity": (lambda num_bins, image_size: None, False),
-        "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, 32.0, num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, 32.0, num_bins), True),
-        "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 135.0, num_bins), True),
-        "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
-        "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.99, num_bins), True),
+        "Identity": (lambda num_bins, height, width: None, False),
+        "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
+        "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
+        "TranslateX": (lambda num_bins, height, width: torch.linspace(0.0, 32.0, num_bins), True),
+        "TranslateY": (lambda num_bins, height, width: torch.linspace(0.0, 32.0, num_bins), True),
+        "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 135.0, num_bins), True),
+        "Brightness": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
+        "Color": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
+        "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
+        "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.99, num_bins), True),
         "Posterize": (
-            lambda num_bins, image_size: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)))
+            lambda num_bins, height, width: cast(torch.Tensor, 8 - (torch.arange(num_bins) / ((num_bins - 1) / 6)))
             .round()
             .int(),
             False,
         ),
-        "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        "AutoContrast": (lambda num_bins, image_size: None, False),
-        "Equalize": (lambda num_bins, image_size: None, False),
+        "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
+        "AutoContrast": (lambda num_bins, height, width: None, False),
+        "Equalize": (lambda num_bins, height, width: None, False),
     }
 
-    def __init__(self, *, num_magnitude_bins: int = 31, **kwargs: Any):
-        super().__init__(**kwargs)
+    def __init__(
+        self,
+        *,
+        num_magnitude_bins: int = 31,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Optional[List[float]] = None,
+    ):
+        super().__init__(interpolation=interpolation, fill=fill)
         self.num_magnitude_bins = num_magnitude_bins
 
     def forward(self, *inputs: Any) -> Any:
@@ -436,7 +466,7 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
         transform_id, (magnitudes_fn, signed) = self._get_random_item(self._AUGMENTATION_SPACE)
 
-        magnitudes = magnitudes_fn(self.num_magnitude_bins, (height, width))
+        magnitudes = magnitudes_fn(self.num_magnitude_bins, height, width)
         if magnitudes is not None:
             magnitude = float(magnitudes[int(torch.randint(self.num_magnitude_bins, ()))])
             if signed and torch.rand(()) <= 0.5:
@@ -450,27 +480,27 @@ class TrivialAugmentWide(_AutoAugmentBase):
 
 class AugMix(_AutoAugmentBase):
     _PARTIAL_AUGMENTATION_SPACE = {
-        "ShearX": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "ShearY": (lambda num_bins, image_size: torch.linspace(0.0, 0.3, num_bins), True),
-        "TranslateX": (lambda num_bins, image_size: torch.linspace(0.0, image_size[1] / 3.0, num_bins), True),
-        "TranslateY": (lambda num_bins, image_size: torch.linspace(0.0, image_size[0] / 3.0, num_bins), True),
-        "Rotate": (lambda num_bins, image_size: torch.linspace(0.0, 30.0, num_bins), True),
+        "ShearX": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        "ShearY": (lambda num_bins, height, width: torch.linspace(0.0, 0.3, num_bins), True),
+        "TranslateX": (lambda num_bins, height, width: torch.linspace(0.0, width / 3.0, num_bins), True),
+        "TranslateY": (lambda num_bins, height, width: torch.linspace(0.0, height / 3.0, num_bins), True),
+        "Rotate": (lambda num_bins, height, width: torch.linspace(0.0, 30.0, num_bins), True),
         "Posterize": (
-            lambda num_bins, image_size: cast(torch.Tensor, 4 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
+            lambda num_bins, height, width: cast(torch.Tensor, 4 - (torch.arange(num_bins) / ((num_bins - 1) / 4)))
             .round()
             .int(),
             False,
         ),
-        "Solarize": (lambda num_bins, image_size: torch.linspace(255.0, 0.0, num_bins), False),
-        "AutoContrast": (lambda num_bins, image_size: None, False),
-        "Equalize": (lambda num_bins, image_size: None, False),
+        "Solarize": (lambda num_bins, height, width: torch.linspace(255.0, 0.0, num_bins), False),
+        "AutoContrast": (lambda num_bins, height, width: None, False),
+        "Equalize": (lambda num_bins, height, width: None, False),
     }
-    _AUGMENTATION_SPACE: Dict[str, Tuple[Callable[[int, Tuple[int, int]], Optional[torch.Tensor]], bool]] = {
+    _AUGMENTATION_SPACE: Dict[str, Tuple[Callable[[int, int, int], Optional[torch.Tensor]], bool]] = {
         **_PARTIAL_AUGMENTATION_SPACE,
-        "Brightness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Color": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Contrast": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
-        "Sharpness": (lambda num_bins, image_size: torch.linspace(0.0, 0.9, num_bins), True),
+        "Brightness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Color": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Contrast": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
+        "Sharpness": (lambda num_bins, height, width: torch.linspace(0.0, 0.9, num_bins), True),
     }
 
     def __init__(
@@ -480,9 +510,10 @@ class AugMix(_AutoAugmentBase):
         chain_depth: int = -1,
         alpha: float = 1.0,
         all_ops: bool = True,
-        **kwargs: Any,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+        fill: Optional[List[float]] = None,
     ) -> None:
-        super().__init__(**kwargs)
+        super().__init__(interpolation=interpolation, fill=fill)
         self._PARAMETER_MAX = 10
         if not (1 <= severity <= self._PARAMETER_MAX):
             raise ValueError(f"The severity must be between [1, {self._PARAMETER_MAX}]. Got {severity} instead.")
@@ -531,7 +562,7 @@ class AugMix(_AutoAugmentBase):
             for _ in range(depth):
                 transform_id, (magnitudes_fn, signed) = self._get_random_item(augmentation_space)
 
-                magnitudes = magnitudes_fn(self._PARAMETER_MAX, (height, width))
+                magnitudes = magnitudes_fn(self._PARAMETER_MAX, height, width)
                 if magnitudes is not None:
                     magnitude = float(magnitudes[int(torch.randint(self.severity, ()))])
                     if signed and torch.rand(()) <= 0.5:
