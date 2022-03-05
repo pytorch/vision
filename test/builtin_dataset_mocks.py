@@ -1395,7 +1395,7 @@ def pcam(info, root, config):
 @register_mock
 def stanford_cars(info, root, config):
     import scipy.io as io
-    from np.core.records import fromarrays
+    from numpy.core.records import fromarrays
 
     num_examples = {"train": 5, "test": 7}[config["split"]]
     num_classes = 3
