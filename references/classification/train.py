@@ -248,7 +248,7 @@ def main(args):
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
     if args.norm_weight_decay is None:
-        parameters = model.parameters()
+        parameters = [p for p in model.parameters() if p.requires_grad]
     else:
         param_groups = torchvision.ops._utils.split_normalization_params(model)
         wd_groups = [args.norm_weight_decay, args.weight_decay]
