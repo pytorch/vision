@@ -30,7 +30,7 @@ class TestVideoGPUDecoder:
     )
     def test_frame_reading(self, video_file):
         full_path = os.path.join(VIDEO_DIR, video_file)
-        decoder = VideoReader(full_path, device="cuda:0")
+        decoder = VideoReader(full_path, device="cuda")
         with av.open(full_path) as container:
             for av_frame in container.decode(container.streams.video[0]):
                 av_frames = torch.tensor(av_frame.to_rgb(src_colorspace="ITU709").to_ndarray())
@@ -54,7 +54,7 @@ class TestVideoGPUDecoder:
         ],
     )
     def test_seek_reading(self, keyframes, full_path, duration):
-        decoder = VideoReader(full_path, device="cuda:0")
+        decoder = VideoReader(full_path, device="cuda")
         time = duration / 2
         decoder.seek(time, keyframes_only=keyframes)
         with av.open(full_path) as container:
@@ -80,7 +80,7 @@ class TestVideoGPUDecoder:
     )
     def test_metadata(self, video_file):
         full_path = os.path.join(VIDEO_DIR, video_file)
-        decoder = VideoReader(full_path, device="cuda:0")
+        decoder = VideoReader(full_path, device="cuda")
         video_metadata = decoder.get_metadata()["video"]
         with av.open(full_path) as container:
             video = container.streams.video[0]
