@@ -2,7 +2,7 @@ from typing import Any, Dict, List, Tuple, Iterator
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
 from torchvision.prototype.features import BoundingBox, EncodedImage
 
@@ -44,7 +44,7 @@ class StanfordCars(Dataset):
         "car_devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
-    def resources(self, config: DatasetConfig) -> List[HttpResource]:
+    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         resources = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
         if config.split == "test":
             resources.append(
