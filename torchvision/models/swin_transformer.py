@@ -94,8 +94,8 @@ class WindowAttention(nn.Module):
         window_size: int,
         num_heads: int,
         qkv_bias: bool = True,
-        attention_dropout: float = 0.,
-        dropout: float = 0.
+        attention_dropout: float = 0.0,
+        dropout: float = 0.0,
     ):
         super().__init__()
         self.dim = dim
@@ -127,7 +127,7 @@ class WindowAttention(nn.Module):
         self.proj = nn.Linear(dim, dim)
         self.dropout = nn.Dropout(dropout)
         self.softmax = nn.Softmax(dim=-1)
-        
+
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def forward(self, x: Tensor, mask: Tensor = None):
@@ -145,18 +145,16 @@ class WindowAttention(nn.Module):
 
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
             self.window_size * self.window_size, self.window_size * self.window_size, -1
-        ) # Wh*Ww,Wh*Ww,nH
+        )  # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
         attn = attn + relative_position_bias.unsqueeze(0)
 
         if mask is not None:
-            nW = mask.shape[0]
-            attn = attn.view(B // nW, nW, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
+            num_windows = mask.shape[0]
+            attn = attn.view(B // num_windows, num_windows, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
             attn = attn.view(-1, self.num_heads, N, N)
-            attn = self.softmax(attn)
-        else:
-            attn = self.softmax(attn)
 
+        attn = self.softmax(attn)
         attn = self.attention_dropout(attn)
 
         x = (attn @ v).transpose(1, 2).reshape(B, N, C)
@@ -188,13 +186,13 @@ class SwinTransformerBlock(nn.Module):
         num_heads: int,
         window_size: int = 7,
         shift_size: int = 0,
-        mlp_ratio: float = 4.,
+        mlp_ratio: float = 4.0,
         qkv_bias: bool = True,
-        dropout: float = 0.,
-        attention_dropout: float = 0.,
-        stochastic_depth_prob: float = 0.,
+        dropout: float = 0.0,
+        attention_dropout: float = 0.0,
+        stochastic_depth_prob: float = 0.0,
         act_layer: Callable[..., nn.Module] = nn.GELU,
-        norm_layer: Callable[..., nn.Module] = nn.LayerNorm
+        norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ):
         super().__init__()
         self.dim = dim
@@ -210,10 +208,10 @@ class SwinTransformerBlock(nn.Module):
 
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
-        
+
         self.mlp = MLPBlock(dim, int(dim * mlp_ratio), act_layer=act_layer, dropout=dropout)
 
-    def generate_attention_mask(self, shift_size: int, H: int, W: int, device):
+    def generate_attention_mask(self, shift_size: int, H: int, W: int, device: torch.device):
         if shift_size > 0:
             # calculate attention mask for SW-MSA
             mask = torch.zeros((1, H, W, 1), device=device)  # 1 H W 1
@@ -341,11 +339,11 @@ class SwinTransformer(nn.Module):
         depths: List[int] = [2, 2, 6, 2],
         num_heads: List[int] = [3, 6, 12, 24],
         window_size: int = 7,
-        mlp_ratio: float = 4.,
+        mlp_ratio: float = 4.0,
         qkv_bias: bool = True,
-        dropout: float = 0.,
-        attention_dropout: float = 0.,
-        stochastic_depth_prob: float = 0.,
+        dropout: float = 0.0,
+        attention_dropout: float = 0.0,
+        stochastic_depth_prob: float = 0.0,
         block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ):
@@ -366,7 +364,8 @@ class SwinTransformer(nn.Module):
                 nn.Conv2d(3, embed_dim, kernel_size=patch_size, stride=patch_size),
                 Permute([0, 2, 3, 1]),
                 norm_layer(embed_dim),
-        ))
+            )
+        )
 
         total_stage_blocks = sum(depths)
         stage_block_id = 0
@@ -404,7 +403,7 @@ class SwinTransformer(nn.Module):
                     # )
                     PatchMerging(dim, norm_layer)
                 )
-            
+
         self.features = nn.Sequential(*layers)
 
         num_features = embed_dim * 2 ** (len(depths) - 1)
