@@ -451,3 +451,52 @@ def random_crop_image_pil(
         img = pad_image_pil(img, padding, fill, padding_mode)
 
     return crop_image_pil(img, top, left, height, width)
+
+
+def random_pad_image_tensor(
+    img: torch.Tensor,
+    output_size: List[int],
+    image_size: Tuple[int, int, int],
+    padding: List[int] = None,
+    pad_if_needed: bool = False,
+    fill: int = 0,
+    padding_mode: str = "constant",
+) -> torch.Tensor:
+    _, height, width = image_size
+
+    if padding is not None:
+        img = pad_image_tensor(img, padding, fill, padding_mode)
+    # pad the width if needed
+    if pad_if_needed and width < output_size[1]:
+        padding = [output_size[1] - width, 0]
+        img = pad_image_tensor(img, padding, fill, padding_mode)
+    # pad the height if needed
+    if pad_if_needed and height < output_size[0]:
+        padding = [0, output_size[0] - height]
+        img = pad_image_tensor(img, padding, fill, padding_mode)
+    return img
+
+
+def random_pad_image_pil(
+    img: PIL.Image.Image,
+    output_size: List[int],
+    image_size: Tuple[int, int, int],
+    padding: List[int] = None,
+    pad_if_needed: bool = False,
+    fill: int = 0,
+    padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
+) -> PIL.Image.Image:
+
+    _, height, width = image_size
+
+    if padding is not None:
+        img = pad_image_pil(img, padding, fill, padding_mode)
+    # pad the width if needed
+    if pad_if_needed and width < output_size[1]:
+        padding = [output_size[1] - width, 0]
+        img = pad_image_pil(img, padding, fill, padding_mode)
+    # pad the height if needed
+    if pad_if_needed and height < output_size[0]:
+        padding = [0, output_size[0] - height]
+        img = pad_image_pil(img, padding, fill, padding_mode)
+    return img
