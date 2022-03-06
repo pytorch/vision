@@ -48,6 +48,8 @@ from ._geometry import (
     center_crop_image_pil,
     resized_crop_image_tensor,
     resized_crop_image_pil,
+    random_crop_image_tensor,
+    random_crop_image_pil,
     affine_image_tensor,
     affine_image_pil,
     rotate_image_tensor,

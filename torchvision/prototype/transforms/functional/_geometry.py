@@ -1,5 +1,5 @@
 import numbers
-from typing import Tuple, List, Optional, Sequence, Union
+from typing import Tuple, List, Optional, Sequence, Union, Literal
 
 import PIL.Image
 import torch
@@ -390,3 +390,64 @@ def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: boo
     tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(img, size)
 
     return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
+
+
+def random_crop_image_tensor(
+    img: torch.Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+    padding: List[int] = None,
+    pad_if_needed: bool = False,
+    fill: int = 0,
+    padding_mode: str = "constant",
+) -> torch.Tensor:
+
+    if padding is not None:
+        img = pad_image_tensor(img, padding, fill, padding_mode)
+
+    _, h, w = get_dimensions_image_tensor(img)
+
+    # pad the width if needed
+    if pad_if_needed and w < size[1]:
+        padding = [size[1] - w, 0]
+        img = pad_image_tensor(img, padding, fill, padding_mode)
+
+    # pad the height if needed
+    if pad_if_needed and h < size[0]:
+        padding = [0, size[0] - h]
+        img = pad_image_tensor(img, padding, fill, padding_mode)
+
+    return crop_image_tensor(img, top, left, height, width)
+
+
+def random_crop_image_pil(
+    img: PIL.Image.Image,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+    padding: List[int] = None,
+    pad_if_needed: bool = False,
+    fill: int = 0,
+    padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
+) -> PIL.Image.Image:
+    if padding is not None:
+        img = pad_image_pil(img, padding, fill, padding_mode)
+
+    _, h, w = get_dimensions_image_pil(img)
+
+    # pad the width if needed
+    if pad_if_needed and w < size[1]:
+        padding = [size[1] - w, 0]
+        img = pad_image_pil(img, padding, fill, padding_mode)
+
+    # pad the height if needed
+    if pad_if_needed and h < size[0]:
+        padding = [0, size[0] - h]
+        img = pad_image_pil(img, padding, fill, padding_mode)
+
+    return crop_image_pil(img, top, left, height, width)
