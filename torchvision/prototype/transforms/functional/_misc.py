@@ -3,7 +3,7 @@ from typing import Optional, List
 import PIL.Image
 import torch
 from torchvision.transforms import functional_tensor as _FT
-from torchvision.transforms.functional import to_tensor, to_pil_image
+from torchvision.transforms.functional import pil_to_tensor, to_pil_image
 
 
 normalize_image_tensor = _FT.normalize
@@ -39,4 +39,6 @@ def gaussian_blur_image_tensor(
 
 
 def gaussian_blur_image_pil(img: PIL.Image, kernel_size: List[int], sigma: Optional[List[float]] = None) -> PIL.Image:
-    return to_pil_image(gaussian_blur_image_tensor(to_tensor(img), kernel_size=kernel_size, sigma=sigma))
+    t_img = pil_to_tensor(img)
+    output = gaussian_blur_image_tensor(t_img, kernel_size=kernel_size, sigma=sigma)
+    return to_pil_image(output, mode=img.mode)

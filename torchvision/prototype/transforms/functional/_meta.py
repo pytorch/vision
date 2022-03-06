@@ -4,6 +4,10 @@ from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
 
 
+get_dimensions_image_tensor = _FT.get_dimensions
+get_dimensions_image_pil = _FP.get_dimensions
+
+
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
     xyxy = xywh.clone()
     xyxy[..., 2:] += xyxy[..., :2]
@@ -54,7 +58,9 @@ def convert_bounding_box_format(
 
 
 def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
-    return grayscale.expand(3, 1, 1)
+    repeats = [1] * grayscale.ndim
+    repeats[-3] = 3
+    return grayscale.repeat(repeats)
 
 
 def convert_image_color_space_tensor(

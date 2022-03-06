@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Optional, Sequence, cast
+from typing import Any, Optional, Sequence, cast, Union
 
 import torch
 from torchvision.prototype.utils._internal import apply_recursively
@@ -15,20 +15,32 @@ class Label(_Feature):
         cls,
         data: Any,
         *,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
-        like: Optional[Label] = None,
         categories: Optional[Sequence[str]] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: bool = False,
     ) -> Label:
-        label = super().__new__(cls, data, dtype=dtype, device=device)
+        label = super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
 
-        label._metadata.update(dict(categories=categories))
+        label.categories = categories
 
         return label
 
     @classmethod
-    def from_category(cls, category: str, *, categories: Sequence[str]) -> Label:
-        return cls(categories.index(category), categories=categories)
+    def new_like(cls, other: Label, data: Any, *, categories: Optional[Sequence[str]] = None, **kwargs: Any) -> Label:
+        return super().new_like(
+            other, data, categories=categories if categories is not None else other.categories, **kwargs
+        )
+
+    @classmethod
+    def from_category(
+        cls,
+        category: str,
+        *,
+        categories: Sequence[str],
+        **kwargs: Any,
+    ) -> Label:
+        return cls(categories.index(category), categories=categories, **kwargs)
 
     def to_categories(self) -> Any:
         if not self.categories:
@@ -44,16 +56,24 @@ class OneHotLabel(_Feature):
         cls,
         data: Any,
         *,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
-        like: Optional[Label] = None,
         categories: Optional[Sequence[str]] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: bool = False,
     ) -> OneHotLabel:
-        one_hot_label = super().__new__(cls, data, dtype=dtype, device=device)
+        one_hot_label = super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
 
         if categories is not None and len(categories) != one_hot_label.shape[-1]:
             raise ValueError()
 
-        one_hot_label._metadata.update(dict(categories=categories))
+        one_hot_label.categories = categories
 
         return one_hot_label
+
+    @classmethod
+    def new_like(
+        cls, other: OneHotLabel, data: Any, *, categories: Optional[Sequence[str]] = None, **kwargs: Any
+    ) -> OneHotLabel:
+        return super().new_like(
+            other, data, categories=categories if categories is not None else other.categories, **kwargs
+        )

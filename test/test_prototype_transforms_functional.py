@@ -14,8 +14,6 @@ make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
 def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32):
     size = size or torch.randint(16, 33, (2,)).tolist()
 
-    if isinstance(color_space, str):
-        color_space = features.ColorSpace[color_space]
     num_channels = {
         features.ColorSpace.GRAYSCALE: 1,
         features.ColorSpace.RGB: 3,
@@ -199,21 +197,31 @@ def resize_bounding_box():
             yield SampleInput(bounding_box, size=size, image_size=bounding_box.image_size)
 
 
-class TestKernelsCommon:
-    @pytest.mark.parametrize("functional_info", FUNCTIONAL_INFOS, ids=lambda functional_info: functional_info.name)
-    def test_scriptable(self, functional_info):
-        jit.script(functional_info.functional)
+@pytest.mark.parametrize(
+    "kernel",
+    [
+        pytest.param(kernel, id=name)
+        for name, kernel in F.__dict__.items()
+        if not name.startswith("_")
+        and callable(kernel)
+        and any(feature_type in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label"})
+        and "pil" not in name
+    ],
+)
+def test_scriptable(kernel):
+    jit.script(kernel)
 
-    @pytest.mark.parametrize(
-        ("functional_info", "sample_input"),
-        [
-            pytest.param(functional_info, sample_input, id=f"{functional_info.name}-{idx}")
-            for functional_info in FUNCTIONAL_INFOS
-            for idx, sample_input in enumerate(functional_info.sample_inputs())
-        ],
-    )
-    def test_eager_vs_scripted(self, functional_info, sample_input):
-        eager = functional_info(sample_input)
-        scripted = jit.script(functional_info.functional)(*sample_input.args, **sample_input.kwargs)
 
-        torch.testing.assert_close(eager, scripted)
+@pytest.mark.parametrize(
+    ("functional_info", "sample_input"),
+    [
+        pytest.param(functional_info, sample_input, id=f"{functional_info.name}-{idx}")
+        for functional_info in FUNCTIONAL_INFOS
+        for idx, sample_input in enumerate(functional_info.sample_inputs())
+    ],
+)
+def test_eager_vs_scripted(functional_info, sample_input):
+    eager = functional_info(sample_input)
+    scripted = jit.script(functional_info.functional)(*sample_input.args, **sample_input.kwargs)
+
+    torch.testing.assert_close(eager, scripted)
