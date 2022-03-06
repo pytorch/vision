@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Tuple, Optional, Callable, List, Any
+from typing import Optional, Callable, List, Any
 
 import torch
 import torch.nn.functional as F
@@ -47,7 +47,7 @@ class PatchMerging(nn.Module):
 
     Args:
         dim (int): Number of input channels.
-        norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm
+        norm_layer (nn.Module): Normalization layer. Default: nn.LayerNorm.
     """
 
     def __init__(self, dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
@@ -58,7 +58,7 @@ class PatchMerging(nn.Module):
 
     def forward(self, x: Tensor):
         B, H, W, C = x.shape
-        assert H % 2 == 0 and W % 2 == 0, f"x size ({H}*{W}) are not even."
+        assert H % 2 == 0 and W % 2 == 0, f"input size ({H}*{W}) are not even."
 
         x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
         x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
@@ -82,9 +82,9 @@ class WindowAttention(nn.Module):
         dim (int): Number of input channels.
         window_size (int)): The size of the window.
         num_heads (int): Number of attention heads.
-        qkv_bias (bool, optional):  If True, add a learnable bias to query, key, value. Default: True.
-        attention_dropout (float, optional): Dropout ratio of attention weight. Default: 0.0.
-        dropout (float, optional): Dropout ratio of output. Default: 0.0.
+        qkv_bias (bool):  If True, add a learnable bias to query, key, value. Default: True.
+        attention_dropout (float): Dropout ratio of attention weight. Default: 0.0.
+        dropout (float): Dropout ratio of output. Default: 0.0.
     """
 
     def __init__(
@@ -132,8 +132,8 @@ class WindowAttention(nn.Module):
     def forward(self, x: Tensor, mask: Tensor = None):
         """
         Args:
-            x (Tensor): input features with shape of (num_windows*B, N, C)
-            mask (Tensor): (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None
+            x (Tensor): input features with shape of (num_windows*B, N, C).
+            mask (Tensor): (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None.
         """
         B, N, C = x.shape
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
@@ -171,12 +171,12 @@ class SwinTransformerBlock(nn.Module):
         window_size (int): Window size.
         shift_size (int): Shift size for SW-MSA.
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
-        qkv_bias (bool, optional): If True, add a learnable bias to query, key, value. Default: True.
-        dropout (float, optional): Dropout rate. Default: 0.0
-        attention_dropout (float, optional): Attention dropout rate. Default: 0.0
-        stochastic_depth_prob: (float, optional): Stochastic depth rate. Default: 0.0
-        act_layer (nn.Module, optional): Activation layer. Default: nn.GELU
-        norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
+        qkv_bias (bool): If True, add a learnable bias to query, key, value. Default: True.
+        dropout (float): Dropout rate. Default: 0.0.
+        attention_dropout (float): Attention dropout rate. Default: 0.0.
+        stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
+        act_layer (nn.Module): Activation layer. Default: nn.GELU.
+        norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
     """
 
     def __init__(
@@ -210,19 +210,19 @@ class SwinTransformerBlock(nn.Module):
 
         self.mlp = MLPBlock(dim, int(dim * mlp_ratio), act_layer=act_layer, dropout=dropout)
 
-    def generate_attention_mask(self, shift_size: int, H: int, W: int, device: torch.device):
+    def generate_attention_mask(self, shift_size: int, height: int, width: int, device: torch.device):
         if shift_size > 0:
             # calculate attention mask for SW-MSA
-            mask = torch.zeros((1, H, W, 1), device=device)  # 1 H W 1
+            mask = torch.zeros((1, height, width, 1), device=device)
             h_slices = (slice(0, -self.window_size), slice(-self.window_size, -shift_size), slice(-shift_size, None))
             w_slices = (slice(0, -self.window_size), slice(-self.window_size, -shift_size), slice(-shift_size, None))
-            cnt = 0
+            count = 0
             for h in h_slices:
                 for w in w_slices:
-                    mask[:, h, w, :] = cnt
-                    cnt += 1
+                    mask[:, h, w, :] = count
+                    count += 1
 
-            mask_windows = self.partition_window(mask, self.window_size)  # nW, window_size, window_size, 1
+            mask_windows = self.partition_window(mask)  # nW, window_size, window_size, 1
             mask_windows = mask_windows.view(-1, self.window_size ** 2)
             attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
             attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
@@ -254,7 +254,7 @@ class SwinTransformerBlock(nn.Module):
             shifted_x = x
 
         # partition windows
-        x_windows = self.partition_window(shifted_x, self.window_size)  # nW*B, window_size, window_size, C
+        x_windows = self.partition_window(shifted_x)  # nW*B, window_size, window_size, C
         x_windows = x_windows.view(-1, self.window_size ** 2, C)  # nW*B, window_size*window_size, C
 
         # W-MSA/SW-MSA
@@ -280,32 +280,22 @@ class SwinTransformerBlock(nn.Module):
         x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
         return x
 
-    def partition_window(self, x: Tensor, window_size: int):
+    def partition_window(self, x: Tensor):
         """
-        Args:
-            x: (B, H, W, C)
-            window_size (int): window size
-        Returns:
-            windows: (num_windows*B, window_size, window_size, C)
+        Partition the input tensor into windows: (B, H, W, C) -> (B*nW, window_size, window_size, C).
         """
         B, H, W, C = x.shape
-        x = x.view(B, H // window_size, window_size, W // window_size, window_size, C)
-        x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, window_size, C)
+        x = x.view(B, H // self.window_size, self.window_size, W // self.window_size, self.window_size, C)
+        x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, self.window_size, self.window_size, C)
         return x
 
-    def reverse_window(self, x: Tensor, window_size: int, H: int, W: int):
+    def reverse_window(self, x: Tensor, height: int, width: int):
         """
-        Args:
-            windows: (num_windows*B, window_size, window_size, C)
-            window_size (int): Window size
-            H (int): Height of image
-            W (int): Width of image
-        Returns:
-            x: (B, H, W, C)
+        The Inverse operation of `partition_window`.
         """
-        B = int(x.shape[0] / (H * W / window_size / window_size))
-        x = x.view(B, H // window_size, W // window_size, window_size, window_size, -1)
-        x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, H, W, -1)
+        B = int(x.shape[0] / (height * width / (self.window_size ** 2)))
+        x = x.view(B, height // self.window_size, width // self.window_size, self.window_size, self.window_size, -1)
+        x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, height, width, -1)
         return x
 
 
