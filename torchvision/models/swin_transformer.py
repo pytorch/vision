@@ -263,7 +263,7 @@ class SwinTransformerBlock(nn.Module):
 
         # merge windows
         attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
-        shifted_x = self.reverse_window(attn_windows, self.window_size, Hp, Wp)  # B H' W' C
+        shifted_x = self.reverse_window(attn_windows, Hp, Wp)  # B H' W' C
 
         # reverse cyclic shift
         if shift_size > 0:
