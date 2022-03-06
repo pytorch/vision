@@ -10,6 +10,7 @@ from .eurosat import EuroSAT
 from .fer2013 import FER2013
 from .gtsrb import GTSRB
 from .imagenet import ImageNet
+from .lsun import Lsun
 from .mnist import MNIST, FashionMNIST, KMNIST, EMNIST, QMNIST
 from .oxford_iiit_pet import OxfordIITPet
 from .pcam import PCAM
