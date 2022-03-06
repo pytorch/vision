@@ -1,11 +1,12 @@
-from typing import Tuple, Optional, Callable, List, Any
 from functools import partial
+from typing import Tuple, Optional, Callable, List, Any
 
 import torch
-from torch import nn, Tensor
 import torch.nn.functional as F
+from torch import nn, Tensor
 
 from torchvision.ops import StochasticDepth
+
 from .._internally_replaced_utils import load_state_dict_from_url
 
 
@@ -16,15 +17,15 @@ __all__ = [
 
 
 _MODELS_URLS = {
-    "swin_tiny": ""
+    "swin_tiny": "",
+    "swin_base": "",
 }
 
 
 class MLPBlock(nn.Sequential):
     """Transformer MLP block."""
 
-    def __init__(self, in_dim: int, mlp_dim: int, dropout: float, 
-                 act_layer: Callable[..., nn.Module] = nn.GELU):
+    def __init__(self, in_dim: int, mlp_dim: int, dropout: float, act_layer: Callable[..., nn.Module] = nn.GELU):
         super().__init__()
         self.linear_1 = nn.Linear(in_dim, mlp_dim)
         self.act = act_layer()
@@ -44,7 +45,7 @@ class Permute(nn.Module):
 
 class PatchMerging(nn.Module):
     """Patch Merging Layer.
-    
+
     Args:
         dim (int): Number of input channels.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm
@@ -75,9 +76,9 @@ class PatchMerging(nn.Module):
 
 
 class WindowAttention(nn.Module):
-    """ Window based multi-head self attention (W-MSA) module with relative position bias.
+    """Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
-    
+
     Args:
         dim (int): Number of input channels.
         window_size (int)): The size of the window.
@@ -87,8 +88,15 @@ class WindowAttention(nn.Module):
         dropout (float, optional): Dropout ratio of output. Default: 0.0.
     """
 
-    def __init__(self, dim: int, window_size: int, num_heads: int, qkv_bias: bool = True,
-                 attention_dropout: float = 0., dropout: float = 0.):
+    def __init__(
+        self,
+        dim: int,
+        window_size: int,
+        num_heads: int,
+        qkv_bias: bool = True,
+        attention_dropout: float = 0.,
+        dropout: float = 0.
+    ):
         super().__init__()
         self.dim = dim
         self.window_size = window_size
@@ -120,7 +128,7 @@ class WindowAttention(nn.Module):
         self.dropout = nn.Dropout(dropout)
         self.softmax = nn.Softmax(dim=-1)
         
-        nn.init.trunc_normal_(self.relative_position_bias_table, std=.02)
+        nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def forward(self, x: Tensor, mask: Tensor = None):
         """
@@ -133,10 +141,11 @@ class WindowAttention(nn.Module):
         q, k, v = qkv[0], qkv[1], qkv[2]
 
         q = q * self.scale
-        attn = (q @ k.transpose(-2, -1))
+        attn = q @ k.transpose(-2, -1)
 
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.window_size * self.window_size, self.window_size * self.window_size, -1)  # Wh*Ww,Wh*Ww,nH
+            self.window_size * self.window_size, self.window_size * self.window_size, -1
+        ) # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
         attn = attn + relative_position_bias.unsqueeze(0)
 
@@ -157,8 +166,8 @@ class WindowAttention(nn.Module):
 
 
 class SwinTransformerBlock(nn.Module):
-    """ Swin Transformer Block.
-    
+    """Swin Transformer Block.
+
     Args:
         dim (int): Number of input channels.
         num_heads (int): Number of attention heads.
@@ -173,12 +182,20 @@ class SwinTransformerBlock(nn.Module):
         norm_layer (nn.Module, optional): Normalization layer.  Default: nn.LayerNorm
     """
 
-    def __init__(self, dim: int, num_heads: int, window_size: int = 7, shift_size: int = 0,
-                 mlp_ratio: float = 4., qkv_bias: bool = True, dropout: float = 0.,
-                 attention_dropout: float = 0.,
-                 stochastic_depth_prob: float = 0.,
-                 act_layer: Callable[..., nn.Module] = nn.GELU, 
-                 norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
+    def __init__(
+        self,
+        dim: int,
+        num_heads: int,
+        window_size: int = 7,
+        shift_size: int = 0,
+        mlp_ratio: float = 4.,
+        qkv_bias: bool = True,
+        dropout: float = 0.,
+        attention_dropout: float = 0.,
+        stochastic_depth_prob: float = 0.,
+        act_layer: Callable[..., nn.Module] = nn.GELU,
+        norm_layer: Callable[..., nn.Module] = nn.LayerNorm
+    ):
         super().__init__()
         self.dim = dim
         self.num_heads = num_heads
@@ -188,25 +205,20 @@ class SwinTransformerBlock(nn.Module):
 
         self.norm1 = norm_layer(dim)
         self.attn = WindowAttention(
-            dim, window_size, num_heads,
-            qkv_bias=qkv_bias, attention_dropout=attention_dropout, dropout=dropout)
+            dim, window_size, num_heads, qkv_bias=qkv_bias, attention_dropout=attention_dropout, dropout=dropout
+        )
 
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
         
         self.mlp = MLPBlock(dim, int(dim * mlp_ratio), act_layer=act_layer, dropout=dropout)
-        
-    
+
     def generate_attention_mask(self, shift_size: int, H: int, W: int, device):
         if shift_size > 0:
             # calculate attention mask for SW-MSA
             mask = torch.zeros((1, H, W, 1), device=device)  # 1 H W 1
-            h_slices = (slice(0, -self.window_size),
-                        slice(-self.window_size, -shift_size),
-                        slice(-shift_size, None))
-            w_slices = (slice(0, -self.window_size),
-                        slice(-self.window_size, -shift_size),
-                        slice(-shift_size, None))
+            h_slices = (slice(0, -self.window_size), slice(-self.window_size, -shift_size), slice(-shift_size, None))
+            w_slices = (slice(0, -self.window_size), slice(-self.window_size, -shift_size), slice(-shift_size, None))
             cnt = 0
             for h in h_slices:
                 for w in w_slices:
@@ -225,14 +237,14 @@ class SwinTransformerBlock(nn.Module):
         B, H, W, C = x.shape
         shortcut = x
         x = self.norm1(x)
-        
+
         # pad feature maps to multiples of window size
         pad_l = pad_t = 0
         pad_r = (self.window_size - W % self.window_size) % self.window_size
         pad_b = (self.window_size - H % self.window_size) % self.window_size
         x = F.pad(x, (0, 0, pad_l, pad_r, pad_t, pad_b))
         _, Hp, Wp, _ = x.shape
-        
+
         if self.window_size == min(Hp, Wp):
             shift_size = 0
         else:
@@ -261,7 +273,7 @@ class SwinTransformerBlock(nn.Module):
             x = torch.roll(shifted_x, shifts=(shift_size, shift_size), dims=(1, 2))
         else:
             x = shifted_x
-        
+
         x = x.view(B, Hp, Wp, C)
         if pad_r > 0 or pad_b > 0:
             x = x[:, :H, :W, :].contiguous()
@@ -283,7 +295,7 @@ class SwinTransformerBlock(nn.Module):
         x = x.view(B, H // window_size, window_size, W // window_size, window_size, C)
         x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, window_size, window_size, C)
         return x
-    
+
     def reverse_window(self, x: Tensor, window_size: int, H: int, W: int):
         """
         Args:
@@ -321,25 +333,26 @@ class SwinTransformer(nn.Module):
         norm_layer (nn.Module): Normalization layer.
     """
 
-    def __init__(self,
-                patch_size: int = 4,
-                num_classes: int = 1000,
-                embed_dim: int = 96,
-                depths: List[int] = [2, 2, 6, 2],
-                num_heads: List[int] = [3, 6, 12, 24],
-                window_size: int = 7,
-                mlp_ratio: float = 4.,
-                qkv_bias: bool = True,
-                dropout: float = 0.0,
-                attention_dropout: float = 0.0,
-                stochastic_depth_prob: float = 0.,
-                block: Optional[Callable[..., nn.Module]] = None,
-                norm_layer: Optional[Callable[..., nn.Module]] = None,
+    def __init__(
+        self,
+        patch_size: int = 4,
+        num_classes: int = 1000,
+        embed_dim: int = 96,
+        depths: List[int] = [2, 2, 6, 2],
+        num_heads: List[int] = [3, 6, 12, 24],
+        window_size: int = 7,
+        mlp_ratio: float = 4.,
+        qkv_bias: bool = True,
+        dropout: float = 0.,
+        attention_dropout: float = 0.,
+        stochastic_depth_prob: float = 0.,
+        block: Optional[Callable[..., nn.Module]] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
 
         self.num_classes = num_classes
-        
+
         if block is None:
             block = SwinTransformerBlock
 
@@ -348,10 +361,11 @@ class SwinTransformer(nn.Module):
 
         layers: List[nn.Module] = []
         # split image into non-overlapping patches
-        layers.append(nn.Sequential(
-            nn.Conv2d(3, embed_dim, kernel_size=patch_size, stride=patch_size),
-            Permute([0, 2, 3, 1]),
-            norm_layer(embed_dim),
+        layers.append(
+            nn.Sequential(
+                nn.Conv2d(3, embed_dim, kernel_size=patch_size, stride=patch_size),
+                Permute([0, 2, 3, 1]),
+                norm_layer(embed_dim),
         ))
 
         total_stage_blocks = sum(depths)
@@ -374,7 +388,7 @@ class SwinTransformer(nn.Module):
                         dropout=dropout,
                         attention_dropout=attention_dropout,
                         stochastic_depth_prob=sd_prob,
-                        norm_layer=norm_layer
+                        norm_layer=norm_layer,
                     )
                 )
                 stage_block_id += 1
@@ -382,17 +396,17 @@ class SwinTransformer(nn.Module):
             # add patch merging layer
             if i_stage < (len(depths) - 1):
                 layers.append(
-                    #nn.Sequential(
-                    #    norm_layer(dim),
-                    #    Permute([0, 3, 1, 2]),
-                    #    nn.Conv2d(dim, dim * 2, kernel_size=2, stride=2, bias=False),
-                    #    Permute([0, 2, 3, 1]),
-                    #)
+                    # nn.Sequential(
+                    #     norm_layer(dim),
+                    #     Permute([0, 3, 1, 2]),
+                    #     nn.Conv2d(dim, dim * 2, kernel_size=2, stride=2, bias=False),
+                    #     Permute([0, 2, 3, 1]),
+                    # )
                     PatchMerging(dim, norm_layer)
                 )
             
         self.features = nn.Sequential(*layers)
-        
+
         num_features = embed_dim * 2 ** (len(depths) - 1)
         self.norm = norm_layer(num_features)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
@@ -402,7 +416,7 @@ class SwinTransformer(nn.Module):
 
     def _init_weights(self, m):
         if isinstance(m, nn.Linear):
-            nn.init.trunc_normal_(m.weight, std=.02)
+            nn.init.trunc_normal_(m.weight, std=0.02)
             if isinstance(m, nn.Linear) and m.bias is not None:
                 nn.init.constant_(m.bias, 0)
         elif isinstance(m, nn.LayerNorm):
@@ -436,7 +450,7 @@ def _swin_transformer(
         num_heads=num_heads,
         window_size=window_size,
         stochastic_depth_prob=stochastic_depth_prob,
-        **kwargs
+        **kwargs,
     )
     if pretrained:
         if arch not in _MODELS_URLS:
@@ -463,5 +477,5 @@ def swin_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
         stochastic_depth_prob=0.2,
         pretrained=pretrained,
         progress=progress,
-        **kwargs
+        **kwargs,
     )
