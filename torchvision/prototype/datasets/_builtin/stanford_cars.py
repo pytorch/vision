@@ -61,7 +61,6 @@ class StanfordCars(Dataset):
         image, target = data
         image_path, image_buffer = image
         image = EncodedImage.from_file(image_buffer)
-        index = image_path[-9:-4]
         index = int(image_path[-9:-4]) - 1
 
         return dict(
