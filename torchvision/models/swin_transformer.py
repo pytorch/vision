@@ -5,8 +5,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from ..ops.stochastic_depth import StochasticDepth
 from .._internally_replaced_utils import load_state_dict_from_url
+from ..ops.stochastic_depth import StochasticDepth
 
 
 __all__ = [
@@ -143,7 +143,7 @@ class WindowAttention(nn.Module):
         attn = q @ k.transpose(-2, -1)
 
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.window_size * self.window_size, self.window_size * self.window_size, -1
+            self.window_size ** 2, self.window_size ** 2, -1
         )  # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
         attn = attn + relative_position_bias.unsqueeze(0)
@@ -223,7 +223,7 @@ class SwinTransformerBlock(nn.Module):
                     cnt += 1
 
             mask_windows = self.partition_window(mask, self.window_size)  # nW, window_size, window_size, 1
-            mask_windows = mask_windows.view(-1, self.window_size * self.window_size)
+            mask_windows = mask_windows.view(-1, self.window_size ** 2)
             attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
             attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
         else:
@@ -255,7 +255,7 @@ class SwinTransformerBlock(nn.Module):
 
         # partition windows
         x_windows = self.partition_window(shifted_x, self.window_size)  # nW*B, window_size, window_size, C
-        x_windows = x_windows.view(-1, self.window_size * self.window_size, C)  # nW*B, window_size*window_size, C
+        x_windows = x_windows.view(-1, self.window_size ** 2, C)  # nW*B, window_size*window_size, C
 
         # W-MSA/SW-MSA
         attn_mask = self.generate_attention_mask(shift_size, Hp, Wp, x.device)
