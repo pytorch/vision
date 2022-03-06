@@ -12,6 +12,7 @@ from .shufflenetv2 import *
 from .efficientnet import *
 from .regnet import *
 from .vision_transformer import *
+from .swin_transformer import *
 from . import detection
 from . import feature_extraction
 from . import optical_flow
