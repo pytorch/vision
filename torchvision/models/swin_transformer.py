@@ -5,8 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from torchvision.ops import StochasticDepth
-
+from ..ops.stochastic_depth import StochasticDepth
 from .._internally_replaced_utils import load_state_dict_from_url
 
 
