@@ -1,5 +1,6 @@
 import functools
 import io
+import pickle
 from pathlib import Path
 
 import pytest
@@ -108,12 +109,12 @@ class TestCommon:
         next(iter(dataset.map(transforms.Identity())))
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_traversable(self, test_home, dataset_mock, config):
+    def test_serializable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        traverse(dataset)
+        pickle.dumps(dataset)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
