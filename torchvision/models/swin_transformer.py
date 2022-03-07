@@ -7,6 +7,8 @@ from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.stochastic_depth import StochasticDepth
+from .vision_transformer import MLPBlock
+from .convnext import Permute
 
 
 __all__ = [
@@ -19,27 +21,6 @@ _MODELS_URLS = {
     "swin_tiny": "",
     "swin_base": "",
 }
-
-
-class MLPBlock(nn.Sequential):
-    """Transformer MLP block."""
-
-    def __init__(self, in_dim: int, mlp_dim: int, dropout: float, act_layer: Callable[..., nn.Module] = nn.GELU):
-        super().__init__()
-        self.linear_1 = nn.Linear(in_dim, mlp_dim)
-        self.act = act_layer()
-        self.dropout_1 = nn.Dropout(dropout)
-        self.linear_2 = nn.Linear(mlp_dim, in_dim)
-        self.dropout_2 = nn.Dropout(dropout)
-
-
-class Permute(nn.Module):
-    def __init__(self, dims: List[int]):
-        super().__init__()
-        self.dims = dims
-
-    def forward(self, x):
-        return torch.permute(x, self.dims)
 
 
 class PatchMerging(nn.Module):
@@ -111,7 +92,7 @@ class WindowAttention(nn.Module):
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size)
         coords_w = torch.arange(self.window_size)
-        coords = torch.stack(torch.meshgrid([coords_h, coords_w]))  # 2, Wh, Ww
+        coords = torch.stack(torch.meshgrid(coords_h, coords_w, indexing='ij'))  # 2, Wh, Ww
         coords_flatten = torch.flatten(coords, 1)  # 2, Wh*Ww
         relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
         relative_coords = relative_coords.permute(1, 2, 0).contiguous()  # Wh*Ww, Wh*Ww, 2
@@ -175,7 +156,6 @@ class SwinTransformerBlock(nn.Module):
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
-        act_layer (nn.Module): Activation layer. Default: nn.GELU.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
     """
 
@@ -190,7 +170,6 @@ class SwinTransformerBlock(nn.Module):
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
-        act_layer: Callable[..., nn.Module] = nn.GELU,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ):
         super().__init__()
@@ -208,7 +187,7 @@ class SwinTransformerBlock(nn.Module):
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
 
-        self.mlp = MLPBlock(dim, int(dim * mlp_ratio), act_layer=act_layer, dropout=dropout)
+        self.mlp = MLPBlock(dim, int(dim * mlp_ratio), dropout)
 
     def generate_attention_mask(self, shift_size: int, height: int, width: int, device: torch.device):
         if shift_size > 0:
