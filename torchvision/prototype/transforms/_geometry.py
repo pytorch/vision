@@ -256,3 +256,16 @@ class BatchMultiCrop(Transform):
                 return obj
 
         return apply_recursively(inputs if len(inputs) > 1 else inputs[0])
+
+
+class RandomHorizontalFlip(HorizontalFlip):
+    def __init__(self, p: float = 0.5):
+        super().__init__()
+        self.p = p
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if torch.rand(1) >= self.p:
+            return sample
+
+        return super().forward(sample)
