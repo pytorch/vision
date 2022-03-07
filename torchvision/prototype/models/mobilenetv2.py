@@ -42,8 +42,8 @@ class MobileNet_V2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
-            "acc@1": 72.144,
-            "acc@5": 90.818,
+            "acc@1": 72.154,
+            "acc@5": 90.822,
         },
     )
     DEFAULT = IMAGENET1K_V2
