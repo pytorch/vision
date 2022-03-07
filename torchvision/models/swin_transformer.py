@@ -173,7 +173,7 @@ class ShiftedWindowAttention(nn.Module):
             x = x[:, :H, :W, :].contiguous()
 
         return x
-    
+
     @torch.no_grad()
     def generate_attention_mask(self, shift_size: int, height: int, width: int, device: torch.device):
         if shift_size > 0:
@@ -183,7 +183,7 @@ class ShiftedWindowAttention(nn.Module):
             count = 0
             for h in slices:
                 for w in slices:
-                    mask[:, h[0]:h[1], w[0]:w[1], :] = count
+                    mask[:, h[0] : h[1], w[0] : w[1], :] = count
                     count += 1
 
             mask_windows = self.partition_window(mask)  # nW, window_size, window_size, 1
@@ -225,7 +225,6 @@ class SwinTransformerBlock(nn.Module):
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
-        act_layer (nn.Module): Activation layer. Default: nn.GELU.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
     """
 
@@ -240,7 +239,6 @@ class SwinTransformerBlock(nn.Module):
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
-        act_layer: Callable[..., nn.Module] = nn.GELU,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ):
         super().__init__()
@@ -259,7 +257,7 @@ class SwinTransformerBlock(nn.Module):
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
 
-        self.mlp = MLPBlock(dim, int(dim * mlp_ratio), act_layer=act_layer, dropout=dropout)
+        self.mlp = MLPBlock(dim, int(dim * mlp_ratio), dropout)
 
     def forward(self, x: Tensor):
         x = x + self.stochastic_depth(self.attn(self.norm1(x)))
