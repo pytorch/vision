@@ -11,11 +11,11 @@ class _StanfordCarsLabelReader(IterDataPipe[Tuple[np.ndarray, int]]):
     def __init__(self, datapipe: IterDataPipe[Dict[str, Any]]) -> None:
         self.datapipe = datapipe
 
-    def __iter__(self) -> Iterator[Tuple[str]]:
+    def __iter__(self) -> Iterator[Tuple[int, int, int, int, int, str]]:
         for _, file in self.datapipe:
-            file = iter(read_mat(file, squeeze_me=True)["annotations"])
-            for line in file:
-                yield line
+            data = read_mat(file, squeeze_me=True)
+            for ann in data["annotations"]:
+                yield tuple(ann)
 
 
 class StanfordCars(Dataset):
