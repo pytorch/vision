@@ -457,7 +457,7 @@ def random_pad_image_tensor(
     img: torch.Tensor,
     output_size: List[int],
     image_size: Tuple[int, int, int],
-    padding: List[int] = None,
+    padding: List[int],
     pad_if_needed: bool = False,
     fill: int = 0,
     padding_mode: str = "constant",
@@ -481,9 +481,9 @@ def random_pad_image_pil(
     img: PIL.Image.Image,
     output_size: List[int],
     image_size: Tuple[int, int, int],
-    padding: List[int] = None,
+    padding: List[int],
     pad_if_needed: bool = False,
-    fill: int = 0,
+    fill: Union[int, str, Sequence[int]] = 0,
     padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
 ) -> PIL.Image.Image:
 

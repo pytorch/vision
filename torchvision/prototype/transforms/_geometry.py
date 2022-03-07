@@ -261,12 +261,12 @@ class BatchMultiCrop(Transform):
 class RandomCrop(Transform):
     def __init__(
         self,
-        size=Union[int, Sequence[int]],
-        padding: Sequence[int] = None,
+        size: Union[int, Sequence[int]],
+        padding: Sequence[int],
         pad_if_needed: bool = False,
         fill: Union[int, str, Sequence[int]] = 0,
-        padding_mode: Union[str, Literal["constant", "edge", "reflect", "symmetric"]] = "constant",
-    ):
+        padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
+    ) -> None:
         super().__init__()
         self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
 
@@ -318,7 +318,7 @@ class RandomCrop(Transform):
                 sample,
                 output_size=self.size,
                 image_size=get_image_dimensions(sample),
-                padding=self.padding,
+                padding=cast(List[int], tuple(self.padding)),
                 pad_if_needed=self.pad_if_needed,
                 fill=self.fill,
                 padding_mode=self.padding_mode,
@@ -329,7 +329,7 @@ class RandomCrop(Transform):
                 sample,
                 output_size=self.size,
                 image_size=get_image_dimensions(sample),
-                padding=self.padding,
+                padding=cast(List[int], tuple(self.padding)),
                 pad_if_needed=self.pad_if_needed,
                 fill=self.fill,
                 padding_mode=self.padding_mode,
@@ -339,9 +339,9 @@ class RandomCrop(Transform):
                 sample,
                 output_size=self.size,
                 image_size=get_image_dimensions(sample),
-                padding=self.padding,
+                padding=cast(List[int], tuple(self.padding)),
                 pad_if_needed=self.pad_if_needed,
-                fill=self.fill,
+                fill=self.fill,  # TODO: should be converted to number
                 padding_mode=self.padding_mode,
             )
 
