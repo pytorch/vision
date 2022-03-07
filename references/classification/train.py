@@ -163,7 +163,7 @@ def load_data(traindir, valdir, args):
                 weights = prototype.models.get_weight(args.weights)
                 preprocessing = weights.transforms()
             else:
-                preprocessing = prototype.transforms.ImageNetEval(
+                preprocessing = prototype.transforms.ImageClassificationEval(
                     crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
                 )
 

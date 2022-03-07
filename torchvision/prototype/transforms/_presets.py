@@ -6,10 +6,16 @@ from torch import Tensor, nn
 from ...transforms import functional as F, InterpolationMode
 
 
-__all__ = ["CocoEval", "ImageNetEval", "Kinect400Eval", "VocEval", "RaftEval"]
+__all__ = [
+    "ObjectDetectionEval",
+    "ImageClassificationEval",
+    "VideoClassificationEval",
+    "SemanticSegmentationEval",
+    "OpticalFlowEval",
+]
 
 
-class CocoEval(nn.Module):
+class ObjectDetectionEval(nn.Module):
     def forward(
         self, img: Tensor, target: Optional[Dict[str, Tensor]] = None
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
@@ -18,7 +24,7 @@ class CocoEval(nn.Module):
         return F.convert_image_dtype(img, torch.float), target
 
 
-class ImageNetEval(nn.Module):
+class ImageClassificationEval(nn.Module):
     def __init__(
         self,
         crop_size: int,
@@ -44,7 +50,7 @@ class ImageNetEval(nn.Module):
         return img
 
 
-class Kinect400Eval(nn.Module):
+class VideoClassificationEval(nn.Module):
     def __init__(
         self,
         crop_size: Tuple[int, int],
@@ -69,7 +75,7 @@ class Kinect400Eval(nn.Module):
         return vid.permute(1, 0, 2, 3)  # (T, C, H, W) => (C, T, H, W)
 
 
-class VocEval(nn.Module):
+class SemanticSegmentationEval(nn.Module):
     def __init__(
         self,
         resize_size: int,
@@ -99,7 +105,7 @@ class VocEval(nn.Module):
         return img, target
 
 
-class RaftEval(nn.Module):
+class OpticalFlowEval(nn.Module):
     def forward(
         self, img1: Tensor, img2: Tensor, flow: Optional[Tensor], valid_flow_mask: Optional[Tensor]
     ) -> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:

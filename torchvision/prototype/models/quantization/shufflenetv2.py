@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, List, Optional, Union
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.shufflenetv2 import (
@@ -67,7 +67,7 @@ _COMMON_META = {
 class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 1366792,
@@ -82,7 +82,7 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
 class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 2278604,

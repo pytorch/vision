@@ -2,7 +2,7 @@ from functools import partial
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 from torch import nn
-from torchvision.prototype.transforms import Kinect400Eval
+from torchvision.prototype.transforms import VideoClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.video.resnet import (
@@ -65,7 +65,7 @@ _COMMON_META = {
 class R3D_18_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
         url="https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
-        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
+        transforms=partial(VideoClassificationEval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "architecture": "R3D",
@@ -80,7 +80,7 @@ class R3D_18_Weights(WeightsEnum):
 class MC3_18_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
         url="https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
-        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
+        transforms=partial(VideoClassificationEval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "architecture": "MC3",
@@ -95,7 +95,7 @@ class MC3_18_Weights(WeightsEnum):
 class R2Plus1D_18_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
         url="https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
-        transforms=partial(Kinect400Eval, crop_size=(112, 112), resize_size=(128, 171)),
+        transforms=partial(VideoClassificationEval, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "architecture": "R(2+1)D",
