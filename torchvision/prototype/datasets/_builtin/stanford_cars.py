@@ -44,8 +44,8 @@ class StanfordCars(Dataset):
         "car_devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
-    def resources(self, config: DatasetConfig) -> List[HttpResource]:
-        resources = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
+    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
+        resources: List[OnlineResource] = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
         if config.split == "test":
             resources.append(
                 HttpResource(
