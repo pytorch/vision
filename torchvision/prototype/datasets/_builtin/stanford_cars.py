@@ -7,7 +7,7 @@ from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_s
 from torchvision.prototype.features import BoundingBox, EncodedImage
 
 
-class _StanfordCarsLabelReader(IterDataPipe[Tuple[np.ndarray, int]]):
+class StanfordCarsLabelReader(IterDataPipe[Tuple[int, int, int, int, int, str]]):
     def __init__(self, datapipe: IterDataPipe[Dict[str, Any]]) -> None:
         self.datapipe = datapipe
 
