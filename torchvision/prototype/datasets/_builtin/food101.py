@@ -1,12 +1,23 @@
+import enum
+import functools
 import pathlib
 from pathlib import Path
-from typing import Any, Tuple, List, Dict, cast
+from typing import Any, Tuple, List, Dict, cast, Optional
 
 import numpy as np
-from torchdata.datapipes.iter import IterDataPipe, Filter, Mapper
+from torchdata.datapipes.iter import IterDataPipe, Filter, Mapper, CSVParser
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import hint_shuffling, hint_sharding, path_comparator
+from torchvision.prototype.datasets.utils._internal import (
+    hint_shuffling,
+    hint_sharding,
+    path_comparator,
+)
 from torchvision.prototype.features import Label, EncodedImage
+
+
+class Food101Demux(enum.IntEnum):
+    METADATA = 0
+    IMAGES = 1
 
 
 class Food101(Dataset):
@@ -23,10 +34,17 @@ class Food101(Dataset):
     """
 
     _URL = "http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz"
-    # TODO: The sha has changed, is this correct?
-    # _SHA256 = "85eeb15f3717b99a5da872d97d918f87"
     _SHA256 = "d97d15e438b7f4498f96086a4f7e2fa42a32f2712e87d3295441b2b6314053a4"
-    _META_FILE_NAME = "meta"
+    _META_FILE_NAME = "classes.txt"
+
+    # TODO: Inspired from dtd.py. Is this useful?
+    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+        path = pathlib.Path(data[0])
+        print(path)
+        if path.name == "images":
+            return Food101Demux.IMAGES
+        else:
+            return Food101Demux.METADATA
 
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
@@ -41,6 +59,7 @@ class Food101(Dataset):
             HttpResource(
                 url=self._URL,
                 sha256=self._SHA256,
+                decompress=True,
             )
         ]
 
@@ -48,25 +67,34 @@ class Food101(Dataset):
         image_path, image_buffer = data
         # Extract the category for the image path, it is the folder before the image name.
         category = Path(image_path).parent.name
-        categories = [category]
+        # TODO: Extract the list of all categories. Where to do this?
         return dict(
             image=EncodedImage.from_file(image_buffer),
             # TODO: Should the categories be prepared as well? Most likely, yes.
             # For now hardcoded list.
-            label=Label.from_category(category, categories=categories),
+            label=Label.from_category(category, categories=self.categories),
         )
 
     # TODO: Doesn't seem correct, investigate...
     def _is_data_file(self, data: Tuple[str, Any], *, split: str) -> bool:
+        # We need to use the train.json and test.json to get the correct
+        # mapping.
         path = pathlib.Path(data[0])
-        return path.name == split
+        print(path)
+        # Need to compare to the actual list of train and test splits.
+        # return path.name == split
+        return True
 
-    # TODO: Doesn't yet work, fix.
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         resources = self.resources(self.default_config)
         dp = resources[0].load(root)
         dp = Filter(dp, path_comparator("name", self._META_FILE_NAME))
-        return cast(List[str], next(iter(dp)))
+        # TODO: Probably not the best way to parse, but it works for now. Improve.
+        dp = CSVParser(dp, delimiter=" ")
+        categories = []
+        for sample in dp:
+            categories.append(sample[0])
+        return cast(List[str], categories)
 
     def _make_datapipe(
         self,
@@ -74,28 +102,17 @@ class Food101(Dataset):
         *,
         config: DatasetConfig,
     ) -> IterDataPipe[Dict[str, Any]]:
-        # TODO: Finish the datapipe extraction.
-        # Since there is only one resource in the resources method.
         dp = resource_dps[0]
-        # dp = TarArchiveReader(dp)
-        # TODO: What about train/val/test splits?
-        # dp = Filter(dp, functools.partial(self._is_data_file, split=config.split))
+
+        # TODO: Could this be useful? Maybe for easily extracting metadata information for the
+        # train and test splits.
+        # metadata_dp, images_dp = Demultiplexer(
+        #     archive_dp, 2, self._classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
+        # )
+
+        # Train/Test filtering based on the meta file.
+        # TODO: Finish this.
+        dp = Filter(dp, functools.partial(self._is_data_file, split=config.split))
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
         return Mapper(dp, self._prepare_sample)
-
-
-# TODO: Translate this into the dp correspondant part.
-"""
-with open(self._meta_folder / f"{split}.json") as f:
-    metadata = json.loads(f.read())
-
-self.classes = sorted(metadata.keys())
-self.class_to_idx = dict(zip(self.classes, range(len(self.classes))))
-
-for class_label, im_rel_paths in metadata.items():
-    self._labels += [self.class_to_idx[class_label]] * len(im_rel_paths)
-    self._image_files += [
-        self._images_folder.joinpath(*f"{im_rel_path}.jpg".split("/")) for im_rel_path in im_rel_paths
-    ]
-"""

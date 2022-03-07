@@ -906,32 +906,45 @@ def country211(info, root, config):
     return num_examples * len(classes)
 
 
+# TODO: Finish this mock. Inspired from dtd.
 @register_mock
 def food101(info, root, config):
-    split_name_mapper = {
-        "train": "train",
-        "val": "valid",
-        "test": "test",
+    data_folder = root / "food-101"
+
+    num_images_per_class = 3  # TODO: How many?
+    image_folder = data_folder / "images"
+    categories = ["apple_pie", "baby_back_ribs", "baklava"]
+    image_ids_per_category = {
+        category: [
+            str(path.relative_to(path.parents[1]).as_posix())
+            for path in create_image_folder(
+                image_folder,
+                category,
+                file_name_fn=lambda idx: f"{category}_{idx:04d}.jpg",
+                num_examples=num_images_per_class,
+            )
+        ]
+        for category in categories
     }
-    split_folder = pathlib.Path(root, "country211", split_name_mapper[config["split"]])
-    split_folder.mkdir(parents=True, exist_ok=True)
 
-    num_examples = {
-        "train": 3,
-        "val": 4,
-        "test": 5,
-    }[config["split"]]
+    meta_folder = data_folder / "meta"
+    meta_folder.mkdir()
 
-    classes = ("AD", "BS", "GR")
-    for cls in classes:
-        create_image_folder(
-            split_folder,
-            name=cls,
-            file_name_fn=lambda idx: f"{idx}.jpg",
-            num_examples=num_examples,
-        )
-    make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
-    return num_examples * len(classes)
+    # TODO: What about the other metadata files? Need at least train.json and test.json.
+    with open(meta_folder / "classes.txt", "w") as file:
+        for category in categories:
+            file.write(f"{category}\n")
+
+    image_ids = list(itertools.chain(*image_ids_per_category.values()))
+    print(image_ids)
+    # splits = ("train", "test")
+    # TODO: Update how many samples per split? The numbers aren't correct for now,
+    # need to use the test.json and train.json files.
+    num_samples_map = {"train": 9, "test": 9}
+
+    make_tar(root, "food-101.tar.gz", data_folder, compression="gz")
+
+    return num_samples_map[config]
 
 
 @register_mock
