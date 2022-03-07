@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Optional, List
 
-from torchvision.prototype.transforms._presets import ImageClassificationEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mobilenetv3 import MobileNetV3, _mobilenet_v3_conf, InvertedResidualConfig

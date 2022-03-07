@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from torch import nn
-from torchvision.prototype.transforms._presets import ObjectDetectionEval
+from torchvision.prototype.transforms import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.mask_rcnn import (

@@ -3,7 +3,7 @@ from functools import partial
 from typing import Any, Callable, Optional
 
 from torch import nn
-from torchvision.prototype.transforms._presets import ObjectDetectionEval
+from torchvision.prototype.transforms import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.ssdlite import (

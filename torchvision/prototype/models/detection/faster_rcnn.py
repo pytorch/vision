@@ -1,7 +1,7 @@
 from typing import Any, Optional, Union
 
 from torch import nn
-from torchvision.prototype.transforms._presets import ObjectDetectionEval
+from torchvision.prototype.transforms import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.faster_rcnn import (

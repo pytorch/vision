@@ -4,7 +4,7 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.models.optical_flow import RAFT
 from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, ResidualBlock
-from torchvision.prototype.transforms._presets import OpticalFlowEval
+from torchvision.prototype.transforms import OpticalFlowEval
 from torchvision.transforms.functional import InterpolationMode
 
 from .._api import WeightsEnum

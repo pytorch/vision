@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
-from torchvision.prototype.transforms._presets import ImageClassificationEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.resnet import (

@@ -2,7 +2,7 @@ from functools import partial
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 from torch import nn
-from torchvision.prototype.transforms._presets import VideoClassificationEval
+from torchvision.prototype.transforms import VideoClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.video.resnet import (

@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms._presets import SemanticSegmentationEval
+from torchvision.prototype.transforms import SemanticSegmentationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3

@@ -2,7 +2,7 @@ from functools import partial
 from typing import Any, Optional
 
 from torch import nn
-from torchvision.prototype.transforms._presets import ImageClassificationEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.regnet import RegNet, BlockParams
