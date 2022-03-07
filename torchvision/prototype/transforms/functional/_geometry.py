@@ -21,13 +21,13 @@ def horizontal_flip_bounding_box(
     shape = bounding_box.shape
 
     bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY, copy=True
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [2, 0]]
 
     return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
 
 
@@ -240,14 +240,14 @@ def pad_bounding_box(
     shape = bounding_box.shape
 
     bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY, copy=True
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
     bounding_box[:, 0::2] += left
     bounding_box[:, 1::2] += top
 
     return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
 
 
