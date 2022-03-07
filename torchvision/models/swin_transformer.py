@@ -55,13 +55,13 @@ class PatchMerging(nn.Module):
         return x
 
 
-class WindowAttention(nn.Module):
+class ShiftedWindowAttention(nn.Module):
     """Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
-
     Args:
         dim (int): Number of input channels.
         window_size (int)): The size of the window.
+        shift_size (int): Shift size for SW-MSA.
         num_heads (int): Number of attention heads.
         qkv_bias (bool):  If True, add a learnable bias to query, key, value. Default: True.
         attention_dropout (float): Dropout ratio of attention weight. Default: 0.0.
@@ -72,6 +72,7 @@ class WindowAttention(nn.Module):
         self,
         dim: int,
         window_size: int,
+        shift_size: int,
         num_heads: int,
         qkv_bias: bool = True,
         attention_dropout: float = 0.0,
@@ -80,9 +81,9 @@ class WindowAttention(nn.Module):
         super().__init__()
         self.dim = dim
         self.window_size = window_size
+        self.shift_size = shift_size
         self.num_heads = num_heads
-        head_dim = dim // num_heads
-        self.scale = head_dim ** -0.5
+        self.scale = (dim // num_heads) ** -0.5
 
         # define a parameter table of relative position bias
         self.relative_position_bias_table = nn.Parameter(
@@ -99,7 +100,7 @@ class WindowAttention(nn.Module):
         relative_coords[:, :, 0] += self.window_size - 1  # shift to start from 0
         relative_coords[:, :, 1] += self.window_size - 1
         relative_coords[:, :, 0] *= 2 * self.window_size - 1
-        relative_position_index = relative_coords.sum(-1)  # Wh*Ww, Wh*Ww
+        relative_position_index = relative_coords.sum(-1)  # Wh*Ww*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
@@ -110,85 +111,68 @@ class WindowAttention(nn.Module):
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
-    def forward(self, x: Tensor, mask: Tensor = None):
-        """
-        Args:
-            x (Tensor): input features with shape of (num_windows*B, N, C).
-            mask (Tensor): (0/-inf) mask with shape of (num_windows, Wh*Ww, Wh*Ww) or None.
-        """
-        B, N, C = x.shape
-        qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
-        q, k, v = qkv[0], qkv[1], qkv[2]
+    def forward(self, x: Tensor):
+        B, H, W, C = x.shape
+        # pad feature maps to multiples of window size
+        pad_l = pad_t = 0
+        pad_r = (self.window_size - W % self.window_size) % self.window_size
+        pad_b = (self.window_size - H % self.window_size) % self.window_size
+        x = F.pad(x, (0, 0, pad_l, pad_r, pad_t, pad_b))
+        _, Hp, Wp, _ = x.shape
 
+        if self.window_size == min(Hp, Wp):
+            shift_size = 0
+        else:
+            shift_size = self.shift_size
+
+        # cyclic shift
+        if shift_size > 0:
+            x = torch.roll(x, shifts=(-shift_size, -shift_size), dims=(1, 2))
+
+        # partition windows
+        x = self.partition_window(x)  # nW*B, window_size, window_size, C
+        x = x.view(-1, self.window_size ** 2, C)  # nW*B, window_size*window_size, C
+        
+        # multi-head attention
+        attn_mask = self.generate_attention_mask(shift_size, Hp, Wp, x.device)
+        qkv = self.qkv(x).reshape(x.size(0), x.size(1), 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        q, k, v = qkv[0], qkv[1], qkv[2]
         q = q * self.scale
         attn = q @ k.transpose(-2, -1)
 
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
             self.window_size ** 2, self.window_size ** 2, -1
         )  # Wh*Ww,Wh*Ww,nH
-        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()  # nH, Wh*Ww, Wh*Ww
+        relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()
         attn = attn + relative_position_bias.unsqueeze(0)
 
-        if mask is not None:
-            num_windows = mask.shape[0]
-            attn = attn.view(B // num_windows, num_windows, self.num_heads, N, N) + mask.unsqueeze(1).unsqueeze(0)
-            attn = attn.view(-1, self.num_heads, N, N)
+        if attn_mask is not None:
+            num_windows = attn_mask.shape[0]
+            attn = attn.view(x.size(0) // num_windows, num_windows, self.num_heads, x.size(1), x.size(1)) + attn_mask.unsqueeze(1).unsqueeze(0)
+            attn = attn.view(-1, self.num_heads, x.size(1), x.size(1))
 
         attn = self.softmax(attn)
         attn = self.attention_dropout(attn)
 
-        x = (attn @ v).transpose(1, 2).reshape(B, N, C)
+        x = (attn @ v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
         x = self.proj(x)
         x = self.dropout(x)
+        
+        # reverse windows
+        x = x.view(-1, self.window_size, self.window_size, C)
+        x = self.reverse_window(x, Hp, Wp)  # B H' W' C
+
+        # reverse cyclic shift
+        if shift_size > 0:
+            x = torch.roll(x, shifts=(shift_size, shift_size), dims=(1, 2))
+
+        x = x.view(B, Hp, Wp, C)
+        if pad_r > 0 or pad_b > 0:
+            x = x[:, :H, :W, :].contiguous()
+        
         return x
-
-
-class SwinTransformerBlock(nn.Module):
-    """Swin Transformer Block.
-
-    Args:
-        dim (int): Number of input channels.
-        num_heads (int): Number of attention heads.
-        window_size (int): Window size.
-        shift_size (int): Shift size for SW-MSA.
-        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
-        qkv_bias (bool): If True, add a learnable bias to query, key, value. Default: True.
-        dropout (float): Dropout rate. Default: 0.0.
-        attention_dropout (float): Attention dropout rate. Default: 0.0.
-        stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
-        norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
-    """
-
-    def __init__(
-        self,
-        dim: int,
-        num_heads: int,
-        window_size: int = 7,
-        shift_size: int = 0,
-        mlp_ratio: float = 4.0,
-        qkv_bias: bool = True,
-        dropout: float = 0.0,
-        attention_dropout: float = 0.0,
-        stochastic_depth_prob: float = 0.0,
-        norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
-    ):
-        super().__init__()
-        self.dim = dim
-        self.num_heads = num_heads
-        self.window_size = window_size
-        self.shift_size = shift_size
-        self.mlp_ratio = mlp_ratio
-
-        self.norm1 = norm_layer(dim)
-        self.attn = WindowAttention(
-            dim, window_size, num_heads, qkv_bias=qkv_bias, attention_dropout=attention_dropout, dropout=dropout
-        )
-
-        self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
-        self.norm2 = norm_layer(dim)
-
-        self.mlp = MLPBlock(dim, int(dim * mlp_ratio), dropout)
-
+    
+    @torch.no_grad()
     def generate_attention_mask(self, shift_size: int, height: int, width: int, device: torch.device):
         if shift_size > 0:
             # calculate attention mask for SW-MSA
@@ -208,64 +192,14 @@ class SwinTransformerBlock(nn.Module):
         else:
             attn_mask = None
         return attn_mask
-
-    def forward(self, x: Tensor):
-        B, H, W, C = x.shape
-        shortcut = x
-        x = self.norm1(x)
-
-        # pad feature maps to multiples of window size
-        pad_l = pad_t = 0
-        pad_r = (self.window_size - W % self.window_size) % self.window_size
-        pad_b = (self.window_size - H % self.window_size) % self.window_size
-        x = F.pad(x, (0, 0, pad_l, pad_r, pad_t, pad_b))
-        _, Hp, Wp, _ = x.shape
-
-        if self.window_size == min(Hp, Wp):
-            shift_size = 0
-        else:
-            shift_size = self.shift_size
-
-        # cyclic shift
-        if shift_size > 0:
-            shifted_x = torch.roll(x, shifts=(-shift_size, -shift_size), dims=(1, 2))
-        else:
-            shifted_x = x
-
-        # partition windows
-        x_windows = self.partition_window(shifted_x)  # nW*B, window_size, window_size, C
-        x_windows = x_windows.view(-1, self.window_size ** 2, C)  # nW*B, window_size*window_size, C
-
-        # W-MSA/SW-MSA
-        attn_mask = self.generate_attention_mask(shift_size, Hp, Wp, x.device)
-        attn_windows = self.attn(x_windows, mask=attn_mask)  # nW*B, window_size*window_size, C
-
-        # reverse windows
-        attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
-        shifted_x = self.reverse_window(attn_windows, Hp, Wp)  # B H' W' C
-
-        # reverse cyclic shift
-        if shift_size > 0:
-            x = torch.roll(shifted_x, shifts=(shift_size, shift_size), dims=(1, 2))
-        else:
-            x = shifted_x
-
-        x = x.view(B, Hp, Wp, C)
-        if pad_r > 0 or pad_b > 0:
-            x = x[:, :H, :W, :].contiguous()
-
-        # FFN
-        x = shortcut + self.stochastic_depth(x)
-        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
-        return x
-
+    
     def partition_window(self, x: Tensor):
         """
         Partition the input tensor into windows: (B, H, W, C) -> (B*nW, window_size, window_size, C).
         """
         B, H, W, C = x.shape
         x = x.view(B, H // self.window_size, self.window_size, W // self.window_size, self.window_size, C)
-        x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(-1, self.window_size, self.window_size, C)
+        x = x.permute(0, 1, 3, 2, 4, 5).reshape(-1, self.window_size, self.window_size, C)
         return x
 
     def reverse_window(self, x: Tensor, height: int, width: int):
@@ -274,7 +208,55 @@ class SwinTransformerBlock(nn.Module):
         """
         B = int(x.shape[0] / (height * width / (self.window_size ** 2)))
         x = x.view(B, height // self.window_size, width // self.window_size, self.window_size, self.window_size, -1)
-        x = x.permute(0, 1, 3, 2, 4, 5).contiguous().view(B, height, width, -1)
+        x = x.permute(0, 1, 3, 2, 4, 5).reshape(B, height, width, -1)
+        return x
+
+
+class SwinTransformerBlock(nn.Module):
+    """Swin Transformer Block.
+    Args:
+        dim (int): Number of input channels.
+        num_heads (int): Number of attention heads.
+        window_size (int): Window size.
+        shift_size (int): Shift size for SW-MSA.
+        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
+        qkv_bias (bool): If True, add a learnable bias to query, key, value. Default: True.
+        dropout (float): Dropout rate. Default: 0.0.
+        attention_dropout (float): Attention dropout rate. Default: 0.0.
+        stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
+        act_layer (nn.Module): Activation layer. Default: nn.GELU.
+        norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
+    """
+
+    def __init__(
+        self,
+        dim: int,
+        num_heads: int,
+        window_size: int = 7,
+        shift_size: int = 0,
+        mlp_ratio: float = 4.0,
+        qkv_bias: bool = True,
+        dropout: float = 0.0,
+        attention_dropout: float = 0.0,
+        stochastic_depth_prob: float = 0.0,
+        act_layer: Callable[..., nn.Module] = nn.GELU,
+        norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
+    ):
+        super().__init__()
+
+        self.norm1 = norm_layer(dim)
+        self.attn = ShiftedWindowAttention(
+            dim, window_size, shift_size, num_heads, qkv_bias=qkv_bias, attention_dropout=attention_dropout, dropout=dropout
+        )
+
+        self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
+        self.norm2 = norm_layer(dim)
+
+        self.mlp = MLPBlock(dim, int(dim * mlp_ratio), act_layer=act_layer, dropout=dropout)
+
+    def forward(self, x: Tensor):
+        x = x + self.stochastic_depth(self.attn(self.norm1(x)))
+        x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
         return x
 
 
