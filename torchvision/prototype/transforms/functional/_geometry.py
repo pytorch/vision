@@ -1,5 +1,4 @@
 import numbers
-from typing import NamedTuple
 from typing import Tuple, List, Optional, Sequence, Union
 
 import PIL.Image
@@ -316,14 +315,6 @@ def resized_crop_image_pil(
     return resize_image_pil(img, size, interpolation=interpolation)
 
 
-class _FiveCropResult(NamedTuple):
-    top_left: torch.Tensor
-    top_right: torch.Tensor
-    bottom_left: torch.Tensor
-    bottom_right: torch.Tensor
-    center: torch.Tensor
-
-
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
@@ -336,7 +327,9 @@ def _parse_five_crop_size(size: List[int]) -> List[int]:
     return size
 
 
-def five_crop_image_tensor(img: torch.Tensor, size: List[int]) -> _FiveCropResult:
+def five_crop_image_tensor(
+    img: torch.Tensor, size: List[int]
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
     crop_height, crop_width = _parse_five_crop_size(size)
     _, image_height, image_width = get_dimensions_image_tensor(img)
 
@@ -350,10 +343,12 @@ def five_crop_image_tensor(img: torch.Tensor, size: List[int]) -> _FiveCropResul
     br = crop_image_tensor(img, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
     center = center_crop_image_tensor(img, [crop_height, crop_width])
 
-    return _FiveCropResult(tl, tr, bl, br, center)
+    return tl, tr, bl, br, center
 
 
-def five_crop_image_pil(img: PIL.Image.Image, size: List[int]) -> _FiveCropResult:
+def five_crop_image_pil(
+    img: PIL.Image.Image, size: List[int]
+) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
     crop_height, crop_width = _parse_five_crop_size(size)
     _, image_height, image_width = get_dimensions_image_pil(img)
 
@@ -367,23 +362,10 @@ def five_crop_image_pil(img: PIL.Image.Image, size: List[int]) -> _FiveCropResul
     br = crop_image_pil(img, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
     center = center_crop_image_pil(img, [crop_height, crop_width])
 
-    return _FiveCropResult(tl, tr, bl, br, center)
+    return tl, tr, bl, br, center
 
 
-class _TenCropResult(NamedTuple):
-    top_left: torch.Tensor
-    top_right: torch.Tensor
-    bottom_left: torch.Tensor
-    bottom_right: torch.Tensor
-    center: torch.Tensor
-    top_left_flip: torch.Tensor
-    top_right_flip: torch.Tensor
-    bottom_left_flip: torch.Tensor
-    bottom_right_flip: torch.Tensor
-    center_flip: torch.Tensor
-
-
-def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: bool = False) -> _TenCropResult:
+def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
     tl, tr, bl, br, center = five_crop_image_tensor(img, size)
 
     if vertical_flip:
@@ -393,10 +375,10 @@ def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: boo
 
     tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_tensor(img, size)
 
-    return _TenCropResult(tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
+    return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
 
 
-def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: bool = False) -> _TenCropResult:
+def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: bool = False) -> List[PIL.Image.Image]:
     tl, tr, bl, br, center = five_crop_image_pil(img, size)
 
     if vertical_flip:
@@ -406,4 +388,4 @@ def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: boo
 
     tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(img, size)
 
-    return _TenCropResult(tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip)
+    return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]

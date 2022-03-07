@@ -1,4 +1,4 @@
-import functools
+import collections.abc
 import math
 import warnings
 from typing import Any, Dict, List, Union, Sequence, Tuple, cast
@@ -7,7 +7,6 @@ import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
-from torchvision.prototype.utils._internal import apply_recursively
 from torchvision.transforms.functional import pil_to_tensor
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
@@ -173,6 +172,17 @@ class RandomResizedCrop(Transform):
         return super().forward(sample)
 
 
+class MultiCropResult(list):
+    """Helper class for :class:`~torchvision.prototype.transforms.BatchMultiCrop`.
+
+    Outputs of multi crop transforms such as :class:`~torchvision.prototype.transforms.FiveCrop` and
+    `:class:`~torchvision.prototype.transforms.TenCrop` should be wrapped in this in order to be batched correctly by
+    :class:`~torchvision.prototype.transforms.BatchMultiCrop`.
+    """
+
+    pass
+
+
 class FiveCrop(Transform):
     def __init__(self, size: Union[int, Sequence[int]]) -> None:
         super().__init__()
@@ -181,11 +191,11 @@ class FiveCrop(Transform):
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if isinstance(input, features.Image):
             output = F.five_crop_image_tensor(input, self.size)
-            return F._FiveCropResult(*[features.Image.new_like(input, o) for o in output])
-        elif type(input) is torch.Tensor:
-            return F.five_crop_image_tensor(input, self.size)
+            return MultiCropResult(features.Image.new_like(input, o) for o in output)
+        elif is_simple_tensor(input):
+            return MultiCropResult(F.five_crop_image_tensor(input, self.size))
         elif isinstance(input, PIL.Image.Image):
-            return F.five_crop_image_pil(input, self.size)
+            return MultiCropResult(F.five_crop_image_pil(input, self.size))
         else:
             return input
 
@@ -205,11 +215,11 @@ class TenCrop(Transform):
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if isinstance(input, features.Image):
             output = F.ten_crop_image_tensor(input, self.size, vertical_flip=self.vertical_flip)
-            return F._TenCropResult(*[features.Image.new_like(input, o) for o in output])
-        elif type(input) is torch.Tensor:
-            return F.ten_crop_image_tensor(input, self.size)
+            return MultiCropResult(features.Image.new_like(input, o) for o in output)
+        elif is_simple_tensor(input):
+            return MultiCropResult(F.ten_crop_image_tensor(input, self.size))
         elif isinstance(input, PIL.Image.Image):
-            return F.ten_crop_image_pil(input, self.size)
+            return MultiCropResult(F.ten_crop_image_pil(input, self.size))
         else:
             return input
 
@@ -221,27 +231,28 @@ class TenCrop(Transform):
 
 
 class BatchMultiCrop(Transform):
-    _MULTI_CROP_TYPES = (F._FiveCropResult, F._TenCropResult)
-
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, self._MULTI_CROP_TYPES):
-            crops = input
-            if isinstance(input[0], PIL.Image.Image):
-                crops = [pil_to_tensor(crop) for crop in crops]  # type: ignore[assignment]
-
-            batch = torch.stack(crops)
-
-            if isinstance(input[0], features.Image):
-                batch = features.Image.new_like(input[0], batch)
-
-            return batch
-        else:
-            return input
-
     def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        return apply_recursively(
-            functools.partial(self._transform, params=self._get_params(sample)),
-            sample,
-            exclude_sequence_types=(str, *self._MULTI_CROP_TYPES),
-        )
+        # This is basically the functionality of `torchvision.prototype.utils._internal.apply_recursively` with one
+        # significant difference:
+        # Since we need multiple images to batch them together, we need to explicitly exclude `MultiCropResult` from
+        # the sequence case.
+        def apply_recursively(obj: Any) -> Any:
+            if isinstance(obj, MultiCropResult):
+                crops = obj
+                if isinstance(obj[0], PIL.Image.Image):
+                    crops = [pil_to_tensor(crop) for crop in crops]  # type: ignore[assignment]
+
+                batch = torch.stack(crops)
+
+                if isinstance(obj[0], features.Image):
+                    batch = features.Image.new_like(obj[0], batch)
+
+                return batch
+            elif isinstance(obj, collections.abc.Sequence) and not isinstance(obj, str):
+                return [apply_recursively(item) for item in obj]
+            elif isinstance(obj, collections.abc.Mapping):
+                return {key: apply_recursively(item) for key, item in obj.items()}
+            else:
+                return obj
+
+        return apply_recursively(inputs if len(inputs) > 1 else inputs[0])

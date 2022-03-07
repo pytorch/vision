@@ -60,10 +60,8 @@ from ._geometry import (
     perspective_image_pil,
     vertical_flip_image_tensor,
     vertical_flip_image_pil,
-    _FiveCropResult,
     five_crop_image_tensor,
     five_crop_image_pil,
-    _TenCropResult,
     ten_crop_image_tensor,
     ten_crop_image_pil,
 )
