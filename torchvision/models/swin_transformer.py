@@ -33,7 +33,7 @@ def generate_attention_mask(height: int, width: int, window_size: int, shift_siz
             mask[:, h[0] : h[1], w[0] : w[1], :] = count
             count += 1
     return mask
- 
+
 
 torch.fx.wrap("generate_attention_mask")
 
@@ -110,7 +110,7 @@ class ShiftedWindowAttention(nn.Module):
         # partition windows
         x = self.partition_window(x)  # nW*B, window_size, window_size, C
         x = x.view(-1, int(self.window_size ** 2), C)  # nW*B, window_size*window_size, C
-        
+
         # multi-head attention
         qkv = self.qkv(x).reshape(x.size(0), x.size(1), 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
@@ -142,7 +142,7 @@ class ShiftedWindowAttention(nn.Module):
         x = (attn @ v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
         x = self.proj(x)
         x = self.dropout(x)
-        
+
         # reverse windows
         x = x.view(-1, self.window_size, self.window_size, C)
         x = self.reverse_window(x, Hp, Wp)  # B H' W' C
@@ -155,7 +155,7 @@ class ShiftedWindowAttention(nn.Module):
         x = x[:, :H, :W, :].contiguous()
 
         return x
-    
+
     def partition_window(self, x: Tensor):
         """
         Partition the input tensor into windows: (B, H, W, C) -> (B*nW, window_size, window_size, C).
@@ -187,7 +187,6 @@ class SwinTransformerBlock(nn.Module):
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
-        act_layer (nn.Module): Activation layer. Default: nn.GELU.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
     """
 
@@ -208,7 +207,13 @@ class SwinTransformerBlock(nn.Module):
 
         self.norm1 = norm_layer(dim)
         self.attn = ShiftedWindowAttention(
-            dim, window_size, shift_size, num_heads, qkv_bias=qkv_bias, attention_dropout=attention_dropout, dropout=dropout
+            dim,
+            window_size,
+            shift_size,
+            num_heads,
+            qkv_bias=qkv_bias,
+            attention_dropout=attention_dropout,
+            dropout=dropout,
         )
 
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
