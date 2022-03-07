@@ -7,8 +7,8 @@ from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.stochastic_depth import StochasticDepth
-from .vision_transformer import MLPBlock
 from .convnext import Permute
+from .vision_transformer import MLPBlock
 
 
 __all__ = [
@@ -92,7 +92,7 @@ class WindowAttention(nn.Module):
         # get pair-wise relative position index for each token inside the window
         coords_h = torch.arange(self.window_size)
         coords_w = torch.arange(self.window_size)
-        coords = torch.stack(torch.meshgrid(coords_h, coords_w, indexing='ij'))  # 2, Wh, Ww
+        coords = torch.stack(torch.meshgrid(coords_h, coords_w, indexing="ij"))  # 2, Wh, Ww
         coords_flatten = torch.flatten(coords, 1)  # 2, Wh*Ww
         relative_coords = coords_flatten[:, :, None] - coords_flatten[:, None, :]  # 2, Wh*Ww, Wh*Ww
         relative_coords = relative_coords.permute(1, 2, 0).contiguous()  # Wh*Ww, Wh*Ww, 2
@@ -240,7 +240,7 @@ class SwinTransformerBlock(nn.Module):
         attn_mask = self.generate_attention_mask(shift_size, Hp, Wp, x.device)
         attn_windows = self.attn(x_windows, mask=attn_mask)  # nW*B, window_size*window_size, C
 
-        # merge windows
+        # reverse windows
         attn_windows = attn_windows.view(-1, self.window_size, self.window_size, C)
         shifted_x = self.reverse_window(attn_windows, Hp, Wp)  # B H' W' C
 
