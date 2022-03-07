@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from torch import nn
-from torchvision.prototype.transforms import CocoEval
+from torchvision.prototype.transforms import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.keypoint_rcnn import (
@@ -37,7 +37,7 @@ _COMMON_META = {
 class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
     COCO_LEGACY = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             **_COMMON_META,
             "num_params": 59137258,
@@ -48,7 +48,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
     )
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             **_COMMON_META,
             "num_params": 59137258,
