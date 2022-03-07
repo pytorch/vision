@@ -1,6 +1,5 @@
 from typing import Any, Dict, List, Tuple, Iterator, BinaryIO
 
-import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat

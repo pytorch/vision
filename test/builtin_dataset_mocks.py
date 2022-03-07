@@ -1399,9 +1399,8 @@ def stanford_cars(info, root, config):
 
     num_examples = {"train": 5, "test": 7}[config["split"]]
     num_classes = 3
-    base_folder = pathlib.Path(root)
 
-    devkit = base_folder / "devkit"
+    devkit = root / "devkit"
     devkit.mkdir(parents=True)
 
     if config["split"] == "train":
@@ -1409,16 +1408,16 @@ def stanford_cars(info, root, config):
         annotations_mat_path = devkit / "cars_train_annos.mat"
     else:
         images_folder_name = "cars_test"
-        annotations_mat_path = base_folder / "cars_test_annos_withlabels.mat"
+        annotations_mat_path = root / "cars_test_annos_withlabels.mat"
 
     create_image_folder(
-        root=base_folder,
+        root=root,
         name=images_folder_name,
         file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
         num_examples=num_examples,
     )
 
-    make_tar(base_folder, f"cars_{config.split}.tgz", images_folder_name)
+    make_tar(root, f"cars_{config.split}.tgz", images_folder_name)
     bbox = np.random.randint(1, 200, num_examples, dtype=np.uint8)
     classes = np.random.randint(1, num_classes + 1, num_examples, dtype=np.uint8)
     fnames = [f"{i:5d}.jpg" for i in range(num_examples)]
@@ -1429,6 +1428,6 @@ def stanford_cars(info, root, config):
 
     io.savemat(annotations_mat_path, {"annotations": rec_array})
     if config.split == "train":
-        make_tar(base_folder, "car_devkit.tgz", devkit)
+        make_tar(root, "car_devkit.tgz", devkit)
 
     return num_examples
