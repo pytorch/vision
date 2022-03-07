@@ -1,5 +1,6 @@
 from typing import Any, Optional
 
+from torch import nn
 from torchvision.prototype.transforms import CocoEval
 from torchvision.transforms.functional import InterpolationMode
 
@@ -91,11 +92,11 @@ def keypointrcnn_resnet50_fpn(
         if num_keypoints is None:
             num_keypoints = 17
 
-    trainable_backbone_layers = _validate_trainable_layers(
-        weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 3
-    )
+    is_trained = weights is not None or weights_backbone is not None
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
+    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
-    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
     model = KeypointRCNN(backbone, num_classes, num_keypoints=num_keypoints, **kwargs)
 
