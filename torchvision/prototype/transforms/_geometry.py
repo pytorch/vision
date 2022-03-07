@@ -11,7 +11,7 @@ from torchvision.prototype.utils._internal import apply_recursively
 from torchvision.transforms.functional import pil_to_tensor
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 
-from ._utils import query_image, get_image_dimensions, has_any
+from ._utils import query_image, get_image_dimensions, has_any, is_simple_tensor
 
 
 class HorizontalFlip(Transform):
@@ -24,7 +24,7 @@ class HorizontalFlip(Transform):
             return features.BoundingBox.new_like(input, output)
         elif isinstance(input, PIL.Image.Image):
             return F.horizontal_flip_image_pil(input)
-        elif isinstance(input, torch.Tensor):
+        elif is_simple_tensor(input):
             return F.horizontal_flip_image_tensor(input)
         else:
             return input
@@ -49,10 +49,10 @@ class Resize(Transform):
             return features.SegmentationMask.new_like(input, output)
         elif isinstance(input, features.BoundingBox):
             output = F.resize_bounding_box(input, self.size, image_size=input.image_size)
-            return features.BoundingBox.new_like(input, output, image_size=self.size)
+            return features.BoundingBox.new_like(input, output, image_size=cast(Tuple[int, int], tuple(self.size)))
         elif isinstance(input, PIL.Image.Image):
             return F.resize_image_pil(input, self.size, interpolation=self.interpolation)
-        elif isinstance(input, torch.Tensor):
+        elif is_simple_tensor(input):
             return F.resize_image_tensor(input, self.size, interpolation=self.interpolation)
         else:
             return input
@@ -67,7 +67,7 @@ class CenterCrop(Transform):
         if isinstance(input, features.Image):
             output = F.center_crop_image_tensor(input, self.output_size)
             return features.Image.new_like(input, output)
-        elif isinstance(input, torch.Tensor):
+        elif is_simple_tensor(input):
             return F.center_crop_image_tensor(input, self.output_size)
         elif isinstance(input, PIL.Image.Image):
             return F.center_crop_image_pil(input, self.output_size)
@@ -159,7 +159,7 @@ class RandomResizedCrop(Transform):
                 input, **params, size=list(self.size), interpolation=self.interpolation
             )
             return features.Image.new_like(input, output)
-        elif isinstance(input, torch.Tensor):
+        elif is_simple_tensor(input):
             return F.resized_crop_image_tensor(input, **params, size=list(self.size), interpolation=self.interpolation)
         elif isinstance(input, PIL.Image.Image):
             return F.resized_crop_image_pil(input, **params, size=list(self.size), interpolation=self.interpolation)
