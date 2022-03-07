@@ -211,31 +211,10 @@ pad_image_tensor = _FT.pad
 pad_image_pil = _FP.pad
 
 
-# TODO: this was copy-pasted from _FT.pad. Use this if _FT.pad is actually defined here
-def _parse_pad_padding(padding: List[int]) -> List[int]:
-    if isinstance(padding, int):
-        if torch.jit.is_scripting():
-            # This maybe unreachable
-            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
-        pad_left = pad_right = pad_top = pad_bottom = padding
-    elif len(padding) == 1:
-        pad_left = pad_right = pad_top = pad_bottom = padding[0]
-    elif len(padding) == 2:
-        pad_left = pad_right = padding[0]
-        pad_top = pad_bottom = padding[1]
-    else:
-        pad_left = padding[0]
-        pad_top = padding[1]
-        pad_right = padding[2]
-        pad_bottom = padding[3]
-
-    return [pad_left, pad_right, pad_top, pad_bottom]
-
-
 def pad_bounding_box(
     bounding_box: torch.Tensor, padding: List[int], format: features.BoundingBoxFormat
 ) -> torch.Tensor:
-    left, _, top, _ = _parse_pad_padding(padding)
+    left, _, top, _ = _FT._parse_pad_padding(padding)
 
     shape = bounding_box.shape
 
