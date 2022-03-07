@@ -131,8 +131,8 @@ class ShiftedWindowAttention(nn.Module):
 
         # partition windows
         x = self.partition_window(x)  # nW*B, window_size, window_size, C
-        x = x.view(-1, self.window_size ** 2, C)  # nW*B, window_size*window_size, C
-        
+        x = x.view(-1, int(self.window_size ** 2), C)  # nW*B, window_size*window_size, C
+
         # multi-head attention
         attn_mask = self.generate_attention_mask(shift_size, Hp, Wp, x.device)
         qkv = self.qkv(x).reshape(x.size(0), x.size(1), 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
@@ -141,14 +141,16 @@ class ShiftedWindowAttention(nn.Module):
         attn = q @ k.transpose(-2, -1)
 
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
-            self.window_size ** 2, self.window_size ** 2, -1
+            int(self.window_size ** 2), int(self.window_size ** 2), -1
         )  # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()
         attn = attn + relative_position_bias.unsqueeze(0)
 
         if attn_mask is not None:
             num_windows = attn_mask.shape[0]
-            attn = attn.view(x.size(0) // num_windows, num_windows, self.num_heads, x.size(1), x.size(1)) + attn_mask.unsqueeze(1).unsqueeze(0)
+            attn = attn.view(
+                x.size(0) // num_windows, num_windows, self.num_heads, x.size(1), x.size(1)
+            ) + attn_mask.unsqueeze(1).unsqueeze(0)
             attn = attn.view(-1, self.num_heads, x.size(1), x.size(1))
 
         attn = self.softmax(attn)
@@ -157,7 +159,7 @@ class ShiftedWindowAttention(nn.Module):
         x = (attn @ v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
         x = self.proj(x)
         x = self.dropout(x)
-        
+
         # reverse windows
         x = x.view(-1, self.window_size, self.window_size, C)
         x = self.reverse_window(x, Hp, Wp)  # B H' W' C
@@ -169,7 +171,7 @@ class ShiftedWindowAttention(nn.Module):
         x = x.view(B, Hp, Wp, C)
         if pad_r > 0 or pad_b > 0:
             x = x[:, :H, :W, :].contiguous()
-        
+
         return x
     
     @torch.no_grad()
@@ -177,22 +179,21 @@ class ShiftedWindowAttention(nn.Module):
         if shift_size > 0:
             # calculate attention mask for SW-MSA
             mask = torch.zeros((1, height, width, 1), device=device)
-            h_slices = (slice(0, -self.window_size), slice(-self.window_size, -shift_size), slice(-shift_size, None))
-            w_slices = (slice(0, -self.window_size), slice(-self.window_size, -shift_size), slice(-shift_size, None))
+            slices = ((0, -self.window_size), (-self.window_size, -shift_size), (-shift_size, None))
             count = 0
-            for h in h_slices:
-                for w in w_slices:
-                    mask[:, h, w, :] = count
+            for h in slices:
+                for w in slices:
+                    mask[:, h[0]:h[1], w[0]:w[1], :] = count
                     count += 1
 
             mask_windows = self.partition_window(mask)  # nW, window_size, window_size, 1
-            mask_windows = mask_windows.view(-1, self.window_size ** 2)
+            mask_windows = mask_windows.view(-1, int(self.window_size ** 2))
             attn_mask = mask_windows.unsqueeze(1) - mask_windows.unsqueeze(2)
             attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
         else:
             attn_mask = None
         return attn_mask
-    
+
     def partition_window(self, x: Tensor):
         """
         Partition the input tensor into windows: (B, H, W, C) -> (B*nW, window_size, window_size, C).
@@ -246,7 +247,13 @@ class SwinTransformerBlock(nn.Module):
 
         self.norm1 = norm_layer(dim)
         self.attn = ShiftedWindowAttention(
-            dim, window_size, shift_size, num_heads, qkv_bias=qkv_bias, attention_dropout=attention_dropout, dropout=dropout
+            dim,
+            window_size,
+            shift_size,
+            num_heads,
+            qkv_bias=qkv_bias,
+            attention_dropout=attention_dropout,
+            dropout=dropout,
         )
 
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
