@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from torch import nn
-from torchvision.prototype.transforms import CocoEval
+from torchvision.prototype.transforms._presets import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.retinanet import (
@@ -28,7 +28,7 @@ __all__ = [
 class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             "task": "image_object_detection",
             "architecture": "RetinaNet",

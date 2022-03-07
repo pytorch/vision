@@ -4,7 +4,7 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.models.optical_flow import RAFT
 from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, ResidualBlock
-from torchvision.prototype.transforms import RaftEval
+from torchvision.prototype.transforms._presets import OpticalFlowEval
 from torchvision.transforms.functional import InterpolationMode
 
 from .._api import WeightsEnum
@@ -33,7 +33,7 @@ class Raft_Large_Weights(WeightsEnum):
     C_T_V1 = Weights(
         # Chairs + Things, ported from original paper repo (raft-things.pth)
         url="https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth",
-        transforms=RaftEval,
+        transforms=OpticalFlowEval,
         meta={
             **_COMMON_META,
             "num_params": 5257536,
@@ -48,7 +48,7 @@ class Raft_Large_Weights(WeightsEnum):
     C_T_V2 = Weights(
         # Chairs + Things
         url="https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
-        transforms=RaftEval,
+        transforms=OpticalFlowEval,
         meta={
             **_COMMON_META,
             "num_params": 5257536,
@@ -63,7 +63,7 @@ class Raft_Large_Weights(WeightsEnum):
     C_T_SKHT_V1 = Weights(
         # Chairs + Things + Sintel fine-tuning, ported from original paper repo (raft-sintel.pth)
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth",
-        transforms=RaftEval,
+        transforms=OpticalFlowEval,
         meta={
             **_COMMON_META,
             "num_params": 5257536,
@@ -78,7 +78,7 @@ class Raft_Large_Weights(WeightsEnum):
         # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean)
         # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
-        transforms=RaftEval,
+        transforms=OpticalFlowEval,
         meta={
             **_COMMON_META,
             "num_params": 5257536,
@@ -91,7 +91,7 @@ class Raft_Large_Weights(WeightsEnum):
     C_T_SKHT_K_V1 = Weights(
         # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning, ported from the original repo (sintel-kitti.pth)
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V1-4a6a5039.pth",
-        transforms=RaftEval,
+        transforms=OpticalFlowEval,
         meta={
             **_COMMON_META,
             "num_params": 5257536,
@@ -106,7 +106,7 @@ class Raft_Large_Weights(WeightsEnum):
         # Same as CT_SKHT with extra fine-tuning on Kitti
         # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel and then on Kitti
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V2-b5c70766.pth",
-        transforms=RaftEval,
+        transforms=OpticalFlowEval,
         meta={
             **_COMMON_META,
             "num_params": 5257536,
@@ -122,7 +122,7 @@ class Raft_Small_Weights(WeightsEnum):
     C_T_V1 = Weights(
         # Chairs + Things, ported from original paper repo (raft-small.pth)
         url="https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth",
-        transforms=RaftEval,
+        transforms=OpticalFlowEval,
         meta={
             **_COMMON_META,
             "num_params": 990162,
@@ -136,7 +136,7 @@ class Raft_Small_Weights(WeightsEnum):
     C_T_V2 = Weights(
         # Chairs + Things
         url="https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
-        transforms=RaftEval,
+        transforms=OpticalFlowEval,
         meta={
             **_COMMON_META,
             "num_params": 990162,

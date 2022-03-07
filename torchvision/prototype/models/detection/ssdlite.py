@@ -3,7 +3,7 @@ from functools import partial
 from typing import Any, Callable, Optional
 
 from torch import nn
-from torchvision.prototype.transforms import CocoEval
+from torchvision.prototype.transforms._presets import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.ssdlite import (
@@ -30,7 +30,7 @@ __all__ = [
 class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             "task": "image_object_detection",
             "architecture": "SSDLite",

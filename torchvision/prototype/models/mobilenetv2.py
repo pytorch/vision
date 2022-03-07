@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms._presets import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mobilenetv2 import MobileNetV2
@@ -28,7 +28,7 @@ _COMMON_META = {
 class MobileNet_V2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
@@ -38,7 +38,7 @@ class MobileNet_V2_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-7ebf99e0.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
