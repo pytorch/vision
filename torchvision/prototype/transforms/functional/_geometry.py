@@ -10,6 +10,7 @@ from torchvision.transforms.functional import pil_modes_mapping, _get_inverse_af
 
 from ._meta import convert_bounding_box_format, get_dimensions_image_tensor, get_dimensions_image_pil
 
+
 horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
 
