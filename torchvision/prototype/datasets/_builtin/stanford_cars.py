@@ -1,10 +1,10 @@
-from typing import Any, Dict, List, Tuple, Iterator
+from typing import Any, Dict, List, Tuple, Iterator, BinaryIO
 
 import numpy as np
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
-from torchvision.prototype.features import BoundingBox, EncodedImage
+from torchvision.prototype.features import BoundingBox, EncodedImage, Label
 
 
 class StanfordCarsLabelReader(IterDataPipe[Tuple[int, int, int, int, int, str]]):
@@ -79,7 +79,7 @@ class StanfordCars(Dataset):
         images_dp, targets_dp = resource_dps
         if config.split == "train":
             targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
-        targets_dp = _StanfordCarsLabelReader(targets_dp)
+        targets_dp = StanfordCarsLabelReader(targets_dp)
         dp = Zipper(images_dp, targets_dp)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
