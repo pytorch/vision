@@ -57,27 +57,16 @@ class StanfordCars(Dataset):
 
         return resources
 
-    def _prepare_sample(self, data: Tuple[IterDataPipe, Tuple[int, int, int, int, int, str]]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Tuple[int, int, int, int, int, str]]) -> Dict[str, Any]:
         image, target = data
-        image_path, image_buffer = image
-        image = EncodedImage.from_file(image_buffer)
-        index = int(image_path[-9:-4]) - 1
+        path, buffer = image
+        image = EncodedImage.from_file(buffer)
 
         return dict(
-            index=index,
-            image_path=image_path,
+            path=path,
             image=image,
-            classification_label=target[4] - 1,
-            bounding_box=BoundingBox(
-                [
-                    target[0],
-                    target[1],
-                    target[2],
-                    target[3],
-                ],
-                format="xyxy",
-                image_size=image.image_size,
-            ),
+            label=Label(target[4] - 1, categories=self.categories),
+            bounding_box=BoundingBox(target[:4], format="xyxy", image_size=image.image_size),
         )
 
     def _make_datapipe(
