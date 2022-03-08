@@ -413,20 +413,14 @@ def pad(
         need_cast = True
         img = img.to(torch.float32)
 
-    patch_padding = False
-    if isinstance(fill, (int, float)):
-        v = float(fill)
-    elif any([x != fill[0] for x in fill]):
-        patch_padding = True
-        v = 0.0
-    else:
-        v = fill[0]
-    img = torch_pad(img, p, mode=padding_mode, value=v)
+    img = torch_pad(img, p, mode=padding_mode)
 
-    if padding_mode == "constant" and patch_padding and fill is not None:
-        if not isinstance(fill, (tuple, list)):
-            fill = [fill]
-        fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, -1, 1, 1)
+    if padding_mode == "constant":
+        # The following if/else can't be simplified due to JIT
+        if isinstance(fill, (tuple, list)):
+            fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, -1, 1, 1)
+        else:
+            fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device)
         if pad_top > 0:
             img[..., :pad_top, :] = fill_img
         if pad_left > 0:
@@ -529,12 +523,14 @@ def _assert_fill(fill: Optional[Union[List[float], float]], num_channels: int):
         warnings.warn("Argument fill should be either int, float, tuple or list")
 
     # Check fill
-    if isinstance(fill, (tuple, list)) and len(fill) > 1 and len(fill) != num_channels:
-        msg = (
-            "The number of elements in 'fill' cannot broadcast to match the number of "
-            "channels of the image ({} != {})"
-        )
-        raise ValueError(msg.format(len(fill), num_channels))
+    if isinstance(fill, (tuple, list)):
+        length = len(fill)
+        if length > 1 and length != num_channels:
+            msg = (
+                "The number of elements in 'fill' cannot broadcast to match the number of "
+                "channels of the image ({} != {})"
+            )
+            raise ValueError(msg.format(length, num_channels))
 
 
 def _assert_grid_transform_inputs(
