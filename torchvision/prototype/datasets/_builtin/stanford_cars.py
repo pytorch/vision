@@ -57,11 +57,6 @@ class StanfordCars(Dataset):
 
         return resources
 
-    def prepare_categories(self, dp: IterDataPipe) -> List[str]:
-        _, file = dp
-        classes = list(read_mat(file, squeeze_me=True)["class_names"])
-        return classes
-
     def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Tuple[int, int, int, int, int, str]]) -> Dict[str, Any]:
         image, target = data
         path, buffer = image
@@ -96,5 +91,6 @@ class StanfordCars(Dataset):
 
         devkit_dp = resources[1].load(root)
         meta_dp = Filter(devkit_dp, path_comparator("name", "cars_meta.mat"))
-        print(meta_dp)
-        return Mapper(meta_dp, self.prepare_categories)
+        _, meta_file = next(iter(meta_dp))
+
+        return  list(read_mat(meta_file, squeeze_me=True)["class_names"])
