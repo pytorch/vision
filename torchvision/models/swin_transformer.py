@@ -119,7 +119,7 @@ class ShiftedWindowAttention(nn.Module):
         relative_coords[:, :, 0] += self.window_size - 1  # shift to start from 0
         relative_coords[:, :, 1] += self.window_size - 1
         relative_coords[:, :, 0] *= 2 * self.window_size - 1
-        relative_position_index = relative_coords.sum(-1)  # Wh*Ww*Wh*Ww
+        relative_position_index = relative_coords.sum(-1).view(-1)  # Wh*Ww*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
@@ -142,14 +142,16 @@ class ShiftedWindowAttention(nn.Module):
         x_windows = x_windows.view(-1, int(self.window_size ** 2), C)  # nW*B, window_size*window_size, C
 
         # multi-head attention
-        qkv = self.qkv(x_windows).reshape(
-            x_windows.size(0), x_windows.size(1), 3, self.num_heads, C // self.num_heads
-        ).permute(2, 0, 3, 1, 4)
+        qkv = (
+            self.qkv(x_windows)
+            .reshape(x_windows.size(0), x_windows.size(1), 3, self.num_heads, C // self.num_heads)
+            .permute(2, 0, 3, 1, 4)
+        )
         q, k, v = qkv[0], qkv[1], qkv[2]
         q = q * self.scale
         attn = q @ k.transpose(-2, -1)
 
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index.view(-1)].view(
+        relative_position_bias = self.relative_position_bias_table[self.relative_position_index].view(
             int(self.window_size ** 2), int(self.window_size ** 2), -1
         )  # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous()
