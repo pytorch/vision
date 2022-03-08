@@ -422,7 +422,7 @@ class Pad(torch.nn.Module):
               will result in [2, 1, 1, 2, 3, 4, 4, 3]
     """
 
-    def __init__(self, padding, fill=0, padding_mode="constant"):
+    def __init__(self, padding, fill=0.0, padding_mode="constant"):
         super().__init__()
         _log_api_usage_once(self)
         if not isinstance(padding, (numbers.Number, tuple, list)):

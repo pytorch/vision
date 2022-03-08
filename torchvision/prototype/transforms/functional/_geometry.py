@@ -264,7 +264,7 @@ def center_crop_image_tensor(img: torch.Tensor, output_size: List[int]) -> torch
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        img = pad_image_tensor(img, padding_ltrb, fill=0)
+        img = pad_image_tensor(img, padding_ltrb)
 
         _, image_height, image_width = get_dimensions_image_tensor(img)
         if crop_width == image_width and crop_height == image_height:
@@ -280,7 +280,7 @@ def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.I
 
     if crop_height > image_height or crop_width > image_width:
         padding_ltrb = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
-        img = pad_image_pil(img, padding_ltrb, fill=0)
+        img = pad_image_pil(img, padding_ltrb)
 
         _, image_height, image_width = get_dimensions_image_pil(img)
         if crop_width == image_width and crop_height == image_height:
