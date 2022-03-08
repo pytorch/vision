@@ -6,7 +6,7 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
-from torchvision.ops import ConvNormActivation
+from torchvision.ops import Conv2dNormActivation
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...utils import _log_api_usage_once
@@ -38,17 +38,17 @@ class ResidualBlock(nn.Module):
         # and frozen for the rest of the training process (i.e. set as eval()). The bias term is thus still useful
         # for the rest of the datasets. Technically, we could remove the bias for other norm layers like Instance norm
         # because these aren't frozen, but we don't bother (also, we woudn't be able to load the original weights).
-        self.convnormrelu1 = ConvNormActivation(
+        self.convnormrelu1 = Conv2dNormActivation(
             in_channels, out_channels, norm_layer=norm_layer, kernel_size=3, stride=stride, bias=True
         )
-        self.convnormrelu2 = ConvNormActivation(
+        self.convnormrelu2 = Conv2dNormActivation(
             out_channels, out_channels, norm_layer=norm_layer, kernel_size=3, bias=True
         )
 
         if stride == 1:
             self.downsample = nn.Identity()
         else:
-            self.downsample = ConvNormActivation(
+            self.downsample = Conv2dNormActivation(
                 in_channels,
                 out_channels,
                 norm_layer=norm_layer,
@@ -77,13 +77,13 @@ class BottleneckBlock(nn.Module):
         super().__init__()
 
         # See note in ResidualBlock for the reason behind bias=True
-        self.convnormrelu1 = ConvNormActivation(
+        self.convnormrelu1 = Conv2dNormActivation(
             in_channels, out_channels // 4, norm_layer=norm_layer, kernel_size=1, bias=True
         )
-        self.convnormrelu2 = ConvNormActivation(
+        self.convnormrelu2 = Conv2dNormActivation(
             out_channels // 4, out_channels // 4, norm_layer=norm_layer, kernel_size=3, stride=stride, bias=True
         )
-        self.convnormrelu3 = ConvNormActivation(
+        self.convnormrelu3 = Conv2dNormActivation(
             out_channels // 4, out_channels, norm_layer=norm_layer, kernel_size=1, bias=True
         )
         self.relu = nn.ReLU(inplace=True)
@@ -91,7 +91,7 @@ class BottleneckBlock(nn.Module):
         if stride == 1:
             self.downsample = nn.Identity()
         else:
-            self.downsample = ConvNormActivation(
+            self.downsample = Conv2dNormActivation(
                 in_channels,
                 out_channels,
                 norm_layer=norm_layer,
@@ -124,7 +124,9 @@ class FeatureEncoder(nn.Module):
         assert len(layers) == 5
 
         # See note in ResidualBlock for the reason behind bias=True
-        self.convnormrelu = ConvNormActivation(3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=2, bias=True)
+        self.convnormrelu = Conv2dNormActivation(
+            3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=2, bias=True
+        )
 
         self.layer1 = self._make_2_blocks(block, layers[0], layers[1], norm_layer=norm_layer, first_stride=1)
         self.layer2 = self._make_2_blocks(block, layers[1], layers[2], norm_layer=norm_layer, first_stride=2)
@@ -170,17 +172,17 @@ class MotionEncoder(nn.Module):
         assert len(flow_layers) == 2
         assert len(corr_layers) in (1, 2)
 
-        self.convcorr1 = ConvNormActivation(in_channels_corr, corr_layers[0], norm_layer=None, kernel_size=1)
+        self.convcorr1 = Conv2dNormActivation(in_channels_corr, corr_layers[0], norm_layer=None, kernel_size=1)
         if len(corr_layers) == 2:
-            self.convcorr2 = ConvNormActivation(corr_layers[0], corr_layers[1], norm_layer=None, kernel_size=3)
+            self.convcorr2 = Conv2dNormActivation(corr_layers[0], corr_layers[1], norm_layer=None, kernel_size=3)
         else:
             self.convcorr2 = nn.Identity()
 
-        self.convflow1 = ConvNormActivation(2, flow_layers[0], norm_layer=None, kernel_size=7)
-        self.convflow2 = ConvNormActivation(flow_layers[0], flow_layers[1], norm_layer=None, kernel_size=3)
+        self.convflow1 = Conv2dNormActivation(2, flow_layers[0], norm_layer=None, kernel_size=7)
+        self.convflow2 = Conv2dNormActivation(flow_layers[0], flow_layers[1], norm_layer=None, kernel_size=3)
 
         # out_channels - 2 because we cat the flow (2 channels) at the end
-        self.conv = ConvNormActivation(
+        self.conv = Conv2dNormActivation(
             corr_layers[-1] + flow_layers[-1], out_channels - 2, norm_layer=None, kernel_size=3
         )
 
@@ -301,7 +303,7 @@ class MaskPredictor(nn.Module):
 
     def __init__(self, *, in_channels, hidden_size, multiplier=0.25):
         super().__init__()
-        self.convrelu = ConvNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
+        self.convrelu = Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
         # 8 * 8 * 9 because the predicted flow is downsampled by 8, from the downsampling of the initial FeatureEncoder
         # and we interpolate with all 9 surrounding neighbors. See paper and appendix B.
         self.conv = nn.Conv2d(hidden_size, 8 * 8 * 9, 1, padding=0)

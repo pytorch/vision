@@ -1,6 +1,11 @@
+import PIL.Image
 import torch
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
-from torchvision.transforms.functional_tensor import rgb_to_grayscale as _rgb_to_grayscale
+from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
+
+
+get_dimensions_image_tensor = _FT.get_dimensions
+get_dimensions_image_pil = _FP.get_dimensions
 
 
 def _xywh_to_xyxy(xywh: torch.Tensor) -> torch.Tensor:
@@ -52,18 +57,41 @@ def convert_bounding_box_format(
     return bounding_box
 
 
-def _grayscale_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
-    return grayscale.expand(3, 1, 1)
+def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
+    repeats = [1] * grayscale.ndim
+    repeats[-3] = 3
+    return grayscale.repeat(repeats)
 
 
-def convert_color_space(image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace) -> torch.Tensor:
+def convert_image_color_space_tensor(
+    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
+) -> torch.Tensor:
     if new_color_space == old_color_space:
         return image.clone()
 
     if old_color_space == ColorSpace.GRAYSCALE:
-        image = _grayscale_to_rgb(image)
+        image = _grayscale_to_rgb_tensor(image)
 
     if new_color_space == ColorSpace.GRAYSCALE:
-        image = _rgb_to_grayscale(image)
+        image = _FT.rgb_to_grayscale(image)
+
+    return image
+
+
+def _grayscale_to_rgb_pil(grayscale: PIL.Image.Image) -> PIL.Image.Image:
+    return grayscale.convert("RGB")
+
+
+def convert_image_color_space_pil(
+    image: PIL.Image.Image, old_color_space: ColorSpace, new_color_space: ColorSpace
+) -> PIL.Image.Image:
+    if new_color_space == old_color_space:
+        return image.copy()
+
+    if old_color_space == ColorSpace.GRAYSCALE:
+        image = _grayscale_to_rgb_pil(image)
+
+    if new_color_space == ColorSpace.GRAYSCALE:
+        image = _FP.to_grayscale(image)
 
     return image

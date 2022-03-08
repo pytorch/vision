@@ -1,141 +1,34 @@
-from typing import Any
+from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
 
-import PIL.Image
-import torch
-from torchvision.prototype import features
-from torchvision.prototype.transforms import kernels as K
-from torchvision.transforms import functional as _F
+adjust_brightness_image_tensor = _FT.adjust_brightness
+adjust_brightness_image_pil = _FP.adjust_brightness
 
-from ._utils import dispatch
+adjust_saturation_image_tensor = _FT.adjust_saturation
+adjust_saturation_image_pil = _FP.adjust_saturation
 
+adjust_contrast_image_tensor = _FT.adjust_contrast
+adjust_contrast_image_pil = _FP.adjust_contrast
 
-@dispatch(
-    {
-        torch.Tensor: _F.adjust_brightness,
-        PIL.Image.Image: _F.adjust_brightness,
-        features.Image: K.adjust_brightness_image,
-    }
-)
-def adjust_brightness(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
+adjust_sharpness_image_tensor = _FT.adjust_sharpness
+adjust_sharpness_image_pil = _FP.adjust_sharpness
 
+posterize_image_tensor = _FT.posterize
+posterize_image_pil = _FP.posterize
 
-@dispatch(
-    {
-        torch.Tensor: _F.adjust_saturation,
-        PIL.Image.Image: _F.adjust_saturation,
-        features.Image: K.adjust_saturation_image,
-    }
-)
-def adjust_saturation(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
+solarize_image_tensor = _FT.solarize
+solarize_image_pil = _FP.solarize
 
+autocontrast_image_tensor = _FT.autocontrast
+autocontrast_image_pil = _FP.autocontrast
 
-@dispatch(
-    {
-        torch.Tensor: _F.adjust_contrast,
-        PIL.Image.Image: _F.adjust_contrast,
-        features.Image: K.adjust_contrast_image,
-    }
-)
-def adjust_contrast(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
+equalize_image_tensor = _FT.equalize
+equalize_image_pil = _FP.equalize
 
+invert_image_tensor = _FT.invert
+invert_image_pil = _FP.invert
 
-@dispatch(
-    {
-        torch.Tensor: _F.adjust_sharpness,
-        PIL.Image.Image: _F.adjust_sharpness,
-        features.Image: K.adjust_sharpness_image,
-    }
-)
-def adjust_sharpness(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
+adjust_hue_image_tensor = _FT.adjust_hue
+adjust_hue_image_pil = _FP.adjust_hue
 
-
-@dispatch(
-    {
-        torch.Tensor: _F.posterize,
-        PIL.Image.Image: _F.posterize,
-        features.Image: K.posterize_image,
-    }
-)
-def posterize(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
-
-
-@dispatch(
-    {
-        torch.Tensor: _F.solarize,
-        PIL.Image.Image: _F.solarize,
-        features.Image: K.solarize_image,
-    }
-)
-def solarize(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
-
-
-@dispatch(
-    {
-        torch.Tensor: _F.autocontrast,
-        PIL.Image.Image: _F.autocontrast,
-        features.Image: K.autocontrast_image,
-    }
-)
-def autocontrast(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
-
-
-@dispatch(
-    {
-        torch.Tensor: _F.equalize,
-        PIL.Image.Image: _F.equalize,
-        features.Image: K.equalize_image,
-    }
-)
-def equalize(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
-
-
-@dispatch(
-    {
-        torch.Tensor: _F.invert,
-        PIL.Image.Image: _F.invert,
-        features.Image: K.invert_image,
-    }
-)
-def invert(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
-
-
-@dispatch(
-    {
-        torch.Tensor: _F.adjust_hue,
-        PIL.Image.Image: _F.adjust_hue,
-        features.Image: K.adjust_hue_image,
-    }
-)
-def adjust_hue(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
-
-
-@dispatch(
-    {
-        torch.Tensor: _F.adjust_gamma,
-        PIL.Image.Image: _F.adjust_gamma,
-        features.Image: K.adjust_gamma_image,
-    }
-)
-def adjust_gamma(input: Any, *args: Any, **kwargs: Any) -> Any:
-    """TODO: add docstring"""
-    ...
+adjust_gamma_image_tensor = _FT.adjust_gamma
+adjust_gamma_image_pil = _FP.adjust_gamma

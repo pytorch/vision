@@ -2,6 +2,7 @@ import math
 import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
+from itertools import product
 from typing import Callable, List, Tuple
 
 import numpy as np
@@ -48,6 +49,16 @@ class DeformConvModuleWrapper(nn.Module):
 
 
 class StochasticDepthWrapper(nn.Module):
+    def __init__(self, obj):
+        super().__init__()
+        self.layer = obj
+        self.n_inputs = 1
+
+    def forward(self, a):
+        self.layer(a)
+
+
+class DropBlockWrapper(nn.Module):
     def __init__(self, obj):
         super().__init__()
         self.layer = obj
@@ -1355,6 +1366,88 @@ class TestUtils:
 
         assert len(params[0]) == 92
         assert len(params[1]) == 82
+
+
+class TestDropBlock:
+    @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("dim", [2, 3])
+    @pytest.mark.parametrize("p", [0, 0.5])
+    @pytest.mark.parametrize("block_size", [5, 11])
+    @pytest.mark.parametrize("inplace", [True, False])
+    def test_drop_block(self, seed, dim, p, block_size, inplace):
+        torch.manual_seed(seed)
+        batch_size = 5
+        channels = 3
+        height = 11
+        width = height
+        depth = height
+        if dim == 2:
+            x = torch.ones(size=(batch_size, channels, height, width))
+            layer = ops.DropBlock2d(p=p, block_size=block_size, inplace=inplace)
+            feature_size = height * width
+        elif dim == 3:
+            x = torch.ones(size=(batch_size, channels, depth, height, width))
+            layer = ops.DropBlock3d(p=p, block_size=block_size, inplace=inplace)
+            feature_size = depth * height * width
+        layer.__repr__()
+
+        out = layer(x)
+        if p == 0:
+            assert out.equal(x)
+        if block_size == height:
+            for b, c in product(range(batch_size), range(channels)):
+                assert out[b, c].count_nonzero() in (0, feature_size)
+
+    @pytest.mark.parametrize("seed", range(10))
+    @pytest.mark.parametrize("dim", [2, 3])
+    @pytest.mark.parametrize("p", [0.1, 0.2])
+    @pytest.mark.parametrize("block_size", [3])
+    @pytest.mark.parametrize("inplace", [False])
+    def test_drop_block_random(self, seed, dim, p, block_size, inplace):
+        torch.manual_seed(seed)
+        batch_size = 5
+        channels = 3
+        height = 11
+        width = height
+        depth = height
+        if dim == 2:
+            x = torch.ones(size=(batch_size, channels, height, width))
+            layer = ops.DropBlock2d(p=p, block_size=block_size, inplace=inplace)
+        elif dim == 3:
+            x = torch.ones(size=(batch_size, channels, depth, height, width))
+            layer = ops.DropBlock3d(p=p, block_size=block_size, inplace=inplace)
+
+        trials = 250
+        num_samples = 0
+        counts = 0
+        cell_numel = torch.tensor(x.shape).prod()
+        for _ in range(trials):
+            with torch.no_grad():
+                out = layer(x)
+            non_zero_count = out.nonzero().size(0)
+            counts += cell_numel - non_zero_count
+            num_samples += cell_numel
+
+        assert abs(p - counts / num_samples) / p < 0.15
+
+    def make_obj(self, dim, p, block_size, inplace, wrap=False):
+        if dim == 2:
+            obj = ops.DropBlock2d(p, block_size, inplace)
+        elif dim == 3:
+            obj = ops.DropBlock3d(p, block_size, inplace)
+        return DropBlockWrapper(obj) if wrap else obj
+
+    @pytest.mark.parametrize("dim", (2, 3))
+    @pytest.mark.parametrize("p", [0, 1])
+    @pytest.mark.parametrize("block_size", [5, 7])
+    @pytest.mark.parametrize("inplace", [True, False])
+    def test_is_leaf_node(self, dim, p, block_size, inplace):
+        op_obj = self.make_obj(dim, p, block_size, inplace, wrap=True)
+        graph_node_names = get_graph_node_names(op_obj)
+
+        assert len(graph_node_names) == 2
+        assert len(graph_node_names[0]) == len(graph_node_names[1])
+        assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
 if __name__ == "__main__":

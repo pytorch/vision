@@ -12,7 +12,7 @@ import torch
 from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation, SqueezeExcitation
+from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
@@ -55,7 +55,7 @@ model_urls = {
 }
 
 
-class SimpleStemIN(ConvNormActivation):
+class SimpleStemIN(Conv2dNormActivation):
     """Simple stem for ImageNet: 3x3, BN, ReLU."""
 
     def __init__(
@@ -88,10 +88,10 @@ class BottleneckTransform(nn.Sequential):
         w_b = int(round(width_out * bottleneck_multiplier))
         g = w_b // group_width
 
-        layers["a"] = ConvNormActivation(
+        layers["a"] = Conv2dNormActivation(
             width_in, w_b, kernel_size=1, stride=1, norm_layer=norm_layer, activation_layer=activation_layer
         )
-        layers["b"] = ConvNormActivation(
+        layers["b"] = Conv2dNormActivation(
             w_b, w_b, kernel_size=3, stride=stride, groups=g, norm_layer=norm_layer, activation_layer=activation_layer
         )
 
@@ -105,7 +105,7 @@ class BottleneckTransform(nn.Sequential):
                 activation=activation_layer,
             )
 
-        layers["c"] = ConvNormActivation(
+        layers["c"] = Conv2dNormActivation(
             w_b, width_out, kernel_size=1, stride=1, norm_layer=norm_layer, activation_layer=None
         )
         super().__init__(layers)
@@ -131,7 +131,7 @@ class ResBottleneckBlock(nn.Module):
         self.proj = None
         should_proj = (width_in != width_out) or (stride != 1)
         if should_proj:
-            self.proj = ConvNormActivation(
+            self.proj = Conv2dNormActivation(
                 width_in, width_out, kernel_size=1, stride=stride, norm_layer=norm_layer, activation_layer=None
             )
         self.f = BottleneckTransform(

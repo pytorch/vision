@@ -137,7 +137,7 @@ def validate(model, args):
             weights = prototype.models.get_weight(args.weights)
             preprocessing = weights.transforms()
         else:
-            preprocessing = prototype.transforms.RaftEval()
+            preprocessing = prototype.transforms.OpticalFlowEval()
     else:
         preprocessing = OpticalFlowPresetEval()
 

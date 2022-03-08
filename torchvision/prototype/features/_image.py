@@ -4,7 +4,7 @@ import warnings
 from typing import Any, Optional, Union, Tuple, cast
 
 import torch
-from torchvision.prototype.utils._internal import StrEnum
+from torchvision._utils import StrEnum
 from torchvision.transforms.functional import to_pil_image
 from torchvision.utils import draw_bounding_boxes
 from torchvision.utils import make_grid
@@ -14,9 +14,9 @@ from ._feature import _Feature
 
 
 class ColorSpace(StrEnum):
-    OTHER = 0
-    GRAYSCALE = 1
-    RGB = 3
+    OTHER = StrEnum.auto()
+    GRAYSCALE = StrEnum.auto()
+    RGB = StrEnum.auto()
 
 
 class Image(_Feature):
@@ -26,31 +26,37 @@ class Image(_Feature):
         cls,
         data: Any,
         *,
-        dtype: Optional[torch.dtype] = None,
-        device: Optional[torch.device] = None,
         color_space: Optional[Union[ColorSpace, str]] = None,
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: bool = False,
     ) -> Image:
-        image = super().__new__(cls, data, dtype=dtype, device=device)
+        data = torch.as_tensor(data, dtype=dtype, device=device)  # type: ignore[arg-type]
+        if data.ndim < 2:
+            raise ValueError
+        elif data.ndim == 2:
+            data = data.unsqueeze(0)
+        image = super().__new__(cls, data, requires_grad=requires_grad)
 
         if color_space is None:
             color_space = cls.guess_color_space(image)
             if color_space == ColorSpace.OTHER:
                 warnings.warn("Unable to guess a specific color space. Consider passing it explicitly.")
         elif isinstance(color_space, str):
-            color_space = ColorSpace[color_space]
-
-        image._metadata.update(dict(color_space=color_space))
+            color_space = ColorSpace.from_str(color_space.upper())
+        elif not isinstance(color_space, ColorSpace):
+            raise ValueError
+        image.color_space = color_space
 
         return image
 
     @classmethod
-    def _to_tensor(cls, data: Any, *, dtype: Optional[torch.dtype], device: Optional[torch.device]) -> torch.Tensor:
-        tensor = super()._to_tensor(data, dtype=dtype, device=device)
-        if tensor.ndim < 2:
-            raise ValueError
-        elif tensor.ndim == 2:
-            tensor = tensor.unsqueeze(0)
-        return tensor
+    def new_like(
+        cls, other: Image, data: Any, *, color_space: Optional[Union[ColorSpace, str]] = None, **kwargs: Any
+    ) -> Image:
+        return super().new_like(
+            other, data, color_space=color_space if color_space is not None else other.color_space, **kwargs
+        )
 
     @property
     def image_size(self) -> Tuple[int, int]:

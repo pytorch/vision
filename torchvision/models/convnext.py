@@ -6,7 +6,7 @@ from torch import nn, Tensor
 from torch.nn import functional as F
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation
+from ..ops.misc import Conv2dNormActivation
 from ..ops.stochastic_depth import StochasticDepth
 from ..utils import _log_api_usage_once
 
@@ -127,7 +127,7 @@ class ConvNeXt(nn.Module):
         # Stem
         firstconv_output_channels = block_setting[0].input_channels
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 3,
                 firstconv_output_channels,
                 kernel_size=4,

@@ -267,6 +267,7 @@ def setup_ddp(args):
         world_size=args.world_size,
         init_method=args.dist_url,
     )
+    torch.distributed.barrier()
 
 
 def reduce_across_processes(val):

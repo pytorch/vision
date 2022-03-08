@@ -21,6 +21,13 @@ def _assert_threshold(img: Tensor, threshold: float) -> None:
         raise TypeError("Threshold should be less than bound of img.")
 
 
+def get_dimensions(img: Tensor) -> List[int]:
+    _assert_image_tensor(img)
+    channels = 1 if img.ndim == 2 else img.shape[-3]
+    height, width = img.shape[-2:]
+    return [channels, height, width]
+
+
 def get_image_size(img: Tensor) -> List[int]:
     # Returns (w, h) of tensor image
     _assert_image_tensor(img)
@@ -28,6 +35,7 @@ def get_image_size(img: Tensor) -> List[int]:
 
 
 def get_image_num_channels(img: Tensor) -> int:
+    _assert_image_tensor(img)
     if img.ndim == 2:
         return 1
     elif img.ndim > 2:
@@ -55,7 +63,7 @@ def _max_value(dtype: torch.dtype) -> float:
 
 
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:
-    c = get_image_num_channels(img)
+    c = get_dimensions(img)[0]
     if c not in permitted:
         raise TypeError(f"Input image tensor permitted channel values are {permitted}, but found {c}")
 
@@ -127,7 +135,7 @@ def hflip(img: Tensor) -> Tensor:
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     _assert_image_tensor(img)
 
-    w, h = get_image_size(img)
+    _, h, w = get_dimensions(img)
     right = left + width
     bottom = top + height
 
@@ -175,7 +183,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     _assert_image_tensor(img)
 
     _assert_channels(img, [3, 1])
-    c = get_image_num_channels(img)
+    c = get_dimensions(img)[0]
     dtype = img.dtype if torch.is_floating_point(img) else torch.float32
     if c == 3:
         mean = torch.mean(rgb_to_grayscale(img).to(dtype), dim=(-3, -2, -1), keepdim=True)
@@ -195,7 +203,7 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     _assert_image_tensor(img)
 
     _assert_channels(img, [1, 3])
-    if get_image_num_channels(img) == 1:  # Match PIL behaviour
+    if get_dimensions(img)[0] == 1:  # Match PIL behaviour
         return img
 
     orig_dtype = img.dtype
@@ -222,7 +230,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     _assert_channels(img, [1, 3])
 
-    if get_image_num_channels(img) == 1:  # Match PIL behaviour
+    if get_dimensions(img)[0] == 1:  # Match PIL behaviour
         return img
 
     return _blend(img, rgb_to_grayscale(img), saturation_factor)
@@ -451,7 +459,7 @@ def resize(
     if antialias and interpolation not in ["bilinear", "bicubic"]:
         raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
-    w, h = get_image_size(img)
+    _, h, w = get_dimensions(img)
 
     if isinstance(size, int) or len(size) == 1:  # specified size only for the smallest edge
         short, long = (w, h) if w <= h else (h, w)
@@ -518,7 +526,7 @@ def _assert_grid_transform_inputs(
         warnings.warn("Argument fill should be either int, float, tuple or list")
 
     # Check fill
-    num_channels = get_image_num_channels(img)
+    num_channels = get_dimensions(img)[0]
     if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
         msg = (
             "The number of elements in 'fill' cannot broadcast to match the number of "

@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.inception import Inception3, InceptionOutputs, _InceptionOutputs
@@ -16,7 +16,7 @@ __all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "Inception_V3_
 class Inception_V3_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
-        transforms=partial(ImageNetEval, crop_size=299, resize_size=342),
+        transforms=partial(ImageClassificationEval, crop_size=299, resize_size=342),
         meta={
             "task": "image_classification",
             "architecture": "InceptionV3",

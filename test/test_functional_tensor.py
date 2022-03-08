@@ -29,7 +29,7 @@ NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINE
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("fn", [F.get_image_size, F.get_image_num_channels])
+@pytest.mark.parametrize("fn", [F.get_image_size, F.get_image_num_channels, F.get_dimensions])
 def test_image_sizes(device, fn):
     script_F = torch.jit.script(fn)
 
@@ -1020,7 +1020,9 @@ def test_resized_crop(device, mode):
 @pytest.mark.parametrize(
     "func, args",
     [
+        (F_t.get_dimensions, ()),
         (F_t.get_image_size, ()),
+        (F_t.get_image_num_channels, ()),
         (F_t.vflip, ()),
         (F_t.hflip, ()),
         (F_t.crop, (1, 2, 4, 5)),

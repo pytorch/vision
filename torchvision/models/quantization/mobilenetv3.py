@@ -5,7 +5,7 @@ from torch import nn, Tensor
 from torch.ao.quantization import QuantStub, DeQuantStub
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops.misc import ConvNormActivation, SqueezeExcitation
+from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, model_urls, _mobilenet_v3_conf
 from .utils import _fuse_modules, _replace_relu
 
@@ -103,7 +103,7 @@ class QuantizableMobileNetV3(MobileNetV3):
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         for m in self.modules():
-            if type(m) is ConvNormActivation:
+            if type(m) is Conv2dNormActivation:
                 modules_to_fuse = ["0", "1"]
                 if len(m) == 3 and type(m[2]) is nn.ReLU:
                     modules_to_fuse.append("2")
