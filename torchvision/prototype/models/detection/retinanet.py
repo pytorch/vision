@@ -1,6 +1,7 @@
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import CocoEval
+from torch import nn
+from torchvision.prototype.transforms import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.retinanet import (
@@ -27,7 +28,7 @@ __all__ = [
 class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             "task": "image_object_detection",
             "architecture": "RetinaNet",
@@ -64,11 +65,11 @@ def retinanet_resnet50_fpn(
     elif num_classes is None:
         num_classes = 91
 
-    trainable_backbone_layers = _validate_trainable_layers(
-        weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 3
-    )
+    is_trained = weights is not None or weights_backbone is not None
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
+    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
-    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
     # skip P2 because it generates too many anchors (according to their paper)
     backbone = _resnet_fpn_extractor(
         backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)

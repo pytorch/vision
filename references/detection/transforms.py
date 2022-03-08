@@ -310,9 +310,10 @@ class ScaleJitter(nn.Module):
 
         _, orig_height, orig_width = F.get_dimensions(image)
 
-        r = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
-        new_width = int(self.target_size[1] * r)
-        new_height = int(self.target_size[0] * r)
+        scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
+        r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
+        new_width = int(orig_width * r)
+        new_height = int(orig_height * r)
 
         image = F.resize(image, [new_height, new_width], interpolation=self.interpolation)
 
