@@ -1,5 +1,8 @@
+import pathlib
+from curses import meta
 from typing import Any, Dict, List, Tuple, Iterator, BinaryIO
 
+from numpy import squeeze
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
@@ -56,6 +59,11 @@ class StanfordCars(Dataset):
 
         return resources
 
+    def prepare_categories(self, dp: IterDataPipe) -> List[str]:
+        _, file = dp
+        classes = list(read_mat(file, squeeze_me=True)["class_names"])
+        return classes
+
     def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Tuple[int, int, int, int, int, str]]) -> Dict[str, Any]:
         image, target = data
         path, buffer = image
@@ -83,3 +91,12 @@ class StanfordCars(Dataset):
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
         return Mapper(dp, self._prepare_sample)
+
+    def _generate_categories(self, root: pathlib.Path) -> List[str]:
+        config = self.info.make_config(split="train")
+        resources = self.resources(config)
+
+        devkit_dp = resources[1].load(root)
+        meta_dp = Filter(devkit_dp, path_comparator("name", "cars_meta.mat"))
+        print(meta_dp)
+        return Mapper(meta_dp, self.prepare_categories)
