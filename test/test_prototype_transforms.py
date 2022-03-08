@@ -102,7 +102,14 @@ class TestSmoke:
             (
                 transform,
                 itertools.chain.from_iterable(
-                    fn(dtypes=[torch.uint8], extra_dims=[(4,)])
+                    fn(
+                        color_spaces=[
+                            features.ColorSpace.GRAYSCALE,
+                            features.ColorSpace.RGB,
+                        ],
+                        dtypes=[torch.uint8],
+                        extra_dims=[(4,)],
+                    )
                     for fn in [
                         make_images,
                         make_vanilla_tensor_images,
@@ -151,4 +158,33 @@ class TestSmoke:
         ]
     )
     def test_random_resized_crop(self, transform, input):
+        transform(input)
+
+    @parametrize(
+        [
+            (
+                transforms.ConvertImageColorSpace(color_space=new_color_space, old_color_space=old_color_space),
+                itertools.chain.from_iterable(
+                    [
+                        fn(color_spaces=[old_color_space])
+                        for fn in (
+                            make_images,
+                            make_vanilla_tensor_images,
+                            make_pil_images,
+                        )
+                    ]
+                ),
+            )
+            for old_color_space, new_color_space in itertools.product(
+                [
+                    features.ColorSpace.GRAYSCALE,
+                    features.ColorSpace.GRAYSCALE_ALPHA,
+                    features.ColorSpace.RGB,
+                    features.ColorSpace.RGBA,
+                ],
+                repeat=2,
+            )
+        ]
+    )
+    def test_convert_image_color_space(self, transform, input):
         transform(input)

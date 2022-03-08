@@ -16,7 +16,18 @@ from ._feature import _Feature
 class ColorSpace(StrEnum):
     OTHER = StrEnum.auto()
     GRAYSCALE = StrEnum.auto()
+    GRAYSCALE_ALPHA = StrEnum.auto()
     RGB = StrEnum.auto()
+    RGBA = StrEnum.auto()
+
+    @classmethod
+    def from_pil_mode(cls, mode: str) -> ColorSpace:
+        return {
+            "L": cls.GRAYSCALE,
+            "LA": cls.GRAYSCALE_ALPHA,
+            "RGB": cls.RGB,
+            "RGBA": cls.RGBA,
+        }.get(mode, cls.OTHER)
 
 
 class Image(_Feature):
@@ -73,13 +84,12 @@ class Image(_Feature):
         elif data.ndim == 2:
             return ColorSpace.GRAYSCALE
 
-        num_channels = data.shape[-3]
-        if num_channels == 1:
-            return ColorSpace.GRAYSCALE
-        elif num_channels == 3:
-            return ColorSpace.RGB
-        else:
-            return ColorSpace.OTHER
+        return {
+            1: ColorSpace.GRAYSCALE,
+            2: ColorSpace.GRAYSCALE_ALPHA,
+            3: ColorSpace.RGB,
+            4: ColorSpace.RGBA,
+        }.get(data.shape[-3], ColorSpace.OTHER)
 
     def show(self) -> None:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we

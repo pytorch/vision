@@ -57,10 +57,55 @@ def convert_bounding_box_format(
     return bounding_box
 
 
+def _max_value(dtype: torch.dtype) -> int:
+    return {
+        torch.uint8: int(2 ** 8) - 1,
+        torch.int8: int(2 ** 7) - 1,
+        torch.int16: int(2 ** 15) - 1,
+        torch.int32: int(2 ** 31) - 1,
+        torch.int64: int(2 ** 63) - 1,
+    }.get(dtype, 1)
+
+
+def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
+    alpha = image[..., -1, :, :]
+    if not torch.all(alpha == _max_value(image.dtype)):
+        raise RuntimeError(
+            "Stripping the alpha channel if it contains values other than the max value is not supported."
+        )
+    return image[..., :-1, :, :]
+
+
+def _add_alpha(image: torch.Tensor) -> torch.Tensor:
+    shape = list(image.shape)
+    shape[-3] = 1
+    alpha = torch.full(shape, _max_value(image.dtype), dtype=image.dtype, device=image.device)
+    return torch.cat((image, alpha), dim=-3)
+
+
+def _grayscale_alpha_to_grayscale_tensor(grayscale_alpha: torch.Tensor) -> torch.Tensor:
+    return _strip_alpha(grayscale_alpha)
+
+
+def _grayscale_to_grayscale_alpha_tensor(grayscale: torch.Tensor) -> torch.Tensor:
+    return _add_alpha(grayscale)
+
+
 def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
     repeats = [1] * grayscale.ndim
     repeats[-3] = 3
     return grayscale.repeat(repeats)
+
+
+_rgb_to_grayscale_tensor = _FT.rgb_to_grayscale
+
+
+def _rgba_to_rgb_tensor(rgba: torch.Tensor) -> torch.Tensor:
+    return _strip_alpha(rgba)
+
+
+def _rgb_to_rgba_tensor(rgb: torch.Tensor) -> torch.Tensor:
+    return _add_alpha(rgb)
 
 
 def convert_image_color_space_tensor(
@@ -69,29 +114,50 @@ def convert_image_color_space_tensor(
     if new_color_space == old_color_space:
         return image.clone()
 
+    if old_color_space == ColorSpace.OTHER or new_color_space == ColorSpace.OTHER:
+        raise RuntimeError(f"Conversion to or from {ColorSpace.OTHER} is not supported.")
+
+    # This function uses RGB as the intermediate representation for all regular conversions. This means by default
+    # every image gets converted into RGB first and subsequently into `new_color_space`. Since the conversion
+    # `rgb_to_grayscale(grayscale_to_rgb(image))` is lossy, we need to special case grayscale with alpha channel here.
+    if old_color_space == ColorSpace.GRAYSCALE_ALPHA:
+        image = _grayscale_alpha_to_grayscale_tensor(image)
+        if new_color_space == ColorSpace.GRAYSCALE:
+            return image
+
+        old_color_space = ColorSpace.GRAYSCALE
+
     if old_color_space == ColorSpace.GRAYSCALE:
         image = _grayscale_to_rgb_tensor(image)
+    elif old_color_space == ColorSpace.RGBA:
+        image = _rgba_to_rgb_tensor(image)
 
     if new_color_space == ColorSpace.GRAYSCALE:
-        image = _FT.rgb_to_grayscale(image)
+        image = _rgb_to_grayscale_tensor(image)
+    if new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+        image = _grayscale_to_grayscale_alpha_tensor(_rgb_to_grayscale_tensor(image))
+    elif new_color_space == ColorSpace.RGBA:
+        image = _rgb_to_rgba_tensor(image)
 
     return image
 
 
-def _grayscale_to_rgb_pil(grayscale: PIL.Image.Image) -> PIL.Image.Image:
-    return grayscale.convert("RGB")
+_COLOR_SPACE_TO_PIL_MODE = {
+    ColorSpace.GRAYSCALE: "L",
+    ColorSpace.GRAYSCALE_ALPHA: "LA",
+    ColorSpace.RGB: "RGB",
+    ColorSpace.RGBA: "RGBA",
+}
 
 
-def convert_image_color_space_pil(
-    image: PIL.Image.Image, old_color_space: ColorSpace, new_color_space: ColorSpace
-) -> PIL.Image.Image:
-    if new_color_space == old_color_space:
+def convert_image_color_space_pil(image: PIL.Image.Image, color_space: ColorSpace) -> PIL.Image.Image:
+    old_mode = image.mode
+    try:
+        new_mode = _COLOR_SPACE_TO_PIL_MODE[color_space]
+    except KeyError:
+        raise ValueError(f"Conversion of {ColorSpace.from_pil_mode(old_mode)} to {color_space} is not supported.")
+
+    if old_mode == new_mode:
         return image.copy()
 
-    if old_color_space == ColorSpace.GRAYSCALE:
-        image = _grayscale_to_rgb_pil(image)
-
-    if new_color_space == ColorSpace.GRAYSCALE:
-        image = _FP.to_grayscale(image)
-
-    return image
+    return image.convert(new_mode)
