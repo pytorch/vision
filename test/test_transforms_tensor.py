@@ -195,11 +195,22 @@ class TestColorJitter:
         )
 
 
+@pytest.mark.parametrize(
+    "config",
+    [
+        {"padding_mode": "constant", "fill": 10.0},
+        {"padding_mode": "constant", "fill": [10.0, 10.0, 10.0]},
+        {"padding_mode": "constant", "fill": [10.0, 0.0, 10.0]},
+        {"padding_mode": "edge"},
+        {"padding_mode": "reflect"},
+        {"padding_mode": "symmetric"},
+    ],
+)
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("m", ["constant", "edge", "reflect", "symmetric"])
 @pytest.mark.parametrize("mul", [1, -1])
-def test_pad(m, mul, device):
-    fill = 127 if m == "constant" else 0
+def test_pad(config, mul, device):
+    m = config["padding_mode"]
+    fill = config.get("fill", 0.0)
 
     # Test functional.pad (PIL and Tensor) with padding as single int
     _test_functional_op(F.pad, fn_kwargs={"padding": mul * 2, "fill": fill, "padding_mode": m}, device=device)
@@ -252,9 +263,9 @@ def test_crop(device):
 @pytest.mark.parametrize(
     "padding_config",
     [
-        {"padding_mode": "constant", "fill": 0},
-        {"padding_mode": "constant", "fill": 10},
-        {"padding_mode": "constant", "fill": 20},
+        {"padding_mode": "constant", "fill": 10.0},
+        {"padding_mode": "constant", "fill": [10.0, 10.0, 10.0]},
+        {"padding_mode": "constant", "fill": [10.0, 0.0, 10.0]},
         {"padding_mode": "edge"},
         {"padding_mode": "reflect"},
     ],

@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 
 import torch
 from torch import Tensor
@@ -141,7 +141,7 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
 
     if left < 0 or top < 0 or right > w or bottom > h:
         padding_ltrb = [max(-left, 0), max(-top, 0), max(right - w, 0), max(bottom - h, 0)]
-        return pad(img[..., max(top, 0) : bottom, max(left, 0) : right], padding_ltrb, fill=0)
+        return pad(img[..., max(top, 0) : bottom, max(left, 0) : right], padding_ltrb, fill=0.0)
     return img[..., top:bottom, left:right]
 
 
@@ -353,13 +353,13 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
-def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
+def pad(img: Tensor, padding: List[int], fill: Union[List[float], float] = 0.0, padding_mode: str = "constant") -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(padding, (int, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
-    if not isinstance(fill, (int, float)):
-        raise TypeError("Got inappropriate fill arg")
+    channels, height, width = get_dimensions(img)
+    _assert_fill(fill, channels)
     if not isinstance(padding_mode, str):
         raise TypeError("Got inappropriate padding_mode arg")
 
@@ -411,7 +411,28 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         need_cast = True
         img = img.to(torch.float32)
 
-    img = torch_pad(img, p, mode=padding_mode, value=float(fill))
+    patch_padding = False
+    if isinstance(fill, (int, float)):
+        v = float(fill)
+    elif any([x != fill[0] for x in fill]):
+        patch_padding = True
+        v = 0.0
+    else:
+        v = fill[0]
+    img = torch_pad(img, p, mode=padding_mode, value=v)
+
+    if padding_mode == "constant" and patch_padding and fill is not None:
+        if not isinstance(fill, (tuple, list)):
+            fill = [fill]
+        fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, -1, 1, 1)
+        if pad_top > 0:
+            img[..., :pad_top, :] = fill_img
+        if pad_left > 0:
+            img[..., :, :pad_left] = fill_img
+        if pad_bottom > 0:
+            img[..., -pad_bottom:, :] = fill_img
+        if pad_right > 0:
+            img[..., :, -pad_right:] = fill_img
 
     if need_squeeze:
         img = img.squeeze(dim=0)
@@ -499,11 +520,26 @@ def resize(
     return img
 
 
+def _assert_fill(fill: Optional[Union[List[float], float]], num_channels: int):
+    if fill is None:
+        return
+    if not isinstance(fill, (int, float, tuple, list)):
+        warnings.warn("Argument fill should be either int, float, tuple or list")
+
+    # Check fill
+    if isinstance(fill, (tuple, list)) and len(fill) > 1 and len(fill) != num_channels:
+        msg = (
+            "The number of elements in 'fill' cannot broadcast to match the number of "
+            "channels of the image ({} != {})"
+        )
+        raise ValueError(msg.format(len(fill), num_channels))
+
+
 def _assert_grid_transform_inputs(
     img: Tensor,
     matrix: Optional[List[float]],
     interpolation: str,
-    fill: Optional[List[float]],
+    fill: Optional[Union[List[float], float]],
     supported_interpolation_modes: List[str],
     coeffs: Optional[List[float]] = None,
 ) -> None:
@@ -522,17 +558,8 @@ def _assert_grid_transform_inputs(
     if coeffs is not None and len(coeffs) != 8:
         raise ValueError("Argument coeffs should have 8 float values")
 
-    if fill is not None and not isinstance(fill, (int, float, tuple, list)):
-        warnings.warn("Argument fill should be either int, float, tuple or list")
-
-    # Check fill
     num_channels = get_dimensions(img)[0]
-    if isinstance(fill, (tuple, list)) and (len(fill) > 1 and len(fill) != num_channels):
-        msg = (
-            "The number of elements in 'fill' cannot broadcast to match the number of "
-            "channels of the image ({} != {})"
-        )
-        raise ValueError(msg.format(len(fill), num_channels))
+    _assert_fill(fill, num_channels)
 
     if interpolation not in supported_interpolation_modes:
         raise ValueError(f"Interpolation mode '{interpolation}' is unsupported with Tensor input")

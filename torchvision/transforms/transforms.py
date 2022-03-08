@@ -428,7 +428,7 @@ class Pad(torch.nn.Module):
         if not isinstance(padding, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate padding arg")
 
-        if not isinstance(fill, (numbers.Number, str, tuple)):
+        if not isinstance(fill, (numbers.Number, str, tuple, list)):
             raise TypeError("Got inappropriate fill arg")
 
         if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
@@ -641,7 +641,7 @@ class RandomCrop(torch.nn.Module):
         j = torch.randint(0, w - tw + 1, size=(1,)).item()
         return i, j, th, tw
 
-    def __init__(self, size, padding=None, pad_if_needed=False, fill=0, padding_mode="constant"):
+    def __init__(self, size, padding=None, pad_if_needed=False, fill=0.0, padding_mode="constant"):
         super().__init__()
         _log_api_usage_once(self)
 

@@ -946,9 +946,9 @@ def test_adjust_gamma(device, dtype, config, channels):
 @pytest.mark.parametrize(
     "config",
     [
-        {"padding_mode": "constant", "fill": 0},
-        {"padding_mode": "constant", "fill": 10},
-        {"padding_mode": "constant", "fill": 20},
+        {"padding_mode": "constant", "fill": 10.0},
+        {"padding_mode": "constant", "fill": [10.0, 10.0, 10.0]},
+        {"padding_mode": "constant", "fill": [10.0, 0.0, 10.0]},
         {"padding_mode": "edge"},
         {"padding_mode": "reflect"},
         {"padding_mode": "symmetric"},

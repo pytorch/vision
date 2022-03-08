@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional
+from typing import List, Tuple, Any, Optional, Union
 
 import numpy as np
 import torch
@@ -431,7 +431,7 @@ def resize(
     return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
 
 
-def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
+def pad(img: Tensor, padding: List[int], fill: Union[List[float], float] = 0.0, padding_mode: str = "constant") -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,
@@ -451,7 +451,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
-            Only number is supported for torch Tensor.
+            Only number or tuple is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
