@@ -119,7 +119,7 @@ class ShiftedWindowAttention(nn.Module):
         relative_coords[:, :, 0] += self.window_size - 1  # shift to start from 0
         relative_coords[:, :, 1] += self.window_size - 1
         relative_coords[:, :, 0] *= 2 * self.window_size - 1
-        relative_position_index = relative_coords.sum(-1).view(-1) # Wh*Ww*Wh*Ww
+        relative_position_index = relative_coords.sum(-1).view(-1)
         self.register_buffer("relative_position_index", relative_position_index)
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
@@ -176,7 +176,9 @@ class ShiftedWindowAttention(nn.Module):
         x_windows = self.dropout(x_windows)
 
         # reverse windows
-        x = x_windows.view(B, pad_H // self.window_size, pad_W // self.window_size, self.window_size, self.window_size, C)
+        x = x_windows.view(
+            B, pad_H // self.window_size, pad_W // self.window_size, self.window_size, self.window_size, C
+        )
         x = x.permute(0, 1, 3, 2, 4, 5).reshape(B, pad_H, pad_W, C)
 
         # reverse cyclic shift
