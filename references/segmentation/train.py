@@ -42,7 +42,7 @@ def get_transform(train, args):
             weights = prototype.models.get_weight(args.weights)
             return weights.transforms()
         else:
-            return prototype.transforms.VocEval(resize_size=520)
+            return prototype.transforms.SemanticSegmentationEval(resize_size=520)
 
 
 def criterion(inputs, target):

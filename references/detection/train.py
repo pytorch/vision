@@ -57,7 +57,7 @@ def get_transform(train, args):
             weights = prototype.models.get_weight(args.weights)
             return weights.transforms()
         else:
-            return prototype.transforms.CocoEval()
+            return prototype.transforms.ObjectDetectionEval()
 
 
 def get_args_parser(add_help=True):

@@ -3,7 +3,7 @@ from functools import partial
 from typing import Any, Optional, Tuple
 
 import torch.nn as nn
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.densenet import DenseNet
@@ -78,7 +78,7 @@ _COMMON_META = {
 class DenseNet121_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet121-a639ec97.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 7978856,
@@ -92,7 +92,7 @@ class DenseNet121_Weights(WeightsEnum):
 class DenseNet161_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet161-8d451a50.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 28681000,
@@ -106,7 +106,7 @@ class DenseNet161_Weights(WeightsEnum):
 class DenseNet169_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet169-b2777c0a.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 14149480,
@@ -120,7 +120,7 @@ class DenseNet169_Weights(WeightsEnum):
 class DenseNet201_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet201-c1103571.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 20013928,
