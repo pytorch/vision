@@ -10,6 +10,7 @@ from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
 from torchvision.prototype import transforms, datasets
+from torchvision.prototype.datasets.utils._internal import TakerDataPipe
 from torchvision.prototype.utils._internal import sequence_to_str
 
 
@@ -51,8 +52,10 @@ class TestCommon:
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not isinstance(dataset, datasets.utils.Dataset2):
-            raise AssertionError(f"Loading the dataset should return an Dataset, but got {type(dataset)} instead.")
+        if not isinstance(dataset, TakerDataPipe):
+            raise AssertionError(
+                f"Loading the dataset should return an TakerDataPipe, but got {type(dataset)} instead."
+            )
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_sample(self, test_home, dataset_mock, config):
@@ -100,7 +103,6 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
-    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_serializable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
@@ -109,7 +111,6 @@ class TestCommon:
 
         pickle.dumps(dataset)
 
-    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
     @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):

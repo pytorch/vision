@@ -2,7 +2,7 @@ import abc
 import hashlib
 import itertools
 import pathlib
-from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
+from typing import Optional, Sequence, Tuple, Callable, BinaryIO, Any, Union, NoReturn
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
@@ -55,7 +55,7 @@ class OnlineResource(abc.ABC):
     def _decompress(file: pathlib.Path) -> pathlib.Path:
         return pathlib.Path(_decompress(str(file), remove_finished=True))
 
-    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
+    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, BinaryIO]]:
         if path.is_dir():
             return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
@@ -75,7 +75,7 @@ class OnlineResource(abc.ABC):
 
     def _guess_archive_loader(
         self, path: pathlib.Path
-    ) -> Optional[Callable[[IterDataPipe[Tuple[str, IO]]], IterDataPipe[Tuple[str, IO]]]]:
+    ) -> Optional[Callable[[IterDataPipe[Tuple[str, BinaryIO]]], IterDataPipe[Tuple[str, BinaryIO]]]]:
         try:
             _, archive_type, _ = _detect_file_type(path.name)
         except RuntimeError:
@@ -84,7 +84,7 @@ class OnlineResource(abc.ABC):
 
     def load(
         self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False
-    ) -> IterDataPipe[Tuple[str, IO]]:
+    ) -> IterDataPipe[Tuple[str, BinaryIO]]:
         root = pathlib.Path(root)
         path = root / self.file_name
         # Instead of the raw file, there might also be files with fewer suffixes after decompression or directories

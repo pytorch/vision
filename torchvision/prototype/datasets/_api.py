@@ -1,13 +1,12 @@
 import pathlib
-from typing import Any, Dict, List, Callable, Type, Optional, Union, TypeVar
+from typing import Any, Dict, List, Callable, Optional, Union, TypeVar
 
 from torchvision.prototype.datasets import home
-from torchvision.prototype.datasets.utils import Dataset2
+from torchvision.prototype.datasets.utils._internal import TakerDataPipe
 from torchvision.prototype.utils._internal import add_suggestion
 
 
 T = TypeVar("T")
-D = TypeVar("D", bound=Type[Dataset2])
 
 BUILTIN_INFOS: Dict[str, Dict[str, Any]] = {}
 
@@ -23,10 +22,12 @@ def register_info(name: str) -> Callable[[Callable[[], Dict[str, Any]]], Callabl
 BUILTIN_DATASETS = {}
 
 
-def register_dataset(name: str) -> Callable[[D], D]:
-    def wrapper(dataset_cls: D) -> D:
-        BUILTIN_DATASETS[name] = dataset_cls
-        return dataset_cls
+def register_dataset(
+    name: Optional[str] = None,
+) -> Callable[[Callable[..., TakerDataPipe]], Callable[..., TakerDataPipe]]:
+    def wrapper(dataset_fn: Callable[..., TakerDataPipe]) -> Callable[..., TakerDataPipe]:
+        BUILTIN_DATASETS[name or dataset_fn.__name__] = dataset_fn
+        return dataset_fn
 
     return wrapper
 
@@ -56,7 +57,7 @@ def info(name: str) -> Dict[str, Any]:
     return find(BUILTIN_INFOS, name)
 
 
-def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **config: Any) -> Dataset2:
+def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **config: Any) -> TakerDataPipe:
     dataset_cls = find(BUILTIN_DATASETS, name)
 
     if root is None:
