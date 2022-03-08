@@ -1,7 +1,7 @@
 import warnings
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import CocoEval
+from torchvision.prototype.transforms import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.ssd import (
@@ -25,7 +25,7 @@ __all__ = [
 class SSD300_VGG16_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             "task": "image_object_detection",
             "architecture": "SSD",

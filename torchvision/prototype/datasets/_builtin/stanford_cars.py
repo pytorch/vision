@@ -17,7 +17,7 @@ class StanfordCarsLabelReader(IterDataPipe[Tuple[int, int, int, int, int, str]])
         for _, file in self.datapipe:
             data = read_mat(file, squeeze_me=True)
             for ann in data["annotations"]:
-                yield tuple(ann)
+                yield tuple(ann)  # type: ignore[misc]
 
 
 class StanfordCars(Dataset):
