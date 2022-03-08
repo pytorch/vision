@@ -302,10 +302,10 @@ def _parse_fill(
         fill = tuple(fill)
 
     if img.mode != "F":
-        if isinstance(fill, float):
-            fill = int(fill)
-        else:
+        if isinstance(fill, (list, tuple)):
             fill = tuple(int(x) for x in fill)
+        else:
+            fill = int(fill)
 
     return {name: fill}
 

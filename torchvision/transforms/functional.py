@@ -536,7 +536,7 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
             (crop_width - image_width + 1) // 2 if crop_width > image_width else 0,
             (crop_height - image_height + 1) // 2 if crop_height > image_height else 0,
         ]
-        img = pad(img, padding_ltrb, fill=0)  # PIL uses fill value 0
+        img = pad(img, padding_ltrb, fill=0.0)  # PIL uses fill value 0
         _, image_height, image_width = get_dimensions(img)
         if crop_width == image_width and crop_height == image_height:
             return img
