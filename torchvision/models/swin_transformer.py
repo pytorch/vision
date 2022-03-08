@@ -55,7 +55,7 @@ class PatchMerging(nn.Module):
 
 def generate_attention_mask(x: Tensor, window_size: int, shift_size: int):
     """Generate shifted window attention mask"""
-    mask = x_new_zeros((1, x.size(1), x.size(2), 1), device=device)
+    mask = x.new_zeros((1, x.size(1), x.size(2), 1))
     slices = ((0, -window_size), (-window_size, -shift_size), (-shift_size, None))
     count = 0
     for h in slices:
