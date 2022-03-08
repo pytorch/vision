@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, Optional, Tuple, List
+from typing import Optional, Tuple, List
 
 import torch
 from torch import Tensor
@@ -44,6 +44,16 @@ def get_image_num_channels(img: Tensor) -> int:
     raise TypeError(f"Input ndim should be 2 or more. Got {img.ndim}")
 
 
+def _max_value(dtype: torch.dtype) -> int:
+    return {
+        torch.uint8: int(2 ** 8) - 1,
+        torch.int8: int(2 ** 7) - 1,
+        torch.int16: int(2 ** 15) - 1,
+        torch.int32: int(2 ** 31) - 1,
+        torch.int64: int(2 ** 63) - 1,
+    }.get(dtype, 1)
+
+
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:
     c = get_dimensions(img)[0]
     if c not in permitted:
@@ -53,14 +63,6 @@ def _assert_channels(img: Tensor, permitted: List[int]) -> None:
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
     if image.dtype == dtype:
         return image
-
-    _max_values: Dict[torch.dtype, float] = {
-        torch.uint8: float(255),
-        torch.int8: float(127),
-        torch.int16: float(32767),
-        torch.int32: float(2147483647),
-        torch.int64: float(9223372036854775807),
-    }
 
     if image.is_floating_point():
 
@@ -81,17 +83,11 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         # `max + 1 - epsilon` provides more evenly distributed mapping of
         # ranges of floats to ints.
         eps = 1e-3
-        if dtype not in _max_values:
-            msg = f"Internal error when casting from {image.dtype} to {dtype}."
-            raise RuntimeError(msg)
-        max_val = _max_values[dtype]
+        max_val = float(_max_value(dtype))
         result = image.mul(max_val + 1.0 - eps)
         return result.to(dtype)
     else:
-        if image.dtype not in _max_values:
-            msg = f"Internal error when casting from {image.dtype} to {dtype}."
-            raise RuntimeError(msg)
-        input_max = _max_values[image.dtype]
+        input_max = float(_max_value(image.dtype))
 
         # int to float
         # TODO: replace with dtype.is_floating_point when torchscript supports it
@@ -99,10 +95,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             image = image.to(dtype)
             return image / input_max
 
-        if dtype not in _max_values:
-            msg = f"Internal error when casting from {image.dtype} to {dtype}."
-            raise RuntimeError(msg)
-        output_max = _max_values[dtype]
+        output_max = float(_max_value(dtype))
 
         # int to int
         if input_max > output_max:
