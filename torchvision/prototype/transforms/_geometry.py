@@ -1,7 +1,7 @@
 import collections.abc
 import math
 import warnings
-from typing import Any, Dict, List, Union, Sequence, Tuple, cast, Literal
+from typing import Any, Dict, List, Union, Sequence, Tuple, cast, Literal, Optional
 
 import PIL.Image
 import torch
@@ -262,7 +262,7 @@ class RandomCrop(Transform):
     def __init__(
         self,
         size: Union[int, Sequence[int]],
-        padding: Sequence[int],
+        padding: Optional[Sequence[int]] = None,
         pad_if_needed: bool = False,
         fill: Union[int, str, Sequence[int]] = 0,
         padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
@@ -275,7 +275,7 @@ class RandomCrop(Transform):
         self.fill = fill
         self.padding_mode = padding_mode
 
-    def _get_params(self, sample: Any) -> Dict[str, Any]:
+    def _get_crop_parameters(self, image: Any) -> Dict[str, Any]:
         """Get parameters for ``crop`` for a random crop.
         Args:
             sample (PIL Image, Tensor or features.Image): Image to be cropped.
@@ -283,7 +283,7 @@ class RandomCrop(Transform):
             dict: Dict containing 'top', 'left', 'height', and 'width'
         """
 
-        _, h, w = get_image_dimensions(sample)
+        _, h, w = get_image_dimensions(image)
 
         th, tw = self.size
 
@@ -298,6 +298,41 @@ class RandomCrop(Transform):
         return dict(top=i, left=j, height=th, width=tw)
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+
+        if isinstance(input, features.Image):
+            output = F.random_pad_image_tensor(
+                input,
+                output_size=self.size,
+                image_size=get_image_dimensions(input),
+                padding=cast(List[int], tuple(self.padding)),
+                pad_if_needed=self.pad_if_needed,
+                fill=self.fill,
+                padding_mode=self.padding_mode,
+            )
+            input = features.Image.new_like(input, output)
+        elif isinstance(input, PIL.Image.Image):
+            input = F.random_pad_image_pil(
+                input,
+                output_size=self.size,
+                image_size=get_image_dimensions(input),
+                padding=self.padding,
+                pad_if_needed=self.pad_if_needed,
+                fill=self.fill,
+                padding_mode=self.padding_mode,
+            )
+        elif is_simple_tensor(input):
+            input = F.random_pad_image_tensor(
+                input,
+                output_size=self.size,
+                image_size=get_image_dimensions(input),
+                padding=self.padding,
+                pad_if_needed=self.pad_if_needed,
+                fill=self.fill,  # TODO: should be converted to number
+                padding_mode=self.padding_mode,
+            )
+
+        params.update(self._get_crop_parameters(input))
+
         if isinstance(input, features.Image):
             output = F.crop_image_tensor(input, **params)
             return features.Image.new_like(input, output)
@@ -312,37 +347,5 @@ class RandomCrop(Transform):
         sample = inputs if len(inputs) > 1 else inputs[0]
         if has_any(sample, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-
-        if isinstance(sample, features.Image):
-            output = F.random_pad_image_tensor(
-                sample,
-                output_size=self.size,
-                image_size=get_image_dimensions(sample),
-                padding=cast(List[int], tuple(self.padding)),
-                pad_if_needed=self.pad_if_needed,
-                fill=self.fill,
-                padding_mode=self.padding_mode,
-            )
-            sample = features.Image.new_like(sample, output)
-        elif isinstance(sample, PIL.Image.Image):
-            sample = F.random_pad_image_pil(
-                sample,
-                output_size=self.size,
-                image_size=get_image_dimensions(sample),
-                padding=cast(List[int], tuple(self.padding)),
-                pad_if_needed=self.pad_if_needed,
-                fill=self.fill,
-                padding_mode=self.padding_mode,
-            )
-        elif is_simple_tensor(sample):
-            sample = F.random_pad_image_tensor(
-                sample,
-                output_size=self.size,
-                image_size=get_image_dimensions(sample),
-                padding=cast(List[int], tuple(self.padding)),
-                pad_if_needed=self.pad_if_needed,
-                fill=self.fill,  # TODO: should be converted to number
-                padding_mode=self.padding_mode,
-            )
 
         return super().forward(sample)
