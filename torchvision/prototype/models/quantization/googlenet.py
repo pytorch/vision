@@ -2,7 +2,7 @@ import warnings
 from functools import partial
 from typing import Any, Optional, Union
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.googlenet import (
@@ -26,7 +26,7 @@ __all__ = [
 class GoogLeNet_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "GoogLeNet",

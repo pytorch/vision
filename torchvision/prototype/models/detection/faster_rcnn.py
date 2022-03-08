@@ -1,7 +1,7 @@
 from typing import Any, Optional, Union
 
 from torch import nn
-from torchvision.prototype.transforms import CocoEval
+from torchvision.prototype.transforms import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.faster_rcnn import (
@@ -43,7 +43,7 @@ _COMMON_META = {
 class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             **_COMMON_META,
             "num_params": 41755286,
@@ -57,7 +57,7 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
 class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             **_COMMON_META,
             "num_params": 19386354,
@@ -71,7 +71,7 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
 class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             **_COMMON_META,
             "num_params": 19386354,
