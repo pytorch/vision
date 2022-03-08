@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+6aee8ba ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+d785158 ) &#x25BC</a>
     </div>
     
 
@@ -334,7 +334,7 @@
 
 
 <span class="c1"># This is not in nn</span>
-<span class="k">class</span> <span class="nc">FrozenBatchNorm2d</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<div class="viewcode-block" id="FrozenBatchNorm2d"><a class="viewcode-back" href="../../../generated/torchvision.ops.FrozenBatchNorm2d.html#torchvision.ops.FrozenBatchNorm2d">[docs]</a><span class="k">class</span> <span class="nc">FrozenBatchNorm2d</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    BatchNorm2d where the batch statistics and the affine parameters are fixed</span>
 
@@ -374,7 +374,7 @@
             <span class="n">state_dict</span><span class="p">,</span> <span class="n">prefix</span><span class="p">,</span> <span class="n">local_metadata</span><span class="p">,</span> <span class="n">strict</span><span class="p">,</span> <span class="n">missing_keys</span><span class="p">,</span> <span class="n">unexpected_keys</span><span class="p">,</span> <span class="n">error_msgs</span>
         <span class="p">)</span>
 
-    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+<div class="viewcode-block" id="FrozenBatchNorm2d.forward"><a class="viewcode-back" href="../../../generated/torchvision.ops.FrozenBatchNorm2d.html#torchvision.ops.FrozenBatchNorm2d.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">x</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="c1"># move reshapes to the beginning</span>
         <span class="c1"># to make it fuser-friendly</span>
         <span class="n">w</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
@@ -383,10 +383,10 @@
         <span class="n">rm</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">running_mean</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="n">w</span> <span class="o">*</span> <span class="p">(</span><span class="n">rv</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="p">)</span><span class="o">.</span><span class="n">rsqrt</span><span class="p">()</span>
         <span class="n">bias</span> <span class="o">=</span> <span class="n">b</span> <span class="o">-</span> <span class="n">rm</span> <span class="o">*</span> <span class="n">scale</span>
-        <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">scale</span> <span class="o">+</span> <span class="n">bias</span>
+        <span class="k">return</span> <span class="n">x</span> <span class="o">*</span> <span class="n">scale</span> <span class="o">+</span> <span class="n">bias</span></div>
 
     <span class="k">def</span> <span class="fm">__repr__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, eps=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="si">}</span><span class="s2">)&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2">(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">weight</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s2">, eps=</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">eps</span><span class="si">}</span><span class="s2">)&quot;</span></div>
 
 
 <span class="k">class</span> <span class="nc">ConvNormActivation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
@@ -440,16 +440,16 @@
             <span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">Conv2dNormActivation</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">):</span>
+<div class="viewcode-block" id="Conv2dNormActivation"><a class="viewcode-back" href="../../../generated/torchvision.ops.Conv2dNormActivation.html#torchvision.ops.Conv2dNormActivation">[docs]</a><span class="k">class</span> <span class="nc">Conv2dNormActivation</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configurable block used for Convolution2d-Normalzation-Activation blocks.</span>
+<span class="sd">    Configurable block used for Convolution2d-Normalization-Activation blocks.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): Number of channels in the input image</span>
-<span class="sd">        out_channels (int): Number of channels produced by the Convolution-Normalzation-Activation block</span>
+<span class="sd">        out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block</span>
 <span class="sd">        kernel_size: (int, optional): Size of the convolving kernel. Default: 3</span>
 <span class="sd">        stride (int, optional): Stride of the convolution. Default: 1</span>
-<span class="sd">        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in wich case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``</span>
+<span class="sd">        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``</span>
 <span class="sd">        groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1</span>
 <span class="sd">        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm2d``</span>
 <span class="sd">        activation_layer (Callable[..., torch.nn.Module], optinal): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``</span>
@@ -487,19 +487,19 @@
             <span class="n">inplace</span><span class="p">,</span>
             <span class="n">bias</span><span class="p">,</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
 
 
-<span class="k">class</span> <span class="nc">Conv3dNormActivation</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">):</span>
+<div class="viewcode-block" id="Conv3dNormActivation"><a class="viewcode-back" href="../../../generated/torchvision.ops.Conv3dNormActivation.html#torchvision.ops.Conv3dNormActivation">[docs]</a><span class="k">class</span> <span class="nc">Conv3dNormActivation</span><span class="p">(</span><span class="n">ConvNormActivation</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Configurable block used for Convolution3d-Normalzation-Activation blocks.</span>
+<span class="sd">    Configurable block used for Convolution3d-Normalization-Activation blocks.</span>
 
 <span class="sd">    Args:</span>
 <span class="sd">        in_channels (int): Number of channels in the input video.</span>
-<span class="sd">        out_channels (int): Number of channels produced by the Convolution-Normalzation-Activation block</span>
+<span class="sd">        out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block</span>
 <span class="sd">        kernel_size: (int, optional): Size of the convolving kernel. Default: 3</span>
 <span class="sd">        stride (int, optional): Stride of the convolution. Default: 1</span>
-<span class="sd">        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in wich case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``</span>
+<span class="sd">        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``</span>
 <span class="sd">        groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1</span>
 <span class="sd">        norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm3d``</span>
 <span class="sd">        activation_layer (Callable[..., torch.nn.Module], optinal): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``</span>
@@ -536,10 +536,10 @@
             <span class="n">inplace</span><span class="p">,</span>
             <span class="n">bias</span><span class="p">,</span>
             <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv3d</span><span class="p">,</span>
-        <span class="p">)</span>
+        <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="SqueezeExcitation"><a class="viewcode-back" href="../../../generated/torchvision.ops.SqueezeExcitation.html#torchvision.ops.SqueezeExcitation">[docs]</a><span class="k">class</span> <span class="nc">SqueezeExcitation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">SqueezeExcitation</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    This block implements the Squeeze-and-Excitation block from https://arxiv.org/abs/1709.01507 (see Fig. 1).</span>
 <span class="sd">    Parameters ``activation``, and ``scale_activation`` correspond to ``delta`` and ``sigma`` in in eq. 3.</span>
@@ -573,9 +573,9 @@
         <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">fc2</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">scale_activation</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
 
-<div class="viewcode-block" id="SqueezeExcitation.forward"><a class="viewcode-back" href="../../../generated/torchvision.ops.SqueezeExcitation.html#torchvision.ops.SqueezeExcitation.forward">[docs]</a>    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
+    <span class="k">def</span> <span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="nb">input</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_scale</span><span class="p">(</span><span class="nb">input</span><span class="p">)</span>
-        <span class="k">return</span> <span class="n">scale</span> <span class="o">*</span> <span class="nb">input</span></div></div>
+        <span class="k">return</span> <span class="n">scale</span> <span class="o">*</span> <span class="nb">input</span>
 </pre></div>
 
              </article>
