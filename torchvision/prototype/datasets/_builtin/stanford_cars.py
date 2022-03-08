@@ -93,4 +93,4 @@ class StanfordCars(Dataset):
         meta_dp = Filter(devkit_dp, path_comparator("name", "cars_meta.mat"))
         _, meta_file = next(iter(meta_dp))
 
-        return  list(read_mat(meta_file, squeeze_me=True)["class_names"])
+        return list(read_mat(meta_file, squeeze_me=True)["class_names"])
