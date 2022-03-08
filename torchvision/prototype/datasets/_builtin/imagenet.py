@@ -2,9 +2,17 @@ import pathlib
 import re
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast, Union
 
-from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, Filter, Demultiplexer
-from torchdata.datapipes.iter import TarArchiveReader
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    LineReader,
+    IterKeyZipper,
+    Mapper,
+    Filter,
+    Demultiplexer,
+    TarArchiveReader,
+)
 from torchvision.datasets.utils import verify_str_arg
+from torchvision.prototype.datasets import home
 from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     ManualDownloadResource,
@@ -41,7 +49,7 @@ class ImageNetResource(ManualDownloadResource):
         super().__init__("Register on https://image-net.org/ and follow the instructions there.", **kwargs)
 
 
-def load_images_dp(root: Union[str, pathlib.Path], *, split: str, **kwargs: Any) -> IterDataPipe[Tuple[str, BinaryIO]]:
+def load_images_dp(root: pathlib.Path, *, split: str, **kwargs: Any) -> IterDataPipe[Tuple[str, BinaryIO]]:
     name = "test_v10102019" if split == "test" else split
     return ImageNetResource(
         file_name=f"ILSVRC2012_img_{name}.tar",
@@ -53,7 +61,7 @@ def load_images_dp(root: Union[str, pathlib.Path], *, split: str, **kwargs: Any)
     ).load(root, **kwargs)
 
 
-def load_devkit_dp(root: Union[str, pathlib.Path], **kwargs: Any) -> IterDataPipe[Tuple[str, BinaryIO]]:
+def load_devkit_dp(root: pathlib.Path, **kwargs: Any) -> IterDataPipe[Tuple[str, BinaryIO]]:
     return ImageNetResource(
         file_name="ILSVRC2012_devkit_t12.tar.gz",
         sha256="b59243268c0d266621fd587d2018f69e906fb22875aca0e295b48cafaa927953",
@@ -133,8 +141,13 @@ def prepare_sample(
 
 
 @register_dataset(NAME)
-def imagenet(root: Union[str, pathlib.Path], *, split: str = "train", **kwargs: Any) -> TakerDataPipe:
+def imagenet(root: Optional[Union[str, pathlib.Path]] = None, *, split: str = "train", **kwargs: Any) -> TakerDataPipe:
     verify_str_arg(split, "split", ["train", "val", "test"])
+
+    if root is None:
+        root = pathlib.Path(home()) / NAME
+    else:
+        root = pathlib.Path(root)
 
     images_dp = load_images_dp(root, split=split, **kwargs)
     if split == "train":

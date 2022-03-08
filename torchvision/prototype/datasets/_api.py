@@ -1,7 +1,6 @@
 import pathlib
 from typing import Any, Dict, List, Callable, Optional, Union, TypeVar
 
-from torchvision.prototype.datasets import home
 from torchvision.prototype.datasets.utils._internal import TakerDataPipe
 from torchvision.prototype.utils._internal import add_suggestion
 
@@ -59,8 +58,4 @@ def info(name: str) -> Dict[str, Any]:
 
 def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **config: Any) -> TakerDataPipe:
     dataset_cls = find(BUILTIN_DATASETS, name)
-
-    if root is None:
-        root = pathlib.Path(home()) / name
-
     return dataset_cls(root, **config)
