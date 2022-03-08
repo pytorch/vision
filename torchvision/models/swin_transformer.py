@@ -119,7 +119,7 @@ class ShiftedWindowAttention(nn.Module):
         relative_coords[:, :, 0] += self.window_size - 1  # shift to start from 0
         relative_coords[:, :, 1] += self.window_size - 1
         relative_coords[:, :, 0] *= 2 * self.window_size - 1
-        relative_position_index = relative_coords.sum(-1).view(-1)  # Wh*Ww*Wh*Ww
+        relative_position_index = relative_coords.sum(-1).view(-1) # Wh*Ww*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
@@ -127,19 +127,17 @@ class ShiftedWindowAttention(nn.Module):
     def forward(self, x: Tensor):
         B, H, W, C = x.shape
         # pad feature maps to multiples of window size
-        pad_l = pad_t = 0
         pad_r = (self.window_size - W % self.window_size) % self.window_size
         pad_b = (self.window_size - H % self.window_size) % self.window_size
-        x = F.pad(x, (0, 0, pad_l, pad_r, pad_t, pad_b))
-        _, Hp, Wp, _ = x.shape
+        x = F.pad(x, (0, 0, 0, pad_r, 0, pad_b))
+        _, pad_H, pad_W, _ = x.shape
 
         # cyclic shift
         if self.shift_size > 0:
             x = torch.roll(x, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2))
 
         # partition windows
-        x_windows = self.partition_window(x)  # nW*B, window_size, window_size, C
-        x_windows = x_windows.view(-1, int(self.window_size ** 2), C)  # nW*B, window_size*window_size, C
+        x_windows = self.partition_window(x)  # nW*B, window_size*window_size, C
 
         # multi-head attention
         qkv = (
@@ -161,10 +159,10 @@ class ShiftedWindowAttention(nn.Module):
             # generate attention mask
             attn_mask = generate_attention_mask(x, self.window_size, self.shift_size)
             attn_mask = self.partition_window(attn_mask)
-            attn_mask = attn_mask.view(-1, int(self.window_size ** 2))
+            num_windows = attn_mask.size(0)
+            attn_mask = attn_mask.view(num_windows, -1)
             attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
             attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
-            num_windows = attn_mask.shape[0]
             attn = attn.view(
                 x_windows.size(0) // num_windows, num_windows, self.num_heads, x_windows.size(1), x_windows.size(1)
             ) + attn_mask.unsqueeze(1).unsqueeze(0)
@@ -178,34 +176,24 @@ class ShiftedWindowAttention(nn.Module):
         x_windows = self.dropout(x_windows)
 
         # reverse windows
-        x_windows = x_windows.view(-1, self.window_size, self.window_size, C)
-        x = self.reverse_window(x_windows, Hp, Wp)  # B H' W' C
+        x = x_windows.view(B, pad_H // self.window_size, pad_W // self.window_size, self.window_size, self.window_size, C)
+        x = x.permute(0, 1, 3, 2, 4, 5).reshape(B, pad_H, pad_W, C)
 
         # reverse cyclic shift
         if self.shift_size > 0:
             x = torch.roll(x, shifts=(self.shift_size, self.shift_size), dims=(1, 2))
 
-        x = x.view(B, Hp, Wp, C)
+        # unpad features
         x = x[:, :H, :W, :].contiguous()
-
         return x
 
     def partition_window(self, x: Tensor):
         """
-        Partition the input tensor into windows: (B, H, W, C) -> (B*nW, window_size, window_size, C).
+        Partition the input tensor into windows: (B, H, W, C) -> (B*nW, window_size*window_size, C).
         """
         B, H, W, C = x.shape
         x = x.view(B, H // self.window_size, self.window_size, W // self.window_size, self.window_size, C)
-        x = x.permute(0, 1, 3, 2, 4, 5).reshape(-1, self.window_size, self.window_size, C)
-        return x
-
-    def reverse_window(self, x: Tensor, height: int, width: int):
-        """
-        The Inverse operation of `partition_window`.
-        """
-        B = x.shape[0] // ((height * width) // int((self.window_size ** 2)))
-        x = x.view(B, height // self.window_size, width // self.window_size, self.window_size, self.window_size, -1)
-        x = x.permute(0, 1, 3, 2, 4, 5).reshape(B, height, width, -1)
+        x = x.permute(0, 1, 3, 2, 4, 5).reshape(-1, int(self.window_size ** 2), C)
         return x
 
 
@@ -333,7 +321,7 @@ class SwinTransformer(nn.Module):
                         dim,
                         num_heads[i_stage],
                         window_size=window_size,
-                        shift_size=shift_sizes[i_stage] if i_layer % 2 == 0 else window_size // 2,
+                        shift_size=0 if i_layer % 2 == 0 else shift_sizes[i_stage],
                         mlp_ratio=mlp_ratio,
                         qkv_bias=qkv_bias,
                         dropout=dropout,
@@ -399,6 +387,7 @@ def _swin_transformer(
         depths=depths,
         num_heads=num_heads,
         window_size=window_size,
+        shift_sizes=shift_sizes,
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
     )
