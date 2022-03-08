@@ -50,6 +50,7 @@ class PatchMerging(nn.Module):
         x = self.norm(x)
         x = self.reduction(x)
         x = x.view(B, H // 2, W // 2, 2 * C)
+        return x
 
 
 def generate_attention_mask(height: int, width: int, window_size: int, shift_size: int, device: torch.device):
@@ -198,7 +199,7 @@ class ShiftedWindowAttention(nn.Module):
         """
         The Inverse operation of `partition_window`.
         """
-        B = x.shape[0] // (height * width) // int((self.window_size ** 2))
+        B = x.shape[0] // ((height * width) // int((self.window_size ** 2)))
         x = x.view(B, height // self.window_size, width // self.window_size, self.window_size, self.window_size, -1)
         x = x.permute(0, 1, 3, 2, 4, 5).reshape(B, height, width, -1)
         return x
