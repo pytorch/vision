@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, List, Optional
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.convnext import ConvNeXt, CNBlockConfig
@@ -56,7 +56,7 @@ _COMMON_META = {
 class ConvNeXt_Tiny_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/convnext_tiny-983f1562.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=236),
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=236),
         meta={
             **_COMMON_META,
             "num_params": 28589128,
@@ -70,7 +70,7 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
 class ConvNeXt_Small_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/convnext_small-0c510722.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=230),
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=230),
         meta={
             **_COMMON_META,
             "num_params": 50223688,
@@ -84,7 +84,7 @@ class ConvNeXt_Small_Weights(WeightsEnum):
 class ConvNeXt_Base_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/convnext_base-6075fbad.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "num_params": 88591464,
@@ -98,7 +98,7 @@ class ConvNeXt_Base_Weights(WeightsEnum):
 class ConvNeXt_Large_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/convnext_large-ea097f82.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "num_params": 197767336,
