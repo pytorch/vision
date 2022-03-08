@@ -431,7 +431,9 @@ def resize(
     return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
 
 
-def pad(img: Tensor, padding: List[int], fill: Union[List[float], float] = 0.0, padding_mode: str = "constant") -> Tensor:
+def pad(
+    img: Tensor, padding: List[int], fill: Union[List[float], float] = 0.0, padding_mode: str = "constant"
+) -> Tensor:
     r"""Pad the given image on all sides with the given "pad" value.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means at most 2 leading dimensions for mode reflect and symmetric,

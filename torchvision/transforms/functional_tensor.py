@@ -353,7 +353,9 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
-def pad(img: Tensor, padding: List[int], fill: Union[List[float], float] = 0.0, padding_mode: str = "constant") -> Tensor:
+def pad(
+    img: Tensor, padding: List[int], fill: Union[List[float], float] = 0.0, padding_mode: str = "constant"
+) -> Tensor:
     _assert_image_tensor(img)
 
     if not isinstance(padding, (int, tuple, list)):
