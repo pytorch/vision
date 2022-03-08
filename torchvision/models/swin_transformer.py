@@ -53,9 +53,9 @@ class PatchMerging(nn.Module):
         return x
 
 
-def generate_attention_mask(height: int, width: int, window_size: int, shift_size: int, device: torch.device):
+def generate_attention_mask(x: Tensor, window_size: int, shift_size: int):
     """Generate shifted window attention mask"""
-    mask = torch.zeros((1, height, width, 1), device=device)
+    mask = x_new_zeros((1, x.size(1), x.size(2), 1), device=device)
     slices = ((0, -window_size), (-window_size, -shift_size), (-shift_size, None))
     count = 0
     for h in slices:
@@ -138,11 +138,13 @@ class ShiftedWindowAttention(nn.Module):
             x = torch.roll(x, shifts=(-self.shift_size, -self.shift_size), dims=(1, 2))
 
         # partition windows
-        x = self.partition_window(x)  # nW*B, window_size, window_size, C
-        x = x.view(-1, int(self.window_size ** 2), C)  # nW*B, window_size*window_size, C
+        x_windows = self.partition_window(x)  # nW*B, window_size, window_size, C
+        x_windows = x_windows.view(-1, int(self.window_size ** 2), C)  # nW*B, window_size*window_size, C
 
         # multi-head attention
-        qkv = self.qkv(x).reshape(x.size(0), x.size(1), 3, self.num_heads, C // self.num_heads).permute(2, 0, 3, 1, 4)
+        qkv = self.qkv(x_windows).reshape(
+            x_windows.size(0), x_windows.size(1), 3, self.num_heads, C // self.num_heads
+        ).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
         q = q * self.scale
         attn = q @ k.transpose(-2, -1)
@@ -155,27 +157,27 @@ class ShiftedWindowAttention(nn.Module):
 
         if self.shift_size > 0:
             # generate attention mask
-            attn_mask = generate_attention_mask(Hp, Wp, self.window_size, self.shift_size, x.device)
+            attn_mask = generate_attention_mask(x, self.window_size, self.shift_size)
             attn_mask = self.partition_window(attn_mask)
             attn_mask = attn_mask.view(-1, int(self.window_size ** 2))
             attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
             attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
             num_windows = attn_mask.shape[0]
             attn = attn.view(
-                x.size(0) // num_windows, num_windows, self.num_heads, x.size(1), x.size(1)
+                x_windows.size(0) // num_windows, num_windows, self.num_heads, x_windows.size(1), x_windows.size(1)
             ) + attn_mask.unsqueeze(1).unsqueeze(0)
-            attn = attn.view(-1, self.num_heads, x.size(1), x.size(1))
+            attn = attn.view(-1, self.num_heads, x_windows.size(1), x_windows.size(1))
 
         attn = self.softmax(attn)
         attn = self.attention_dropout(attn)
 
-        x = (attn @ v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
-        x = self.proj(x)
-        x = self.dropout(x)
+        x_windows = (attn @ v).transpose(1, 2).reshape(x_windows.size(0), x_windows.size(1), C)
+        x_windows = self.proj(x_windows)
+        x_windows = self.dropout(x_windows)
 
         # reverse windows
-        x = x.view(-1, self.window_size, self.window_size, C)
-        x = self.reverse_window(x, Hp, Wp)  # B H' W' C
+        x_windows = x_windows.view(-1, self.window_size, self.window_size, C)
+        x = self.reverse_window(x_windows, Hp, Wp)  # B H' W' C
 
         # reverse cyclic shift
         if self.shift_size > 0:
