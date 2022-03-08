@@ -196,7 +196,7 @@ def imagenet(root: Optional[Union[str, pathlib.Path]] = None, *, split: str = "t
     )
 
 
-def generate_categories(root: Union[str, pathlib.Path], **kwargs: Any) -> List[Tuple[str, ...]]:
+def generate_categories(root: pathlib.Path, **kwargs: Any) -> List[Tuple[str, ...]]:
     devkit_dp = load_devkit_dp(root, **kwargs)
 
     meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
