@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Tuple, List
+from typing import Dict, Optional, Tuple, List
 
 import torch
 from torch import Tensor
@@ -44,24 +44,6 @@ def get_image_num_channels(img: Tensor) -> int:
     raise TypeError(f"Input ndim should be 2 or more. Got {img.ndim}")
 
 
-def _max_value(dtype: torch.dtype) -> float:
-    # TODO: replace this method with torch.iinfo when it gets torchscript support.
-    # https://github.com/pytorch/pytorch/issues/41492
-
-    a = torch.tensor(2, dtype=dtype)
-    signed = 1 if torch.tensor(0, dtype=dtype).is_signed() else 0
-    bits = 1
-    max_value = torch.tensor(-signed, dtype=torch.long)
-    while True:
-        next_value = a.pow(bits - signed).sub(1)
-        if next_value > max_value:
-            max_value = next_value
-            bits *= 2
-        else:
-            break
-    return max_value.item()
-
-
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:
     c = get_dimensions(img)[0]
     if c not in permitted:
@@ -71,6 +53,14 @@ def _assert_channels(img: Tensor, permitted: List[int]) -> None:
 def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -> torch.Tensor:
     if image.dtype == dtype:
         return image
+
+    _max_values: Dict[torch.dtype, float] = {
+        torch.uint8: float(255),
+        torch.int8: float(127),
+        torch.int16: float(32767),
+        torch.int32: float(2147483647),
+        torch.int64: float(9223372036854775807),
+    }
 
     if image.is_floating_point():
 
@@ -91,11 +81,17 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         # `max + 1 - epsilon` provides more evenly distributed mapping of
         # ranges of floats to ints.
         eps = 1e-3
-        max_val = _max_value(dtype)
+        if dtype not in _max_values:
+            msg = f"Internal error when casting from {image.dtype} to {dtype}."
+            raise RuntimeError(msg)
+        max_val = _max_values[dtype]
         result = image.mul(max_val + 1.0 - eps)
         return result.to(dtype)
     else:
-        input_max = _max_value(image.dtype)
+        if image.dtype not in _max_values:
+            msg = f"Internal error when casting from {image.dtype} to {dtype}."
+            raise RuntimeError(msg)
+        input_max = _max_values[image.dtype]
 
         # int to float
         # TODO: replace with dtype.is_floating_point when torchscript supports it
@@ -103,7 +99,10 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             image = image.to(dtype)
             return image / input_max
 
-        output_max = _max_value(dtype)
+        if dtype not in _max_values:
+            msg = f"Internal error when casting from {image.dtype} to {dtype}."
+            raise RuntimeError(msg)
+        output_max = _max_values[dtype]
 
         # int to int
         if input_max > output_max:
