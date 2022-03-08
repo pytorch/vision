@@ -418,9 +418,9 @@ def pad(
     if padding_mode == "constant":
         # The following if/else can't be simplified due to JIT
         if isinstance(fill, (tuple, list)):
-            fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device).view(1, -1, 1, 1)
+            fill_img = torch.tensor(fill).to(dtype=img.dtype, device=img.device).view(1, -1, 1, 1)
         else:
-            fill_img = torch.tensor(fill, dtype=img.dtype, device=img.device)
+            fill_img = torch.tensor(fill).to(dtype=img.dtype, device=img.device)
         if pad_top > 0:
             img[..., :pad_top, :] = fill_img
         if pad_left > 0:
