@@ -27,22 +27,10 @@ import torch.distributed as dist
 import torch.utils.data
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
+from torchvision.datasets.utils import verify_str_arg  # noqa: F401
+from torchvision.prototype.datasets import home
 from torchvision.prototype.utils._internal import fromfile
 
-
-__all__ = [
-    "INFINITE_BUFFER_SIZE",
-    "BUILTIN_DIR",
-    "read_mat",
-    "MappingIterator",
-    "Enumerator",
-    "getitem",
-    "path_accessor",
-    "path_comparator",
-    "Decompressor",
-    "read_flo",
-    "hint_sharding",
-]
 
 K = TypeVar("K")
 D = TypeVar("D")
@@ -258,3 +246,10 @@ def hint_sharding(datapipe: IterDataPipe) -> ShardingFilter:
 
 def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
     return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)
+
+
+def get_root(root: Optional[Union[str, pathlib.Path]], name: str) -> pathlib.Path:
+    if root is None:
+        return pathlib.Path(home()) / name
+    else:
+        return pathlib.Path(root)

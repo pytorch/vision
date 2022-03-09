@@ -12,8 +12,6 @@ from torchdata.datapipes.iter import (
     Demultiplexer,
     TarArchiveReader,
 )
-from torchvision.datasets.utils import verify_str_arg
-from torchvision.prototype.datasets import home
 from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     ManualDownloadResource,
@@ -29,6 +27,8 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
     path_accessor,
     TakerDataPipe,
+    verify_str_arg,
+    get_root,
 )
 from torchvision.prototype.features import Label, EncodedImage
 
@@ -143,12 +143,8 @@ def prepare_sample(
 
 @register_dataset(NAME)
 def imagenet(root: Optional[Union[str, pathlib.Path]] = None, *, split: str = "train", **kwargs: Any) -> TakerDataPipe:
+    root = get_root(root, NAME)
     verify_str_arg(split, "split", ["train", "val", "test"])
-
-    if root is None:
-        root = pathlib.Path(home()) / NAME
-    else:
-        root = pathlib.Path(root)
 
     images_dp = load_images_dp(root, split=split, **kwargs)
     if split == "train":

@@ -7,8 +7,8 @@ except (ModuleNotFoundError, TypeError) as error:
         "Note that you cannot install it with `pip install torchdata`, since this is another package."
     ) from error
 
+from ._home import home  # usort: skip
 from . import utils
-from ._home import home
 
 # Load this last, since some parts depend on the above being loaded first
 from ._api import list_datasets, info, load, register_info, register_dataset  # usort: skip

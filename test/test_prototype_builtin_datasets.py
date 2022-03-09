@@ -21,7 +21,7 @@ assert_samples_equal = functools.partial(
 
 @pytest.fixture
 def test_home(mocker, tmp_path):
-    mocker.patch("torchvision.prototype.datasets._api.home", return_value=str(tmp_path))
+    mocker.patch("torchvision.prototype.datasets.utils._internal.home", return_value=str(tmp_path))
     yield tmp_path
 
 
