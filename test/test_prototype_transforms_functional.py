@@ -7,6 +7,7 @@ import torchvision.prototype.transforms.functional as F
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
+from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
 
@@ -25,7 +26,7 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
         raise pytest.UsageError() from error
 
     shape = (*extra_dims, num_channels, *size)
-    max_value = 1 if dtype.is_floating_point else torch.iinfo(dtype).max
+    max_value = get_max_value(dtype)
     data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
     if color_space in {features.ColorSpace.GRAYSCALE_ALPHA, features.ColorSpace.RGBA} and constant_alpha:
         alpha = data[..., -1:, :, :]
