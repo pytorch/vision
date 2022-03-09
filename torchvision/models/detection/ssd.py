@@ -408,7 +408,8 @@ class SSD(nn.Module):
 
                 # keep only topk scoring predictions
                 num_topk = det_utils._topk_min(score, self.topk_candidates, 0)
-                score, idxs = score.topk(num_topk)
+                score, idxs = score.sort(dim=-1, descending=True, stable=True)
+                score, idxs = score[:num_topk], idxs[:num_topk]
                 box = box[idxs]
 
                 image_boxes.append(box)

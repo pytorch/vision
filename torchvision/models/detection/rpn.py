@@ -196,7 +196,7 @@ class RegionProposalNetwork(torch.nn.Module):
         for ob in objectness.split(num_anchors_per_level, 1):
             num_anchors = ob.shape[1]
             pre_nms_top_n = det_utils._topk_min(ob, self.pre_nms_top_n(), 1)
-            _, top_n_idx = ob.topk(pre_nms_top_n, dim=1)
+            top_n_idx = ob.sort(dim=1, descending=True, stable=True)[1][:pre_nms_top_n]
             r.append(top_n_idx + offset)
             offset += num_anchors
         return torch.cat(r, dim=1)
