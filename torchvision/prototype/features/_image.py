@@ -18,7 +18,7 @@ class ColorSpace(StrEnum):
     GRAYSCALE = StrEnum.auto()
     GRAYSCALE_ALPHA = StrEnum.auto()
     RGB = StrEnum.auto()
-    RGBA = StrEnum.auto()
+    RGB_ALPHA = StrEnum.auto()
 
     @classmethod
     def from_pil_mode(cls, mode: str) -> ColorSpace:
@@ -29,7 +29,7 @@ class ColorSpace(StrEnum):
         elif mode == "RGB":
             return cls.RGB
         elif mode == "RGBA":
-            return cls.RGBA
+            return cls.RGB_ALPHA
         else:
             return cls.OTHER
 
@@ -96,7 +96,7 @@ class Image(_Feature):
         elif num_channels == 3:
             return ColorSpace.RGB
         elif num_channels == 4:
-            return ColorSpace.RGBA
+            return ColorSpace.RGB_ALPHA
         else:
             return ColorSpace.OTHER
 

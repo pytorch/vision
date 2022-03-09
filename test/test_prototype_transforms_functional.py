@@ -20,7 +20,7 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
             features.ColorSpace.GRAYSCALE: 1,
             features.ColorSpace.GRAYSCALE_ALPHA: 2,
             features.ColorSpace.RGB: 3,
-            features.ColorSpace.RGBA: 4,
+            features.ColorSpace.RGB_ALPHA: 4,
         }[color_space]
     except KeyError as error:
         raise pytest.UsageError() from error
@@ -28,7 +28,7 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
     shape = (*extra_dims, num_channels, *size)
     max_value = get_max_value(dtype)
     data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
-    if color_space in {features.ColorSpace.GRAYSCALE_ALPHA, features.ColorSpace.RGBA} and constant_alpha:
+    if color_space in {features.ColorSpace.GRAYSCALE_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
         data[..., -1, :, :] = max_value
     return features.Image(data, color_space=color_space)
 
@@ -43,7 +43,7 @@ def make_images(
         features.ColorSpace.GRAYSCALE,
         features.ColorSpace.GRAYSCALE_ALPHA,
         features.ColorSpace.RGB,
-        features.ColorSpace.RGBA,
+        features.ColorSpace.RGB_ALPHA,
     ),
     dtypes=(torch.float32, torch.uint8),
     extra_dims=((4,), (2, 3)),

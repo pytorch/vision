@@ -180,7 +180,7 @@ class TestSmoke:
                     features.ColorSpace.GRAYSCALE,
                     features.ColorSpace.GRAYSCALE_ALPHA,
                     features.ColorSpace.RGB,
-                    features.ColorSpace.RGBA,
+                    features.ColorSpace.RGB_ALPHA,
                 ],
                 repeat=2,
             )

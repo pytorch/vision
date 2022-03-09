@@ -101,27 +101,27 @@ def convert_image_color_space_tensor(
         return _add_alpha(image)
     elif old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.RGB:
         return _grayscale_to_rgb_tensor(image)
-    elif old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.RGBA:
+    elif old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.RGB_ALPHA:
         return _add_alpha(_grayscale_to_rgb_tensor(image))
     elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.GRAYSCALE:
         return _strip_alpha(image)
     elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.RGB:
         return _grayscale_to_rgb_tensor(_strip_alpha(image))
-    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.RGBA:
+    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.RGB_ALPHA:
         image, alpha = _split_alpha(image)
         return _add_alpha(_grayscale_to_rgb_tensor(image), alpha)
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAYSCALE:
         return _rgb_to_grayscale_tensor(image)
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
         return _add_alpha(_rgb_to_grayscale_tensor(image))
-    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.RGBA:
+    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.RGB_ALPHA:
         return _add_alpha(image)
-    elif old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.GRAYSCALE:
+    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAYSCALE:
         return _rgb_to_grayscale_tensor(_strip_alpha(image))
-    elif old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
         image, alpha = _split_alpha(image)
         return _add_alpha(_rgb_to_grayscale_tensor(image), alpha)
-    elif old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.RGB:
+    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.RGB:
         return _strip_alpha(image)
     else:
         raise RuntimeError(f"Unknown conversion from {old_color_space} to {new_color_space}.")
@@ -131,7 +131,7 @@ _COLOR_SPACE_TO_PIL_MODE = {
     ColorSpace.GRAYSCALE: "L",
     ColorSpace.GRAYSCALE_ALPHA: "LA",
     ColorSpace.RGB: "RGB",
-    ColorSpace.RGBA: "RGBA",
+    ColorSpace.RGB_ALPHA: "RGBA",
 }
 
 
