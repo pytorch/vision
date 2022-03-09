@@ -689,32 +689,9 @@ def test_detection_model(model_fn, dev):
             return {"mean": mean, "std": std}
 
         output = map_nested_tensor_object(out, tensor_map_fn=compact)
-        prec = 0.01
-        try:
-            # We first try to assert the entire output if possible. This is not
-            # only the best way to assert results but also handles the cases
-            # where we need to create a new expected result.
-            _assert_expected(output, model_name, prec=prec)
-        except AssertionError:
-            # Unfortunately detection models are flaky due to the unstable sort
-            # in NMS. If matching across all outputs fails, use the same approach
-            # as in NMSTester.test_nms_cuda to see if this is caused by duplicate
-            # scores.
-            expected_file = _get_expected_file(model_name)
-            expected = torch.load(expected_file)
-            torch.testing.assert_close(
-                output[0]["scores"], expected[0]["scores"], rtol=prec, atol=prec, check_device=False, check_dtype=False
-            )
+        _assert_expected(output, model_name, prec=0.01)
 
-            # Note: Fmassa proposed turning off NMS by adapting the threshold
-            # and then using the Hungarian algorithm as in DETR to find the
-            # best match between output and expected boxes and eliminate some
-            # of the flakiness. Worth exploring.
-            return False  # Partial validation performed
-
-        return True  # Full validation performed
-
-    full_validation = check_out(out)
+    check_out(out)
     _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None))
 
     if dev == torch.device("cuda"):
@@ -722,17 +699,7 @@ def test_detection_model(model_fn, dev):
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
-                full_validation &= check_out(out)
-
-    if not full_validation:
-        msg = (
-            f"The output of {test_detection_model.__name__} could only be partially validated. "
-            "This is likely due to unit-test flakiness, but you may "
-            "want to do additional manual checks if you made "
-            "significant changes to the codebase."
-        )
-        warnings.warn(msg, RuntimeWarning)
-        pytest.skip(msg)
+                check_out(out)
 
     _check_input_backprop(model, model_input)
 
