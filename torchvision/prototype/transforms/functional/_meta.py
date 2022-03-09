@@ -57,19 +57,9 @@ def convert_bounding_box_format(
     return bounding_box
 
 
-def _max_value(dtype: torch.dtype) -> int:
-    return {
-        torch.uint8: int(2 ** 8) - 1,
-        torch.int8: int(2 ** 7) - 1,
-        torch.int16: int(2 ** 15) - 1,
-        torch.int32: int(2 ** 31) - 1,
-        torch.int64: int(2 ** 63) - 1,
-    }.get(dtype, 1)
-
-
 def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
     alpha = image[..., -1, :, :]
-    if not torch.all(alpha == _max_value(image.dtype)):
+    if not torch.all(alpha == _FT._max_value(image.dtype)):
         raise RuntimeError(
             "Stripping the alpha channel if it contains values other than the max value is not supported."
         )
@@ -79,7 +69,7 @@ def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
 def _add_alpha(image: torch.Tensor) -> torch.Tensor:
     shape = list(image.shape)
     shape[-3] = 1
-    alpha = torch.full(shape, _max_value(image.dtype), dtype=image.dtype, device=image.device)
+    alpha = torch.full(shape, _FT._max_value(image.dtype), dtype=image.dtype, device=image.device)
     return torch.cat((image, alpha), dim=-3)
 
 
