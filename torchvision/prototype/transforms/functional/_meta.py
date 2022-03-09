@@ -62,11 +62,13 @@ def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
     return image[..., :-1, :, :], image[..., -1:, :, :]
 
 
-def _check_alpha(alpha: torch.Tensor) -> None:
+def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
+    image, alpha = _split_alpha(image)
     if not torch.all(alpha == _FT._max_value(alpha.dtype)):
         raise RuntimeError(
             "Stripping the alpha channel if it contains values other than the max value is not supported."
         )
+    return image
 
 
 def _add_alpha(image: torch.Tensor, alpha: Optional[torch.Tensor] = None) -> torch.Tensor:
@@ -95,47 +97,32 @@ def convert_image_color_space_tensor(
     if old_color_space == ColorSpace.OTHER or new_color_space == ColorSpace.OTHER:
         raise RuntimeError(f"Conversion to or from {ColorSpace.OTHER} is not supported.")
 
-    if old_color_space == ColorSpace.GRAYSCALE:
-        if new_color_space == ColorSpace.GRAYSCALE_ALPHA:
-            return _add_alpha(image)
-
-        image = _grayscale_to_rgb_tensor(image)
-        if new_color_space == ColorSpace.RGBA:
-            image = _add_alpha(image)
-
-        return image
-    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA:
+    if old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+        return _add_alpha(image)
+    elif old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.RGB:
+        return _grayscale_to_rgb_tensor(image)
+    elif old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.RGBA:
+        return _add_alpha(_grayscale_to_rgb_tensor(image))
+    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.GRAYSCALE:
+        return _strip_alpha(image)
+    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.RGB:
+        return _grayscale_to_rgb_tensor(_strip_alpha(image))
+    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.RGBA:
         image, alpha = _split_alpha(image)
-        if new_color_space == ColorSpace.GRAYSCALE:
-            _check_alpha(alpha)
-            return image
-
-        image = _grayscale_to_rgb_tensor(image)
-        if new_color_space == ColorSpace.RGB:
-            _check_alpha(alpha)
-            return image
-        else:  # new_color_space == ColorSpace.RGBA
-            return _add_alpha(image, alpha)
-    elif old_color_space == ColorSpace.RGB:
-        if new_color_space == ColorSpace.RGBA:
-            return _add_alpha(image)
-
-        image = _rgb_to_grayscale_tensor(image)
-        if new_color_space == ColorSpace.GRAYSCALE_ALPHA:
-            image = _add_alpha(image)
-
-        return image
-    else:  # old_color_space == ColorSpace.RGBA:
+        return _add_alpha(_grayscale_to_rgb_tensor(image), alpha)
+    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAYSCALE:
+        return _rgb_to_grayscale_tensor(image)
+    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+        return _add_alpha(_rgb_to_grayscale_tensor(image))
+    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.RGBA:
+        return _add_alpha(image)
+    elif old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.GRAYSCALE:
+        return _rgb_to_grayscale_tensor(_strip_alpha(image))
+    elif old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
         image, alpha = _split_alpha(image)
-        if new_color_space == ColorSpace.RGB:
-            return image
-
-        image = _rgb_to_grayscale_tensor(image)
-        if new_color_space == ColorSpace.GRAYSCALE:
-            _check_alpha(alpha)
-            return image
-        else:  # new_color_space == ColorSpace.GRAYSCALE_ALPHA:
-            return _add_alpha(image, alpha)
+        return _add_alpha(_rgb_to_grayscale_tensor(image), alpha)
+    else:  # old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.RGB:
+        return _strip_alpha(image)
 
 
 _COLOR_SPACE_TO_PIL_MODE = {
