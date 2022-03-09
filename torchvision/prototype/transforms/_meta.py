@@ -48,11 +48,11 @@ class ConvertImageColorSpace(Transform):
         super().__init__()
 
         if isinstance(color_space, str):
-            color_space = features.ColorSpace[color_space]
+            color_space = features.ColorSpace.from_str(color_space)
         self.color_space = color_space
 
         if isinstance(old_color_space, str):
-            old_color_space = features.ColorSpace[old_color_space]
+            old_color_space = features.ColorSpace.from_str(old_color_space)
         self.old_color_space = old_color_space
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
@@ -72,13 +72,6 @@ class ConvertImageColorSpace(Transform):
                 input, old_color_space=self.old_color_space, new_color_space=self.color_space
             )
         elif isinstance(input, PIL.Image.Image):
-            old_color_space = {
-                "L": features.ColorSpace.GRAYSCALE,
-                "RGB": features.ColorSpace.RGB,
-            }.get(input.mode, features.ColorSpace.OTHER)
-
-            return F.convert_image_color_space_pil(
-                input, old_color_space=old_color_space, new_color_space=self.color_space
-            )
+            return F.convert_image_color_space_pil(input, color_space=self.color_space)
         else:
             return input
