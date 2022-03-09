@@ -177,6 +177,7 @@ class Kinetics(VisionDataset):
         if not check_integrity(split_url_filepath):
             download_url(split_url, file_list_path)
         list_video_urls = open(split_url_filepath)
+        lines = [str(line).replace(" ", "%20") for line in list_video_urls.readlines()]
 
         if self.num_download_workers == 1:
             for line in list_video_urls.readlines():
