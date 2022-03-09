@@ -622,9 +622,9 @@ def ssd300_vgg16(
     kwargs = {**defaults, **kwargs}
     model = SSD(backbone, anchor_generator, (300, 300), num_classes, **kwargs)
     if pretrained:
-        weights_name = "ssd300_vgg16_coco"
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError(f"No checkpoint is available for model {weights_name}")
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
+        arch = "ssd300_vgg16_coco"
+        if model_urls.get(arch, None) is None:
+            raise NotImplemented(f"No checkpoint is available for model type {arch}")
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model

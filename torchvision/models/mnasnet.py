@@ -196,10 +196,10 @@ class MNASNet(torch.nn.Module):
         )
 
 
-def _load_pretrained(model_name: str, model: nn.Module, progress: bool) -> None:
-    if model_name not in _MODEL_URLS or _MODEL_URLS[model_name] is None:
-        raise ValueError(f"No checkpoint is available for model type {model_name}")
-    checkpoint_url = _MODEL_URLS[model_name]
+def _load_pretrained(arch: str, model: nn.Module, progress: bool) -> None:
+    if arch not in _MODEL_URLS or _MODEL_URLS[arch] is None:
+        raise NotImplemented(f"No checkpoint is available for model type {arch}")
+    checkpoint_url = _MODEL_URLS[arch]
     model.load_state_dict(load_state_dict_from_url(checkpoint_url, progress=progress))
 
 

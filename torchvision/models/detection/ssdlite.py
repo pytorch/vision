@@ -267,9 +267,9 @@ def ssdlite320_mobilenet_v3_large(
     )
 
     if pretrained:
-        weights_name = "ssdlite320_mobilenet_v3_large_coco"
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError(f"No checkpoint is available for model {weights_name}")
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
+        arch = "ssdlite320_mobilenet_v3_large_coco"
+        if model_urls.get(arch, None) is None:
+            raise NotImplemented(f"No checkpoint is available for model type {arch}")
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model

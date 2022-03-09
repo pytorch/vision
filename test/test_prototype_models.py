@@ -43,11 +43,8 @@ def _get_model_weights(model_fn):
 def _build_model(fn, **kwargs):
     try:
         model = fn(**kwargs)
-    except ValueError as e:
-        msg = str(e)
-        if "No checkpoint is available" in msg:
-            pytest.skip(msg)
-        raise e
+    except NotImplemented as e:
+        pytest.skip(str(e))
     return model.eval()
 
 

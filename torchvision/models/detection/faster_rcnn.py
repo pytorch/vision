@@ -402,7 +402,7 @@ def fasterrcnn_resnet50_fpn(
 
 
 def _fasterrcnn_mobilenet_v3_large_fpn(
-    weights_name,
+    arch,
     pretrained=False,
     progress=True,
     num_classes=91,
@@ -435,9 +435,9 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
         backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios), **kwargs
     )
     if pretrained:
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError(f"No checkpoint is available for model {weights_name}")
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
+        if model_urls.get(arch, None) is None:
+            raise NotImplemented(f"No checkpoint is available for model type {arch}")
+        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
 

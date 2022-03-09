@@ -395,7 +395,7 @@ def _regnet(arch: str, block_params: BlockParams, pretrained: bool, progress: bo
     model = RegNet(block_params, norm_layer=norm_layer, **kwargs)
     if pretrained:
         if arch not in model_urls:
-            raise ValueError(f"No checkpoint is available for model type {arch}")
+            raise NotImplemented(f"No checkpoint is available for model type {arch}")
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
