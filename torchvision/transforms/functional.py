@@ -4,7 +4,6 @@ import warnings
 from enum import Enum
 from typing import List, Tuple, Any, Optional, Union
 
-
 import numpy as np
 import torch
 from PIL import Image
@@ -336,7 +335,7 @@ def to_pil_image(pic, mode=None):
 
 
 def normalize(
-    tensor: Tensor, mean: Union(float, List[float]), std: Union(float, List[float]), inplace: bool = False
+    tensor: Tensor, mean: Union[float, List[float]], std: Union[float, List[float]], inplace: bool = False
 ) -> Tensor:
     """Normalize a float tensor image with mean and standard deviation.
     This transform does not support PIL Image.
