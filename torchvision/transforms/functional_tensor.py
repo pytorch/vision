@@ -45,13 +45,18 @@ def get_image_num_channels(img: Tensor) -> int:
 
 
 def _max_value(dtype: torch.dtype) -> int:
-    return {
-        torch.uint8: int(2 ** 8) - 1,
-        torch.int8: int(2 ** 7) - 1,
-        torch.int16: int(2 ** 15) - 1,
-        torch.int32: int(2 ** 31) - 1,
-        torch.int64: int(2 ** 63) - 1,
-    }.get(dtype, 1)
+    if dtype == torch.uint8:
+        return int(2 ** 8) - 1
+    elif dtype == torch.int8:
+        return int(2 ** 7) - 1
+    elif dtype == torch.int16:
+        return int(2 ** 15) - 1
+    elif dtype == torch.int32:
+        return int(2 ** 31) - 1
+    elif dtype == torch.int64:
+        return int(2 ** 63) - 1
+    else:
+        return 1
 
 
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:
