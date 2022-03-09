@@ -3,8 +3,16 @@ import pathlib
 import re
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast
 
-from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, Filter, Demultiplexer
-from torchdata.datapipes.iter import TarArchiveReader
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    LineReader,
+    IterKeyZipper,
+    Mapper,
+    Filter,
+    Demultiplexer,
+    TarArchiveReader,
+    Enumerator,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -16,7 +24,6 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     BUILTIN_DIR,
     path_comparator,
-    Enumerator,
     getitem,
     read_mat,
     hint_sharding,
