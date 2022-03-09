@@ -72,7 +72,7 @@ def shifted_window_attention(
     pad_b = (window_size - H % window_size) % window_size
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
- 
+
     # If window size is larger than feature size, there is no need to shift window.
     if window_size == min(pad_H, pad_W):
         shift_size = 0
@@ -84,7 +84,7 @@ def shifted_window_attention(
     # partition windows
     num_windows = (pad_H // window_size) * (pad_W // window_size)
     x = x.view(B, pad_H // window_size, window_size, pad_W // window_size, window_size, C)
-    x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size ** 2, C) # B*nW, Ws*Ws, C
+    x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size ** 2, C)  # B*nW, Ws*Ws, C
   
     # multi-head attention
     qkv = F.linear(x, qkv_weight, qkv_bias)
@@ -92,10 +92,9 @@ def shifted_window_attention(
     q, k, v = qkv[0], qkv[1], qkv[2]
     q = q * (C // num_heads) ** -0.5
     attn = q @ k.transpose(-2, -1)
-
     # add relative position bias
     attn = attn + relative_position_bias
-    
+
     if shift_size > 0:
         # generate attention mask
         attn_mask = x.new_zeros((pad_H, pad_W))
@@ -109,11 +108,11 @@ def shifted_window_attention(
         attn_mask = attn_mask.permute(0, 2, 1, 3).reshape(num_windows, window_size ** 2)
         attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
         attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
-        attn = attn.view(
-                x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1)
-            ) + attn_mask.unsqueeze(1).unsqueeze(0)
+        attn = attn.view(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1)) + attn_mask.unsqueeze(
+            1
+        ).unsqueeze(0)
         attn = attn.view(-1, num_heads, x.size(1), x.size(1))
-    
+
     attn = F.softmax(attn, dim=-1)
     attn = F.dropout(attn, p=attention_dropout)
 
@@ -132,7 +131,7 @@ def shifted_window_attention(
     # unpad features
     x = x[:, :H, :W, :].contiguous()
     return x
-  
+
 
 torch.fx.wrap("shifted_window_attention")
 
@@ -187,7 +186,7 @@ class ShiftedWindowAttention(nn.Module):
         relative_coords[:, :, 0] += self.window_size - 1  # shift to start from 0
         relative_coords[:, :, 1] += self.window_size - 1
         relative_coords[:, :, 0] *= 2 * self.window_size - 1
-        relative_position_index = relative_coords.sum(-1).view(-1) # Wh*Ww*Wh*Ww
+        relative_position_index = relative_coords.sum(-1).view(-1)  # Wh*Ww*Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
@@ -209,7 +208,7 @@ class ShiftedWindowAttention(nn.Module):
             attention_dropout=self.attention_dropout,
             dropout=self.dropout,
             qkv_bias=self.qkv.bias,
-            proj_bias=self.proj.bias  
+            proj_bias=self.proj.bias,
         )
 
 
