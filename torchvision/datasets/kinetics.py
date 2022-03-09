@@ -180,12 +180,12 @@ class Kinetics(VisionDataset):
         list_video_urls = [str(line).replace(" ", "%20") for line in list_video_urls.readlines()]
 
         if self.num_download_workers == 1:
-            for line in list_video_urls.readlines():
-                line = str(line).replace("\n", "")
+            for line in list_video_urls:
+                line = line.replace("\n", "")
                 download_and_extract_archive(line, tar_path, self.split_folder)
         else:
             part = partial(_dl_wrap, tar_path, self.split_folder)
-            lines = [str(line).replace("\n", "") for line in list_video_urls.readlines()]
+            lines = [line.replace("\n", "") for line in list_video_urls]
             poolproc = Pool(self.num_download_workers)
             poolproc.map(part, lines)
 
