@@ -257,6 +257,12 @@ class Normalize(torch.nn.Module):
         _log_api_usage_once(self)
         self.mean = mean
         self.std = std
+
+        if isinstance(mean, Sequence):
+            self.mean = list(mean)
+        if isinstance(std, Sequence):
+            self.std = list(std)
+
         self.inplace = inplace
 
     def forward(self, tensor: Tensor) -> Tensor:
