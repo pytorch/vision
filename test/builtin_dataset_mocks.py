@@ -1390,3 +1390,109 @@ def pcam(info, root, config):
             compressed_file.write(compressed_data)
 
     return num_images
+
+
+class CityScapesMockData:
+
+    _ARCHIVE_NAMES = {
+        ("Coarse", "train"): [("gtCoarse.zip", "gtCoarse"), ("leftImg8bit_trainvaltest.zip", "leftImg8bit")],
+        ("Coarse", "train_extra"): [("gtCoarse.zip", "gtCoarse"), ("leftImg8bit_trainextra.zip", "leftImg8bit")],
+        ("Coarse", "val"): [("gtCoarse.zip", "gtCoarse"), ("leftImg8bit_trainvaltest.zip", "leftImg8bit")],
+        ("Fine", "train"): [("gtFine_trainvaltest.zip", "gtFine"), ("leftImg8bit_trainvaltest.zip", "leftImg8bit")],
+        ("Fine", "test"): [("gtFine_trainvaltest.zip", "gtFine"), ("leftImg8bit_trainvaltest.zip", "leftImg8bit")],
+        ("Fine", "val"): [("gtFine_trainvaltest.zip", "gtFine"), ("leftImg8bit_trainvaltest.zip", "leftImg8bit")],
+    }
+
+    @classmethod
+    def generate(cls, root, config):
+
+        mode = config.mode.capitalize()
+        req_split = config.split
+
+        if req_split in ["train", "train_extra"]:
+            cities = ["bochum", "bremen", "jena"]
+            num_samples = 3
+        else:
+            cities = ["frankfurt", "munster"]
+            num_samples = 2
+
+        if mode == "Fine":
+            splits = ["train", "test", "val"]
+        else:
+            splits = ["train", "train_extra", "val"]
+
+        # Below values are just example values and not some special values
+        polygon_target = {
+            "imgHeight": 1024,
+            "imgWidth": 2048,
+            "objects": [
+                {
+                    "label": "sky",
+                    "polygon": [
+                        [1241, 0],
+                        [1234, 156],
+                        [1478, 197],
+                        [1611, 172],
+                        [1606, 0],
+                    ],
+                },
+                {
+                    "label": "road",
+                    "polygon": [
+                        [0, 448],
+                        [1331, 274],
+                        [1473, 265],
+                        [2047, 605],
+                        [2047, 1023],
+                        [0, 1023],
+                    ],
+                },
+            ],
+        }
+
+        gt_dir = root / f"gt{mode}"
+
+        for split in splits:
+            for city in cities:
+
+                def make_images(file_name_fn, size=10):
+                    create_image_folder(
+                        root=gt_dir / split,
+                        name=city,
+                        file_name_fn=file_name_fn,
+                        size=size,
+                        num_examples=num_samples,
+                    )
+
+                make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_instanceIds.png")
+                make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_labelIds.png")
+                make_images(lambda idx: f"{city}_000000_{idx:06d}_gt{mode}_color.png", size=(4, 10, 10))
+
+                for idx in range(num_samples):
+                    polygon_target_name = gt_dir / split / city / f"{city}_000000_{idx:06d}_gt{mode}_polygons.json"
+                    with open(polygon_target_name, "w") as outfile:
+                        json.dump(polygon_target, outfile)
+
+            # Create leftImg8bit folder
+            for city in cities:
+                create_image_folder(
+                    root=root / "leftImg8bit" / split,
+                    name=city,
+                    file_name_fn=lambda idx: f"{city}_000000_{idx:06d}_leftImg8bit.png",
+                    num_examples=num_samples,
+                )
+
+        for zip_name, folder_name in cls._ARCHIVE_NAMES[(mode, req_split)]:
+            # Create dummy README and license.txt
+            for filename in ["README", "license.txt"]:
+                with (root / filename).open("w") as handler:
+                    handler.write("Content\n")
+
+            make_zip(root, zip_name, folder_name, root / "README", root / "license.txt")
+
+        return len(cities) * num_samples
+
+
+@register_mock
+def cityscapes(info, root, config):
+    return CityScapesMockData.generate(root, config)
