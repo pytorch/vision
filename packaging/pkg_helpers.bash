@@ -205,6 +205,7 @@ setup_wheel_python() {
       3.7) python_abi=cp37-cp37m ;;
       3.8) python_abi=cp38-cp38 ;;
       3.9) python_abi=cp39-cp39 ;;
+      3.10) python_abi=cp310-cp310 ;;
       *)
         echo "Unrecognized PYTHON_VERSION=$PYTHON_VERSION"
         exit 1
