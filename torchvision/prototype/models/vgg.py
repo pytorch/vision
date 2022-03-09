@@ -186,6 +186,7 @@ class VGG19_BN_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", VGG11_Weights.IMAGENET1K_V1))
 def vgg11(*, weights: Optional[VGG11_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
+    """TODO docstring"""
     weights = VGG11_Weights.verify(weights)
 
     return _vgg("A", False, weights, progress, **kwargs)
@@ -193,6 +194,7 @@ def vgg11(*, weights: Optional[VGG11_Weights] = None, progress: bool = True, **k
 
 @handle_legacy_interface(weights=("pretrained", VGG11_BN_Weights.IMAGENET1K_V1))
 def vgg11_bn(*, weights: Optional[VGG11_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
+    """TODO docstring"""
     weights = VGG11_BN_Weights.verify(weights)
 
     return _vgg("A", True, weights, progress, **kwargs)
@@ -200,6 +202,7 @@ def vgg11_bn(*, weights: Optional[VGG11_BN_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", VGG13_Weights.IMAGENET1K_V1))
 def vgg13(*, weights: Optional[VGG13_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
+    """TODO docstring"""
     weights = VGG13_Weights.verify(weights)
 
     return _vgg("B", False, weights, progress, **kwargs)
@@ -207,6 +210,7 @@ def vgg13(*, weights: Optional[VGG13_Weights] = None, progress: bool = True, **k
 
 @handle_legacy_interface(weights=("pretrained", VGG13_BN_Weights.IMAGENET1K_V1))
 def vgg13_bn(*, weights: Optional[VGG13_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
+    """TODO docstring"""
     weights = VGG13_BN_Weights.verify(weights)
 
     return _vgg("B", True, weights, progress, **kwargs)
@@ -214,6 +218,7 @@ def vgg13_bn(*, weights: Optional[VGG13_BN_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", VGG16_Weights.IMAGENET1K_V1))
 def vgg16(*, weights: Optional[VGG16_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
+    """TODO docstring"""
     weights = VGG16_Weights.verify(weights)
 
     return _vgg("D", False, weights, progress, **kwargs)
@@ -221,6 +226,7 @@ def vgg16(*, weights: Optional[VGG16_Weights] = None, progress: bool = True, **k
 
 @handle_legacy_interface(weights=("pretrained", VGG16_BN_Weights.IMAGENET1K_V1))
 def vgg16_bn(*, weights: Optional[VGG16_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
+    """TODO docstring"""
     weights = VGG16_BN_Weights.verify(weights)
 
     return _vgg("D", True, weights, progress, **kwargs)
@@ -228,6 +234,7 @@ def vgg16_bn(*, weights: Optional[VGG16_BN_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", VGG19_Weights.IMAGENET1K_V1))
 def vgg19(*, weights: Optional[VGG19_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
+    """TODO docstring"""
     weights = VGG19_Weights.verify(weights)
 
     return _vgg("E", False, weights, progress, **kwargs)
@@ -235,6 +242,7 @@ def vgg19(*, weights: Optional[VGG19_Weights] = None, progress: bool = True, **k
 
 @handle_legacy_interface(weights=("pretrained", VGG19_BN_Weights.IMAGENET1K_V1))
 def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
+    """TODO docstring"""
     weights = VGG19_BN_Weights.verify(weights)
 
     return _vgg("E", True, weights, progress, **kwargs)
