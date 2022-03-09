@@ -104,7 +104,7 @@ class TestSmoke:
                 itertools.chain.from_iterable(
                     fn(
                         color_spaces=[
-                            features.ColorSpace.GRAYSCALE,
+                            features.ColorSpace.GRAY,
                             features.ColorSpace.RGB,
                         ],
                         dtypes=[torch.uint8],
@@ -177,8 +177,8 @@ class TestSmoke:
             )
             for old_color_space, new_color_space in itertools.product(
                 [
-                    features.ColorSpace.GRAYSCALE,
-                    features.ColorSpace.GRAYSCALE_ALPHA,
+                    features.ColorSpace.GRAY,
+                    features.ColorSpace.GRAY_ALPHA,
                     features.ColorSpace.RGB,
                     features.ColorSpace.RGB_ALPHA,
                 ],

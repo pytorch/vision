@@ -17,8 +17,8 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
 
     try:
         num_channels = {
-            features.ColorSpace.GRAYSCALE: 1,
-            features.ColorSpace.GRAYSCALE_ALPHA: 2,
+            features.ColorSpace.GRAY: 1,
+            features.ColorSpace.GRAY_ALPHA: 2,
             features.ColorSpace.RGB: 3,
             features.ColorSpace.RGB_ALPHA: 4,
         }[color_space]
@@ -28,20 +28,20 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
     shape = (*extra_dims, num_channels, *size)
     max_value = get_max_value(dtype)
     data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
-    if color_space in {features.ColorSpace.GRAYSCALE_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
+    if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
         data[..., -1, :, :] = max_value
     return features.Image(data, color_space=color_space)
 
 
-make_grayscale_image = functools.partial(make_image, color_space=features.ColorSpace.GRAYSCALE)
+make_grayscale_image = functools.partial(make_image, color_space=features.ColorSpace.GRAY)
 make_rgb_image = functools.partial(make_image, color_space=features.ColorSpace.RGB)
 
 
 def make_images(
     sizes=((16, 16), (7, 33), (31, 9)),
     color_spaces=(
-        features.ColorSpace.GRAYSCALE,
-        features.ColorSpace.GRAYSCALE_ALPHA,
+        features.ColorSpace.GRAY,
+        features.ColorSpace.GRAY_ALPHA,
         features.ColorSpace.RGB,
         features.ColorSpace.RGB_ALPHA,
     ),

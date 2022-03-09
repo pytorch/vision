@@ -79,13 +79,13 @@ def _add_alpha(image: torch.Tensor, alpha: Optional[torch.Tensor] = None) -> tor
     return torch.cat((image, alpha), dim=-3)
 
 
-def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
+def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
     repeats = [1] * grayscale.ndim
     repeats[-3] = 3
     return grayscale.repeat(repeats)
 
 
-_rgb_to_grayscale_tensor = _FT.rgb_to_grayscale
+_rgb_to_gray = _FT.rgb_to_grayscale
 
 
 def convert_image_color_space_tensor(
@@ -97,30 +97,30 @@ def convert_image_color_space_tensor(
     if old_color_space == ColorSpace.OTHER or new_color_space == ColorSpace.OTHER:
         raise RuntimeError(f"Conversion to or from {ColorSpace.OTHER} is not supported.")
 
-    if old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+    if old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.GRAY_ALPHA:
         return _add_alpha(image)
-    elif old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.RGB:
-        return _grayscale_to_rgb_tensor(image)
-    elif old_color_space == ColorSpace.GRAYSCALE and new_color_space == ColorSpace.RGB_ALPHA:
-        return _add_alpha(_grayscale_to_rgb_tensor(image))
-    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.GRAYSCALE:
+    elif old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.RGB:
+        return _gray_to_rgb(image)
+    elif old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.RGB_ALPHA:
+        return _add_alpha(_gray_to_rgb(image))
+    elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.GRAY:
         return _strip_alpha(image)
-    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.RGB:
-        return _grayscale_to_rgb_tensor(_strip_alpha(image))
-    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA and new_color_space == ColorSpace.RGB_ALPHA:
+    elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB:
+        return _gray_to_rgb(_strip_alpha(image))
+    elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB_ALPHA:
         image, alpha = _split_alpha(image)
-        return _add_alpha(_grayscale_to_rgb_tensor(image), alpha)
-    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAYSCALE:
-        return _rgb_to_grayscale_tensor(image)
-    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
-        return _add_alpha(_rgb_to_grayscale_tensor(image))
+        return _add_alpha(_gray_to_rgb(image), alpha)
+    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY:
+        return _rgb_to_gray(image)
+    elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY_ALPHA:
+        return _add_alpha(_rgb_to_gray(image))
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.RGB_ALPHA:
         return _add_alpha(image)
-    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAYSCALE:
-        return _rgb_to_grayscale_tensor(_strip_alpha(image))
-    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY:
+        return _rgb_to_gray(_strip_alpha(image))
+    elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY_ALPHA:
         image, alpha = _split_alpha(image)
-        return _add_alpha(_rgb_to_grayscale_tensor(image), alpha)
+        return _add_alpha(_rgb_to_gray(image), alpha)
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.RGB:
         return _strip_alpha(image)
     else:
@@ -128,8 +128,8 @@ def convert_image_color_space_tensor(
 
 
 _COLOR_SPACE_TO_PIL_MODE = {
-    ColorSpace.GRAYSCALE: "L",
-    ColorSpace.GRAYSCALE_ALPHA: "LA",
+    ColorSpace.GRAY: "L",
+    ColorSpace.GRAY_ALPHA: "LA",
     ColorSpace.RGB: "RGB",
     ColorSpace.RGB_ALPHA: "RGBA",
 }
