@@ -147,7 +147,4 @@ def convert_image_color_space_pil(image: PIL.Image.Image, color_space: ColorSpac
     except KeyError:
         raise ValueError(f"Conversion of {ColorSpace.from_pil_mode(old_mode)} to {color_space} is not supported.")
 
-    if old_mode == new_mode:
-        return image.copy()
-
     return image.convert(new_mode)
