@@ -121,8 +121,10 @@ def convert_image_color_space_tensor(
     elif old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.GRAYSCALE_ALPHA:
         image, alpha = _split_alpha(image)
         return _add_alpha(_rgb_to_grayscale_tensor(image), alpha)
-    else:  # old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.RGB:
+    elif old_color_space == ColorSpace.RGBA and new_color_space == ColorSpace.RGB:
         return _strip_alpha(image)
+    else:
+        raise RuntimeError(f"Unknown conversion from {old_color_space} to {new_color_space}.")
 
 
 _COLOR_SPACE_TO_PIL_MODE = {
