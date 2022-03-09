@@ -1,3 +1,4 @@
+import functools
 import pathlib
 import re
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast, Union
@@ -108,8 +109,8 @@ def extract_categories_and_wnids(data: Tuple[str, BinaryIO]) -> List[Tuple[str, 
     ]
 
 
-def imagenet_label_to_wnid(imagenet_label: str) -> str:
-    return cast(Tuple[str, ...], WNIDS)[int(imagenet_label) - 1]
+def imagenet_label_to_wnid(imagenet_label: str, *, wnids: List[str]) -> str:
+    return wnids[int(imagenet_label) - 1]
 
 
 VAL_TEST_IMAGE_NAME_PATTERN = re.compile(r"ILSVRC2012_(val|test)_(?P<id>\d{8})[.]JPEG")
@@ -171,7 +172,7 @@ def imagenet(root: Optional[Union[str, pathlib.Path]] = None, *, split: str = "t
         _, wnids = zip(*next(iter(meta_dp)))
 
         label_dp = LineReader(label_dp, decode=True, return_path=False)
-        label_dp = Mapper(label_dp, imagenet_label_to_wnid)
+        label_dp = Mapper(label_dp, functools.partial(imagenet_label_to_wnid, wnids=wnids))
         label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
         label_dp = hint_sharding(label_dp)
         label_dp = hint_shuffling(label_dp)
