@@ -38,3 +38,4 @@ fi
 
 printf "* Installing torchvision\n"
 python setup.py develop
+pip install git+https://github.com/pytorch/data.git
