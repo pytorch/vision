@@ -285,5 +285,24 @@ def inject_minigalleries(app, what, name, obj, options, lines):
         lines.append("\n")
 
 
+def inject_weight_metadata(app, what, name, obj, options, lines):
+
+    if obj.__name__.endswith("Weights"):
+        lines[:] = ["A Weights object with the following allowed fields:"]
+        lines.append("")
+        lines.append(
+            "Note: rendering is a bit ugly but it's still in POC status.  It's likely that using tabulate would generate much prettier output. Also we can filter out more stuff if we want to."
+        )
+        lines.append("")
+        for field in obj:
+            lines.append(f"``{str(field)}``:")
+            lines.append("")
+            for k, v in field.meta.items():
+                if k != "categories":
+                    lines.append(f"|   {k}: {v}")
+            lines.append("")
+
+
 def setup(app):
     app.connect("autodoc-process-docstring", inject_minigalleries)
+    app.connect("autodoc-process-docstring", inject_weight_metadata)

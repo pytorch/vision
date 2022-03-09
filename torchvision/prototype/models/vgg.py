@@ -7,7 +7,7 @@ from torchvision.transforms.functional import InterpolationMode
 from ...models.vgg import VGG, make_layers, cfgs
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import handle_legacy_interface, _ovewrite_named_param, set_docstring
 
 
 __all__ = [
@@ -184,65 +184,80 @@ class VGG19_BN_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+# It may or may not be a good idea to somehow unify that with _RESNET_DOC . It's
+# too early to decide yet.
+_VGG_DOC = """VGG-{suffix} from `Very Deep Convolutional Networks for Large-Scale
+Image Recognition <https://arxiv.org/abs/1409.1556>`__.
+
+Args:
+    weights (:class:`~torchvision.prototype.models.{weight_name}`, optional): The
+        pretrained weights to use. See :class:`~torchvision.prototype.models.{weight_name}`
+        for possible values and details about each set of weight.
+    progress (bool, optional): Whether to print some stuff.
+    **kwargs: Some other stuff
+
+"""
+
+
+@set_docstring(_VGG_DOC.format(suffix="11", weight_name=VGG11_Weights.__name__))
 @handle_legacy_interface(weights=("pretrained", VGG11_Weights.IMAGENET1K_V1))
 def vgg11(*, weights: Optional[VGG11_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    """TODO docstring"""
     weights = VGG11_Weights.verify(weights)
 
     return _vgg("A", False, weights, progress, **kwargs)
 
 
+@set_docstring(_VGG_DOC.format(suffix="11-BN", weight_name=VGG11_BN_Weights.__name__))
 @handle_legacy_interface(weights=("pretrained", VGG11_BN_Weights.IMAGENET1K_V1))
 def vgg11_bn(*, weights: Optional[VGG11_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    """TODO docstring"""
     weights = VGG11_BN_Weights.verify(weights)
 
     return _vgg("A", True, weights, progress, **kwargs)
 
 
+@set_docstring(_VGG_DOC.format(suffix="13", weight_name=VGG13_Weights.__name__))
 @handle_legacy_interface(weights=("pretrained", VGG13_Weights.IMAGENET1K_V1))
 def vgg13(*, weights: Optional[VGG13_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    """TODO docstring"""
     weights = VGG13_Weights.verify(weights)
 
     return _vgg("B", False, weights, progress, **kwargs)
 
 
+@set_docstring(_VGG_DOC.format(suffix="13-BN", weight_name=VGG13_BN_Weights.__name__))
 @handle_legacy_interface(weights=("pretrained", VGG13_BN_Weights.IMAGENET1K_V1))
 def vgg13_bn(*, weights: Optional[VGG13_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    """TODO docstring"""
     weights = VGG13_BN_Weights.verify(weights)
 
     return _vgg("B", True, weights, progress, **kwargs)
 
 
+@set_docstring(_VGG_DOC.format(suffix="16", weight_name=VGG16_Weights.__name__))
 @handle_legacy_interface(weights=("pretrained", VGG16_Weights.IMAGENET1K_V1))
 def vgg16(*, weights: Optional[VGG16_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    """TODO docstring"""
     weights = VGG16_Weights.verify(weights)
 
     return _vgg("D", False, weights, progress, **kwargs)
 
 
+@set_docstring(_VGG_DOC.format(suffix="16-BN", weight_name=VGG16_BN_Weights.__name__))
 @handle_legacy_interface(weights=("pretrained", VGG16_BN_Weights.IMAGENET1K_V1))
 def vgg16_bn(*, weights: Optional[VGG16_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    """TODO docstring"""
     weights = VGG16_BN_Weights.verify(weights)
 
     return _vgg("D", True, weights, progress, **kwargs)
 
 
+@set_docstring(_VGG_DOC.format(suffix="19", weight_name=VGG19_Weights.__name__))
 @handle_legacy_interface(weights=("pretrained", VGG19_Weights.IMAGENET1K_V1))
 def vgg19(*, weights: Optional[VGG19_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    """TODO docstring"""
     weights = VGG19_Weights.verify(weights)
 
     return _vgg("E", False, weights, progress, **kwargs)
 
 
+@set_docstring(_VGG_DOC.format(suffix="19-BN", weight_name=VGG19_BN_Weights.__name__))
 @handle_legacy_interface(weights=("pretrained", VGG19_BN_Weights.IMAGENET1K_V1))
 def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    """TODO docstring"""
     weights = VGG19_BN_Weights.verify(weights)
 
     return _vgg("E", True, weights, progress, **kwargs)
