@@ -1,8 +1,9 @@
+from typing import Tuple, Optional
+
 import PIL.Image
 import torch
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
-
 
 get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
@@ -57,28 +58,23 @@ def convert_bounding_box_format(
     return bounding_box
 
 
-def _strip_alpha(image: torch.Tensor) -> torch.Tensor:
-    alpha = image[..., -1, :, :]
-    if not torch.all(alpha == _FT._max_value(image.dtype)):
+def _split_alpha(image: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    return image[..., :-1, :, :], image[..., -1:, :, :]
+
+
+def _check_alpha(alpha: torch.Tensor) -> None:
+    if not torch.all(alpha == _FT._max_value(alpha.dtype)):
         raise RuntimeError(
             "Stripping the alpha channel if it contains values other than the max value is not supported."
         )
-    return image[..., :-1, :, :]
 
 
-def _add_alpha(image: torch.Tensor) -> torch.Tensor:
-    shape = list(image.shape)
-    shape[-3] = 1
-    alpha = torch.full(shape, _FT._max_value(image.dtype), dtype=image.dtype, device=image.device)
+def _add_alpha(image: torch.Tensor, alpha: Optional[torch.Tensor] = None) -> torch.Tensor:
+    if alpha is None:
+        shape = list(image.shape)
+        shape[-3] = 1
+        alpha = torch.full(shape, _FT._max_value(image.dtype), dtype=image.dtype, device=image.device)
     return torch.cat((image, alpha), dim=-3)
-
-
-def _grayscale_alpha_to_grayscale_tensor(grayscale_alpha: torch.Tensor) -> torch.Tensor:
-    return _strip_alpha(grayscale_alpha)
-
-
-def _grayscale_to_grayscale_alpha_tensor(grayscale: torch.Tensor) -> torch.Tensor:
-    return _add_alpha(grayscale)
 
 
 def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
@@ -90,14 +86,6 @@ def _grayscale_to_rgb_tensor(grayscale: torch.Tensor) -> torch.Tensor:
 _rgb_to_grayscale_tensor = _FT.rgb_to_grayscale
 
 
-def _rgba_to_rgb_tensor(rgba: torch.Tensor) -> torch.Tensor:
-    return _strip_alpha(rgba)
-
-
-def _rgb_to_rgba_tensor(rgb: torch.Tensor) -> torch.Tensor:
-    return _add_alpha(rgb)
-
-
 def convert_image_color_space_tensor(
     image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace
 ) -> torch.Tensor:
@@ -107,29 +95,47 @@ def convert_image_color_space_tensor(
     if old_color_space == ColorSpace.OTHER or new_color_space == ColorSpace.OTHER:
         raise RuntimeError(f"Conversion to or from {ColorSpace.OTHER} is not supported.")
 
-    # This function uses RGB as the intermediate representation for all regular conversions. This means by default
-    # every image gets converted into RGB first and subsequently into `new_color_space`. Since the conversion
-    # `rgb_to_grayscale(grayscale_to_rgb(image))` is lossy, we need to special case grayscale with alpha channel here.
-    if old_color_space == ColorSpace.GRAYSCALE_ALPHA:
-        image = _grayscale_alpha_to_grayscale_tensor(image)
+    if old_color_space == ColorSpace.GRAYSCALE:
+        if new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+            return _add_alpha(image)
+
+        image = _grayscale_to_rgb_tensor(image)
+        if new_color_space == ColorSpace.RGBA:
+            image = _add_alpha(image)
+
+        return image
+    elif old_color_space == ColorSpace.GRAYSCALE_ALPHA:
+        image, alpha = _split_alpha(image)
         if new_color_space == ColorSpace.GRAYSCALE:
+            _check_alpha(alpha)
             return image
 
-        old_color_space = ColorSpace.GRAYSCALE
-
-    if old_color_space == ColorSpace.GRAYSCALE:
         image = _grayscale_to_rgb_tensor(image)
-    elif old_color_space == ColorSpace.RGBA:
-        image = _rgba_to_rgb_tensor(image)
+        if new_color_space == ColorSpace.RGB:
+            _check_alpha(alpha)
+            return image
+        else:  # new_color_space == ColorSpace.RGBA
+            return _add_alpha(image, alpha)
+    elif old_color_space == ColorSpace.RGB:
+        if new_color_space == ColorSpace.RGBA:
+            return _add_alpha(image)
 
-    if new_color_space == ColorSpace.GRAYSCALE:
         image = _rgb_to_grayscale_tensor(image)
-    if new_color_space == ColorSpace.GRAYSCALE_ALPHA:
-        image = _grayscale_to_grayscale_alpha_tensor(_rgb_to_grayscale_tensor(image))
-    elif new_color_space == ColorSpace.RGBA:
-        image = _rgb_to_rgba_tensor(image)
+        if new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+            image = _add_alpha(image)
 
-    return image
+        return image
+    else:  # old_color_space == ColorSpace.RGBA:
+        image, alpha = _split_alpha(image)
+        if new_color_space == ColorSpace.RGB:
+            return image
+
+        image = _rgb_to_grayscale_tensor(image)
+        if new_color_space == ColorSpace.GRAYSCALE:
+            _check_alpha(alpha)
+            return image
+        else:  # new_color_space == ColorSpace.GRAYSCALE_ALPHA:
+            return _add_alpha(image, alpha)
 
 
 _COLOR_SPACE_TO_PIL_MODE = {
