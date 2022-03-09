@@ -81,7 +81,7 @@ def _get_expected_file(name=None):
 
     # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
     # We hardcode it here to avoid having to re-generate the reference files
-    expected_file = expected_file = os.path.join(expected_file_base, "ModelTester.test_" + name)
+    expected_file = os.path.join(expected_file_base, "ModelTester.test_" + name)
     expected_file += "_expect.pkl"
 
     if not ACCEPT and not os.path.exists(expected_file):
@@ -665,6 +665,7 @@ def test_detection_model(model_fn, dev):
         assert len(out) == 1
 
         def compact(tensor):
+            tensor = tensor.cpu()
             size = tensor.size()
             elements_per_sample = functools.reduce(operator.mul, size[1:], 1)
             if elements_per_sample > 30:
