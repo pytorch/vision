@@ -4,7 +4,6 @@ import operator
 import os
 import pkgutil
 import sys
-import traceback
 import warnings
 from collections import OrderedDict
 from tempfile import TemporaryDirectory
@@ -839,6 +838,11 @@ def test_quantized_classification_model(model_fn):
         assert out.shape[-1] == 5
         _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
         _check_fx_compatible(model, x, eager_out=out)
+    else:
+        try:
+            torch.jit.script(model)
+        except Exception as e:
+            raise AssertionError(f"model cannot be scripted.") from e
 
     kwargs["quantize"] = False
     for eval_mode in [True, False]:
