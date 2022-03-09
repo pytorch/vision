@@ -122,24 +122,13 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
 def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out=None):
     """Check that a nn.Module's results in TorchScript match eager and that it can be exported"""
 
-    def assert_export_import_module(m, args):
-        """Check that the results of a model are the same after saving and loading"""
-
-        def get_export_import_copy(m):
-            """Save and load a TorchScript model"""
-            with TemporaryDirectory() as dir:
-                path = os.path.join(dir, "script.pt")
-                m.save(path)
-                imported = torch.jit.load(path)
-            return imported
-
-        m_import = get_export_import_copy(m)
-        with torch.no_grad(), freeze_rng_state():
-            results = m(*args)
-        with torch.no_grad(), freeze_rng_state():
-            results_from_imported = m_import(*args)
-        tol = 3e-4
-        torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
+    def get_export_import_copy(m):
+        """Save and load a TorchScript model"""
+        with TemporaryDirectory() as dir:
+            path = os.path.join(dir, "script.pt")
+            m.save(path)
+            imported = torch.jit.load(path)
+        return imported
 
     TEST_WITH_SLOW = os.getenv("PYTORCH_TEST_WITH_SLOW", "0") == "1"
     if not TEST_WITH_SLOW or skip:
@@ -159,7 +148,8 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out
 
     if eager_out is None:
         with torch.no_grad(), freeze_rng_state():
-            eager_out = nn_module(*args)
+            if unwrapper:
+                eager_out = nn_module(*args)
 
     with torch.no_grad(), freeze_rng_state():
         script_out = sm(*args)
@@ -167,7 +157,14 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out
             script_out = unwrapper(script_out)
 
     torch.testing.assert_close(eager_out, script_out, atol=1e-4, rtol=1e-4)
-    assert_export_import_module(sm, args)
+
+    m_import = get_export_import_copy(sm)
+    with torch.no_grad(), freeze_rng_state():
+        imported_script_out = m_import(*args)
+        if unwrapper:
+            imported_script_out = unwrapper(imported_script_out)
+
+    torch.testing.assert_close(script_out, imported_script_out, atol=3e-4, rtol=3e-4)
 
 
 def _check_fx_compatible(model, inputs, eager_out=None):
@@ -861,12 +858,6 @@ def test_quantized_classification_model(model_fn):
             model.eval()
 
         torch.ao.quantization.convert(model, inplace=True)
-
-    try:
-        torch.jit.script(model)
-    except Exception as e:
-        tb = traceback.format_exc()
-        raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
 
 
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
