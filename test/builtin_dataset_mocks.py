@@ -1397,8 +1397,8 @@ def stanford_cars(info, root, config):
     import scipy.io as io
     from numpy.core.records import fromarrays
 
-    num_examples = {"train": 5, "test": 7}[config["split"]]
-    num_classes = 3
+    num_samples = {"train": 5, "test": 7}[config["split"]]
+    num_categories = 3
 
     devkit = root / "devkit"
     devkit.mkdir(parents=True)
@@ -1414,13 +1414,13 @@ def stanford_cars(info, root, config):
         root=root,
         name=images_folder_name,
         file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
-        num_examples=num_examples,
+        num_examples=num_samples,
     )
 
     make_tar(root, f"cars_{config.split}.tgz", images_folder_name)
-    bbox = np.random.randint(1, 200, num_examples, dtype=np.uint8)
-    classes = np.random.randint(1, num_classes + 1, num_examples, dtype=np.uint8)
-    fnames = [f"{i:5d}.jpg" for i in range(num_examples)]
+    bbox = np.random.randint(1, 200, num_samples, dtype=np.uint8)
+    classes = np.random.randint(1, num_categories + 1, num_samples, dtype=np.uint8)
+    fnames = [f"{i:5d}.jpg" for i in range(num_samples)]
     rec_array = fromarrays(
         [bbox, bbox, bbox, bbox, classes, fnames],
         names=["bbox_x1", "bbox_y1", "bbox_x2", "bbox_y2", "class", "fname"],
@@ -1428,6 +1428,6 @@ def stanford_cars(info, root, config):
 
     io.savemat(annotations_mat_path, {"annotations": rec_array})
     if config.split == "train":
-        make_tar(root, "car_devkit.tgz", devkit)
+        make_tar(root, "car_devkit.tgz", devkit, compression="gz")
 
-    return num_examples
+    return num_samples

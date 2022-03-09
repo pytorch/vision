@@ -46,15 +46,15 @@ class StanfordCars(Dataset):
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         resources: List[OnlineResource] = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
-        if config.split == "test":
+        if config.split == "train":
+            resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
+
+        else:
             resources.append(
                 HttpResource(
                     self._URLS["cars_test_annos_withlabels"], sha256=self._CHECKSUM["cars_test_annos_withlabels"]
                 )
-            )
-        else:
-            resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
-
+            )            
         return resources
 
     def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Tuple[int, int, int, int, int, str]]) -> Dict[str, Any]:
