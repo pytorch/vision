@@ -26,9 +26,9 @@ class ColorSpace(StrEnum):
             return cls.GRAYSCALE
         elif mode == "LA":
             return cls.GRAYSCALE_ALPHA
-        elif mode == "LA":
+        elif mode == "RGB":
             return cls.RGB
-        elif mode == "LA":
+        elif mode == "RGBA":
             return cls.RGBA
         else:
             return cls.OTHER
@@ -93,9 +93,9 @@ class Image(_Feature):
             return ColorSpace.GRAYSCALE
         elif num_channels == 2:
             return ColorSpace.GRAYSCALE_ALPHA
-        elif num_channels == 2:
+        elif num_channels == 3:
             return ColorSpace.RGB
-        elif num_channels == 2:
+        elif num_channels == 4:
             return ColorSpace.RGBA
         else:
             return ColorSpace.OTHER
