@@ -170,7 +170,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out
     assert_export_import_module(sm, args)
 
 
-def _check_fx_compatible(model, inputs, eager_out = None):
+def _check_fx_compatible(model, inputs, eager_out=None):
     model_fx = torch.fx.symbolic_trace(model)
     if eager_out is None:
         eager_out = model(inputs)
