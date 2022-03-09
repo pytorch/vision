@@ -114,7 +114,7 @@ class QuantizableMobileNetV3(MobileNetV3):
 
 def _load_weights(arch: str, model: QuantizableMobileNetV3, model_url: Optional[str], progress: bool) -> None:
     if model_url is None:
-        raise NotImplementedError(f"No checkpoint is available for model type {arch}")
+        raise NotImplementedError(f"No pre-trained weights are available for model type {arch}")
     state_dict = load_state_dict_from_url(model_url, progress=progress)
     model.load_state_dict(state_dict)
 

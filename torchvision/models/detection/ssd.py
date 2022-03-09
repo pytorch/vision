@@ -624,7 +624,7 @@ def ssd300_vgg16(
     if pretrained:
         arch = "ssd300_vgg16_coco"
         if model_urls.get(arch, None) is None:
-            raise NotImplementedError(f"No checkpoint is available for model type {arch}")
+            raise NotImplementedError(f"No pre-trained weights are available for model type {arch}")
         state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
