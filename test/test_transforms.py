@@ -1994,6 +1994,17 @@ def test_normalize_3d_tensor():
     torch.testing.assert_close(target, result2)
 
 
+def test_normalize_with_single_value_mean_std():
+    torch.manual_seed(42)
+    n_channels = 3
+    img_size = 10
+    mean = 0.5
+    std = 0.5
+    img = torch.rand(n_channels, img_size, img_size)
+    # Check that this work
+    target = F.normalize(img, mean, std)
+
+
 class TestAffine:
     @pytest.fixture(scope="class")
     def input_img(self):
