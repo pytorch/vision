@@ -7,33 +7,44 @@ import torchvision.prototype.transforms.functional as F
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
+from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
 
 
-def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32):
+def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, constant_alpha=True):
     size = size or torch.randint(16, 33, (2,)).tolist()
 
-    num_channels = {
-        features.ColorSpace.GRAYSCALE: 1,
-        features.ColorSpace.RGB: 3,
-    }[color_space]
+    try:
+        num_channels = {
+            features.ColorSpace.GRAY: 1,
+            features.ColorSpace.GRAY_ALPHA: 2,
+            features.ColorSpace.RGB: 3,
+            features.ColorSpace.RGB_ALPHA: 4,
+        }[color_space]
+    except KeyError as error:
+        raise pytest.UsageError() from error
 
     shape = (*extra_dims, num_channels, *size)
-    if dtype.is_floating_point:
-        data = torch.rand(shape, dtype=dtype)
-    else:
-        data = torch.randint(0, torch.iinfo(dtype).max, shape, dtype=dtype)
+    max_value = get_max_value(dtype)
+    data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
+    if color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA} and constant_alpha:
+        data[..., -1, :, :] = max_value
     return features.Image(data, color_space=color_space)
 
 
-make_grayscale_image = functools.partial(make_image, color_space=features.ColorSpace.GRAYSCALE)
+make_grayscale_image = functools.partial(make_image, color_space=features.ColorSpace.GRAY)
 make_rgb_image = functools.partial(make_image, color_space=features.ColorSpace.RGB)
 
 
 def make_images(
     sizes=((16, 16), (7, 33), (31, 9)),
-    color_spaces=(features.ColorSpace.GRAYSCALE, features.ColorSpace.RGB),
+    color_spaces=(
+        features.ColorSpace.GRAY,
+        features.ColorSpace.GRAY_ALPHA,
+        features.ColorSpace.RGB,
+        features.ColorSpace.RGB_ALPHA,
+    ),
     dtypes=(torch.float32, torch.uint8),
     extra_dims=((4,), (2, 3)),
 ):
@@ -48,15 +59,12 @@ def randint_with_tensor_bounds(arg1, arg2=None, **kwargs):
     low, high = torch.broadcast_tensors(
         *[torch.as_tensor(arg) for arg in ((0, arg1) if arg2 is None else (arg1, arg2))]
     )
-    try:
-        return torch.stack(
-            [
-                torch.randint(low_scalar, high_scalar, (), **kwargs)
-                for low_scalar, high_scalar in zip(low.flatten().tolist(), high.flatten().tolist())
-            ]
-        ).reshape(low.shape)
-    except RuntimeError as error:
-        raise error
+    return torch.stack(
+        [
+            torch.randint(low_scalar, high_scalar, (), **kwargs)
+            for low_scalar, high_scalar in zip(low.flatten().tolist(), high.flatten().tolist())
+        ]
+    ).reshape(low.shape)
 
 
 def make_bounding_box(*, format, image_size=(32, 32), extra_dims=(), dtype=torch.int64):
@@ -83,8 +91,8 @@ def make_bounding_box(*, format, image_size=(32, 32), extra_dims=(), dtype=torch
         w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
         h = randint_with_tensor_bounds(1, torch.minimum(cy, width - cy) + 1)
         parts = (cx, cy, w, h)
-    else:  # format == features.BoundingBoxFormat._SENTINEL:
-        raise ValueError()
+    else:
+        raise pytest.UsageError()
 
     return features.BoundingBox(torch.stack(parts, dim=-1).to(dtype), format=format, image_size=image_size)
 
