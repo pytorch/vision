@@ -1,5 +1,5 @@
 import warnings
-from typing import Optional, Tuple, List
+from typing import Optional, Tuple, List, Union
 
 import torch
 from torch import Tensor
@@ -928,7 +928,9 @@ def equalize(img: Tensor) -> Tensor:
     return torch.stack([_equalize_single_image(x) for x in img])
 
 
-def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool = False) -> Tensor:
+def normalize(
+    tensor: Tensor, mean: Union[float, List[float]], std: Union[float, List[float]], inplace: bool = False
+) -> Tensor:
     _assert_image_tensor(tensor)
 
     if not tensor.is_floating_point():
@@ -941,6 +943,13 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
 
     if not inplace:
         tensor = tensor.clone()
+
+    # Make sure the type of mean and std are List[float]
+    # Otherwise it will error on the torch.as_tensor call
+    if isinstance(mean, float):
+        mean = [mean]
+    if isinstance(std, float):
+        std = [std]
 
     dtype = tensor.dtype
     mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
