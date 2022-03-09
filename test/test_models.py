@@ -119,7 +119,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
 
-def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
+def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out=None):
     """Check that a nn.Module's results in TorchScript match eager and that it can be exported"""
 
     def assert_export_import_module(m, args):
@@ -157,8 +157,9 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
 
     sm = torch.jit.script(nn_module)
 
-    with torch.no_grad(), freeze_rng_state():
-        eager_out = nn_module(*args)
+    if eager_out is None:
+        with torch.no_grad(), freeze_rng_state():
+            eager_out = nn_module(*args)
 
     with torch.no_grad(), freeze_rng_state():
         script_out = sm(*args)
@@ -169,11 +170,12 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
     assert_export_import_module(sm, args)
 
 
-def _check_fx_compatible(model, inputs):
+def _check_fx_compatible(model, inputs, eager_out = None):
     model_fx = torch.fx.symbolic_trace(model)
-    out = model(inputs)
-    out_fx = model_fx(inputs)
-    torch.testing.assert_close(out, out_fx)
+    if eager_out is None:
+        eager_out = model(inputs)
+    fx_out = model_fx(inputs)
+    torch.testing.assert_close(eager_out, fx_out)
 
 
 def _check_input_backprop(model, inputs):
@@ -564,8 +566,8 @@ def test_classification_model(model_fn, dev):
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
     assert out.shape[-1] == num_classes
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-    _check_fx_compatible(model, x)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
+    _check_fx_compatible(model, x, eager_out=out)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
@@ -595,7 +597,7 @@ def test_segmentation_model(model_fn, dev):
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
-    out = model(x)["out"]
+    out = model(x)
 
     def check_out(out):
         prec = 0.01
@@ -615,17 +617,17 @@ def test_segmentation_model(model_fn, dev):
 
         return True  # Full validation performed
 
-    full_validation = check_out(out)
+    full_validation = check_out(out["out"])
 
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-    _check_fx_compatible(model, x)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
+    _check_fx_compatible(model, x, eager_out=out)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
-            out = model(x)["out"]
+            out = model(x)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
-                full_validation &= check_out(out)
+                full_validation &= check_out(out["out"])
 
     if not full_validation:
         msg = (
@@ -715,7 +717,7 @@ def test_detection_model(model_fn, dev):
         return True  # Full validation performed
 
     full_validation = check_out(out)
-    _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
@@ -779,8 +781,8 @@ def test_video_model(model_fn, dev):
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-    _check_fx_compatible(model, x)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
+    _check_fx_compatible(model, x, eager_out=out)
     assert out.shape[-1] == 50
 
     if dev == torch.device("cuda"):
@@ -820,8 +822,8 @@ def test_quantized_classification_model(model_fn):
     if model_name not in quantized_flaky_models:
         _assert_expected(out, model_name + "_quantized", prec=0.1)
         assert out.shape[-1] == 5
-        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-        _check_fx_compatible(model, x)
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
+        _check_fx_compatible(model, x, eager_out=out)
 
     kwargs["quantize"] = False
     for eval_mode in [True, False]:
