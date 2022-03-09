@@ -124,7 +124,7 @@ def convert_image_color_space_tensor(
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.RGB:
         return _strip_alpha(image)
     else:
-        raise RuntimeError(f"Unknown conversion from {old_color_space} to {new_color_space}.")
+        raise RuntimeError(f"Conversion from {old_color_space} to {new_color_space} is not supported.")
 
 
 _COLOR_SPACE_TO_PIL_MODE = {
@@ -140,6 +140,6 @@ def convert_image_color_space_pil(image: PIL.Image.Image, color_space: ColorSpac
     try:
         new_mode = _COLOR_SPACE_TO_PIL_MODE[color_space]
     except KeyError:
-        raise ValueError(f"Conversion of {ColorSpace.from_pil_mode(old_mode)} to {color_space} is not supported.")
+        raise ValueError(f"Conversion from {ColorSpace.from_pil_mode(old_mode)} to {color_space} is not supported.")
 
     return image.convert(new_mode)
