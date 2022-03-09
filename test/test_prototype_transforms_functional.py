@@ -29,8 +29,7 @@ def make_image(size=None, *, color_space, extra_dims=(), dtype=torch.float32, co
     max_value = get_max_value(dtype)
     data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
     if color_space in {features.ColorSpace.GRAYSCALE_ALPHA, features.ColorSpace.RGBA} and constant_alpha:
-        alpha = data[..., -1:, :, :]
-        data = torch.cat((data[..., :-1, :, :], torch.full_like(alpha, max_value)), dim=-3)
+        data[..., -1, :, :] = max_value
     return features.Image(data, color_space=color_space)
 
 
