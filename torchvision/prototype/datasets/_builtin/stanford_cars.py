@@ -54,7 +54,7 @@ class StanfordCars(Dataset):
                 HttpResource(
                     self._URLS["cars_test_annos_withlabels"], sha256=self._CHECKSUM["cars_test_annos_withlabels"]
                 )
-            )            
+            )
         return resources
 
     def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Tuple[int, int, int, int, int, str]]) -> Dict[str, Any]:
