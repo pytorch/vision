@@ -842,7 +842,7 @@ def test_quantized_classification_model(model_fn):
         try:
             torch.jit.script(model)
         except Exception as e:
-            raise AssertionError(f"model cannot be scripted.") from e
+            raise AssertionError("model cannot be scripted.") from e
 
     kwargs["quantize"] = False
     for eval_mode in [True, False]:
