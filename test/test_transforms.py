@@ -1486,6 +1486,15 @@ def test_max_value(dtype):
     # self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
 
 
+@pytest.mark.xfail(
+    reason="torch.iinfo() is not supported by torchscript. See https://github.com/pytorch/pytorch/issues/41492."
+)
+def test_max_value_iinfo():
+    @torch.jit.script
+    def max_value(image: torch.Tensor) -> int:
+        return 1 if image.is_floating_point() else torch.iinfo(image.dtype).max
+
+
 @pytest.mark.parametrize("should_vflip", [True, False])
 @pytest.mark.parametrize("single_dim", [True, False])
 def test_ten_crop(should_vflip, single_dim):
