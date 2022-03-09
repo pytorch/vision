@@ -300,6 +300,24 @@ _model_params = {
         "rpn_post_nms_top_n_test": 1000,
     },
 }
+# speeding up slow models:
+slow_models = [
+    "convnext_base",
+    "convnext_large",
+    "resnext101_32x8d",
+    "wide_resnet101_2",
+    "efficientnet_b6",
+    "efficientnet_b7",
+    "efficientnet_v2_m",
+    "efficientnet_v2_l",
+    "regnet_y_16gf",
+    "regnet_y_32gf",
+    "regnet_y_128gf",
+    "regnet_x_16gf",
+    "regnet_x_32gf",
+]
+for m in slow_models:
+    _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
 
 # The following contains configuration and expected values to be used tests that are model specific
