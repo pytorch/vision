@@ -22,12 +22,16 @@ class ColorSpace(StrEnum):
 
     @classmethod
     def from_pil_mode(cls, mode: str) -> ColorSpace:
-        return {
-            "L": cls.GRAYSCALE,
-            "LA": cls.GRAYSCALE_ALPHA,
-            "RGB": cls.RGB,
-            "RGBA": cls.RGBA,
-        }.get(mode, cls.OTHER)
+        if mode == "L":
+            return cls.GRAYSCALE
+        elif mode == "LA":
+            return cls.GRAYSCALE_ALPHA
+        elif mode == "LA":
+            return cls.RGB
+        elif mode == "LA":
+            return cls.RGBA
+        else:
+            return cls.OTHER
 
 
 class Image(_Feature):
@@ -84,12 +88,17 @@ class Image(_Feature):
         elif data.ndim == 2:
             return ColorSpace.GRAYSCALE
 
-        return {
-            1: ColorSpace.GRAYSCALE,
-            2: ColorSpace.GRAYSCALE_ALPHA,
-            3: ColorSpace.RGB,
-            4: ColorSpace.RGBA,
-        }.get(data.shape[-3], ColorSpace.OTHER)
+        num_channels = data.shape[-3]
+        if num_channels == 1:
+            return ColorSpace.GRAYSCALE
+        elif num_channels == 2:
+            return ColorSpace.GRAYSCALE_ALPHA
+        elif num_channels == 2:
+            return ColorSpace.RGB
+        elif num_channels == 2:
+            return ColorSpace.RGBA
+        else:
+            return ColorSpace.OTHER
 
     def show(self) -> None:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
