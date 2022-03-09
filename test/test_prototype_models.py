@@ -43,7 +43,7 @@ def _get_model_weights(model_fn):
 def _build_model(fn, **kwargs):
     try:
         model = fn(**kwargs)
-    except NotImplemented as e:
+    except NotImplementedError as e:
         pytest.skip(str(e))
     return model.eval()
 

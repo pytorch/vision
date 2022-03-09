@@ -197,7 +197,7 @@ def _convnext(
     model = ConvNeXt(block_setting, stochastic_depth_prob=stochastic_depth_prob, **kwargs)
     if pretrained:
         if arch not in _MODELS_URLS:
-            raise NotImplemented(f"No checkpoint is available for model type {arch}")
+            raise NotImplementedError(f"No checkpoint is available for model type {arch}")
         state_dict = load_state_dict_from_url(_MODELS_URLS[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
