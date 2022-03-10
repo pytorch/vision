@@ -2,6 +2,7 @@ import itertools
 
 import pytest
 import torch
+from common_utils import assert_equal
 from test_prototype_transforms_functional import make_images, make_bounding_boxes, make_one_hot_labels
 from torchvision.prototype import transforms, features
 from torchvision.transforms.functional import to_pil_image, pil_to_tensor
@@ -161,40 +162,47 @@ class TestRandomHorizontalFlip:
     def expected_tensor(self, dtype: torch.dtype = torch.float32) -> torch.Tensor:
         return torch.tensor([[[1, 0], [1, 0]], [[0, 1], [0, 1]]], dtype=dtype)
 
-    def test_simple_tensor_p1(self):
+    @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
+    def test_simple_tensor(self, p: float):
         input = self.input_tensor()
 
-        actual = transforms.RandomHorizontalFlip(p=1.0)(input)
+        actual = transforms.RandomHorizontalFlip(p=p)(input)
 
-        assert torch.equal(self.expected_tensor(), actual)
+        expected = self.expected_tensor() if p == 1.0 else input
+        assert_equal(expected, actual)
 
-    def test_pil_image_p1(self):
-        input = to_pil_image(self.input_tensor(dtype=torch.uint8))
+    @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
+    def test_pil_image(self, p: float):
+        input = self.input_tensor(dtype=torch.uint8)
 
-        actual = transforms.RandomHorizontalFlip(p=1.0)(input)
+        actual = transforms.RandomHorizontalFlip(p=p)(to_pil_image(input))
 
-        assert torch.equal(self.expected_tensor(dtype=torch.uint8), pil_to_tensor(actual))
+        expected = self.expected_tensor(dtype=torch.uint8) if p == 1.0 else input
+        assert_equal(expected, pil_to_tensor(actual))
 
-    def test_features_image_p1(self):
-        input = features.Image(self.input_tensor())
+    @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
+    def test_features_image(self, p: float):
+        input = self.input_tensor()
 
-        actual = transforms.RandomHorizontalFlip(p=1.0)(input)
+        actual = transforms.RandomHorizontalFlip(p=p)(features.Image(input))
 
-        assert torch.equal(features.Image(self.expected_tensor()), actual)
+        expected = self.expected_tensor() if p == 1.0 else input
+        assert_equal(features.Image(expected), actual)
 
-    def test_features_segmentation_mask_p1(self):
+    @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
+    def test_features_segmentation_mask(self, p: float):
         input = features.SegmentationMask(self.input_tensor())
 
-        actual = transforms.RandomHorizontalFlip(p=1.0)(input)
+        actual = transforms.RandomHorizontalFlip(p=p)(input)
 
-        assert torch.equal(features.SegmentationMask(self.expected_tensor()), actual)
+        expected = self.expected_tensor() if p == 1.0 else input
+        assert_equal(features.SegmentationMask(expected), actual)
 
-    def test_features_bounding_box_p1(self):
-        bbox_format = features.BoundingBoxFormat.XYXY
-        image_size = (10, 10)
-        input = features.BoundingBox(torch.tensor([0, 0, 5, 5]), format=bbox_format, image_size=image_size)
+    @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
+    def test_features_bounding_box(self, p: float):
+        input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
 
-        actual = transforms.RandomHorizontalFlip(p=1.0)(input)
+        actual = transforms.RandomHorizontalFlip(p=p)(input)
 
-        expected = features.BoundingBox(torch.tensor([5, 0, 10, 5]), format=bbox_format, image_size=image_size)
-        assert torch.equal(expected, actual)
+        expected = torch.tensor([5, 0, 10, 5]) if p == 1.0 else input
+        assert_equal(features.BoundingBox.new_like(input, expected), actual)
