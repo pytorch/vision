@@ -5,7 +5,7 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
-from typing import Dict, Callable, List, Union, Optional, Tuple, Any
+from typing import Dict, Callable, List, Type, Union, Optional, Tuple, Any
 
 import torch
 import torchvision
@@ -277,7 +277,8 @@ class DualGraphModule(fx.GraphModule):
         # eval graphs)
         for node in chain(iter(train_graph.nodes), iter(eval_graph.nodes)):
             if node.op in ["get_attr", "call_module"]:
-                assert isinstance(node.target, str)
+                if not isinstance(node.target, str):
+                    raise TypeError(f"node.target should be of type str instead of {type(node.target)}")    
                 _copy_attr(root, self, node.target)
 
         # train mode by default
@@ -290,9 +291,8 @@ class DualGraphModule(fx.GraphModule):
         # Locally defined Tracers are not pickleable. This is needed because torch.package will
         # serialize a GraphModule without retaining the Graph, and needs to use the correct Tracer
         # to re-create the Graph during deserialization.
-        assert (
-            self.eval_graph._tracer_cls == self.train_graph._tracer_cls
-        ), "Train mode and eval mode should use the same tracer class"
+        if not self.eval_graph._tracer_cls == self.train_graph._tracer_cls:
+            raise RuntimeError("Train mode and eval mode should use the same tracer class")
         self._tracer_cls = None
         if self.graph._tracer_cls and "<locals>" not in self.graph._tracer_cls.__qualname__:
             self._tracer_cls = self.graph._tracer_cls
@@ -431,17 +431,14 @@ def create_feature_extractor(
         }
     is_training = model.training
 
-    assert any(
-        arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]
-    ), "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
+    if not any(arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
+        raise RuntimeError("Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified")
 
-    assert not (
-        (train_return_nodes is None) ^ (eval_return_nodes is None)
-    ), "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+    if ((train_return_nodes is None) ^ (eval_return_nodes is None)):
+        raise RuntimeError("If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified")
 
-    assert (return_nodes is None) ^ (
-        train_return_nodes is None
-    ), "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+    if not (return_nodes is None) ^ (train_return_nodes is None):
+        raise RuntimeError("If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified")
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:
@@ -497,7 +494,7 @@ def create_feature_extractor(
         for n in reversed(graph_module.graph.nodes):
             if n.op == "output":
                 orig_output_nodes.append(n)
-        assert len(orig_output_nodes)
+        
         for n in orig_output_nodes:
             graph_module.graph.erase_node(n)
 

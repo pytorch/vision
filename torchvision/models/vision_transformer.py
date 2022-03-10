@@ -76,7 +76,8 @@ class EncoderBlock(nn.Module):
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
+        if not input.dim() == 3:
+            raise ValueError(f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}"))
         x = self.ln_1(input)
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
         x = self.dropout(x)
@@ -120,7 +121,8 @@ class Encoder(nn.Module):
         self.ln = norm_layer(hidden_dim)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
+        if not input.dim() == 3:
+            raise ValueError(f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         input = input + self.pos_embedding
         return self.ln(self.layers(self.dropout(input)))
 
@@ -145,7 +147,8 @@ class VisionTransformer(nn.Module):
     ):
         super().__init__()
         _log_api_usage_once(self)
-        torch._assert(image_size % patch_size == 0, "Input shape indivisible by patch size!")
+        if not image_size % patch_size == 0:
+            raise ValueError("Input shape indivisible by patch size!")
         self.image_size = image_size
         self.patch_size = patch_size
         self.hidden_dim = hidden_dim
@@ -236,8 +239,10 @@ class VisionTransformer(nn.Module):
     def _process_input(self, x: torch.Tensor) -> torch.Tensor:
         n, c, h, w = x.shape
         p = self.patch_size
-        torch._assert(h == self.image_size, "Wrong image height!")
-        torch._assert(w == self.image_size, "Wrong image width!")
+        if not h == self.image_size:
+            raise ValueError("Wrong image height!")
+        if not w == self.image_size:
+            raise ValueError("Wrong image width!")
         n_h = h // p
         n_w = w // p
 
@@ -434,7 +439,8 @@ def interpolate_embeddings(
         # (1, seq_length, hidden_dim) -> (1, hidden_dim, seq_length)
         pos_embedding_img = pos_embedding_img.permute(0, 2, 1)
         seq_length_1d = int(math.sqrt(seq_length))
-        torch._assert(seq_length_1d * seq_length_1d == seq_length, "seq_length is not a perfect square!")
+        if not seq_length_1d * seq_length_1d == seq_length:
+            raise ValueError("seq_length is not a perfect square!")
 
         # (1, hidden_dim, seq_length) -> (1, hidden_dim, seq_l_1d, seq_l_1d)
         pos_embedding_img = pos_embedding_img.reshape(1, hidden_dim, seq_length_1d, seq_length_1d)

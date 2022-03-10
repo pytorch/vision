@@ -67,14 +67,8 @@ class VideoMetaData:
 
 def _validate_pts(pts_range: Tuple[int, int]) -> None:
 
-    if pts_range[1] > 0:
-        assert (
-            pts_range[0] <= pts_range[1]
-        ), """Start pts should not be smaller than end pts, got
-            start pts: {:d} and end pts: {:d}""".format(
-            pts_range[0],
-            pts_range[1],
-        )
+    if pts_range[1] > 0 and not (pts_range[0] <= pts_range[1]):
+        raise ValueError(f"Start pts should not be smaller than end pts, got start pts: {pts_range[0]} and end pts: {pts_range[1]}")
 
 
 def _fill_info(

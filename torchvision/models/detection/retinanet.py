@@ -347,7 +347,8 @@ class RetinaNet(nn.Module):
             )
         self.backbone = backbone
 
-        assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
+        if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
+            raise TypeError(f"anchor_generator should be of type AnchorGenerator or None instead of {type(anchor_generator)}")
 
         if anchor_generator is None:
             anchor_sizes = tuple((x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3))) for x in [32, 64, 128, 256, 512])

@@ -1,4 +1,5 @@
-from typing import Optional, List, Dict, Tuple
+from multiprocessing.sharedctypes import Value
+from typing import Optional, List, Dict, Tuple, Type
 
 import torch
 import torch.nn.functional as F
@@ -299,7 +300,8 @@ def heatmaps_to_keypoints(maps, rois):
 def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched_idxs):
     # type: (Tensor, List[Tensor], List[Tensor], List[Tensor]) -> Tensor
     N, K, H, W = keypoint_logits.shape
-    assert H == W
+    if not H == W:
+        raise ValueError("keypoint_logits height and width (last two elements of shape) should be equal.")
     discretization_size = H
     heatmaps = []
     valid = []
@@ -615,11 +617,15 @@ class RoIHeads(nn.Module):
 
     def check_targets(self, targets):
         # type: (Optional[List[Dict[str, Tensor]]]) -> None
-        assert targets is not None
-        assert all(["boxes" in t for t in targets])
-        assert all(["labels" in t for t in targets])
+        if targets is None:
+            raise ValueError("targets should not be None")
+        if not all(["boxes" in t for t in targets]):
+            raise ValueError("Every element of targets should have a boxes key")
+        if not all(["labels" in t for t in targets]):
+            raise ValueError("Every element of targets should have a labels key")
         if self.has_mask():
-            assert all(["masks" in t for t in targets])
+            if not all(["masks" in t for t in targets]):
+                raise ValueError("Every element of targets should have a masks key")
 
     def select_training_samples(
         self,
@@ -628,7 +634,8 @@ class RoIHeads(nn.Module):
     ):
         # type: (...) -> Tuple[List[Tensor], List[Tensor], List[Tensor], List[Tensor]]
         self.check_targets(targets)
-        assert targets is not None
+        if targets is None:
+            raise ValueError("targets should not be None")
         dtype = proposals[0].dtype
         device = proposals[0].device
 
@@ -736,10 +743,13 @@ class RoIHeads(nn.Module):
             for t in targets:
                 # TODO: https://github.com/pytorch/pytorch/issues/26731
                 floating_point_types = (torch.float, torch.double, torch.half)
-                assert t["boxes"].dtype in floating_point_types, "target boxes must of float type"
-                assert t["labels"].dtype == torch.int64, "target labels must of int64 type"
+                if not t["boxes"].dtype in floating_point_types:
+                    raise TypeError("target boxes must of float type")
+                if not t["labels"].dtype == torch.int64:
+                    raise TypeError("target labels must of int64 type")
                 if self.has_keypoint():
-                    assert t["keypoints"].dtype == torch.float32, "target keypoints must of float type"
+                    if not t["keypoints"].dtype == torch.float32:
+                        raise TypeError("target keypoints must of float type")
 
         if self.training:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)

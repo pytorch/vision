@@ -308,7 +308,8 @@ class SSD(nn.Module):
             raise ValueError("In training mode, targets should be passed")
 
         if self.training:
-            assert targets is not None
+            if targets is None:
+                raise ValueError("targets should not be None")
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
@@ -527,7 +528,8 @@ def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
     num_stages = len(stage_indices)
 
     # find the index of the layer from which we wont freeze
-    assert 0 <= trainable_layers <= num_stages
+    if 0 <= trainable_layers <= num_stages:
+        raise ValueError(f"trainable_layers should be in the range [0, {num_stages}].")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:

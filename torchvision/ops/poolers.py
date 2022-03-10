@@ -112,7 +112,8 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
 def _setup_scales(
     features: List[Tensor], image_shapes: List[Tuple[int, int]], canonical_scale: int, canonical_level: int
 ) -> Tuple[List[float], LevelMapper]:
-    assert len(image_shapes) != 0
+    if len(image_shapes) == 0:
+        raise ValueError("images list should not be empty")
     max_x = 0
     max_y = 0
     for shape in image_shapes:
@@ -150,8 +151,8 @@ def _multiscale_roi_align(
     boxes: List[Tensor],
     output_size: List[int],
     sampling_ratio: int,
-    scales: Optional[List[float]],
-    mapper: Optional[LevelMapper],
+    scales: List[float],
+    mapper: LevelMapper,
 ) -> Tensor:
     """
     Args:
@@ -161,14 +162,11 @@ def _multiscale_roi_align(
             reference. The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
         sampling_ratio (int): sampling ratio for ROIAlign
-        scales (Optional[List[float]]): If None, scales will be automatically infered. Default value is None.
-        mapper (Optional[LevelMapper]): If none, mapper will be automatically infered. Default value is None.
+        scales (List[float]): scales list 
+        mapper (LevelMapper): level mapper
     Returns:
         result (Tensor)
     """
-    assert scales is not None
-    assert mapper is not None
-
     num_levels = len(x_filtered)
     rois = _convert_to_roi_format(boxes)
 

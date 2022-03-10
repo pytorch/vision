@@ -2,7 +2,7 @@ import math
 import pathlib
 import warnings
 from types import FunctionType
-from typing import Any, BinaryIO, List, Optional, Tuple, Union
+from typing import Any, BinaryIO, List, Optional, Tuple, Type, Union
 
 import numpy as np
 import torch
@@ -82,10 +82,8 @@ def make_grid(
 
     if normalize is True:
         tensor = tensor.clone()  # avoid modifying tensor in-place
-        if value_range is not None:
-            assert isinstance(
-                value_range, tuple
-            ), "value_range has to be a tuple (min, max) if specified. min and max are numbers"
+        if value_range is not None and not isinstance(value_range, tuple):
+            raise TypeError("value_range has to be a tuple (min, max) if specified. min and max are numbers")
 
         def norm_ip(img, low, high):
             img.clamp_(min=low, max=high)
@@ -103,7 +101,8 @@ def make_grid(
         else:
             norm_range(tensor, value_range)
 
-    assert isinstance(tensor, torch.Tensor)
+    if not isinstance(tensor, torch.Tensor):
+        raise ValueError("tensor should be of type torch.Tensor")
     if tensor.size(0) == 1:
         return tensor.squeeze(0)
 
