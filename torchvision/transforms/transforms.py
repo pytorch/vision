@@ -1584,7 +1584,7 @@ class Grayscale(torch.nn.Module):
 class RandomGrayscale(torch.nn.Module):
     """Randomly convert image to grayscale with a probability of p (default 0.1).
     If the image is torch Tensor, it is expected
-    to have [..., 3, H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., 1 or 3, H, W] shape, where ... means an arbitrary number of leading dimensions
 
     Args:
         p (float): probability that image should be converted to grayscale.
@@ -1592,8 +1592,8 @@ class RandomGrayscale(torch.nn.Module):
     Returns:
         PIL Image or Tensor: Grayscale version of the input image with probability p and unchanged
         with probability (1-p).
-        - If input image is 1 channel: grayscale version is 1 channel
-        - If input image is 3 channel: grayscale version is 3 channel with r == g == b
+        - If input image is grayscale (1 channel): copy input is returned
+        - If input image is RGB (3 channels): grayscale version of input is returned with 3 channels and r == g == b
 
     """
 
@@ -1610,10 +1610,17 @@ class RandomGrayscale(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Randomly grayscaled image.
         """
-        num_output_channels, _, _ = F.get_dimensions(img)
-        if torch.rand(1) < self.p:
-            return F.rgb_to_grayscale(img, num_output_channels=num_output_channels)
-        return img
+        if torch.rand(1) >= self.p:
+            return img
+
+        num_input_channels, _, _ = F.get_dimensions(img)
+        if num_input_channels == 1:
+            if isinstance(img, torch.Tensor):
+                return img.clone()
+            else:  # isinstance(img, PIL.Image.Image)
+                return img.copy()
+
+        return F.rgb_to_grayscale(img, num_output_channels=3)
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}(p={self.p})"
