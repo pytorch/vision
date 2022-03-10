@@ -318,8 +318,31 @@ Args:
 
 """
 
+import re
+def _make_resnet_docstring(weights):
+    # TODO maybe, maybe not: unify that with _make_vgg_docstring.
+    name = weights.__name__
+    suffix = re.search("ResNet(.+)_Weights", name).groups()[0]
+    allowed_values = ", ".join(f"``{v}``" for v in weights)
 
-@set_docstring(_RESNET_DOC.format(num_layers=18, weight_name=ResNet18_Weights.__name__))
+    return f"""ResNet-{suffix} from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
+    Image Recognition <https://arxiv.org/abs/1409.1556>`__.
+
+    Args:
+        weights (:class:`~torchvision.prototype.models.{name}`, optional): The
+            pretrained weights to use. Possible values are {allowed_values}.
+            See :class:`~torchvision.prototype.models.{name}` below for more
+            details.
+        progress (bool, optional): Whether to print some stuff.
+        **kwargs: Some other stuff
+
+    .. autoclass:: torchvision.prototype.models.{name}
+        :members:
+
+    """
+
+
+@set_docstring(_make_resnet_docstring(ResNet18_Weights))
 @handle_legacy_interface(weights=("pretrained", ResNet18_Weights.IMAGENET1K_V1))
 def resnet18(*, weights: Optional[ResNet18_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     weights = ResNet18_Weights.verify(weights)
@@ -327,7 +350,7 @@ def resnet18(*, weights: Optional[ResNet18_Weights] = None, progress: bool = Tru
     return _resnet(BasicBlock, [2, 2, 2, 2], weights, progress, **kwargs)
 
 
-@set_docstring(_RESNET_DOC.format(num_layers=34, weight_name=ResNet34_Weights.__name__))
+@set_docstring(_make_resnet_docstring(ResNet34_Weights))
 @handle_legacy_interface(weights=("pretrained", ResNet34_Weights.IMAGENET1K_V1))
 def resnet34(*, weights: Optional[ResNet34_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     """TODO docstring"""
@@ -336,7 +359,7 @@ def resnet34(*, weights: Optional[ResNet34_Weights] = None, progress: bool = Tru
     return _resnet(BasicBlock, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
-@set_docstring(_RESNET_DOC.format(num_layers=50, weight_name=ResNet50_Weights.__name__))
+@set_docstring(_make_resnet_docstring(ResNet50_Weights))
 @handle_legacy_interface(weights=("pretrained", ResNet50_Weights.IMAGENET1K_V1))
 def resnet50(*, weights: Optional[ResNet50_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     weights = ResNet50_Weights.verify(weights)
@@ -344,7 +367,7 @@ def resnet50(*, weights: Optional[ResNet50_Weights] = None, progress: bool = Tru
     return _resnet(Bottleneck, [3, 4, 6, 3], weights, progress, **kwargs)
 
 
-@set_docstring(_RESNET_DOC.format(num_layers=101, weight_name=ResNet101_Weights.__name__))
+@set_docstring(_make_resnet_docstring(ResNet101_Weights))
 @handle_legacy_interface(weights=("pretrained", ResNet101_Weights.IMAGENET1K_V1))
 def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     """TODO docstring"""
@@ -353,7 +376,7 @@ def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = T
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
-@set_docstring(_RESNET_DOC.format(num_layers=152, weight_name=ResNet152_Weights.__name__))
+@set_docstring(_make_resnet_docstring(ResNet152_Weights))
 @handle_legacy_interface(weights=("pretrained", ResNet152_Weights.IMAGENET1K_V1))
 def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     """TODO docstring"""
