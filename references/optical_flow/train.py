@@ -60,7 +60,7 @@ def get_train_dataset(stage, dataset_root):
 
 
 @torch.no_grad()
-def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, batch_size=None, header=None):
+def _evaluate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, batch_size=None, header=None):
     """Helper function to compute various metrics (epe, etc.) for a model on a given dataset.
 
     We process as many samples as possible with ddp, and process the rest on a single worker.
@@ -129,7 +129,7 @@ def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
     print(header, logger)
 
 
-def validate(model, args):
+def evaluate(model, args):
     val_datasets = args.val_dataset or []
 
     if args.prototype:
@@ -151,7 +151,7 @@ def validate(model, args):
                 )
 
             val_dataset = KittiFlow(root=args.dataset_root, split="train", transforms=preprocessing)
-            _validate(
+            _evaluate(
                 model, args, val_dataset, num_flow_updates=24, padder_mode="kitti", header="Kitti val", batch_size=1
             )
         elif name == "sintel":
@@ -159,7 +159,7 @@ def validate(model, args):
                 val_dataset = Sintel(
                     root=args.dataset_root, split="train", pass_name=pass_name, transforms=preprocessing
                 )
-                _validate(
+                _evaluate(
                     model,
                     args,
                     val_dataset,
@@ -216,7 +216,7 @@ def main(args):
         # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
-        validate(model, args)
+        evaluate(model, args)
         return
 
     print(f"Parameter Count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
@@ -275,7 +275,7 @@ def main(args):
             torch.save(model.state_dict(), Path(args.output_dir) / f"{args.name}.pth")
 
         if current_epoch % args.val_freq == 0 or done:
-            validate(model, args)
+            evaluate(model, args)
             model.train()
             if args.freeze_batch_norm:
                 utils.freeze_batch_norm(model.module)
