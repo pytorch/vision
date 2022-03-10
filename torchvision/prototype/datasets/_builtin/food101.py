@@ -3,7 +3,6 @@ import functools
 from pathlib import Path
 from typing import Any, Tuple, List, Dict, cast, Optional, BinaryIO
 
-import numpy as np
 from torchdata.datapipes.iter import IterDataPipe, Filter, Mapper, CSVParser, JsonParser, Demultiplexer
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
