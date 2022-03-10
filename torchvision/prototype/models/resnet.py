@@ -2,7 +2,6 @@ from functools import partial
 from typing import Any, List, Optional, Type, Union
 
 from torchvision.prototype.transforms import ImageClassificationEval
-from torchvision.prototype.utils._internal import sequence_to_str
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.resnet import BasicBlock, Bottleneck, ResNet
