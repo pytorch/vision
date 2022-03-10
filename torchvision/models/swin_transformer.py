@@ -66,6 +66,26 @@ def shifted_window_attention(
     qkv_bias: Tensor = None,
     proj_bias: Tensor = None,
 ):
+    """
+    Window based multi-head self attention (W-MSA) module with relative position bias.
+    It supports both of shifted and non-shifted window.
+    
+    Args:
+        input (Tensor[N, H, W, C]): The input tensor or 4-dimensions.
+        qkv_weight (Tensor[in_dim, out_dim]): The weight tensor of query, key, value.
+        proj_weight (Tensor[out_dim, out_dim]): The weight tensor of projection.
+        relative_position_bias (Tensor): The learned relative position bias added to attention.
+        window_size (int)): The size of the window.
+        shift_size (int): Shift size for SW-MSA.
+        num_heads (int): Number of attention heads.
+        attention_dropout (float): Dropout ratio of attention weight. Default: 0.0.
+        dropout (float): Dropout ratio of output. Default: 0.0.
+        qkv_weight (Tensor[out_dim]): The bias tensor of query, key, value. Default: None.
+        proj_weight (Tensor[out_dim]): The bias tensor of projection. Default: None.
+
+    Returns:
+        Tensor[N, H, W, C]: The output tensor after shifted window attention.
+    """
     B, H, W, C = input.shape
     # pad feature maps to multiples of window size
     pad_r = (window_size - W % window_size) % window_size
@@ -84,8 +104,8 @@ def shifted_window_attention(
     # partition windows
     num_windows = (pad_H // window_size) * (pad_W // window_size)
     x = x.view(B, pad_H // window_size, window_size, pad_W // window_size, window_size, C)
-    x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size ** 2, C)  # B*nW, Ws*Ws, C
-  
+    x = x.permute(0, 1, 3, 2, 4, 5).reshape(B * num_windows, window_size * window_size, C)  # B*nW, Ws*Ws, C
+
     # multi-head attention
     qkv = F.linear(x, qkv_weight, qkv_bias)
     qkv = qkv.reshape(x.size(0), x.size(1), 3, num_heads, C // num_heads).permute(2, 0, 3, 1, 4)
@@ -105,7 +125,7 @@ def shifted_window_attention(
                 attn_mask[h[0] : h[1], w[0] : w[1]] = count
                 count += 1
         attn_mask = attn_mask.view(pad_H // window_size, window_size, pad_W // window_size, window_size)
-        attn_mask = attn_mask.permute(0, 2, 1, 3).reshape(num_windows, window_size ** 2)
+        attn_mask = attn_mask.permute(0, 2, 1, 3).reshape(num_windows, window_size * window_size)
         attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
         attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
         attn = attn.view(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1)) + attn_mask.unsqueeze(
@@ -137,17 +157,8 @@ torch.fx.wrap("shifted_window_attention")
 
 
 class ShiftedWindowAttention(nn.Module):
-    """Window based multi-head self attention (W-MSA) module with relative position bias.
-    It supports both of shifted and non-shifted window.
-    Args:
-        dim (int): Number of input channels.
-        window_size (int)): The size of the window.
-        shift_size (int): Shift size for SW-MSA.
-        num_heads (int): Number of attention heads.
-        qkv_bias (bool):  If True, add a learnable bias to query, key, value. Default: True.
-        proj_bias (bool): If True, add a learnable bias to projection. Default: True.
-        attention_dropout (float): Dropout ratio of attention weight. Default: 0.0.
-        dropout (float): Dropout ratio of output. Default: 0.0.
+    """
+    See :func:`shifted_window_attention`.
     """
 
     def __init__(
@@ -193,7 +204,7 @@ class ShiftedWindowAttention(nn.Module):
 
     def forward(self, x: Tensor):
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index].view(
-            int(self.window_size ** 2), int(self.window_size ** 2), -1
+            self.window_size * self.window_size, self.window_size * self.window_size, -1
         )  # Wh*Ww,Wh*Ww,nH
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
 
@@ -213,7 +224,9 @@ class ShiftedWindowAttention(nn.Module):
 
 
 class SwinTransformerBlock(nn.Module):
-    """Swin Transformer Block.
+    """
+    Swin Transformer Block.
+
     Args:
         dim (int): Number of input channels.
         num_heads (int): Number of attention heads.
@@ -265,6 +278,7 @@ class SwinTransformer(nn.Module):
     """
     Implements Swin Transformer from the `"Swin Transformer: Hierarchical Vision Transformer using
     Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_ paper.
+
     Args:
         patch_size (int): Patch size. Default: 4.
         num_classes (int): Number of classes for classification head. Default: 1000.
@@ -402,24 +416,3 @@ def _swin_transformer(
         state_dict = load_state_dict_from_url(_MODELS_URLS[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
-
-
-def swin_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SwinTransformer:
-    """
-    Constructs a swin_tiny architecture from
-    `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
-    Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-    """
-    return _swin_transformer(
-        arch="swin_tiny",
-        embed_dim=96,
-        depths=[2, 2, 6, 2],
-        num_heads=[3, 6, 12, 24],
-        window_size=7,
-        stochastic_depth_prob=0.2,
-        pretrained=pretrained,
-        progress=progress,
-        **kwargs,
-    )
