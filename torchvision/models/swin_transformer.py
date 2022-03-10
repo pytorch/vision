@@ -69,7 +69,7 @@ def shifted_window_attention(
     """
     Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
-    
+
     Args:
         input (Tensor[N, H, W, C]): The input tensor or 4-dimensions.
         qkv_weight (Tensor[in_dim, out_dim]): The weight tensor of query, key, value.
