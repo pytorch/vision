@@ -980,7 +980,7 @@ class FiveCrop(torch.nn.Module):
     Example:
          >>> transform = Compose([
          >>>    FiveCrop(size), # this is a list of PIL Images
-         >>>    Lambda(lambda crops: torch.stack([ToTensor()(crop) for crop in crops])) # returns a 4D tensor
+         >>>    Lambda(lambda crops: torch.stack([PILToTensor()(crop) for crop in crops])) # returns a 4D tensor
          >>> ])
          >>> #In your test loop you can do the following:
          >>> input, target = batch # input is a 5d tensor, target is 2d
@@ -1029,7 +1029,7 @@ class TenCrop(torch.nn.Module):
     Example:
          >>> transform = Compose([
          >>>    TenCrop(size), # this is a list of PIL Images
-         >>>    Lambda(lambda crops: torch.stack([ToTensor()(crop) for crop in crops])) # returns a 4D tensor
+         >>>    Lambda(lambda crops: torch.stack([PILToTensor()(crop) for crop in crops])) # returns a 4D tensor
          >>> ])
          >>> #In your test loop you can do the following:
          >>> input, target = batch # input is a 5d tensor, target is 2d

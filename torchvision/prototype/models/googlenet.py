@@ -2,7 +2,7 @@ import warnings
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.googlenet import GoogLeNet, GoogLeNetOutputs, _GoogLeNetOutputs
@@ -17,7 +17,7 @@ __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNet_Weig
 class GoogLeNet_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "GoogLeNet",
