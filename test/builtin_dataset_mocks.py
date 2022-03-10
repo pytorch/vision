@@ -911,7 +911,7 @@ def country211(info, root, config):
 def food101(info, root, config):
     data_folder = root / "food-101"
 
-    num_images_per_class = 3  # TODO: How many?
+    num_images_per_class = 3
     image_folder = data_folder / "images"
     categories = ["apple_pie", "baby_back_ribs", "baklava"]
     image_ids_per_category = {
@@ -920,7 +920,7 @@ def food101(info, root, config):
             for path in create_image_folder(
                 image_folder,
                 category,
-                file_name_fn=lambda idx: f"{category}_{idx:04d}.jpg",
+                file_name_fn=lambda idx: f"{category}/{idx:04d}.jpg",
                 num_examples=num_images_per_class,
             )
         ]
@@ -930,17 +930,25 @@ def food101(info, root, config):
     meta_folder = data_folder / "meta"
     meta_folder.mkdir()
 
-    # TODO: What about the other metadata files? Need at least train.json and test.json.
     with open(meta_folder / "classes.txt", "w") as file:
         for category in categories:
             file.write(f"{category}\n")
 
-    image_ids = list(itertools.chain(*image_ids_per_category.values()))
-    print(image_ids)
-    # splits = ("train", "test")
-    # TODO: Update how many samples per split? The numbers aren't correct for now,
-    # need to use the test.json and train.json files.
-    num_samples_map = {"train": 9, "test": 9}
+    train_categories = categories[:2]
+    test_categories = categories[2:]
+
+    with open(meta_folder / "train.json", "w") as file:
+        content = {category: image_ids_per_category[category] for category in train_categories}
+        json.dump(content, file)
+
+    with open(meta_folder / "test.json", "w") as file:
+        content = {category: image_ids_per_category[category] for category in test_categories}
+        json.dump(content, file)
+
+    num_samples_map = {
+        "train": len(train_categories) * num_images_per_class,
+        "test": len(test_categories) * num_images_per_class,
+    }
 
     make_tar(root, "food-101.tar.gz", data_folder, compression="gz")
 
