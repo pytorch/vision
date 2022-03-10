@@ -16,5 +16,6 @@ from .oxford_iiit_pet import OxfordIITPet
 from .pcam import PCAM
 from .sbd import SBD
 from .semeion import SEMEION
+from .stanford_cars import StanfordCars
 from .svhn import SVHN
 from .voc import VOC

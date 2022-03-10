@@ -1,5 +1,6 @@
 import functools
 import io
+import pickle
 from pathlib import Path
 
 import pytest
@@ -107,29 +108,15 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
-    @parametrize_dataset_mocks(
-        DATASET_MOCKS,
-        marks={
-            "cub200": pytest.mark.xfail(
-                reason="See https://github.com/pytorch/vision/pull/5187#issuecomment-1015479165"
-            )
-        },
-    )
-    def test_traversable(self, test_home, dataset_mock, config):
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_serializable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        traverse(dataset)
+        pickle.dumps(dataset)
 
-    @parametrize_dataset_mocks(
-        DATASET_MOCKS,
-        marks={
-            "cub200": pytest.mark.xfail(
-                reason="See https://github.com/pytorch/vision/pull/5187#issuecomment-1015479165"
-            )
-        },
-    )
+    @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
         def scan(graph):

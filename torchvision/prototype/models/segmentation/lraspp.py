@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import VocEval
+from torchvision.prototype.transforms import SemanticSegmentationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3
@@ -17,7 +17,7 @@ __all__ = ["LRASPP", "LRASPP_MobileNet_V3_Large_Weights", "lraspp_mobilenet_v3_l
 class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
     COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
-        transforms=partial(VocEval, resize_size=520),
+        transforms=partial(SemanticSegmentationEval, resize_size=520),
         meta={
             "task": "image_semantic_segmentation",
             "architecture": "LRASPP",

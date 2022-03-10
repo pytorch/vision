@@ -413,13 +413,13 @@ class TestONNXExporter:
         import os
 
         from PIL import Image
-        from torchvision import transforms
+        from torchvision.transforms import functional as F
 
         data_dir = os.path.join(os.path.dirname(__file__), "assets")
         path = os.path.join(data_dir, *rel_path.split("/"))
         image = Image.open(path).convert("RGB").resize(size, Image.BILINEAR)
 
-        return transforms.ToTensor()(image)
+        return F.convert_image_dtype(F.pil_to_tensor(image))
 
     def get_test_images(self) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
         return (

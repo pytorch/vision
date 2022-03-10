@@ -2,7 +2,7 @@ from functools import partial
 from typing import Any, List, Optional, Union
 
 import torch
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.mobilenetv3 import (
@@ -59,7 +59,7 @@ def _mobilenet_v3_model(
 class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
     IMAGENET1K_QNNPACK_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "MobileNetV3",

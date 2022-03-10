@@ -157,7 +157,7 @@ def main(args):
             weights = prototype.models.get_weight(args.weights)
             transform_test = weights.transforms()
         else:
-            transform_test = prototype.transforms.Kinect400Eval(crop_size=(112, 112), resize_size=(128, 171))
+            transform_test = prototype.transforms.VideoClassificationEval(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")

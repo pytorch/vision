@@ -30,7 +30,7 @@ class Kitti(VisionDataset):
         train (bool, optional): Use ``train`` split if true, else ``test`` split.
             Defaults to ``train``.
         transform (callable, optional): A function/transform that takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
         transforms (callable, optional): A function/transform that takes input sample
