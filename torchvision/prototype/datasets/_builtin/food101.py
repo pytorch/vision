@@ -1,7 +1,7 @@
 import enum
 import functools
 from pathlib import Path
-from typing import Any, Tuple, List, Dict, cast, Optional
+from typing import Any, Tuple, List, Dict, cast, Optional, BinaryIO
 
 import numpy as np
 from torchdata.datapipes.iter import IterDataPipe, Filter, Mapper, CSVParser, JsonParser, Demultiplexer
@@ -66,7 +66,7 @@ class Food101(Dataset):
             )
         ]
 
-    def _prepare_sample(self, data: Tuple[np.ndarray, int]) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         image_path, image_buffer = data
         category = Path(image_path).parent.name
         return dict(
