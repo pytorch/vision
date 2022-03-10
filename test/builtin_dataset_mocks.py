@@ -909,7 +909,7 @@ def country211(info, root, config):
 # TODO: Finish this mock. Inspired from dtd.
 @register_mock
 def food101(info, root, config):
-    data_folder = root / "food-101"
+    data_folder = root / "food101"
 
     num_images_per_class = 3
     image_folder = data_folder / "images"
@@ -920,12 +920,17 @@ def food101(info, root, config):
             for path in create_image_folder(
                 image_folder,
                 category,
-                file_name_fn=lambda idx: f"{category}/{idx:04d}.jpg",
+                file_name_fn=lambda idx: f"{idx:04d}.jpg",
                 num_examples=num_images_per_class,
             )
         ]
         for category in categories
     }
+
+    # Remove the extension from the list of images per category.
+    image_ids_per_category = {k: [e.replace(".jpg", "") for e in v] for k, v in image_ids_per_category.items()}
+
+    print(image_ids_per_category)
 
     meta_folder = data_folder / "meta"
     meta_folder.mkdir()
@@ -952,7 +957,7 @@ def food101(info, root, config):
 
     make_tar(root, "food-101.tar.gz", data_folder, compression="gz")
 
-    return num_samples_map[config]
+    return num_samples_map[config.split]
 
 
 @register_mock

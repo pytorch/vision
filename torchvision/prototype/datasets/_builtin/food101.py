@@ -51,7 +51,7 @@ class Food101(Dataset):
 
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
-            "food-101",
+            "food101",
             homepage="https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101",
             # Only train and test splits, no validation.
             valid_options=dict(split=("train", "test")),
@@ -78,8 +78,11 @@ class Food101(Dataset):
         # Check whether or not the file is contained in the list of the splitted metdata.
         path = Path(data[0])
         category = Path(path).parent.name
-        img_ids = {e.split("/")[-1] for e in metadata[category]}
-        return path.stem in img_ids
+        if category in metadata:
+            img_ids = {e.split("/")[-1] for e in metadata[category]}
+            return path.stem in img_ids
+        else:
+            return False
 
     def _generate_categories(self, root: Path) -> List[str]:
         resources = self.resources(self.default_config)
