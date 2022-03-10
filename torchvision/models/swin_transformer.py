@@ -416,3 +416,24 @@ def _swin_transformer(
         state_dict = load_state_dict_from_url(_MODELS_URLS[arch], progress=progress)
         model.load_state_dict(state_dict)
     return model
+
+
+def swin_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+    """
+    Constructs a swin_tiny architecture from
+    `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
+    Args:
+        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    return _swin_transformer(
+        arch="swin_tiny",
+        embed_dim=96,
+        depths=[2, 2, 6, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=7,
+        stochastic_depth_prob=0.2,
+        pretrained=pretrained,
+        progress=progress,
+        **kwargs,
+    )
