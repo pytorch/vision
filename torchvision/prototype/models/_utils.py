@@ -110,7 +110,6 @@ def _ovewrite_value_param(param: Optional[V], new_value: V) -> V:
 
 def set_docstring(doc):
     # basic decorator that sets the __doc__ attribute of a function
-    # would be put somewhere in utils
     def wrapper(f):
         f.__doc__ = doc
         return f
