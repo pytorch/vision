@@ -63,8 +63,8 @@ def shifted_window_attention(
     shift_size: int = 0,
     attention_dropout: float = 0.0,
     dropout: float = 0.0,
-    qkv_bias: Tensor = None,
-    proj_bias: Tensor = None,
+    qkv_bias: Optional[Tensor] = None,
+    proj_bias: Optional[Tensor] = None,
 ):
     """
     Window based multi-head self attention (W-MSA) module with relative position bias.
