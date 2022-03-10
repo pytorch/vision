@@ -1,4 +1,5 @@
 from multiprocessing.sharedctypes import Value
+
 import torch
 import torchvision.transforms as T
 import torchvision.transforms.functional as F
@@ -9,10 +10,9 @@ class ValidateModelInput(torch.nn.Module):
     def forward(self, img1, img2, flow, valid_flow_mask):
 
         if not all(isinstance(arg, torch.Tensor) for arg in (img1, img2, flow, valid_flow_mask) if arg is not None):
-            raise TypeError("This method expects all input arguments to be of type torch.Tensor.")    
+            raise TypeError("This method expects all input arguments to be of type torch.Tensor.")
         if not all(arg.dtype == torch.float32 for arg in (img1, img2, flow) if arg is not None):
             raise TypeError(f"This method expects the tensors img1, img2 and flow of be of dtype torch.float32.")
-
 
         if not img1.shape == img2.shape:
             raise ValueError("img1 and img2 should have the same shape.")

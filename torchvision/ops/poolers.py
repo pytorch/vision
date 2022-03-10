@@ -162,7 +162,7 @@ def _multiscale_roi_align(
             reference. The coordinate must satisfy ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
         output_size (Union[List[Tuple[int, int]], List[int]]): size of the output
         sampling_ratio (int): sampling ratio for ROIAlign
-        scales (List[float]): scales list 
+        scales (List[float]): scales list
         mapper (LevelMapper): level mapper
     Returns:
         result (Tensor)

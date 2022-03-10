@@ -379,7 +379,9 @@ class FCOS(nn.Module):
         self.backbone = backbone
 
         if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
-            raise TypeError(f"anchor_generator should be of type AnchorGenerator or None, instead  got {type(anchor_generator)}")
+            raise TypeError(
+                f"anchor_generator should be of type AnchorGenerator or None, instead  got {type(anchor_generator)}"
+            )
 
         if anchor_generator is None:
             anchor_sizes = ((8,), (16,), (32,), (64,), (128,))  # equal to strides of multi-level feature map
@@ -387,7 +389,9 @@ class FCOS(nn.Module):
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
         self.anchor_generator = anchor_generator
         if not self.anchor_generator.num_anchors_per_location()[0] == 1:
-            raise ValueError(f"anchor_generator.num_anchors_per_location()[0] should be 1 instead of {anchor_generator.num_anchors_per_location()[0]}")
+            raise ValueError(
+                f"anchor_generator.num_anchors_per_location()[0] should be 1 instead of {anchor_generator.num_anchors_per_location()[0]}"
+            )
 
         if head is None:
             head = FCOSHead(backbone.out_channels, anchor_generator.num_anchors_per_location()[0], num_classes)

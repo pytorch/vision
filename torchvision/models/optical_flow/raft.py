@@ -241,7 +241,7 @@ class RecurrentBlock(nn.Module):
         if not len(kernel_size) == len(padding):
             raise ValueError("kernel_size should have the same length as padding")
         if not len(kernel_size) in (1, 2):
-            raise 
+            raise
 
         self.convgru1 = ConvGRU(
             input_size=input_size, hidden_size=hidden_size, kernel_size=kernel_size[0], padding=padding[0]
@@ -392,7 +392,9 @@ class CorrBlock(nn.Module):
 
         expected_output_shape = (batch_size, self.out_channels, h, w)
         if not corr_features.shape == expected_output_shape:
-            raise ValueError(f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}")
+            raise ValueError(
+                f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}"
+            )
 
         return corr_features
 
@@ -481,7 +483,9 @@ class RAFT(nn.Module):
         hidden_state_size = self.update_block.hidden_state_size
         out_channels_context = context_out.shape[1] - hidden_state_size
         if not out_channels_context > 0:
-            raise ValueError(f"The context encoder outputs {context_out.shape[1]} channels, but it should have at strictly more than hidden_state={hidden_state_size} channels")
+            raise ValueError(
+                f"The context encoder outputs {context_out.shape[1]} channels, but it should have at strictly more than hidden_state={hidden_state_size} channels"
+            )
         hidden_state, context = torch.split(context_out, [hidden_state_size, out_channels_context], dim=1)
         hidden_state = torch.tanh(hidden_state)
         context = F.relu(context)

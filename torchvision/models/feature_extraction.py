@@ -278,7 +278,7 @@ class DualGraphModule(fx.GraphModule):
         for node in chain(iter(train_graph.nodes), iter(eval_graph.nodes)):
             if node.op in ["get_attr", "call_module"]:
                 if not isinstance(node.target, str):
-                    raise TypeError(f"node.target should be of type str instead of {type(node.target)}")    
+                    raise TypeError(f"node.target should be of type str instead of {type(node.target)}")
                 _copy_attr(root, self, node.target)
 
         # train mode by default
@@ -432,13 +432,19 @@ def create_feature_extractor(
     is_training = model.training
 
     if not any(arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
-        raise RuntimeError("Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified")
+        raise RuntimeError(
+            "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
+        )
 
-    if ((train_return_nodes is None) ^ (eval_return_nodes is None)):
-        raise RuntimeError("If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified")
+    if (train_return_nodes is None) ^ (eval_return_nodes is None):
+        raise RuntimeError(
+            "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+        )
 
     if not (return_nodes is None) ^ (train_return_nodes is None):
-        raise RuntimeError("If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified")
+        raise RuntimeError(
+            "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+        )
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:
@@ -494,7 +500,7 @@ def create_feature_extractor(
         for n in reversed(graph_module.graph.nodes):
             if n.op == "output":
                 orig_output_nodes.append(n)
-        
+
         for n in orig_output_nodes:
             graph_module.graph.erase_node(n)
 

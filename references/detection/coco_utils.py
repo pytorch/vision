@@ -100,7 +100,7 @@ class ConvertCocoPolysToMask:
         return image, target
 
 
-def _coco_remove_images_without_annotations(dataset: torchvision.datasets.CocoDetection, cat_list: list  = None):
+def _coco_remove_images_without_annotations(dataset: torchvision.datasets.CocoDetection, cat_list: list = None):
     def _has_only_empty_bbox(anno):
         return all(any(o <= 1 for o in obj["bbox"][2:]) for obj in anno)
 
@@ -127,7 +127,9 @@ def _coco_remove_images_without_annotations(dataset: torchvision.datasets.CocoDe
         return False
 
     if not isinstance(dataset, torchvision.datasets.CocoDetection):
-        raise TypeError(f"This function expects dataset of type torchvision.datasets.CocoDetection, instead  got {type(dataset)}")
+        raise TypeError(
+            f"This function expects dataset of type torchvision.datasets.CocoDetection, instead  got {type(dataset)}"
+        )
     ids = []
     for ds_idx, img_id in enumerate(dataset.ids):
         ann_ids = dataset.coco.getAnnIds(imgIds=img_id, iscrowd=None)

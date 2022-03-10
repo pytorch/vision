@@ -69,7 +69,9 @@ def _coco_remove_images_without_annotations(dataset, cat_list=None):
         return sum(obj["area"] for obj in anno) > 1000
 
     if not isinstance(dataset, torchvision.datasets.CocoDetection):
-        raise TypeError(f"This function expects dataset of type torchvision.datasets.CocoDetection, instead  got {type(dataset)}")
+        raise TypeError(
+            f"This function expects dataset of type torchvision.datasets.CocoDetection, instead  got {type(dataset)}"
+        )
 
     ids = []
     for ds_idx, img_id in enumerate(dataset.ids):

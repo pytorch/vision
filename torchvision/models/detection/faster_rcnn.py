@@ -188,9 +188,13 @@ class FasterRCNN(GeneralizedRCNN):
             )
 
         if not isinstance(rpn_anchor_generator, (AnchorGenerator, type(None))):
-            raise TypeError(f"rpn_anchor_generator should be of type AnchorGenerator or None instead of {type(rpn_anchor_generator)}")
+            raise TypeError(
+                f"rpn_anchor_generator should be of type AnchorGenerator or None instead of {type(rpn_anchor_generator)}"
+            )
         if not isinstance(box_roi_pool, (MultiScaleRoIAlign, type(None))):
-            raise TypeError(f"box_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(box_roi_pool)}")
+            raise TypeError(
+                f"box_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(box_roi_pool)}"
+            )
 
         if num_classes is not None:
             if box_predictor is not None:
@@ -302,7 +306,9 @@ class FastRCNNPredictor(nn.Module):
     def forward(self, x):
         if x.dim() == 4:
             if not list(x.shape[2:]) == [1, 1]:
-                raise ValueError(f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}")
+                raise ValueError(
+                    f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}"
+                )
         x = x.flatten(start_dim=1)
         scores = self.cls_score(x)
         bbox_deltas = self.bbox_pred(x)
