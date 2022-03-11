@@ -100,7 +100,7 @@ class ConvertCocoPolysToMask:
         return image, target
 
 
-def _coco_remove_images_without_annotations(dataset: torchvision.datasets.CocoDetection, cat_list: list = None):
+def _coco_remove_images_without_annotations(dataset, cat_list=None):
     def _has_only_empty_bbox(anno):
         return all(any(o <= 1 for o in obj["bbox"][2:]) for obj in anno)
 

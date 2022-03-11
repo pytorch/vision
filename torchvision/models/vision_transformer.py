@@ -239,9 +239,9 @@ class VisionTransformer(nn.Module):
     def _process_input(self, x: torch.Tensor) -> torch.Tensor:
         n, c, h, w = x.shape
         p = self.patch_size
-        if not h == self.image_size:
+        if h != self.image_size:
             raise ValueError("Wrong image height!")
-        if not w == self.image_size:
+        if w != self.image_size:
             raise ValueError("Wrong image width!")
         n_h = h // p
         n_w = w // p

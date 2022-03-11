@@ -240,7 +240,7 @@ class RecurrentBlock(nn.Module):
         if not len(kernel_size) == len(padding):
             raise ValueError("kernel_size should have the same length as padding")
         if not len(kernel_size) in (1, 2):
-            raise
+            raise ValueError("kernel_size should either 1 or 2")
 
         self.convgru1 = ConvGRU(
             input_size=input_size, hidden_size=hidden_size, kernel_size=kernel_size[0], padding=padding[0]
