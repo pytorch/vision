@@ -69,7 +69,7 @@ def _evaluate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
     device = torch.device(args.device)
 
     model.eval()
-    
+
     if args.distributed:
         sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
     else:
@@ -206,8 +206,8 @@ def main(args):
     if not args.prototype and args.weights:
         raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     utils.setup_ddp(args)
-    
-    if args.distributed and args.device == 'cpu':
+
+    if args.distributed and args.device == "cpu":
         raise ValueError("The device must be cuda if we want to run in distributed mode using torchrun")
     device = torch.device(args.device)
 
