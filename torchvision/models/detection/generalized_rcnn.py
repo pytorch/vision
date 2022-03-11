@@ -58,7 +58,7 @@ class GeneralizedRCNN(nn.Module):
 
         """
         if self.training:
-            if and targets is None:
+            if targets is None:
                 raise ValueError("In training mode, targets should be passed")
             else:
                 for target in targets:
