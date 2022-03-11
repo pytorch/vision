@@ -106,12 +106,3 @@ def _ovewrite_value_param(param: Optional[V], new_value: V) -> V:
         if param != new_value:
             raise ValueError(f"The parameter '{param}' expected value {new_value} but got {param} instead.")
     return new_value
-
-
-def set_docstring(doc):
-    # basic decorator that sets the __doc__ attribute of a function
-    def wrapper(f):
-        f.__doc__ = doc
-        return f
-
-    return wrapper
