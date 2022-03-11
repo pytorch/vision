@@ -785,14 +785,17 @@ class RoIHeads(nn.Module):
         if self.has_mask():
             mask_proposals = [p["boxes"] for p in result]
             if self.training:
-                # during training, only focus on positive boxes
-                num_images = len(proposals)
-                mask_proposals = []
-                pos_matched_idxs = []
-                for img_id in range(num_images):
-                    pos = torch.where(labels[img_id] > 0)[0]
-                    mask_proposals.append(proposals[img_id][pos])
-                    pos_matched_idxs.append(matched_idxs[img_id][pos])
+                if not matched_idxs:
+                    raise ValueError("if in trainning, matched_idxs should not be None")
+                else:
+                    # during training, only focus on positive boxes
+                    num_images = len(proposals)
+                    mask_proposals = []
+                    pos_matched_idxs = []
+                    for img_id in range(num_images):
+                        pos = torch.where(labels[img_id] > 0)[0]
+                        mask_proposals.append(proposals[img_id][pos])
+                        pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
                 pos_matched_idxs = None
 

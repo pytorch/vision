@@ -432,16 +432,18 @@ def create_feature_extractor(
     is_training = model.training
 
     if not any(arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
+
         raise RuntimeError(
             "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
         )
 
-    if (train_return_nodes is None) ^ (eval_return_nodes is None):
+
+    if ((train_return_nodes is None) ^ (eval_return_nodes is None)):
         raise RuntimeError(
             "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
         )
 
-    if not (return_nodes is None) ^ (train_return_nodes is None):
+    if not ((return_nodes is None) ^ (train_return_nodes is None)):
         raise RuntimeError(
             "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
         )
