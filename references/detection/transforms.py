@@ -334,7 +334,7 @@ class FixedSizeCrop(nn.Module):
         size = tuple(T._setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
         self.crop_height = size[0]
         self.crop_width = size[1]
-        self.fill = tuple(int(x) for x in fill)  # TODO: Fill is currently respected only on PIL. Apply tensor patch.
+        self.fill = fill  # TODO: Fill is currently respected only on PIL. Apply tensor patch.
         self.padding_mode = padding_mode
 
     def _pad(self, img, target, padding):
