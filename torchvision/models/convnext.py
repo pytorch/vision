@@ -278,7 +278,7 @@ def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: 
     r"""ConvNeXt Tiny model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
     Args:
-        weights (ConvNeXt_Tiny_Weights): The pretrained weights for the model
+        weights (ConvNeXt_Tiny_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = ConvNeXt_Tiny_Weights.verify(weights)
@@ -300,7 +300,7 @@ def convnext_small(
     r"""ConvNeXt Small model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
     Args:
-        weights (ConvNeXt_Small_Weights): The pretrained weights for the model
+        weights (ConvNeXt_Small_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = ConvNeXt_Small_Weights.verify(weights)
@@ -320,7 +320,7 @@ def convnext_base(*, weights: Optional[ConvNeXt_Base_Weights] = None, progress: 
     r"""ConvNeXt Base model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
     Args:
-        weights (ConvNeXt_Base_Weights): The pretrained weights for the model
+        weights (ConvNeXt_Base_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = ConvNeXt_Base_Weights.verify(weights)
@@ -342,7 +342,7 @@ def convnext_large(
     r"""ConvNeXt Large model architecture from the
     `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
     Args:
-        weights (ConvNeXt_Large_Weights): The pretrained weights for the model
+        weights (ConvNeXt_Large_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = ConvNeXt_Large_Weights.verify(weights)

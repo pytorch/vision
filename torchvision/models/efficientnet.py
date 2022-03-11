@@ -677,7 +677,7 @@ def efficientnet_b0(
     `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
 
     Args:
-        weights (EfficientNet_B0_Weights): The pretrained weights for the model
+        weights (EfficientNet_B0_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_B0_Weights.verify(weights)
@@ -695,7 +695,7 @@ def efficientnet_b1(
     `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
 
     Args:
-        weights (EfficientNet_B1_Weights): The pretrained weights for the model
+        weights (EfficientNet_B1_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_B1_Weights.verify(weights)
@@ -713,7 +713,7 @@ def efficientnet_b2(
     `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
 
     Args:
-        weights (EfficientNet_B2_Weights): The pretrained weights for the model
+        weights (EfficientNet_B2_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_B2_Weights.verify(weights)
@@ -731,7 +731,7 @@ def efficientnet_b3(
     `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
 
     Args:
-        weights (EfficientNet_B3_Weights): The pretrained weights for the model
+        weights (EfficientNet_B3_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_B3_Weights.verify(weights)
@@ -749,7 +749,7 @@ def efficientnet_b4(
     `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
 
     Args:
-        weights (EfficientNet_B4_Weights): The pretrained weights for the model
+        weights (EfficientNet_B4_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_B4_Weights.verify(weights)
@@ -767,7 +767,7 @@ def efficientnet_b5(
     `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
 
     Args:
-        weights (EfficientNet_B5_Weights): The pretrained weights for the model
+        weights (EfficientNet_B5_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_B5_Weights.verify(weights)
@@ -793,7 +793,7 @@ def efficientnet_b6(
     `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
 
     Args:
-        weights (EfficientNet_B6_Weights): The pretrained weights for the model
+        weights (EfficientNet_B6_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_B6_Weights.verify(weights)
@@ -819,7 +819,7 @@ def efficientnet_b7(
     `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
 
     Args:
-        weights (EfficientNet_B7_Weights): The pretrained weights for the model
+        weights (EfficientNet_B7_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_B7_Weights.verify(weights)
@@ -845,7 +845,7 @@ def efficientnet_v2_s(
     `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        weights (EfficientNet_V2_S_Weights): The pretrained weights for the model
+        weights (EfficientNet_V2_S_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_V2_S_Weights.verify(weights)
@@ -871,7 +871,7 @@ def efficientnet_v2_m(
     `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        weights (EfficientNet_V2_M_Weights): The pretrained weights for the model
+        weights (EfficientNet_V2_M_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_V2_M_Weights.verify(weights)
@@ -897,7 +897,7 @@ def efficientnet_v2_l(
     `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        weights (EfficientNet_V2_L_Weights): The pretrained weights for the model
+        weights (EfficientNet_V2_L_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = EfficientNet_V2_L_Weights.verify(weights)

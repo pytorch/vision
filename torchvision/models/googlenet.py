@@ -303,7 +303,7 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
     The required minimum input size of the model is 15x15.
 
     Args:
-        weights (GoogLeNet_Weights): The pretrained weights for the model
+        weights (GoogLeNet_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         aux_logits (bool): If True, adds two auxiliary branches that can improve training.
             Default: *False* when pretrained is True otherwise *True*

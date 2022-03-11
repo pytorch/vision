@@ -440,7 +440,7 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
         N x 3 x 299 x 299, so ensure your images are sized accordingly.
 
     Args:
-        weights (Inception_V3_Weights): The pretrained weights for the model
+        weights (Inception_V3_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         aux_logits (bool): If True, add an auxiliary branch that can improve training.
             Default: *True*

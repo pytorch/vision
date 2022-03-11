@@ -81,7 +81,7 @@ def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True,
     The required minimum input size of the model is 63x63.
 
     Args:
-        weights (AlexNet_Weights): The pretrained weights for the model
+        weights (AlexNet_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = AlexNet_Weights.verify(weights)
