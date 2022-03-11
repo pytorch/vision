@@ -437,8 +437,7 @@ def create_feature_extractor(
             "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
         )
 
-
-    if ((train_return_nodes is None) ^ (eval_return_nodes is None)):
+    if (train_return_nodes is None) ^ (eval_return_nodes is None):
         raise RuntimeError(
             "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
         )
