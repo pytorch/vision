@@ -125,7 +125,8 @@ def _resnet(
         backend = "fbgemm"
         quantize_model(model, backend)
     else:
-        assert pretrained in [True, False]
+        if pretrained not in [True, False]:
+            raise ValueError(f"For non quantized models, pretrained should be a bollean value instead of {pretrained}")
 
     if pretrained:
         if quantize:

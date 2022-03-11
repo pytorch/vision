@@ -196,7 +196,10 @@ class SSD(nn.Module):
             else:
                 out_channels = det_utils.retrieve_out_channels(backbone, size)
 
-            assert len(out_channels) == len(anchor_generator.aspect_ratios)
+            if not len(out_channels) == len(anchor_generator.aspect_ratios):
+                raise RuntimeError(
+                    f"The length of the output channels from the backbone {len(out_channels)} do not match the length of the anchor generator aspect ratios {len(anchor_generator.aspect_ratios)}"
+                )
 
             num_anchors = self.anchor_generator.num_anchors_per_location()
             head = SSDHead(out_channels, num_anchors, num_classes)
@@ -322,7 +325,10 @@ class SSD(nn.Module):
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            if not len(val) == 2:
+                raise ValueError(
+                    f"The last two dimensions of the input tensors should contain H and W, instead got {img.shape[-2:]}"
+                )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -357,8 +363,6 @@ class SSD(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
-
             matched_idxs = []
             for anchors_per_image, targets_per_image in zip(anchors, targets):
                 if targets_per_image["boxes"].numel() == 0:

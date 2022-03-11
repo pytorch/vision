@@ -77,7 +77,7 @@ class EncoderBlock(nn.Module):
 
     def forward(self, input: torch.Tensor):
         if not input.dim() == 3:
-            raise ValueError(f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}"))
+            raise ValueError(f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
         x = self.dropout(x)

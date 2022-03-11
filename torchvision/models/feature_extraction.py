@@ -5,7 +5,7 @@ import warnings
 from collections import OrderedDict
 from copy import deepcopy
 from itertools import chain
-from typing import Dict, Callable, List, Type, Union, Optional, Tuple, Any
+from typing import Dict, Callable, List, Union, Optional, Tuple, Any
 
 import torch
 import torchvision
@@ -479,9 +479,10 @@ def create_feature_extractor(
 
         available_nodes = list(tracer.node_to_qualname.values())
         # FIXME We don't know if we should expect this to happen
-        assert len(set(available_nodes)) == len(
-            available_nodes
-        ), "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
+        if len(set(available_nodes)) != len(available_nodes):
+            raise RuntimeError(
+                "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
+            )
         # Check that all outputs in return_nodes are present in the model
         for query in mode_return_nodes[mode].keys():
             # To check if a query is available we need to check that at least

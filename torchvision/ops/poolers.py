@@ -104,7 +104,6 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
         approx_scale = float(s1) / float(s2)
         scale = 2 ** float(torch.tensor(approx_scale).log2().round())
         possible_scales.append(scale)
-    assert possible_scales[0] == possible_scales[1]
     return possible_scales[0]
 
 

@@ -42,7 +42,6 @@ class InvertedResidual(nn.Module):
         self.stride = stride
 
         branch_features = oup // 2
-        assert (self.stride != 1) or (inp == branch_features << 1)
 
         if self.stride > 1:
             self.branch1 = nn.Sequential(

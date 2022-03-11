@@ -27,9 +27,9 @@ class _InvertedResidual(nn.Module):
         self, in_ch: int, out_ch: int, kernel_size: int, stride: int, expansion_factor: int, bn_momentum: float = 0.1
     ) -> None:
         super().__init__()
-        if not stride in [1, 2]:
+        if stride not in [1, 2]:
             raise ValueError(f"stride should be 1 or 2 instead of {stride}")
-        if not kernel_size in [3, 5]:
+        if kernel_size not in [3, 5]:
             raise ValueError(f"kernel_size should be 3 or 5 instead of {kernel_size}")
         mid_ch = in_ch * expansion_factor
         self.apply_residual = in_ch == out_ch and stride == 1
@@ -163,7 +163,7 @@ class MNASNet(torch.nn.Module):
         error_msgs: List[str],
     ) -> None:
         version = local_metadata.get("version", None)
-        if not version in [1, 2]:
+        if version not in [1, 2]:
             raise ValueError(f"version shluld be set to 1 or 2 instead of {version}")
 
         if version == 1 and not self.alpha == 1.0:

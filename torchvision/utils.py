@@ -2,7 +2,7 @@ import math
 import pathlib
 import warnings
 from types import FunctionType
-from typing import Any, BinaryIO, List, Optional, Tuple, Type, Union
+from typing import Any, BinaryIO, List, Optional, Tuple, Union
 
 import numpy as np
 import torch

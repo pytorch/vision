@@ -1,5 +1,4 @@
-from multiprocessing.sharedctypes import Value
-from typing import Optional, List, Dict, Tuple, Type
+from typing import Optional, List, Dict, Tuple
 
 import torch
 import torch.nn.functional as F
@@ -765,7 +764,10 @@ class RoIHeads(nn.Module):
         result: List[Dict[str, torch.Tensor]] = []
         losses = {}
         if self.training:
-            assert labels is not None and regression_targets is not None
+            if labels is None:
+                raise RuntimeError("labels cannot be None")
+            if regression_targets is None:
+                raise RuntimeError("regression_targets cannot be None")
             loss_classifier, loss_box_reg = fastrcnn_loss(class_logits, box_regression, labels, regression_targets)
             losses = {"loss_classifier": loss_classifier, "loss_box_reg": loss_box_reg}
         else:
@@ -783,7 +785,6 @@ class RoIHeads(nn.Module):
         if self.has_mask():
             mask_proposals = [p["boxes"] for p in result]
             if self.training:
-                assert matched_idxs is not None
                 # during training, only focus on positive boxes
                 num_images = len(proposals)
                 mask_proposals = []
@@ -804,10 +805,6 @@ class RoIHeads(nn.Module):
 
             loss_mask = {}
             if self.training:
-                assert targets is not None
-                assert pos_matched_idxs is not None
-                assert mask_logits is not None
-
                 gt_masks = [t["masks"] for t in targets]
                 gt_labels = [t["labels"] for t in targets]
                 rcnn_loss_mask = maskrcnn_loss(mask_logits, mask_proposals, gt_masks, gt_labels, pos_matched_idxs)
@@ -833,7 +830,6 @@ class RoIHeads(nn.Module):
                 num_images = len(proposals)
                 keypoint_proposals = []
                 pos_matched_idxs = []
-                assert matched_idxs is not None
                 for img_id in range(num_images):
                     pos = torch.where(labels[img_id] > 0)[0]
                     keypoint_proposals.append(proposals[img_id][pos])
@@ -847,18 +843,12 @@ class RoIHeads(nn.Module):
 
             loss_keypoint = {}
             if self.training:
-                assert targets is not None
-                assert pos_matched_idxs is not None
-
                 gt_keypoints = [t["keypoints"] for t in targets]
                 rcnn_loss_keypoint = keypointrcnn_loss(
                     keypoint_logits, keypoint_proposals, gt_keypoints, pos_matched_idxs
                 )
                 loss_keypoint = {"loss_keypoint": rcnn_loss_keypoint}
             else:
-                assert keypoint_logits is not None
-                assert keypoint_proposals is not None
-
                 keypoints_probs, kp_scores = keypointrcnn_inference(keypoint_logits, keypoint_proposals)
                 for keypoint_prob, kps, r in zip(keypoints_probs, kp_scores, result):
                     r["keypoints"] = keypoint_prob
