@@ -192,7 +192,10 @@ def _assert_approx_equal_tensor_to_pil(
 
 def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
     transformed_batch = fn(batch_tensors, **fn_kwargs)
-    assert_equal(transformed_batch.split(1), [fn(img_tensor, **fn_kwargs) for img_tensor in batch_tensors.split(1)])
+    for i in range(len(batch_tensors)):
+        img_tensor = batch_tensors[i, ...]
+        transformed_img = fn(img_tensor, **fn_kwargs)
+        torch.testing.assert_close(transformed_img, transformed_batch[i, ...], rtol=0, atol=1e-6)
 
     if scripted_fn_atol >= 0:
         scripted_fn = torch.jit.script(fn)
