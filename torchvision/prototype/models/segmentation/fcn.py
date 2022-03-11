@@ -5,8 +5,8 @@ from torchvision.prototype.transforms import SemanticSegmentationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.fcn import FCN, _fcn_resnet
-from .._api import WeightsEnum, Weights
-from .._meta import _VOC_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _VOC_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..resnet import ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
 

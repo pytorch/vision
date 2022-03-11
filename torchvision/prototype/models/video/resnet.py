@@ -15,8 +15,8 @@ from ....models.video.resnet import (
     R2Plus1dStem,
     VideoResNet,
 )
-from .._api import WeightsEnum, Weights
-from .._meta import _KINETICS400_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _KINETICS400_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
 
 

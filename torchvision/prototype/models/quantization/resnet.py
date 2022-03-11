@@ -11,8 +11,8 @@ from ....models.quantization.resnet import (
     _replace_relu,
     quantize_model,
 )
-from .._api import WeightsEnum, Weights
-from .._meta import _IMAGENET_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..resnet import ResNet18_Weights, ResNet50_Weights, ResNeXt101_32X8D_Weights
 

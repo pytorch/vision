@@ -11,8 +11,8 @@ from ....models.quantization.mobilenetv3 import (
     QuantizableMobileNetV3,
     _replace_relu,
 )
-from .._api import WeightsEnum, Weights
-from .._meta import _IMAGENET_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..mobilenetv3 import MobileNet_V3_Large_Weights, _mobilenet_v3_conf
 

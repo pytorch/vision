@@ -9,8 +9,8 @@ from ....models.quantization.inception import (
     _replace_relu,
     quantize_model,
 )
-from .._api import WeightsEnum, Weights
-from .._meta import _IMAGENET_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..inception import Inception_V3_Weights
 

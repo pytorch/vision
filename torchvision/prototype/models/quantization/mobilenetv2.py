@@ -10,8 +10,8 @@ from ....models.quantization.mobilenetv2 import (
     _replace_relu,
     quantize_model,
 )
-from .._api import WeightsEnum, Weights
-from .._meta import _IMAGENET_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
 from ..mobilenetv2 import MobileNet_V2_Weights
 

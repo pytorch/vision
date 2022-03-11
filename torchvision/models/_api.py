@@ -7,7 +7,7 @@ from typing import Any, Callable, Dict
 
 from torchvision._utils import StrEnum
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 
 
 __all__ = ["WeightsEnum", "Weights", "get_weight"]

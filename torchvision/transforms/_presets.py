@@ -3,7 +3,7 @@ from typing import Dict, Optional, Tuple
 import torch
 from torch import Tensor, nn
 
-from ...transforms import functional as F, InterpolationMode
+from . import functional as F, InterpolationMode
 
 
 __all__ = [

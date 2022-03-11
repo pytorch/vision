@@ -15,8 +15,8 @@ from ....models.detection.ssdlite import (
     SSD,
     SSDLiteHead,
 )
-from .._api import WeightsEnum, Weights
-from .._meta import _COCO_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
 

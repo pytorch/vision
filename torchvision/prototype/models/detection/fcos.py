@@ -11,8 +11,8 @@ from ....models.detection.fcos import (
     LastLevelP6P7,
     misc_nn_ops,
 )
-from .._api import WeightsEnum, Weights
-from .._meta import _COCO_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..resnet import ResNet50_Weights, resnet50
 

@@ -5,8 +5,8 @@ from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.mobilenetv2 import MobileNetV2
-from ._api import WeightsEnum, Weights
-from ._meta import _IMAGENET_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 

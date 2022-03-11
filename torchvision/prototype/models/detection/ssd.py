@@ -10,8 +10,8 @@ from ....models.detection.ssd import (
     DefaultBoxGenerator,
     SSD,
 )
-from .._api import WeightsEnum, Weights
-from .._meta import _COCO_CATEGORIES
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..vgg import VGG16_Weights, vgg16
 

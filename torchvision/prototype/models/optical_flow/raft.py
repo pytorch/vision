@@ -7,8 +7,8 @@ from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, Residua
 from torchvision.prototype.transforms import OpticalFlowEval
 from torchvision.transforms.functional import InterpolationMode
 
-from .._api import WeightsEnum
-from .._api import Weights
+from torchvision.models._api import WeightsEnum
+from torchvision.models._api import Weights
 from .._utils import handle_legacy_interface
 
 
