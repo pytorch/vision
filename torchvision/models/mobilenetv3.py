@@ -5,19 +5,22 @@ from typing import Any, Callable, List, Optional, Sequence
 import torch
 from torch import nn, Tensor
 
-from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation as SElayer
+from ..transforms import ImageClassificationEval, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._utils import _make_divisible
+
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisible
 
 
-__all__ = ["MobileNetV3", "mobilenet_v3_large", "mobilenet_v3_small"]
-
-
-model_urls = {
-    "mobilenet_v3_large": "https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
-    "mobilenet_v3_small": "https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
-}
+__all__ = [
+    "MobileNetV3",
+    "MobileNet_V3_Large_Weights",
+    "MobileNet_V3_Small_Weights",
+    "mobilenet_v3_large",
+    "mobilenet_v3_small",
+]
 
 
 class SqueezeExcitation(SElayer):
@@ -284,45 +287,106 @@ def _mobilenet_v3_conf(
 
 
 def _mobilenet_v3(
-    arch: str,
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
-):
+) -> MobileNetV3:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
     model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
-    if pretrained:
-        if model_urls.get(arch, None) is None:
-            raise ValueError(f"No checkpoint is available for model type {arch}")
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
 
 
-def mobilenet_v3_large(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
+_COMMON_META = {
+    "task": "image_classification",
+    "architecture": "MobileNetV3",
+    "publication_year": 2019,
+    "size": (224, 224),
+    "min_size": (1, 1),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
+
+
+class MobileNet_V3_Large_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
+        transforms=partial(ImageClassificationEval, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 5483032,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
+            "acc@1": 74.042,
+            "acc@5": 91.340,
+        },
+    )
+    IMAGENET1K_V2 = Weights(
+        url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 5483032,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
+            "acc@1": 75.274,
+            "acc@5": 92.566,
+        },
+    )
+    DEFAULT = IMAGENET1K_V2
+
+
+class MobileNet_V3_Small_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
+        transforms=partial(ImageClassificationEval, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 2542856,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
+            "acc@1": 67.668,
+            "acc@5": 87.402,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+@handle_legacy_interface(weights=("pretrained", MobileNet_V3_Large_Weights.IMAGENET1K_V1))
+def mobilenet_v3_large(
+    *, weights: Optional[MobileNet_V3_Large_Weights] = None, progress: bool = True, **kwargs: Any
+) -> MobileNetV3:
     """
     Constructs a large MobileNetV3 architecture from
     `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (MobileNet_V3_Large_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    arch = "mobilenet_v3_large"
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
+    weights = MobileNet_V3_Large_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
+    return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
 
 
-def mobilenet_v3_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MobileNetV3:
+@handle_legacy_interface(weights=("pretrained", MobileNet_V3_Small_Weights.IMAGENET1K_V1))
+def mobilenet_v3_small(
+    *, weights: Optional[MobileNet_V3_Small_Weights] = None, progress: bool = True, **kwargs: Any
+) -> MobileNetV3:
     """
     Constructs a small MobileNetV3 architecture from
     `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (MobileNet_V3_Small_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    arch = "mobilenet_v3_small"
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3(arch, inverted_residual_setting, last_channel, pretrained, progress, **kwargs)
+    weights = MobileNet_V3_Small_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)
+    return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
