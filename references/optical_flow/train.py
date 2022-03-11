@@ -73,7 +73,7 @@ def _evaluate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
     if args.distributed:
         sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
     else:
-        sampler = torch.utils.data.SequentialSampler(val_dataset, drop_last=True)
+        sampler = torch.utils.data.SequentialSampler(val_dataset)
 
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
@@ -122,14 +122,13 @@ def _evaluate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
 
     if args.distributed:
         num_processed_samples = utils.reduce_across_processes(num_processed_samples)
-    print(
-        f"Batch-processed {num_processed_samples} / {len(val_dataset)} samples. "
-        "Going to process the remaining samples individually, if any."
-    )
-
-    if not args.distributed or args.rank == 0:  # we only need to process the rest on a single worker
-        for i in range(num_processed_samples, len(val_dataset)):
-            inner_loop(val_dataset[i])
+        print(
+            f"Batch-processed {num_processed_samples} / {len(val_dataset)} samples. "
+            "Going to process the remaining samples individually, if any."
+        )
+        if args.rank == 0:  # we only need to process the rest on a single worker
+            for i in range(num_processed_samples, len(val_dataset)):
+                inner_loop(val_dataset[i])
 
     logger.synchronize_between_processes()
     print(header, logger)
