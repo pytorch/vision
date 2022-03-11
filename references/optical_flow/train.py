@@ -221,10 +221,6 @@ def main(args):
         model = model.to(args.local_rank)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
 
-    if args.resume is not None:
-        d = torch.load(args.resume, map_location="cpu")
-        model.load_state_dict(d, strict=True)
-
     if args.train_dataset is None:
         # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
         torch.backends.cudnn.benchmark = False
@@ -234,13 +230,34 @@ def main(args):
 
     print(f"Parameter Count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
+    train_dataset = get_train_dataset(args.train_dataset, args.dataset_root)
+
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, eps=args.adamw_eps)
+
+    scheduler = torch.optim.lr_scheduler.OneCycleLR(
+        optimizer=optimizer,
+        max_lr=args.lr,
+        epochs=args.epochs,
+        steps_per_epoch=ceil(len(train_dataset) / (args.world_size * args.batch_size)),
+        pct_start=0.05,
+        cycle_momentum=False,
+        anneal_strategy="linear",
+    )
+
+    if args.resume is not None:
+        checkpoint = torch.load(args.resume, map_location="cpu")
+        model.load_state_dict(checkpoint["model"])
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        scheduler.load_state_dict(checkpoint["scheduler"])
+        args.start_epoch = checkpoint["epoch"] + 1
+    else:
+        args.start_epoch = 0
+
     torch.backends.cudnn.benchmark = True
 
     model.train()
     if args.freeze_batch_norm:
         utils.freeze_batch_norm(model.module)
-
-    train_dataset = get_train_dataset(args.train_dataset, args.dataset_root)
 
     if args.distributed:
         sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True, drop_last=True)
@@ -255,22 +272,10 @@ def main(args):
         num_workers=args.num_workers,
     )
 
-    optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, eps=args.adamw_eps)
-
-    scheduler = torch.optim.lr_scheduler.OneCycleLR(
-        optimizer=optimizer,
-        max_lr=args.lr,
-        epochs=args.epochs,
-        steps_per_epoch=ceil(len(train_dataset) / (args.world_size * args.batch_size)),
-        pct_start=0.05,
-        cycle_momentum=False,
-        anneal_strategy="linear",
-    )
-
     logger = utils.MetricLogger()
 
     done = False
-    for current_epoch in range(args.epochs):
+    for current_epoch in range(args.start_epoch, args.epochs):
         print(f"EPOCH {current_epoch}")
         if args.distributed:
             # needed on distributed mode, otherwise the data loading order would be the same for all epochs
@@ -289,9 +294,15 @@ def main(args):
         print(f"Epoch {current_epoch} done. ", logger)
 
         if not args.distributed or args.rank == 0:
-            # TODO: Also save the optimizer and scheduler
-            torch.save(model.state_dict(), Path(args.output_dir) / f"{args.name}_{current_epoch}.pth")
-            torch.save(model.state_dict(), Path(args.output_dir) / f"{args.name}.pth")
+            checkpoint = {
+                "model": model.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict(),
+                "epoch": current_epoch,
+                "args": args,
+            }
+            torch.save(checkpoint, Path(args.output_dir) / f"{args.name}_{current_epoch}.pth")
+            torch.save(checkpoint, Path(args.output_dir) / f"{args.name}.pth")
 
         if current_epoch % args.val_freq == 0 or done:
             evaluate(model, args)
