@@ -1319,7 +1319,7 @@ def omniglot(info, root, config):
 
     make_zip(root, f"{split}.zip")
 
-    return num_images
+    return num_images["images_background"]
 
 
 @register_mock
