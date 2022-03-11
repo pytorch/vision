@@ -53,7 +53,9 @@ class DistributedSampler(Sampler):
                 raise RuntimeError("Requires distributed package to be available")
             rank = dist.get_rank()
         if not len(dataset) % group_size == 0:
-            raise ValueError(f"dataset length must be a multiplier of group size dataset length: {len(dataset)}, group size: {group_size}")
+            raise ValueError(
+                f"dataset length must be a multiplier of group size dataset length: {len(dataset)}, group size: {group_size}"
+            )
         self.dataset = dataset
         self.group_size = group_size
         self.num_replicas = num_replicas
