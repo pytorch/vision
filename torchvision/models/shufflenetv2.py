@@ -1,21 +1,30 @@
-from typing import Callable, Any, List
+from functools import partial
+from typing import Callable, Any, List, Optional
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 
-from .._internally_replaced_utils import load_state_dict_from_url
+from ..transforms import ImageClassificationEval, InterpolationMode
 from ..utils import _log_api_usage_once
 
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
-__all__ = ["ShuffleNetV2", "shufflenet_v2_x0_5", "shufflenet_v2_x1_0", "shufflenet_v2_x1_5", "shufflenet_v2_x2_0"]
 
-model_urls = {
-    "shufflenetv2_x0.5": "https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
-    "shufflenetv2_x1.0": "https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
-    "shufflenetv2_x1.5": None,
-    "shufflenetv2_x2.0": None,
-}
+__all__ = [
+    "ShuffleNetV2",
+    "ShuffleNet_V2_X0_5_Weights",
+    "ShuffleNet_V2_X1_0_Weights",
+    "ShuffleNet_V2_X1_5_Weights",
+    "ShuffleNet_V2_X2_0_Weights",
+    "shufflenet_v2_x0_5",
+    "shufflenet_v2_x1_0",
+    "shufflenet_v2_x1_5",
+    "shufflenet_v2_x2_0",
+]
+
 
 
 def channel_shuffle(x: Tensor, groups: int) -> Tensor:
@@ -156,67 +165,139 @@ class ShuffleNetV2(nn.Module):
         return self._forward_impl(x)
 
 
-def _shufflenetv2(arch: str, pretrained: bool, progress: bool, *args: Any, **kwargs: Any) -> ShuffleNetV2:
+def _shufflenetv2(
+    weights: Optional[WeightsEnum],
+    progress: bool,
+    *args: Any,
+    **kwargs: Any,
+) -> ShuffleNetV2:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
     model = ShuffleNetV2(*args, **kwargs)
 
-    if pretrained:
-        model_url = model_urls[arch]
-        if model_url is None:
-            raise ValueError(f"No checkpoint is available for model type {arch}")
-        else:
-            state_dict = load_state_dict_from_url(model_url, progress=progress)
-            model.load_state_dict(state_dict)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
 
-def shufflenet_v2_x0_5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ShuffleNetV2:
+_COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ShuffleNetV2",
+    "publication_year": 2018,
+    "size": (224, 224),
+    "min_size": (1, 1),
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+    "recipe": "https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0",
+}
+
+
+class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
+        transforms=partial(ImageClassificationEval, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 1366792,
+            "acc@1": 69.362,
+            "acc@5": 88.316,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
+        transforms=partial(ImageClassificationEval, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 2278604,
+            "acc@1": 60.552,
+            "acc@5": 81.746,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
+    pass
+
+
+class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
+    pass
+
+
+
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1))
+def shufflenet_v2_x0_5(
+    *, weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 0.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ShuffleNet_V2_X0_5_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _shufflenetv2("shufflenetv2_x0.5", pretrained, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
+    weights = ShuffleNet_V2_X0_5_Weights.verify(weights)
+
+    return _shufflenetv2(weights, progress, [4, 8, 4], [24, 48, 96, 192, 1024], **kwargs)
 
 
-def shufflenet_v2_x1_0(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ShuffleNetV2:
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1))
+def shufflenet_v2_x1_0(
+    *, weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 1.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ShuffleNet_V2_X1_0_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _shufflenetv2("shufflenetv2_x1.0", pretrained, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
+    weights = ShuffleNet_V2_X1_0_Weights.verify(weights)
+
+    return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
-def shufflenet_v2_x1_5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ShuffleNetV2:
+@handle_legacy_interface(weights=("pretrained", None))
+def shufflenet_v2_x1_5(
+    *, weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 1.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ShuffleNet_V2_X1_5_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _shufflenetv2("shufflenetv2_x1.5", pretrained, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
+    weights = ShuffleNet_V2_X1_5_Weights.verify(weights)
+
+    return _shufflenetv2(weights, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
-def shufflenet_v2_x2_0(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> ShuffleNetV2:
+@handle_legacy_interface(weights=("pretrained", None))
+def shufflenet_v2_x2_0(
+    *, weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 2.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ShuffleNet_V2_X2_0_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    return _shufflenetv2("shufflenetv2_x2.0", pretrained, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
+    weights = ShuffleNet_V2_X2_0_Weights.verify(weights)
+
+    return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
