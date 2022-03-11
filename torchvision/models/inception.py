@@ -1,22 +1,23 @@
 import warnings
 from collections import namedtuple
+from functools import partial
 from typing import Callable, Any, Optional, Tuple, List
 
 import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from .._internally_replaced_utils import load_state_dict_from_url
 from ..utils import _log_api_usage_once
 
 
-__all__ = ["Inception3", "inception_v3", "InceptionOutputs", "_InceptionOutputs"]
+from ..transforms import ImageClassificationEval, InterpolationMode
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
-model_urls = {
-    # Inception v3 ported from TensorFlow
-    "inception_v3_google": "https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
-}
+__all__ = ["Inception3", "InceptionOutputs", "_InceptionOutputs", "Inception_V3_Weights", "inception_v3"]
+
 
 InceptionOutputs = namedtuple("InceptionOutputs", ["logits", "aux_logits"])
 InceptionOutputs.__annotations__ = {"logits": Tensor, "aux_logits": Optional[Tensor]}
@@ -407,7 +408,29 @@ class BasicConv2d(nn.Module):
         return F.relu(x, inplace=True)
 
 
-def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> Inception3:
+class Inception_V3_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
+        transforms=partial(ImageClassificationEval, crop_size=299, resize_size=342),
+        meta={
+            "task": "image_classification",
+            "architecture": "InceptionV3",
+            "publication_year": 2015,
+            "num_params": 27161264,
+            "size": (299, 299),
+            "min_size": (75, 75),
+            "categories": _IMAGENET_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#inception-v3",
+            "acc@1": 77.294,
+            "acc@5": 93.450,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+@handle_legacy_interface(weights=("pretrained", Inception_V3_Weights.IMAGENET1K_V1))
+def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
     r"""Inception v3 model architecture from
     `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
     The required minimum input size of the model is 75x75.
@@ -417,28 +440,29 @@ def inception_v3(pretrained: bool = False, progress: bool = True, **kwargs: Any)
         N x 3 x 299 x 299, so ensure your images are sized accordingly.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (Inception_V3_Weights): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         aux_logits (bool): If True, add an auxiliary branch that can improve training.
             Default: *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
             was trained on ImageNet. Default: True if ``pretrained=True``, else False.
     """
-    if pretrained:
+    weights = Inception_V3_Weights.verify(weights)
+
+    original_aux_logits = kwargs.get("aux_logits", True)
+    if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" in kwargs:
-            original_aux_logits = kwargs["aux_logits"]
-            kwargs["aux_logits"] = True
-        else:
-            original_aux_logits = True
-        kwargs["init_weights"] = False  # we are loading weights from a pretrained model
-        model = Inception3(**kwargs)
-        state_dict = load_state_dict_from_url(model_urls["inception_v3_google"], progress=progress)
-        model.load_state_dict(state_dict)
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "init_weights", False)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
+    model = Inception3(**kwargs)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
             model.AuxLogits = None
-        return model
 
-    return Inception3(**kwargs)
+    return model
