@@ -156,14 +156,14 @@ class TestSmoke:
 
 
 class TestRandomHorizontalFlip:
-    def input_tensor(self, dtype: torch.dtype = torch.float32) -> torch.Tensor:
+    def input_tensor(self, dtype=torch.float32):
         return torch.tensor([[[0, 1], [0, 1]], [[1, 0], [1, 0]]], dtype=dtype)
 
-    def expected_tensor(self, dtype: torch.dtype = torch.float32) -> torch.Tensor:
+    def expected_tensor(self, dtype=torch.float32):
         return torch.tensor([[[1, 0], [1, 0]], [[0, 1], [0, 1]]], dtype=dtype)
 
     @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
-    def test_simple_tensor(self, p: float):
+    def test_simple_tensor(self, p):
         input = self.input_tensor()
 
         actual = transforms.RandomHorizontalFlip(p=p)(input)
@@ -172,7 +172,7 @@ class TestRandomHorizontalFlip:
         assert_equal(expected, actual)
 
     @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
-    def test_pil_image(self, p: float):
+    def test_pil_image(self, p):
         input = self.input_tensor(dtype=torch.uint8)
 
         actual = transforms.RandomHorizontalFlip(p=p)(to_pil_image(input))
@@ -181,7 +181,7 @@ class TestRandomHorizontalFlip:
         assert_equal(expected, pil_to_tensor(actual))
 
     @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
-    def test_features_image(self, p: float):
+    def test_features_image(self, p):
         input = self.input_tensor()
 
         actual = transforms.RandomHorizontalFlip(p=p)(features.Image(input))
@@ -190,7 +190,7 @@ class TestRandomHorizontalFlip:
         assert_equal(features.Image(expected), actual)
 
     @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
-    def test_features_segmentation_mask(self, p: float):
+    def test_features_segmentation_mask(self, p):
         input = features.SegmentationMask(self.input_tensor())
 
         actual = transforms.RandomHorizontalFlip(p=p)(input)
@@ -199,7 +199,7 @@ class TestRandomHorizontalFlip:
         assert_equal(features.SegmentationMask(expected), actual)
 
     @pytest.mark.parametrize("p", [0.0, 1.0], ids=["p=0", "p=1"])
-    def test_features_bounding_box(self, p: float):
+    def test_features_bounding_box(self, p):
         input = features.BoundingBox([0, 0, 5, 5], format=features.BoundingBoxFormat.XYXY, image_size=(10, 10))
 
         actual = transforms.RandomHorizontalFlip(p=p)(input)
