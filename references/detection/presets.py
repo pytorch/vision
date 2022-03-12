@@ -22,6 +22,15 @@ class DetectionPresetTrain:
                     T.ConvertImageDtype(torch.float),
                 ]
             )
+        elif data_augmentation == "multiscale":
+            self.transforms = T.Compose(
+                [
+                    T.RandomShortestSize(min_size=(640, 672, 704, 736, 768, 800), max_size=1333),
+                    T.RandomHorizontalFlip(p=hflip_prob),
+                    T.PILToTensor(),
+                    T.ConvertImageDtype(torch.float),
+                ]
+            )
         elif data_augmentation == "ssd":
             self.transforms = T.Compose(
                 [

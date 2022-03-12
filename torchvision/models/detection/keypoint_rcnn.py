@@ -189,6 +189,7 @@ class KeypointRCNN(FasterRCNN):
         keypoint_head=None,
         keypoint_predictor=None,
         num_keypoints=None,
+        **kwargs,
     ):
 
         assert isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None)))
@@ -247,6 +248,7 @@ class KeypointRCNN(FasterRCNN):
             box_batch_size_per_image,
             box_positive_fraction,
             bbox_reg_weights,
+            **kwargs,
         )
 
         self.roi_heads.keypoint_roi_pool = keypoint_roi_pool

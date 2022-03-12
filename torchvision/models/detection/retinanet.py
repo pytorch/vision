@@ -335,6 +335,7 @@ class RetinaNet(nn.Module):
         fg_iou_thresh=0.5,
         bg_iou_thresh=0.4,
         topk_candidates=1000,
+        **kwargs,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -373,7 +374,7 @@ class RetinaNet(nn.Module):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        self.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+        self.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std, **kwargs)
 
         self.score_thresh = score_thresh
         self.nms_thresh = nms_thresh

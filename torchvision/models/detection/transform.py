@@ -1,5 +1,5 @@
 import math
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Any
 
 import torch
 import torchvision
@@ -91,6 +91,7 @@ class GeneralizedRCNNTransform(nn.Module):
         image_std: List[float],
         size_divisible: int = 32,
         fixed_size: Optional[Tuple[int, int]] = None,
+        **kwargs: Any,
     ):
         super().__init__()
         if not isinstance(min_size, (list, tuple)):
@@ -101,6 +102,7 @@ class GeneralizedRCNNTransform(nn.Module):
         self.image_std = image_std
         self.size_divisible = size_divisible
         self.fixed_size = fixed_size
+        self._skip_resize = kwargs.pop("_skip_resize", False)
 
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
@@ -167,6 +169,8 @@ class GeneralizedRCNNTransform(nn.Module):
     ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
         h, w = image.shape[-2:]
         if self.training:
+            if self._skip_resize:
+                return image, target
             size = float(self.torch_choice(self.min_size))
         else:
             # FIXME assume for now that testing uses the largest scale
