@@ -45,7 +45,7 @@ visualizing images, bounding boxes, segmentation masks and keypoints.
     def show(imgs):
         if not isinstance(imgs, list):
             imgs = [imgs]
-        fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+        fig, axs = plt.subplots(ncols=len(imgs), squeeze=False)
         for i, img in enumerate(imgs):
             img = img.detach()
             img = F.to_pil_image(img)
@@ -1112,7 +1112,7 @@ We pass the above list to the connectivity parameter to connect the keypoints.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  10.435 seconds)
+   **Total running time of the script:** ( 0 minutes  18.100 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_visualization_utils.py:
