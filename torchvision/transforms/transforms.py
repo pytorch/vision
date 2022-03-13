@@ -428,7 +428,7 @@ class Pad(torch.nn.Module):
         if not isinstance(padding, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate padding arg")
 
-        if not isinstance(fill, (numbers.Number, str, tuple)):
+        if not isinstance(fill, (numbers.Number, str, tuple, list)):
             raise TypeError("Got inappropriate fill arg")
 
         if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
