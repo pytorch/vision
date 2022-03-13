@@ -1,7 +1,7 @@
 import collections.abc
 import math
 import warnings
-from typing import Any, Dict, List, Union, Sequence, Tuple, cast
+from typing import Any, Dict, List, Union, Sequence, Tuple, cast, Literal, Optional
 
 import PIL.Image
 import torch
@@ -256,3 +256,96 @@ class BatchMultiCrop(Transform):
                 return obj
 
         return apply_recursively(inputs if len(inputs) > 1 else inputs[0])
+
+
+class RandomCrop(Transform):
+    def __init__(
+        self,
+        size: Union[int, Sequence[int]],
+        padding: Optional[Sequence[int]] = None,
+        pad_if_needed: bool = False,
+        fill: Union[int, str, Sequence[int]] = 0,
+        padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
+    ) -> None:
+        super().__init__()
+        self.size = _setup_size(size, error_msg="Please provide only two dimensions (h, w) for size.")
+
+        self.padding = padding
+        self.pad_if_needed = pad_if_needed
+        self.fill = fill
+        self.padding_mode = padding_mode
+
+    def _get_crop_parameters(self, image: Any) -> Dict[str, Any]:
+        """Get parameters for ``crop`` for a random crop.
+        Args:
+            sample (PIL Image, Tensor or features.Image): Image to be cropped.
+        Returns:
+            dict: Dict containing 'top', 'left', 'height', and 'width'
+        """
+
+        _, h, w = get_image_dimensions(image)
+
+        th, tw = self.size
+
+        if h + 1 < th or w + 1 < tw:
+            raise ValueError(f"Required crop size {(th, tw)} is larger then input image size {(h, w)}")
+
+        if w == tw and h == th:
+            return dict(top=0, left=0, height=h, width=w)
+
+        i = torch.randint(0, h - th + 1, size=(1,)).item()
+        j = torch.randint(0, w - tw + 1, size=(1,)).item()
+        return dict(top=i, left=j, height=th, width=tw)
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+
+        if isinstance(input, features.Image):
+            output = F.random_pad_image_tensor(
+                input,
+                output_size=self.size,
+                image_size=get_image_dimensions(input),
+                padding=cast(List[int], tuple(self.padding)),
+                pad_if_needed=self.pad_if_needed,
+                fill=self.fill,
+                padding_mode=self.padding_mode,
+            )
+            input = features.Image.new_like(input, output)
+        elif isinstance(input, PIL.Image.Image):
+            input = F.random_pad_image_pil(
+                input,
+                output_size=self.size,
+                image_size=get_image_dimensions(input),
+                padding=self.padding,
+                pad_if_needed=self.pad_if_needed,
+                fill=self.fill,
+                padding_mode=self.padding_mode,
+            )
+        elif is_simple_tensor(input):
+            input = F.random_pad_image_tensor(
+                input,
+                output_size=self.size,
+                image_size=get_image_dimensions(input),
+                padding=self.padding,
+                pad_if_needed=self.pad_if_needed,
+                fill=self.fill,  # TODO: should be converted to number
+                padding_mode=self.padding_mode,
+            )
+
+        params.update(self._get_crop_parameters(input))
+
+        if isinstance(input, features.Image):
+            output = F.crop_image_tensor(input, **params)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, PIL.Image.Image):
+            return F.crop_image_pil(input, **params)
+        elif is_simple_tensor(input):
+            return F.crop_image_tensor(input, **params)
+        else:
+            return input
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if has_any(sample, features.BoundingBox, features.SegmentationMask):
+            raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
+
+        return super().forward(sample)
