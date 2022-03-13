@@ -546,6 +546,8 @@ class RetinaNet(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             # compute the losses
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:
