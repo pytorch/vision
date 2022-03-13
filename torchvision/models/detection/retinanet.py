@@ -491,6 +491,8 @@ class RetinaNet(nn.Module):
             raise ValueError("In training mode, targets should be passed")
 
         if self.training:
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
