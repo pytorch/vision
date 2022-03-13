@@ -25,7 +25,9 @@ class DetectionPresetTrain:
         elif data_augmentation == "multiscale":
             self.transforms = T.Compose(
                 [
-                    T.RandomShortestSize(min_size=(640, 672, 704, 736, 768, 800), max_size=1333),
+                    T.RandomShortestSize(
+                        min_size=(480, 512, 544, 576, 608, 640, 672, 704, 736, 768, 800), max_size=1333
+                    ),
                     T.RandomHorizontalFlip(p=hflip_prob),
                     T.PILToTensor(),
                     T.ConvertImageDtype(torch.float),
