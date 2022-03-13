@@ -363,18 +363,23 @@ class SSD(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            matched_idxs = []
-            for anchors_per_image, targets_per_image in zip(anchors, targets):
-                if targets_per_image["boxes"].numel() == 0:
-                    matched_idxs.append(
-                        torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device)
-                    )
-                    continue
+            if targets is None:
+                raise ValueError("targets should not be None when in training mode")
+            else:
+                matched_idxs = []
+                for anchors_per_image, targets_per_image in zip(anchors, targets):
+                    if targets_per_image["boxes"].numel() == 0:
+                        matched_idxs.append(
+                            torch.full(
+                                (anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device
+                            )
+                        )
+                        continue
 
-                match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
-                matched_idxs.append(self.proposal_matcher(match_quality_matrix))
+                    match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
+                    matched_idxs.append(self.proposal_matcher(match_quality_matrix))
 
-            losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
+                losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
         else:
             detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
             detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)

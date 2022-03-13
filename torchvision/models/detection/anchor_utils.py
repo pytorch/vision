@@ -85,30 +85,33 @@ class AnchorGenerator(nn.Module):
         anchors = []
         cell_anchors = self.cell_anchors
 
-        if not (len(grid_sizes) == len(strides) == len(cell_anchors)):
-            raise ValueError(
-                "Anchors should be Tuple[Tuple[int]] because each feature "
-                "map could potentially have different sizes and aspect ratios. "
-                "There needs to be a match between the number of "
-                "feature maps passed and the number of sizes / aspect ratios specified."
-            )
+        if cell_anchors is None:
+            raise RuntimeError("cell_anchors should not be None")
+        else:
+            if not (len(grid_sizes) == len(strides) == len(cell_anchors)):
+                raise ValueError(
+                    "Anchors should be Tuple[Tuple[int]] because each feature "
+                    "map could potentially have different sizes and aspect ratios. "
+                    "There needs to be a match between the number of "
+                    "feature maps passed and the number of sizes / aspect ratios specified."
+                )
 
-        for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
-            grid_height, grid_width = size
-            stride_height, stride_width = stride
-            device = base_anchors.device
+            for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
+                grid_height, grid_width = size
+                stride_height, stride_width = stride
+                device = base_anchors.device
 
-            # For output anchor, compute [x_center, y_center, x_center, y_center]
-            shifts_x = torch.arange(0, grid_width, dtype=torch.int32, device=device) * stride_width
-            shifts_y = torch.arange(0, grid_height, dtype=torch.int32, device=device) * stride_height
-            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
-            shift_x = shift_x.reshape(-1)
-            shift_y = shift_y.reshape(-1)
-            shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
+                # For output anchor, compute [x_center, y_center, x_center, y_center]
+                shifts_x = torch.arange(0, grid_width, dtype=torch.int32, device=device) * stride_width
+                shifts_y = torch.arange(0, grid_height, dtype=torch.int32, device=device) * stride_height
+                shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
+                shift_x = shift_x.reshape(-1)
+                shift_y = shift_y.reshape(-1)
+                shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
 
-            # For every (base anchor, output anchor) pair,
-            # offset each zero-centered base anchor by the center of the output anchor.
-            anchors.append((shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4))
+                # For every (base anchor, output anchor) pair,
+                # offset each zero-centered base anchor by the center of the output anchor.
+                anchors.append((shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4))
 
         return anchors
 

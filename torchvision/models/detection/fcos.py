@@ -613,7 +613,10 @@ class FCOS(nn.Module):
         detections: List[Dict[str, Tensor]] = []
         if self.training:
             # compute the losses
-            losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
+            if targets is None:
+                raise ValueError("targets should not be none when in training mode")
+            else:
+                losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
         else:
             # split outputs per level
             split_head_outputs: Dict[str, List[Tensor]] = {}
