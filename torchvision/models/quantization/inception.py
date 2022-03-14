@@ -223,7 +223,7 @@ def inception_v3(
     GPU inference is not yet supported
 
     Args:
-        pretrained (Inception_V3_QuantizedWeights or Inception_V3_Weights, optional): The pretrained
+        weights (Inception_V3_QuantizedWeights or Inception_V3_Weights, optional): The pretrained
             weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model

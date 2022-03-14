@@ -254,7 +254,7 @@ def resnet18(
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
-        pretrained (ResNet18_QuantizedWeights or ResNet18_Weights, optional): The pretrained
+        weights (ResNet18_QuantizedWeights or ResNet18_Weights, optional): The pretrained
             weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
@@ -283,7 +283,7 @@ def resnet50(
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
-        pretrained (ResNet50_QuantizedWeights or ResNet50_Weights, optional): The pretrained
+        weights (ResNet50_QuantizedWeights or ResNet50_Weights, optional): The pretrained
             weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
@@ -312,7 +312,7 @@ def resnext101_32x8d(
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
 
     Args:
-        pretrained (ResNeXt101_32X8D_QuantizedWeights or ResNeXt101_32X8D_Weights, optional): The pretrained
+        weights (ResNeXt101_32X8D_QuantizedWeights or ResNeXt101_32X8D_Weights, optional): The pretrained
             weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model

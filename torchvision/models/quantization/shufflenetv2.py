@@ -166,7 +166,7 @@ def shufflenet_v2_x0_5(
     <https://arxiv.org/abs/1807.11164>`_.
 
     Args:
-        pretrained (ShuffleNet_V2_X0_5_QuantizedWeights or ShuffleNet_V2_X0_5_Weights, optional): The pretrained
+        weights (ShuffleNet_V2_X0_5_QuantizedWeights or ShuffleNet_V2_X0_5_Weights, optional): The pretrained
             weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
@@ -198,7 +198,7 @@ def shufflenet_v2_x1_0(
     <https://arxiv.org/abs/1807.11164>`_.
 
     Args:
-        pretrained (ShuffleNet_V2_X1_0_QuantizedWeights or ShuffleNet_V2_X1_0_Weights, optional): The pretrained
+        weights (ShuffleNet_V2_X1_0_QuantizedWeights or ShuffleNet_V2_X1_0_Weights, optional): The pretrained
             weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model

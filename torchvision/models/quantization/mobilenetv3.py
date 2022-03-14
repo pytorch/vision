@@ -202,7 +202,7 @@ def mobilenet_v3_large(
     GPU inference is not yet supported
 
     Args:
-        pretrained (MobileNet_V3_Large_QuantizedWeights or MobileNet_V3_Large_Weights, optional): The pretrained
+        weights (MobileNet_V3_Large_QuantizedWeights or MobileNet_V3_Large_Weights, optional): The pretrained
             weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, returns a quantized model, else returns a float model

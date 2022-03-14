@@ -153,7 +153,7 @@ def googlenet(
     GPU inference is not yet supported
 
     Args:
-        pretrained (GoogLeNet_QuantizedWeights or GoogLeNet_Weights, optional): The pretrained
+        weights (GoogLeNet_QuantizedWeights or GoogLeNet_Weights, optional): The pretrained
             weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
