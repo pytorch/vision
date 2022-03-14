@@ -1,7 +1,7 @@
 import collections.abc
 import math
 import warnings
-from typing import Any, Dict, List, Union, Sequence, Tuple, cast, Optional
+from typing import Any, Dict, List, Union, Sequence, Tuple, cast
 
 import PIL.Image
 import torch
