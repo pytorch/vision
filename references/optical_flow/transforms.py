@@ -18,7 +18,7 @@ class ValidateModelInput(torch.nn.Module):
         if flow is not None and flow.shape != (2, h, w):
             raise ValueError(f"flow.shape should be (2, {h}, {w}) instead of {flow.shape}")
         if valid_flow_mask is not None:
-            if not valid_flow_mask.shape == (h, w):
+            if valid_flow_mask.shape != (h, w):
                 raise ValueError(f"valid_flow_mask.shape should be ({h}, {w}) instead of {valid_flow_mask.shape}")
             if valid_flow_mask.dtype != torch.bool:
                 raise TypeError("valid_flow_mask should be of dtype torch.bool instead of {valid_flow_mask.dtype}")
