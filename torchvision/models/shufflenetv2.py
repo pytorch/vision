@@ -7,7 +7,6 @@ from torch import Tensor
 
 from ..transforms import ImageClassificationEval, InterpolationMode
 from ..utils import _log_api_usage_once
-
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface, _ovewrite_named_param
@@ -24,7 +23,6 @@ __all__ = [
     "shufflenet_v2_x1_5",
     "shufflenet_v2_x2_0",
 ]
-
 
 
 def channel_shuffle(x: Tensor, groups: int) -> Tensor:
@@ -228,7 +226,6 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
 
 class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
     pass
-
 
 
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1))

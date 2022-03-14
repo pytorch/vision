@@ -6,11 +6,17 @@ from torch.ao.quantization import QuantStub, DeQuantStub
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
-from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, model_urls, _mobilenet_v3_conf
+from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, _mobilenet_v3_conf
 from .utils import _fuse_modules, _replace_relu
 
 
 __all__ = ["QuantizableMobileNetV3", "mobilenet_v3_large"]
+
+
+model_urls = {
+    "mobilenet_v3_large": "https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
+}
+
 
 quant_model_urls = {
     "mobilenet_v3_large_qnnpack": "https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",

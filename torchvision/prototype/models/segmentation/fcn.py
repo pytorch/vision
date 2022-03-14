@@ -1,14 +1,12 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import SemanticSegmentationEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.segmentation.fcn import FCN, _fcn_resnet
 from torchvision.models._api import WeightsEnum, Weights
 from torchvision.models._meta import _VOC_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_value_param
+from torchvision.models.resnet import ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
+from torchvision.models.segmentation.fcn import FCN, _fcn_resnet
+from torchvision.transforms import SemanticSegmentationEval, InterpolationMode
 
 
 __all__ = ["FCN", "FCN_ResNet50_Weights", "FCN_ResNet101_Weights", "fcn_resnet50", "fcn_resnet101"]

@@ -1,20 +1,18 @@
 from typing import Any, Optional
 
 from torch import nn
-from torchvision.prototype.transforms import ObjectDetectionEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.detection.mask_rcnn import (
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _COCO_CATEGORIES
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_value_param
+from torchvision.models.detection.mask_rcnn import (
     _resnet_fpn_extractor,
     _validate_trainable_layers,
     MaskRCNN,
     misc_nn_ops,
     overwrite_eps,
 )
-from torchvision.models._api import WeightsEnum, Weights
-from torchvision.models._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from torchvision.models.resnet import ResNet50_Weights, resnet50
+from torchvision.transforms import ObjectDetectionEval, InterpolationMode
 
 
 __all__ = [

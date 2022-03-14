@@ -5,13 +5,20 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
-from torchvision.models.googlenet import GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet, model_urls
+from torchvision.models.googlenet import GoogLeNetOutputs, BasicConv2d, Inception, InceptionAux, GoogLeNet
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
 __all__ = ["QuantizableGoogLeNet", "googlenet"]
+
+
+model_urls = {
+    # GoogLeNet ported from TensorFlow
+    "googlenet": "https://download.pytorch.org/models/googlenet-1378be20.pth",
+}
+
 
 quant_model_urls = {
     # fp32 GoogLeNet ported from TensorFlow, with weights quantized in PyTorch

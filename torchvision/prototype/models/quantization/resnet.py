@@ -1,20 +1,18 @@
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
-from torchvision.prototype.transforms import ImageClassificationEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.quantization.resnet import (
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
+from torchvision.models.quantization.resnet import (
     QuantizableBasicBlock,
     QuantizableBottleneck,
     QuantizableResNet,
     _replace_relu,
     quantize_model,
 )
-from torchvision.models._api import WeightsEnum, Weights
-from torchvision.models._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..resnet import ResNet18_Weights, ResNet50_Weights, ResNeXt101_32X8D_Weights
+from torchvision.models.resnet import ResNet18_Weights, ResNet50_Weights, ResNeXt101_32X8D_Weights
+from torchvision.transforms import ImageClassificationEval, InterpolationMode
 
 
 __all__ = [

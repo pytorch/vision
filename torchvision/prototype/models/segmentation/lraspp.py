@@ -1,14 +1,12 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import SemanticSegmentationEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3
 from torchvision.models._api import WeightsEnum, Weights
 from torchvision.models._meta import _VOC_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_value_param
+from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
+from torchvision.models.segmentation.lraspp import LRASPP, _lraspp_mobilenetv3
+from torchvision.transforms import SemanticSegmentationEval, InterpolationMode
 
 
 __all__ = ["LRASPP", "LRASPP_MobileNet_V3_Large_Weights", "lraspp_mobilenet_v3_large"]

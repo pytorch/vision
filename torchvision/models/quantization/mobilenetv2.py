@@ -3,7 +3,7 @@ from typing import Any, Optional
 from torch import Tensor
 from torch import nn
 from torch.ao.quantization import QuantStub, DeQuantStub
-from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, model_urls
+from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import Conv2dNormActivation
@@ -11,6 +11,12 @@ from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
 __all__ = ["QuantizableMobileNetV2", "mobilenet_v2"]
+
+
+model_urls = {
+    "mobilenet_v2": "https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
+}
+
 
 quant_model_urls = {
     "mobilenet_v2_qnnpack": "https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth"

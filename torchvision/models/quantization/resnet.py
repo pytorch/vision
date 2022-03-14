@@ -3,12 +3,19 @@ from typing import Any, Type, Union, List, Optional
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
+from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 __all__ = ["QuantizableResNet", "resnet18", "resnet50", "resnext101_32x8d"]
+
+
+model_urls = {
+    "resnet18": "https://download.pytorch.org/models/resnet18-f37072fd.pth",
+    "resnet50": "https://download.pytorch.org/models/resnet50-0676ba61.pth",
+    "resnext101_32x8d": "https://download.pytorch.org/models/resnext101_32x8d-8ba56ff5.pth",
+}
 
 
 quant_model_urls = {

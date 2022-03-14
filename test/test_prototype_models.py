@@ -5,8 +5,8 @@ import pytest
 import test_models as TM
 import torch
 from common_utils import cpu_and_gpu, needs_cuda
-from torchvision.prototype import models
 from torchvision.models._api import WeightsEnum, Weights
+from torchvision.prototype import models
 from torchvision.prototype.models._utils import handle_legacy_interface
 
 run_if_test_with_prototype = pytest.mark.skipif(

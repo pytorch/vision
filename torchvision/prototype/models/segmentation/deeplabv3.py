@@ -1,16 +1,13 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import SemanticSegmentationEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.segmentation.deeplabv3 import DeepLabV3, _deeplabv3_mobilenetv3, _deeplabv3_resnet
 from torchvision.models._api import WeightsEnum, Weights
 from torchvision.models._meta import _VOC_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
-from ..resnet import resnet50, resnet101
-from ..resnet import ResNet50_Weights, ResNet101_Weights
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_value_param
+from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
+from torchvision.models.resnet import resnet50, resnet101, ResNet50_Weights, ResNet101_Weights
+from torchvision.models.segmentation.deeplabv3 import DeepLabV3, _deeplabv3_mobilenetv3, _deeplabv3_resnet
+from torchvision.transforms import SemanticSegmentationEval, InterpolationMode
 
 
 __all__ = [

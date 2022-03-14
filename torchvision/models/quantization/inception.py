@@ -18,6 +18,12 @@ __all__ = [
 ]
 
 
+model_urls = {
+    # Inception v3 ported from TensorFlow
+    "inception_v3_google": "https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
+}
+
+
 quant_model_urls = {
     # fp32 weights ported from TensorFlow, quantized in PyTorch
     "inception_v3_google_fbgemm": "https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth"
@@ -225,7 +231,7 @@ def inception_v3(
                 model.AuxLogits = None
             model_url = quant_model_urls["inception_v3_google_" + backend]
         else:
-            model_url = inception_module.model_urls["inception_v3_google"]
+            model_url = model_urls["inception_v3_google"]
 
         state_dict = load_state_dict_from_url(model_url, progress=progress)
 

@@ -5,8 +5,8 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ..utils import _log_api_usage_once
 from ..transforms import ImageClassificationEval, InterpolationMode
+from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface, _ovewrite_named_param

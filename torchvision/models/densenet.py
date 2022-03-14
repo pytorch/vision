@@ -1,6 +1,6 @@
 import re
-from functools import partial
 from collections import OrderedDict
+from functools import partial
 from typing import Any, List, Optional, Tuple
 
 import torch
@@ -11,7 +11,6 @@ from torch import Tensor
 
 from ..transforms import ImageClassificationEval, InterpolationMode
 from ..utils import _log_api_usage_once
-
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface, _ovewrite_named_param
@@ -276,6 +275,7 @@ _COMMON_META = {
     "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/pull/116",
 }
+
 
 class DenseNet121_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(

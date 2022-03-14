@@ -2,19 +2,17 @@ from functools import partial
 from typing import Any, List, Optional, Union
 
 import torch
-from torchvision.prototype.transforms import ImageClassificationEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.quantization.mobilenetv3 import (
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
+from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights, _mobilenet_v3_conf
+from torchvision.models.quantization.mobilenetv3 import (
     InvertedResidualConfig,
     QuantizableInvertedResidual,
     QuantizableMobileNetV3,
     _replace_relu,
 )
-from torchvision.models._api import WeightsEnum, Weights
-from torchvision.models._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..mobilenetv3 import MobileNet_V3_Large_Weights, _mobilenet_v3_conf
+from torchvision.transforms import ImageClassificationEval, InterpolationMode
 
 
 __all__ = [

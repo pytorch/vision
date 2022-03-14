@@ -1,18 +1,16 @@
 from functools import partial
 from typing import Any, List, Optional, Union
 
-from torchvision.prototype.transforms import ImageClassificationEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.quantization.shufflenetv2 import (
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
+from torchvision.models.quantization.shufflenetv2 import (
     QuantizableShuffleNetV2,
     _replace_relu,
     quantize_model,
 )
-from torchvision.models._api import WeightsEnum, Weights
-from torchvision.models._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights
+from torchvision.models.shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights
+from torchvision.transforms import ImageClassificationEval, InterpolationMode
 
 
 __all__ = [

@@ -2,10 +2,10 @@ from functools import partial
 from typing import Any, Callable, List, Optional, Sequence, Type, Union
 
 from torch import nn
-from torchvision.prototype.transforms import VideoClassificationEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.video.resnet import (
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _KINETICS400_CATEGORIES
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
+from torchvision.models.video.resnet import (
     BasicBlock,
     BasicStem,
     Bottleneck,
@@ -15,9 +15,7 @@ from ....models.video.resnet import (
     R2Plus1dStem,
     VideoResNet,
 )
-from torchvision.models._api import WeightsEnum, Weights
-from torchvision.models._meta import _KINETICS400_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from torchvision.transforms import VideoClassificationEval, InterpolationMode
 
 
 __all__ = [

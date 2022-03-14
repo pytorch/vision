@@ -1,19 +1,17 @@
 import warnings
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import ObjectDetectionEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.detection.ssd import (
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _COCO_CATEGORIES
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_value_param
+from torchvision.models.detection.ssd import (
     _validate_trainable_layers,
     _vgg_extractor,
     DefaultBoxGenerator,
     SSD,
 )
-from torchvision.models._api import WeightsEnum, Weights
-from torchvision.models._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..vgg import VGG16_Weights, vgg16
+from torchvision.models.vgg import VGG16_Weights, vgg16
+from torchvision.transforms import ObjectDetectionEval, InterpolationMode
 
 
 __all__ = [

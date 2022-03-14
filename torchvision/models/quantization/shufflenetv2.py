@@ -14,6 +14,13 @@ __all__ = [
     "shufflenet_v2_x1_0",
 ]
 
+
+model_urls = {
+    "shufflenetv2_x0.5": "https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
+    "shufflenetv2_x1.0": "https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
+}
+
+
 quant_model_urls = {
     "shufflenetv2_x0.5_fbgemm": "https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
     "shufflenetv2_x1.0_fbgemm": "https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
@@ -96,7 +103,7 @@ def _shufflenetv2(
         if quantize:
             model_url = quant_model_urls[arch + "_" + backend]
         else:
-            model_url = shufflenetv2.model_urls[arch]
+            model_url = model_urls[arch]
 
         state_dict = load_state_dict_from_url(model_url, progress=progress)
 

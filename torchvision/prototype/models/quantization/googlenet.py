@@ -2,18 +2,16 @@ import warnings
 from functools import partial
 from typing import Any, Optional, Union
 
-from torchvision.prototype.transforms import ImageClassificationEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.quantization.googlenet import (
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _IMAGENET_CATEGORIES
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_named_param
+from torchvision.models.googlenet import GoogLeNet_Weights
+from torchvision.models.quantization.googlenet import (
     QuantizableGoogLeNet,
     _replace_relu,
     quantize_model,
 )
-from torchvision.models._api import WeightsEnum, Weights
-from torchvision.models._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..googlenet import GoogLeNet_Weights
+from torchvision.transforms import ImageClassificationEval, InterpolationMode
 
 
 __all__ = [

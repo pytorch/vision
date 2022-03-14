@@ -1,10 +1,10 @@
 from typing import Any, Optional, Union
 
 from torch import nn
-from torchvision.prototype.transforms import ObjectDetectionEval
-from torchvision.transforms.functional import InterpolationMode
-
-from ....models.detection.faster_rcnn import (
+from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._meta import _COCO_CATEGORIES
+from torchvision.models._utils import handle_legacy_interface, _ovewrite_value_param
+from torchvision.models.detection.faster_rcnn import (
     _mobilenet_extractor,
     _resnet_fpn_extractor,
     _validate_trainable_layers,
@@ -13,11 +13,9 @@ from ....models.detection.faster_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from torchvision.models._api import WeightsEnum, Weights
-from torchvision.models._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
-from ..resnet import ResNet50_Weights, resnet50
+from torchvision.models.mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
+from torchvision.models.resnet import ResNet50_Weights, resnet50
+from torchvision.transforms import ObjectDetectionEval, InterpolationMode
 
 
 __all__ = [

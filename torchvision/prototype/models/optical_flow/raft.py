@@ -2,14 +2,12 @@ from typing import Optional
 
 from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
+from torchvision.models._api import Weights
+from torchvision.models._api import WeightsEnum
+from torchvision.models._utils import handle_legacy_interface
 from torchvision.models.optical_flow import RAFT
 from torchvision.models.optical_flow.raft import _raft, BottleneckBlock, ResidualBlock
-from torchvision.prototype.transforms import OpticalFlowEval
-from torchvision.transforms.functional import InterpolationMode
-
-from torchvision.models._api import WeightsEnum
-from torchvision.models._api import Weights
-from .._utils import handle_legacy_interface
+from torchvision.transforms import OpticalFlowEval, InterpolationMode
 
 
 __all__ = (
