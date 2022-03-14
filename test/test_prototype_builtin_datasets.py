@@ -10,8 +10,8 @@ from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
-from torchvision.prototype import transforms, datasets
 from torchvision._utils import sequence_to_str
+from torchvision.prototype import transforms, datasets
 
 
 assert_samples_equal = functools.partial(
