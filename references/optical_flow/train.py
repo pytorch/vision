@@ -130,7 +130,8 @@ def _evaluate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
             for i in range(num_processed_samples, len(val_dataset)):
                 inner_loop(val_dataset[i])
 
-    logger.synchronize_between_processes()
+        logger.synchronize_between_processes()
+
     print(header, logger)
 
 
@@ -215,18 +216,13 @@ def main(args):
     else:
         model = torchvision.models.optical_flow.__dict__[args.model](pretrained=args.pretrained)
 
-    model.to(device)
-
     if args.distributed:
         model = model.to(args.local_rank)
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
-
-    if args.train_dataset is None:
-        # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
-        torch.backends.cudnn.benchmark = False
-        torch.backends.cudnn.deterministic = True
-        evaluate(model, args)
-        return
+        model_without_ddp = model.module
+    else:
+        model.to(device)
+        model_without_ddp = model
 
     print(f"Parameter Count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
@@ -246,12 +242,19 @@ def main(args):
 
     if args.resume is not None:
         checkpoint = torch.load(args.resume, map_location="cpu")
-        model.load_state_dict(checkpoint["model"])
+        model_without_ddp.load_state_dict(checkpoint["model"])
         optimizer.load_state_dict(checkpoint["optimizer"])
         scheduler.load_state_dict(checkpoint["scheduler"])
         args.start_epoch = checkpoint["epoch"] + 1
     else:
         args.start_epoch = 0
+
+    if args.train_dataset is None:
+        # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        evaluate(model, args)
+        return
 
     torch.backends.cudnn.benchmark = True
 
@@ -295,7 +298,7 @@ def main(args):
 
         if not args.distributed or args.rank == 0:
             checkpoint = {
-                "model": model.state_dict(),
+                "model": model_without_ddp.state_dict(),
                 "optimizer": optimizer.state_dict(),
                 "scheduler": scheduler.state_dict(),
                 "epoch": current_epoch,
