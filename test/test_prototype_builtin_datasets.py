@@ -11,7 +11,7 @@ from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe 
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
 from torchvision.prototype import transforms, datasets
-from torchvision.prototype.utils._internal import sequence_to_str
+from torchvision._utils import sequence_to_str
 
 
 assert_samples_equal = functools.partial(

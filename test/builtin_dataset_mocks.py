@@ -20,7 +20,7 @@ from datasets_utils import make_zip, make_tar, create_image_folder, create_image
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype.datasets._api import find
-from torchvision.prototype.utils._internal import sequence_to_str
+from torchvision._utils import sequence_to_str
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
