@@ -305,7 +305,7 @@ class FastRCNNPredictor(nn.Module):
 
     def forward(self, x):
         if x.dim() == 4:
-            if not list(x.shape[2:]) == [1, 1]:
+            if list(x.shape[2:]) != [1, 1]:
                 raise ValueError(
                     f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}"
                 )

@@ -24,14 +24,14 @@ def crop(clip, i, j, h, w):
     Args:
         clip (torch.tensor): Video clip to be cropped. Size is (C, T, H, W)
     """
-    if not len(clip.size()) == 4:
+    if len(clip.size()) != 4:
         raise ValueError("clip should be a 4D tensor")
     return clip[..., i : i + h, j : j + w]
 
 
 def resize(clip, target_size, interpolation_mode):
-    if not len(target_size) == 2:
-        raise ValueError("target size should be tuple (height, width)")
+    if len(target_size) != 2:
+        raise ValueError(f"target size should be tuple (height, width), instead got {target_size}")
     return torch.nn.functional.interpolate(clip, size=target_size, mode=interpolation_mode, align_corners=False)
 
 
@@ -60,7 +60,7 @@ def center_crop(clip, crop_size):
         raise ValueError("clip should be a 4D torch.tensor")
     h, w = clip.size(-2), clip.size(-1)
     th, tw = crop_size
-    if not h >= th and w >= tw:
+    if h < th or w < tw:
         raise ValueError("height and width must be no smaller than crop_size")
 
     i = int(round((h - th) / 2.0))

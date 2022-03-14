@@ -50,7 +50,7 @@ class GoogLeNet(nn.Module):
                 FutureWarning,
             )
             init_weights = True
-        if not len(blocks) == 3:
+        if len(blocks) != 3:
             raise ValueError(f"blocks length should be 3 instead of {len(blocks)}")
         conv_block = blocks[0]
         inception_block = blocks[1]

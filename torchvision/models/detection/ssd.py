@@ -196,7 +196,7 @@ class SSD(nn.Module):
             else:
                 out_channels = det_utils.retrieve_out_channels(backbone, size)
 
-            if not len(out_channels) == len(anchor_generator.aspect_ratios):
+            if len(out_channels) != len(anchor_generator.aspect_ratios):
                 raise RuntimeError(
                     f"The length of the output channels from the backbone ({len(out_channels)}) do not match the length of the anchor generator aspect ratios ({len(anchor_generator.aspect_ratios)})"
                 )
@@ -325,7 +325,7 @@ class SSD(nn.Module):
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            if not len(val) == 2:
+            if not len(val) != 2:
                 raise ValueError(
                     f"The last two dimensions of the input tensors should contain H and W, instead got {img.shape[-2:]}"
                 )
@@ -538,7 +538,7 @@ def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
 
     # find the index of the layer from which we wont freeze
     if not 0 <= trainable_layers <= num_stages:
-        raise ValueError(f"trainable_layers should be in the range [0, {num_stages}].")
+        raise ValueError(f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}")
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:

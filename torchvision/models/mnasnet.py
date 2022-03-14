@@ -58,8 +58,8 @@ def _stack(
     in_ch: int, out_ch: int, kernel_size: int, stride: int, exp_factor: int, repeats: int, bn_momentum: float
 ) -> nn.Sequential:
     """Creates a stack of inverted residuals."""
-    if not repeats >= 1:
-        raise ValueError("repeats should be >= 1")
+    if repeats < 1:
+        raise ValueError(f"repeats should be >= 1, instead got {repeats}")
     # First one has no skip, because feature map size changes.
     first = _InvertedResidual(in_ch, out_ch, kernel_size, stride, exp_factor, bn_momentum=bn_momentum)
     remaining = []

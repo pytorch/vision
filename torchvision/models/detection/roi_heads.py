@@ -299,8 +299,10 @@ def heatmaps_to_keypoints(maps, rois):
 def keypointrcnn_loss(keypoint_logits, proposals, gt_keypoints, keypoint_matched_idxs):
     # type: (Tensor, List[Tensor], List[Tensor], List[Tensor]) -> Tensor
     N, K, H, W = keypoint_logits.shape
-    if not H == W:
-        raise ValueError("keypoint_logits height and width (last two elements of shape) should be equal.")
+    if H != W:
+        raise ValueError(
+            f"keypoint_logits height and width (last two elements of shape) should be equal. Instead got H = {H} and W = {W}"
+        )
     discretization_size = H
     heatmaps = []
     valid = []
@@ -743,12 +745,12 @@ class RoIHeads(nn.Module):
                 # TODO: https://github.com/pytorch/pytorch/issues/26731
                 floating_point_types = (torch.float, torch.double, torch.half)
                 if not t["boxes"].dtype in floating_point_types:
-                    raise TypeError("target boxes must of float type")
+                    raise TypeError(f"target boxes must of float type, instead got {t['boxes'].dtype}")
                 if not t["labels"].dtype == torch.int64:
-                    raise TypeError("target labels must of int64 type")
+                    raise TypeError("target labels must of int64 type, instead got {t['labels'].dtype}")
                 if self.has_keypoint():
                     if not t["keypoints"].dtype == torch.float32:
-                        raise TypeError("target keypoints must of float type")
+                        raise TypeError(f"target keypoints must of float type, instead got {t['keypoints'].dtype}")
 
         if self.training:
             proposals, matched_idxs, labels, regression_targets = self.select_training_samples(proposals, targets)

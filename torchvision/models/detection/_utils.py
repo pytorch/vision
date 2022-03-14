@@ -335,7 +335,7 @@ class Matcher:
         """
         self.BELOW_LOW_THRESHOLD = -1
         self.BETWEEN_THRESHOLDS = -2
-        if not low_threshold <= high_threshold:
+        if low_threshold > high_threshold:
             raise ValueError("low_threshold should be <= high_threshold")
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold

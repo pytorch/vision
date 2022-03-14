@@ -247,7 +247,7 @@ def ssdlite320_mobilenet_v3_large(
     anchor_generator = DefaultBoxGenerator([[2, 3] for _ in range(6)], min_ratio=0.2, max_ratio=0.95)
     out_channels = det_utils.retrieve_out_channels(backbone, size)
     num_anchors = anchor_generator.num_anchors_per_location()
-    if not len(out_channels) == len(anchor_generator.aspect_ratios):
+    if len(out_channels) != len(anchor_generator.aspect_ratios):
         raise RuntimeError(
             f"The length of the output channels from the backbone {len(out_channels)} do not match the length of the anchor generator aspect ratios {len(anchor_generator.aspect_ratios)}"
         )

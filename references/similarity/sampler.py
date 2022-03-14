@@ -47,7 +47,7 @@ class PKSampler(Sampler):
         self.groups = create_groups(groups, self.k)
 
         # Ensures there are enough classes to sample from
-        if not len(self.groups) >= p:
+        if len(self.groups) < p:
             raise ValueError("There are not enought classes to sample from")
 
     def __iter__(self):

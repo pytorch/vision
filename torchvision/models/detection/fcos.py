@@ -388,7 +388,7 @@ class FCOS(nn.Module):
             aspect_ratios = ((1.0,),) * len(anchor_sizes)  # set only one anchor
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
         self.anchor_generator = anchor_generator
-        if not self.anchor_generator.num_anchors_per_location()[0] == 1:
+        if self.anchor_generator.num_anchors_per_location()[0] != 1:
             raise ValueError(
                 f"anchor_generator.num_anchors_per_location()[0] should be 1 instead of {anchor_generator.num_anchors_per_location()[0]}"
             )
@@ -571,7 +571,7 @@ class FCOS(nn.Module):
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            if not len(val) == 2:
+            if not len(val) != 2:
                 raise ValueError(
                     f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}"
                 )

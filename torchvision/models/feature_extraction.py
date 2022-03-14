@@ -291,8 +291,10 @@ class DualGraphModule(fx.GraphModule):
         # Locally defined Tracers are not pickleable. This is needed because torch.package will
         # serialize a GraphModule without retaining the Graph, and needs to use the correct Tracer
         # to re-create the Graph during deserialization.
-        if not self.eval_graph._tracer_cls == self.train_graph._tracer_cls:
-            raise RuntimeError("Train mode and eval mode should use the same tracer class")
+        if self.eval_graph._tracer_cls != self.train_graph._tracer_cls:
+            raise RuntimeError(
+                f"Train mode and eval mode should use the same tracer class. Instead got {self.eval_graph._tracer_cls} for eval vs {self.train_graph._tracer_cls} for train"
+            )
         self._tracer_cls = None
         if self.graph._tracer_cls and "<locals>" not in self.graph._tracer_cls.__qualname__:
             self._tracer_cls = self.graph._tracer_cls
