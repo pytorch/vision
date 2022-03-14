@@ -4,10 +4,11 @@ import os
 import pytest
 import test_models as TM
 import torch
+import torchvision
 from common_utils import cpu_and_gpu, needs_cuda
 from torchvision.models._api import WeightsEnum, Weights
+from torchvision.models._utils import handle_legacy_interface
 from torchvision.prototype import models
-from torchvision.prototype.models._utils import handle_legacy_interface
 
 run_if_test_with_prototype = pytest.mark.skipif(
     os.getenv("PYTORCH_TEST_WITH_PROTOTYPE") != "1",
@@ -88,7 +89,7 @@ def test_naming_conventions(model_fn):
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models)
+    TM.get_models_from_module(torchvision.models)
     + TM.get_models_from_module(models.detection)
     + TM.get_models_from_module(models.quantization)
     + TM.get_models_from_module(models.segmentation)
@@ -142,13 +143,6 @@ def test_schema_meta_validation(model_fn):
     assert not bad_names
 
 
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@run_if_test_with_prototype
-def test_classification_model(model_fn, dev):
-    TM.test_classification_model(model_fn, dev)
-
-
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.detection))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
@@ -186,8 +180,7 @@ def test_raft(model_builder, scripted):
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models)
-    + TM.get_models_from_module(models.detection)
+    TM.get_models_from_module(models.detection)
     + TM.get_models_from_module(models.quantization)
     + TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
