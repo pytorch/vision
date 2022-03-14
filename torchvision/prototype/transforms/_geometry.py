@@ -260,12 +260,12 @@ class BatchMultiCrop(Transform):
 
 class RandomZoomOut(Transform):
     def __init__(
-        self, fill: Optional[List[float]] = None, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
+        self, fill: Union[float, Sequence[float]] = 0.0, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
     ) -> None:
         super().__init__()
 
         if fill is None:
-            fill = [0.0, 0.0, 0.0]
+            fill = 0.0
         self.fill = fill
 
         self.side_range = side_range
@@ -276,7 +276,7 @@ class RandomZoomOut(Transform):
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
-        _, orig_h, orig_w = get_image_dimensions(image)
+        orig_c, orig_h, orig_w = get_image_dimensions(image)
 
         r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
         canvas_width = int(orig_w * r)
@@ -287,23 +287,45 @@ class RandomZoomOut(Transform):
         top = int((canvas_height - orig_h) * r[1])
         right = canvas_width - (left + orig_w)
         bottom = canvas_height - (top + orig_h)
+        padding = [left, top, right, bottom]
 
-        return dict(left=left, top=top, right=right, bottom=bottom)
+        fill = self.fill
+        if not isinstance(fill, collections.abc.Sequence):
+            fill = [fill] * orig_c
+
+        return dict(padding=padding, fill=fill)
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, features.Image):
-            output = F.zoom_out_image_tensor(input, **params, fill=self.fill)
-            return features.Image.new_like(input, output)
-        elif isinstance(input, torch.Tensor) and not isinstance(input, features._Feature):
-            return F.zoom_out_image_tensor(input, **params, fill=self.fill)
-        elif isinstance(input, PIL.Image.Image):
-            return F.zoom_out_image_pil(input, **params, fill=self.fill)
-        elif isinstance(input, features.BoundingBox):
-            output = F.zoom_out_bounding_box(input, **params, format=input.format)
+        if isinstance(input, features.Image) or is_simple_tensor(input):
+            # PyTorch's pad supports only integers on fill. So we need to overwrite the colour
+            output = F.pad_image_tensor(input, params["padding"], fill=0, padding_mode="constant")
 
+            left, top, right, bottom = params["padding"]
+            fill = torch.tensor(params["fill"], dtype=input.dtype, device=input.device).to().view(-1, 1, 1)
+
+            output[..., :top, :] = fill
+            output[..., :, :left] = fill
+            output[..., -bottom:, :] = fill
+            output[..., :, -right:] = fill
+
+            if isinstance(input, features.Image):
+                output = features.Image.new_like(input, output)
+
+            return output
+        elif isinstance(input, PIL.Image.Image):
+            return F.pad_image_pil(
+                input,
+                params["padding"],
+                fill=tuple(int(v) if input.mode != "F" else v for v in params["fill"]),
+                padding_mode="constant",
+            )
+        elif isinstance(input, features.BoundingBox):
+            output = F.pad_bounding_box(input, params["padding"], format=input.format)
+
+            left, top, right, bottom = params["padding"]
             height, width = input.image_size
-            height += params["top"] + params["bottom"]
-            width += params["left"] + params["right"]
+            height += top + bottom
+            width += left + right
 
             return features.BoundingBox.new_like(input, output, image_size=(height, width))
         else:

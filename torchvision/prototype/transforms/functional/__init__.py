@@ -65,9 +65,6 @@ from ._geometry import (
     five_crop_image_pil,
     ten_crop_image_tensor,
     ten_crop_image_pil,
-    zoom_out_image_pil,
-    zoom_out_image_tensor,
-    zoom_out_bounding_box,
 )
 from ._misc import normalize_image_tensor, gaussian_blur_image_tensor
 from ._type_conversion import decode_image_with_pil, decode_video_with_av, label_to_one_hot
