@@ -55,8 +55,8 @@ def _build_model(fn, **kwargs):
 @pytest.mark.parametrize(
     "name, weight",
     [
-        ("ResNet50_Weights.IMAGENET1K_V1", models.ResNet50_Weights.IMAGENET1K_V1),
-        ("ResNet50_Weights.DEFAULT", models.ResNet50_Weights.IMAGENET1K_V2),
+        ("ResNet50_Weights.IMAGENET1K_V1", torchvision.models.ResNet50_Weights.IMAGENET1K_V1),
+        ("ResNet50_Weights.DEFAULT", torchvision.models.ResNet50_Weights.IMAGENET1K_V2),
         (
             "ResNet50_QuantizedWeights.DEFAULT",
             models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2,
@@ -68,7 +68,7 @@ def _build_model(fn, **kwargs):
     ],
 )
 def test_get_weight(name, weight):
-    assert models.get_weight(name) == weight
+    assert torchvision.models.get_weight(name) == weight
 
 
 @pytest.mark.parametrize(
