@@ -350,6 +350,26 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
+def _parse_pad_padding(padding: List[int]) -> List[int]:
+    if isinstance(padding, int):
+        if torch.jit.is_scripting():
+            # This maybe unreachable
+            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
+        pad_left = pad_right = pad_top = pad_bottom = padding
+    elif len(padding) == 1:
+        pad_left = pad_right = pad_top = pad_bottom = padding[0]
+    elif len(padding) == 2:
+        pad_left = pad_right = padding[0]
+        pad_top = pad_bottom = padding[1]
+    else:
+        pad_left = padding[0]
+        pad_top = padding[1]
+        pad_right = padding[2]
+        pad_bottom = padding[3]
+
+    return [pad_left, pad_right, pad_top, pad_bottom]
+
+
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     _assert_image_tensor(img)
 
@@ -369,23 +389,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
-    if isinstance(padding, int):
-        if torch.jit.is_scripting():
-            # This maybe unreachable
-            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
-        pad_left = pad_right = pad_top = pad_bottom = padding
-    elif len(padding) == 1:
-        pad_left = pad_right = pad_top = pad_bottom = padding[0]
-    elif len(padding) == 2:
-        pad_left = pad_right = padding[0]
-        pad_top = pad_bottom = padding[1]
-    else:
-        pad_left = padding[0]
-        pad_top = padding[1]
-        pad_right = padding[2]
-        pad_bottom = padding[3]
-
-    p = [pad_left, pad_right, pad_top, pad_bottom]
+    p = _parse_pad_padding(padding)
 
     if padding_mode == "edge":
         # remap padding_mode str
