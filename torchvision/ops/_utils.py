@@ -30,11 +30,11 @@ def check_roi_boxes_shape(boxes: Union[Tensor, List[Tensor]]):
         for _tensor in boxes:
             if _tensor.size(1) != 4:
                 raise ValueError(
-                    f"The shape of the tensor in the boxes list is not correct as List[Tensor[L, 4]], instead got {_tensor.size}"
+                    f"The shape of the tensor in the boxes list is not correct as List[Tensor[L, 4]]."
                 )
     elif isinstance(boxes, torch.Tensor):
         if boxes.size(1) != 5:
-            raise ValueError(f"The boxes tensor shape is not correct as Tensor[K, 5], instead got {boxes.size}")
+            raise ValueError(f"The boxes tensor shape is not correct as Tensor[K, 5]/")
     else:
         raise TypeError(f"boxes is expected to be a Tensor[L, 5] or a List[Tensor[K, 4]], instead got {type(boxes)}")
     return
