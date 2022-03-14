@@ -303,10 +303,13 @@ class RandomZoomOut(Transform):
             left, top, right, bottom = params["padding"]
             fill = torch.tensor(params["fill"], dtype=input.dtype, device=input.device).to().view(-1, 1, 1)
 
+            # TODO: only perform this if padding is actually needed, e.g `top > 0`
             output[..., :top, :] = fill
             output[..., :, :left] = fill
-            output[..., -bottom:, :] = fill
-            output[..., :, -right:] = fill
+            _, height, width = get_image_dimensions(input)
+            # TODO: use negative indexing, e.g. -bottom instead of (top + height) if the check above is implemented
+            output[..., (top + height) :, :] = fill
+            output[..., :, (left + width) :] = fill
 
             if isinstance(input, features.Image):
                 output = features.Image.new_like(input, output)
