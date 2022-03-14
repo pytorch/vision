@@ -22,7 +22,7 @@ plt.rcParams["savefig.bbox"] = 'tight'
 def show(imgs):
     if not isinstance(imgs, list):
         imgs = [imgs]
-    fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False)
     for i, img in enumerate(imgs):
         img = img.detach()
         img = F.to_pil_image(img)

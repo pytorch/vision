@@ -44,22 +44,19 @@ def get_image_num_channels(img: Tensor) -> int:
     raise TypeError(f"Input ndim should be 2 or more. Got {img.ndim}")
 
 
-def _max_value(dtype: torch.dtype) -> float:
-    # TODO: replace this method with torch.iinfo when it gets torchscript support.
-    # https://github.com/pytorch/pytorch/issues/41492
-
-    a = torch.tensor(2, dtype=dtype)
-    signed = 1 if torch.tensor(0, dtype=dtype).is_signed() else 0
-    bits = 1
-    max_value = torch.tensor(-signed, dtype=torch.long)
-    while True:
-        next_value = a.pow(bits - signed).sub(1)
-        if next_value > max_value:
-            max_value = next_value
-            bits *= 2
-        else:
-            break
-    return max_value.item()
+def _max_value(dtype: torch.dtype) -> int:
+    if dtype == torch.uint8:
+        return int(2 ** 8) - 1
+    elif dtype == torch.int8:
+        return int(2 ** 7) - 1
+    elif dtype == torch.int16:
+        return int(2 ** 15) - 1
+    elif dtype == torch.int32:
+        return int(2 ** 31) - 1
+    elif dtype == torch.int64:
+        return int(2 ** 63) - 1
+    else:
+        return 1
 
 
 def _assert_channels(img: Tensor, permitted: List[int]) -> None:
@@ -91,11 +88,11 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
         # `max + 1 - epsilon` provides more evenly distributed mapping of
         # ranges of floats to ints.
         eps = 1e-3
-        max_val = _max_value(dtype)
+        max_val = float(_max_value(dtype))
         result = image.mul(max_val + 1.0 - eps)
         return result.to(dtype)
     else:
-        input_max = _max_value(image.dtype)
+        input_max = float(_max_value(image.dtype))
 
         # int to float
         # TODO: replace with dtype.is_floating_point when torchscript supports it
@@ -103,7 +100,7 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             image = image.to(dtype)
             return image / input_max
 
-        output_max = _max_value(dtype)
+        output_max = float(_max_value(dtype))
 
         # int to int
         if input_max > output_max:
@@ -353,6 +350,26 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
+def _parse_pad_padding(padding: List[int]) -> List[int]:
+    if isinstance(padding, int):
+        if torch.jit.is_scripting():
+            # This maybe unreachable
+            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
+        pad_left = pad_right = pad_top = pad_bottom = padding
+    elif len(padding) == 1:
+        pad_left = pad_right = pad_top = pad_bottom = padding[0]
+    elif len(padding) == 2:
+        pad_left = pad_right = padding[0]
+        pad_top = pad_bottom = padding[1]
+    else:
+        pad_left = padding[0]
+        pad_top = padding[1]
+        pad_right = padding[2]
+        pad_bottom = padding[3]
+
+    return [pad_left, pad_right, pad_top, pad_bottom]
+
+
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     _assert_image_tensor(img)
 
@@ -372,23 +389,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
-    if isinstance(padding, int):
-        if torch.jit.is_scripting():
-            # This maybe unreachable
-            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
-        pad_left = pad_right = pad_top = pad_bottom = padding
-    elif len(padding) == 1:
-        pad_left = pad_right = pad_top = pad_bottom = padding[0]
-    elif len(padding) == 2:
-        pad_left = pad_right = padding[0]
-        pad_top = pad_bottom = padding[1]
-    else:
-        pad_left = padding[0]
-        pad_top = padding[1]
-        pad_right = padding[2]
-        pad_bottom = padding[3]
-
-    p = [pad_left, pad_right, pad_top, pad_bottom]
+    p = _parse_pad_padding(padding)
 
     if padding_mode == "edge":
         # remap padding_mode str

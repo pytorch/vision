@@ -452,12 +452,12 @@ def test_resize_size_equals_small_edge_size(height, width):
 
 
 class TestPad:
-    def test_pad(self):
+    @pytest.mark.parametrize("fill", [85, 85.0])
+    def test_pad(self, fill):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
         img = torch.ones(3, height, width, dtype=torch.uint8)
         padding = random.randint(1, 20)
-        fill = random.randint(1, 50)
         result = transforms.Compose(
             [
                 transforms.ToPILImage(),
@@ -484,7 +484,7 @@ class TestPad:
         output = transforms.Pad(padding)(img)
         assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
 
-        padding = tuple(random.randint(1, 20) for _ in range(4))
+        padding = [random.randint(1, 20) for _ in range(4)]
         output = transforms.Pad(padding)(img)
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
@@ -1484,6 +1484,15 @@ def test_max_value(dtype):
     # runtime error: 5.7896e+76 is outside the range of representable values of type 'float'
     # for dtype in float_dtypes():
     # self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
+
+
+@pytest.mark.xfail(
+    reason="torch.iinfo() is not supported by torchscript. See https://github.com/pytorch/pytorch/issues/41492."
+)
+def test_max_value_iinfo():
+    @torch.jit.script
+    def max_value(image: torch.Tensor) -> int:
+        return 1 if image.is_floating_point() else torch.iinfo(image.dtype).max
 
 
 @pytest.mark.parametrize("should_vflip", [True, False])
