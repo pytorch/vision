@@ -13,7 +13,11 @@ from torchvision.models.feature_extraction import create_feature_extractor, get_
 
 def get_available_models():
     # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+    return [
+        k
+        for k, v in models.__dict__.items()
+        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
+    ]
 
 
 @pytest.mark.parametrize("backbone_name", ("resnet18", "resnet50"))
