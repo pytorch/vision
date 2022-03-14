@@ -114,7 +114,7 @@ class RandomErasing(T.RandomErasing):
     def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False, max_erase=1):
         super().__init__(p=p, scale=scale, ratio=ratio, value=value, inplace=inplace)
         self.max_erase = max_erase
-        if not self.max_erase > 0:
+        if self.max_erase <= 0:
             raise ValueError("max_raise should be greater than 0")
 
     def forward(self, img1, img2, flow, valid_flow_mask):
