@@ -220,9 +220,9 @@ def affine_bounding_box(
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
     # out_bboxes should be of shape [N boxes, 4]
 
-    return convert_bounding_box_format(out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format).view(
-        original_shape
-    )
+    return convert_bounding_box_format(
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(original_shape)
 
 
 def rotate_image_tensor(
