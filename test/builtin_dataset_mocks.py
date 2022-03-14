@@ -1390,3 +1390,44 @@ def pcam(info, root, config):
             compressed_file.write(compressed_data)
 
     return num_images
+
+
+@register_mock
+def stanford_cars(info, root, config):
+    import scipy.io as io
+    from numpy.core.records import fromarrays
+
+    num_samples = {"train": 5, "test": 7}[config["split"]]
+    num_categories = 3
+
+    devkit = root / "devkit"
+    devkit.mkdir(parents=True)
+
+    if config["split"] == "train":
+        images_folder_name = "cars_train"
+        annotations_mat_path = devkit / "cars_train_annos.mat"
+    else:
+        images_folder_name = "cars_test"
+        annotations_mat_path = root / "cars_test_annos_withlabels.mat"
+
+    create_image_folder(
+        root=root,
+        name=images_folder_name,
+        file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+        num_examples=num_samples,
+    )
+
+    make_tar(root, f"cars_{config.split}.tgz", images_folder_name)
+    bbox = np.random.randint(1, 200, num_samples, dtype=np.uint8)
+    classes = np.random.randint(1, num_categories + 1, num_samples, dtype=np.uint8)
+    fnames = [f"{i:5d}.jpg" for i in range(num_samples)]
+    rec_array = fromarrays(
+        [bbox, bbox, bbox, bbox, classes, fnames],
+        names=["bbox_x1", "bbox_y1", "bbox_x2", "bbox_y2", "class", "fname"],
+    )
+
+    io.savemat(annotations_mat_path, {"annotations": rec_array})
+    if config.split == "train":
+        make_tar(root, "car_devkit.tgz", devkit, compression="gz")
+
+    return num_samples

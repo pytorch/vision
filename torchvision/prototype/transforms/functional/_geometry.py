@@ -314,3 +314,79 @@ def resized_crop_image_pil(
 ) -> PIL.Image.Image:
     img = crop_image_pil(img, top, left, height, width)
     return resize_image_pil(img, size, interpolation=interpolation)
+
+
+def _parse_five_crop_size(size: List[int]) -> List[int]:
+    if isinstance(size, numbers.Number):
+        size = [int(size), int(size)]
+    elif isinstance(size, (tuple, list)) and len(size) == 1:
+        size = [size[0], size[0]]
+
+    if len(size) != 2:
+        raise ValueError("Please provide only two dimensions (h, w) for size.")
+
+    return size
+
+
+def five_crop_image_tensor(
+    img: torch.Tensor, size: List[int]
+) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
+    crop_height, crop_width = _parse_five_crop_size(size)
+    _, image_height, image_width = get_dimensions_image_tensor(img)
+
+    if crop_width > image_width or crop_height > image_height:
+        msg = "Requested crop size {} is bigger than input size {}"
+        raise ValueError(msg.format(size, (image_height, image_width)))
+
+    tl = crop_image_tensor(img, 0, 0, crop_height, crop_width)
+    tr = crop_image_tensor(img, 0, image_width - crop_width, crop_height, crop_width)
+    bl = crop_image_tensor(img, image_height - crop_height, 0, crop_height, crop_width)
+    br = crop_image_tensor(img, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
+    center = center_crop_image_tensor(img, [crop_height, crop_width])
+
+    return tl, tr, bl, br, center
+
+
+def five_crop_image_pil(
+    img: PIL.Image.Image, size: List[int]
+) -> Tuple[PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image, PIL.Image.Image]:
+    crop_height, crop_width = _parse_five_crop_size(size)
+    _, image_height, image_width = get_dimensions_image_pil(img)
+
+    if crop_width > image_width or crop_height > image_height:
+        msg = "Requested crop size {} is bigger than input size {}"
+        raise ValueError(msg.format(size, (image_height, image_width)))
+
+    tl = crop_image_pil(img, 0, 0, crop_height, crop_width)
+    tr = crop_image_pil(img, 0, image_width - crop_width, crop_height, crop_width)
+    bl = crop_image_pil(img, image_height - crop_height, 0, crop_height, crop_width)
+    br = crop_image_pil(img, image_height - crop_height, image_width - crop_width, crop_height, crop_width)
+    center = center_crop_image_pil(img, [crop_height, crop_width])
+
+    return tl, tr, bl, br, center
+
+
+def ten_crop_image_tensor(img: torch.Tensor, size: List[int], vertical_flip: bool = False) -> List[torch.Tensor]:
+    tl, tr, bl, br, center = five_crop_image_tensor(img, size)
+
+    if vertical_flip:
+        img = vertical_flip_image_tensor(img)
+    else:
+        img = horizontal_flip_image_tensor(img)
+
+    tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_tensor(img, size)
+
+    return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]
+
+
+def ten_crop_image_pil(img: PIL.Image.Image, size: List[int], vertical_flip: bool = False) -> List[PIL.Image.Image]:
+    tl, tr, bl, br, center = five_crop_image_pil(img, size)
+
+    if vertical_flip:
+        img = vertical_flip_image_pil(img)
+    else:
+        img = horizontal_flip_image_pil(img)
+
+    tl_flip, tr_flip, bl_flip, br_flip, center_flip = five_crop_image_pil(img, size)
+
+    return [tl, tr, bl, br, center, tl_flip, tr_flip, bl_flip, br_flip, center_flip]

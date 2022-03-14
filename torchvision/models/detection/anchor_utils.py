@@ -121,8 +121,8 @@ class AnchorGenerator(nn.Module):
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         strides = [
             [
-                torch.tensor(image_size[0] // g[0], dtype=torch.int64, device=device),
-                torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device),
+                torch.empty((), dtype=torch.int64, device=device).fill_(image_size[0] // g[0]),
+                torch.empty((), dtype=torch.int64, device=device).fill_(image_size[1] // g[1]),
             ]
             for g in grid_sizes
         ]

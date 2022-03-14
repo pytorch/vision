@@ -5,7 +5,7 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.vision_transformer import VisionTransformer, interpolate_embeddings  # noqa: F401
@@ -38,7 +38,7 @@ _COMMON_META = {
 class ViT_B_16_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_16-c867db91.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 86567656,
@@ -55,7 +55,7 @@ class ViT_B_16_Weights(WeightsEnum):
 class ViT_B_32_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_32-d86f8d99.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 88224232,
@@ -72,7 +72,7 @@ class ViT_B_32_Weights(WeightsEnum):
 class ViT_L_16_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_16-852ce7e3.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=242),
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=242),
         meta={
             **_COMMON_META,
             "num_params": 304326632,
@@ -89,7 +89,7 @@ class ViT_L_16_Weights(WeightsEnum):
 class ViT_L_32_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_32-c7638314.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 306535400,

@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Optional, Union
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.mobilenetv2 import (
@@ -26,7 +26,7 @@ __all__ = [
 class MobileNet_V2_QuantizedWeights(WeightsEnum):
     IMAGENET1K_QNNPACK_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "MobileNetV2",
