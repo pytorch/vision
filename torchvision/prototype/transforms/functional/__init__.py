@@ -55,6 +55,7 @@ from ._geometry import (
     rotate_image_pil,
     pad_image_tensor,
     pad_image_pil,
+    pad_bounding_box,
     crop_image_tensor,
     crop_image_pil,
     perspective_image_tensor,
