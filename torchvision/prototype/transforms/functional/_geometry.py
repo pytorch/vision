@@ -209,7 +209,7 @@ def affine_bounding_box(
     # Single point structure is similar to
     # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
     points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
-    points = torch.cat([points, torch.ones(points.shape[0], 1)], dim=-1)
+    points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
     # 2) Now let's transform the points using affine matrix
     transformed_points = torch.matmul(points, affine_matrix.T)
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
@@ -223,6 +223,27 @@ def affine_bounding_box(
     return convert_bounding_box_format(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
+
+
+def affine_segmentation_mask(
+    img: torch.Tensor,
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, center=center)
+
+    center_f = [0.0, 0.0]
+    if center is not None:
+        _, height, width = get_dimensions_image_tensor(img)
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+
+    translate_f = [1.0 * t for t in translate]
+    matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
+    return _FT.affine(img, matrix, interpolation=InterpolationMode.NEAREST.value, fill=None)
 
 
 def rotate_image_tensor(

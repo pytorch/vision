@@ -51,6 +51,7 @@ from ._geometry import (
     affine_bounding_box,
     affine_image_tensor,
     affine_image_pil,
+    affine_segmentation_mask,
     rotate_image_tensor,
     rotate_image_pil,
     pad_image_tensor,

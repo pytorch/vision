@@ -6,12 +6,12 @@ import numpy as np
 import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
+from common_utils import cpu_and_gpu
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
 from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
-
 
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
 
@@ -138,6 +138,22 @@ def make_one_hot_labels(
         yield make_one_hot_label(extra_dims_)
 
 
+def make_segmentation_mask(size=None, *, max_value=80, extra_dims=(), dtype=torch.uint8):
+    size = size or torch.randint(16, 33, (2,)).tolist()
+    shape = (*extra_dims, 1, *size)
+    data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
+    return features.SegmentationMask(data)
+
+
+def make_segmentation_masks(
+    image_sizes=((32, 32), (32, 42)),
+    dtypes=(torch.long,),
+    extra_dims=((), (4,)),
+):
+    for image_size, dtype, extra_dims_ in itertools.product(image_sizes, dtypes, extra_dims):
+        yield make_segmentation_mask(size=image_size, dtype=dtype, extra_dims=extra_dims_)
+
+
 class SampleInput:
     def __init__(self, *args, **kwargs):
         self.args = args
@@ -248,6 +264,24 @@ def affine_bounding_box():
         )
 
 
+@register_kernel_info_from_sample_inputs_fn
+def affine_segmentation_mask():
+    for image, angle, translate, scale, shear in itertools.product(
+        make_images(extra_dims=()),
+        [-87, 15, 90],  # angle
+        [5, -5],  # translate
+        [0.77, 1.27],  # scale
+        [0, 12],  # shear
+    ):
+        yield SampleInput(
+            image,
+            angle=angle,
+            translate=(translate, translate),
+            scale=scale,
+            shear=(shear, shear),
+        )
+
+
 @pytest.mark.parametrize(
     "kernel",
     [
@@ -278,33 +312,38 @@ def test_eager_vs_scripted(functional_info, sample_input):
     torch.testing.assert_close(eager, scripted)
 
 
-@pytest.mark.parametrize("angle", range(-90, 90, 36))
-@pytest.mark.parametrize("translate", range(-10, 10, 5))
+def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
+    rot = math.radians(angle_)
+    cx, cy = center_
+    tx, ty = translate_
+    sx, sy = [math.radians(sh_) for sh_ in shear_]
+
+    c_matrix = np.array([[1, 0, cx], [0, 1, cy], [0, 0, 1]])
+    t_matrix = np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
+    c_matrix_inv = np.linalg.inv(c_matrix)
+    rs_matrix = np.array(
+        [
+            [scale_ * math.cos(rot), -scale_ * math.sin(rot), 0],
+            [scale_ * math.sin(rot), scale_ * math.cos(rot), 0],
+            [0, 0, 1],
+        ]
+    )
+    shear_x_matrix = np.array([[1, -math.tan(sx), 0], [0, 1, 0], [0, 0, 1]])
+    shear_y_matrix = np.array([[1, 0, 0], [-math.tan(sy), 1, 0], [0, 0, 1]])
+    rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
+    true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
+    return true_matrix
+
+
+@pytest.mark.parametrize("angle", range(-90, 90, 56))
+@pytest.mark.parametrize("translate", range(-10, 10, 8))
 @pytest.mark.parametrize("scale", [0.77, 1.0, 1.27])
-@pytest.mark.parametrize("shear", range(-15, 15, 5))
+@pytest.mark.parametrize("shear", range(-15, 15, 8))
 @pytest.mark.parametrize("center", [None, (12, 14)])
 def test_correctness_affine_bounding_box(angle, translate, scale, shear, center):
     def _compute_expected_bbox(bbox, angle_, translate_, scale_, shear_, center_):
-        rot = math.radians(angle_)
-        cx, cy = center_
-        tx, ty = translate_
-        sx, sy = [math.radians(sh_) for sh_ in shear_]
-
-        c_matrix = np.array([[1, 0, cx], [0, 1, cy], [0, 0, 1]])
-        t_matrix = np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
-        c_matrix_inv = np.linalg.inv(c_matrix)
-        rs_matrix = np.array(
-            [
-                [scale_ * math.cos(rot), -scale_ * math.sin(rot), 0],
-                [scale_ * math.sin(rot), scale_ * math.cos(rot), 0],
-                [0, 0, 1],
-            ]
-        )
-        shear_x_matrix = np.array([[1, -math.tan(sx), 0], [0, 1, 0], [0, 0, 1]])
-        shear_y_matrix = np.array([[1, 0, 0], [-math.tan(sy), 1, 0], [0, 0, 1]])
-        rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
-        true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
-        true_matrix = true_matrix[:2, :]
+        affine_matrix = _compute_affine_matrix(angle_, translate_, scale_, shear_, center_)
+        affine_matrix = affine_matrix[:2, :]
 
         bbox_xyxy = convert_bounding_box_format(
             bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
@@ -317,7 +356,7 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
                 [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
             ]
         )
-        transformed_points = np.matmul(points, true_matrix.T)
+        transformed_points = np.matmul(points, affine_matrix.T)
         out_bbox = [
             np.min(transformed_points[:, 0]),
             np.min(transformed_points[:, 1]),
@@ -328,11 +367,11 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=(32, 32), dtype=torch.float32
         )
         out_bbox = convert_bounding_box_format(
-            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format
+            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
-        return out_bbox
+        return out_bbox.to(bbox.device)
 
-    image_size = (32, 32)
+    image_size = (32, 38)
 
     for bboxes in make_bounding_boxes(
         image_sizes=[
@@ -351,7 +390,7 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             center=center,
         )
         if center is None:
-            center = [s // 2 for s in image_size]
+            center = [s // 2 for s in image_size[::-1]]
 
         bboxes_format = bboxes.format
         bboxes_image_size = bboxes.image_size
@@ -366,14 +405,15 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             expected_bboxes.append(
                 _compute_expected_bbox(bbox, angle, (translate, translate), scale, (shear, shear), center)
             )
-        expected_bboxes = torch.stack(expected_bboxes)
-        if expected_bboxes.shape[0] < 2:
-            expected_bboxes = expected_bboxes.squeeze(0)
-
+        if len(expected_bboxes) > 1:
+            expected_bboxes = torch.stack(expected_bboxes)
+        else:
+            expected_bboxes = expected_bboxes[0]
         torch.testing.assert_close(output_bboxes, expected_bboxes)
 
 
-def test_correctness_affine_bounding_box_on_fixed_input():
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_affine_bounding_box_on_fixed_input(device):
     # Check transformation against known expected output
     image_size = (64, 64)
     # xyxy format
@@ -385,7 +425,7 @@ def test_correctness_affine_bounding_box_on_fixed_input():
     ]
     in_boxes = features.BoundingBox(
         in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
-    )
+    ).to(device)
     # Tested parameters
     angle = 63
     scale = 0.89
@@ -419,5 +459,57 @@ def test_correctness_affine_bounding_box_on_fixed_input():
     )
 
     assert len(output_boxes) == len(expected_bboxes)
-    for a_out_box, out_box in zip(expected_bboxes, output_boxes):
+    for a_out_box, out_box in zip(expected_bboxes, output_boxes.cpu()):
         np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)
+
+
+@pytest.mark.parametrize("angle", [-54, 56])
+@pytest.mark.parametrize("translate", [-7, 8])
+@pytest.mark.parametrize("scale", [0.89, 1.12])
+@pytest.mark.parametrize("shear", [4])
+@pytest.mark.parametrize("center", [None, (12, 14)])
+def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, center):
+    def _compute_expected_mask(mask, angle_, translate_, scale_, shear_, center_):
+        assert mask.ndim == 3 and mask.shape[0] == 1
+        affine_matrix = _compute_affine_matrix(angle_, translate_, scale_, shear_, center_)
+        inv_affine_matrix = np.linalg.inv(affine_matrix)
+        inv_affine_matrix = inv_affine_matrix[:2, :]
+
+        expected_mask = torch.zeros_like(mask.cpu())
+        for out_y in range(expected_mask.shape[1]):
+            for out_x in range(expected_mask.shape[2]):
+                output_pt = np.array([out_x + 0.5, out_y + 0.5, 1.0])
+                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype(np.int32)
+                in_x, in_y = input_pt[:2]
+                if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
+                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+        return expected_mask.to(mask.device)
+
+    for mask in make_segmentation_masks():
+        output_mask = F.affine_segmentation_mask(
+            mask,
+            angle=angle,
+            translate=(translate, translate),
+            scale=scale,
+            shear=(shear, shear),
+            center=center,
+        )
+        if center is None:
+            center = [s // 2 for s in mask.shape[-2:][::-1]]
+
+        if mask.ndim < 4:
+            masks = [
+                mask,
+            ]
+        else:
+            masks = [m for m in mask]
+
+        expected_masks = []
+        for mask in masks:
+            expected_mask = _compute_expected_mask(mask, angle, (translate, translate), scale, (shear, shear), center)
+            expected_masks.append(expected_mask)
+        if len(expected_masks) > 1:
+            expected_masks = torch.stack(expected_masks)
+        else:
+            expected_masks = expected_masks[0]
+        torch.testing.assert_close(output_mask, expected_masks)
