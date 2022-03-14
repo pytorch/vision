@@ -204,18 +204,22 @@ def affine_bounding_box(
         dtype=dtype,
         device=device,
     ).view(2, 3)
-    # bboxes to 4 points like:
-    # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1), ...]
+    # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
+    # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
+    # Single point structure is similar to
+    # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
     points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
     points = torch.cat([points, torch.ones(points.shape[0], 1)], dim=-1)
-    transformed_points = points @ affine_matrix.T
-    # reshape transformed points to [N boxes, 4 points, x/y coords]
+    # 2) Now let's transform the points using affine matrix
+    transformed_points = torch.matmul(points, affine_matrix.T)
+    # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
+    # and compute bounding box from 4 transformed points:
     transformed_points = transformed_points.view(-1, 4, 2)
-    # compute bounding box from 4 transformed points:
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
     # out_bboxes should be of shape [N boxes, 4]
+
     return convert_bounding_box_format(out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format).view(
         original_shape
     )

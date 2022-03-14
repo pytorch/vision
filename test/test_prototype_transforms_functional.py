@@ -317,7 +317,7 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
                 [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
             ]
         )
-        transformed_points = points @ true_matrix.T
+        transformed_points = np.matmul(points, true_matrix.T)
         out_bbox = [
             np.min(transformed_points[:, 0]),
             np.min(transformed_points[:, 1]),
@@ -371,3 +371,53 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             expected_bboxes = expected_bboxes.squeeze(0)
 
         torch.testing.assert_close(output_bboxes, expected_bboxes)
+
+
+def test_correctness_affine_bounding_box_on_fixed_input():
+    # Check transformation against known expected output
+    image_size = (64, 64)
+    # xyxy format
+    in_boxes = [
+        [20, 25, 35, 45],
+        [50, 5, 70, 22],
+        [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
+        [1, 1, 5, 5],
+    ]
+    in_boxes = features.BoundingBox(
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
+    )
+    # Tested parameters
+    angle = 63
+    scale = 0.89
+    dx = 0.12
+    dy = 0.23
+
+    # Expected bboxes computed using albumentations:
+    # from albumentations.augmentations.geometric.functional import bbox_shift_scale_rotate
+    # from albumentations.augmentations.geometric.functional import normalize_bbox, denormalize_bbox
+    # expected_bboxes = []
+    # for in_box in in_boxes:
+    #     n_in_box = normalize_bbox(in_box, *image_size)
+    #     n_out_box = bbox_shift_scale_rotate(n_in_box, -angle, scale, dx, dy, *image_size)
+    #     out_box = denormalize_bbox(n_out_box, *image_size)
+    #     expected_bboxes.append(out_box)
+    expected_bboxes = [
+        (24.522435977922218, 34.375689508290854, 46.443125279998114, 54.3516575015695),
+        (54.88288587110401, 50.08453280875634, 76.44484547743795, 72.81332520036864),
+        (27.709526487041554, 34.74952648704156, 51.650473512958435, 58.69047351295844),
+        (48.56528888843238, 9.611532109828834, 53.35347829361575, 14.39972151501221),
+    ]
+
+    output_boxes = F.affine_bounding_box(
+        in_boxes,
+        in_boxes.format,
+        in_boxes.image_size,
+        angle,
+        (dx * image_size[1], dy * image_size[0]),
+        scale,
+        shear=(0, 0),
+    )
+
+    assert len(output_boxes) == len(expected_bboxes)
+    for a_out_box, out_box in zip(expected_bboxes, output_boxes):
+        np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)
