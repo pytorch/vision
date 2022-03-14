@@ -197,9 +197,7 @@ class TestRandomHorizontalFlip:
         input = torch.tensor([[[0, 1], [0, 1]], [[1, 0], [1, 0]]], dtype=dtype)
         expected = torch.tensor([[[1, 0], [1, 0]], [[0, 1], [0, 1]]], dtype=dtype)
 
-        if p == 1.0:
-            return input, expected
-        return input, input
+        return input, expected if p == 1 else input
 
     def test_simple_tensor(self, p):
         input, expected = self.input_expected_image_tensor(p)
