@@ -270,3 +270,88 @@ class BatchMultiCrop(Transform):
                 return obj
 
         return apply_recursively(inputs if len(inputs) > 1 else inputs[0])
+
+
+class RandomZoomOut(Transform):
+    def __init__(
+        self, fill: Union[float, Sequence[float]] = 0.0, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
+    ) -> None:
+        super().__init__()
+
+        if fill is None:
+            fill = 0.0
+        self.fill = fill
+
+        self.side_range = side_range
+        if side_range[0] < 1.0 or side_range[0] > side_range[1]:
+            raise ValueError(f"Invalid canvas side range provided {side_range}.")
+
+        self.p = p
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        orig_c, orig_h, orig_w = get_image_dimensions(image)
+
+        r = self.side_range[0] + torch.rand(1) * (self.side_range[1] - self.side_range[0])
+        canvas_width = int(orig_w * r)
+        canvas_height = int(orig_h * r)
+
+        r = torch.rand(2)
+        left = int((canvas_width - orig_w) * r[0])
+        top = int((canvas_height - orig_h) * r[1])
+        right = canvas_width - (left + orig_w)
+        bottom = canvas_height - (top + orig_h)
+        padding = [left, top, right, bottom]
+
+        fill = self.fill
+        if not isinstance(fill, collections.abc.Sequence):
+            fill = [fill] * orig_c
+
+        return dict(padding=padding, fill=fill)
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image) or is_simple_tensor(input):
+            # PyTorch's pad supports only integers on fill. So we need to overwrite the colour
+            output = F.pad_image_tensor(input, params["padding"], fill=0, padding_mode="constant")
+
+            left, top, right, bottom = params["padding"]
+            fill = torch.tensor(params["fill"], dtype=input.dtype, device=input.device).to().view(-1, 1, 1)
+
+            if top > 0:
+                output[..., :top, :] = fill
+            if left > 0:
+                output[..., :, :left] = fill
+            if bottom > 0:
+                output[..., -bottom:, :] = fill
+            if right > 0:
+                output[..., :, -right:] = fill
+
+            if isinstance(input, features.Image):
+                output = features.Image.new_like(input, output)
+
+            return output
+        elif isinstance(input, PIL.Image.Image):
+            return F.pad_image_pil(
+                input,
+                params["padding"],
+                fill=tuple(int(v) if input.mode != "F" else v for v in params["fill"]),
+                padding_mode="constant",
+            )
+        elif isinstance(input, features.BoundingBox):
+            output = F.pad_bounding_box(input, params["padding"], format=input.format)
+
+            left, top, right, bottom = params["padding"]
+            height, width = input.image_size
+            height += top + bottom
+            width += left + right
+
+            return features.BoundingBox.new_like(input, output, image_size=(height, width))
+        else:
+            return input
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if torch.rand(1) >= self.p:
+            return sample
+
+        return super().forward(sample)

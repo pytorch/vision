@@ -31,7 +31,7 @@ def horizontal_flip_bounding_box(
     bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [2, 0]]
 
     return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
 
 
@@ -213,6 +213,26 @@ def rotate_image_pil(
 
 pad_image_tensor = _FT.pad
 pad_image_pil = _FP.pad
+
+
+def pad_bounding_box(
+    bounding_box: torch.Tensor, padding: List[int], format: features.BoundingBoxFormat
+) -> torch.Tensor:
+    left, _, top, _ = _FT._parse_pad_padding(padding)
+
+    shape = bounding_box.shape
+
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    bounding_box[:, 0::2] += left
+    bounding_box[:, 1::2] += top
+
+    return convert_bounding_box_format(
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(shape)
+
 
 crop_image_tensor = _FT.crop
 crop_image_pil = _FP.crop
