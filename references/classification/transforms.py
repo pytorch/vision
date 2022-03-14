@@ -21,10 +21,10 @@ class RandomMixup(torch.nn.Module):
 
     def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False) -> None:
         super().__init__()
-        if not num_classes > 0:
+        if num_classes <= 1:
             raise ValueError("Please provide a valid positive value for the num_classes.")
 
-        if not alpha > 0:
+        if alpha <= 0:
             raise ValueError("Alpha param can't be zero.")
 
         self.num_classes = num_classes
@@ -102,9 +102,9 @@ class RandomCutmix(torch.nn.Module):
 
     def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False) -> None:
         super().__init__()
-        if not num_classes > 0:
+        if num_classes <= 1:
             raise ValueError("Please provide a valid positive value for the num_classes.")
-        if not alpha > 0:
+        if alpha <= 0:
             raise ValueError("Alpha param can't be zero.")
 
         self.num_classes = num_classes
