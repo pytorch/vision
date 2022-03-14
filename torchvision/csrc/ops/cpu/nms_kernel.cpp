@@ -16,6 +16,9 @@ at::Tensor nms_kernel_impl(
   TORCH_CHECK(
       dets.scalar_type() == scores.scalar_type(),
       "dets should have the same type as scores");
+  //AT_ASSERTM(
+  //    dets.size(0) >= post_nms_top_n,
+  //    "should have at least post_nms_top_n boxes");
 
   if (dets.numel() == 0)
     return at::empty({0}, dets.options().dtype(at::kLong));

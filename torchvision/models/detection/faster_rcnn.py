@@ -148,6 +148,7 @@ class FasterRCNN(GeneralizedRCNN):
         self,
         backbone,
         num_classes=None,
+        is_xla=False,
         # transform parameters
         min_size=800,
         max_size=1333,
@@ -253,7 +254,7 @@ class FasterRCNN(GeneralizedRCNN):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std, is_xla)
 
         super().__init__(backbone, rpn, roi_heads, transform)
 
@@ -356,7 +357,6 @@ def fasterrcnn_resnet50_fpn(
         >>> model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
         >>> # For training
         >>> images, boxes = torch.rand(4, 3, 600, 1200), torch.rand(4, 11, 4)
-        >>> boxes[:, :, 2:4] = boxes[:, :, 0:2] + boxes[:, :, 2:4]
         >>> labels = torch.randint(1, 91, (4, 11))
         >>> images = list(image for image in images)
         >>> targets = []

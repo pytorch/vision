@@ -8,6 +8,7 @@ from typing import Tuple, List, Dict, Optional, Union
 
 import torch
 from torch import nn, Tensor
+import torch_xla.core.xla_model as xm
 
 from ...utils import _log_api_usage_once
 
@@ -79,25 +80,46 @@ class GeneralizedRCNN(nn.Module):
 
         # Check for degenerate boxes
         # TODO: Move this to a function
-        if targets is not None:
-            for target_idx, target in enumerate(targets):
-                boxes = target["boxes"]
-                degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
-                if degenerate_boxes.any():
-                    # print the first degenerate box
-                    bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
-                    degen_bb: List[float] = boxes[bb_idx].tolist()
-                    raise ValueError(
-                        "All bounding boxes should have positive height and width."
-                        f" Found invalid box {degen_bb} for target at index {target_idx}."
-                    )
+        print("milad comment out degenerate box elimination")
+        #if targets is not None:
+        #    for target_idx, target in enumerate(targets):
+        #        boxes = target["boxes"]
+        #        degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
+        #        if degenerate_boxes.any():
+        #            # print the first degenerate box
+        #            bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
+        #            degen_bb: List[float] = boxes[bb_idx].tolist()
+        #            raise ValueError(
+        #                "All bounding boxes should have positive height and width."
+        #                f" Found invalid box {degen_bb} for target at index {target_idx}."
+        #            )
+
 
         features = self.backbone(images.tensors)
         if isinstance(features, torch.Tensor):
             features = OrderedDict([("0", features)])
         proposals, proposal_losses = self.rpn(images, features, targets)
         detections, detector_losses = self.roi_heads(features, proposals, images.image_sizes, targets)
-        detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)  # type: ignore[operator]
+        #detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)  # type: ignore[operator]
+
+        import torch_xla.debug.metrics as met
+        xm.master_print(met.metrics_report())
+
+        if not self.training:
+            # Sync tensors and use CPU instead for post processing
+            sync_tensors = []
+            for detection in detections:
+                sync_tensors.extend(list(detection.values()))
+            xm.mark_step()
+
+            detections_cpu = []
+            for detection in detections:
+                detection_cpu = {}
+                for k in detection.keys():
+                    detection_cpu[k] = detection[k].cpu().clone()
+                detections_cpu.append(detection_cpu)
+            detections = detections_cpu
+        detections = self.transform.postprocess(detections_cpu, images.image_sizes, original_image_sizes)
 
         losses = {}
         losses.update(detector_losses)
