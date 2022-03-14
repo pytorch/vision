@@ -10,8 +10,8 @@ from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
-from torchvision.prototype.utils._internal import sequence_to_str
 
 
 assert_samples_equal = functools.partial(
@@ -53,6 +53,8 @@ class TestCommon:
 
         try:
             sample = next(iter(dataset))
+        except StopIteration:
+            raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
             raise AssertionError("Drawing a sample raised the error above.") from error
 

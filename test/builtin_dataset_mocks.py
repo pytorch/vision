@@ -19,8 +19,8 @@ import torch
 from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
+from torchvision._utils import sequence_to_str
 from torchvision.prototype.datasets._api import find
-from torchvision.prototype.utils._internal import sequence_to_str
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
@@ -1329,20 +1329,20 @@ def cub200(info, root, config):
 
 @register_mock
 def eurosat(info, root, config):
-    data_folder = pathlib.Path(root, "eurosat", "2750")
+    data_folder = root / "2750"
     data_folder.mkdir(parents=True)
 
     num_examples_per_class = 3
-    classes = ("AnnualCrop", "Forest")
-    for cls in classes:
+    categories = ["AnnualCrop", "Forest"]
+    for category in categories:
         create_image_folder(
             root=data_folder,
-            name=cls,
-            file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+            name=category,
+            file_name_fn=lambda idx: f"{category}_{idx + 1}.jpg",
             num_examples=num_examples_per_class,
         )
     make_zip(root, "EuroSAT.zip", data_folder)
-    return len(classes) * num_examples_per_class
+    return len(categories) * num_examples_per_class
 
 
 @register_mock
