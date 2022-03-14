@@ -12,7 +12,7 @@ class ValidateModelInput(torch.nn.Module):
         if not all(arg.dtype == torch.float32 for arg in (img1, img2, flow) if arg is not None):
             raise TypeError("This method expects the tensors img1, img2 and flow of be of dtype torch.float32.")
 
-        if not img1.shape == img2.shape:
+        if img1.shape != img2.shape:
             raise ValueError("img1 and img2 should have the same shape.")
         h, w = img1.shape[-2:]
         if flow is not None and flow.shape != (2, h, w):
