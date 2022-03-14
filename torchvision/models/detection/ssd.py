@@ -325,7 +325,7 @@ class SSD(nn.Module):
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            if not len(val) != 2:
+            if len(val) != 2:
                 raise ValueError(
                     f"The last two dimensions of the input tensors should contain H and W, instead got {img.shape[-2:]}"
                 )
