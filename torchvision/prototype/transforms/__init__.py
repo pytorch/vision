@@ -19,5 +19,11 @@ from ._geometry import (
 )
 from ._meta import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertImageColorSpace
 from ._misc import Identity, Normalize, ToDtype, Lambda
-from ._presets import CocoEval, ImageNetEval, VocEval, Kinect400Eval, RaftEval
+from ._presets import (
+    ObjectDetectionEval,
+    ImageClassificationEval,
+    SemanticSegmentationEval,
+    VideoClassificationEval,
+    OpticalFlowEval,
+)
 from ._type_conversion import DecodeImage, LabelToOneHot

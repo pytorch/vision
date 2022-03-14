@@ -338,9 +338,9 @@ def resized_crop_image_pil(
 
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
-        size = (int(size), int(size))
+        size = [int(size), int(size)]
     elif isinstance(size, (tuple, list)) and len(size) == 1:
-        size = (size[0], size[0])  # type: ignore[assignment]
+        size = [size[0], size[0]]
 
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")

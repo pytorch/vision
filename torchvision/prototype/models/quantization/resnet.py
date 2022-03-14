@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, List, Optional, Type, Union
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.resnet import (
@@ -68,7 +68,7 @@ _COMMON_META = {
 class ResNet18_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -85,7 +85,7 @@ class ResNet18_QuantizedWeights(WeightsEnum):
 class ResNet50_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -98,7 +98,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
     )
     IMAGENET1K_FBGEMM_V2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -115,7 +115,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
 class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
@@ -128,7 +128,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
     )
     IMAGENET1K_FBGEMM_V2 = Weights(
         url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth",
-        transforms=partial(ImageNetEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
