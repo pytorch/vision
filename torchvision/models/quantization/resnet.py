@@ -4,7 +4,14 @@ from typing import Any, Type, Union, List, Optional
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, ResNet18_Weights, ResNet50_Weights, ResNeXt101_32X8D_Weights
+from torchvision.models.resnet import (
+    Bottleneck,
+    BasicBlock,
+    ResNet,
+    ResNet18_Weights,
+    ResNet50_Weights,
+    ResNeXt101_32X8D_Weights,
+)
 
 from ...transforms import ImageClassificationEval, InterpolationMode
 from .._api import WeightsEnum, Weights
@@ -137,6 +144,7 @@ def _resnet(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
 
 _COMMON_META = {
     "task": "image_classification",

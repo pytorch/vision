@@ -59,11 +59,11 @@ def _build_model(fn, **kwargs):
         ("ResNet50_Weights.DEFAULT", torchvision.models.ResNet50_Weights.IMAGENET1K_V2),
         (
             "ResNet50_QuantizedWeights.DEFAULT",
-            models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2,
+            torchvision.models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2,
         ),
         (
             "ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1",
-            models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1,
+            torchvision.models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1,
         ),
     ],
 )
@@ -73,9 +73,9 @@ def test_get_weight(name, weight):
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models)
+    TM.get_models_from_module(torchvision.models)
     + TM.get_models_from_module(models.detection)
-    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(torchvision.models.quantization)
     + TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
     + TM.get_models_from_module(models.optical_flow),
@@ -91,7 +91,7 @@ def test_naming_conventions(model_fn):
     "model_fn",
     TM.get_models_from_module(torchvision.models)
     + TM.get_models_from_module(models.detection)
-    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(torchvision.models.quantization)
     + TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
     + TM.get_models_from_module(models.optical_flow),
@@ -150,12 +150,6 @@ def test_detection_model(model_fn, dev):
     TM.test_detection_model(model_fn, dev)
 
 
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.quantization))
-@run_if_test_with_prototype
-def test_quantized_classification_model(model_fn):
-    TM.test_quantized_classification_model(model_fn)
-
-
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
@@ -181,7 +175,6 @@ def test_raft(model_builder, scripted):
 @pytest.mark.parametrize(
     "model_fn",
     TM.get_models_from_module(models.detection)
-    + TM.get_models_from_module(models.quantization)
     + TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
     + TM.get_models_from_module(models.optical_flow),

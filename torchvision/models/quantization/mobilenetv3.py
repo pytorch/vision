@@ -10,7 +10,13 @@ from ...transforms import ImageClassificationEval, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, _mobilenet_v3_conf, MobileNet_V3_Large_Weights
+from ..mobilenetv3 import (
+    InvertedResidual,
+    InvertedResidualConfig,
+    MobileNetV3,
+    _mobilenet_v3_conf,
+    MobileNet_V3_Large_Weights,
+)
 from .utils import _fuse_modules, _replace_relu
 
 
