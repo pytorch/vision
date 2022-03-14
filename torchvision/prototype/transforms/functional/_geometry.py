@@ -209,7 +209,7 @@ def affine_bounding_box(
     # Single point structure is similar to
     # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
     points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
-    points = torch.cat([points, torch.ones(points.shape[0], 1)], dim=-1)
+    points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
     # 2) Now let's transform the points using affine matrix
     transformed_points = torch.matmul(points, affine_matrix.T)
     # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
