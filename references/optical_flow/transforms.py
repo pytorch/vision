@@ -15,7 +15,7 @@ class ValidateModelInput(torch.nn.Module):
         if not img1.shape == img2.shape:
             raise ValueError("img1 and img2 should have the same shape.")
         h, w = img1.shape[-2:]
-        if flow is not None and not flow.shape == (2, h, w):
+        if flow is not None and flow.shape != (2, h, w):
             raise ValueError(f"flow.shape should be (2, {h}, {w}) instead of {flow.shape}")
         if valid_flow_mask is not None:
             if not valid_flow_mask.shape == (h, w):
