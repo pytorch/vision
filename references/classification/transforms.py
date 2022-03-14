@@ -25,7 +25,7 @@ class RandomMixup(torch.nn.Module):
             raise ValueError("Please provide a valid positive value for the num_classes.")
 
         if not alpha > 0:
-            raise ValueError("Alpha param can't be zero.")
+            raise ValueError("alpha param can't be zero.")
 
         self.num_classes = num_classes
         self.p = p
