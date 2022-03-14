@@ -340,7 +340,7 @@ def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool
     The required minimum input size of the model is 29x29.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (DenseNet121_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
@@ -357,7 +357,7 @@ def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool
     The required minimum input size of the model is 29x29.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (DenseNet161_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
@@ -374,7 +374,7 @@ def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool
     The required minimum input size of the model is 29x29.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (DenseNet169_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
@@ -391,7 +391,7 @@ def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool
     The required minimum input size of the model is 29x29.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (DenseNet201_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
           but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
