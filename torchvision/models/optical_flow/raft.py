@@ -238,7 +238,9 @@ class RecurrentBlock(nn.Module):
         super().__init__()
 
         if len(kernel_size) != len(padding):
-            raise ValueError(f"kernel_size should have the same length as padding, instead got len(kernel_size) = {len(kernel_size)} and len(padding) = {len(padding)}")
+            raise ValueError(
+                f"kernel_size should have the same length as padding, instead got len(kernel_size) = {len(kernel_size)} and len(padding) = {len(padding)}"
+            )
         if len(kernel_size) not in (1, 2):
             raise ValueError(f"kernel_size should either 1 or 2, instead got {len(kernel_size)}")
 
@@ -357,7 +359,9 @@ class CorrBlock(nn.Module):
         """
 
         if fmap1.shape != fmap2.shape:
-            raise ValueError(f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)")
+            raise ValueError(
+                f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)"
+            )
         corr_volume = self._compute_corr_volume(fmap1, fmap2)
 
         batch_size, h, w, num_channels, _, _ = corr_volume.shape  # _, _ = h, w
