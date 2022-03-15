@@ -172,7 +172,7 @@ class MotionEncoder(nn.Module):
 
         if len(flow_layers) != 2:
             raise ValueError(f"The expected number of flow_layers is 2, instead got {len(flow_layers)}")
-        if not len(corr_layers) in (1, 2):
+        if len(corr_layers) not in (1, 2):
             raise ValueError(f"The number of corr_layers should be 1 or 2, instead got {len(corr_layers)}")
 
         self.convcorr1 = Conv2dNormActivation(in_channels_corr, corr_layers[0], norm_layer=None, kernel_size=1)
