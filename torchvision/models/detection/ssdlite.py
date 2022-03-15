@@ -6,21 +6,24 @@ from typing import Any, Callable, Dict, List, Optional, Union
 import torch
 from torch import nn, Tensor
 
-from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import Conv2dNormActivation
+from ...transforms import ObjectDetectionEval, InterpolationMode
 from ...utils import _log_api_usage_once
 from .. import mobilenet
+from .._api import WeightsEnum, Weights
+from .._meta import _COCO_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .ssd import SSD, SSDScoringHead
 
 
-__all__ = ["ssdlite320_mobilenet_v3_large"]
-
-model_urls = {
-    "ssdlite320_mobilenet_v3_large_coco": "https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth"
-}
+__all__ = [
+    "SSDLite320_MobileNet_V3_Large_Weights",
+    "ssdlite320_mobilenet_v3_large",
+]
 
 
 # Building blocks of SSDlite as described in section 6.2 of MobileNetV2 paper
@@ -178,15 +181,39 @@ def _mobilenet_extractor(
     return SSDLiteFeatureExtractorMobileNet(backbone, stage_indices[-2], norm_layer)
 
 
+class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
+        transforms=ObjectDetectionEval,
+        meta={
+            "task": "image_object_detection",
+            "architecture": "SSDLite",
+            "publication_year": 2018,
+            "num_params": 3440060,
+            "size": (320, 320),
+            "categories": _COCO_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
+            "map": 21.3,
+        },
+    )
+    DEFAULT = COCO_V1
+
+
+@handle_legacy_interface(
+    weights=("pretrained", SSDLite320_MobileNet_V3_Large_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
+)
 def ssdlite320_mobilenet_v3_large(
-    pretrained: bool = False,
+    *,
+    weights: Optional[SSDLite320_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
-    pretrained_backbone: bool = False,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = None,
     trainable_backbone_layers: Optional[int] = None,
     norm_layer: Optional[Callable[..., nn.Module]] = None,
     **kwargs: Any,
-):
+) -> SSD:
     """Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at
     `"Searching for MobileNetV3"
     <https://arxiv.org/abs/1905.02244>`_ and
@@ -203,35 +230,41 @@ def ssdlite320_mobilenet_v3_large(
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (FasterRCNN_ResNet50_FPN_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 6.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
     """
+    weights = SSDLite320_MobileNet_V3_Large_Weights.verify(weights)
+    weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
+
     if "size" in kwargs:
-        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+        warnings.warn("The size of the model is already fixed; ignoring the parameter.")
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 6
+        weights is not None or weights_backbone is not None, trainable_backbone_layers, 6, 6
     )
 
-    if pretrained:
-        pretrained_backbone = False
-
     # Enable reduced tail if no pretrained backbone is selected. See Table 6 of MobileNetV3 paper.
-    reduce_tail = not pretrained_backbone
+    reduce_tail = weights_backbone is None
 
     if norm_layer is None:
         norm_layer = partial(nn.BatchNorm2d, eps=0.001, momentum=0.03)
 
-    backbone = mobilenet.mobilenet_v3_large(
-        pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer, reduced_tail=reduce_tail, **kwargs
+    backbone = mobilenet_v3_large(
+        weights=weights_backbone, progress=progress, norm_layer=norm_layer, reduced_tail=reduce_tail, **kwargs
     )
-    if not pretrained_backbone:
+    if weights_backbone is None:
         # Change the default initialization scheme if not pretrained
         _normal_init(backbone)
     backbone = _mobilenet_extractor(
@@ -252,11 +285,11 @@ def ssdlite320_mobilenet_v3_large(
         "detections_per_img": 300,
         "topk_candidates": 300,
         # Rescale the input in a way compatible to the backbone:
-        # The following mean/std rescale the data from [0, 1] to [-1, 1]
+        # The following mean/std rescale the data from [0, 1] to [-1, -1]
         "image_mean": [0.5, 0.5, 0.5],
         "image_std": [0.5, 0.5, 0.5],
     }
-    kwargs = {**defaults, **kwargs}
+    kwargs: Any = {**defaults, **kwargs}
     model = SSD(
         backbone,
         anchor_generator,
@@ -266,10 +299,7 @@ def ssdlite320_mobilenet_v3_large(
         **kwargs,
     )
 
-    if pretrained:
-        weights_name = "ssdlite320_mobilenet_v3_large_coco"
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError(f"No checkpoint is available for model {weights_name}")
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
-        model.load_state_dict(state_dict)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model

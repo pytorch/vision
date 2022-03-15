@@ -97,7 +97,8 @@ cfgs: Dict[str, List[Union[str, int]]] = {
 
 def _vgg(cfg: str, batch_norm: bool, weights: Optional[WeightsEnum], progress: bool, **kwargs: Any) -> VGG:
     if weights is not None:
-        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if weights.meta["categories"] is not None:
+            _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
     model = VGG(make_layers(cfgs[cfg], batch_norm=batch_norm), **kwargs)
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
