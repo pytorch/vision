@@ -340,6 +340,20 @@ jobs:
     resource_class: xlarge
     steps:
       - checkout
+      - install_torchvision
+      - install_prototype_dependencies
+      - pip_install:
+          args: scipy pycocotools h5py
+          descr: Install optional dependencies
+      - run_tests_selective:
+          file_or_dir: test/test_prototype_*.py
+
+  unittest_extended:
+    docker:
+      - image: circleci/python:3.7
+    resource_class: xlarge
+    steps:
+      - checkout
       - run:
           name: Download model weights
           background: true
@@ -349,15 +363,11 @@ jobs:
             python scripts/collect_model_urls.py torchvision/prototype/models \
                 | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
       - install_torchvision
-      - install_prototype_dependencies
-      - pip_install:
-          args: scipy pycocotools h5py
-          descr: Install optional dependencies
       - run:
-          name: Enable prototype tests
-          command: echo 'export PYTORCH_TEST_WITH_PROTOTYPE=1' >> $BASH_ENV
+          name: Enable extended tests
+          command: echo 'export PYTORCH_TEST_WITH_EXTENDED=1' >> $BASH_ENV
       - run_tests_selective:
-          file_or_dir: test/test_prototype_*.py
+          file_or_dir: test/test_extended_*.py
 
   binary_linux_wheel:
     <<: *binary_common
@@ -1608,6 +1618,7 @@ workflows:
       - unittest_torchhub
       - unittest_onnx
       - unittest_prototype
+      - unittest_extended
       - unittest_linux_cpu:
           cu_version: cpu
           name: unittest_linux_cpu_py3.7

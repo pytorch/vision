@@ -3,20 +3,14 @@ import os
 
 import pytest
 import test_models as TM
-import torchvision
+from torchvision import models
 from torchvision.models._api import WeightsEnum, Weights
 from torchvision.models._utils import handle_legacy_interface
 
 run_if_test_with_prototype = pytest.mark.skipif(
-    os.getenv("PYTORCH_TEST_WITH_PROTOTYPE") != "1",
-    reason="Prototype tests are disabled by default. Set PYTORCH_TEST_WITH_PROTOTYPE=1 to run them.",
+    os.getenv("PYTORCH_TEST_WITH_EXTENDED") != "1",
+    reason="Extended tests are disabled by default. Set PYTORCH_TEST_WITH_EXTENDED=1 to run them.",
 )
-
-
-def _get_original_model(model_fn):
-    original_module_name = model_fn.__module__.replace(".prototype", "")
-    module = importlib.import_module(original_module_name)
-    return module.__dict__[model_fn.__name__]
 
 
 def _get_parent_module(model_fn):
@@ -38,44 +32,33 @@ def _get_model_weights(model_fn):
         return None
 
 
-def _build_model(fn, **kwargs):
-    try:
-        model = fn(**kwargs)
-    except ValueError as e:
-        msg = str(e)
-        if "No checkpoint is available" in msg:
-            pytest.skip(msg)
-        raise e
-    return model.eval()
-
-
 @pytest.mark.parametrize(
     "name, weight",
     [
-        ("ResNet50_Weights.IMAGENET1K_V1", torchvision.models.ResNet50_Weights.IMAGENET1K_V1),
-        ("ResNet50_Weights.DEFAULT", torchvision.models.ResNet50_Weights.IMAGENET1K_V2),
+        ("ResNet50_Weights.IMAGENET1K_V1", models.ResNet50_Weights.IMAGENET1K_V1),
+        ("ResNet50_Weights.DEFAULT", models.ResNet50_Weights.IMAGENET1K_V2),
         (
             "ResNet50_QuantizedWeights.DEFAULT",
-            torchvision.models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2,
+            models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2,
         ),
         (
             "ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1",
-            torchvision.models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1,
+            models.quantization.ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1,
         ),
     ],
 )
 def test_get_weight(name, weight):
-    assert torchvision.models.get_weight(name) == weight
+    assert models.get_weight(name) == weight
 
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(torchvision.models)
-    + TM.get_models_from_module(torchvision.models.detection)
-    + TM.get_models_from_module(torchvision.models.quantization)
-    + TM.get_models_from_module(torchvision.models.segmentation)
-    + TM.get_models_from_module(torchvision.models.video)
-    + TM.get_models_from_module(torchvision.models.optical_flow),
+    TM.get_models_from_module(models)
+    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(models.optical_flow),
 )
 def test_naming_conventions(model_fn):
     weights_enum = _get_model_weights(model_fn)
@@ -86,12 +69,12 @@ def test_naming_conventions(model_fn):
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(torchvision.models)
-    + TM.get_models_from_module(torchvision.models.detection)
-    + TM.get_models_from_module(torchvision.models.quantization)
-    + TM.get_models_from_module(torchvision.models.segmentation)
-    + TM.get_models_from_module(torchvision.models.video)
-    + TM.get_models_from_module(torchvision.models.optical_flow),
+    TM.get_models_from_module(models)
+    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(models.optical_flow),
 )
 @run_if_test_with_prototype
 def test_schema_meta_validation(model_fn):
