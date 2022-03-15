@@ -513,3 +513,22 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
         else:
             expected_masks = expected_masks[0]
         torch.testing.assert_close(output_mask, expected_masks)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_affine_segmentation_mask_on_fixed_input(device):
+    # Check transformation against known expected output
+    # Rotate 90 degrees and scale
+    mask = torch.zeros(1, 32, 32, dtype=torch.long, device=device)
+    mask[0, 2:10, 2:10] = 1
+    mask[0, 32 - 9 : 32 - 3, 3:9] = 2
+    mask[0, 1:11, 32 - 11 : 32 - 1] = 3
+    mask[0, 16 - 4 : 16 + 4, 16 - 4 : 16 + 4] = 4
+
+    expected_mask = torch.rot90(mask, k=-1, dims=(-2, -1))
+    expected_mask = torch.nn.functional.interpolate(expected_mask[None, ...].float(), size=(64, 64), mode="nearest")
+    expected_mask = expected_mask[0, :, 16 : 64 - 16, 16 : 64 - 16].long()
+
+    out_mask = F.affine_segmentation_mask(mask, 90, [0.0, 0.0], 64.0 / 32.0, [0.0, 0.0])
+
+    assert out_mask.allclose(expected_mask)
