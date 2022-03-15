@@ -8,10 +8,9 @@ from torch.nn import functional as F
 from ...transforms import SemanticSegmentationEval, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
+from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
 from ..mobilenetv3 import MobileNetV3, MobileNet_V3_Large_Weights, mobilenet_v3_large
 from ..resnet import ResNet, resnet50, resnet101, ResNet50_Weights, ResNet101_Weights
-from .._utils import IntermediateLayerGetter
 from ._utils import _SimpleSegmentationModel
 from .fcn import FCNHead
 

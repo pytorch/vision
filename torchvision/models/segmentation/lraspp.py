@@ -1,21 +1,19 @@
+from functools import partial
 from collections import OrderedDict
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
 from torch import nn, Tensor
 from torch.nn import functional as F
 
+from ...transforms import SemanticSegmentationEval, InterpolationMode
 from ...utils import _log_api_usage_once
-from .. import mobilenetv3
-from .._utils import IntermediateLayerGetter
-from ._utils import _load_weights
+from .._api import WeightsEnum, Weights
+from .._meta import _VOC_CATEGORIES
+from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
+from ..mobilenetv3 import MobileNetV3, MobileNet_V3_Large_Weights, mobilenet_v3_large
 
 
-__all__ = ["LRASPP", "lraspp_mobilenet_v3_large"]
-
-
-model_urls = {
-    "lraspp_mobilenet_v3_large_coco": "https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
-}
+__all__ = ["LRASPP", "LRASPP_MobileNet_V3_Large_Weights", "lraspp_mobilenet_v3_large"]
 
 
 class LRASPP(nn.Module):
@@ -81,7 +79,7 @@ class LRASPPHead(nn.Module):
         return self.low_classifier(low) + self.high_classifier(x)
 
 
-def _lraspp_mobilenetv3(backbone: mobilenetv3.MobileNetV3, num_classes: int) -> LRASPP:
+def _lraspp_mobilenetv3(backbone: MobileNetV3, num_classes: int) -> LRASPP:
     backbone = backbone.features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
     # The first and last blocks are always included because they are the C0 (conv1) and Cn.
@@ -95,31 +93,61 @@ def _lraspp_mobilenetv3(backbone: mobilenetv3.MobileNetV3, num_classes: int) -> 
     return LRASPP(backbone, low_channels, high_channels, num_classes)
 
 
+class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
+    COCO_WITH_VOC_LABELS_V1 = Weights(
+        url="https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
+        transforms=partial(SemanticSegmentationEval, resize_size=520),
+        meta={
+            "task": "image_semantic_segmentation",
+            "architecture": "LRASPP",
+            "publication_year": 2019,
+            "num_params": 3221538,
+            "categories": _VOC_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
+            "mIoU": 57.9,
+            "acc": 91.2,
+        },
+    )
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
+
+
+@handle_legacy_interface(
+    weights=("pretrained", LRASPP_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
+)
 def lraspp_mobilenet_v3_large(
-    pretrained: bool = False,
+    *,
+    weights: Optional[LRASPP_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
-    pretrained_backbone: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = None,
     **kwargs: Any,
 ) -> LRASPP:
     """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
+        weights (LRASPP_MobileNet_V3_Large_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int, optional): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, the backbone will be pre-trained.
+        weights_backbone (MobileNet_V3_Large_Weights, optional): The pretrained weights for the backbone
     """
     if kwargs.pop("aux_loss", False):
         raise NotImplementedError("This model does not use auxiliary loss")
-    if pretrained:
-        pretrained_backbone = False
 
-    backbone = mobilenetv3.mobilenet_v3_large(pretrained=pretrained_backbone, dilated=True)
+    weights = LRASPP_MobileNet_V3_Large_Weights.verify(weights)
+    weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 21
+
+    backbone = mobilenet_v3_large(weights=weights_backbone, dilated=True)
     model = _lraspp_mobilenetv3(backbone, num_classes)
 
-    if pretrained:
-        arch = "lraspp_mobilenet_v3_large_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
