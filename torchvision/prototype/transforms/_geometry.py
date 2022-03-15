@@ -46,7 +46,7 @@ class Resize(Transform):
             return features.SegmentationMask.new_like(input, output)
         elif isinstance(input, features.BoundingBox):
             output = F.resize_bounding_box(input, self.size, image_size=input.image_size)
-            return features.BoundingBox.new_like(input, output, image_size=self.size)
+            return features.BoundingBox.new_like(input, output, image_size=cast(Tuple[int, int], tuple(self.size)))
         elif isinstance(input, PIL.Image.Image):
             return F.resize_image_pil(input, self.size, interpolation=self.interpolation)
         elif isinstance(input, torch.Tensor):
