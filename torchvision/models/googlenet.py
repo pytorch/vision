@@ -307,7 +307,7 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
         aux_logits (bool): If True, adds two auxiliary branches that can improve training.
             Default: *False* when pretrained is True otherwise *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
+            was trained on ImageNet. Default: True if ``weights=GoogLeNet_Weights.IMAGENET1K_V1``, else False.
     """
     weights = GoogLeNet_Weights.verify(weights)
 

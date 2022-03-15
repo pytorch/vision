@@ -596,7 +596,7 @@ def ssd300_vgg16(
 
     Example:
 
-        >>> model = torchvision.models.detection.ssd300_vgg16(pretrained=True)
+        >>> model = torchvision.models.detection.ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 300), torch.rand(3, 500, 400)]
         >>> predictions = model(x)

@@ -224,7 +224,7 @@ def ssdlite320_mobilenet_v3_large(
 
     Example:
 
-        >>> model = torchvision.models.detection.ssdlite320_mobilenet_v3_large(pretrained=True)
+        >>> model = torchvision.models.detection.ssdlite320_mobilenet_v3_large(weights=SSDLite320_MobileNet_V3_Large_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 320, 320), torch.rand(3, 500, 400)]
         >>> predictions = model(x)

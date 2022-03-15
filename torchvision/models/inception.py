@@ -443,7 +443,7 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
         aux_logits (bool): If True, add an auxiliary branch that can improve training.
             Default: *True*
         transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
+            was trained on ImageNet. Default: True if ``weights=Inception_V3_Weights.IMAGENET1K_V1``, else False.
     """
     weights = Inception_V3_Weights.verify(weights)
 

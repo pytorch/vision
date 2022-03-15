@@ -117,7 +117,7 @@ class FasterRCNN(GeneralizedRCNN):
         >>> from torchvision.models.detection.rpn import AnchorGenerator
         >>> # load a pre-trained model for classification and return
         >>> # only the features
-        >>> backbone = torchvision.models.mobilenet_v2(pretrained=True).features
+        >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # FasterRCNN needs to know the number of
         >>> # output channels in a backbone. For mobilenet_v2, it's 1280
         >>> # so we need to add it here
@@ -415,7 +415,7 @@ def fasterrcnn_resnet50_fpn(
 
     Example::
 
-        >>> model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
         >>> # For training
         >>> images, boxes = torch.rand(4, 3, 600, 1200), torch.rand(4, 11, 4)
         >>> boxes[:, :, 2:4] = boxes[:, :, 0:2] + boxes[:, :, 2:4]
@@ -532,7 +532,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
 
     Example::
 
-        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(weights=FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
@@ -589,7 +589,7 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 
     Example::
 
-        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(weights=FasterRCNN_MobileNet_V3_Large_FPN_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
