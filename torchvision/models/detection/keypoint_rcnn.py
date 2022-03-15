@@ -191,7 +191,10 @@ class KeypointRCNN(FasterRCNN):
         num_keypoints=None,
     ):
 
-        assert isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None)))
+        if not isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None))):
+            raise TypeError(
+                "keypoint_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(keypoint_roi_pool)}"
+            )
         if min_size is None:
             min_size = (640, 672, 704, 736, 768, 800)
 
