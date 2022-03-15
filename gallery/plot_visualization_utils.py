@@ -126,7 +126,7 @@ show(dogs_with_boxes)
 from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
 
 weights = FCN_ResNet50_Weights.DEFAULT
-transforms = weights.transforms()
+transforms = weights.transforms(resize_size=None)
 
 model = fcn_resnet50(weights=weights, progress=False)
 model = model.eval()
