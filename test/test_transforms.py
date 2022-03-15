@@ -452,12 +452,12 @@ def test_resize_size_equals_small_edge_size(height, width):
 
 
 class TestPad:
-    def test_pad(self):
+    @pytest.mark.parametrize("fill", [85, 85.0])
+    def test_pad(self, fill):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
         img = torch.ones(3, height, width, dtype=torch.uint8)
         padding = random.randint(1, 20)
-        fill = random.randint(1, 50)
         result = transforms.Compose(
             [
                 transforms.ToPILImage(),
@@ -484,7 +484,7 @@ class TestPad:
         output = transforms.Pad(padding)(img)
         assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
 
-        padding = tuple(random.randint(1, 20) for _ in range(4))
+        padding = [random.randint(1, 20) for _ in range(4)]
         output = transforms.Pad(padding)(img)
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
