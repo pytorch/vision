@@ -78,27 +78,29 @@ class VideoClassificationEval(nn.Module):
 class SemanticSegmentationEval(nn.Module):
     def __init__(
         self,
-        resize_size: int,
+        resize_size: Optional[int],
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
         interpolation_target: InterpolationMode = InterpolationMode.NEAREST,
     ) -> None:
         super().__init__()
-        self._size = [resize_size]
+        self._size = [resize_size] if resize_size is not None else None
         self._mean = list(mean)
         self._std = list(std)
         self._interpolation = interpolation
         self._interpolation_target = interpolation_target
 
     def forward(self, img: Tensor, target: Optional[Tensor] = None) -> Tuple[Tensor, Optional[Tensor]]:
-        img = F.resize(img, self._size, interpolation=self._interpolation)
+        if isinstance(self._size, list):
+            img = F.resize(img, self._size, interpolation=self._interpolation)
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
         img = F.convert_image_dtype(img, torch.float)
         img = F.normalize(img, mean=self._mean, std=self._std)
         if target:
-            target = F.resize(target, self._size, interpolation=self._interpolation_target)
+            if isinstance(self._size, list):
+                target = F.resize(target, self._size, interpolation=self._interpolation_target)
             if not isinstance(target, Tensor):
                 target = F.pil_to_tensor(target)
             target = target.squeeze(0).to(torch.int64)
@@ -107,7 +109,7 @@ class SemanticSegmentationEval(nn.Module):
 
 class OpticalFlowEval(nn.Module):
     def forward(
-        self, img1: Tensor, img2: Tensor, flow: Optional[Tensor], valid_flow_mask: Optional[Tensor]
+        self, img1: Tensor, img2: Tensor, flow: Optional[Tensor] = None, valid_flow_mask: Optional[Tensor] = None
     ) -> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:
 
         img1, img2, flow, valid_flow_mask = self._pil_or_numpy_to_tensor(img1, img2, flow, valid_flow_mask)
