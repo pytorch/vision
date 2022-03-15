@@ -21,7 +21,6 @@ __all__ = [
 ]
 
 
-
 class KeypointRCNN(FasterRCNN):
     """
     Implements Keypoint R-CNN.
