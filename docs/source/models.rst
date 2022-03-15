@@ -38,7 +38,7 @@ architectures for image classification:
 -  `ResNeXt`_
 -  `Wide ResNet`_
 -  `MNASNet`_
--  `EfficientNet`_
+-  `EfficientNet`_ v1 & v2
 -  `RegNet`_
 -  `VisionTransformer`_
 -  `ConvNeXt`_
@@ -70,6 +70,9 @@ You can construct a model with random weights by calling its constructor:
     efficientnet_b5 = models.efficientnet_b5()
     efficientnet_b6 = models.efficientnet_b6()
     efficientnet_b7 = models.efficientnet_b7()
+    efficientnet_v2_s = models.efficientnet_v2_s()
+    efficientnet_v2_m = models.efficientnet_v2_m()
+    efficientnet_v2_l = models.efficientnet_v2_l()
     regnet_y_400mf = models.regnet_y_400mf()
     regnet_y_800mf = models.regnet_y_800mf()
     regnet_y_1_6gf = models.regnet_y_1_6gf()
@@ -122,6 +125,9 @@ These can be constructed by passing ``pretrained=True``:
     efficientnet_b5 = models.efficientnet_b5(pretrained=True)
     efficientnet_b6 = models.efficientnet_b6(pretrained=True)
     efficientnet_b7 = models.efficientnet_b7(pretrained=True)
+    efficientnet_v2_s = models.efficientnet_v2_s(pretrained=True)
+    efficientnet_v2_m = models.efficientnet_v2_m(pretrained=True)
+    efficientnet_v2_l = models.efficientnet_v2_l(pretrained=True)
     regnet_y_400mf = models.regnet_y_400mf(pretrained=True)
     regnet_y_800mf = models.regnet_y_800mf(pretrained=True)
     regnet_y_1_6gf = models.regnet_y_1_6gf(pretrained=True)
@@ -238,6 +244,9 @@ EfficientNet-B4                   83.384          96.594
 EfficientNet-B5                   83.444          96.628
 EfficientNet-B6                   84.008          96.916
 EfficientNet-B7                   84.122          96.908
+EfficientNetV2-s                  84.228          96.878
+EfficientNetV2-m                  85.112          97.156
+EfficientNetV2-l                  85.810          97.792
 regnet_x_400mf                    72.834          90.950
 regnet_x_800mf                    75.212          92.348
 regnet_x_1_6gf                    77.040          93.440
@@ -439,6 +448,9 @@ EfficientNet
     efficientnet_b5
     efficientnet_b6
     efficientnet_b7
+    efficientnet_v2_s
+    efficientnet_v2_m
+    efficientnet_v2_l
 
 RegNet
 ------------
