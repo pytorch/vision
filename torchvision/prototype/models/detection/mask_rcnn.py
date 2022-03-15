@@ -1,7 +1,7 @@
 from typing import Any, Optional
 
 from torch import nn
-from torchvision.prototype.transforms import CocoEval
+from torchvision.prototype.transforms import ObjectDetectionEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.detection.mask_rcnn import (
@@ -27,7 +27,7 @@ __all__ = [
 class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
-        transforms=CocoEval,
+        transforms=ObjectDetectionEval,
         meta={
             "task": "image_object_detection",
             "architecture": "MaskRCNN",
