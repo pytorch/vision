@@ -94,8 +94,8 @@ transforms = weights.transforms()
 
 
 def preprocess(img1_batch, img2_batch):
-    batch1 = F.resize(img1_batch, size=[520, 960])
-    batch2 = F.resize(img2_batch, size=[520, 960])
+    img1_batch = F.resize(img1_batch, size=[520, 960])
+    img2_batch = F.resize(img2_batch, size=[520, 960])
     return transforms(img1_batch, img2_batch)
 
 
