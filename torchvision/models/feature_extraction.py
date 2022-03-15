@@ -502,6 +502,8 @@ def create_feature_extractor(
         for n in reversed(graph_module.graph.nodes):
             if n.op == "output":
                 orig_output_nodes.append(n)
+        if not orig_output_nodes:
+            raise RuntimeError("No output nodes found in graph_module.graph.nodes")
 
         for n in orig_output_nodes:
             graph_module.graph.erase_node(n)
