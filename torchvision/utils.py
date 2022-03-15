@@ -102,7 +102,7 @@ def make_grid(
             norm_range(tensor, value_range)
 
     if not isinstance(tensor, torch.Tensor):
-        raise ValueError("tensor should be of type torch.Tensor")
+        raise TypeError("tensor should be of type torch.Tensor")
     if tensor.size(0) == 1:
         return tensor.squeeze(0)
 
