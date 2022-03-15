@@ -1,5 +1,5 @@
-from typing import Any, Optional
 from collections import OrderedDict
+from typing import Any, Optional
 
 from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
