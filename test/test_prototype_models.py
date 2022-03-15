@@ -78,7 +78,7 @@ def test_get_weight(name, weight):
     + TM.get_models_from_module(torchvision.models.quantization)
     + TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
-    + TM.get_models_from_module(models.optical_flow),
+    + TM.get_models_from_module(torchvision.models.optical_flow),
 )
 def test_naming_conventions(model_fn):
     weights_enum = _get_model_weights(model_fn)
@@ -94,7 +94,7 @@ def test_naming_conventions(model_fn):
     + TM.get_models_from_module(torchvision.models.quantization)
     + TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
-    + TM.get_models_from_module(models.optical_flow),
+    + TM.get_models_from_module(torchvision.models.optical_flow),
 )
 @run_if_test_with_prototype
 def test_schema_meta_validation(model_fn):
@@ -157,19 +157,9 @@ def test_video_model(model_fn, dev):
     TM.test_video_model(model_fn, dev)
 
 
-@needs_cuda
-@pytest.mark.parametrize("model_builder", TM.get_models_from_module(models.optical_flow))
-@pytest.mark.parametrize("scripted", (False, True))
-@run_if_test_with_prototype
-def test_raft(model_builder, scripted):
-    TM.test_raft(model_builder, scripted)
-
-
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video)
-    + TM.get_models_from_module(models.optical_flow),
+    TM.get_models_from_module(models.segmentation) + TM.get_models_from_module(models.video),
 )
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
