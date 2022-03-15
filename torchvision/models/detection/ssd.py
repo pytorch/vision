@@ -370,9 +370,7 @@ class SSD(nn.Module):
             for anchors_per_image, targets_per_image in zip(anchors, targets):
                 if targets_per_image["boxes"].numel() == 0:
                     matched_idxs.append(
-                        torch.full(
-                            (anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device
-                        )
+                        torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device)
                     )
                     continue
 
