@@ -5,7 +5,7 @@ import pytest
 import test_models as TM
 import torch
 import torchvision
-from common_utils import cpu_and_gpu, needs_cuda
+from common_utils import cpu_and_gpu
 from torchvision.models._api import WeightsEnum, Weights
 from torchvision.models._utils import handle_legacy_interface
 from torchvision.prototype import models
@@ -77,7 +77,7 @@ def test_get_weight(name, weight):
     + TM.get_models_from_module(torchvision.models.detection)
     + TM.get_models_from_module(torchvision.models.quantization)
     + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(torchvision.models.video)
     + TM.get_models_from_module(torchvision.models.optical_flow),
 )
 def test_naming_conventions(model_fn):
@@ -93,7 +93,7 @@ def test_naming_conventions(model_fn):
     + TM.get_models_from_module(torchvision.models.detection)
     + TM.get_models_from_module(torchvision.models.quantization)
     + TM.get_models_from_module(models.segmentation)
-    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(torchvision.models.video)
     + TM.get_models_from_module(torchvision.models.optical_flow),
 )
 @run_if_test_with_prototype
@@ -150,16 +150,9 @@ def test_segmentation_model(model_fn, dev):
     TM.test_segmentation_model(model_fn, dev)
 
 
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.video))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@run_if_test_with_prototype
-def test_video_model(model_fn, dev):
-    TM.test_video_model(model_fn, dev)
-
-
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models.segmentation) + TM.get_models_from_module(models.video),
+    TM.get_models_from_module(models.segmentation),
 )
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
