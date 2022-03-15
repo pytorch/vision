@@ -57,22 +57,25 @@ class GeneralizedRCNN(nn.Module):
                 like `scores`, `labels` and `mask` (for Mask R-CNN models).
 
         """
-        if self.training and targets is None:
-            raise ValueError("In training mode, targets should be passed")
         if self.training:
-            assert targets is not None
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
+
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
                         raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                    raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            if len(val) != 2:
+                raise ValueError(
+                    f"Expecting the last two dimensions of the input tensor to be H and W, instead got {img.shape[-2:]}"
+                )
             original_image_sizes.append((val[0], val[1]))
 
         images, targets = self.transform(images, targets)

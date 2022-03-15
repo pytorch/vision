@@ -14,6 +14,10 @@ horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
 
 
+def horizontal_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Tensor:
+    return horizontal_flip_image_tensor(segmentation_mask)
+
+
 def horizontal_flip_bounding_box(
     bounding_box: torch.Tensor, format: features.BoundingBoxFormat, image_size: Tuple[int, int]
 ) -> torch.Tensor:
@@ -171,6 +175,57 @@ def affine_image_pil(
     matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
 
     return _FP.affine(img, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
+
+
+def affine_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    image_size: Tuple[int, int],
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    original_shape = bounding_box.shape
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
+    device = bounding_box.device
+
+    if center is None:
+        height, width = image_size
+        center_f = [width * 0.5, height * 0.5]
+    else:
+        center_f = [float(c) for c in center]
+
+    translate_f = [float(t) for t in translate]
+    affine_matrix = torch.tensor(
+        _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear, inverted=False),
+        dtype=dtype,
+        device=device,
+    ).view(2, 3)
+    # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
+    # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
+    # Single point structure is similar to
+    # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
+    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
+    points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
+    # 2) Now let's transform the points using affine matrix
+    transformed_points = torch.matmul(points, affine_matrix.T)
+    # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
+    # and compute bounding box from 4 transformed points:
+    transformed_points = transformed_points.view(-1, 4, 2)
+    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
+    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
+    # out_bboxes should be of shape [N boxes, 4]
+
+    return convert_bounding_box_format(
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(original_shape)
 
 
 def rotate_image_tensor(
