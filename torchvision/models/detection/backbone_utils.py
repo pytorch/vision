@@ -88,7 +88,7 @@ def resnet_fpn_backbone(
         pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
         norm_layer (callable): it is recommended to use the default value. For details visit:
             (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
-        trainable_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        trainable_layers (int): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
         returned_layers (list of int): The layers of the network to return. Each entry must be in ``[1, 4]``.
             By default all layers are returned.
