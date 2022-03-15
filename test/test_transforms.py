@@ -154,7 +154,7 @@ class TestConvertImageDtype:
 @pytest.mark.skipif(accimage is None, reason="accimage not available")
 class TestAccImage:
     def test_accimage_to_tensor(self):
-        trans = transforms.ToTensor()
+        trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert("RGB"))
         output = trans(accimage.Image(GRACE_HOPPER))
@@ -174,7 +174,8 @@ class TestAccImage:
         trans = transforms.Compose(
             [
                 transforms.Resize(256, interpolation=Image.LINEAR),
-                transforms.ToTensor(),
+                transforms.PILToTensor(),
+                transforms.ConvertImageDtype(dtype=torch.float),
             ]
         )
 
@@ -192,10 +193,7 @@ class TestAccImage:
 
     def test_accimage_crop(self):
         trans = transforms.Compose(
-            [
-                transforms.CenterCrop(256),
-                transforms.ToTensor(),
-            ]
+            [transforms.CenterCrop(256), transforms.PILToTensor(), transforms.ConvertImageDtype(dtype=torch.float)]
         )
 
         # Checking if Compose, CenterCrop and ToTensor can be printed as string
@@ -457,26 +455,24 @@ class TestPad:
     def test_pad(self):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
-        img = torch.ones(3, height, width)
+        img = torch.ones(3, height, width, dtype=torch.uint8)
         padding = random.randint(1, 20)
         fill = random.randint(1, 50)
         result = transforms.Compose(
             [
                 transforms.ToPILImage(),
                 transforms.Pad(padding, fill=fill),
-                transforms.ToTensor(),
+                transforms.PILToTensor(),
             ]
         )(img)
         assert result.size(1) == height + 2 * padding
         assert result.size(2) == width + 2 * padding
         # check that all elements in the padded region correspond
         # to the pad value
-        fill_v = fill / 255
-        eps = 1e-5
         h_padded = result[:, :padding, :]
         w_padded = result[:, :, :padding]
-        torch.testing.assert_close(h_padded, torch.full_like(h_padded, fill_value=fill_v), rtol=0.0, atol=eps)
-        torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill_v), rtol=0.0, atol=eps)
+        torch.testing.assert_close(h_padded, torch.full_like(h_padded, fill_value=fill), rtol=0.0, atol=0.0)
+        torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill), rtol=0.0, atol=0.0)
         pytest.raises(ValueError, transforms.Pad(padding, fill=(1, 2)), transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
@@ -509,7 +505,7 @@ class TestPad:
         # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
         edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
         assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8))
-        assert transforms.ToTensor()(edge_padded_img).size() == (3, 35, 35)
+        assert transforms.PILToTensor()(edge_padded_img).size() == (3, 35, 35)
 
         # Pad 3 to left/right, 2 to top/bottom
         reflect_padded_img = F.pad(img, (3, 2), padding_mode="reflect")
@@ -517,7 +513,7 @@ class TestPad:
         # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
         reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
         assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8))
-        assert transforms.ToTensor()(reflect_padded_img).size() == (3, 33, 35)
+        assert transforms.PILToTensor()(reflect_padded_img).size() == (3, 33, 35)
 
         # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
         symmetric_padded_img = F.pad(img, (3, 2, 2, 1), padding_mode="symmetric")
@@ -525,7 +521,7 @@ class TestPad:
         # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
         symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
         assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8))
-        assert transforms.ToTensor()(symmetric_padded_img).size() == (3, 32, 34)
+        assert transforms.PILToTensor()(symmetric_padded_img).size() == (3, 32, 34)
 
         # Check negative padding explicitly for symmetric case, since it is not
         # implemented for tensor case to compare to
@@ -535,7 +531,7 @@ class TestPad:
         symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
         assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8))
         assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8))
-        assert transforms.ToTensor()(symmetric_padded_img_neg).size() == (3, 28, 31)
+        assert transforms.PILToTensor()(symmetric_padded_img_neg).size() == (3, 28, 31)
 
     def test_pad_raises_with_invalid_pad_sequence_len(self):
         with pytest.raises(ValueError):
@@ -1625,12 +1621,12 @@ def test_random_crop():
     width = random.randint(10, 32) * 2
     oheight = random.randint(5, (height - 2) / 2) * 2
     owidth = random.randint(5, (width - 2) / 2) * 2
-    img = torch.ones(3, height, width)
+    img = torch.ones(3, height, width, dtype=torch.uint8)
     result = transforms.Compose(
         [
             transforms.ToPILImage(),
             transforms.RandomCrop((oheight, owidth)),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     assert result.size(1) == oheight
@@ -1641,14 +1637,14 @@ def test_random_crop():
         [
             transforms.ToPILImage(),
             transforms.RandomCrop((oheight, owidth), padding=padding),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     assert result.size(1) == oheight
     assert result.size(2) == owidth
 
     result = transforms.Compose(
-        [transforms.ToPILImage(), transforms.RandomCrop((height, width)), transforms.ToTensor()]
+        [transforms.ToPILImage(), transforms.RandomCrop((height, width)), transforms.PILToTensor()]
     )(img)
     assert result.size(1) == height
     assert result.size(2) == width
@@ -1658,7 +1654,7 @@ def test_random_crop():
         [
             transforms.ToPILImage(),
             transforms.RandomCrop((height + 1, width + 1), pad_if_needed=True),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     assert result.size(1) == height + 1
@@ -1676,7 +1672,7 @@ def test_center_crop():
     oheight = random.randint(5, (height - 2) / 2) * 2
     owidth = random.randint(5, (width - 2) / 2) * 2
 
-    img = torch.ones(3, height, width)
+    img = torch.ones(3, height, width, dtype=torch.uint8)
     oh1 = (height - oheight) // 2
     ow1 = (width - owidth) // 2
     imgnarrow = img[:, oh1 : oh1 + oheight, ow1 : ow1 + owidth]
@@ -1685,7 +1681,7 @@ def test_center_crop():
         [
             transforms.ToPILImage(),
             transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     assert result.sum() == 0
@@ -1695,7 +1691,7 @@ def test_center_crop():
         [
             transforms.ToPILImage(),
             transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     sum1 = result.sum()
@@ -1706,7 +1702,7 @@ def test_center_crop():
         [
             transforms.ToPILImage(),
             transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     sum2 = result.sum()
@@ -1729,12 +1725,12 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
     delta_height *= delta
     delta_width *= delta
 
-    img = torch.ones(3, *input_image_size)
+    img = torch.ones(3, *input_image_size, dtype=torch.uint8)
     crop_size = (input_image_size[0] + delta_height, input_image_size[1] + delta_width)
 
     # Test both transforms, one with PIL input and one with tensor
     output_pil = transforms.Compose(
-        [transforms.ToPILImage(), transforms.CenterCrop(crop_size), transforms.ToTensor()],
+        [transforms.ToPILImage(), transforms.CenterCrop(crop_size), transforms.PILToTensor()],
     )(img)
     assert output_pil.size()[1:3] == crop_size
 
@@ -1893,13 +1889,13 @@ def test_randomperspective():
         perp = transforms.RandomPerspective()
         startpoints, endpoints = perp.get_params(width, height, 0.5)
         tr_img = F.perspective(img, startpoints, endpoints)
-        tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
-        tr_img = F.to_tensor(tr_img)
+        tr_img2 = F.convert_image_dtype(F.pil_to_tensor(F.perspective(tr_img, endpoints, startpoints)))
+        tr_img = F.convert_image_dtype(F.pil_to_tensor(tr_img))
         assert img.size[0] == width
         assert img.size[1] == height
-        assert torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3 > torch.nn.functional.mse_loss(
-            tr_img2, F.to_tensor(img)
-        )
+        assert torch.nn.functional.mse_loss(
+            tr_img, F.convert_image_dtype(F.pil_to_tensor(img))
+        ) + 0.3 > torch.nn.functional.mse_loss(tr_img2, F.convert_image_dtype(F.pil_to_tensor(img)))
 
 
 @pytest.mark.parametrize("seed", range(10))
