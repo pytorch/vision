@@ -15,6 +15,10 @@ horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
 
 
+def horizontal_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Tensor:
+    return horizontal_flip_image_tensor(segmentation_mask)
+
+
 def horizontal_flip_bounding_box(
     bounding_box: torch.Tensor, format: features.BoundingBoxFormat, image_size: Tuple[int, int]
 ) -> torch.Tensor:
