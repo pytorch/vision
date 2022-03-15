@@ -99,7 +99,8 @@ class SemanticSegmentationEval(nn.Module):
         img = F.convert_image_dtype(img, torch.float)
         img = F.normalize(img, mean=self._mean, std=self._std)
         if target:
-            target = F.resize(target, self._size, interpolation=self._interpolation_target)
+            if isinstance(self._size, list):
+                target = F.resize(target, self._size, interpolation=self._interpolation_target)
             if not isinstance(target, Tensor):
                 target = F.pil_to_tensor(target)
             target = target.squeeze(0).to(torch.int64)
