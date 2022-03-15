@@ -30,7 +30,7 @@ class LRASPP(nn.Module):
             "high" for the high level feature map and "low" for the low level feature map.
         low_channels (int): the number of channels of the low level features.
         high_channels (int): the number of channels of the high level features.
-        num_classes (int): number of output classes of the model (including the background).
+        num_classes (int, optional): number of output classes of the model (including the background).
         inter_channels (int, optional): the number of channels for intermediate computations.
     """
 
@@ -108,7 +108,7 @@ def lraspp_mobilenet_v3_large(
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
+        num_classes (int, optional): number of output classes of the model (including the background)
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
     if kwargs.pop("aux_loss", False):

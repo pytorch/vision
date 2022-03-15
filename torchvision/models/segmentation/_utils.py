@@ -36,10 +36,3 @@ class _SimpleSegmentationModel(nn.Module):
             result["aux"] = x
 
         return result
-
-
-def _load_weights(arch: str, model: nn.Module, model_url: Optional[str], progress: bool) -> None:
-    if model_url is None:
-        raise ValueError(f"No checkpoint is available for {arch}")
-    state_dict = load_state_dict_from_url(model_url, progress=progress)
-    model.load_state_dict(state_dict)

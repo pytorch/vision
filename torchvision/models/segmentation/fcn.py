@@ -77,7 +77,7 @@ def fcn_resnet50(
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
+        num_classes (int, optional): number of output classes of the model (including the background)
         aux_loss (bool, optional): If True, it uses an auxiliary loss
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
@@ -107,7 +107,7 @@ def fcn_resnet101(
         pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
             contains the same classes as Pascal VOC
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
+        num_classes (int, optional): number of output classes of the model (including the background)
         aux_loss (bool, optional): If True, it uses an auxiliary loss
         pretrained_backbone (bool): If True, the backbone will be pre-trained.
     """
