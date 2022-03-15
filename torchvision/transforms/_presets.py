@@ -106,15 +106,6 @@ class SemanticSegmentationEval(nn.Module):
 
 
 class OpticalFlowEval(nn.Module):
-    def __init__(
-        self,
-        mean: Tuple[float, ...] = (0.5, 0.5, 0.5),
-        std: Tuple[float, ...] = (0.5, 0.5, 0.5),
-    ) -> None:
-        super().__init__()
-        self._mean = list(mean)
-        self._std = list(std)
-
     def forward(
         self, img1: Tensor, img2: Tensor, flow: Optional[Tensor] = None, valid_flow_mask: Optional[Tensor] = None
     ) -> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:
@@ -124,8 +115,9 @@ class OpticalFlowEval(nn.Module):
         img1 = F.convert_image_dtype(img1, torch.float32)
         img2 = F.convert_image_dtype(img2, torch.float32)
 
-        img1 = F.normalize(img1, mean=self._mean, std=self._std)
-        img2 = F.normalize(img2, mean=self._mean, std=self._std)
+        # map [0, 1] into [-1, 1]
+        img1 = F.normalize(img1, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
+        img2 = F.normalize(img2, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
 
         img1 = img1.contiguous()
         img2 = img2.contiguous()
