@@ -259,7 +259,12 @@ def setup_ddp(args):
         # if we're here, the script was called by run_with_submitit.py
         args.local_rank = args.gpu
     else:
-        raise ValueError(r"Sorry, I can't set up the distributed training ¯\_(ツ)_/¯.")
+        print("Not using distributed mode!")
+        args.distributed = False
+        args.world_size = 1
+        return
+
+    args.distributed = True
 
     _redefine_print(is_main=(args.rank == 0))
 
