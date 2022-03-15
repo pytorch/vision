@@ -435,19 +435,17 @@ def create_feature_extractor(
 
     if not any(arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
 
-        raise RuntimeError(
+        raise ValueError(
             "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
         )
 
     if (train_return_nodes is None) ^ (eval_return_nodes is None):
-        raise RuntimeError(
+        raise ValueError(
             "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
         )
 
     if not ((return_nodes is None) ^ (train_return_nodes is None)):
-        raise RuntimeError(
-            "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
-        )
+        raise ValueError("If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified")
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:

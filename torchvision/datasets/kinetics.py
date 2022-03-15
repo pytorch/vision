@@ -119,7 +119,7 @@ class Kinetics(VisionDataset):
             self.split_folder = root
             self.split = "unknown"
             if download:
-                raise RuntimeError("Cannot download the videos using legacy_structure.")
+                raise ValueError("Cannot download the videos using legacy_structure.")
         else:
             self.split_folder = path.join(root, split)
             self.split = verify_str_arg(split, arg="split", valid_values=["train", "val"])
