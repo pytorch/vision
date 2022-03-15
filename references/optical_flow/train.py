@@ -224,6 +224,17 @@ def main(args):
         model.to(device)
         model_without_ddp = model
 
+    if args.resume is not None:
+        checkpoint = torch.load(args.resume, map_location="cpu")
+        model_without_ddp.load_state_dict(checkpoint["model"])
+
+    if args.train_dataset is None:
+        # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        evaluate(model, args)
+        return
+
     print(f"Parameter Count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
     train_dataset = get_train_dataset(args.train_dataset, args.dataset_root)
@@ -241,20 +252,11 @@ def main(args):
     )
 
     if args.resume is not None:
-        checkpoint = torch.load(args.resume, map_location="cpu")
-        model_without_ddp.load_state_dict(checkpoint["model"])
         optimizer.load_state_dict(checkpoint["optimizer"])
         scheduler.load_state_dict(checkpoint["scheduler"])
         args.start_epoch = checkpoint["epoch"] + 1
     else:
         args.start_epoch = 0
-
-    if args.train_dataset is None:
-        # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
-        torch.backends.cudnn.benchmark = False
-        torch.backends.cudnn.deterministic = True
-        evaluate(model, args)
-        return
 
     torch.backends.cudnn.benchmark = True
 
