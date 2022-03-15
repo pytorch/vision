@@ -110,14 +110,10 @@ class Tester(unittest.TestCase):
         process_model(models.wide_resnet101_2(), self.image, _C_tests.forward_wide_resnet101_2, "WideResNet101_2")
 
     def test_squeezenet1_0(self):
-        process_model(
-            models.squeezenet1_0(), self.image, _C_tests.forward_squeezenet1_0, "Squeezenet1.0"
-        )
+        process_model(models.squeezenet1_0(), self.image, _C_tests.forward_squeezenet1_0, "Squeezenet1.0")
 
     def test_squeezenet1_1(self):
-        process_model(
-            models.squeezenet1_1(), self.image, _C_tests.forward_squeezenet1_1, "Squeezenet1.1"
-        )
+        process_model(models.squeezenet1_1(), self.image, _C_tests.forward_squeezenet1_1, "Squeezenet1.1")
 
     def test_densenet121(self):
         process_model(models.densenet121(), self.image, _C_tests.forward_densenet121, "Densenet121")

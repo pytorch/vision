@@ -430,7 +430,9 @@ class TestONNXExporter:
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(weights=models.detection.faster_rcnn.FasterRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(
+            weights=models.detection.faster_rcnn.FasterRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         # Test exported model on images of different size, or dummy input
@@ -486,7 +488,9 @@ class TestONNXExporter:
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(weights=models.detection.mask_rcnn.MaskRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300)
+        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(
+            weights=models.detection.mask_rcnn.MaskRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         # Test exported model on images of different size, or dummy input
@@ -548,7 +552,9 @@ class TestONNXExporter:
     def test_keypoint_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_images = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(weights=models.detection.keypoint_rcnn.KeypointRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300)
+        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
+            weights=models.detection.keypoint_rcnn.KeypointRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         self.run_model(
