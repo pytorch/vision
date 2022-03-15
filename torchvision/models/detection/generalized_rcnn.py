@@ -60,16 +60,16 @@ class GeneralizedRCNN(nn.Module):
         if self.training:
             if targets is None:
                 raise ValueError("In training mode, targets should be passed")
-            else:
-                for target in targets:
-                    boxes = target["boxes"]
-                    if isinstance(boxes, torch.Tensor):
-                        if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                            raise ValueError(
-                                f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}."
-                            )
-                    else:
-                        raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+
+            for target in targets:
+                boxes = target["boxes"]
+                if isinstance(boxes, torch.Tensor):
+                    if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
+                        raise ValueError(
+                            f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}."
+                        )
+                else:
+                    raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:

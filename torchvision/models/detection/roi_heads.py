@@ -789,15 +789,15 @@ class RoIHeads(nn.Module):
             if self.training:
                 if matched_idxs is None:
                     raise ValueError("if in trainning, matched_idxs should not be None")
-                else:
-                    # during training, only focus on positive boxes
-                    num_images = len(proposals)
-                    mask_proposals = []
-                    pos_matched_idxs = []
-                    for img_id in range(num_images):
-                        pos = torch.where(labels[img_id] > 0)[0]
-                        mask_proposals.append(proposals[img_id][pos])
-                        pos_matched_idxs.append(matched_idxs[img_id][pos])
+
+                # during training, only focus on positive boxes
+                num_images = len(proposals)
+                mask_proposals = []
+                pos_matched_idxs = []
+                for img_id in range(num_images):
+                    pos = torch.where(labels[img_id] > 0)[0]
+                    mask_proposals.append(proposals[img_id][pos])
+                    pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
                 pos_matched_idxs = None
 
@@ -840,11 +840,11 @@ class RoIHeads(nn.Module):
                 pos_matched_idxs = []
                 if matched_idxs is None:
                     raise ValueError("if in trainning, matched_idxs should not be None")
-                else:
-                    for img_id in range(num_images):
-                        pos = torch.where(labels[img_id] > 0)[0]
-                        keypoint_proposals.append(proposals[img_id][pos])
-                        pos_matched_idxs.append(matched_idxs[img_id][pos])
+
+                for img_id in range(num_images):
+                    pos = torch.where(labels[img_id] > 0)[0]
+                    keypoint_proposals.append(proposals[img_id][pos])
+                    pos_matched_idxs.append(matched_idxs[img_id][pos])
             else:
                 pos_matched_idxs = None
 
@@ -856,22 +856,22 @@ class RoIHeads(nn.Module):
             if self.training:
                 if targets is None or pos_matched_idxs is None:
                     raise ValueError("both targets and pos_matched_idxs should not be None when in training mode")
-                else:
-                    gt_keypoints = [t["keypoints"] for t in targets]
-                    rcnn_loss_keypoint = keypointrcnn_loss(
-                        keypoint_logits, keypoint_proposals, gt_keypoints, pos_matched_idxs
-                    )
-                    loss_keypoint = {"loss_keypoint": rcnn_loss_keypoint}
+
+                gt_keypoints = [t["keypoints"] for t in targets]
+                rcnn_loss_keypoint = keypointrcnn_loss(
+                    keypoint_logits, keypoint_proposals, gt_keypoints, pos_matched_idxs
+                )
+                loss_keypoint = {"loss_keypoint": rcnn_loss_keypoint}
             else:
                 if keypoint_logits is None or keypoint_proposals is None:
                     raise ValueError(
                         "both keypoint_logits and keypoint_proposals should not be None when not in training mode"
                     )
-                else:
-                    keypoints_probs, kp_scores = keypointrcnn_inference(keypoint_logits, keypoint_proposals)
-                    for keypoint_prob, kps, r in zip(keypoints_probs, kp_scores, result):
-                        r["keypoints"] = keypoint_prob
-                        r["keypoints_scores"] = kps
+
+                keypoints_probs, kp_scores = keypointrcnn_inference(keypoint_logits, keypoint_proposals)
+                for keypoint_prob, kps, r in zip(keypoints_probs, kp_scores, result):
+                    r["keypoints"] = keypoint_prob
+                    r["keypoints_scores"] = kps
             losses.update(loss_keypoint)
 
         return result, losses
