@@ -1,6 +1,5 @@
 import collections.abc
 import difflib
-import enum
 import functools
 import inspect
 import io
@@ -31,7 +30,6 @@ import numpy as np
 import torch
 
 __all__ = [
-    "StrEnum",
     "sequence_to_str",
     "add_suggestion",
     "FrozenMapping",
@@ -43,17 +41,6 @@ __all__ = [
     "apply_recursively",
     "query_recursively",
 ]
-
-
-class StrEnumMeta(enum.EnumMeta):
-    auto = enum.auto
-
-    def __getitem__(self, item):
-        return super().__getitem__(item.upper() if isinstance(item, str) else item)
-
-
-class StrEnum(enum.Enum, metaclass=StrEnumMeta):
-    pass
 
 
 def sequence_to_str(seq: Sequence, separate_last: str = "") -> str:
