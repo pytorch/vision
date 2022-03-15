@@ -23,7 +23,7 @@ def get_available_models():
 @pytest.mark.parametrize("backbone_name", ("resnet18", "resnet50"))
 def test_resnet_fpn_backbone(backbone_name):
     x = torch.rand(1, 3, 300, 300, dtype=torch.float32, device="cpu")
-    model = resnet_fpn_backbone(backbone_name=backbone_name, weights=None)
+    model = resnet_fpn_backbone(backbone_name=backbone_name)
     assert isinstance(model, BackboneWithFPN)
     y = model(x)
     assert list(y.keys()) == ["0", "1", "2", "3", "pool"]
