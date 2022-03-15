@@ -111,7 +111,7 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
 def _setup_scales(
     features: List[Tensor], image_shapes: List[Tuple[int, int]], canonical_scale: int, canonical_level: int
 ) -> Tuple[List[float], LevelMapper]:
-    if len(image_shapes) == 0:
+    if not image_shapes:
         raise ValueError("images list should not be empty")
     max_x = 0
     max_y = 0
