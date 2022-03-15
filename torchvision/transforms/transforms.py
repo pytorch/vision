@@ -1894,7 +1894,7 @@ class RandomPosterize(torch.nn.Module):
 
     Args:
         bits (int): number of bits to keep for each channel (0-8)
-        p (float): probability of the image being color inverted. Default value is 0.5
+        p (float): probability of the image being posterized. Default value is 0.5
     """
 
     def __init__(self, bits, p=0.5):
@@ -1927,7 +1927,7 @@ class RandomSolarize(torch.nn.Module):
 
     Args:
         threshold (float): all pixels equal or above this value are inverted.
-        p (float): probability of the image being color inverted. Default value is 0.5
+        p (float): probability of the image being solarized. Default value is 0.5
     """
 
     def __init__(self, threshold, p=0.5):
@@ -1960,7 +1960,7 @@ class RandomAdjustSharpness(torch.nn.Module):
         sharpness_factor (float):  How much to adjust the sharpness. Can be
             any non negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
-        p (float): probability of the image being color inverted. Default value is 0.5
+        p (float): probability of the image being sharpened. Default value is 0.5
     """
 
     def __init__(self, sharpness_factor, p=0.5):
