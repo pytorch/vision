@@ -12,7 +12,7 @@ from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..vgg import VGG16_Weights, vgg16
+from ..vgg import VGG, VGG16_Weights, vgg16
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
@@ -535,7 +535,7 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
+def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     backbone = backbone.features
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
