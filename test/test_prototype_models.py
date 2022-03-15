@@ -74,7 +74,7 @@ def test_get_weight(name, weight):
 @pytest.mark.parametrize(
     "model_fn",
     TM.get_models_from_module(torchvision.models)
-    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(torchvision.models.detection)
     + TM.get_models_from_module(torchvision.models.quantization)
     + TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
@@ -90,7 +90,7 @@ def test_naming_conventions(model_fn):
 @pytest.mark.parametrize(
     "model_fn",
     TM.get_models_from_module(torchvision.models)
-    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(torchvision.models.detection)
     + TM.get_models_from_module(torchvision.models.quantization)
     + TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
@@ -143,13 +143,6 @@ def test_schema_meta_validation(model_fn):
     assert not bad_names
 
 
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.detection))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@run_if_test_with_prototype
-def test_detection_model(model_fn, dev):
-    TM.test_detection_model(model_fn, dev)
-
-
 @pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 @run_if_test_with_prototype
@@ -174,8 +167,7 @@ def test_raft(model_builder, scripted):
 
 @pytest.mark.parametrize(
     "model_fn",
-    TM.get_models_from_module(models.detection)
-    + TM.get_models_from_module(models.segmentation)
+    TM.get_models_from_module(models.segmentation)
     + TM.get_models_from_module(models.video)
     + TM.get_models_from_module(models.optical_flow),
 )
