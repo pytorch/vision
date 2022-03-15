@@ -18,8 +18,6 @@ predicted flows to RGB images for visualization.
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
-import torchvision.transforms.functional as F
-import torchvision.transforms as T
 
 
 plt.rcParams["savefig.bbox"] = "tight"
@@ -88,24 +86,20 @@ plot(img1_batch)
 # reduce the image sizes for the example to run faster. Image dimension must be
 # divisible by 8.
 
+from torchvision.models.optical_flow import Raft_Large_Weights
+from torchvision.transforms import functional as F
 
-def preprocess(batch):
-    transforms = T.Compose(
-        [
-            T.ConvertImageDtype(torch.float32),
-            T.Normalize(mean=0.5, std=0.5),  # map [0, 1] into [-1, 1]
-            T.Resize(size=(520, 960)),
-        ]
-    )
-    batch = transforms(batch)
-    return batch
+weights = Raft_Large_Weights.DEFAULT
+transforms = weights.transforms()
 
 
-# If you can, run this example on a GPU, it will be a lot faster.
-device = "cuda" if torch.cuda.is_available() else "cpu"
+def preprocess(batch1, batch2):
+    batch1 = F.resize(batch1, size=[520, 960])
+    batch2 = F.resize(batch2, size=[520, 960])
+    return transforms(batch1, batch2)
 
-img1_batch = preprocess(img1_batch).to(device)
-img2_batch = preprocess(img2_batch).to(device)
+
+img1_batch, img2_batch = preprocess(img1_batch, img2_batch)
 
 print(f"shape = {img1_batch.shape}, dtype = {img1_batch.dtype}")
 
@@ -121,7 +115,10 @@ print(f"shape = {img1_batch.shape}, dtype = {img1_batch.dtype}")
 
 from torchvision.models.optical_flow import raft_large
 
-model = raft_large(pretrained=True, progress=False).to(device)
+# If you can, run this example on a GPU, it will be a lot faster.
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+model = raft_large(weights=Raft_Large_Weights.DEFAULT, progress=False).to(device)
 model = model.eval()
 
 list_of_flows = model(img1_batch.to(device), img2_batch.to(device))
