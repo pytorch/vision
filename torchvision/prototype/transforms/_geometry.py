@@ -13,11 +13,25 @@ from torchvision.transforms.transforms import _setup_size, _interpolation_modes_
 from ._utils import query_image, get_image_dimensions, has_any, is_simple_tensor
 
 
-class HorizontalFlip(Transform):
+class RandomHorizontalFlip(Transform):
+    def __init__(self, p: float = 0.5) -> None:
+        super().__init__()
+        self.p = p
+
+    def forward(self, *inputs: Any) -> Any:
+        sample = inputs if len(inputs) > 1 else inputs[0]
+        if torch.rand(1) >= self.p:
+            return sample
+
+        return super().forward(sample)
+
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if isinstance(input, features.Image):
             output = F.horizontal_flip_image_tensor(input)
             return features.Image.new_like(input, output)
+        elif isinstance(input, features.SegmentationMask):
+            output = F.horizontal_flip_segmentation_mask(input)
+            return features.SegmentationMask.new_like(input, output)
         elif isinstance(input, features.BoundingBox):
             output = F.horizontal_flip_bounding_box(input, format=input.format, image_size=input.image_size)
             return features.BoundingBox.new_like(input, output)
