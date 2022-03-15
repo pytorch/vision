@@ -1,5 +1,5 @@
-from functools import partial
 from collections import OrderedDict
+from functools import partial
 from typing import Any, Dict, Optional
 
 from torch import nn, Tensor

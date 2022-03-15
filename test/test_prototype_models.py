@@ -3,12 +3,9 @@ import os
 
 import pytest
 import test_models as TM
-import torch
 import torchvision
-from common_utils import cpu_and_gpu
 from torchvision.models._api import WeightsEnum, Weights
 from torchvision.models._utils import handle_legacy_interface
-from torchvision.prototype import models
 
 run_if_test_with_prototype = pytest.mark.skipif(
     os.getenv("PYTORCH_TEST_WITH_PROTOTYPE") != "1",
@@ -76,7 +73,7 @@ def test_get_weight(name, weight):
     TM.get_models_from_module(torchvision.models)
     + TM.get_models_from_module(torchvision.models.detection)
     + TM.get_models_from_module(torchvision.models.quantization)
-    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(torchvision.models.segmentation)
     + TM.get_models_from_module(torchvision.models.video)
     + TM.get_models_from_module(torchvision.models.optical_flow),
 )
@@ -92,7 +89,7 @@ def test_naming_conventions(model_fn):
     TM.get_models_from_module(torchvision.models)
     + TM.get_models_from_module(torchvision.models.detection)
     + TM.get_models_from_module(torchvision.models.quantization)
-    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(torchvision.models.segmentation)
     + TM.get_models_from_module(torchvision.models.video)
     + TM.get_models_from_module(torchvision.models.optical_flow),
 )
@@ -141,68 +138,6 @@ def test_schema_meta_validation(model_fn):
     assert not problematic_weights
     assert not incorrect_params
     assert not bad_names
-
-
-@pytest.mark.parametrize("model_fn", TM.get_models_from_module(models.segmentation))
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@run_if_test_with_prototype
-def test_segmentation_model(model_fn, dev):
-    TM.test_segmentation_model(model_fn, dev)
-
-
-@pytest.mark.parametrize(
-    "model_fn",
-    TM.get_models_from_module(models.segmentation),
-)
-@pytest.mark.parametrize("dev", cpu_and_gpu())
-@run_if_test_with_prototype
-def test_old_vs_new_factory(model_fn, dev):
-    defaults = {
-        "models": {
-            "input_shape": (1, 3, 224, 224),
-        },
-        "detection": {
-            "input_shape": (3, 300, 300),
-        },
-        "quantization": {
-            "input_shape": (1, 3, 224, 224),
-            "quantize": True,
-        },
-        "segmentation": {
-            "input_shape": (1, 3, 520, 520),
-        },
-        "video": {
-            "input_shape": (1, 3, 4, 112, 112),
-        },
-        "optical_flow": {
-            "input_shape": (1, 3, 128, 128),
-        },
-    }
-    model_name = model_fn.__name__
-    module_name = model_fn.__module__.split(".")[-2]
-    kwargs = {"pretrained": True, **defaults[module_name], **TM._model_params.get(model_name, {})}
-    input_shape = kwargs.pop("input_shape")
-    kwargs.pop("num_classes", None)  # ignore this as it's an incompatible speed optimization for pre-trained models
-    x = torch.rand(input_shape).to(device=dev)
-    if module_name == "detection":
-        x = [x]
-
-    if module_name == "optical_flow":
-        args = [x, x]  # RAFT model requires img1, img2 as input
-    else:
-        args = [x]
-
-    # compare with new model builder parameterized in the old fashion way
-    try:
-        model_old = _build_model(_get_original_model(model_fn), **kwargs).to(device=dev)
-        model_new = _build_model(model_fn, **kwargs).to(device=dev)
-    except ModuleNotFoundError:
-        pytest.skip(f"Model '{model_name}' not available in both modules.")
-    torch.testing.assert_close(model_new(*args), model_old(*args), rtol=0.0, atol=0.0, check_dtype=False)
-
-
-def test_smoke():
-    import torchvision.prototype.models  # noqa: F401
 
 
 # With this filter, every unexpected warning will be turned into an error

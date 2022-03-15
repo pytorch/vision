@@ -4,8 +4,8 @@ from typing import Tuple, Optional, Callable, List, Sequence, Type, Any, Union
 import torch.nn as nn
 from torch import Tensor
 
-from ...utils import _log_api_usage_once
 from ...transforms import VideoClassificationEval, InterpolationMode
+from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _KINETICS400_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param

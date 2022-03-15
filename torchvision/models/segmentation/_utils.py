@@ -4,7 +4,6 @@ from typing import Optional, Dict
 from torch import nn, Tensor
 from torch.nn import functional as F
 
-from ..._internally_replaced_utils import load_state_dict_from_url
 from ...utils import _log_api_usage_once
 
 
