@@ -15,6 +15,10 @@ horizontal_flip_image_tensor = _FT.hflip
 horizontal_flip_image_pil = _FP.hflip
 
 
+def horizontal_flip_segmentation_mask(segmentation_mask: torch.Tensor) -> torch.Tensor:
+    return horizontal_flip_image_tensor(segmentation_mask)
+
+
 def horizontal_flip_bounding_box(
     bounding_box: torch.Tensor, format: features.BoundingBoxFormat, image_size: Tuple[int, int]
 ) -> torch.Tensor:
@@ -27,7 +31,7 @@ def horizontal_flip_bounding_box(
     bounding_box[:, [0, 2]] = image_size[1] - bounding_box[:, [2, 0]]
 
     return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(shape)
 
 
@@ -210,6 +214,26 @@ def rotate_image_pil(
 pad_image_tensor = _FT.pad
 pad_image_pil = _FP.pad
 
+
+def pad_bounding_box(
+    bounding_box: torch.Tensor, padding: List[int], format: features.BoundingBoxFormat
+) -> torch.Tensor:
+    left, _, top, _ = _FT._parse_pad_padding(padding)
+
+    shape = bounding_box.shape
+
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    bounding_box[:, 0::2] += left
+    bounding_box[:, 1::2] += top
+
+    return convert_bounding_box_format(
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(shape)
+
+
 crop_image_tensor = _FT.crop
 crop_image_pil = _FP.crop
 
@@ -318,9 +342,9 @@ def resized_crop_image_pil(
 
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
-        size = (int(size), int(size))
+        size = [int(size), int(size)]
     elif isinstance(size, (tuple, list)) and len(size) == 1:
-        size = (size[0], size[0])  # type: ignore[assignment]
+        size = [size[0], size[0]]
 
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
