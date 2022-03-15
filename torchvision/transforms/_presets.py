@@ -92,7 +92,7 @@ class SemanticSegmentationEval(nn.Module):
         self._interpolation_target = interpolation_target
 
     def forward(self, img: Tensor, target: Optional[Tensor] = None) -> Tuple[Tensor, Optional[Tensor]]:
-        if self._size is not None:
+        if isinstance(self._size, list):
             img = F.resize(img, self._size, interpolation=self._interpolation)
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
