@@ -428,7 +428,6 @@ def test_mobilenet_norm_layer(model_fn):
 
 
 def test_inception_v3_eval():
-    # replacement for models.inception_v3(pretrained=True) that does not download weights
     kwargs = {}
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
@@ -444,7 +443,7 @@ def test_inception_v3_eval():
 
 
 def test_fasterrcnn_double():
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50)
     model.double()
     model.eval()
     input_shape = (3, 300, 300)
@@ -460,7 +459,6 @@ def test_fasterrcnn_double():
 
 
 def test_googlenet_eval():
-    # replacement for models.googlenet(pretrained=True) that does not download weights
     kwargs = {}
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
@@ -484,7 +482,7 @@ def test_fasterrcnn_switch_devices():
         assert "scores" in out[0]
         assert "labels" in out[0]
 
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50)
     model.cuda()
     model.eval()
     input_shape = (3, 300, 300)
@@ -600,7 +598,6 @@ def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 10,
-        "pretrained_backbone": False,
         "input_shape": (1, 3, 32, 32),
     }
     model_name = model_fn.__name__
@@ -662,7 +659,6 @@ def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 50,
-        "pretrained_backbone": False,
         "input_shape": (3, 300, 300),
     }
     model_name = model_fn.__name__
@@ -757,7 +753,7 @@ def test_detection_model(model_fn, dev):
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
-    model = model_fn(num_classes=50, pretrained_backbone=False)
+    model = model_fn(num_classes=50)
     input_shape = (3, 300, 300)
     x = [torch.rand(input_shape)]
 
@@ -821,7 +817,6 @@ def test_quantized_classification_model(model_fn):
     defaults = {
         "num_classes": 5,
         "input_shape": (1, 3, 224, 224),
-        "pretrained": False,
         "quantize": True,
     }
     model_name = model_fn.__name__
@@ -871,7 +866,7 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
     for trainable_layers in range(0, max_trainable + 1):
-        model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
+        model = model_fn(weights_backbone="DEFAULT", trainable_backbone_layers=trainable_layers)
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
