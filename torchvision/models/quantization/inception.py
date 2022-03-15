@@ -216,8 +216,7 @@ def inception_v3(
         backend = "fbgemm"
         quantize_model(model, backend)
     else:
-        if pretrained not in [True, False]:
-            raise ValueError(f"For non quantized models, pretrained should be a bollean value instead of {pretrained}")
+        assert pretrained in [True, False]
 
     if pretrained:
         if quantize:
