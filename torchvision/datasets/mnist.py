@@ -535,7 +535,7 @@ def read_label_file(path: str) -> torch.Tensor:
     x = read_sn3_pascalvincent_tensor(path, strict=False)
     if x.dtype != torch.uint8:
         raise TypeError(f"x should be of dtype torch.uint8 instead of {x.dtype}")
-    if not x.ndimension() == 1:
+    if x.ndimension() != 1:
         raise ValueError(f"x should have 1 dimension instead of {x.ndimension()}")
     return x.long()
 
