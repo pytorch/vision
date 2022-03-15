@@ -93,10 +93,10 @@ weights = Raft_Large_Weights.DEFAULT
 transforms = weights.transforms()
 
 
-def preprocess(batch1, batch2):
-    batch1 = F.resize(batch1, size=[520, 960])
-    batch2 = F.resize(batch2, size=[520, 960])
-    return transforms(batch1, batch2)
+def preprocess(img1_batch, img2_batch):
+    batch1 = F.resize(img1_batch, size=[520, 960])
+    batch2 = F.resize(img2_batch, size=[520, 960])
+    return transforms(img1_batch, img2_batch)
 
 
 img1_batch, img2_batch = preprocess(img1_batch, img2_batch)
