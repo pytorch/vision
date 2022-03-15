@@ -18,6 +18,7 @@ predicted flows to RGB images for visualization.
 import numpy as np
 import torch
 import matplotlib.pyplot as plt
+import torchvision.transforms.functional as F
 
 
 plt.rcParams["savefig.bbox"] = "tight"
@@ -87,7 +88,6 @@ plot(img1_batch)
 # divisible by 8.
 
 from torchvision.models.optical_flow import Raft_Large_Weights
-from torchvision.transforms import functional as F
 
 weights = Raft_Large_Weights.DEFAULT
 transforms = weights.transforms()
