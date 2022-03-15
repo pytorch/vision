@@ -292,7 +292,7 @@ class DualGraphModule(fx.GraphModule):
         # serialize a GraphModule without retaining the Graph, and needs to use the correct Tracer
         # to re-create the Graph during deserialization.
         if self.eval_graph._tracer_cls != self.train_graph._tracer_cls:
-            raise RuntimeError(
+            raise TypeError(
                 f"Train mode and eval mode should use the same tracer class. Instead got {self.eval_graph._tracer_cls} for eval vs {self.train_graph._tracer_cls} for train"
             )
         self._tracer_cls = None
@@ -481,7 +481,7 @@ def create_feature_extractor(
         available_nodes = list(tracer.node_to_qualname.values())
         # FIXME We don't know if we should expect this to happen
         if len(set(available_nodes)) != len(available_nodes):
-            raise RuntimeError(
+            raise ValueError(
                 "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
             )
         # Check that all outputs in return_nodes are present in the model
@@ -503,7 +503,7 @@ def create_feature_extractor(
             if n.op == "output":
                 orig_output_nodes.append(n)
         if not orig_output_nodes:
-            raise RuntimeError("No output nodes found in graph_module.graph.nodes")
+            raise ValueError("No output nodes found in graph_module.graph.nodes")
 
         for n in orig_output_nodes:
             graph_module.graph.erase_node(n)

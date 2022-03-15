@@ -99,7 +99,7 @@ def ssdlite320_mobilenet_v3_large(
     out_channels = det_utils.retrieve_out_channels(backbone, size)
     num_anchors = anchor_generator.num_anchors_per_location()
     if len(out_channels) != len(anchor_generator.aspect_ratios):
-        raise RuntimeError(
+        raise ValueError(
             f"The length of the output channels from the backbone {len(out_channels)} do not match the length of the anchor generator aspect ratios {len(anchor_generator.aspect_ratios)}"
         )
 

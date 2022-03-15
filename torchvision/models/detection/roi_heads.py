@@ -767,9 +767,9 @@ class RoIHeads(nn.Module):
         losses = {}
         if self.training:
             if labels is None:
-                raise RuntimeError("labels cannot be None")
+                raise ValueError("labels cannot be None")
             if regression_targets is None:
-                raise RuntimeError("regression_targets cannot be None")
+                raise ValueError("regression_targets cannot be None")
             loss_classifier, loss_box_reg = fastrcnn_loss(class_logits, box_regression, labels, regression_targets)
             losses = {"loss_classifier": loss_classifier, "loss_box_reg": loss_box_reg}
         else:
