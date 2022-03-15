@@ -1,4 +1,3 @@
-import enum
 import functools
 from pathlib import Path
 from typing import Any, Tuple, List, Dict, cast, Optional, BinaryIO
@@ -15,39 +14,7 @@ from torchvision.prototype.datasets.utils._internal import (
 from torchvision.prototype.features import Label, EncodedImage
 
 
-class Food101Demux(enum.IntEnum):
-    METADATA = 0
-    IMAGES = 1
-    EXTRA = 2
-
-
 class Food101(Dataset):
-    """`The Food-101 Data Set <https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101/>`_.
-
-    The Food-101 is a challenging data set of 101 food categories, with 101'000 images.
-    For each class, 250 manually reviewed test images are provided as well as 750 training images.
-    On purpose, the training images were not cleaned, and thus still contain some amount of noise.
-    This comes mostly in the form of intense colors and sometimes wrong labels. All images were
-    rescaled to have a maximum side length of 512 pixels.
-
-    TODO: Add more details?
-
-    """
-
-    _URL = "http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz"
-    _SHA256 = "d97d15e438b7f4498f96086a4f7e2fa42a32f2712e87d3295441b2b6314053a4"
-    _CATEGORIES_FILE_NAME = "classes.txt"
-
-    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
-        path = Path(data[0])
-        if path.parents[1].name == "images":
-            return Food101Demux.IMAGES
-        elif path.parents[0].name == "meta":
-            return Food101Demux.METADATA
-        else:
-            # README and licence_agreement files.
-            return Food101Demux.EXTRA
-
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "food101",
@@ -59,11 +26,20 @@ class Food101(Dataset):
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [
             HttpResource(
-                url=self._URL,
-                sha256=self._SHA256,
+                url="http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz",
+                sha256="d97d15e438b7f4498f96086a4f7e2fa42a32f2712e87d3295441b2b6314053a4",
                 decompress=True,
             )
         ]
+
+    def _classify_archive(self, data: Tuple[str, Any]) -> Optional[int]:
+        path = Path(data[0])
+        if path.parents[1].name == "images":
+            return 0
+        elif path.parents[0].name == "meta":
+            return 1
+        else:
+            return None
 
     def _prepare_sample(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         image_path, image_buffer = data
@@ -83,15 +59,6 @@ class Food101(Dataset):
         else:
             return False
 
-    def _generate_categories(self, root: Path) -> List[str]:
-        resources = self.resources(self.default_config)
-        dp = resources[0].load(root)
-        dp = Filter(dp, path_comparator("name", self._CATEGORIES_FILE_NAME))
-        # TODO: Probably not the best way to parse, but it works for now. Improve later?
-        dp = CSVParser(dp, delimiter=" ")
-        categories = [sample[0] for sample in dp]
-        return cast(List[str], categories)
-
     def _make_datapipe(
         self,
         resource_dps: List[IterDataPipe],
@@ -99,8 +66,8 @@ class Food101(Dataset):
         config: DatasetConfig,
     ) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
-        metadata_dp, images_dp, _ = Demultiplexer(
-            archive_dp, 3, self._classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
+        images_dp, metadata_dp = Demultiplexer(
+            archive_dp, 2, self._classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
         )
         metadata_dp = Filter(metadata_dp, path_comparator("name", f"{config.split}.json"))
         metadata_dp = JsonParser(metadata_dp)
@@ -109,3 +76,11 @@ class Food101(Dataset):
         images_dp = hint_sharding(images_dp)
         images_dp = hint_shuffling(images_dp)
         return Mapper(images_dp, self._prepare_sample)
+
+    def _generate_categories(self, root: Path) -> List[str]:
+        resources = self.resources(self.default_config)
+        dp = resources[0].load(root)
+        dp = Filter(dp, path_comparator("name", "classes.txt"))
+        dp = CSVParser(dp, delimiter=" ")
+        categories = [sample[0] for sample in dp]
+        return cast(List[str], categories)
