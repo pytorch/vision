@@ -146,7 +146,7 @@ model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 print(img.size())
 
 tranforms = weights.transforms()
-img = tranforms(img)
+img, _ = tranforms(img)
 target = {}
 target["boxes"] = boxes
 target["labels"] = labels = torch.ones((masks.size(0),), dtype=torch.int64)
