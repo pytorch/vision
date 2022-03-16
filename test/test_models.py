@@ -118,7 +118,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
 
-def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out=None):
+def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
     """Check that a nn.Module's results in TorchScript match eager and that it can be exported"""
 
     def get_export_import_copy(m):
@@ -128,12 +128,6 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out
             m.save(path)
             imported = torch.jit.load(path)
         return imported
-
-    if skip:
-        # TorchScript is not enabled, skip these tests
-        msg = f"The check_jit_scriptable test for {nn_module.__class__.__name__} was skipped. "
-        warnings.warn(msg, RuntimeWarning)
-        return None
 
     sm = torch.jit.script(nn_module)
 
