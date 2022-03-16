@@ -237,17 +237,15 @@ def affine_segmentation_mask(
     shear: List[float],
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
-    angle, translate, shear, center = _affine_parse_args(angle, translate, scale, shear, center=center)
-
-    center_f = [0.0, 0.0]
-    if center is not None:
-        _, height, width = get_dimensions_image_tensor(img)
-        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
-
-    translate_f = [1.0 * t for t in translate]
-    matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
-    return _FT.affine(img, matrix, interpolation=InterpolationMode.NEAREST.value, fill=None)
+    return affine_image_tensor(
+        img,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        interpolation=InterpolationMode.NEAREST,
+        center=center,
+    )
 
 
 def rotate_image_tensor(

@@ -146,7 +146,7 @@ def make_segmentation_mask(size=None, *, max_value=80, extra_dims=(), dtype=torc
 
 
 def make_segmentation_masks(
-    image_sizes=((32, 32), (32, 42)),
+    image_sizes=((32, 32), (32, 42), (38, 24)),
     dtypes=(torch.long,),
     extra_dims=((), (4,)),
 ):
@@ -498,9 +498,7 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
             center = [s // 2 for s in mask.shape[-2:][::-1]]
 
         if mask.ndim < 4:
-            masks = [
-                mask,
-            ]
+            masks = [mask]
         else:
             masks = [m for m in mask]
 
@@ -518,17 +516,20 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
 @pytest.mark.parametrize("device", cpu_and_gpu())
 def test_correctness_affine_segmentation_mask_on_fixed_input(device):
     # Check transformation against known expected output
-    # Rotate 90 degrees and scale
+
+    # Create a fixed input segmentation mask with 4 square masks
+    # in top-left, top-right, bottom-right corners and in the center
     mask = torch.zeros(1, 32, 32, dtype=torch.long, device=device)
     mask[0, 2:10, 2:10] = 1
     mask[0, 32 - 9 : 32 - 3, 3:9] = 2
     mask[0, 1:11, 32 - 11 : 32 - 1] = 3
     mask[0, 16 - 4 : 16 + 4, 16 - 4 : 16 + 4] = 4
 
+    # Rotate 90 degrees and scale
     expected_mask = torch.rot90(mask, k=-1, dims=(-2, -1))
     expected_mask = torch.nn.functional.interpolate(expected_mask[None, ...].float(), size=(64, 64), mode="nearest")
     expected_mask = expected_mask[0, :, 16 : 64 - 16, 16 : 64 - 16].long()
 
     out_mask = F.affine_segmentation_mask(mask, 90, [0.0, 0.0], 64.0 / 32.0, [0.0, 0.0])
 
-    assert out_mask.allclose(expected_mask)
+    torch.testing.assert_close(out_mask, expected_mask)
