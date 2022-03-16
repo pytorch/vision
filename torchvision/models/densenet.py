@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from torch import Tensor
 
-from ..transforms import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassificationEval, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES

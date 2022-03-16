@@ -7,7 +7,7 @@ import torch
 from torch import nn, Tensor
 
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
-from ..transforms import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassificationEval, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES

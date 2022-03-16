@@ -10,7 +10,7 @@ from ...ops import sigmoid_focal_loss
 from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
-from ...transforms import ObjectDetectionEval, InterpolationMode
+from ...transforms._presets import ObjectDetectionEval, InterpolationMode
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES

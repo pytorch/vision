@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
 
-from ...transforms import ImageClassificationEval, InterpolationMode
+from ...transforms._presets import ImageClassificationEval, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param

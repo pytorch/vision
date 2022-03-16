@@ -7,7 +7,7 @@ import torch
 from torch import nn, Tensor
 
 from ...ops.misc import Conv2dNormActivation
-from ...transforms import ObjectDetectionEval, InterpolationMode
+from ...transforms._presets import ObjectDetectionEval, InterpolationMode
 from ...utils import _log_api_usage_once
 from .. import mobilenet
 from .._api import WeightsEnum, Weights

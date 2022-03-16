@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from torch import nn, Tensor
 from torch.nn import functional as F
 
-from ...transforms import SemanticSegmentationEval, InterpolationMode
+from ...transforms._presets import SemanticSegmentationEval, InterpolationMode
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES

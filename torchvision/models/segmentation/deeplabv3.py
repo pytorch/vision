@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ...transforms import SemanticSegmentationEval, InterpolationMode
+from ...transforms._presets import SemanticSegmentationEval, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param

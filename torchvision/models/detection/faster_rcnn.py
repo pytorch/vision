@@ -5,7 +5,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
-from ...transforms import ObjectDetectionEval, InterpolationMode
+from ...transforms._presets import ObjectDetectionEval, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param

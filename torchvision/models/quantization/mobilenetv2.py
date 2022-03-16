@@ -7,7 +7,7 @@ from torch.ao.quantization import QuantStub, DeQuantStub
 from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, MobileNet_V2_Weights
 
 from ...ops.misc import Conv2dNormActivation
-from ...transforms import ImageClassificationEval, InterpolationMode
+from ...transforms._presets import ImageClassificationEval, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
