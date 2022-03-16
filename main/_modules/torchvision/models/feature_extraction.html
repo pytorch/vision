@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+2317ef5 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+ae8f405 ) &#x25BC</a>
     </div>
     
 
@@ -600,7 +600,8 @@
         <span class="c1"># eval graphs)</span>
         <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">chain</span><span class="p">(</span><span class="nb">iter</span><span class="p">(</span><span class="n">train_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">),</span> <span class="nb">iter</span><span class="p">(</span><span class="n">eval_graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">)):</span>
             <span class="k">if</span> <span class="n">node</span><span class="o">.</span><span class="n">op</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;get_attr&quot;</span><span class="p">,</span> <span class="s2">&quot;call_module&quot;</span><span class="p">]:</span>
-                <span class="k">assert</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="nb">str</span><span class="p">)</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">target</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;node.target should be of type str instead of </span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">node</span><span class="o">.</span><span class="n">target</span><span class="p">)</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
                 <span class="n">_copy_attr</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="p">,</span> <span class="n">node</span><span class="o">.</span><span class="n">target</span><span class="p">)</span>
 
         <span class="c1"># train mode by default</span>
@@ -613,9 +614,10 @@
         <span class="c1"># Locally defined Tracers are not pickleable. This is needed because torch.package will</span>
         <span class="c1"># serialize a GraphModule without retaining the Graph, and needs to use the correct Tracer</span>
         <span class="c1"># to re-create the Graph during deserialization.</span>
-        <span class="k">assert</span> <span class="p">(</span>
-            <span class="bp">self</span><span class="o">.</span><span class="n">eval_graph</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="o">==</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_graph</span><span class="o">.</span><span class="n">_tracer_cls</span>
-        <span class="p">),</span> <span class="s2">&quot;Train mode and eval mode should use the same tracer class&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">eval_graph</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">train_graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">TypeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s2">&quot;Train mode and eval mode should use the same tracer class. Instead got </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">eval_graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="si">}</span><span class="s2"> for eval vs </span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">train_graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="si">}</span><span class="s2"> for train&quot;</span>
+            <span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="o">=</span> <span class="kc">None</span>
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="ow">and</span> <span class="s2">&quot;&lt;locals&gt;&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">_tracer_cls</span><span class="o">.</span><span class="vm">__qualname__</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">_tracer_cls</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">_tracer_cls</span>
@@ -754,17 +756,19 @@
         <span class="p">}</span>
     <span class="n">is_training</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training</span>
 
-    <span class="k">assert</span> <span class="nb">any</span><span class="p">(</span>
-        <span class="n">arg</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="n">return_nodes</span><span class="p">,</span> <span class="n">train_return_nodes</span><span class="p">,</span> <span class="n">eval_return_nodes</span><span class="p">]</span>
-    <span class="p">),</span> <span class="s2">&quot;Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified&quot;</span>
+    <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">arg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="n">return_nodes</span><span class="p">,</span> <span class="n">train_return_nodes</span><span class="p">,</span> <span class="n">eval_return_nodes</span><span class="p">]):</span>
 
-    <span class="k">assert</span> <span class="ow">not</span> <span class="p">(</span>
-        <span class="p">(</span><span class="n">train_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">eval_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span>
-    <span class="p">),</span> <span class="s2">&quot;If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified&quot;</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified&quot;</span>
+        <span class="p">)</span>
 
-    <span class="k">assert</span> <span class="p">(</span><span class="n">return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span>
-        <span class="n">train_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span>
-    <span class="p">),</span> <span class="s2">&quot;If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="n">train_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">eval_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+            <span class="s2">&quot;If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified&quot;</span>
+        <span class="p">)</span>
+
+    <span class="k">if</span> <span class="ow">not</span> <span class="p">((</span><span class="n">return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)</span> <span class="o">^</span> <span class="p">(</span><span class="n">train_return_nodes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified&quot;</span><span class="p">)</span>
 
     <span class="c1"># Put *_return_nodes into Dict[str, str] format</span>
     <span class="k">def</span> <span class="nf">to_strdict</span><span class="p">(</span><span class="n">n</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="nb">str</span><span class="p">]:</span>
@@ -799,9 +803,10 @@
 
         <span class="n">available_nodes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">tracer</span><span class="o">.</span><span class="n">node_to_qualname</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
         <span class="c1"># FIXME We don&#39;t know if we should expect this to happen</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">))</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span>
-            <span class="n">available_nodes</span>
-        <span class="p">),</span> <span class="s2">&quot;There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues&quot;</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">available_nodes</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
+                <span class="s2">&quot;There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues&quot;</span>
+            <span class="p">)</span>
         <span class="c1"># Check that all outputs in return_nodes are present in the model</span>
         <span class="k">for</span> <span class="n">query</span> <span class="ow">in</span> <span class="n">mode_return_nodes</span><span class="p">[</span><span class="n">mode</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
             <span class="c1"># To check if a query is available we need to check that at least</span>
@@ -820,7 +825,9 @@
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="nb">reversed</span><span class="p">(</span><span class="n">graph_module</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">nodes</span><span class="p">):</span>
             <span class="k">if</span> <span class="n">n</span><span class="o">.</span><span class="n">op</span> <span class="o">==</span> <span class="s2">&quot;output&quot;</span><span class="p">:</span>
                 <span class="n">orig_output_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
-        <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">orig_output_nodes</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">orig_output_nodes</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;No output nodes found in graph_module.graph.nodes&quot;</span><span class="p">)</span>
+
         <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">orig_output_nodes</span><span class="p">:</span>
             <span class="n">graph_module</span><span class="o">.</span><span class="n">graph</span><span class="o">.</span><span class="n">erase_node</span><span class="p">(</span><span class="n">n</span><span class="p">)</span>
 

@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+2317ef5 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+ae8f405 ) &#x25BC</a>
     </div>
     
 
@@ -427,7 +427,6 @@
         <span class="n">approx_scale</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">s1</span><span class="p">)</span> <span class="o">/</span> <span class="nb">float</span><span class="p">(</span><span class="n">s2</span><span class="p">)</span>
         <span class="n">scale</span> <span class="o">=</span> <span class="mi">2</span> <span class="o">**</span> <span class="nb">float</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">approx_scale</span><span class="p">)</span><span class="o">.</span><span class="n">log2</span><span class="p">()</span><span class="o">.</span><span class="n">round</span><span class="p">())</span>
         <span class="n">possible_scales</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">scale</span><span class="p">)</span>
-    <span class="k">assert</span> <span class="n">possible_scales</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">possible_scales</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
     <span class="k">return</span> <span class="n">possible_scales</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
 
 
@@ -435,7 +434,8 @@
 <span class="k">def</span> <span class="nf">_setup_scales</span><span class="p">(</span>
     <span class="n">features</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="n">image_shapes</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]],</span> <span class="n">canonical_scale</span><span class="p">:</span> <span class="nb">int</span><span class="p">,</span> <span class="n">canonical_level</span><span class="p">:</span> <span class="nb">int</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">float</span><span class="p">],</span> <span class="n">LevelMapper</span><span class="p">]:</span>
-    <span class="k">assert</span> <span class="nb">len</span><span class="p">(</span><span class="n">image_shapes</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">0</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">image_shapes</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;images list should not be empty&quot;</span><span class="p">)</span>
     <span class="n">max_x</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="n">max_y</span> <span class="o">=</span> <span class="mi">0</span>
     <span class="k">for</span> <span class="n">shape</span> <span class="ow">in</span> <span class="n">image_shapes</span><span class="p">:</span>
@@ -489,8 +489,8 @@
 <span class="sd">    Returns:</span>
 <span class="sd">        result (Tensor)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">assert</span> <span class="n">scales</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
-    <span class="k">assert</span> <span class="n">mapper</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">scales</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">mapper</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="s2">&quot;scales and mapper should not be None&quot;</span><span class="p">)</span>
 
     <span class="n">num_levels</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">x_filtered</span><span class="p">)</span>
     <span class="n">rois</span> <span class="o">=</span> <span class="n">_convert_to_roi_format</span><span class="p">(</span><span class="n">boxes</span><span class="p">)</span>
