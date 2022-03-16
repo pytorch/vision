@@ -341,11 +341,11 @@ def store_model_weights(model, checkpoint_path, checkpoint_key="model", strict=T
         print(store_model_weights(model, './qat.pth'))
 
         # Object Detection
-        model = M.detection.fasterrcnn_mobilenet_v3_large_fpn(pretrained_backbone=False)
+        model = M.detection.fasterrcnn_mobilenet_v3_large_fpn()
         print(store_model_weights(model, './obj.pth'))
 
         # Segmentation
-        model = M.segmentation.deeplabv3_mobilenet_v3_large(pretrained_backbone=False, aux_loss=True)
+        model = M.segmentation.deeplabv3_mobilenet_v3_large(aux_loss=True)
         print(store_model_weights(model, './segm.pth', strict=False))
 
     Args:
