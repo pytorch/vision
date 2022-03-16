@@ -69,12 +69,24 @@ class VideoClassificationEval(nn.Module):
         self._interpolation = interpolation
 
     def forward(self, vid: Tensor) -> Tensor:
-        vid = vid.permute(0, 3, 1, 2)  # (T, H, W, C) => (T, C, H, W)
+        need_squeeze = False
+        if vid.ndim < 5:
+            vid = vid.unsqueeze(dim=0)
+            need_squeeze = True
+
+        vid = vid.permute(0, 1, 4, 2, 3)  # (N, T, H, W, C) => (N, T, C, H, W)
+        N, T, C, H, W = vid.shape
+        vid = vid.view(-1, C, H, W)
         vid = F.resize(vid, self._size, interpolation=self._interpolation)
         vid = F.center_crop(vid, self._crop_size)
         vid = F.convert_image_dtype(vid, torch.float)
         vid = F.normalize(vid, mean=self._mean, std=self._std)
-        return vid.permute(1, 0, 2, 3)  # (T, C, H, W) => (C, T, H, W)
+        vid = vid.view(N, T, C, H, W)
+        vid = vid.permute(0, 2, 1, 3, 4)  # (N, T, C, H, W) => (N, C, T, H, W)
+
+        if need_squeeze:
+            vid = vid.squeeze(dim=0)
+        return vid
 
 
 class SemanticSegmentationEval(nn.Module):
