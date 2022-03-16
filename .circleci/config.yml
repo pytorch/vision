@@ -1025,7 +1025,7 @@ jobs:
   build_docs:
     <<: *binary_common
     docker:
-      - image: "pytorch/manylinux-cuda100"
+      - image: circleci/python:3.7
     resource_class: 2xlarge+
     steps:
       - attach_workspace:
