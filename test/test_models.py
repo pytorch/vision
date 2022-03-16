@@ -133,8 +133,9 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
 
     if eager_out is None:
         with torch.no_grad(), freeze_rng_state():
-            if unwrapper:
-                eager_out = nn_module(*args)
+            eager_out = nn_module(*args)
+    if unwrapper:
+        eager_out = unwrapper(eager_out)
 
     with torch.no_grad(), freeze_rng_state():
         script_out = sm(*args)

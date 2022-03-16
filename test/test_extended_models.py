@@ -1,5 +1,6 @@
 import importlib
 import os
+import torch
 
 import pytest
 import test_models as TM
@@ -7,8 +8,9 @@ from torchvision import models
 from torchvision.models._api import WeightsEnum, Weights
 from torchvision.models._utils import handle_legacy_interface
 
-run_if_test_with_prototype = pytest.mark.skipif(
-    os.getenv("PYTORCH_TEST_WITH_EXTENDED") != "1",
+
+run_if_test_with_extended = pytest.mark.skipif(
+    os.getenv("PYTORCH_TEST_WITH_EXTENDED", "0") != "1",
     reason="Extended tests are disabled by default. Set PYTORCH_TEST_WITH_EXTENDED=1 to run them.",
 )
 
@@ -76,7 +78,7 @@ def test_naming_conventions(model_fn):
     + TM.get_models_from_module(models.video)
     + TM.get_models_from_module(models.optical_flow),
 )
-@run_if_test_with_prototype
+@run_if_test_with_extended
 def test_schema_meta_validation(model_fn):
     classification_fields = ["size", "categories", "acc@1", "acc@5", "min_size"]
     defaults = {
@@ -121,6 +123,64 @@ def test_schema_meta_validation(model_fn):
     assert not problematic_weights
     assert not incorrect_params
     assert not bad_names
+
+
+@pytest.mark.parametrize(
+    "model_fn",
+    TM.get_models_from_module(models)
+    + TM.get_models_from_module(models.detection)
+    + TM.get_models_from_module(models.quantization)
+    + TM.get_models_from_module(models.segmentation)
+    + TM.get_models_from_module(models.video)
+    + TM.get_models_from_module(models.optical_flow),
+)
+@run_if_test_with_extended
+def test_transforms_jit(model_fn):
+    model_name = model_fn.__name__
+    weights_enum = _get_model_weights(model_fn)
+    if len(weights_enum) == 0:
+        pytest.skip(f"Model '{model_name}' doesn't have any pre-trained weights.")
+
+    defaults = {
+        "models": {
+            "input_shape": (1, 3, 224, 224),
+        },
+        "detection": {
+            "input_shape": (3, 300, 300),
+        },
+        "quantization": {
+            "input_shape": (1, 3, 224, 224),
+            "quantize": True,
+        },
+        "segmentation": {
+            "input_shape": (1, 3, 520, 520),
+        },
+        "video": {
+            "input_shape": (1, 4, 112, 112, 3),
+        },
+        "optical_flow": {
+            "input_shape": (1, 3, 128, 128),
+        },
+    }
+    module_name = model_fn.__module__.split(".")[-2]
+
+    kwargs = {**defaults[module_name], **TM._model_params.get(model_name, {})}
+    input_shape = kwargs.pop("input_shape")
+    x = torch.rand(input_shape)
+    if module_name == "optical_flow":
+        args = (x, x)
+    else:
+        args = (x, )
+
+    problematic_weights = []
+    for w in weights_enum:
+        transforms = w.transforms()
+        try:
+            TM._check_jit_scriptable(transforms, args)
+        except Exception:
+            problematic_weights.append(w)
+
+    assert not problematic_weights
 
 
 # With this filter, every unexpected warning will be turned into an error
