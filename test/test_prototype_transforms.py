@@ -71,6 +71,7 @@ class TestSmoke:
         transforms.CenterCrop([16, 16]),
         transforms.ConvertImageDtype(),
         transforms.RandomHorizontalFlip(),
+        transforms.Pad(5),
     )
     def test_common(self, transform, input):
         transform(input)
