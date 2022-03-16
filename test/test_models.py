@@ -767,7 +767,7 @@ def test_detection_model_validation(model_fn):
 
     # validate type
     targets = [{"boxes": 0.0}]
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         model(x, targets=targets)
 
     # validate boxes shape

@@ -347,7 +347,10 @@ class RetinaNet(nn.Module):
             )
         self.backbone = backbone
 
-        assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
+        if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
+            raise TypeError(
+                f"anchor_generator should be of type AnchorGenerator or None instead of {type(anchor_generator)}"
+            )
 
         if anchor_generator is None:
             anchor_sizes = tuple((x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3))) for x in [32, 64, 128, 256, 512])
@@ -488,20 +491,24 @@ class RetinaNet(nn.Module):
             raise ValueError("In training mode, targets should be passed")
 
         if self.training:
-            assert targets is not None
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
                         raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                    raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            if len(val) != 2:
+                raise ValueError(
+                    f"Expecting the two last elements of the input tensors to be H and W instead got {img.shape[-2:]}"
+                )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -539,8 +546,8 @@ class RetinaNet(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
-
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             # compute the losses
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:

@@ -46,15 +46,15 @@ def get_image_num_channels(img: Tensor) -> int:
 
 def _max_value(dtype: torch.dtype) -> int:
     if dtype == torch.uint8:
-        return int(2 ** 8) - 1
+        return 255
     elif dtype == torch.int8:
-        return int(2 ** 7) - 1
+        return 127
     elif dtype == torch.int16:
-        return int(2 ** 15) - 1
+        return 32767
     elif dtype == torch.int32:
-        return int(2 ** 31) - 1
+        return 2147483647
     elif dtype == torch.int64:
-        return int(2 ** 63) - 1
+        return 9223372036854775807
     else:
         return 1
 
