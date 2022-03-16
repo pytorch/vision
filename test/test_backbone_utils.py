@@ -144,16 +144,16 @@ class TestFxFeatureExtraction:
             model, train_return_nodes=train_return_nodes, eval_return_nodes=eval_return_nodes
         )
         # Check must specify return nodes
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             self._create_feature_extractor(model)
         # Check return_nodes and train_return_nodes / eval_return nodes
         # mutual exclusivity
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             self._create_feature_extractor(
                 model, return_nodes=train_return_nodes, train_return_nodes=train_return_nodes
             )
         # Check train_return_nodes / eval_return nodes must both be specified
-        with pytest.raises(AssertionError):
+        with pytest.raises(ValueError):
             self._create_feature_extractor(model, train_return_nodes=train_return_nodes)
         # Check invalid node name raises ValueError
         with pytest.raises(ValueError):

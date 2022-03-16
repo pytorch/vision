@@ -48,7 +48,8 @@ class Inception3(nn.Module):
                 FutureWarning,
             )
             init_weights = True
-        assert len(inception_blocks) == 7
+        if len(inception_blocks) != 7:
+            raise ValueError(f"lenght of inception_blocks should be 7 instead of {len(inception_blocks)}")
         conv_block = inception_blocks[0]
         inception_a = inception_blocks[1]
         inception_b = inception_blocks[2]

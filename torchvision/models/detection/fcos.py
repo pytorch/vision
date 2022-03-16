@@ -378,14 +378,20 @@ class FCOS(nn.Module):
             )
         self.backbone = backbone
 
-        assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
+        if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
+            raise TypeError(
+                f"anchor_generator should be of type AnchorGenerator or None, instead  got {type(anchor_generator)}"
+            )
 
         if anchor_generator is None:
             anchor_sizes = ((8,), (16,), (32,), (64,), (128,))  # equal to strides of multi-level feature map
             aspect_ratios = ((1.0,),) * len(anchor_sizes)  # set only one anchor
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
         self.anchor_generator = anchor_generator
-        assert self.anchor_generator.num_anchors_per_location()[0] == 1
+        if self.anchor_generator.num_anchors_per_location()[0] != 1:
+            raise ValueError(
+                f"anchor_generator.num_anchors_per_location()[0] should be 1 instead of {anchor_generator.num_anchors_per_location()[0]}"
+            )
 
         if head is None:
             head = FCOSHead(backbone.out_channels, anchor_generator.num_anchors_per_location()[0], num_classes)
@@ -560,12 +566,15 @@ class FCOS(nn.Module):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
                         raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                    raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            if len(val) != 2:
+                raise ValueError(
+                    f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}"
+                )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -603,9 +612,10 @@ class FCOS(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
-
             # compute the losses
+            if targets is None:
+                raise ValueError("targets should not be none when in training mode")
+
             losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
         else:
             # split outputs per level
