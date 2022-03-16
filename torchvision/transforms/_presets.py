@@ -96,14 +96,12 @@ class SemanticSegmentationInference(nn.Module):
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        interpolation_target: InterpolationMode = InterpolationMode.NEAREST,
     ) -> None:
         super().__init__()
         self._size = [resize_size] if resize_size is not None else None
         self._mean = list(mean)
         self._std = list(std)
         self._interpolation = interpolation
-        self._interpolation_target = interpolation_target
 
     def forward(self, img: Tensor) -> Tensor:
         if isinstance(self._size, list):
@@ -122,8 +120,8 @@ class OpticalFlowInference(nn.Module):
         if not isinstance(img2, Tensor):
             img2 = F.pil_to_tensor(img2)
 
-        img1 = F.convert_image_dtype(img1, torch.float32)
-        img2 = F.convert_image_dtype(img2, torch.float32)
+        img1 = F.convert_image_dtype(img1, torch.float)
+        img2 = F.convert_image_dtype(img2, torch.float)
 
         # map [0, 1] into [-1, 1]
         img1 = F.normalize(img1, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])

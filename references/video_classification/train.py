@@ -120,7 +120,7 @@ def main(args):
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
-    transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
+    transform_train = presets.VideoClassificationPresetTrain(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_train from {cache_path}")
@@ -151,7 +151,7 @@ def main(args):
     cache_path = _get_cache_path(valdir)
 
     if not args.prototype:
-        transform_test = presets.VideoClassificationPresetEval(resize_size=(128, 171), crop_size=(112, 112))
+        transform_test = presets.VideoClassificationPresetEval(crop_size=(112, 112), resize_size=(128, 171))
     else:
         if args.weights:
             weights = prototype.models.get_weight(args.weights)
