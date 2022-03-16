@@ -158,6 +158,22 @@ commands:
           args: iopath git+https://github.com/pytorch/data
           descr: Install prototype dependencies
 
+  # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
+  # This command can be used if only a selection of tests need to be run, for ad-hoc files.
+  run_tests_selective:
+    parameters:
+      file_or_dir:
+        type: string
+    steps:
+      - run:
+          name: Install test utilities
+          command: pip install --progress-bar=off pytest pytest-mock
+      - run:
+          name: Run tests
+          command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
+      - store_test_results:
+          path: test-results
+
   download_model_weights:
     parameters:
       extract_roots:
@@ -177,22 +193,6 @@ commands:
             mkdir -p ~/.cache/torch/hub/checkpoints
             python scripts/collect_model_urls.py << parameters.extract_roots >> \
                 | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
-
-  # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
-  # This command can be used if only a selection of tests need to be run, for ad-hoc files.
-  run_tests_selective:
-    parameters:
-      file_or_dir:
-        type: string
-    steps:
-      - run:
-          name: Install test utilities
-          command: pip install --progress-bar=off pytest pytest-mock
-      - run:
-          name: Run tests
-          command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
-      - store_test_results:
-          path: test-results
 
 binary_common: &binary_common
   parameters:
