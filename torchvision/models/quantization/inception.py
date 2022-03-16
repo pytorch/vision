@@ -9,7 +9,7 @@ from torch import Tensor
 from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs, Inception_V3_Weights
 
-from ...transforms._presets import ImageClassificationEval, InterpolationMode
+from ...transforms._presets import ImageClassificationInference, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -175,7 +175,7 @@ class QuantizableInception3(inception_module.Inception3):
 class Inception_V3_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
-        transforms=partial(ImageClassificationEval, crop_size=299, resize_size=342),
+        transforms=partial(ImageClassificationInference, crop_size=299, resize_size=342),
         meta={
             "task": "image_classification",
             "architecture": "InceptionV3",

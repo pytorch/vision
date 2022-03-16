@@ -10,7 +10,7 @@ from torch import nn, Tensor
 from torchvision.ops import StochasticDepth
 
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
-from ..transforms._presets import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassificationInference, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -458,7 +458,7 @@ class EfficientNet_B0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC
+            ImageClassificationInference, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META_V1,
@@ -475,7 +475,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC
+            ImageClassificationInference, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META_V1,
@@ -488,7 +488,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b1-c27df63c.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=240, resize_size=255, interpolation=InterpolationMode.BILINEAR
+            ImageClassificationInference, crop_size=240, resize_size=255, interpolation=InterpolationMode.BILINEAR
         ),
         meta={
             **_COMMON_META_V1,
@@ -507,7 +507,7 @@ class EfficientNet_B2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC
+            ImageClassificationInference, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META_V1,
@@ -524,7 +524,7 @@ class EfficientNet_B3_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC
+            ImageClassificationInference, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META_V1,
@@ -541,7 +541,7 @@ class EfficientNet_B4_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC
+            ImageClassificationInference, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META_V1,
@@ -558,7 +558,7 @@ class EfficientNet_B5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC
+            ImageClassificationInference, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META_V1,
@@ -575,7 +575,7 @@ class EfficientNet_B6_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC
+            ImageClassificationInference, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META_V1,
@@ -592,7 +592,7 @@ class EfficientNet_B7_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
         transforms=partial(
-            ImageClassificationEval, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC
+            ImageClassificationInference, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META_V1,
@@ -609,7 +609,7 @@ class EfficientNet_V2_S_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_v2_s-dd5fe13b.pth",
         transforms=partial(
-            ImageClassificationEval,
+            ImageClassificationInference,
             crop_size=384,
             resize_size=384,
             interpolation=InterpolationMode.BILINEAR,
@@ -629,7 +629,7 @@ class EfficientNet_V2_M_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_v2_m-dc08266a.pth",
         transforms=partial(
-            ImageClassificationEval,
+            ImageClassificationInference,
             crop_size=480,
             resize_size=480,
             interpolation=InterpolationMode.BILINEAR,
@@ -649,7 +649,7 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/efficientnet_v2_l-59c71312.pth",
         transforms=partial(
-            ImageClassificationEval,
+            ImageClassificationInference,
             crop_size=480,
             resize_size=480,
             interpolation=InterpolationMode.BICUBIC,

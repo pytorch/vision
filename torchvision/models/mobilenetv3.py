@@ -6,7 +6,7 @@ import torch
 from torch import nn, Tensor
 
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation as SElayer
-from ..transforms._presets import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassificationInference, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -317,7 +317,7 @@ _COMMON_META = {
 class MobileNet_V3_Large_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-8738ca79.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 5483032,
@@ -328,7 +328,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_large-5c1a4163.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "num_params": 5483032,
@@ -343,7 +343,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
 class MobileNet_V3_Small_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v3_small-047dcff4.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 2542856,

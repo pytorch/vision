@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ..transforms._presets import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassificationInference, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -313,7 +313,7 @@ _COMMON_META = {
 class ResNet18_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet18-f37072fd.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -330,7 +330,7 @@ class ResNet18_Weights(WeightsEnum):
 class ResNet34_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet34-b627a593.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -347,7 +347,7 @@ class ResNet34_Weights(WeightsEnum):
 class ResNet50_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet50-0676ba61.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -360,7 +360,7 @@ class ResNet50_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnet50-11ad3fa6.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -377,7 +377,7 @@ class ResNet50_Weights(WeightsEnum):
 class ResNet101_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet101-63fe2227.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -390,7 +390,7 @@ class ResNet101_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnet101-cd907fc2.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -407,7 +407,7 @@ class ResNet101_Weights(WeightsEnum):
 class ResNet152_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet152-394f9c45.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -420,7 +420,7 @@ class ResNet152_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnet152-f82ba261.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
@@ -437,7 +437,7 @@ class ResNet152_Weights(WeightsEnum):
 class ResNeXt50_32X4D_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnext50_32x4d-7cdf4587.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
@@ -450,7 +450,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnext50_32x4d-1a0047aa.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
@@ -467,7 +467,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
 class ResNeXt101_32X8D_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnext101_32x8d-8ba56ff5.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
@@ -480,7 +480,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/resnext101_32x8d-110c445d.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
@@ -497,7 +497,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
 class Wide_ResNet50_2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "WideResNet",
@@ -510,7 +510,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/wide_resnet50_2-9ba9bcbe.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "WideResNet",
@@ -527,7 +527,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
 class Wide_ResNet101_2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/wide_resnet101_2-32ee1156.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "architecture": "WideResNet",
@@ -540,7 +540,7 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/wide_resnet101_2-d733dc28.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "architecture": "WideResNet",

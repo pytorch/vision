@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ..transforms._presets import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassificationInference, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -226,7 +226,7 @@ _COMMON_META = {
 class MNASNet0_5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mnasnet0.5_top1_67.823-3ffadce67e.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 2218512,
@@ -245,7 +245,7 @@ class MNASNet0_75_Weights(WeightsEnum):
 class MNASNet1_0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 4383312,

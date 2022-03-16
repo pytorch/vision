@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from ..transforms._presets import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassificationInference, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -410,7 +410,7 @@ class BasicConv2d(nn.Module):
 class Inception_V3_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
-        transforms=partial(ImageClassificationEval, crop_size=299, resize_size=342),
+        transforms=partial(ImageClassificationInference, crop_size=299, resize_size=342),
         meta={
             "task": "image_classification",
             "architecture": "InceptionV3",

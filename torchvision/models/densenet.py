@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from torch import Tensor
 
-from ..transforms._presets import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassificationInference, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -280,7 +280,7 @@ _COMMON_META = {
 class DenseNet121_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet121-a639ec97.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 7978856,
@@ -294,7 +294,7 @@ class DenseNet121_Weights(WeightsEnum):
 class DenseNet161_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet161-8d451a50.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 28681000,
@@ -308,7 +308,7 @@ class DenseNet161_Weights(WeightsEnum):
 class DenseNet169_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet169-b2777c0a.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 14149480,
@@ -322,7 +322,7 @@ class DenseNet169_Weights(WeightsEnum):
 class DenseNet201_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/densenet201-c1103571.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassificationInference, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 20013928,

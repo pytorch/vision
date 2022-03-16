@@ -11,22 +11,22 @@ from . import functional as F, InterpolationMode
 
 
 __all__ = [
-    "ObjectDetectionEval",
-    "ImageClassificationEval",
-    "VideoClassificationEval",
-    "SemanticSegmentationEval",
-    "OpticalFlowEval",
+    "ObjectDetectionInference",
+    "ImageClassificationInference",
+    "VideoClassificationInference",
+    "SemanticSegmentationInference",
+    "OpticalFlowInference",
 ]
 
 
-class ObjectDetectionEval(nn.Module):
+class ObjectDetectionInference(nn.Module):
     def forward(self, img: Tensor) -> Tensor:
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
         return F.convert_image_dtype(img, torch.float)
 
 
-class ImageClassificationEval(nn.Module):
+class ImageClassificationInference(nn.Module):
     def __init__(
         self,
         crop_size: int,
@@ -52,7 +52,7 @@ class ImageClassificationEval(nn.Module):
         return img
 
 
-class VideoClassificationEval(nn.Module):
+class VideoClassificationInference(nn.Module):
     def __init__(
         self,
         crop_size: Tuple[int, int],
@@ -89,7 +89,7 @@ class VideoClassificationEval(nn.Module):
         return vid
 
 
-class SemanticSegmentationEval(nn.Module):
+class SemanticSegmentationInference(nn.Module):
     def __init__(
         self,
         resize_size: Optional[int],
@@ -115,7 +115,7 @@ class SemanticSegmentationEval(nn.Module):
         return img
 
 
-class OpticalFlowEval(nn.Module):
+class OpticalFlowInference(nn.Module):
     def forward(self, img1: Tensor, img2: Tensor) -> Tuple[Tensor, Tensor]:
         if not isinstance(img1, Tensor):
             img1 = F.pil_to_tensor(img1)

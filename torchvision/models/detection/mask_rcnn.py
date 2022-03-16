@@ -5,7 +5,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
-from ...transforms._presets import ObjectDetectionEval, InterpolationMode
+from ...transforms._presets import ObjectDetectionInference, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
@@ -308,7 +308,7 @@ class MaskRCNNPredictor(nn.Sequential):
 class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
-        transforms=ObjectDetectionEval,
+        transforms=ObjectDetectionInference,
         meta={
             "task": "image_object_detection",
             "architecture": "MaskRCNN",
