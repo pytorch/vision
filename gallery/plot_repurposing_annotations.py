@@ -146,11 +146,8 @@ model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 print(img.size())
 
 tranforms = weights.transforms()
-img, _ = tranforms(img)
-target = {}
-target["boxes"] = boxes
-target["labels"] = labels = torch.ones((masks.size(0),), dtype=torch.int64)
-detection_outputs = model(img.unsqueeze(0), [target])
+img = tranforms(img)
+detection_outputs = model(img.unsqueeze(0))
 
 
 ####################################

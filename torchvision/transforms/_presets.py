@@ -20,12 +20,10 @@ __all__ = [
 
 
 class ObjectDetectionEval(nn.Module):
-    def forward(
-        self, img: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+    def forward(self, img: Tensor) -> Tensor:
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
-        return F.convert_image_dtype(img, torch.float), target
+        return F.convert_image_dtype(img, torch.float)
 
 
 class ImageClassificationEval(nn.Module):
@@ -95,28 +93,22 @@ class SemanticSegmentationEval(nn.Module):
         self._interpolation = interpolation
         self._interpolation_target = interpolation_target
 
-    def forward(self, img: Tensor, target: Optional[Tensor] = None) -> Tuple[Tensor, Optional[Tensor]]:
+    def forward(self, img: Tensor) -> Tensor:
         if isinstance(self._size, list):
             img = F.resize(img, self._size, interpolation=self._interpolation)
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
         img = F.convert_image_dtype(img, torch.float)
         img = F.normalize(img, mean=self._mean, std=self._std)
-        if target:
-            if isinstance(self._size, list):
-                target = F.resize(target, self._size, interpolation=self._interpolation_target)
-            if not isinstance(target, Tensor):
-                target = F.pil_to_tensor(target)
-            target = target.squeeze(0).to(torch.int64)
-        return img, target
+        return img
 
 
 class OpticalFlowEval(nn.Module):
-    def forward(
-        self, img1: Tensor, img2: Tensor, flow: Optional[Tensor] = None, valid_flow_mask: Optional[Tensor] = None
-    ) -> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:
-
-        img1, img2, flow, valid_flow_mask = self._pil_or_numpy_to_tensor(img1, img2, flow, valid_flow_mask)
+    def forward(self, img1: Tensor, img2: Tensor) -> Tuple[Tensor, Tensor]:
+        if not isinstance(img1, Tensor):
+            img1 = F.pil_to_tensor(img1)
+        if not isinstance(img2, Tensor):
+            img2 = F.pil_to_tensor(img2)
 
         img1 = F.convert_image_dtype(img1, torch.float32)
         img2 = F.convert_image_dtype(img2, torch.float32)
@@ -128,19 +120,4 @@ class OpticalFlowEval(nn.Module):
         img1 = img1.contiguous()
         img2 = img2.contiguous()
 
-        return img1, img2, flow, valid_flow_mask
-
-    def _pil_or_numpy_to_tensor(
-        self, img1: Tensor, img2: Tensor, flow: Optional[Tensor], valid_flow_mask: Optional[Tensor]
-    ) -> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:
-        if not isinstance(img1, Tensor):
-            img1 = F.pil_to_tensor(img1)
-        if not isinstance(img2, Tensor):
-            img2 = F.pil_to_tensor(img2)
-
-        if flow is not None and not isinstance(flow, Tensor):
-            flow = torch.from_numpy(flow)
-        if valid_flow_mask is not None and not isinstance(valid_flow_mask, Tensor):
-            valid_flow_mask = torch.from_numpy(valid_flow_mask)
-
-        return img1, img2, flow, valid_flow_mask
+        return img1, img2

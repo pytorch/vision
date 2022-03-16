@@ -81,7 +81,7 @@ batch_int = torch.stack([dog1_int, dog2_int])
 weights = FasterRCNN_ResNet50_FPN_Weights.DEFAULT
 transforms = weights.transforms()
 
-batch, _ = transforms(batch_int)
+batch = transforms(batch_int)
 
 model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
@@ -131,7 +131,7 @@ transforms = weights.transforms(resize_size=None)
 model = fcn_resnet50(weights=weights, progress=False)
 model = model.eval()
 
-normalized_batch, _ = transforms(batch)
+normalized_batch = transforms(batch)
 output = model(normalized_batch)['out']
 print(output.shape, output.min().item(), output.max().item())
 
@@ -272,7 +272,7 @@ from torchvision.models.detection import maskrcnn_resnet50_fpn, MaskRCNN_ResNet5
 weights = MaskRCNN_ResNet50_FPN_Weights.DEFAULT
 transforms = weights.transforms()
 
-batch, _ = transforms(batch_int)
+batch = transforms(batch_int)
 
 model = maskrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
@@ -397,7 +397,7 @@ person_int = read_image(str(Path("assets") / "person1.jpg"))
 weights = KeypointRCNN_ResNet50_FPN_Weights.DEFAULT
 transforms = weights.transforms()
 
-person_float, _ = transforms(person_int)
+person_float = transforms(person_int)
 
 model = keypointrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
