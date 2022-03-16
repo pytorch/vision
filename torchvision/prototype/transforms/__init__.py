@@ -13,6 +13,7 @@ from ._geometry import (
     TenCrop,
     BatchMultiCrop,
     RandomHorizontalFlip,
+    Pad,
     RandomZoomOut,
 )
 from ._meta import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertImageColorSpace
