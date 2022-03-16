@@ -434,7 +434,10 @@ def interpolate_embeddings(
         # (1, seq_length, hidden_dim) -> (1, hidden_dim, seq_length)
         pos_embedding_img = pos_embedding_img.permute(0, 2, 1)
         seq_length_1d = int(math.sqrt(seq_length))
-        torch._assert(seq_length_1d * seq_length_1d == seq_length, "seq_length is not a perfect square!")
+        if seq_length_1d * seq_length_1d != seq_length:
+            raise ValueError(
+                f"seq_length is not a perfect square! Instead got seq_length_1d * seq_length_1d = {seq_length_1d * seq_length_1d } and seq_length = {seq_length}"
+            )
 
         # (1, hidden_dim, seq_length) -> (1, hidden_dim, seq_l_1d, seq_l_1d)
         pos_embedding_img = pos_embedding_img.reshape(1, hidden_dim, seq_length_1d, seq_length_1d)
