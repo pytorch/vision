@@ -10,6 +10,7 @@ from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
 from torchvision.transforms.functional import pil_to_tensor
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
+from typing_extensions import Literal
 
 from ._utils import query_image, get_image_dimensions, has_any, is_simple_tensor
 
@@ -278,7 +279,7 @@ class Pad(Transform):
         self,
         padding: Union[int, Sequence[int]],
         fill: Union[float, Sequence[float]] = 0.0,
-        padding_mode: str = "constant",
+        padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
     ) -> None:
         super().__init__()
         if not isinstance(padding, (numbers.Number, tuple, list)):
