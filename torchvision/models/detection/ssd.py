@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 
 from ...ops import boxes as box_ops
-from ...transforms import ObjectDetectionEval, InterpolationMode
+from ...transforms._presets import ObjectDetection, InterpolationMode
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
@@ -28,7 +28,7 @@ __all__ = [
 class SSD300_VGG16_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
-        transforms=ObjectDetectionEval,
+        transforms=ObjectDetection,
         meta={
             "task": "image_object_detection",
             "architecture": "SSD",

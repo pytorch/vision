@@ -7,7 +7,7 @@ from torch import Tensor
 from torch import nn
 
 from ..ops.misc import Conv2dNormActivation
-from ..transforms import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -209,7 +209,7 @@ _COMMON_META = {
 class MobileNet_V2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-b0353104.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
@@ -219,7 +219,7 @@ class MobileNet_V2_Weights(WeightsEnum):
     )
     IMAGENET1K_V2 = Weights(
         url="https://download.pytorch.org/models/mobilenet_v2-7ebf99e0.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224, resize_size=232),
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",

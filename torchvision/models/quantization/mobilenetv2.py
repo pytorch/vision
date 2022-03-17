@@ -7,7 +7,7 @@ from torch.ao.quantization import QuantStub, DeQuantStub
 from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, MobileNet_V2_Weights
 
 from ...ops.misc import Conv2dNormActivation
-from ...transforms import ImageClassificationEval, InterpolationMode
+from ...transforms._presets import ImageClassification, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -67,7 +67,7 @@ class QuantizableMobileNetV2(MobileNetV2):
 class MobileNet_V2_QuantizedWeights(WeightsEnum):
     IMAGENET1K_QNNPACK_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "MobileNetV2",

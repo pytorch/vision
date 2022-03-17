@@ -6,7 +6,7 @@ from torch import nn, Tensor
 from torch.ao.quantization import QuantStub, DeQuantStub
 
 from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
-from ...transforms import ImageClassificationEval, InterpolationMode
+from ...transforms._presets import ImageClassification, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -157,7 +157,7 @@ def _mobilenet_v3_model(
 class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
     IMAGENET1K_QNNPACK_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "MobileNetV3",

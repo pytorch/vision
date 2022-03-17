@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch import Tensor
 from torchvision.models import shufflenetv2
 
-from ...transforms import ImageClassificationEval, InterpolationMode
+from ...transforms._presets import ImageClassification, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -118,7 +118,7 @@ _COMMON_META = {
 class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x0.5_fbgemm-00845098.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 1366792,
@@ -133,7 +133,7 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
 class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_fbgemm-db332c57.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 2278604,

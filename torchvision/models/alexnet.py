@@ -4,7 +4,7 @@ from typing import Any, Optional
 import torch
 import torch.nn as nn
 
-from ..transforms import ImageClassificationEval, InterpolationMode
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -55,7 +55,7 @@ class AlexNet(nn.Module):
 class AlexNet_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/alexnet-owt-7be5be79.pth",
-        transforms=partial(ImageClassificationEval, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "AlexNet",

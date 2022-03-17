@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from torch import nn
 
-from ...transforms import SemanticSegmentationEval, InterpolationMode
+from ...transforms._presets import SemanticSegmentation, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
@@ -59,7 +59,7 @@ _COMMON_META = {
 class FCN_ResNet50_Weights(WeightsEnum):
     COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
-        transforms=partial(SemanticSegmentationEval, resize_size=520),
+        transforms=partial(SemanticSegmentation, resize_size=520),
         meta={
             **_COMMON_META,
             "num_params": 35322218,
@@ -74,7 +74,7 @@ class FCN_ResNet50_Weights(WeightsEnum):
 class FCN_ResNet101_Weights(WeightsEnum):
     COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
-        transforms=partial(SemanticSegmentationEval, resize_size=520),
+        transforms=partial(SemanticSegmentation, resize_size=520),
         meta={
             **_COMMON_META,
             "num_params": 54314346,

@@ -11,7 +11,7 @@ from ...ops import sigmoid_focal_loss, generalized_box_iou_loss
 from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
-from ...transforms import ObjectDetectionEval, InterpolationMode
+from ...transforms._presets import ObjectDetection, InterpolationMode
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
@@ -646,7 +646,7 @@ class FCOS(nn.Module):
 class FCOS_ResNet50_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/fcos_resnet50_fpn_coco-99b0c9b7.pth",
-        transforms=ObjectDetectionEval,
+        transforms=ObjectDetection,
         meta={
             "task": "image_object_detection",
             "architecture": "FCOS",

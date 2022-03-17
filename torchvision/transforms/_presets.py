@@ -1,4 +1,8 @@
-from typing import Dict, Optional, Tuple
+"""
+This file is part of the private API. Please do not use directly these classes as they will be modified on
+future versions without warning. The classes should be accessed only via the transforms argument of Weights.
+"""
+from typing import Optional, Tuple
 
 import torch
 from torch import Tensor, nn
@@ -7,24 +11,22 @@ from . import functional as F, InterpolationMode
 
 
 __all__ = [
-    "ObjectDetectionEval",
-    "ImageClassificationEval",
-    "VideoClassificationEval",
-    "SemanticSegmentationEval",
-    "OpticalFlowEval",
+    "ObjectDetection",
+    "ImageClassification",
+    "VideoClassification",
+    "SemanticSegmentation",
+    "OpticalFlow",
 ]
 
 
-class ObjectDetectionEval(nn.Module):
-    def forward(
-        self, img: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+class ObjectDetection(nn.Module):
+    def forward(self, img: Tensor) -> Tensor:
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
-        return F.convert_image_dtype(img, torch.float), target
+        return F.convert_image_dtype(img, torch.float)
 
 
-class ImageClassificationEval(nn.Module):
+class ImageClassification(nn.Module):
     def __init__(
         self,
         crop_size: int,
@@ -50,7 +52,7 @@ class ImageClassificationEval(nn.Module):
         return img
 
 
-class VideoClassificationEval(nn.Module):
+class VideoClassification(nn.Module):
     def __init__(
         self,
         crop_size: Tuple[int, int],
@@ -67,55 +69,59 @@ class VideoClassificationEval(nn.Module):
         self._interpolation = interpolation
 
     def forward(self, vid: Tensor) -> Tensor:
-        vid = vid.permute(0, 3, 1, 2)  # (T, H, W, C) => (T, C, H, W)
+        need_squeeze = False
+        if vid.ndim < 5:
+            vid = vid.unsqueeze(dim=0)
+            need_squeeze = True
+
+        vid = vid.permute(0, 1, 4, 2, 3)  # (N, T, H, W, C) => (N, T, C, H, W)
+        N, T, C, H, W = vid.shape
+        vid = vid.view(-1, C, H, W)
         vid = F.resize(vid, self._size, interpolation=self._interpolation)
         vid = F.center_crop(vid, self._crop_size)
         vid = F.convert_image_dtype(vid, torch.float)
         vid = F.normalize(vid, mean=self._mean, std=self._std)
-        return vid.permute(1, 0, 2, 3)  # (T, C, H, W) => (C, T, H, W)
+        vid = vid.view(N, T, C, H, W)
+        vid = vid.permute(0, 2, 1, 3, 4)  # (N, T, C, H, W) => (N, C, T, H, W)
+
+        if need_squeeze:
+            vid = vid.squeeze(dim=0)
+        return vid
 
 
-class SemanticSegmentationEval(nn.Module):
+class SemanticSegmentation(nn.Module):
     def __init__(
         self,
         resize_size: Optional[int],
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        interpolation_target: InterpolationMode = InterpolationMode.NEAREST,
     ) -> None:
         super().__init__()
         self._size = [resize_size] if resize_size is not None else None
         self._mean = list(mean)
         self._std = list(std)
         self._interpolation = interpolation
-        self._interpolation_target = interpolation_target
 
-    def forward(self, img: Tensor, target: Optional[Tensor] = None) -> Tuple[Tensor, Optional[Tensor]]:
+    def forward(self, img: Tensor) -> Tensor:
         if isinstance(self._size, list):
             img = F.resize(img, self._size, interpolation=self._interpolation)
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
         img = F.convert_image_dtype(img, torch.float)
         img = F.normalize(img, mean=self._mean, std=self._std)
-        if target:
-            if isinstance(self._size, list):
-                target = F.resize(target, self._size, interpolation=self._interpolation_target)
-            if not isinstance(target, Tensor):
-                target = F.pil_to_tensor(target)
-            target = target.squeeze(0).to(torch.int64)
-        return img, target
+        return img
 
 
-class OpticalFlowEval(nn.Module):
-    def forward(
-        self, img1: Tensor, img2: Tensor, flow: Optional[Tensor] = None, valid_flow_mask: Optional[Tensor] = None
-    ) -> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:
+class OpticalFlow(nn.Module):
+    def forward(self, img1: Tensor, img2: Tensor) -> Tuple[Tensor, Tensor]:
+        if not isinstance(img1, Tensor):
+            img1 = F.pil_to_tensor(img1)
+        if not isinstance(img2, Tensor):
+            img2 = F.pil_to_tensor(img2)
 
-        img1, img2, flow, valid_flow_mask = self._pil_or_numpy_to_tensor(img1, img2, flow, valid_flow_mask)
-
-        img1 = F.convert_image_dtype(img1, torch.float32)
-        img2 = F.convert_image_dtype(img2, torch.float32)
+        img1 = F.convert_image_dtype(img1, torch.float)
+        img2 = F.convert_image_dtype(img2, torch.float)
 
         # map [0, 1] into [-1, 1]
         img1 = F.normalize(img1, mean=[0.5, 0.5, 0.5], std=[0.5, 0.5, 0.5])
@@ -124,19 +130,4 @@ class OpticalFlowEval(nn.Module):
         img1 = img1.contiguous()
         img2 = img2.contiguous()
 
-        return img1, img2, flow, valid_flow_mask
-
-    def _pil_or_numpy_to_tensor(
-        self, img1: Tensor, img2: Tensor, flow: Optional[Tensor], valid_flow_mask: Optional[Tensor]
-    ) -> Tuple[Tensor, Tensor, Optional[Tensor], Optional[Tensor]]:
-        if not isinstance(img1, Tensor):
-            img1 = F.pil_to_tensor(img1)
-        if not isinstance(img2, Tensor):
-            img2 = F.pil_to_tensor(img2)
-
-        if flow is not None and not isinstance(flow, Tensor):
-            flow = torch.from_numpy(flow)
-        if valid_flow_mask is not None and not isinstance(valid_flow_mask, Tensor):
-            valid_flow_mask = torch.from_numpy(valid_flow_mask)
-
-        return img1, img2, flow, valid_flow_mask
+        return img1, img2
