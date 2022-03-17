@@ -187,20 +187,17 @@ def _get_leaf_modules_for_ops() -> List[type]:
 def set_default_tracer_kargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     default_autowrap_modules = (math, torchvision.ops)
     default_leaf_modules = _get_leaf_modules_for_ops()
-    if original_tr_kwargs is None:
-        result_tracer_kwargs = {}
-    else:
-        result_tracer_kwargs = original_tr_kwargs
-    if "autowrap_modules" in result_tracer_kwargs:
-        result_tracer_kwargs["autowrap_modules"] = tuple(
-            set(result_tracer_kwargs["autowrap_modules"] + default_autowrap_modules)
-        )
-    else:
-        result_tracer_kwargs["autowrap_modules"] = default_autowrap_modules
-    if "leaf_modules" in result_tracer_kwargs:
-        result_tracer_kwargs["leaf_modules"] = list(set(result_tracer_kwargs["leaf_modules"] + default_leaf_modules))
-    else:
-        result_tracer_kwargs["leaf_modules"] = default_leaf_modules
+    result_tracer_kwargs = {} if original_tr_kwargs is None else original_tr_kwargs
+    result_tracer_kwargs["autowrap_modules"] = (
+        tuple(set(result_tracer_kwargs["autowrap_modules"] + default_autowrap_modules))
+        if "autowrap_modules" in result_tracer_kwargs
+        else default_autowrap_modules
+    )
+    result_tracer_kwargs["leaf_modules"] = (
+        list(set(result_tracer_kwargs["leaf_modules"] + default_leaf_modules))
+        if "leaf_modules" in result_tracer_kwargs
+        else default_leaf_modules
+    )
     return result_tracer_kwargs
 
 
