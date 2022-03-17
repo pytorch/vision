@@ -268,13 +268,6 @@ class SwinTransformerBlock(nn.Module):
 
         self.mlp = MLPBlock(dim, int(dim * mlp_ratio), dropout)
 
-        for block in [self.attn, self.mlp]:
-            for m in block.modules():
-                if isinstance(m, nn.Linear):
-                    nn.init.trunc_normal_(m.weight, std=0.02)
-                    if m.bias is not None:
-                        nn.init.zeros_(m.bias)
-
     def forward(self, x: Tensor):
         x = x + self.stochastic_depth(self.attn(self.norm1(x)))
         x = x + self.stochastic_depth(self.mlp(self.norm2(x)))
@@ -379,12 +372,15 @@ class SwinTransformer(nn.Module):
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.head = nn.Linear(num_features, num_classes)
 
-        nn.init.trunc_normal_(self.head.weight, std=0.02)
-        nn.init.zeros_(self.head.bias)
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.trunc_normal_(m.weight, std=0.02)
+                if m.bias is not None:
+                    nn.init.zeros_(m.bias)
 
     @torch.jit.ignore
     def no_weight_decay_keywords(self):
-        return {'relative_position_bias_table'}
+        return {"relative_position_bias_table"}
 
     def forward(self, x):
         x = self.features(x)
