@@ -124,7 +124,7 @@ def main(args):
     )
 
     model = torchvision.models.segmentation.__dict__[args.model](
-        weights=args.weights, num_classes=num_classes, aux_loss=args.aux_loss
+        weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, aux_loss=args.aux_loss
     )
     model.to(device)
     if args.distributed:
@@ -258,6 +258,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--weights-backbone", default=None, type=str, help="the backbone weights enum name to load")
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
