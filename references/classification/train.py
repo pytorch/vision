@@ -247,12 +247,17 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
-    if args.norm_weight_decay is None:
-        parameters = model.parameters()
+    if hasattr(model, 'no_weight_decay_keywords'):
+        custom_keys_weight_decay = {k: 0.0 for k in model.no_weight_decay_keywords()}
     else:
-        param_groups = torchvision.ops._utils.split_normalization_params(model)
-        wd_groups = [args.norm_weight_decay, args.weight_decay]
-        parameters = [{"params": p, "weight_decay": w} for p, w in zip(param_groups, wd_groups) if p]
+        custom_keys_weight_decay = None
+    parameters = utils.set_weight_decay(
+        model,
+        args.weight_decay,
+        norm_weight_decay=args.norm_weight_decay,
+        bias_weight_decay=args.bias_weight_decay,
+        custom_keys_weight_decay=custom_keys_weight_decay,
+    )
 
     opt_name = args.opt.lower()
     if opt_name.startswith("sgd"):
@@ -410,6 +415,12 @@ def get_args_parser(add_help=True):
         default=None,
         type=float,
         help="weight decay for Normalization layers (default: None, same value as --wd)",
+    )
+    parser.add_argument(
+        "--bias-weight-decay",
+        default=None,
+        type=float,
+        help="weight decay for all bias parameters (default: None, same value as --wd)",
     )
     parser.add_argument(
         "--label-smoothing", default=0.0, type=float, help="label smoothing (default: 0.0)", dest="label_smoothing"
