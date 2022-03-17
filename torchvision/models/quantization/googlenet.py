@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
 
-from ...transforms._presets import ImageClassificationInference, InterpolationMode
+from ...transforms._presets import ImageClassification, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -109,7 +109,7 @@ class QuantizableGoogLeNet(GoogLeNet):
 class GoogLeNet_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
         url="https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "GoogLeNet",

@@ -8,7 +8,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from ..transforms._presets import ImageClassificationInference, InterpolationMode
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -278,7 +278,7 @@ class BasicConv2d(nn.Module):
 class GoogLeNet_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "GoogLeNet",

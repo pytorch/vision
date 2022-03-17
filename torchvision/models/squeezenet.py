@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 
-from ..transforms._presets import ImageClassificationInference, InterpolationMode
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -128,7 +128,7 @@ _COMMON_META = {
 class SqueezeNet1_0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/squeezenet1_0-b66bff10.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "min_size": (21, 21),
@@ -143,7 +143,7 @@ class SqueezeNet1_0_Weights(WeightsEnum):
 class SqueezeNet1_1_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/squeezenet1_1-b8a52dc0.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "min_size": (17, 17),

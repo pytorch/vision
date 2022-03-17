@@ -148,7 +148,7 @@ def load_data(traindir, valdir, args):
         print(f"Loading dataset_test from {cache_path}")
         dataset_test, _ = torch.load(cache_path)
     else:
-        if args.weights:
+        if args.weights and args.test_only:
             weights = torchvision.models.get_weight(args.weights)
             preprocessing = weights.transforms()
         else:

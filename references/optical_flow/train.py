@@ -133,10 +133,10 @@ def _evaluate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
 def evaluate(model, args):
     val_datasets = args.val_dataset or []
 
-    if args.weights:
+    if args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
-        return lambda img1, img2, flow = None, valid = None: (trans(img1, img2), flow, valid)
+        return lambda img1, img2, flow = None, valid = None: trans(img1, img2) + (flow, valid)
     else:
         preprocessing = OpticalFlowPresetEval()
 

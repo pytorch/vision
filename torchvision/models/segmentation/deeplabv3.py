@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ...transforms._presets import SemanticSegmentationInference, InterpolationMode
+from ...transforms._presets import SemanticSegmentation, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
@@ -140,7 +140,7 @@ _COMMON_META = {
 class DeepLabV3_ResNet50_Weights(WeightsEnum):
     COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_resnet50_coco-cd0a2569.pth",
-        transforms=partial(SemanticSegmentationInference, resize_size=520),
+        transforms=partial(SemanticSegmentation, resize_size=520),
         meta={
             **_COMMON_META,
             "num_params": 42004074,
@@ -155,7 +155,7 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
 class DeepLabV3_ResNet101_Weights(WeightsEnum):
     COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_resnet101_coco-586e9e4e.pth",
-        transforms=partial(SemanticSegmentationInference, resize_size=520),
+        transforms=partial(SemanticSegmentation, resize_size=520),
         meta={
             **_COMMON_META,
             "num_params": 60996202,
@@ -170,7 +170,7 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
 class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
     COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/deeplabv3_mobilenet_v3_large-fc3c493d.pth",
-        transforms=partial(SemanticSegmentationInference, resize_size=520),
+        transforms=partial(SemanticSegmentation, resize_size=520),
         meta={
             **_COMMON_META,
             "num_params": 11029328,

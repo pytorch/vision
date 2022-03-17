@@ -4,7 +4,7 @@ from typing import Tuple, Optional, Callable, List, Sequence, Type, Any, Union
 import torch.nn as nn
 from torch import Tensor
 
-from ...transforms._presets import VideoClassificationInference, InterpolationMode
+from ...transforms._presets import VideoClassification, InterpolationMode
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _KINETICS400_CATEGORIES
@@ -322,7 +322,7 @@ _COMMON_META = {
 class R3D_18_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
         url="https://download.pytorch.org/models/r3d_18-b3b3357e.pth",
-        transforms=partial(VideoClassificationInference, crop_size=(112, 112), resize_size=(128, 171)),
+        transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "architecture": "R3D",
@@ -337,7 +337,7 @@ class R3D_18_Weights(WeightsEnum):
 class MC3_18_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
         url="https://download.pytorch.org/models/mc3_18-a90a0ba3.pth",
-        transforms=partial(VideoClassificationInference, crop_size=(112, 112), resize_size=(128, 171)),
+        transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "architecture": "MC3",
@@ -352,7 +352,7 @@ class MC3_18_Weights(WeightsEnum):
 class R2Plus1D_18_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
         url="https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth",
-        transforms=partial(VideoClassificationInference, crop_size=(112, 112), resize_size=(128, 171)),
+        transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
             "architecture": "R(2+1)D",

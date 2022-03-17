@@ -141,7 +141,7 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    if args.weights:
+    if args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         transform_test = weights.transforms()
     else:

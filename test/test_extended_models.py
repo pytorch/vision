@@ -150,7 +150,6 @@ def test_transforms_jit(model_fn):
         },
         "quantization": {
             "input_shape": (1, 3, 224, 224),
-            "quantize": True,
         },
         "segmentation": {
             "input_shape": (1, 3, 520, 520),

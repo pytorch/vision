@@ -7,7 +7,7 @@ import torch
 from torch import nn, Tensor
 
 from ...ops.misc import Conv2dNormActivation
-from ...transforms._presets import ObjectDetectionInference, InterpolationMode
+from ...transforms._presets import ObjectDetection, InterpolationMode
 from ...utils import _log_api_usage_once
 from .. import mobilenet
 from .._api import WeightsEnum, Weights
@@ -187,7 +187,7 @@ def _mobilenet_extractor(
 class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
-        transforms=ObjectDetectionInference,
+        transforms=ObjectDetection,
         meta={
             "task": "image_object_detection",
             "architecture": "SSDLite",

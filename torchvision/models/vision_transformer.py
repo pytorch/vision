@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 
 from ..ops.misc import Conv2dNormActivation
-from ..transforms._presets import ImageClassificationInference, InterpolationMode
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -317,7 +317,7 @@ _COMMON_META = {
 class ViT_B_16_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_16-c867db91.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 86567656,
@@ -334,7 +334,7 @@ class ViT_B_16_Weights(WeightsEnum):
 class ViT_B_32_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_32-d86f8d99.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 88224232,
@@ -351,7 +351,7 @@ class ViT_B_32_Weights(WeightsEnum):
 class ViT_L_16_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_16-852ce7e3.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224, resize_size=242),
+        transforms=partial(ImageClassification, crop_size=224, resize_size=242),
         meta={
             **_COMMON_META,
             "num_params": 304326632,
@@ -368,7 +368,7 @@ class ViT_L_16_Weights(WeightsEnum):
 class ViT_L_32_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_32-c7638314.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 306535400,

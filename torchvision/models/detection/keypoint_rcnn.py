@@ -5,7 +5,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
-from ...transforms._presets import ObjectDetectionInference, InterpolationMode
+from ...transforms._presets import ObjectDetection, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
@@ -318,7 +318,7 @@ _COMMON_META = {
 class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
     COCO_LEGACY = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-9f466800.pth",
-        transforms=ObjectDetectionInference,
+        transforms=ObjectDetection,
         meta={
             **_COMMON_META,
             "num_params": 59137258,
@@ -329,7 +329,7 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
     )
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth",
-        transforms=ObjectDetectionInference,
+        transforms=ObjectDetection,
         meta={
             **_COMMON_META,
             "num_params": 59137258,

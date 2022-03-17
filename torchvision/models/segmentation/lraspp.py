@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from torch import nn, Tensor
 from torch.nn import functional as F
 
-from ...transforms._presets import SemanticSegmentationInference, InterpolationMode
+from ...transforms._presets import SemanticSegmentation, InterpolationMode
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
@@ -96,7 +96,7 @@ def _lraspp_mobilenetv3(backbone: MobileNetV3, num_classes: int) -> LRASPP:
 class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
     COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
-        transforms=partial(SemanticSegmentationInference, resize_size=520),
+        transforms=partial(SemanticSegmentation, resize_size=520),
         meta={
             "task": "image_semantic_segmentation",
             "architecture": "LRASPP",

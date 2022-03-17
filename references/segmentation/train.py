@@ -29,7 +29,7 @@ def get_dataset(dir_path, name, image_set, transform):
 def get_transform(train, args):
     if train:
         return presets.SegmentationPresetTrain(base_size=520, crop_size=480)
-    elif args.weights:
+    elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
         return lambda img, target = None: (trans(img), target)

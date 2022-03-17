@@ -4,7 +4,7 @@ from typing import Union, List, Dict, Any, Optional, cast
 import torch
 import torch.nn as nn
 
-from ..transforms._presets import ImageClassificationInference, InterpolationMode
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -120,7 +120,7 @@ _COMMON_META = {
 class VGG11_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg11-8a719046.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 132863336,
@@ -134,7 +134,7 @@ class VGG11_Weights(WeightsEnum):
 class VGG11_BN_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg11_bn-6002323d.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 132868840,
@@ -148,7 +148,7 @@ class VGG11_BN_Weights(WeightsEnum):
 class VGG13_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg13-19584684.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 133047848,
@@ -162,7 +162,7 @@ class VGG13_Weights(WeightsEnum):
 class VGG13_BN_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg13_bn-abd245e5.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 133053736,
@@ -176,7 +176,7 @@ class VGG13_BN_Weights(WeightsEnum):
 class VGG16_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg16-397923af.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 138357544,
@@ -190,7 +190,7 @@ class VGG16_Weights(WeightsEnum):
     IMAGENET1K_FEATURES = Weights(
         url="https://download.pytorch.org/models/vgg16_features-amdegroot-88682ab5.pth",
         transforms=partial(
-            ImageClassificationInference,
+            ImageClassification,
             crop_size=224,
             mean=(0.48235, 0.45882, 0.40784),
             std=(1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0),
@@ -210,7 +210,7 @@ class VGG16_Weights(WeightsEnum):
 class VGG16_BN_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg16_bn-6c64b313.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 138365992,
@@ -224,7 +224,7 @@ class VGG16_BN_Weights(WeightsEnum):
 class VGG19_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg19-dcbb9e9d.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 143667240,
@@ -238,7 +238,7 @@ class VGG19_Weights(WeightsEnum):
 class VGG19_BN_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/vgg19_bn-c79401a0.pth",
-        transforms=partial(ImageClassificationInference, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 143678248,
