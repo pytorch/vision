@@ -408,7 +408,7 @@ def set_weight_decay(
     weight_decay: float,
     norm_weight_decay: Optional[float] = None,
     bias_weight_decay: Optional[float] = None,
-    custom_keys_weight_decay: Optional[Dict[str, float]] = None
+    custom_keys_weight_decay: Optional[Dict[str, float]] = None,
 ):
     norm_classes = (torch.nn.modules.batchnorm._BatchNorm, torch.nn.LayerNorm, torch.nn.GroupNorm)
 
