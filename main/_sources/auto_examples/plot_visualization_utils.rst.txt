@@ -255,7 +255,6 @@ model.
 
  .. code-block:: none
 
-    Downloading: "https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth" to /root/.cache/torch/hub/checkpoints/fcn_resnet50_coco-1167a1af.pth
     torch.Size([2, 21, 500, 500]) -7.089669704437256 14.858256340026855
 
 
@@ -531,7 +530,6 @@ use the normalized batch.
 
  .. code-block:: none
 
-    Downloading: "https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth" to /root/.cache/torch/hub/checkpoints/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth
     [{'boxes': tensor([[219.7444, 168.1722, 400.7379, 384.0263],
             [343.9716, 171.2287, 358.3447, 222.6263],
             [301.0303, 192.6917, 313.8879, 232.3154]], grad_fn=<StackBackward0>), 'labels': tensor([18,  1,  1]), 'scores': tensor([0.9987, 0.7187, 0.6525], grad_fn=<IndexBackward0>), 'masks': tensor([[[[0., 0., 0.,  ..., 0., 0., 0.],
@@ -825,7 +823,6 @@ Note that the keypoint detection model does not need normalized images.
 
  .. code-block:: none
 
-    Downloading: "https://download.pytorch.org/models/keypointrcnn_resnet50_fpn_coco-fc266e95.pth" to /root/.cache/torch/hub/checkpoints/keypointrcnn_resnet50_fpn_coco-fc266e95.pth
     [{'boxes': tensor([[124.3751, 177.9242, 327.6353, 574.7064],
             [124.3625, 180.7574, 290.1061, 390.7958]], grad_fn=<StackBackward0>), 'labels': tensor([1, 1]), 'scores': tensor([0.9998, 0.1070], grad_fn=<IndexBackward0>), 'keypoints': tensor([[[208.0176, 214.2408,   1.0000],
              [208.0176, 207.0375,   1.0000],
@@ -1112,7 +1109,7 @@ We pass the above list to the connectivity parameter to connect the keypoints.
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  11.273 seconds)
+   **Total running time of the script:** ( 0 minutes  9.197 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_visualization_utils.py:

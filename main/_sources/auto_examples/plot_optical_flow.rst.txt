@@ -226,7 +226,6 @@ builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
  .. code-block:: none
 
-    Downloading: "https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth" to /root/.cache/torch/hub/checkpoints/raft_large_C_T_SKHT_V2-ff5fadd5.pth
     type = <class 'list'>
     length = 12 = number of iterations of the model
 
@@ -360,7 +359,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  5.579 seconds)
+   **Total running time of the script:** ( 0 minutes  10.516 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:
