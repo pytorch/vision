@@ -76,7 +76,8 @@ class EncoderBlock(nn.Module):
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
+        if input.dim() != 3:
+            raise ValueError(f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
         x = self.dropout(x)
@@ -120,7 +121,8 @@ class Encoder(nn.Module):
         self.ln = norm_layer(hidden_dim)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
+        if input.dim() != 3:
+            raise ValueError(f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         input = input + self.pos_embedding
         return self.ln(self.layers(self.dropout(input)))
 
@@ -145,7 +147,10 @@ class VisionTransformer(nn.Module):
     ):
         super().__init__()
         _log_api_usage_once(self)
-        torch._assert(image_size % patch_size == 0, "Input shape indivisible by patch size!")
+        if image_size % patch_size != 0:
+            raise ValueError(
+                f"Input shape indivisible by patch size! Instead got image_size = {image_size} and patch_size = {patch_size}"
+            )
         self.image_size = image_size
         self.patch_size = patch_size
         self.hidden_dim = hidden_dim
@@ -236,8 +241,10 @@ class VisionTransformer(nn.Module):
     def _process_input(self, x: torch.Tensor) -> torch.Tensor:
         n, c, h, w = x.shape
         p = self.patch_size
-        torch._assert(h == self.image_size, "Wrong image height!")
-        torch._assert(w == self.image_size, "Wrong image width!")
+        if h != self.image_size:
+            raise ValueError(f"Wrong image height! Expected {self.image_size} but got {h}")
+        if w != self.image_size:
+            raise ValueError(f"Wrong image width! Expected {self.image_size} but got {w}")
         n_h = h // p
         n_w = w // p
 
