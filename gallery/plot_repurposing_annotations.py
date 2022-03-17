@@ -147,7 +147,10 @@ print(img.size())
 
 tranforms = weights.transforms()
 img = tranforms(img)
-detection_outputs = model(img.unsqueeze(0))
+target = {}
+target["boxes"] = boxes
+target["labels"] = labels = torch.ones((masks.size(0),), dtype=torch.int64)
+detection_outputs = model(img.unsqueeze(0), [target])
 
 
 ####################################
