@@ -195,6 +195,7 @@ def train_one_epoch(model, optimizer, scheduler, train_loader, logger, args):
 
 def main(args):
     utils.setup_ddp(args)
+    args.test_only = args.train_dataset is None
 
     if args.distributed and args.device == "cpu":
         raise ValueError("The device must be cuda if we want to run in distributed mode using torchrun")
@@ -214,7 +215,7 @@ def main(args):
         checkpoint = torch.load(args.resume, map_location="cpu")
         model_without_ddp.load_state_dict(checkpoint["model"])
 
-    if args.train_dataset is None:
+    if args.test_only:
         # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
