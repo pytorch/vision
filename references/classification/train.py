@@ -247,7 +247,7 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
-    if hasattr(model, 'no_weight_decay_keywords'):
+    if hasattr(model, "no_weight_decay_keywords"):
         custom_keys_weight_decay = {k: 0.0 for k in model.no_weight_decay_keywords()}
     else:
         custom_keys_weight_decay = None
