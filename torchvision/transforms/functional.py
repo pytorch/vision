@@ -448,11 +448,11 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             .. note::
                 In torchscript mode padding as single int is not supported, use a sequence of
                 length 1: ``[padding, ]``.
-        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
+        fill (number or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
+            Only int or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
