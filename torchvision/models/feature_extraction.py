@@ -184,7 +184,7 @@ def _get_leaf_modules_for_ops() -> List[type]:
     return result
 
 
-def set_default_tracer_kargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def set_default_tracer_kwargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     default_autowrap_modules = (math, torchvision.ops)
     default_leaf_modules = _get_leaf_modules_for_ops()
     result_tracer_kwargs = {} if original_tr_kwargs is None else original_tr_kwargs
@@ -229,7 +229,7 @@ def get_graph_node_names(
         tracer_kwargs (dict, optional): a dictionary of keywork arguments for
             ``NodePathTracer`` (they are eventually passed onto
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
-            By default it will be set to wrap and make leaf nodes all torchvision ops, i.e. tracer_kwargs
+            By default it will be set to wrap and make leaf nodes all torchvision ops, i.e., tracer_kwargs
             will be set to
 
             tracer_kwargs = {
@@ -240,7 +240,7 @@ def get_graph_node_names(
                 "leaf_modules": _get_leaf_modules_for_ops(),
             }
 
-            WARNING: In case the user provides tracer_kwargs, above default arguments will be apended to the user
+            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
             provided dictionary.
 
         suppress_diff_warning (bool, optional): whether to suppress a warning
@@ -256,7 +256,7 @@ def get_graph_node_names(
         >>> model = torchvision.models.resnet18()
         >>> train_nodes, eval_nodes = get_graph_node_names(model)
     """
-    tracer_kwargs = set_default_tracer_kargs(tracer_kwargs)
+    tracer_kwargs = set_default_tracer_kwargs(tracer_kwargs)
     is_training = model.training
     train_tracer = NodePathTracer(**tracer_kwargs)
     train_tracer.trace(model.train())
@@ -401,7 +401,7 @@ def create_feature_extractor(
         tracer_kwargs (dict, optional): a dictionary of keywork arguments for
             ``NodePathTracer`` (which passes them onto it's parent class
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
-           By default it will be set to wrap and make leaf nodes all torchvision ops, i.e. tracer_kwargs
+           By default it will be set to wrap and make leaf nodes all torchvision ops, i.e., tracer_kwargs
             will be set to
 
             tracer_kwargs = {
@@ -412,7 +412,7 @@ def create_feature_extractor(
                 "leaf_modules": _get_leaf_modules_for_ops(),
             }
 
-            WARNING: In case the user provides tracer_kwargs, above default arguments will be apended to the user
+            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
             provided dictionary.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
@@ -458,7 +458,7 @@ def create_feature_extractor(
         >>>                    'autowrap_functions': [leaf_function]})
 
     """
-    tracer_kwargs = set_default_tracer_kargs(tracer_kwargs)
+    tracer_kwargs = set_default_tracer_kwargs(tracer_kwargs)
     is_training = model.training
 
     if all(arg is None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
