@@ -136,7 +136,7 @@ def evaluate(model, args):
     if args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
-        preprocessing = lambda img1, img2, flow=None, valid=None: trans(img1, img2) + (flow, valid)
+        preprocessing = lambda img1, img2, flow=None, valid=None: trans(img1, img2) + (flow, valid)  # noqa: E731
     else:
         preprocessing = OpticalFlowPresetEval()
 
