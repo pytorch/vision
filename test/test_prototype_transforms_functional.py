@@ -1,12 +1,16 @@
 import functools
 import itertools
+import math
 
+import numpy as np
 import pytest
 import torch.testing
 import torchvision.prototype.transforms.functional as F
+from common_utils import cpu_and_gpu
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
+from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
@@ -205,6 +209,45 @@ def resize_bounding_box():
             yield SampleInput(bounding_box, size=size, image_size=bounding_box.image_size)
 
 
+@register_kernel_info_from_sample_inputs_fn
+def affine_image_tensor():
+    for image, angle, translate, scale, shear in itertools.product(
+        make_images(extra_dims=()),
+        [-87, 15, 90],  # angle
+        [5, -5],  # translate
+        [0.77, 1.27],  # scale
+        [0, 12],  # shear
+    ):
+        yield SampleInput(
+            image,
+            angle=angle,
+            translate=(translate, translate),
+            scale=scale,
+            shear=(shear, shear),
+            interpolation=F.InterpolationMode.NEAREST,
+        )
+
+
+@register_kernel_info_from_sample_inputs_fn
+def affine_bounding_box():
+    for bounding_box, angle, translate, scale, shear in itertools.product(
+        make_bounding_boxes(),
+        [-87, 15, 90],  # angle
+        [5, -5],  # translate
+        [0.77, 1.27],  # scale
+        [0, 12],  # shear
+    ):
+        yield SampleInput(
+            bounding_box,
+            format=bounding_box.format,
+            image_size=bounding_box.image_size,
+            angle=angle,
+            translate=(translate, translate),
+            scale=scale,
+            shear=(shear, shear),
+        )
+
+
 @pytest.mark.parametrize(
     "kernel",
     [
@@ -233,3 +276,154 @@ def test_eager_vs_scripted(functional_info, sample_input):
     scripted = jit.script(functional_info.functional)(*sample_input.args, **sample_input.kwargs)
 
     torch.testing.assert_close(eager, scripted)
+
+
+def _compute_affine_matrix(angle_, translate_, scale_, shear_, center_):
+    rot = math.radians(angle_)
+    cx, cy = center_
+    tx, ty = translate_
+    sx, sy = [math.radians(sh_) for sh_ in shear_]
+
+    c_matrix = np.array([[1, 0, cx], [0, 1, cy], [0, 0, 1]])
+    t_matrix = np.array([[1, 0, tx], [0, 1, ty], [0, 0, 1]])
+    c_matrix_inv = np.linalg.inv(c_matrix)
+    rs_matrix = np.array(
+        [
+            [scale_ * math.cos(rot), -scale_ * math.sin(rot), 0],
+            [scale_ * math.sin(rot), scale_ * math.cos(rot), 0],
+            [0, 0, 1],
+        ]
+    )
+    shear_x_matrix = np.array([[1, -math.tan(sx), 0], [0, 1, 0], [0, 0, 1]])
+    shear_y_matrix = np.array([[1, 0, 0], [-math.tan(sy), 1, 0], [0, 0, 1]])
+    rss_matrix = np.matmul(rs_matrix, np.matmul(shear_y_matrix, shear_x_matrix))
+    true_matrix = np.matmul(t_matrix, np.matmul(c_matrix, np.matmul(rss_matrix, c_matrix_inv)))
+    return true_matrix
+
+
+@pytest.mark.parametrize("angle", range(-90, 90, 56))
+@pytest.mark.parametrize("translate", range(-10, 10, 8))
+@pytest.mark.parametrize("scale", [0.77, 1.0, 1.27])
+@pytest.mark.parametrize("shear", range(-15, 15, 8))
+@pytest.mark.parametrize("center", [None, (12, 14)])
+def test_correctness_affine_bounding_box(angle, translate, scale, shear, center):
+    def _compute_expected_bbox(bbox, angle_, translate_, scale_, shear_, center_):
+        affine_matrix = _compute_affine_matrix(angle_, translate_, scale_, shear_, center_)
+        affine_matrix = affine_matrix[:2, :]
+
+        bbox_xyxy = convert_bounding_box_format(
+            bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
+        )
+        points = np.array(
+            [
+                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
+                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
+                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
+                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
+            ]
+        )
+        transformed_points = np.matmul(points, affine_matrix.T)
+        out_bbox = [
+            np.min(transformed_points[:, 0]),
+            np.min(transformed_points[:, 1]),
+            np.max(transformed_points[:, 0]),
+            np.max(transformed_points[:, 1]),
+        ]
+        out_bbox = features.BoundingBox(
+            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=(32, 32), dtype=torch.float32
+        )
+        out_bbox = convert_bounding_box_format(
+            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
+        )
+        return out_bbox.to(bbox.device)
+
+    image_size = (32, 38)
+
+    for bboxes in make_bounding_boxes(
+        image_sizes=[
+            image_size,
+        ],
+        extra_dims=((4,),),
+    ):
+        output_bboxes = F.affine_bounding_box(
+            bboxes,
+            bboxes.format,
+            image_size=image_size,
+            angle=angle,
+            translate=(translate, translate),
+            scale=scale,
+            shear=(shear, shear),
+            center=center,
+        )
+        if center is None:
+            center = [s // 2 for s in image_size[::-1]]
+
+        bboxes_format = bboxes.format
+        bboxes_image_size = bboxes.image_size
+        if bboxes.ndim < 2:
+            bboxes = [
+                bboxes,
+            ]
+
+        expected_bboxes = []
+        for bbox in bboxes:
+            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            expected_bboxes.append(
+                _compute_expected_bbox(bbox, angle, (translate, translate), scale, (shear, shear), center)
+            )
+        if len(expected_bboxes) > 1:
+            expected_bboxes = torch.stack(expected_bboxes)
+        else:
+            expected_bboxes = expected_bboxes[0]
+        torch.testing.assert_close(output_bboxes, expected_bboxes)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_affine_bounding_box_on_fixed_input(device):
+    # Check transformation against known expected output
+    image_size = (64, 64)
+    # xyxy format
+    in_boxes = [
+        [20, 25, 35, 45],
+        [50, 5, 70, 22],
+        [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
+        [1, 1, 5, 5],
+    ]
+    in_boxes = features.BoundingBox(
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
+    ).to(device)
+    # Tested parameters
+    angle = 63
+    scale = 0.89
+    dx = 0.12
+    dy = 0.23
+
+    # Expected bboxes computed using albumentations:
+    # from albumentations.augmentations.geometric.functional import bbox_shift_scale_rotate
+    # from albumentations.augmentations.geometric.functional import normalize_bbox, denormalize_bbox
+    # expected_bboxes = []
+    # for in_box in in_boxes:
+    #     n_in_box = normalize_bbox(in_box, *image_size)
+    #     n_out_box = bbox_shift_scale_rotate(n_in_box, -angle, scale, dx, dy, *image_size)
+    #     out_box = denormalize_bbox(n_out_box, *image_size)
+    #     expected_bboxes.append(out_box)
+    expected_bboxes = [
+        (24.522435977922218, 34.375689508290854, 46.443125279998114, 54.3516575015695),
+        (54.88288587110401, 50.08453280875634, 76.44484547743795, 72.81332520036864),
+        (27.709526487041554, 34.74952648704156, 51.650473512958435, 58.69047351295844),
+        (48.56528888843238, 9.611532109828834, 53.35347829361575, 14.39972151501221),
+    ]
+
+    output_boxes = F.affine_bounding_box(
+        in_boxes,
+        in_boxes.format,
+        in_boxes.image_size,
+        angle,
+        (dx * image_size[1], dy * image_size[0]),
+        scale,
+        shear=(0, 0),
+    )
+
+    assert len(output_boxes) == len(expected_bboxes)
+    for a_out_box, out_box in zip(expected_bboxes, output_boxes.cpu()):
+        np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)

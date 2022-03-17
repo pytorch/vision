@@ -44,7 +44,8 @@ class InvertedResidual(nn.Module):
     ) -> None:
         super().__init__()
         self.stride = stride
-        assert stride in [1, 2]
+        if stride not in [1, 2]:
+            raise ValueError(f"stride should be 1 or 2 insted of {stride}")
 
         if norm_layer is None:
             norm_layer = nn.BatchNorm2d

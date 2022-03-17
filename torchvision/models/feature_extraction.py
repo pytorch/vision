@@ -277,7 +277,8 @@ class DualGraphModule(fx.GraphModule):
         # eval graphs)
         for node in chain(iter(train_graph.nodes), iter(eval_graph.nodes)):
             if node.op in ["get_attr", "call_module"]:
-                assert isinstance(node.target, str)
+                if not isinstance(node.target, str):
+                    raise TypeError(f"node.target should be of type str instead of {type(node.target)}")
                 _copy_attr(root, self, node.target)
 
         # train mode by default
@@ -290,9 +291,10 @@ class DualGraphModule(fx.GraphModule):
         # Locally defined Tracers are not pickleable. This is needed because torch.package will
         # serialize a GraphModule without retaining the Graph, and needs to use the correct Tracer
         # to re-create the Graph during deserialization.
-        assert (
-            self.eval_graph._tracer_cls == self.train_graph._tracer_cls
-        ), "Train mode and eval mode should use the same tracer class"
+        if self.eval_graph._tracer_cls != self.train_graph._tracer_cls:
+            raise TypeError(
+                f"Train mode and eval mode should use the same tracer class. Instead got {self.eval_graph._tracer_cls} for eval vs {self.train_graph._tracer_cls} for train"
+            )
         self._tracer_cls = None
         if self.graph._tracer_cls and "<locals>" not in self.graph._tracer_cls.__qualname__:
             self._tracer_cls = self.graph._tracer_cls
@@ -431,17 +433,19 @@ def create_feature_extractor(
         }
     is_training = model.training
 
-    assert any(
-        arg is not None for arg in [return_nodes, train_return_nodes, eval_return_nodes]
-    ), "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
+    if all(arg is None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
 
-    assert not (
-        (train_return_nodes is None) ^ (eval_return_nodes is None)
-    ), "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+        raise ValueError(
+            "Either `return_nodes` or `train_return_nodes` and `eval_return_nodes` together, should be specified"
+        )
 
-    assert (return_nodes is None) ^ (
-        train_return_nodes is None
-    ), "If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+    if (train_return_nodes is None) ^ (eval_return_nodes is None):
+        raise ValueError(
+            "If any of `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified"
+        )
+
+    if not ((return_nodes is None) ^ (train_return_nodes is None)):
+        raise ValueError("If `train_return_nodes` and `eval_return_nodes` are specified, then both should be specified")
 
     # Put *_return_nodes into Dict[str, str] format
     def to_strdict(n) -> Dict[str, str]:
@@ -476,9 +480,10 @@ def create_feature_extractor(
 
         available_nodes = list(tracer.node_to_qualname.values())
         # FIXME We don't know if we should expect this to happen
-        assert len(set(available_nodes)) == len(
-            available_nodes
-        ), "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
+        if len(set(available_nodes)) != len(available_nodes):
+            raise ValueError(
+                "There are duplicate nodes! Please raise an issue https://github.com/pytorch/vision/issues"
+            )
         # Check that all outputs in return_nodes are present in the model
         for query in mode_return_nodes[mode].keys():
             # To check if a query is available we need to check that at least
@@ -497,7 +502,9 @@ def create_feature_extractor(
         for n in reversed(graph_module.graph.nodes):
             if n.op == "output":
                 orig_output_nodes.append(n)
-        assert len(orig_output_nodes)
+        if not orig_output_nodes:
+            raise ValueError("No output nodes found in graph_module.graph.nodes")
+
         for n in orig_output_nodes:
             graph_module.graph.erase_node(n)
 
