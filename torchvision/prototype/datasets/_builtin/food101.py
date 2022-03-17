@@ -1,5 +1,5 @@
 from pathlib import Path
-from typing import Any, Tuple, List, Dict, cast, Optional, BinaryIO
+from typing import Any, Tuple, List, Dict, Optional, BinaryIO
 
 from torchdata.datapipes.iter import (
     IterDataPipe,
