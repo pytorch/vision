@@ -1,9 +1,9 @@
 import importlib
 import os
-import torch
 
 import pytest
 import test_models as TM
+import torch
 from torchvision import models
 from torchvision.models._api import WeightsEnum, Weights
 from torchvision.models._utils import handle_legacy_interface
@@ -169,7 +169,7 @@ def test_transforms_jit(model_fn):
     if module_name == "optical_flow":
         args = (x, x)
     else:
-        args = (x, )
+        args = (x,)
 
     problematic_weights = []
     for w in weights_enum:

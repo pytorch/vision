@@ -47,7 +47,7 @@ def get_transform(train, args):
     if args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
-        return lambda img, target = None: (trans(img), target)
+        return lambda img, target=None: (trans(img), target)
     else:
         return presets.DetectionPresetEval()
 
