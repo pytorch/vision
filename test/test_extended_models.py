@@ -232,22 +232,32 @@ class TestHandleLegacyInterface:
         with pytest.warns(UserWarning, match=f"weights={self.ModelWeights.Sentinel if pretrained else None}"):
             builder(*args, **kwargs)
 
-    def test_multi_params(self):
-        weights_params = ("weights", "weights_other")
-        pretrained_params = [param.replace("weights", "pretrained") for param in weights_params]
-
+    @pytest.mark.parametrize(
+        ("args", "kwargs"),
+        [
+            ((), dict()),
+            ((None, None), dict()),
+            ((), dict(weights_backbone=None)),
+            ((None, ModelWeights.Sentinel), dict()),
+            ((), dict(weights_backbone=ModelWeights.Sentinel)),
+        ],
+    )
+    def test_weights_backbone(self, args, kwargs):
         @handle_legacy_interface(
-            **{
-                weights_param: (pretrained_param, self.ModelWeights.Sentinel)
-                for weights_param, pretrained_param in zip(weights_params, pretrained_params)
-            }
+            weights=("pretrained", self.ModelWeights.Sentinel),
+            weights_backbone=("pretrained_backbone", self.ModelWeights.Sentinel),
         )
-        def builder(*, weights=None, weights_other=None):
-            pass
+        def builder(*, weights=None, weights_backbone=None, should_have_weights_backbone):
+            assert should_have_weights_backbone ^ (weights_backbone is not self.ModelWeights.Sentinel)
 
-        for pretrained_param in pretrained_params:
-            with pytest.warns(UserWarning, match="deprecated"):
-                builder(**{pretrained_param: True})
+        if args:
+            with pytest.warns(UserWarning, match="positional"):
+                builder(*args, should_have_weights_backbone=args[-1] is not None)
+        elif kwargs:
+            builder(**kwargs, should_have_weights_backbone=kwargs["weights_backbone"] is not None)
+        else:
+            with pytest.warns(UserWarning, match="explicitly"):
+                builder(should_have_weights_backbone=True)
 
     def test_default_callable(self):
         @handle_legacy_interface(
