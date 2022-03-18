@@ -400,6 +400,7 @@ def test_mobilenet_v2_residual_setting():
     assert out.shape[-1] == 1000
 
 
+@pytest.mark.xfail(reason="See https://github.com/pytorch/vision/issues/5642")
 @pytest.mark.parametrize("model_fn", [models.mobilenet_v2, models.mobilenet_v3_large, models.mobilenet_v3_small])
 def test_mobilenet_norm_layer(model_fn):
     model = model_fn()
