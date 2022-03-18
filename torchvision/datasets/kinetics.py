@@ -82,7 +82,7 @@ class Kinetics(VisionDataset):
     }
     _ANNOTATION_URLS = {
         "400": "https://s3.amazonaws.com/kinetics/400/annotations/{split}.csv",
-        "600": "https://s3.amazonaws.com/kinetics/600/annotations/{split}.txt",
+        "600": "https://s3.amazonaws.com/kinetics/600/annotations/{split}.csv",
         "700": "https://s3.amazonaws.com/kinetics/700_2020/annotations/{split}.csv",
     }
 
