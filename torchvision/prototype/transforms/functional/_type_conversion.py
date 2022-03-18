@@ -7,6 +7,7 @@ import torch
 from torch.nn.functional import one_hot
 from torchvision.io.video import read_video
 from torchvision.prototype.utils._internal import ReadOnlyTensorBuffer
+from torchvision.transforms import functional as F
 
 
 def decode_image_with_pil(encoded_image: torch.Tensor) -> torch.Tensor:
@@ -23,3 +24,8 @@ def decode_video_with_av(encoded_video: torch.Tensor) -> Tuple[torch.Tensor, tor
 
 def label_to_one_hot(label: torch.Tensor, *, num_categories: int) -> torch.Tensor:
     return one_hot(label, num_classes=num_categories)  # type: ignore[no-any-return]
+
+
+to_tensor = F.to_tensor
+pil_to_tensor = F.pil_to_tensor
+image_to_pil = F.to_pil_image

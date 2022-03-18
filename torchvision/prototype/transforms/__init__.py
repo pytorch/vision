@@ -28,4 +28,4 @@ from ._presets import (
     VideoClassificationEval,
     OpticalFlowEval,
 )
-from ._type_conversion import DecodeImage, LabelToOneHot
+from ._type_conversion import DecodeImage, LabelToOneHot, ToTensor, ImageToPIL, PILToTensor
