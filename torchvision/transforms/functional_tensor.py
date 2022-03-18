@@ -46,15 +46,15 @@ def get_image_num_channels(img: Tensor) -> int:
 
 def _max_value(dtype: torch.dtype) -> int:
     if dtype == torch.uint8:
-        return int(2 ** 8) - 1
+        return 255
     elif dtype == torch.int8:
-        return int(2 ** 7) - 1
+        return 127
     elif dtype == torch.int16:
-        return int(2 ** 15) - 1
+        return 32767
     elif dtype == torch.int32:
-        return int(2 ** 31) - 1
+        return 2147483647
     elif dtype == torch.int64:
-        return int(2 ** 63) - 1
+        return 9223372036854775807
     else:
         return 1
 
@@ -350,6 +350,26 @@ def _pad_symmetric(img: Tensor, padding: List[int]) -> Tensor:
         raise RuntimeError("Symmetric padding of N-D tensors are not supported yet")
 
 
+def _parse_pad_padding(padding: List[int]) -> List[int]:
+    if isinstance(padding, int):
+        if torch.jit.is_scripting():
+            # This maybe unreachable
+            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
+        pad_left = pad_right = pad_top = pad_bottom = padding
+    elif len(padding) == 1:
+        pad_left = pad_right = pad_top = pad_bottom = padding[0]
+    elif len(padding) == 2:
+        pad_left = pad_right = padding[0]
+        pad_top = pad_bottom = padding[1]
+    else:
+        pad_left = padding[0]
+        pad_top = padding[1]
+        pad_right = padding[2]
+        pad_bottom = padding[3]
+
+    return [pad_left, pad_right, pad_top, pad_bottom]
+
+
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
     _assert_image_tensor(img)
 
@@ -369,23 +389,7 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
         raise ValueError("Padding mode should be either constant, edge, reflect or symmetric")
 
-    if isinstance(padding, int):
-        if torch.jit.is_scripting():
-            # This maybe unreachable
-            raise ValueError("padding can't be an int while torchscripting, set it as a list [value, ]")
-        pad_left = pad_right = pad_top = pad_bottom = padding
-    elif len(padding) == 1:
-        pad_left = pad_right = pad_top = pad_bottom = padding[0]
-    elif len(padding) == 2:
-        pad_left = pad_right = padding[0]
-        pad_top = pad_bottom = padding[1]
-    else:
-        pad_left = padding[0]
-        pad_top = padding[1]
-        pad_right = padding[2]
-        pad_bottom = padding[3]
-
-    p = [pad_left, pad_right, pad_top, pad_bottom]
+    p = _parse_pad_padding(padding)
 
     if padding_mode == "edge":
         # remap padding_mode str

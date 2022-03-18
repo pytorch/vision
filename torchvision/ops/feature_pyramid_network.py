@@ -95,7 +95,8 @@ class FeaturePyramidNetwork(nn.Module):
                 nn.init.constant_(m.bias, 0)
 
         if extra_blocks is not None:
-            assert isinstance(extra_blocks, ExtraFPNBlock)
+            if not isinstance(extra_blocks, ExtraFPNBlock):
+                raise TypeError(f"extra_blocks should be of type ExtraFPNBlock not {type(extra_blocks)}")
         self.extra_blocks = extra_blocks
 
     def get_result_from_inner_blocks(self, x: Tensor, idx: int) -> Tensor:
