@@ -1,8 +1,9 @@
-from typing import Any, Optional, List
+from typing import Any, Optional, List, Dict
 
 import torch
+from torchvision.prototype.transforms import Transform
 
-from ._transform import Transform
+from ._transform import _RandomApplyTransform
 
 
 class Compose(Transform):
@@ -19,18 +20,13 @@ class Compose(Transform):
         return sample
 
 
-class RandomApply(Transform):
+class RandomApply(_RandomApplyTransform):
     def __init__(self, transform: Transform, *, p: float = 0.5) -> None:
-        super().__init__()
+        super().__init__(p=p)
         self.transform = transform
-        self.p = p
 
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if float(torch.rand(())) < self.p:
-            return sample
-
-        return self.transform(sample)
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        return self.transform(input)
 
     def extra_repr(self) -> str:
         return f"p={self.p}"
