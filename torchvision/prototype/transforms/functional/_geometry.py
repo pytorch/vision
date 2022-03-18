@@ -208,7 +208,7 @@ def _affine_bounding_box_xyxy(
     shear: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
     expand: bool = False,
-):
+) -> torch.Tensor:
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
     device = bounding_box.device
 
@@ -342,7 +342,7 @@ def rotate_bounding_box(
     angle: float,
     expand: bool = False,
     center: Optional[List[float]] = None,
-):
+) -> torch.Tensor:
     original_shape = bounding_box.shape
     bounding_box = convert_bounding_box_format(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
