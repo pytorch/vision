@@ -44,20 +44,26 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   // clean-up
   releaseSubtitle();
   // check flush packet
-  AVPacket avPacket;
-  av_init_packet(&avPacket);
-  avPacket.data = nullptr;
-  avPacket.size = 0;
-  auto pkt = packet ? *packet : avPacket;
+  AVPacket* avPacket;
+  avPacket = av_packet_alloc();
+  if (avPacket == NULL) {
+    LOG(ERROR) << "decoder as not able to allocate the packet.";
+  }
+  avPacket->data = nullptr;
+  avPacket->size = 0;
+
+  auto pkt = packet ? packet : avPacket;
   int gotFramePtr = 0;
-  int result = avcodec_decode_subtitle2(codecCtx_, &sub_, &gotFramePtr, &pkt);
+  // is these a better way than cast from const?
+  int result =
+      avcodec_decode_subtitle2(codecCtx_, &sub_, &gotFramePtr, (AVPacket*)pkt);
 
   if (result < 0) {
     LOG(ERROR) << "avcodec_decode_subtitle2 failed, err: "
                << Util::generateErrorDesc(result);
     return result;
   } else if (result == 0) {
-    result = pkt.size; // discard the rest of the package
+    result = pkt->size; // discard the rest of the package
   }
 
   sub_.release = gotFramePtr;
@@ -66,7 +72,7 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   // set proper pts in us
   if (gotFramePtr) {
     sub_.pts = av_rescale_q(
-        pkt.pts, inputCtx_->streams[format_.stream]->time_base, timeBaseQ);
+        pkt->pts, inputCtx_->streams[format_.stream]->time_base, timeBaseQ);
   }
 
   return result;
