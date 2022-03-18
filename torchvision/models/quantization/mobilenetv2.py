@@ -1,13 +1,13 @@
-from typing import Any
+from typing import Any, Optional
 
 from torch import Tensor
 from torch import nn
-from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
+from torch.ao.quantization import QuantStub, DeQuantStub
 from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, model_urls
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops.misc import ConvNormActivation
-from .utils import _replace_relu, quantize_model
+from ...ops.misc import Conv2dNormActivation
+from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
 __all__ = ["QuantizableMobileNetV2", "mobilenet_v2"]
@@ -28,10 +28,10 @@ class QuantizableInvertedResidual(InvertedResidual):
         else:
             return self.conv(x)
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         for idx in range(len(self.conv)):
             if type(self.conv[idx]) is nn.Conv2d:
-                fuse_modules(self.conv, [str(idx), str(idx + 1)], inplace=True)
+                _fuse_modules(self.conv, [str(idx), str(idx + 1)], is_qat, inplace=True)
 
 
 class QuantizableMobileNetV2(MobileNetV2):
@@ -52,12 +52,12 @@ class QuantizableMobileNetV2(MobileNetV2):
         x = self.dequant(x)
         return x
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         for m in self.modules():
-            if type(m) is ConvNormActivation:
-                fuse_modules(m, ["0", "1", "2"], inplace=True)
+            if type(m) is Conv2dNormActivation:
+                _fuse_modules(m, ["0", "1", "2"], is_qat, inplace=True)
             if type(m) is QuantizableInvertedResidual:
-                m.fuse_model()
+                m.fuse_model(is_qat)
 
 
 def mobilenet_v2(

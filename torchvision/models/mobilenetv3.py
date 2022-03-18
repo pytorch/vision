@@ -6,7 +6,7 @@ import torch
 from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation, SqueezeExcitation as SElayer
+from ..ops.misc import Conv2dNormActivation, SqueezeExcitation as SElayer
 from ..utils import _log_api_usage_once
 from ._utils import _make_divisible
 
@@ -29,8 +29,8 @@ class SqueezeExcitation(SElayer):
         self.relu = self.activation
         delattr(self, "activation")
         warnings.warn(
-            "This SqueezeExcitation class is deprecated and will be removed in future versions. "
-            "Use torchvision.ops.misc.SqueezeExcitation instead.",
+            "This SqueezeExcitation class is deprecated since 0.12 and will be removed in 0.14. "
+            "Use torchvision.ops.SqueezeExcitation instead.",
             FutureWarning,
         )
 
@@ -83,7 +83,7 @@ class InvertedResidual(nn.Module):
         # expand
         if cnf.expanded_channels != cnf.input_channels:
             layers.append(
-                ConvNormActivation(
+                Conv2dNormActivation(
                     cnf.input_channels,
                     cnf.expanded_channels,
                     kernel_size=1,
@@ -95,7 +95,7 @@ class InvertedResidual(nn.Module):
         # depthwise
         stride = 1 if cnf.dilation > 1 else cnf.stride
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 cnf.expanded_channels,
                 cnf.expanded_channels,
                 kernel_size=cnf.kernel,
@@ -112,7 +112,7 @@ class InvertedResidual(nn.Module):
 
         # project
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 cnf.expanded_channels, cnf.out_channels, kernel_size=1, norm_layer=norm_layer, activation_layer=None
             )
         )
@@ -172,7 +172,7 @@ class MobileNetV3(nn.Module):
         # building first layer
         firstconv_output_channels = inverted_residual_setting[0].input_channels
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 3,
                 firstconv_output_channels,
                 kernel_size=3,
@@ -190,7 +190,7 @@ class MobileNetV3(nn.Module):
         lastconv_input_channels = inverted_residual_setting[-1].out_channels
         lastconv_output_channels = 6 * lastconv_input_channels
         layers.append(
-            ConvNormActivation(
+            Conv2dNormActivation(
                 lastconv_input_channels,
                 lastconv_output_channels,
                 kernel_size=1,

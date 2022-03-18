@@ -1,5 +1,5 @@
 import warnings
-from typing import Any, List
+from typing import Any, List, Optional
 
 import torch
 import torch.nn as nn
@@ -9,7 +9,7 @@ from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from .utils import _replace_relu, quantize_model
+from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
 __all__ = [
@@ -35,8 +35,8 @@ class QuantizableBasicConv2d(inception_module.BasicConv2d):
         x = self.relu(x)
         return x
 
-    def fuse_model(self) -> None:
-        torch.ao.quantization.fuse_modules(self, ["conv", "bn", "relu"], inplace=True)
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
+        _fuse_modules(self, ["conv", "bn", "relu"], is_qat, inplace=True)
 
 
 class QuantizableInceptionA(inception_module.InceptionA):
@@ -160,7 +160,7 @@ class QuantizableInception3(inception_module.Inception3):
         else:
             return self.eager_outputs(x, aux)
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         r"""Fuse conv/bn/relu modules in inception model
 
         Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
@@ -170,7 +170,7 @@ class QuantizableInception3(inception_module.Inception3):
 
         for m in self.modules():
             if type(m) is QuantizableBasicConv2d:
-                m.fuse_model()
+                m.fuse_model(is_qat)
 
 
 def inception_v3(

@@ -11,9 +11,11 @@ from .boxes import (
 )
 from .boxes import box_convert
 from .deform_conv import deform_conv2d, DeformConv2d
+from .drop_block import drop_block2d, DropBlock2d, drop_block3d, DropBlock3d
 from .feature_pyramid_network import FeaturePyramidNetwork
 from .focal_loss import sigmoid_focal_loss
-from .misc import FrozenBatchNorm2d, ConvNormActivation, SqueezeExcitation
+from .giou_loss import generalized_box_iou_loss
+from .misc import FrozenBatchNorm2d, Conv2dNormActivation, Conv3dNormActivation, SqueezeExcitation
 from .poolers import MultiScaleRoIAlign
 from .ps_roi_align import ps_roi_align, PSRoIAlign
 from .ps_roi_pool import ps_roi_pool, PSRoIPool
@@ -50,6 +52,12 @@ __all__ = [
     "stochastic_depth",
     "StochasticDepth",
     "FrozenBatchNorm2d",
-    "ConvNormActivation",
+    "Conv2dNormActivation",
+    "Conv3dNormActivation",
     "SqueezeExcitation",
+    "generalized_box_iou_loss",
+    "drop_block2d",
+    "DropBlock2d",
+    "drop_block3d",
+    "DropBlock3d",
 ]

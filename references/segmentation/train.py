@@ -12,9 +12,9 @@ from torch import nn
 
 
 try:
-    from torchvision.prototype import models as PM
+    from torchvision import prototype
 except ImportError:
-    PM = None
+    prototype = None
 
 
 def get_dataset(dir_path, name, image_set, transform):
@@ -35,11 +35,14 @@ def get_dataset(dir_path, name, image_set, transform):
 def get_transform(train, args):
     if train:
         return presets.SegmentationPresetTrain(base_size=520, crop_size=480)
-    elif not args.weights:
+    elif not args.prototype:
         return presets.SegmentationPresetEval(base_size=520)
     else:
-        weights = PM.get_weight(args.weights)
-        return weights.transforms()
+        if args.weights:
+            weights = prototype.models.get_weight(args.weights)
+            return weights.transforms()
+        else:
+            return prototype.transforms.SemanticSegmentationEval(resize_size=520)
 
 
 def criterion(inputs, target):
@@ -97,8 +100,10 @@ def train_one_epoch(model, criterion, optimizer, data_loader, lr_scheduler, devi
 
 
 def main(args):
-    if args.weights and PM is None:
+    if args.prototype and prototype is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+    if not args.prototype and args.weights:
+        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -130,14 +135,14 @@ def main(args):
         dataset_test, batch_size=1, sampler=test_sampler, num_workers=args.workers, collate_fn=utils.collate_fn
     )
 
-    if not args.weights:
+    if not args.prototype:
         model = torchvision.models.segmentation.__dict__[args.model](
             pretrained=args.pretrained,
             num_classes=num_classes,
             aux_loss=args.aux_loss,
         )
     else:
-        model = PM.segmentation.__dict__[args.model](
+        model = prototype.models.segmentation.__dict__[args.model](
             weights=args.weights, num_classes=num_classes, aux_loss=args.aux_loss
         )
     model.to(device)
@@ -278,6 +283,12 @@ def get_args_parser(add_help=True):
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
     # Prototype models only
+    parser.add_argument(
+        "--prototype",
+        dest="prototype",
+        help="Use prototype model builders instead those from main area",
+        action="store_true",
+    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     # Mixed precision training parameters

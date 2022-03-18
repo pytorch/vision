@@ -34,9 +34,9 @@ from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_group
 
 
 try:
-    from torchvision.prototype import models as PM
+    from torchvision import prototype
 except ImportError:
-    PM = None
+    prototype = None
 
 
 def get_dataset(name, image_set, transform, data_path):
@@ -50,11 +50,14 @@ def get_dataset(name, image_set, transform, data_path):
 def get_transform(train, args):
     if train:
         return presets.DetectionPresetTrain(args.data_augmentation)
-    elif not args.weights:
+    elif not args.prototype:
         return presets.DetectionPresetEval()
     else:
-        weights = PM.get_weight(args.weights)
-        return weights.transforms()
+        if args.weights:
+            weights = prototype.models.get_weight(args.weights)
+            return weights.transforms()
+        else:
+            return prototype.transforms.ObjectDetectionEval()
 
 
 def get_args_parser(add_help=True):
@@ -141,6 +144,12 @@ def get_args_parser(add_help=True):
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
     # Prototype models only
+    parser.add_argument(
+        "--prototype",
+        dest="prototype",
+        help="Use prototype model builders instead those from main area",
+        action="store_true",
+    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     # Mixed precision training parameters
@@ -150,8 +159,10 @@ def get_args_parser(add_help=True):
 
 
 def main(args):
-    if args.weights and PM is None:
+    if args.prototype and prototype is None:
         raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
+    if not args.prototype and args.weights:
+        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -193,12 +204,12 @@ def main(args):
     if "rcnn" in args.model:
         if args.rpn_score_thresh is not None:
             kwargs["rpn_score_thresh"] = args.rpn_score_thresh
-    if not args.weights:
+    if not args.prototype:
         model = torchvision.models.detection.__dict__[args.model](
             pretrained=args.pretrained, num_classes=num_classes, **kwargs
         )
     else:
-        model = PM.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
+        model = prototype.models.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)

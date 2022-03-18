@@ -9,10 +9,11 @@ dependencies:
   - libpng
   - jpeg
   - ca-certificates
-  - h5py
+  - hdf5
   - pip:
     - future
     - pillow >=5.3.0, !=8.3.*
     - scipy
     - av
     - dataclasses
+    - h5py

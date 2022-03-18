@@ -26,15 +26,15 @@ class FGVCAircraft(VisionDataset):
         root (string): Root directory of the FGVC Aircraft dataset.
         split (string, optional): The dataset split, supports ``train``, ``val``,
             ``trainval`` and ``test``.
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
         annotation_level (str, optional): The annotation level, supports ``variant``,
             ``family`` and ``manufacturer``.
         transform (callable, optional): A function/transform that  takes in an PIL image
             and returns a transformed version. E.g, ``transforms.RandomCrop``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again.
     """
 
     _URL = "https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/archives/fgvc-aircraft-2013b.tar.gz"
@@ -43,10 +43,10 @@ class FGVCAircraft(VisionDataset):
         self,
         root: str,
         split: str = "trainval",
-        download: bool = False,
         annotation_level: str = "variant",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self._split = verify_str_arg(split, "split", ("train", "val", "trainval", "test"))

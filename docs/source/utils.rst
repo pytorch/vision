@@ -15,5 +15,6 @@ vizualization <sphx_glr_auto_examples_plot_visualization_utils.py>`.
     draw_bounding_boxes
     draw_segmentation_masks
     draw_keypoints
+    flow_to_image
     make_grid
     save_image

@@ -2,12 +2,12 @@ from typing import Any, List, Optional
 
 import torch
 from torch import nn, Tensor
-from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
+from torch.ao.quantization import QuantStub, DeQuantStub
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops.misc import ConvNormActivation, SqueezeExcitation
+from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, model_urls, _mobilenet_v3_conf
-from .utils import _replace_relu
+from .utils import _fuse_modules, _replace_relu
 
 
 __all__ = ["QuantizableMobileNetV3", "mobilenet_v3_large"]
@@ -28,8 +28,8 @@ class QuantizableSqueezeExcitation(SqueezeExcitation):
     def forward(self, input: Tensor) -> Tensor:
         return self.skip_mul.mul(self._scale(input), input)
 
-    def fuse_model(self) -> None:
-        fuse_modules(self, ["fc1", "activation"], inplace=True)
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
+        _fuse_modules(self, ["fc1", "activation"], is_qat, inplace=True)
 
     def _load_from_state_dict(
         self,
@@ -101,15 +101,15 @@ class QuantizableMobileNetV3(MobileNetV3):
         x = self.dequant(x)
         return x
 
-    def fuse_model(self) -> None:
+    def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         for m in self.modules():
-            if type(m) is ConvNormActivation:
+            if type(m) is Conv2dNormActivation:
                 modules_to_fuse = ["0", "1"]
                 if len(m) == 3 and type(m[2]) is nn.ReLU:
                     modules_to_fuse.append("2")
-                fuse_modules(m, modules_to_fuse, inplace=True)
+                _fuse_modules(m, modules_to_fuse, is_qat, inplace=True)
             elif type(m) is QuantizableSqueezeExcitation:
-                m.fuse_model()
+                m.fuse_model(is_qat)
 
 
 def _load_weights(arch: str, model: QuantizableMobileNetV3, model_url: Optional[str], progress: bool) -> None:
@@ -135,7 +135,7 @@ def _mobilenet_v3_model(
     if quantize:
         backend = "qnnpack"
 
-        model.fuse_model()
+        model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
 

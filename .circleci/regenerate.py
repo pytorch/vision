@@ -21,7 +21,7 @@ import yaml
 from jinja2 import select_autoescape
 
 
-PYTHON_VERSIONS = ["3.7", "3.8", "3.9"]
+PYTHON_VERSIONS = ["3.7", "3.8", "3.9", "3.10"]
 
 RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 
@@ -32,8 +32,8 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu102", "cu111", "cu113", "cu115", "rocm4.2", "rocm4.3.1"],
-                "win": ["cpu", "cu111", "cu113", "cu115"],
+                "linux": ["cpu", "cu102", "cu113", "cu115", "rocm4.3.1", "rocm4.5.2"],
+                "win": ["cpu", "cu113", "cu115"],
                 "macos": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
@@ -84,9 +84,10 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=""
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
-        if filter_branch == "nightly" and os_type in ["linux", "win"]:
-            pydistro = "pip" if btype == "wheel" else "conda"
-            w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
+        # disable smoke tests, they are broken and needs to be fixed
+        # if filter_branch == "nightly" and os_type in ["linux", "win"]:
+        #     pydistro = "pip" if btype == "wheel" else "conda"
+        #     w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
 
     return w
 

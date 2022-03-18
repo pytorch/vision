@@ -45,7 +45,7 @@ class OxfordIIITPet(VisionDataset):
         transforms: Optional[Callable] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        download: bool = True,
+        download: bool = False,
     ):
         self._split = verify_str_arg(split, "split", ("trainval", "test"))
         if isinstance(target_types, str):

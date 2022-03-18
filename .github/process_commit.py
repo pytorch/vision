@@ -43,6 +43,7 @@ SECONDARY_LABELS = {
     "module: video",
     "Perf",
     "Revert(ed)",
+    "topic: build",
 }
 
 

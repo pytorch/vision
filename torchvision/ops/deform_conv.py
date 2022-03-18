@@ -179,14 +179,17 @@ class DeformConv2d(nn.Module):
         )
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "{in_channels}"
-        s += ", {out_channels}"
-        s += ", kernel_size={kernel_size}"
-        s += ", stride={stride}"
-        s += ", padding={padding}" if self.padding != (0, 0) else ""
-        s += ", dilation={dilation}" if self.dilation != (1, 1) else ""
-        s += ", groups={groups}" if self.groups != 1 else ""
+        s = (
+            f"{self.__class__.__name__}("
+            f"{self.in_channels}"
+            f", {self.out_channels}"
+            f", kernel_size={self.kernel_size}"
+            f", stride={self.stride}"
+        )
+        s += f", padding={self.padding}" if self.padding != (0, 0) else ""
+        s += f", dilation={self.dilation}" if self.dilation != (1, 1) else ""
+        s += f", groups={self.groups}" if self.groups != 1 else ""
         s += ", bias=False" if self.bias is None else ""
         s += ")"
-        return s.format(**self.__dict__)
+
+        return s

@@ -1,11 +1,11 @@
 import csv
-import os
+import pathlib
 from typing import Any, Callable, Optional, Tuple
 
 import PIL
 
 from .folder import make_dataset
-from .utils import download_and_extract_archive
+from .utils import download_and_extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 
@@ -14,8 +14,7 @@ class GTSRB(VisionDataset):
 
     Args:
         root (string): Root directory of the dataset.
-        train (bool, optional): If True, creates dataset from training set, otherwise
-            creates from test set.
+        split (string, optional): The dataset split, supports ``"train"`` (default), or ``"test"``.
         transform (callable, optional): A function/transform that  takes in an PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
@@ -24,23 +23,10 @@ class GTSRB(VisionDataset):
             downloaded again.
     """
 
-    # Ground Truth for the test set
-    _gt_url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_GT.zip"
-    _gt_csv = "GT-final_test.csv"
-    _gt_md5 = "fe31e9c9270bbcd7b84b7f21a9d9d9e5"
-
-    # URLs for the test and train set
-    _urls = (
-        "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB_Final_Test_Images.zip",
-        "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/GTSRB-Training_fixed.zip",
-    )
-
-    _md5s = ("c7e4e6327067d32654124b0fe9e82185", "513f3c79a4c5141765e10e952eaa2478")
-
     def __init__(
         self,
         root: str,
-        train: bool = True,
+        split: str = "train",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
@@ -48,12 +34,11 @@ class GTSRB(VisionDataset):
 
         super().__init__(root, transform=transform, target_transform=target_transform)
 
-        self.root = os.path.expanduser(root)
-
-        self.train = train
-
-        self._base_folder = os.path.join(self.root, type(self).__name__)
-        self._target_folder = os.path.join(self._base_folder, "Training" if self.train else "Final_Test/Images")
+        self._split = verify_str_arg(split, "split", ("train", "test"))
+        self._base_folder = pathlib.Path(root) / "gtsrb"
+        self._target_folder = (
+            self._base_folder / "GTSRB" / ("Training" if self._split == "train" else "Final_Test/Images")
+        )
 
         if download:
             self.download()
@@ -61,12 +46,12 @@ class GTSRB(VisionDataset):
         if not self._check_exists():
             raise RuntimeError("Dataset not found. You can use download=True to download it")
 
-        if train:
-            samples = make_dataset(self._target_folder, extensions=(".ppm",))
+        if self._split == "train":
+            samples = make_dataset(str(self._target_folder), extensions=(".ppm",))
         else:
-            with open(os.path.join(self._base_folder, self._gt_csv)) as csv_file:
+            with open(self._base_folder / "GT-final_test.csv") as csv_file:
                 samples = [
-                    (os.path.join(self._target_folder, row["Filename"]), int(row["ClassId"]))
+                    (str(self._target_folder / row["Filename"]), int(row["ClassId"]))
                     for row in csv.DictReader(csv_file, delimiter=";", skipinitialspace=True)
                 ]
 
@@ -91,16 +76,28 @@ class GTSRB(VisionDataset):
         return sample, target
 
     def _check_exists(self) -> bool:
-        return os.path.exists(self._target_folder) and os.path.isdir(self._target_folder)
+        return self._target_folder.is_dir()
 
     def download(self) -> None:
         if self._check_exists():
             return
 
-        download_and_extract_archive(self._urls[self.train], download_root=self.root, md5=self._md5s[self.train])
+        base_url = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/"
 
-        if not self.train:
-            # Download Ground Truth for the test set
+        if self._split == "train":
             download_and_extract_archive(
-                self._gt_url, download_root=self.root, extract_root=self._base_folder, md5=self._gt_md5
+                f"{base_url}GTSRB-Training_fixed.zip",
+                download_root=str(self._base_folder),
+                md5="513f3c79a4c5141765e10e952eaa2478",
+            )
+        else:
+            download_and_extract_archive(
+                f"{base_url}GTSRB_Final_Test_Images.zip",
+                download_root=str(self._base_folder),
+                md5="c7e4e6327067d32654124b0fe9e82185",
+            )
+            download_and_extract_archive(
+                f"{base_url}GTSRB_Final_Test_GT.zip",
+                download_root=str(self._base_folder),
+                md5="fe31e9c9270bbcd7b84b7f21a9d9d9e5",
             )

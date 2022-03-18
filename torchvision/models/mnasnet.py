@@ -27,8 +27,10 @@ class _InvertedResidual(nn.Module):
         self, in_ch: int, out_ch: int, kernel_size: int, stride: int, expansion_factor: int, bn_momentum: float = 0.1
     ) -> None:
         super().__init__()
-        assert stride in [1, 2]
-        assert kernel_size in [3, 5]
+        if stride not in [1, 2]:
+            raise ValueError(f"stride should be 1 or 2 instead of {stride}")
+        if kernel_size not in [3, 5]:
+            raise ValueError(f"kernel_size should be 3 or 5 instead of {kernel_size}")
         mid_ch = in_ch * expansion_factor
         self.apply_residual = in_ch == out_ch and stride == 1
         self.layers = nn.Sequential(
@@ -56,7 +58,8 @@ def _stack(
     in_ch: int, out_ch: int, kernel_size: int, stride: int, exp_factor: int, repeats: int, bn_momentum: float
 ) -> nn.Sequential:
     """Creates a stack of inverted residuals."""
-    assert repeats >= 1
+    if repeats < 1:
+        raise ValueError(f"repeats should be >= 1, instead got {repeats}")
     # First one has no skip, because feature map size changes.
     first = _InvertedResidual(in_ch, out_ch, kernel_size, stride, exp_factor, bn_momentum=bn_momentum)
     remaining = []
@@ -69,7 +72,8 @@ def _round_to_multiple_of(val: float, divisor: int, round_up_bias: float = 0.9) 
     """Asymmetric rounding to make `val` divisible by `divisor`. With default
     bias, will round up, unless the number is no more than 10% greater than the
     smaller divisible value, i.e. (83, 8) -> 80, but (84, 8) -> 88."""
-    assert 0.0 < round_up_bias < 1.0
+    if not 0.0 < round_up_bias < 1.0:
+        raise ValueError(f"round_up_bias should be greater than 0.0 and smaller than 1.0 instead of {round_up_bias}")
     new_val = max(divisor, int(val + divisor / 2) // divisor * divisor)
     return new_val if new_val >= round_up_bias * val else new_val + divisor
 
@@ -99,7 +103,8 @@ class MNASNet(torch.nn.Module):
     def __init__(self, alpha: float, num_classes: int = 1000, dropout: float = 0.2) -> None:
         super().__init__()
         _log_api_usage_once(self)
-        assert alpha > 0.0
+        if alpha <= 0.0:
+            raise ValueError(f"alpha should be greater than 0.0 instead of {alpha}")
         self.alpha = alpha
         self.num_classes = num_classes
         depths = _get_depths(alpha)
@@ -128,15 +133,7 @@ class MNASNet(torch.nn.Module):
         ]
         self.layers = nn.Sequential(*layers)
         self.classifier = nn.Sequential(nn.Dropout(p=dropout, inplace=True), nn.Linear(1280, num_classes))
-        self._initialize_weights()
 
-    def forward(self, x: Tensor) -> Tensor:
-        x = self.layers(x)
-        # Equivalent to global avgpool and removing H and W dimensions.
-        x = x.mean([2, 3])
-        return self.classifier(x)
-
-    def _initialize_weights(self) -> None:
         for m in self.modules():
             if isinstance(m, nn.Conv2d):
                 nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -149,6 +146,12 @@ class MNASNet(torch.nn.Module):
                 nn.init.kaiming_uniform_(m.weight, mode="fan_out", nonlinearity="sigmoid")
                 nn.init.zeros_(m.bias)
 
+    def forward(self, x: Tensor) -> Tensor:
+        x = self.layers(x)
+        # Equivalent to global avgpool and removing H and W dimensions.
+        x = x.mean([2, 3])
+        return self.classifier(x)
+
     def _load_from_state_dict(
         self,
         state_dict: Dict,
@@ -160,7 +163,8 @@ class MNASNet(torch.nn.Module):
         error_msgs: List[str],
     ) -> None:
         version = local_metadata.get("version", None)
-        assert version in [1, 2]
+        if version not in [1, 2]:
+            raise ValueError(f"version shluld be set to 1 or 2 instead of {version}")
 
         if version == 1 and not self.alpha == 1.0:
             # In the initial version of the model (v1), stem was fixed-size.

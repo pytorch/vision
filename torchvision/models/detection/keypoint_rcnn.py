@@ -191,7 +191,10 @@ class KeypointRCNN(FasterRCNN):
         num_keypoints=None,
     ):
 
-        assert isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None)))
+        if not isinstance(keypoint_roi_pool, (MultiScaleRoIAlign, type(None))):
+            raise TypeError(
+                "keypoint_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(keypoint_roi_pool)}"
+            )
         if min_size is None:
             min_size = (640, 672, 704, 736, 768, 800)
 
@@ -365,15 +368,15 @@ def keypointrcnn_resnet50_fpn(
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
     """
-    trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
-    )
+    is_trained = pretrained or pretrained_backbone
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
+    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
     model = KeypointRCNN(backbone, num_classes, num_keypoints=num_keypoints, **kwargs)
     if pretrained:

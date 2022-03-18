@@ -3,8 +3,9 @@ import inspect
 import sys
 from collections import OrderedDict
 from dataclasses import dataclass, fields
-from enum import Enum
 from typing import Any, Callable, Dict
+
+from torchvision._utils import StrEnum
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 
@@ -34,7 +35,7 @@ class Weights:
     meta: Dict[str, Any]
 
 
-class WeightsEnum(Enum):
+class WeightsEnum(StrEnum):
     """
     This class is the parent class of all model weights. Each model building method receives an optional `weights`
     parameter with its associated pre-trained weights. It inherits from `Enum` and its values should be of type
@@ -58,17 +59,10 @@ class WeightsEnum(Enum):
                 )
         return obj
 
-    @classmethod
-    def from_str(cls, value: str) -> "WeightsEnum":
-        for k, v in cls.__members__.items():
-            if k == value:
-                return v
-        raise ValueError(f"Invalid value {value} for enum {cls.__name__}.")
-
     def get_state_dict(self, progress: bool) -> OrderedDict:
         return load_state_dict_from_url(self.url, progress=progress)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self._name_}"
 
     def __getattr__(self, name):
@@ -81,7 +75,7 @@ class WeightsEnum(Enum):
 
 def get_weight(name: str) -> WeightsEnum:
     """
-    Gets the weight enum value by its full name. Example: "ResNet50_Weights.ImageNet1K_V1"
+    Gets the weight enum value by its full name. Example: "ResNet50_Weights.IMAGENET1K_V1"
 
     Args:
         name (str): The name of the weight enum entry.

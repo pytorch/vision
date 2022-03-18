@@ -5,10 +5,11 @@
 
 class GPUDecoder : public torch::CustomClassHolder {
  public:
-  GPUDecoder(std::string, int64_t);
+  GPUDecoder(std::string, torch::Device);
   ~GPUDecoder();
   torch::Tensor decode();
-  torch::Tensor nv12_to_yuv420(torch::Tensor);
+  void seek(double, bool);
+  c10::Dict<std::string, c10::Dict<std::string, double>> get_metadata() const;
 
  private:
   Demuxer demuxer;

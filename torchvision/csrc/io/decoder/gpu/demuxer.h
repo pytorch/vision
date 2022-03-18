@@ -15,11 +15,10 @@ class Demuxer {
   bool bMp4H264, bMp4HEVC, bMp4MPEG4;
   unsigned int frameCount = 0;
   int iVideoStream;
-  int64_t userTimeScale = 0;
   double timeBase = 0.0;
 
  public:
-  Demuxer(const char* filePath, int64_t timeScale = 1000 /*Hz*/) {
+  Demuxer(const char* filePath) {
     avformat_network_init();
     TORCH_CHECK(
         0 <= avformat_open_input(&fmtCtx, filePath, NULL, NULL),
@@ -52,7 +51,6 @@ class Demuxer {
     eVideoCodec = fmtCtx->streams[iVideoStream]->codecpar->codec_id;
     AVRational rTimeBase = fmtCtx->streams[iVideoStream]->time_base;
     timeBase = av_q2d(rTimeBase);
-    userTimeScale = timeScale;
 
     bMp4H264 = eVideoCodec == AV_CODEC_ID_H264 &&
         (!strcmp(fmtCtx->iformat->long_name, "QuickTime / MOV") ||
@@ -119,6 +117,7 @@ class Demuxer {
           " in demuxer.h\n");
     }
   }
+
   ~Demuxer() {
     if (!fmtCtx) {
       return;
@@ -140,6 +139,14 @@ class Demuxer {
 
   AVCodecID get_video_codec() {
     return eVideoCodec;
+  }
+
+  double get_duration() const {
+    return (double)fmtCtx->duration / AV_TIME_BASE;
+  }
+
+  double get_fps() const {
+    return av_q2d(fmtCtx->streams[iVideoStream]->r_frame_rate);
   }
 
   bool demux(uint8_t** video, unsigned long* videoBytes) {
@@ -209,6 +216,15 @@ class Demuxer {
     }
     frameCount++;
     return true;
+  }
+
+  void seek(double timestamp, int flag) {
+    int64_t time = timestamp * AV_TIME_BASE;
+    TORCH_CHECK(
+        0 <= av_seek_frame(fmtCtx, -1, time, flag),
+        "av_seek_frame() failed at line ",
+        __LINE__,
+        " in demuxer.h\n");
   }
 };
 

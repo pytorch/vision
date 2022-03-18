@@ -22,6 +22,8 @@ class ClassificationPresetTrain:
                 trans.append(autoaugment.RandAugment(interpolation=interpolation))
             elif auto_augment_policy == "ta_wide":
                 trans.append(autoaugment.TrivialAugmentWide(interpolation=interpolation))
+            elif auto_augment_policy == "augmix":
+                trans.append(autoaugment.AugMix(interpolation=interpolation))
             else:
                 aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
                 trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))

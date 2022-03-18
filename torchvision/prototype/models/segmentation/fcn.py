@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import VocEval
+from torchvision.prototype.transforms import SemanticSegmentationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.segmentation.fcn import FCN, _fcn_resnet
@@ -24,9 +24,9 @@ _COMMON_META = {
 
 
 class FCN_ResNet50_Weights(WeightsEnum):
-    CocoWithVocLabels_V1 = Weights(
+    COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
-        transforms=partial(VocEval, resize_size=520),
+        transforms=partial(SemanticSegmentationEval, resize_size=520),
         meta={
             **_COMMON_META,
             "num_params": 35322218,
@@ -35,13 +35,13 @@ class FCN_ResNet50_Weights(WeightsEnum):
             "acc": 91.4,
         },
     )
-    default = CocoWithVocLabels_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 class FCN_ResNet101_Weights(WeightsEnum):
-    CocoWithVocLabels_V1 = Weights(
+    COCO_WITH_VOC_LABELS_V1 = Weights(
         url="https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
-        transforms=partial(VocEval, resize_size=520),
+        transforms=partial(SemanticSegmentationEval, resize_size=520),
         meta={
             **_COMMON_META,
             "num_params": 54314346,
@@ -50,12 +50,12 @@ class FCN_ResNet101_Weights(WeightsEnum):
             "acc": 91.9,
         },
     )
-    default = CocoWithVocLabels_V1
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
 
 
 @handle_legacy_interface(
-    weights=("pretrained", FCN_ResNet50_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", ResNet50_Weights.ImageNet1K_V1),
+    weights=("pretrained", FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
 )
 def fcn_resnet50(
     *,
@@ -86,8 +86,8 @@ def fcn_resnet50(
 
 
 @handle_legacy_interface(
-    weights=("pretrained", FCN_ResNet101_Weights.CocoWithVocLabels_V1),
-    weights_backbone=("pretrained_backbone", ResNet101_Weights.ImageNet1K_V1),
+    weights=("pretrained", FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
 )
 def fcn_resnet101(
     *,

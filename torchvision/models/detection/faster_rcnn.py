@@ -187,8 +187,14 @@ class FasterRCNN(GeneralizedRCNN):
                 "same for all the levels)"
             )
 
-        assert isinstance(rpn_anchor_generator, (AnchorGenerator, type(None)))
-        assert isinstance(box_roi_pool, (MultiScaleRoIAlign, type(None)))
+        if not isinstance(rpn_anchor_generator, (AnchorGenerator, type(None))):
+            raise TypeError(
+                f"rpn_anchor_generator should be of type AnchorGenerator or None instead of {type(rpn_anchor_generator)}"
+            )
+        if not isinstance(box_roi_pool, (MultiScaleRoIAlign, type(None))):
+            raise TypeError(
+                f"box_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(box_roi_pool)}"
+            )
 
         if num_classes is not None:
             if box_predictor is not None:
@@ -299,7 +305,10 @@ class FastRCNNPredictor(nn.Module):
 
     def forward(self, x):
         if x.dim() == 4:
-            assert list(x.shape[2:]) == [1, 1]
+            if list(x.shape[2:]) != [1, 1]:
+                raise ValueError(
+                    f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}"
+                )
         x = x.flatten(start_dim=1)
         scores = self.cls_score(x)
         bbox_deltas = self.bbox_pred(x)
@@ -383,15 +392,15 @@ def fasterrcnn_resnet50_fpn(
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
     """
-    trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
-    )
+    is_trained = pretrained or pretrained_backbone
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
+    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
     model = FasterRCNN(backbone, num_classes, **kwargs)
     if pretrained:
@@ -410,16 +419,14 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
     trainable_backbone_layers=None,
     **kwargs,
 ):
-    trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 6, 3
-    )
+    is_trained = pretrained or pretrained_backbone
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 6, 3)
+    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
     if pretrained:
         pretrained_backbone = False
 
-    backbone = mobilenet_v3_large(
-        pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d
-    )
+    backbone = mobilenet_v3_large(pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _mobilenet_extractor(backbone, True, trainable_backbone_layers)
 
     anchor_sizes = (

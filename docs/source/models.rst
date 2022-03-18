@@ -38,9 +38,10 @@ architectures for image classification:
 -  `ResNeXt`_
 -  `Wide ResNet`_
 -  `MNASNet`_
--  `EfficientNet`_
+-  `EfficientNet`_ v1 & v2
 -  `RegNet`_
 -  `VisionTransformer`_
+-  `ConvNeXt`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -69,6 +70,9 @@ You can construct a model with random weights by calling its constructor:
     efficientnet_b5 = models.efficientnet_b5()
     efficientnet_b6 = models.efficientnet_b6()
     efficientnet_b7 = models.efficientnet_b7()
+    efficientnet_v2_s = models.efficientnet_v2_s()
+    efficientnet_v2_m = models.efficientnet_v2_m()
+    efficientnet_v2_l = models.efficientnet_v2_l()
     regnet_y_400mf = models.regnet_y_400mf()
     regnet_y_800mf = models.regnet_y_800mf()
     regnet_y_1_6gf = models.regnet_y_1_6gf()
@@ -88,6 +92,10 @@ You can construct a model with random weights by calling its constructor:
     vit_b_32 = models.vit_b_32()
     vit_l_16 = models.vit_l_16()
     vit_l_32 = models.vit_l_32()
+    convnext_tiny = models.convnext_tiny()
+    convnext_small = models.convnext_small()
+    convnext_base = models.convnext_base()
+    convnext_large = models.convnext_large()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 These can be constructed by passing ``pretrained=True``:
@@ -117,6 +125,9 @@ These can be constructed by passing ``pretrained=True``:
     efficientnet_b5 = models.efficientnet_b5(pretrained=True)
     efficientnet_b6 = models.efficientnet_b6(pretrained=True)
     efficientnet_b7 = models.efficientnet_b7(pretrained=True)
+    efficientnet_v2_s = models.efficientnet_v2_s(pretrained=True)
+    efficientnet_v2_m = models.efficientnet_v2_m(pretrained=True)
+    efficientnet_v2_l = models.efficientnet_v2_l(pretrained=True)
     regnet_y_400mf = models.regnet_y_400mf(pretrained=True)
     regnet_y_800mf = models.regnet_y_800mf(pretrained=True)
     regnet_y_1_6gf = models.regnet_y_1_6gf(pretrained=True)
@@ -135,6 +146,10 @@ These can be constructed by passing ``pretrained=True``:
     vit_b_32 = models.vit_b_32(pretrained=True)
     vit_l_16 = models.vit_l_16(pretrained=True)
     vit_l_32 = models.vit_l_32(pretrained=True)
+    convnext_tiny = models.convnext_tiny(pretrained=True)
+    convnext_small = models.convnext_small(pretrained=True)
+    convnext_base = models.convnext_base(pretrained=True)
+    convnext_large = models.convnext_large(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_HOME` environment variable. See
@@ -164,7 +179,7 @@ to::
     import torch
     from torchvision import datasets, transforms as T
 
-    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
+    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.PILToTensor(), T.ConvertImageDtype(torch.float)])
     dataset = datasets.ImageNet(".", split="train", transform=transform)
 
     means = []
@@ -229,6 +244,9 @@ EfficientNet-B4                   83.384          96.594
 EfficientNet-B5                   83.444          96.628
 EfficientNet-B6                   84.008          96.916
 EfficientNet-B7                   84.122          96.908
+EfficientNetV2-s                  84.228          96.878
+EfficientNetV2-m                  85.112          97.156
+EfficientNetV2-l                  85.810          97.792
 regnet_x_400mf                    72.834          90.950
 regnet_x_800mf                    75.212          92.348
 regnet_x_1_6gf                    77.040          93.440
@@ -247,6 +265,10 @@ vit_b_16                          81.072          95.318
 vit_b_32                          75.912          92.466
 vit_l_16                          79.662          94.638
 vit_l_32                          76.972          93.070
+convnext_tiny                     82.520          96.146
+convnext_small                    83.616          96.650
+convnext_base                     84.062          96.870
+convnext_large                    84.414          96.976
 ================================  =============   =============
 
 
@@ -265,6 +287,7 @@ vit_l_32                          76.972          93.070
 .. _EfficientNet: https://arxiv.org/abs/1905.11946
 .. _RegNet: https://arxiv.org/abs/2003.13678
 .. _VisionTransformer: https://arxiv.org/abs/2010.11929
+.. _ConvNeXt: https://arxiv.org/abs/2201.03545
 
 .. currentmodule:: torchvision.models
 
@@ -425,6 +448,9 @@ EfficientNet
     efficientnet_b5
     efficientnet_b6
     efficientnet_b7
+    efficientnet_v2_s
+    efficientnet_v2_m
+    efficientnet_v2_l
 
 RegNet
 ------------
@@ -460,6 +486,18 @@ VisionTransformer
     vit_b_32
     vit_l_16
     vit_l_32
+
+ConvNeXt
+--------
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    convnext_tiny
+    convnext_small
+    convnext_base
+    convnext_large
 
 Quantized Models
 ----------------
@@ -592,6 +630,7 @@ The models subpackage contains definitions for the following model
 architectures for detection:
 
 - `Faster R-CNN <https://arxiv.org/abs/1506.01497>`_
+- `FCOS <https://arxiv.org/abs/1904.01355>`_
 - `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
 - `RetinaNet <https://arxiv.org/abs/1708.02002>`_
 - `SSD <https://arxiv.org/abs/1512.02325>`_
@@ -637,6 +676,7 @@ Network                                 box AP   mask AP   keypoint AP
 Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
+FCOS ResNet-50 FPN                      39.2     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
 SSD300 VGG16                            25.1     -         -
 SSDlite320 MobileNetV3-Large            21.3     -         -
@@ -697,6 +737,7 @@ Network                                 train time (s / it)  test time (s / it) 
 Faster R-CNN ResNet-50 FPN              0.2288               0.0590              5.2
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
+FCOS ResNet-50 FPN                      0.1450               0.0539              3.3
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
 SSD300 VGG16                            0.2093               0.0744              1.5
 SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
@@ -715,6 +756,15 @@ Faster R-CNN
     torchvision.models.detection.fasterrcnn_resnet50_fpn
     torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn
     torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
+
+FCOS
+----
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.fcos_resnet50_fpn
 
 
 RetinaNet

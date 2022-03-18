@@ -2,7 +2,7 @@ import warnings
 from functools import partial
 from typing import Any, Optional
 
-from torchvision.prototype.transforms import ImageNetEval
+from torchvision.prototype.transforms import ImageClassificationEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.googlenet import GoogLeNet, GoogLeNetOutputs, _GoogLeNetOutputs
@@ -15,15 +15,16 @@ __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNet_Weig
 
 
 class GoogLeNet_Weights(WeightsEnum):
-    ImageNet1K_V1 = Weights(
+    IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
-        transforms=partial(ImageNetEval, crop_size=224),
+        transforms=partial(ImageClassificationEval, crop_size=224),
         meta={
             "task": "image_classification",
             "architecture": "GoogLeNet",
             "publication_year": 2014,
             "num_params": 6624904,
             "size": (224, 224),
+            "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#googlenet",
@@ -31,10 +32,10 @@ class GoogLeNet_Weights(WeightsEnum):
             "acc@5": 89.530,
         },
     )
-    default = ImageNet1K_V1
+    DEFAULT = IMAGENET1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.ImageNet1K_V1))
+@handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.IMAGENET1K_V1))
 def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     weights = GoogLeNet_Weights.verify(weights)
 

@@ -180,7 +180,7 @@ class DownloadConfig:
         self.md5 = md5
         self.id = id or url
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return self.id
 
 

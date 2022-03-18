@@ -6,7 +6,7 @@ from torch.nn import functional as F
 
 from .. import mobilenetv3
 from .. import resnet
-from ..feature_extraction import create_feature_extractor
+from .._utils import IntermediateLayerGetter
 from ._utils import _SimpleSegmentationModel, _load_weights
 from .fcn import FCNHead
 
@@ -121,7 +121,7 @@ def _deeplabv3_resnet(
     return_layers = {"layer4": "out"}
     if aux:
         return_layers["layer3"] = "aux"
-    backbone = create_feature_extractor(backbone, return_layers)
+    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = FCNHead(1024, num_classes) if aux else None
     classifier = DeepLabHead(2048, num_classes)
@@ -144,7 +144,7 @@ def _deeplabv3_mobilenetv3(
     return_layers = {str(out_pos): "out"}
     if aux:
         return_layers[str(aux_pos)] = "aux"
-    backbone = create_feature_extractor(backbone, return_layers)
+    backbone = IntermediateLayerGetter(backbone, return_layers=return_layers)
 
     aux_classifier = FCNHead(aux_inplanes, num_classes) if aux else None
     classifier = DeepLabHead(out_inplanes, num_classes)

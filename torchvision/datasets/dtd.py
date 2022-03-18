@@ -21,12 +21,12 @@ class DTD(VisionDataset):
                 The partition only changes which split each image belongs to. Thus, regardless of the selected
                 partition, combining all splits will result in all images.
 
-        download (bool, optional): If True, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
         transform (callable, optional): A function/transform that  takes in a PIL image and returns a transformed
             version. E.g, ``transforms.RandomCrop``.
         target_transform (callable, optional): A function/transform that takes in the target and transforms it.
+        download (bool, optional): If True, downloads the dataset from the internet and
+            puts it in root directory. If dataset is already downloaded, it is not
+            downloaded again. Default is False.
     """
 
     _URL = "https://www.robots.ox.ac.uk/~vgg/data/dtd/download/dtd-r1.0.1.tar.gz"
@@ -37,9 +37,9 @@ class DTD(VisionDataset):
         root: str,
         split: str = "train",
         partition: int = 1,
-        download: bool = True,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
+        download: bool = False,
     ) -> None:
         self._split = verify_str_arg(split, "split", ("train", "val", "test"))
         if not isinstance(partition, int) and not (1 <= partition <= 10):

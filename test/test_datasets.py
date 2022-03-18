@@ -2169,6 +2169,27 @@ class HD1KTestCase(KittiFlowTestCase):
         return num_sequences * (num_examples_per_sequence - 1)
 
 
+class EuroSATTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.EuroSAT
+    FEATURE_TYPES = (PIL.Image.Image, int)
+
+    def inject_fake_data(self, tmpdir, config):
+        data_folder = os.path.join(tmpdir, "eurosat", "2750")
+        os.makedirs(data_folder)
+
+        num_examples_per_class = 3
+        classes = ("AnnualCrop", "Forest")
+        for cls in classes:
+            datasets_utils.create_image_folder(
+                root=data_folder,
+                name=cls,
+                file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+                num_examples=num_examples_per_class,
+            )
+
+        return len(classes) * num_examples_per_class
+
+
 class Food101TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Food101
     FEATURE_TYPES = (PIL.Image.Image, int)
@@ -2260,11 +2281,6 @@ class FGVCAircraftTestCase(datasets_utils.ImageDatasetTestCase):
 class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.SUN397
 
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(
-        split=("train", "test"),
-        partition=(1, 10, None),
-    )
-
     def inject_fake_data(self, tmpdir: str, config):
         data_dir = pathlib.Path(tmpdir) / "SUN397"
         data_dir.mkdir()
@@ -2287,18 +2303,7 @@ class SUN397TestCase(datasets_utils.ImageDatasetTestCase):
         with open(data_dir / "ClassName.txt", "w") as file:
             file.writelines("\n".join(f"/{cls[0]}/{cls}" for cls in sampled_classes))
 
-        if config["partition"] is not None:
-            num_samples = max(len(im_paths) // (2 if config["split"] == "train" else 3), 1)
-
-            with open(data_dir / f"{config['split'].title()}ing_{config['partition']:02d}.txt", "w") as file:
-                file.writelines(
-                    "\n".join(
-                        f"/{f_path.relative_to(data_dir).as_posix()}"
-                        for f_path in random.choices(im_paths, k=num_samples)
-                    )
-                )
-        else:
-            num_samples = len(im_paths)
+        num_samples = len(im_paths)
 
         return num_samples
 
@@ -2376,17 +2381,17 @@ class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.GTSRB
     FEATURE_TYPES = (PIL.Image.Image, int)
 
-    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(train=(True, False))
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
 
     def inject_fake_data(self, tmpdir: str, config):
-        root_folder = os.path.join(tmpdir, "GTSRB")
+        root_folder = os.path.join(tmpdir, "gtsrb")
         os.makedirs(root_folder, exist_ok=True)
 
         # Train data
-        train_folder = os.path.join(root_folder, "Training")
+        train_folder = os.path.join(root_folder, "GTSRB", "Training")
         os.makedirs(train_folder, exist_ok=True)
 
-        num_examples = 3
+        num_examples = 3 if config["split"] == "train" else 4
         classes = ("00000", "00042", "00012")
         for class_idx in classes:
             datasets_utils.create_image_folder(
@@ -2398,7 +2403,7 @@ class GTSRBTestCase(datasets_utils.ImageDatasetTestCase):
 
         total_number_of_examples = num_examples * len(classes)
         # Test data
-        test_folder = os.path.join(root_folder, "Final_Test", "Images")
+        test_folder = os.path.join(root_folder, "GTSRB", "Final_Test", "Images")
         os.makedirs(test_folder, exist_ok=True)
 
         with open(os.path.join(root_folder, "GT-final_test.csv"), "w") as csv_file:
@@ -2514,6 +2519,50 @@ class OxfordIIITPetTestCase(datasets_utils.ImageDatasetTestCase):
         return (image_id, class_id, species, breed_id)
 
 
+class StanfordCarsTestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.StanfordCars
+    REQUIRED_PACKAGES = ("scipy",)
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "test"))
+
+    def inject_fake_data(self, tmpdir, config):
+        import scipy.io as io
+        from numpy.core.records import fromarrays
+
+        num_examples = {"train": 5, "test": 7}[config["split"]]
+        num_classes = 3
+        base_folder = pathlib.Path(tmpdir) / "stanford_cars"
+
+        devkit = base_folder / "devkit"
+        devkit.mkdir(parents=True)
+
+        if config["split"] == "train":
+            images_folder_name = "cars_train"
+            annotations_mat_path = devkit / "cars_train_annos.mat"
+        else:
+            images_folder_name = "cars_test"
+            annotations_mat_path = base_folder / "cars_test_annos_withlabels.mat"
+
+        datasets_utils.create_image_folder(
+            root=base_folder,
+            name=images_folder_name,
+            file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+            num_examples=num_examples,
+        )
+
+        classes = np.random.randint(1, num_classes + 1, num_examples, dtype=np.uint8)
+        fnames = [f"{i:5d}.jpg" for i in range(num_examples)]
+        rec_array = fromarrays(
+            [classes, fnames],
+            names=["class", "fname"],
+        )
+        io.savemat(annotations_mat_path, {"annotations": rec_array})
+
+        random_class_names = ["random_name"] * num_classes
+        io.savemat(devkit / "cars_meta.mat", {"class_names": random_class_names})
+
+        return num_examples
+
+
 class Country211TestCase(datasets_utils.ImageDatasetTestCase):
     DATASET_CLASS = datasets.Country211
 
@@ -2598,6 +2647,28 @@ class PCAMTestCase(datasets_utils.ImageDatasetTestCase):
             f["y"] = np.random.randint(0, 2, size=(num_images, 1, 1, 1), dtype=np.uint8)
 
         return num_images
+
+
+class RenderedSST2TestCase(datasets_utils.ImageDatasetTestCase):
+    DATASET_CLASS = datasets.RenderedSST2
+    ADDITIONAL_CONFIGS = datasets_utils.combinations_grid(split=("train", "val", "test"))
+    SPLIT_TO_FOLDER = {"train": "train", "val": "valid", "test": "test"}
+
+    def inject_fake_data(self, tmpdir: str, config):
+        root_folder = pathlib.Path(tmpdir) / "rendered-sst2"
+        image_folder = root_folder / self.SPLIT_TO_FOLDER[config["split"]]
+
+        num_images_per_class = {"train": 5, "test": 6, "val": 7}
+        sampled_classes = ["positive", "negative"]
+        for cls in sampled_classes:
+            datasets_utils.create_image_folder(
+                image_folder,
+                cls,
+                file_name_fn=lambda idx: f"{idx}.png",
+                num_examples=num_images_per_class[config["split"]],
+            )
+
+        return len(sampled_classes) * num_images_per_class[config["split"]]
 
 
 if __name__ == "__main__":

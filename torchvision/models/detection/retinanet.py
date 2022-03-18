@@ -347,7 +347,10 @@ class RetinaNet(nn.Module):
             )
         self.backbone = backbone
 
-        assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
+        if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
+            raise TypeError(
+                f"anchor_generator should be of type AnchorGenerator or None instead of {type(anchor_generator)}"
+            )
 
         if anchor_generator is None:
             anchor_sizes = tuple((x, int(x * 2 ** (1.0 / 3)), int(x * 2 ** (2.0 / 3))) for x in [32, 64, 128, 256, 512])
@@ -436,7 +439,7 @@ class RetinaNet(nn.Module):
                 topk_idxs = torch.where(keep_idxs)[0]
 
                 # keep only topk scoring predictions
-                num_topk = min(self.topk_candidates, topk_idxs.size(0))
+                num_topk = det_utils._topk_min(topk_idxs, self.topk_candidates, 0)
                 scores_per_level, idxs = scores_per_level.topk(num_topk)
                 topk_idxs = topk_idxs[idxs]
 
@@ -488,20 +491,24 @@ class RetinaNet(nn.Module):
             raise ValueError("In training mode, targets should be passed")
 
         if self.training:
-            assert targets is not None
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
                         raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                    raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            if len(val) != 2:
+                raise ValueError(
+                    f"Expecting the two last elements of the input tensors to be H and W instead got {img.shape[-2:]}"
+                )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -539,8 +546,8 @@ class RetinaNet(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
-
+            if targets is None:
+                raise ValueError("In training mode, targets should be passed")
             # compute the losses
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:
@@ -626,15 +633,15 @@ def retinanet_resnet50_fpn(
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
     """
-    trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
-    )
+    is_trained = pretrained or pretrained_backbone
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
+    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
     if pretrained:
         # no need to download the backbone if pretrained is set
         pretrained_backbone = False
 
-    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer)
     # skip P2 because it generates too many anchors (according to their paper)
     backbone = _resnet_fpn_extractor(
         backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)
