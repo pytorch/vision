@@ -14,7 +14,7 @@ class USPSFileReader(IterDataPipe[torch.Tensor]):
     def __init__(self, datapipe: IterDataPipe[Tuple[Any, BinaryIO]]) -> None:
         self.datapipe = datapipe
 
-    def __iter__(self) -> Iterator[torch.Tensor]:
+    def __iter__(self) -> Iterator[Tuple[torch.Tensor, torch.Tensor]]:
         for path, _ in self.datapipe:
             with bz2.open(path) as fp:
                 datapipe = IterableWrapper([(path, fp)])
