@@ -370,7 +370,7 @@ def detect_flows(frames: Tensor, model: nn.Module,
             ``notebook_mode = True``. In case, you are running out of memory, 
             consider setting ``return_flow_images = False`` and 
             ``return_flow_data = False``. This will ensure to free-up memory and 
-            accordingly return None for those ``flow_imgs`` and/or ``pred_flows``.
+            accordingly return None for ``flow_imgs`` and/or ``pred_flows``.
 
         ```python
         # Specify keyword-arguments for detect_flow() function.
@@ -448,18 +448,18 @@ def detect_flows(frames: Tensor, model: nn.Module,
             ext = "png",
         )
         with torch.no_grad():
-            flow_imgs.append(flow_img.clone())
-            pred_flows.append(pred_flow.clone())
+            if return_flow_images:
+                flow_imgs.append(flow_img.clone())
+            else:
+                flow_imgs = None
+
+            if return_flow_data:
+                pred_flows.append(pred_flow.clone())
+            else:
+                pred_flows = None
         # release memory
         flow_img = None
         pred_flow = None   
-        _release_memory()
-
-    if not return_flow_images:
-        flow_imgs = None
-        _release_memory()
-    if not return_flow_data:
-        pred_flows = None
         _release_memory()
 
     return flow_imgs, pred_flows
