@@ -527,7 +527,7 @@ def test_correctness_affine_segmentation_mask_on_fixed_input(device):
 
     # Rotate 90 degrees and scale
     expected_mask = torch.rot90(mask, k=-1, dims=(-2, -1))
-    expected_mask = torch.nn.functional.interpolate(expected_mask[None, ...].float(), size=(64, 64), mode="nearest")
+    expected_mask = torch.nn.functional.interpolate(expected_mask[None, :].float(), size=(64, 64), mode="nearest")
     expected_mask = expected_mask[0, :, 16 : 64 - 16, 16 : 64 - 16].long()
 
     out_mask = F.affine_segmentation_mask(mask, 90, [0.0, 0.0], 64.0 / 32.0, [0.0, 0.0])
