@@ -120,7 +120,7 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
-            "quantization": "ptq",
+            "quantization": "Post Training Quantization",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": GoogLeNet_Weights.IMAGENET1K_V1,
             "acc@1": 69.826,

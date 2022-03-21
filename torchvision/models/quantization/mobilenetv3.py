@@ -168,7 +168,7 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "qnnpack",
-            "quantization": "qat",
+            "quantization": "Quantization Aware Training",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3",
             "unquantized": MobileNet_V3_Large_Weights.IMAGENET1K_V1,
             "acc@1": 73.004,

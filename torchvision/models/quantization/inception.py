@@ -186,7 +186,7 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
             "categories": _IMAGENET_CATEGORIES,
             "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
-            "quantization": "ptq",
+            "quantization": "Post Training Quantization",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": Inception_V3_Weights.IMAGENET1K_V1,
             "acc@1": 77.176,

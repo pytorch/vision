@@ -110,7 +110,7 @@ _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BILINEAR,
     "backend": "fbgemm",
-    "quantization": "ptq",
+    "quantization": "Post Training Quantization",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
 }
 
