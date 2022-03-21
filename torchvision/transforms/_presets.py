@@ -81,6 +81,7 @@ class VideoClassification(nn.Module):
         vid = F.center_crop(vid, self._crop_size)
         vid = F.convert_image_dtype(vid, torch.float)
         vid = F.normalize(vid, mean=self._mean, std=self._std)
+        H, W = self._crop_size
         vid = vid.view(N, T, C, H, W)
         vid = vid.permute(0, 2, 1, 3, 4)  # (N, T, C, H, W) => (N, C, T, H, W)
 
