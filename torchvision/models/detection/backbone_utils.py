@@ -62,7 +62,7 @@ class BackboneWithFPN(nn.Module):
 def resnet_fpn_backbone(
     *,
     backbone_name: str,
-    weights: Optional[WeightsEnum] = None,
+    weights: Optional[WeightsEnum],
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 3,
     returned_layers: Optional[List[int]] = None,
@@ -171,8 +171,8 @@ def _validate_trainable_layers(
 def mobilenet_backbone(
     *,
     backbone_name: str,
-    weights: Optional[WeightsEnum] = None,
-    fpn: bool = True,
+    weights: Optional[WeightsEnum],
+    fpn: bool,
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 2,
     returned_layers: Optional[List[int]] = None,

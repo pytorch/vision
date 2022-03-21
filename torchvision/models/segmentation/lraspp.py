@@ -121,7 +121,7 @@ def lraspp_mobilenet_v3_large(
     weights: Optional[LRASPP_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
-    weights_backbone: Optional[MobileNet_V3_Large_Weights] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = MobileNet_V3_Large_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> LRASPP:
     """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.

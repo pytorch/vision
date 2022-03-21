@@ -40,7 +40,7 @@ class TestModelsDetectionUtils:
         # be frozen for each trainable_backbone_layers parameter value
         # i.e all 53 params are frozen if trainable_backbone_layers=0
         # ad first 24 params are frozen if trainable_backbone_layers=2
-        model = backbone_utils.resnet_fpn_backbone("resnet50", trainable_layers=train_layers)
+        model = backbone_utils.resnet_fpn_backbone("resnet50", weights=None, trainable_layers=train_layers)
         # boolean list that is true if the param at that index is frozen
         is_frozen = [not parameter.requires_grad for _, parameter in model.named_parameters()]
         # check that expected initial number of layers are frozen

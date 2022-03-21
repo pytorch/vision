@@ -428,7 +428,7 @@ def test_inception_v3_eval():
 
 
 def test_fasterrcnn_double():
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, weights=None, weights_backbone=None)
     model.double()
     model.eval()
     input_shape = (3, 300, 300)
@@ -467,7 +467,7 @@ def test_fasterrcnn_switch_devices():
         assert "scores" in out[0]
         assert "labels" in out[0]
 
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, weights=None, weights_backbone=None)
     model.cuda()
     model.eval()
     input_shape = (3, 300, 300)
@@ -583,6 +583,7 @@ def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 10,
+        "weights_backbone": None,
         "input_shape": (1, 3, 32, 32),
     }
     model_name = model_fn.__name__
@@ -644,6 +645,7 @@ def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 50,
+        "weights_backbone": None,
         "input_shape": (3, 300, 300),
     }
     model_name = model_fn.__name__
@@ -738,7 +740,7 @@ def test_detection_model(model_fn, dev):
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
-    model = model_fn(num_classes=50)
+    model = model_fn(num_classes=50, weights=None, weights_backbone=None)
     input_shape = (3, 300, 300)
     x = [torch.rand(input_shape)]
 
@@ -851,7 +853,7 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
     for trainable_layers in range(0, max_trainable + 1):
-        model = model_fn(weights_backbone="DEFAULT", trainable_backbone_layers=trainable_layers)
+        model = model_fn(weights=None, weights_backbone="DEFAULT", trainable_backbone_layers=trainable_layers)
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]

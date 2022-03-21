@@ -215,7 +215,7 @@ def deeplabv3_resnet50(
     progress: bool = True,
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    weights_backbone: Optional[ResNet50_Weights] = None,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
@@ -256,7 +256,7 @@ def deeplabv3_resnet101(
     progress: bool = True,
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    weights_backbone: Optional[ResNet101_Weights] = None,
+    weights_backbone: Optional[ResNet101_Weights] = ResNet101_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
@@ -297,7 +297,7 @@ def deeplabv3_mobilenet_v3_large(
     progress: bool = True,
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    weights_backbone: Optional[MobileNet_V3_Large_Weights] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = MobileNet_V3_Large_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.

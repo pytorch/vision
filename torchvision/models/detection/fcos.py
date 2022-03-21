@@ -670,7 +670,7 @@ def fcos_resnet50_fpn(
     weights: Optional[FCOS_ResNet50_FPN_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
-    weights_backbone: Optional[ResNet50_Weights] = None,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> FCOS:
