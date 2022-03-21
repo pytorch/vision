@@ -23,30 +23,30 @@ def get_available_models():
 @pytest.mark.parametrize("backbone_name", ("resnet18", "resnet50"))
 def test_resnet_fpn_backbone(backbone_name):
     x = torch.rand(1, 3, 300, 300, dtype=torch.float32, device="cpu")
-    model = resnet_fpn_backbone(backbone_name=backbone_name)
+    model = resnet_fpn_backbone(backbone_name=backbone_name, weights=None)
     assert isinstance(model, BackboneWithFPN)
     y = model(x)
     assert list(y.keys()) == ["0", "1", "2", "3", "pool"]
 
     with pytest.raises(ValueError, match=r"Trainable layers should be in the range"):
-        resnet_fpn_backbone(backbone_name=backbone_name, trainable_layers=6)
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, trainable_layers=6)
     with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
-        resnet_fpn_backbone(backbone_name=backbone_name, returned_layers=[0, 1, 2, 3])
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, returned_layers=[0, 1, 2, 3])
     with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
-        resnet_fpn_backbone(backbone_name=backbone_name, returned_layers=[2, 3, 4, 5])
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, returned_layers=[2, 3, 4, 5])
 
 
 @pytest.mark.parametrize("backbone_name", ("mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"))
 def test_mobilenet_backbone(backbone_name):
     with pytest.raises(ValueError, match=r"Trainable layers should be in the range"):
-        mobilenet_backbone(backbone_name=backbone_name, fpn=False, trainable_layers=-1)
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=False, trainable_layers=-1)
     with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
-        mobilenet_backbone(backbone_name=backbone_name, fpn=True, returned_layers=[-1, 0, 1, 2])
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True, returned_layers=[-1, 0, 1, 2])
     with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
-        mobilenet_backbone(backbone_name=backbone_name, fpn=True, returned_layers=[3, 4, 5, 6])
-    model_fpn = mobilenet_backbone(backbone_name=backbone_name, fpn=True)
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True, returned_layers=[3, 4, 5, 6])
+    model_fpn = mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True)
     assert isinstance(model_fpn, BackboneWithFPN)
-    model = mobilenet_backbone(backbone_name=backbone_name, fpn=False)
+    model = mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=False)
     assert isinstance(model, torch.nn.Sequential)
 
 
