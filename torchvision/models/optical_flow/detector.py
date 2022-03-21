@@ -245,7 +245,7 @@ def detect_flow(frameA: Union[Tensor, List[Tensor]],
             ext = "jpg"
             write_imfile = write_jpeg
         if (output_folder is None) or (not output_folder):
-            output_folder = "/tmp"
+            output_folder = "outputs"
         if (flow_basename is None) or (not flow_basename):
             flow_basename = "predicted_flow"
         if (flow_id is not None) and flow_id:
