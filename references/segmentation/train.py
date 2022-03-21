@@ -34,12 +34,13 @@ def get_transform(train, args):
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
 
-        def preprocess(img, target):
+        def preprocessing(img, target):
             img = trans(img)
             size = F.get_dimensions(img)[1:]
             target = F.resize(target, size, interpolation=InterpolationMode.NEAREST)
             return img, F.pil_to_tensor(target)
-        return preprocess
+
+        return preprocessing
     else:
         return presets.SegmentationPresetEval(base_size=520)
 

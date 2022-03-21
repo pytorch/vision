@@ -136,10 +136,15 @@ def evaluate(model, args):
     if args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
-        preprocessing = lambda img1, img2, flow, valid: trans(img1, img2) + (  # noqa: E731
-            torch.from_numpy(flow),
-            torch.from_numpy(valid),
-        )
+
+        def preprocessing(img1, img2, flow, valid_flow_mask):
+            img1, img2 = trans(img1, img2)
+            if flow is not None and not isinstance(flow, torch.Tensor):
+                flow = torch.from_numpy(flow)
+            if valid_flow_mask is not None and not isinstance(valid_flow_mask, torch.Tensor):
+                valid_flow_mask = torch.from_numpy(valid_flow_mask)
+            return img1, img2, flow, valid_flow_mask
+
     else:
         preprocessing = OpticalFlowPresetEval()
 
