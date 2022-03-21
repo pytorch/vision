@@ -306,8 +306,8 @@ def main(args):
                 "epoch": epoch,
                 "args": args,
             }
-            torch.save(checkpoint, Path(args.output_dir) / f"model_{epoch}.pth")
-            torch.save(checkpoint, Path(args.output_dir) / f"checkpoint.pth")
+            torch.save(checkpoint, Path(args.output_dir) / f"{args.name}_{epoch}.pth")
+            torch.save(checkpoint, Path(args.output_dir) / f"{args.name}.pth")
 
         if epoch % args.val_freq == 0 or done:
             evaluate(model, args)
@@ -318,6 +318,12 @@ def main(args):
 
 def get_args_parser(add_help=True):
     parser = argparse.ArgumentParser(add_help=add_help, description="Train or evaluate an optical-flow model.")
+    parser.add_argument(
+        "--name",
+        default="raft",
+        type=str,
+        help="The name of the experiment - determines the name of the files where weights are saved.",
+    )
     parser.add_argument(
         "--output-dir", default=".", type=str, help="Output dir where checkpoints will be stored."
     )
