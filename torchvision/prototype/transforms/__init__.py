@@ -29,3 +29,4 @@ from ._presets import (
     OpticalFlowEval,
 )
 from ._type_conversion import DecodeImage, LabelToOneHot
+from .color import ColorJitter
