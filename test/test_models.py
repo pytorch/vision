@@ -118,7 +118,7 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
 
-def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out=None):
+def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
     """Check that a nn.Module's results in TorchScript match eager and that it can be exported"""
 
     def get_export_import_copy(m):
@@ -128,20 +128,6 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False, eager_out
             m.save(path)
             imported = torch.jit.load(path)
         return imported
-
-    TEST_WITH_SLOW = os.getenv("PYTORCH_TEST_WITH_SLOW", "0") == "1"
-    if not TEST_WITH_SLOW or skip:
-        # TorchScript is not enabled, skip these tests
-        msg = (
-            f"The check_jit_scriptable test for {nn_module.__class__.__name__} was skipped. "
-            "This test checks if the module's results in TorchScript "
-            "match eager and that it can be exported. To run these "
-            "tests make sure you set the environment variable "
-            "PYTORCH_TEST_WITH_SLOW=1 and that the test is not "
-            "manually skipped."
-        )
-        warnings.warn(msg, RuntimeWarning)
-        return None
 
     sm = torch.jit.script(nn_module)
 
@@ -420,7 +406,7 @@ def test_mobilenet_norm_layer(model_fn):
     assert any(isinstance(x, nn.BatchNorm2d) for x in model.modules())
 
     def get_gn(num_channels):
-        return nn.GroupNorm(32, num_channels)
+        return nn.GroupNorm(1, num_channels)
 
     model = model_fn(norm_layer=get_gn)
     assert not (any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
