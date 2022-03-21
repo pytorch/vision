@@ -212,7 +212,7 @@ def ssdlite320_mobilenet_v3_large(
     weights: Optional[SSDLite320_MobileNet_V3_Large_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
-    weights_backbone: Optional[MobileNet_V3_Large_Weights] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = MobileNet_V3_Large_Weights.IMAGENET1K_V1,
     trainable_backbone_layers: Optional[int] = None,
     norm_layer: Optional[Callable[..., nn.Module]] = None,
     **kwargs: Any,

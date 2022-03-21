@@ -111,7 +111,7 @@ def fcn_resnet50(
     progress: bool = True,
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    weights_backbone: Optional[ResNet50_Weights] = None,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
@@ -152,7 +152,7 @@ def fcn_resnet101(
     progress: bool = True,
     num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    weights_backbone: Optional[ResNet101_Weights] = None,
+    weights_backbone: Optional[ResNet101_Weights] = ResNet101_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.

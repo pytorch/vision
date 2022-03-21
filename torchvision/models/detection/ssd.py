@@ -570,7 +570,7 @@ def ssd300_vgg16(
     weights: Optional[SSD300_VGG16_Weights] = None,
     progress: bool = True,
     num_classes: Optional[int] = None,
-    weights_backbone: Optional[VGG16_Weights] = None,
+    weights_backbone: Optional[VGG16_Weights] = VGG16_Weights.IMAGENET1K_FEATURES,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> SSD:
