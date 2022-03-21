@@ -1,9 +1,7 @@
-import functools
-import io
 import itertools
-from typing import Any, Callable, Dict, List, Optional, Tuple
+import pathlib
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Iterator
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, LineReader
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -11,7 +9,6 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
     GDriveResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
@@ -22,18 +19,17 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     getitem,
 )
-from torchvision.prototype.features import BoundingBox
+from torchvision.prototype.features import BoundingBox, EncodedImage, Label
 
 
-class WIDERFaceAnnotationParser(IterDataPipe):
-    def __init__(self, datapipe):
+class WIDERFaceAnnotationParser(IterDataPipe[Tuple[str, List[Dict[str, str]]]]):
+    def __init__(self, datapipe: IterDataPipe[str]) -> None:
         self.datapipe = datapipe
 
-    def __iter__(self):
+    def __iter__(self) -> Iterator[Tuple[str, List[Dict[str, str]]]]:
         lines = iter(self.datapipe)
         for line in lines:
-            image_name = line.rsplit("/")[1]
-            num_anns = int(next(lines))
+            name = line.rsplit("/")[1]
             anns = [
                 dict(
                     zip(
@@ -41,16 +37,15 @@ class WIDERFaceAnnotationParser(IterDataPipe):
                         next(lines).split(" "),
                     )
                 )
-                for _ in range(num_anns)
+                for _ in range(int(next(lines)))
             ]
-            yield image_name, anns
+            yield name, anns
 
 
 class WIDERFace(Dataset):
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "widerface",
-            type=DatasetType.IMAGE,
             homepage="http://shuoyang1213.me/WIDERFACE/",
             valid_options=dict(split=("train", "val", "test")),
         )
@@ -108,7 +103,7 @@ class WIDERFace(Dataset):
         "1": "atypical",
     }
 
-    def _prepare_anns(self, anns: Optional[List[Dict[str, Any]]]) -> Dict[str, Any]:
+    def _prepare_anns(self, anns: Optional[List[Dict[str, Any]]], image_size: Tuple[int, int]) -> Dict[str, Any]:
         if not anns:
             return dict(
                 zip(
@@ -119,7 +114,9 @@ class WIDERFace(Dataset):
 
         return dict(
             bounding_boxes=BoundingBox(
-                [[int(part) for part in (ann["x"], ann["y"], ann["w"], ann["h"])] for ann in anns], format="xywh"
+                [[int(part) for part in (ann["x"], ann["y"], ann["w"], ann["h"])] for ann in anns],
+                format="xywh",
+                image_size=image_size,
             ),
             blur=[self._BLUR_MAP[ann["blur"]] for ann in anns],
             expression=[self._EXPRESSION_MAP[ann["expression"]] for ann in anns],
@@ -129,41 +126,34 @@ class WIDERFace(Dataset):
             invalid=[ann["invalid"] == "1" for ann in anns],
         )
 
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self,
-        data: Tuple[Tuple[str, Optional[List[Dict[str, Any]]]], Tuple[str, io.IOBase]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        data: Tuple[Tuple[str, Optional[List[Dict[str, Any]]]], Tuple[str, BinaryIO]],
     ) -> Dict[str, Any]:
         ann_data, image_data = data
         _, anns = ann_data
         path, buffer = image_data
+        image = EncodedImage.from_file(buffer)
 
         return dict(
-            self._prepare_anns(anns),
+            self._prepare_anns(anns, image.image_size),
             path=path,
-            image=decoder(buffer) if decoder else buffer,
+            label=Label.from_category(pathlib.Path(path).parent.name.rsplit("--")[1], categories=self.categories),
+            image=image,
         )
 
     def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
-        anns_dp = Filter(
-            anns_dp,
-            path_comparator(
-                "name", f"wider_face_{'test_filelist' if config.split == 'test' else f'{config.split}_bbx_gt'}.txt"
-            ),
-        )
-        anns_dp = LineReader(anns_dp, decode=True, return_path=False)
         if config.split == "test":
+            anns_dp = Filter(anns_dp, path_comparator("name", "wider_face_test_filelist.txt"))
+            anns_dp = LineReader(anns_dp, decode=True, return_path=False)
             anns_dp = Mapper(anns_dp, self._parse_test_annotation)
         else:
+            anns_dp = Filter(anns_dp, path_comparator("name", f"wider_face_{config.split}_bbx_gt.txt"))
+            anns_dp = LineReader(anns_dp, decode=True, return_path=False)
             anns_dp = WIDERFaceAnnotationParser(anns_dp)
         anns_dp = hint_sharding(anns_dp)
         anns_dp = hint_shuffling(anns_dp)
@@ -175,4 +165,11 @@ class WIDERFace(Dataset):
             ref_key_fn=path_accessor("name"),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
+
+    def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
+        resource = self.resources(self.default_config)[0]
+
+        ids_and_categories = set(tuple(pathlib.Path(path).parent.name.split("--")) for path, _ in resource.load(root))
+        _, categories = zip(*sorted(ids_and_categories, key=lambda id_and_category: int(id_and_category[0])))
+        return categories
