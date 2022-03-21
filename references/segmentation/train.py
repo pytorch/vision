@@ -9,6 +9,7 @@ import torchvision
 import utils
 from coco_utils import get_coco
 from torch import nn
+from torchvision.transforms import functional as F, InterpolationMode
 
 
 def get_dataset(dir_path, name, image_set, transform):
@@ -32,7 +33,13 @@ def get_transform(train, args):
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()
-        return lambda img, target=None: (trans(img), target)
+
+        def preprocess(img, target):
+            img = trans(img)
+            size = F.get_dimensions(img)[1:]
+            target = F.resize(target, size, interpolation=InterpolationMode.NEAREST)
+            return img, F.pil_to_tensor(target)
+        return preprocess
     else:
         return presets.SegmentationPresetEval(base_size=520)
 
