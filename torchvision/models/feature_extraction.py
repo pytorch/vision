@@ -184,7 +184,7 @@ def _get_leaf_modules_for_ops() -> List[type]:
     return result
 
 
-def set_default_tracer_kwargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
+def _set_default_tracer_kwargs(original_tr_kwargs: Optional[Dict[str, Any]]) -> Dict[str, Any]:
     default_autowrap_modules = (math, torchvision.ops)
     default_leaf_modules = _get_leaf_modules_for_ops()
     result_tracer_kwargs = {} if original_tr_kwargs is None else original_tr_kwargs
@@ -256,7 +256,7 @@ def get_graph_node_names(
         >>> model = torchvision.models.resnet18()
         >>> train_nodes, eval_nodes = get_graph_node_names(model)
     """
-    tracer_kwargs = set_default_tracer_kwargs(tracer_kwargs)
+    tracer_kwargs = _set_default_tracer_kwargs(tracer_kwargs)
     is_training = model.training
     train_tracer = NodePathTracer(**tracer_kwargs)
     train_tracer.trace(model.train())
@@ -458,7 +458,7 @@ def create_feature_extractor(
         >>>                    'autowrap_functions': [leaf_function]})
 
     """
-    tracer_kwargs = set_default_tracer_kwargs(tracer_kwargs)
+    tracer_kwargs = _set_default_tracer_kwargs(tracer_kwargs)
     is_training = model.training
 
     if all(arg is None for arg in [return_nodes, train_return_nodes, eval_return_nodes]):
