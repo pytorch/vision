@@ -13,6 +13,7 @@ from ._geometry import (
     TenCrop,
     BatchMultiCrop,
     RandomHorizontalFlip,
+    RandomVerticalFlip,
     Pad,
     RandomZoomOut,
 )

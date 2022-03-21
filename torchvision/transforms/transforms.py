@@ -400,11 +400,11 @@ class Pad(torch.nn.Module):
             .. note::
                 In torchscript mode padding as single int is not supported, use a sequence of
                 length 1: ``[padding, ]``.
-        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (number or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
+            Only int or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
@@ -428,7 +428,7 @@ class Pad(torch.nn.Module):
         if not isinstance(padding, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate padding arg")
 
-        if not isinstance(fill, (numbers.Number, str, tuple, list)):
+        if not isinstance(fill, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate fill arg")
 
         if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
@@ -595,11 +595,11 @@ class RandomCrop(torch.nn.Module):
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (number or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
+            Only int or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 

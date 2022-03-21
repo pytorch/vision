@@ -12,21 +12,11 @@ from torchvision.transforms.functional import pil_to_tensor, InterpolationMode
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 from typing_extensions import Literal
 
+from ._transform import _RandomApplyTransform
 from ._utils import query_image, get_image_dimensions, has_any, is_simple_tensor
 
 
-class RandomHorizontalFlip(Transform):
-    def __init__(self, p: float = 0.5) -> None:
-        super().__init__()
-        self.p = p
-
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if torch.rand(1) >= self.p:
-            return sample
-
-        return super().forward(sample)
-
+class RandomHorizontalFlip(_RandomApplyTransform):
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if isinstance(input, features.Image):
             output = F.horizontal_flip_image_tensor(input)
@@ -41,6 +31,25 @@ class RandomHorizontalFlip(Transform):
             return F.horizontal_flip_image_pil(input)
         elif is_simple_tensor(input):
             return F.horizontal_flip_image_tensor(input)
+        else:
+            return input
+
+
+class RandomVerticalFlip(_RandomApplyTransform):
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image):
+            output = F.vertical_flip_image_tensor(input)
+            return features.Image.new_like(input, output)
+        elif isinstance(input, features.SegmentationMask):
+            output = F.vertical_flip_segmentation_mask(input)
+            return features.SegmentationMask.new_like(input, output)
+        elif isinstance(input, features.BoundingBox):
+            output = F.vertical_flip_bounding_box(input, format=input.format, image_size=input.image_size)
+            return features.BoundingBox.new_like(input, output)
+        elif isinstance(input, PIL.Image.Image):
+            return F.vertical_flip_image_pil(input)
+        elif is_simple_tensor(input):
+            return F.vertical_flip_image_tensor(input)
         else:
             return input
 
@@ -341,11 +350,11 @@ class Pad(Transform):
             return input
 
 
-class RandomZoomOut(Transform):
+class RandomZoomOut(_RandomApplyTransform):
     def __init__(
         self, fill: Union[float, Sequence[float]] = 0.0, side_range: Tuple[float, float] = (1.0, 4.0), p: float = 0.5
     ) -> None:
-        super().__init__()
+        super().__init__(p=p)
 
         if fill is None:
             fill = 0.0
@@ -354,8 +363,6 @@ class RandomZoomOut(Transform):
         self.side_range = side_range
         if side_range[0] < 1.0 or side_range[0] > side_range[1]:
             raise ValueError(f"Invalid canvas side range provided {side_range}.")
-
-        self.p = p
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
         image = query_image(sample)
@@ -381,10 +388,3 @@ class RandomZoomOut(Transform):
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         transform = Pad(**params, padding_mode="constant")
         return transform(input)
-
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if torch.rand(1) >= self.p:
-            return sample
-
-        return super().forward(sample)
