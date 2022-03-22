@@ -6,6 +6,7 @@ from ._transform import Transform  # usort: skip
 
 from ._augment import RandomErasing, RandomMixup, RandomCutmix
 from ._auto_augment import RandAugment, TrivialAugmentWide, AutoAugment, AugMix
+from ._color import ColorJitter
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
     Resize,
@@ -29,4 +30,3 @@ from ._presets import (
     OpticalFlowEval,
 )
 from ._type_conversion import DecodeImage, LabelToOneHot
-from .color import ColorJitter
