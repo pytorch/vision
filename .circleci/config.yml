@@ -155,8 +155,14 @@ commands:
   install_prototype_dependencies:
     steps:
       - pip_install:
-          args: iopath git+https://github.com/pytorch/data
-          descr: Install prototype dependencies
+          args: iopath
+          descr: Install third-party dependencies
+      - pip_install:
+          args: -r https://raw.githubusercontent.com/pytorch/data/main/requirements.txt
+          descr: Install torchdata build dependencies
+      - pip_install:
+          args: --no-build-isolation git+https://github.com/pytorch/data
+          descr: Install torchdata from source
 
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
   # This command can be used if only a selection of tests need to be run, for ad-hoc files.
@@ -173,6 +179,26 @@ commands:
           command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
       - store_test_results:
           path: test-results
+
+  download_model_weights:
+    parameters:
+      extract_roots:
+        type: string
+        default: "torchvision/models"
+      background:
+        type: boolean
+        default: true
+    steps:
+      - apt_install:
+          args: parallel wget
+          descr: Install download utilitites
+      - run:
+          name: Download model weights
+          background: << parameters.background >>
+          command: |
+            mkdir -p ~/.cache/torch/hub/checkpoints
+            python scripts/collect_model_urls.py << parameters.extract_roots >> \
+                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
 
 binary_common: &binary_common
   parameters:
@@ -340,24 +366,27 @@ jobs:
     resource_class: xlarge
     steps:
       - checkout
-      - run:
-          name: Download model weights
-          background: true
-          command: |
-            sudo apt update -qy && sudo apt install -qy parallel wget
-            mkdir -p ~/.cache/torch/hub/checkpoints
-            python scripts/collect_model_urls.py torchvision/prototype/models \
-                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
       - install_torchvision
       - install_prototype_dependencies
       - pip_install:
           args: scipy pycocotools h5py
           descr: Install optional dependencies
-      - run:
-          name: Enable prototype tests
-          command: echo 'export PYTORCH_TEST_WITH_PROTOTYPE=1' >> $BASH_ENV
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
+
+  unittest_extended:
+    docker:
+      - image: circleci/python:3.7
+    resource_class: xlarge
+    steps:
+      - checkout
+      - download_model_weights
+      - install_torchvision
+      - run:
+          name: Enable extended tests
+          command: echo 'export PYTORCH_TEST_WITH_EXTENDED=1' >> $BASH_ENV
+      - run_tests_selective:
+          file_or_dir: test/test_extended_*.py
 
   binary_linux_wheel:
     <<: *binary_common
@@ -1011,12 +1040,13 @@ jobs:
   build_docs:
     <<: *binary_common
     docker:
-      - image: "pytorch/manylinux-cuda100"
+      - image: circleci/python:3.7
     resource_class: 2xlarge+
     steps:
       - attach_workspace:
           at: ~/workspace
       - checkout
+      - download_model_weights
       - run:
           name: Setup
           command: .circleci/unittest/linux/scripts/setup_env.sh
@@ -1608,6 +1638,7 @@ workflows:
       - unittest_torchhub
       - unittest_onnx
       - unittest_prototype
+      - unittest_extended
       - unittest_linux_cpu:
           cu_version: cpu
           name: unittest_linux_cpu_py3.7

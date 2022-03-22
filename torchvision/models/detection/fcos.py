@@ -2,25 +2,32 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Callable, Dict, List, Tuple, Optional
+from typing import Any, Callable, Dict, List, Tuple, Optional
 
 import torch
 from torch import nn, Tensor
 
-from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import sigmoid_focal_loss, generalized_box_iou_loss
 from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
+from ...transforms._presets import ObjectDetection, InterpolationMode
 from ...utils import _log_api_usage_once
-from ..resnet import resnet50
+from .._api import WeightsEnum, Weights
+from .._meta import _COCO_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..resnet import ResNet50_Weights, resnet50
 from . import _utils as det_utils
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 
 
-__all__ = ["FCOS", "fcos_resnet50_fpn"]
+__all__ = [
+    "FCOS",
+    "FCOS_ResNet50_FPN_Weights",
+    "fcos_resnet50_fpn",
+]
 
 
 class FCOSHead(nn.Module):
@@ -318,7 +325,7 @@ class FCOS(nn.Module):
         >>> from torchvision.models.detection.anchor_utils import AnchorGenerator
         >>> # load a pre-trained model for classification and return
         >>> # only the features
-        >>> backbone = torchvision.models.mobilenet_v2(pretrained=True).features
+        >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # FCOS needs to know the number of
         >>> # output channels in a backbone. For mobilenet_v2, it's 1280
         >>> # so we need to add it here
@@ -379,14 +386,20 @@ class FCOS(nn.Module):
             )
         self.backbone = backbone
 
-        assert isinstance(anchor_generator, (AnchorGenerator, type(None)))
+        if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
+            raise TypeError(
+                f"anchor_generator should be of type AnchorGenerator or None, instead  got {type(anchor_generator)}"
+            )
 
         if anchor_generator is None:
             anchor_sizes = ((8,), (16,), (32,), (64,), (128,))  # equal to strides of multi-level feature map
             aspect_ratios = ((1.0,),) * len(anchor_sizes)  # set only one anchor
             anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
         self.anchor_generator = anchor_generator
-        assert self.anchor_generator.num_anchors_per_location()[0] == 1
+        if self.anchor_generator.num_anchors_per_location()[0] != 1:
+            raise ValueError(
+                f"anchor_generator.num_anchors_per_location()[0] should be 1 instead of {anchor_generator.num_anchors_per_location()[0]}"
+            )
 
         if head is None:
             head = FCOSHead(backbone.out_channels, anchor_generator.num_anchors_per_location()[0], num_classes)
@@ -561,12 +574,15 @@ class FCOS(nn.Module):
                     if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
                         raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
                 else:
-                    raise ValueError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                    raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            if len(val) != 2:
+                raise ValueError(
+                    f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}"
+                )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -604,9 +620,10 @@ class FCOS(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
-
             # compute the losses
+            if targets is None:
+                raise ValueError("targets should not be none when in training mode")
+
             losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
         else:
             # split outputs per level
@@ -627,19 +644,37 @@ class FCOS(nn.Module):
         return self.eager_outputs(losses, detections)
 
 
-model_urls = {
-    "fcos_resnet50_fpn_coco": "https://download.pytorch.org/models/fcos_resnet50_fpn_coco-99b0c9b7.pth",
-}
+class FCOS_ResNet50_FPN_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/fcos_resnet50_fpn_coco-99b0c9b7.pth",
+        transforms=ObjectDetection,
+        meta={
+            "task": "image_object_detection",
+            "architecture": "FCOS",
+            "publication_year": 2019,
+            "num_params": 32269600,
+            "categories": _COCO_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
+            "map": 39.2,
+        },
+    )
+    DEFAULT = COCO_V1
 
 
+@handle_legacy_interface(
+    weights=("pretrained", FCOS_ResNet50_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def fcos_resnet50_fpn(
-    pretrained: bool = False,
+    *,
+    weights: Optional[FCOS_ResNet50_FPN_Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
-    pretrained_backbone: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
     trainable_backbone_layers: Optional[int] = None,
-    **kwargs,
-):
+    **kwargs: Any,
+) -> FCOS:
     """
     Constructs a FCOS model with a ResNet-50-FPN backbone.
 
@@ -673,34 +708,40 @@ def fcos_resnet50_fpn(
 
     Example:
 
-        >>> model = torchvision.models.detection.fcos_resnet50_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.fcos_resnet50_fpn(weights=FCOS_ResNet50_FPN_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (FCOS_ResNet50_FPN_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
         trainable_backbone_layers (int, optional): number of trainable (not frozen) resnet layers starting
             from final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are
             trainable. If ``None`` is passed (the default) this value is set to 3. Default: None
     """
-    is_trained = pretrained or pretrained_backbone
+    weights = FCOS_ResNet50_FPN_Weights.verify(weights)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
+
+    is_trained = weights is not None or weights_backbone is not None
     trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
     norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
-    if pretrained:
-        # no need to download the backbone if pretrained is set
-        pretrained_backbone = False
-
-    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer)
+    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _resnet_fpn_extractor(
         backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(256, 256)
     )
     model = FCOS(backbone, num_classes, **kwargs)
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls["fcos_resnet50_fpn_coco"], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
