@@ -1,15 +1,15 @@
 import collections.abc
 import functools
-from typing import Any, Dict, Union, Tuple, Optional, Sequence, Callable
+from typing import Any, Dict, Union, Tuple, Optional, Sequence, Callable, TypeVar
 
 import PIL.Image
 import torch
-from torch import nn
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Compose
 from torchvision.prototype.transforms import Transform, functional as F
 
 from ._utils import is_simple_tensor
+
+T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 
 
 class ColorJitter(Transform):
@@ -49,68 +49,76 @@ class ColorJitter(Transform):
         else:
             raise TypeError(f"{name} should be a single number or a sequence with length 2.")
 
-        return float(value[0]), float(value[1])
+        return None if value[0] == value[1] == center else (float(value[0]), float(value[1]))
 
-    # TODO: remove this helper if primitive transforms for F.adjust_{brightness, contrast, saturation, hue} are added
-    class _ColorJitterHelper(Transform):
-        def __init__(self, kernel_tensor: Callable, kernel_pil: Callable, *args: Any, **kwargs: Any) -> None:
-            # We circumvent Transform.__init__ to avoid logging, since this helper is instantiated for every call of
-            # the transform.
-            nn.Module.__init__(self)
-            self.fn_tensor = functools.partial(kernel_tensor, *args, **kwargs)
-            self.fn_pil = functools.partial(kernel_pil, *args, **kwargs)
-
-        def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-            if isinstance(input, features.Image):
-                output = self.fn_tensor(input)
-                return features.Image.new_like(input, output)
-            elif is_simple_tensor(input):
-                return self.fn_tensor(input)
-            elif isinstance(input, PIL.Image.Image):
-                return self.fn_pil(input)
-            else:
-                return input
+    def _image_transform(
+        self,
+        input: T,
+        *,
+        kernel_tensor: Callable[..., torch.Tensor],
+        kernel_pil: Callable[..., PIL.Image.Image],
+        **kwargs: Any,
+    ) -> T:
+        if isinstance(input, features.Image):
+            output = kernel_tensor(input, **kwargs)
+            return features.Image.new_like(input, output)
+        elif is_simple_tensor(input):
+            return kernel_tensor(input, **kwargs)
+        elif isinstance(input, PIL.Image.Image):
+            return kernel_pil(input, **kwargs)  # type: ignore[no-any-return]
+        else:
+            raise RuntimeError
 
     def _get_params(self, sample: Any) -> Dict[str, Any]:
-        transforms = []
+        image_transforms = []
         if self.brightness is not None:
-            transforms.append(
-                self._ColorJitterHelper(
-                    F.adjust_brightness_image_tensor,
-                    F.adjust_brightness_image_pil,
+            image_transforms.append(
+                functools.partial(
+                    self._image_transform,
+                    kernel_tensor=F.adjust_brightness_image_tensor,
+                    kernel_pil=F.adjust_brightness_image_pil,
                     brightness_factor=float(
                         torch.distributions.Uniform(self.brightness[0], self.brightness[1]).sample()
                     ),
                 )
             )
         if self.contrast is not None:
-            transforms.append(
-                self._ColorJitterHelper(
-                    F.adjust_contrast_image_tensor,
-                    F.adjust_contrast_image_pil,
+            image_transforms.append(
+                functools.partial(
+                    self._image_transform,
+                    kernel_tensor=F.adjust_contrast_image_tensor,
+                    kernel_pil=F.adjust_contrast_image_pil,
                     contrast_factor=float(torch.distributions.Uniform(self.contrast[0], self.contrast[1]).sample()),
                 )
             )
         if self.saturation is not None:
-            transforms.append(
-                self._ColorJitterHelper(
-                    F.adjust_saturation_image_tensor,
-                    F.adjust_saturation_image_pil,
+            image_transforms.append(
+                functools.partial(
+                    self._image_transform,
+                    kernel_tensor=F.adjust_saturation_image_tensor,
+                    kernel_pil=F.adjust_saturation_image_pil,
                     saturation_factor=float(
                         torch.distributions.Uniform(self.saturation[0], self.saturation[1]).sample()
                     ),
                 )
             )
         if self.hue is not None:
-            transforms.append(
-                self._ColorJitterHelper(
-                    F.adjust_hue_image_tensor,
-                    F.adjust_hue_image_pil,
+            image_transforms.append(
+                functools.partial(
+                    self._image_transform,
+                    kernel_tensor=F.adjust_hue_image_tensor,
+                    kernel_pil=F.adjust_hue_image_pil,
                     hue_factor=float(torch.distributions.Uniform(self.hue[0], self.hue[1]).sample()),
                 )
             )
-        return dict(transform=Compose(*[transforms[idx] for idx in torch.randperm(len(transforms)).tolist()]))
+
+        return dict(image_transforms=[image_transforms[idx] for idx in torch.randperm(len(image_transforms))])
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        transform = params["transform"]
-        return transform(input)
+        if not (isinstance(input, (features.Image, PIL.Image.Image)) or is_simple_tensor(input)):
+            return input
+
+        for transform in params["image_transforms"]:
+            input = transform(input)
+
+        return input
