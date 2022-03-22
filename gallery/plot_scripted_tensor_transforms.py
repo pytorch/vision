@@ -85,20 +85,16 @@ show([transformed_dog1, transformed_dog2])
 # Let's define a ``Predictor`` module that transforms the input tensor and then
 # applies an ImageNet model on it.
 
-from torchvision.models import resnet18
+from torchvision.models import resnet18, ResNet18_Weights
 
 
 class Predictor(nn.Module):
 
     def __init__(self):
         super().__init__()
-        self.resnet18 = resnet18(pretrained=True, progress=False).eval()
-        self.transforms = nn.Sequential(
-            T.Resize([256, ]),  # We use single int value inside a list due to torchscript type restrictions
-            T.CenterCrop(224),
-            T.ConvertImageDtype(torch.float),
-            T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-        )
+        weights = ResNet18_Weights.DEFAULT
+        self.resnet18 = resnet18(weights=weights, progress=False).eval()
+        self.transforms = weights.transforms()
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         with torch.no_grad():

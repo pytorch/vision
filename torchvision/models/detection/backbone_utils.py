@@ -6,7 +6,8 @@ from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
 
 from .. import mobilenet, resnet
-from .._utils import IntermediateLayerGetter
+from .._api import WeightsEnum, get_enum_from_fn
+from .._utils import IntermediateLayerGetter, handle_legacy_interface
 
 
 class BackboneWithFPN(nn.Module):
@@ -55,9 +56,16 @@ class BackboneWithFPN(nn.Module):
         return x
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: get_enum_from_fn(resnet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
+    ),
+)
 def resnet_fpn_backbone(
+    *,
     backbone_name: str,
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 3,
     returned_layers: Optional[List[int]] = None,
@@ -69,7 +77,7 @@ def resnet_fpn_backbone(
     Examples::
 
         >>> from torchvision.models.detection.backbone_utils import resnet_fpn_backbone
-        >>> backbone = resnet_fpn_backbone('resnet50', pretrained=True, trainable_layers=3)
+        >>> backbone = resnet_fpn_backbone('resnet50', weights=ResNet50_Weights.DEFAULT, trainable_layers=3)
         >>> # get some dummy image
         >>> x = torch.rand(1,3,64,64)
         >>> # compute the output
@@ -85,10 +93,10 @@ def resnet_fpn_backbone(
     Args:
         backbone_name (string): resnet architecture. Possible values are 'resnet18', 'resnet34', 'resnet50',
              'resnet101', 'resnet152', 'resnext50_32x4d', 'resnext101_32x8d', 'wide_resnet50_2', 'wide_resnet101_2'
-        pretrained (bool): If True, returns a model with backbone pre-trained on Imagenet
+        weights (WeightsEnum, optional): The pretrained weights for the model
         norm_layer (callable): it is recommended to use the default value. For details visit:
             (https://github.com/facebookresearch/maskrcnn-benchmark/issues/267)
-        trainable_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        trainable_layers (int): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable.
         returned_layers (list of int): The layers of the network to return. Each entry must be in ``[1, 4]``.
             By default all layers are returned.
@@ -98,7 +106,7 @@ def resnet_fpn_backbone(
             a new list of feature maps and their corresponding names. By
             default a ``LastLevelMaxPool`` is used.
     """
-    backbone = resnet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
+    backbone = resnet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
     return _resnet_fpn_extractor(backbone, trainable_layers, returned_layers, extra_blocks)
 
 
@@ -135,13 +143,13 @@ def _resnet_fpn_extractor(
 
 
 def _validate_trainable_layers(
-    pretrained: bool,
+    is_trained: bool,
     trainable_backbone_layers: Optional[int],
     max_value: int,
     default_value: int,
 ) -> int:
     # don't freeze any layers if pretrained model or backbone is not used
-    if not pretrained:
+    if not is_trained:
         if trainable_backbone_layers is not None:
             warnings.warn(
                 "Changing trainable_backbone_layers has not effect if "
@@ -160,16 +168,23 @@ def _validate_trainable_layers(
     return trainable_backbone_layers
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: get_enum_from_fn(mobilenet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
+    ),
+)
 def mobilenet_backbone(
+    *,
     backbone_name: str,
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     fpn: bool,
     norm_layer: Callable[..., nn.Module] = misc_nn_ops.FrozenBatchNorm2d,
     trainable_layers: int = 2,
     returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
 ) -> nn.Module:
-    backbone = mobilenet.__dict__[backbone_name](pretrained=pretrained, norm_layer=norm_layer)
+    backbone = mobilenet.__dict__[backbone_name](weights=weights, norm_layer=norm_layer)
     return _mobilenet_extractor(backbone, fpn, trainable_layers, returned_layers, extra_blocks)
 
 
