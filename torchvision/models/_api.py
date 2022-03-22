@@ -4,7 +4,7 @@ import sys
 from collections import OrderedDict
 from dataclasses import dataclass, fields
 from inspect import signature
-from typing import Any, Callable, Dict
+from typing import Any, Callable, Dict, cast
 
 from torchvision._utils import StrEnum
 
@@ -140,4 +140,4 @@ def get_enum_from_fn(fn: Callable) -> WeightsEnum:
             "The WeightsEnum class for the specific method couldn't be retrieved. Make sure the typing info is correct."
         )
 
-    return weights_enum
+    return cast(WeightsEnum, weights_enum)
