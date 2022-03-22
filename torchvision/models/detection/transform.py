@@ -134,10 +134,7 @@ class GeneralizedRCNNTransform(nn.Module):
         images = self.batch_images(images, size_divisible=self.size_divisible)
         image_sizes_list: List[Tuple[int, int]] = []
         for image_size in image_sizes:
-            if len(image_size) != 2:
-                raise ValueError(
-                    f"Input tensors expected to have in the last two elements H and W, instead got {image_size}"
-                )
+            assert len(image_size) == 2
             image_sizes_list.append((image_size[0], image_size[1]))
 
         image_list = ImageList(images, image_sizes_list)

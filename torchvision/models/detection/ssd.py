@@ -311,8 +311,7 @@ class SSD(nn.Module):
             raise ValueError("In training mode, targets should be passed")
 
         if self.training:
-            if targets is None:
-                raise ValueError("targets should not be None")
+            assert targets is not None
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
@@ -325,10 +324,7 @@ class SSD(nn.Module):
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            if len(val) != 2:
-                raise ValueError(
-                    f"The last two dimensions of the input tensors should contain H and W, instead got {img.shape[-2:]}"
-                )
+            assert len(val) == 2
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -363,9 +359,7 @@ class SSD(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            if targets is None:
-                raise ValueError("targets should not be None when in training mode")
-
+            assert targets is not None
             matched_idxs = []
             for anchors_per_image, targets_per_image in zip(anchors, targets):
                 if targets_per_image["boxes"].numel() == 0:
@@ -535,8 +529,7 @@ def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
     num_stages = len(stage_indices)
 
     # find the index of the layer from which we wont freeze
-    if not 0 <= trainable_layers <= num_stages:
-        raise ValueError(f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}")
+    assert 0 <= trainable_layers <= num_stages
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:

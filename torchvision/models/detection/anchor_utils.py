@@ -84,9 +84,7 @@ class AnchorGenerator(nn.Module):
     def grid_anchors(self, grid_sizes: List[List[int]], strides: List[List[Tensor]]) -> List[Tensor]:
         anchors = []
         cell_anchors = self.cell_anchors
-
-        if cell_anchors is None:
-            ValueError("cell_anchors should not be None")
+        assert cell_anchors is not None
 
         if not (len(grid_sizes) == len(strides) == len(cell_anchors)):
             raise ValueError(
@@ -164,8 +162,8 @@ class DefaultBoxGenerator(nn.Module):
         clip: bool = True,
     ):
         super().__init__()
-        if steps is not None and len(aspect_ratios) != len(steps):
-            raise ValueError("aspect_ratios and steps should have the same length")
+        if steps is not None:
+            assert len(aspect_ratios) == len(steps)
         self.aspect_ratios = aspect_ratios
         self.steps = steps
         self.clip = clip

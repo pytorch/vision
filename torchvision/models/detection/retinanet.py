@@ -487,8 +487,8 @@ class RetinaNet(nn.Module):
                 like `scores`, `labels` and `mask` (for Mask R-CNN models).
 
         """
-        if self.training and targets is None:
-            raise ValueError("In training mode, targets should be passed")
+        if self.training:
+            assert targets is not None
 
         if self.training:
             if targets is None:
@@ -505,10 +505,7 @@ class RetinaNet(nn.Module):
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            if len(val) != 2:
-                raise ValueError(
-                    f"Expecting the two last elements of the input tensors to be H and W instead got {img.shape[-2:]}"
-                )
+            assert len(val) == 2
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -546,8 +543,7 @@ class RetinaNet(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            if targets is None:
-                raise ValueError("In training mode, targets should be passed")
+            assert targets is not None
             # compute the losses
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:

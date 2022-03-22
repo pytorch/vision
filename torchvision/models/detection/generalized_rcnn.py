@@ -58,8 +58,7 @@ class GeneralizedRCNN(nn.Module):
 
         """
         if self.training:
-            if targets is None:
-                raise ValueError("In training mode, targets should be passed")
+            assert targets is not None
 
             for target in targets:
                 boxes = target["boxes"]
@@ -72,10 +71,7 @@ class GeneralizedRCNN(nn.Module):
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            if len(val) != 2:
-                raise ValueError(
-                    f"Expecting the last two dimensions of the input tensor to be H and W, instead got {img.shape[-2:]}"
-                )
+            assert len(val) == 2
             original_image_sizes.append((val[0], val[1]))
 
         images, targets = self.transform(images, targets)
