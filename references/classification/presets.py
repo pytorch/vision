@@ -6,6 +6,7 @@ from torchvision.transforms.functional import InterpolationMode
 class ClassificationPresetTrain:
     def __init__(
         self,
+        *,
         crop_size,
         mean=(0.485, 0.456, 0.406),
         std=(0.229, 0.224, 0.225),
@@ -46,6 +47,7 @@ class ClassificationPresetTrain:
 class ClassificationPresetEval:
     def __init__(
         self,
+        *,
         crop_size,
         resize_size=256,
         mean=(0.485, 0.456, 0.406),
