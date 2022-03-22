@@ -490,7 +490,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   avPacket = av_packet_alloc();
   if (avPacket == nullptr) {
     LOG(ERROR) << "decoder as not able to allocate the packet.";
-    av_packet_free(&avPacket);
+    av_packet_free(avPacket);
     return ENOMEM;
   }
   avPacket->data = nullptr;
@@ -500,7 +500,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       std::chrono::milliseconds(workingTimeInMs);
   // return true if elapsed time less than timeout
   auto watcher = [end]() -> bool {
-    av_packet_free(&avPacket);
+    av_packet_free(avPacket);
     return std::chrono::steady_clock::now() <= end;
   };
 
@@ -589,7 +589,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   // 3. unrecoverable error or ENODATA (end of stream)
   // 4. decoded frames pts are out of the specified range
   // 5. success decoded frame
-  av_packet_free(&avPacket);
+  av_packet_free(avPacket);
   if (interrupted_) {
     return EINTR;
   }
