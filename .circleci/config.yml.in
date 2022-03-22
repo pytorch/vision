@@ -155,8 +155,14 @@ commands:
   install_prototype_dependencies:
     steps:
       - pip_install:
-          args: iopath git+https://github.com/pytorch/data
-          descr: Install prototype dependencies
+          args: iopath
+          descr: Install third-party dependencies
+      - pip_install:
+          args: -r https://raw.githubusercontent.com/pytorch/data/main/requirements.txt
+          descr: Install torchdata build dependencies
+      - pip_install:
+          args: --no-build-isolation git+https://github.com/pytorch/data
+          descr: Install torchdata from source
 
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
   # This command can be used if only a selection of tests need to be run, for ad-hoc files.
