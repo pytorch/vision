@@ -230,8 +230,7 @@ def get_graph_node_names(
             ``NodePathTracer`` (they are eventually passed onto
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
             By default it will be set to wrap and make leaf nodes all torchvision ops, i.e., tracer_kwargs
-            will be set to
-
+            will be set to:
             tracer_kwargs = {
                 "autowrap_modules": (
                     math,
@@ -239,7 +238,6 @@ def get_graph_node_names(
                 ),
                 "leaf_modules": _get_leaf_modules_for_ops(),
             }
-
             WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
             provided dictionary.
 
@@ -402,18 +400,16 @@ def create_feature_extractor(
             ``NodePathTracer`` (which passes them onto it's parent class
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
             By default it will be set to wrap and make leaf nodes all torchvision ops, i.e.,
-            tracer_kwargs will be set to
-
-                tracer_kwargs = {
-                    "autowrap_modules": (
-                        math,
-                        torchvision.ops,
-                    ),
-                    "leaf_modules": _get_leaf_modules_for_ops(),
-                }
-
-                WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
-                provided dictionary.
+            tracer_kwargs will be set to:
+            tracer_kwargs = {
+                "autowrap_modules": (
+                    math,
+                    torchvision.ops,
+                ),
+                "leaf_modules": _get_leaf_modules_for_ops(),
+            }
+            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user
+            provided dictionary.
         suppress_diff_warning (bool, optional): whether to suppress a warning
             when there are discrepancies between the train and eval version of
             the graph. Defaults to False.
