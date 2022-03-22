@@ -6,7 +6,7 @@ from torchvision.ops import misc as misc_nn_ops
 from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
 
 from .. import mobilenet, resnet
-from .._api import WeightsEnum
+from .._api import WeightsEnum, get_enum_from_fn
 from .._utils import IntermediateLayerGetter, handle_legacy_interface
 
 
@@ -57,7 +57,10 @@ class BackboneWithFPN(nn.Module):
 
 
 @handle_legacy_interface(
-    weights=("pretrained", True),  # type: ignore[arg-type]
+    weights=(
+        "pretrained",
+        lambda kwargs: get_enum_from_fn(resnet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
+    ),
 )
 def resnet_fpn_backbone(
     *,
@@ -166,7 +169,10 @@ def _validate_trainable_layers(
 
 
 @handle_legacy_interface(
-    weights=("pretrained", True),  # type: ignore[arg-type]
+    weights=(
+        "pretrained",
+        lambda kwargs: get_enum_from_fn(mobilenet.__dict__[kwargs["backbone_name"]]).from_str("IMAGENET1K_V1"),
+    ),
 )
 def mobilenet_backbone(
     *,
