@@ -43,7 +43,7 @@ def get_dataset(name, image_set, transform, data_path):
 
 def get_transform(train, args):
     if train:
-        return presets.DetectionPresetTrain(args.data_augmentation)
+        return presets.DetectionPresetTrain(data_augmentation=args.data_augmentation)
     elif args.weights and args.test_only:
         weights = torchvision.models.get_weight(args.weights)
         trans = weights.transforms()

@@ -29,6 +29,7 @@ class ObjectDetection(nn.Module):
 class ImageClassification(nn.Module):
     def __init__(
         self,
+        *,
         crop_size: int,
         resize_size: int = 256,
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
@@ -55,6 +56,7 @@ class ImageClassification(nn.Module):
 class VideoClassification(nn.Module):
     def __init__(
         self,
+        *,
         crop_size: Tuple[int, int],
         resize_size: Tuple[int, int],
         mean: Tuple[float, ...] = (0.43216, 0.394666, 0.37645),
@@ -93,6 +95,7 @@ class VideoClassification(nn.Module):
 class SemanticSegmentation(nn.Module):
     def __init__(
         self,
+        *,
         resize_size: Optional[int],
         mean: Tuple[float, ...] = (0.485, 0.456, 0.406),
         std: Tuple[float, ...] = (0.229, 0.224, 0.225),
