@@ -4,6 +4,7 @@
 #include <future>
 #include <iostream>
 #include <mutex>
+#include <cerrno>
 #include "audio_stream.h"
 #include "cc_stream.h"
 #include "subtitle_stream.h"
@@ -487,8 +488,10 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   // update 03/22: moving memory management to ffmpeg
   AVPacket* avPacket;
   avPacket = av_packet_alloc();
-  if (avPacket == NULL) {
+  if (avPacket == nullptr) {
     LOG(ERROR) << "decoder as not able to allocate the packet.";
+    av_packet_free(&avPacket);
+    return ENOMEM;
   }
   avPacket->data = nullptr;
   avPacket->size = 0;
