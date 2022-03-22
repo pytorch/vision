@@ -324,9 +324,7 @@ def get_args_parser(add_help=True):
         type=str,
         help="The name of the experiment - determines the name of the files where weights are saved.",
     )
-    parser.add_argument(
-        "--output-dir", default=".", type=str, help="Output dir where checkpoints will be stored."
-    )
+    parser.add_argument("--output-dir", default=".", type=str, help="Output dir where checkpoints will be stored.")
     parser.add_argument(
         "--resume",
         type=str,
