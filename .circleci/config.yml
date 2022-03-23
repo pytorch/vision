@@ -155,8 +155,14 @@ commands:
   install_prototype_dependencies:
     steps:
       - pip_install:
-          args: iopath git+https://github.com/pytorch/data
-          descr: Install prototype dependencies
+          args: iopath
+          descr: Install third-party dependencies
+      - pip_install:
+          args: -r https://raw.githubusercontent.com/pytorch/data/main/requirements.txt
+          descr: Install torchdata build dependencies
+      - pip_install:
+          args: --no-build-isolation git+https://github.com/pytorch/data
+          descr: Install torchdata from source
 
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
   # This command can be used if only a selection of tests need to be run, for ad-hoc files.
@@ -360,18 +366,27 @@ jobs:
     resource_class: xlarge
     steps:
       - checkout
-      - download_model_weights:
-          extract_roots: torchvision/prototype/models
       - install_torchvision
       - install_prototype_dependencies
       - pip_install:
           args: scipy pycocotools h5py
           descr: Install optional dependencies
-      - run:
-          name: Enable prototype tests
-          command: echo 'export PYTORCH_TEST_WITH_PROTOTYPE=1' >> $BASH_ENV
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
+
+  unittest_extended:
+    docker:
+      - image: circleci/python:3.7
+    resource_class: xlarge
+    steps:
+      - checkout
+      - download_model_weights
+      - install_torchvision
+      - run:
+          name: Enable extended tests
+          command: echo 'export PYTORCH_TEST_WITH_EXTENDED=1' >> $BASH_ENV
+      - run_tests_selective:
+          file_or_dir: test/test_extended_*.py
 
   binary_linux_wheel:
     <<: *binary_common
@@ -1623,6 +1638,7 @@ workflows:
       - unittest_torchhub
       - unittest_onnx
       - unittest_prototype
+      - unittest_extended
       - unittest_linux_cpu:
           cu_version: cpu
           name: unittest_linux_cpu_py3.7

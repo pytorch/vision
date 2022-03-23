@@ -7,10 +7,11 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 
+from ._transform import _RandomApplyTransform
 from ._utils import query_image, get_image_dimensions, has_all, has_any, is_simple_tensor
 
 
-class RandomErasing(Transform):
+class RandomErasing(_RandomApplyTransform):
     def __init__(
         self,
         p: float = 0.5,
@@ -18,7 +19,7 @@ class RandomErasing(Transform):
         ratio: Tuple[float, float] = (0.3, 3.3),
         value: float = 0,
     ):
-        super().__init__()
+        super().__init__(p=p)
         if not isinstance(value, (numbers.Number, str, tuple, list)):
             raise TypeError("Argument value should be either a number or str or a sequence")
         if isinstance(value, str) and value != "random":
@@ -31,9 +32,6 @@ class RandomErasing(Transform):
             warnings.warn("Scale and ratio should be of kind (min, max)")
         if scale[0] < 0 or scale[1] > 1:
             raise ValueError("Scale should be between 0 and 1")
-        if p < 0 or p > 1:
-            raise ValueError("Random erasing probability should be between 0 and 1")
-        self.p = p
         self.scale = scale
         self.ratio = ratio
         self.value = value
@@ -99,8 +97,6 @@ class RandomErasing(Transform):
         sample = inputs if len(inputs) > 1 else inputs[0]
         if has_any(sample, features.BoundingBox, features.SegmentationMask):
             raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        elif torch.rand(1) >= self.p:
-            return sample
 
         return super().forward(sample)
 
