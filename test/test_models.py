@@ -200,6 +200,7 @@ script_model_unwrapper = {
     "maskrcnn_resnet50_fpn": lambda x: x[1],
     "keypointrcnn_resnet50_fpn": lambda x: x[1],
     "retinanet_resnet50_fpn": lambda x: x[1],
+    "retinanet_resnet50_fpn_v2": lambda x: x[1],
     "ssd300_vgg16": lambda x: x[1],
     "ssdlite320_mobilenet_v3_large": lambda x: x[1],
     "fcos_resnet50_fpn": lambda x: x[1],
@@ -240,6 +241,13 @@ quantized_flaky_models = ("inception_v3", "resnet50")
 _model_params = {
     "inception_v3": {"input_shape": (1, 3, 299, 299)},
     "retinanet_resnet50_fpn": {
+        "num_classes": 20,
+        "score_thresh": 0.01,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
+    "retinanet_resnet50_fpn_v2": {
         "num_classes": 20,
         "score_thresh": 0.01,
         "min_size": 224,
@@ -306,6 +314,10 @@ _model_tests_values = {
     "retinanet_resnet50_fpn": {
         "max_trainable": 5,
         "n_trn_params_per_layer": [36, 46, 65, 78, 88, 89],
+    },
+    "retinanet_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [44, 74, 131, 170, 200, 203],
     },
     "keypointrcnn_resnet50_fpn": {
         "max_trainable": 5,

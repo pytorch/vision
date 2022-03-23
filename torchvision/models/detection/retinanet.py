@@ -28,6 +28,7 @@ __all__ = [
     "RetinaNet",
     "RetinaNet_ResNet50_FPN_Weights",
     "retinanet_resnet50_fpn",
+    "retinanet_resnet50_fpn_v2",
 ]
 
 
