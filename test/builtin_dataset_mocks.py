@@ -1435,18 +1435,56 @@ def stanford_cars(info, root, config):
 
 @register_mock
 def sun397(info, root, config):
-    num_samples = 2
+    import os
+
+    num_samples_map = {"train": 5, "test": 3}
+    num_samples = num_samples_map[config["split"]]
+    num_samples_train = num_samples_map["train"]
+    num_samples_all = sum(num_samples_map.values())
+
     categories = ["abbey", "bakery/shop", "bar"]
     image_root = root / "SUN397"
+    partitions_root = root / "Partitions"
+    os.makedirs(partitions_root, exist_ok=True)
     for category in categories:
         image_folder_list = [category[0]] + category.split("/")
         image_folder_name = pathlib.Path(*image_folder_list)
+        # Create mock images
         create_image_folder(
             root=image_root,
             name=image_folder_name,
-            file_name_fn=lambda idx: f"sun{idx:05d}.jpg",
-            num_examples=num_samples,
+            file_name_fn=lambda idx: f"sun_{idx:05d}.jpg",
+            num_examples=num_samples_all,
         )
 
-    make_tar(root, "SUN397.tar.gz", compression="gz")
+        # Create the partitions for 10 fold of train and test
+        for fold in range(1, 11):
+            shuffled_idxs = list(range(num_samples_all))
+            random.shuffle(shuffled_idxs)
+            split_data = {
+                "train": {
+                    "filename": f"Training_{fold:02d}.txt",
+                    "idxs": shuffled_idxs[:num_samples_train],
+                },
+                "test": {
+                    "filename": f"Testing_{fold:02d}.txt",
+                    "idxs": shuffled_idxs[num_samples_train:],
+                },
+            }
+            # Handle case if file with similar name and path exists before
+            write_mode = "a"
+            if category == categories[0]:
+                write_mode = "w"
+
+            for split, data in split_data.items():
+                filepath = pathlib.Path(partitions_root, data["filename"])
+                content = ["/" + "/".join((image_folder_name / f"sun_{idx:05d}.jpg").parts) for idx in data["idxs"]]
+                with open(filepath, write_mode) as f:
+                    f.write("\n".join(content))
+                    if category != categories[-1]:
+                        # We dont want to have an extra new line at the end
+                        f.write("\n")
+
+    make_tar(root, "SUN397.tar.gz", image_root, compression="gz")
+    make_zip(root, "Partitions.zip", partitions_root)
     return num_samples * len(categories)
