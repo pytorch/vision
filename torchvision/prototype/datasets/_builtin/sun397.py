@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Tuple
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import path_comparator, hint_sharding, hint_shuffling
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import EncodedImage, Label
 
 
@@ -60,4 +60,4 @@ class SUN397(Dataset):
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         resources = self.resources(self.default_config)
         dp = resources[0].load(root)
-        return sorted({self._get_category_from_path(path) for path, _ in dp})
+        return sorted({self._get_category_from_path(path_str) for path_str, _ in dp})
