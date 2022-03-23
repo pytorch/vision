@@ -138,17 +138,17 @@ def make_one_hot_labels(
         yield make_one_hot_label(extra_dims_)
 
 
-def make_segmentation_mask(size=None, *, max_value=80, extra_dims=(), dtype=torch.uint8):
+def make_segmentation_mask(size=None, *, num_categories=80, extra_dims=(), dtype=torch.long):
     size = size or torch.randint(16, 33, (2,)).tolist()
     shape = (*extra_dims, 1, *size)
-    data = make_tensor(shape, low=0, high=max_value, dtype=dtype)
+    data = make_tensor(shape, low=0, high=num_categories, dtype=dtype)
     return features.SegmentationMask(data)
 
 
 def make_segmentation_masks(
     image_sizes=((32, 32), (32, 42), (38, 24)),
     dtypes=(torch.long,),
-    extra_dims=((), (4,)),
+    extra_dims=((), (4,), (2, 3)),
 ):
     for image_size, dtype, extra_dims_ in itertools.product(image_sizes, dtypes, extra_dims):
         yield make_segmentation_mask(size=image_size, dtype=dtype, extra_dims=extra_dims_)
@@ -228,7 +228,7 @@ def resize_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def affine_image_tensor():
     for image, angle, translate, scale, shear in itertools.product(
-        make_images(extra_dims=()),
+        make_segmentation_masks(extra_dims=((), (4,))),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
@@ -485,7 +485,7 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
                     expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
         return expected_mask.to(mask.device)
 
-    for mask in make_segmentation_masks():
+    for mask in make_segmentation_masks(extra_dims=((), (4, ))):
         output_mask = F.affine_segmentation_mask(
             mask,
             angle=angle,
