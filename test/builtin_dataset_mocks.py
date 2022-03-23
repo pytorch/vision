@@ -1431,3 +1431,19 @@ def stanford_cars(info, root, config):
         make_tar(root, "car_devkit.tgz", devkit, compression="gz")
 
     return num_samples
+
+
+@register_mock
+def sun397(info, root, config):
+    num_samples = 2
+    categories = ["abbey", "bakery/shop", "bar"]
+    for category in categories:
+        create_image_folder(
+            root=root,
+            name="{}/{}".format(category[0], category),
+            file_name_fn=lambda idx: f"sun{idx:5d}.jpg",
+            num_examples=num_samples,
+        )
+
+    make_tar(root, "SUN397.tar.gz")
+    return num_samples * len(categories)

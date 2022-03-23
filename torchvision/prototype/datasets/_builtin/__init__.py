@@ -16,5 +16,6 @@ from .pcam import PCAM
 from .sbd import SBD
 from .semeion import SEMEION
 from .stanford_cars import StanfordCars
+from .sun397 import SUN397
 from .svhn import SVHN
 from .voc import VOC
