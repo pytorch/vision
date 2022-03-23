@@ -53,7 +53,7 @@ class USPS(Dataset):
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [USPS._RESOURCES[config.split]]
 
-    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor], *, config: DatasetConfig) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, Any]:
         image, label = data
         return dict(
             image=Image(image),
@@ -69,4 +69,4 @@ class USPS(Dataset):
         dp = USPSFileReader(resource_dps[0])
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
-        return Mapper(dp, functools.partial(self._prepare_sample, config=config))
+        return Mapper(dp, self._prepare_sample)
