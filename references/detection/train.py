@@ -33,12 +33,6 @@ from engine import train_one_epoch, evaluate
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
 
-try:
-    from torchvision import prototype
-except ImportError:
-    prototype = None
-
-
 def get_dataset(name, image_set, transform, data_path):
     paths = {"coco": (data_path, get_coco, 91), "coco_kp": (data_path, get_coco_kp, 2)}
     p, ds_fn, num_classes = paths[name]
@@ -49,15 +43,13 @@ def get_dataset(name, image_set, transform, data_path):
 
 def get_transform(train, args):
     if train:
-        return presets.DetectionPresetTrain(args.data_augmentation)
-    elif not args.prototype:
-        return presets.DetectionPresetEval()
+        return presets.DetectionPresetTrain(data_augmentation=args.data_augmentation)
+    elif args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        trans = weights.transforms()
+        return lambda img, target: (trans(img), target)
     else:
-        if args.weights:
-            weights = prototype.models.get_weight(args.weights)
-            return weights.transforms()
-        else:
-            return prototype.transforms.ObjectDetectionEval()
+        return presets.DetectionPresetEval()
 
 
 def get_args_parser(add_help=True):
@@ -132,25 +124,12 @@ def get_args_parser(add_help=True):
         help="Only test the model",
         action="store_true",
     )
-    parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
-    )
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
-
-    # Prototype models only
-    parser.add_argument(
-        "--prototype",
-        dest="prototype",
-        help="Use prototype model builders instead those from main area",
-        action="store_true",
-    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--weights-backbone", default=None, type=str, help="the backbone weights enum name to load")
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
@@ -159,10 +138,6 @@ def get_args_parser(add_help=True):
 
 
 def main(args):
-    if args.prototype and prototype is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-    if not args.prototype and args.weights:
-        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -204,12 +179,9 @@ def main(args):
     if "rcnn" in args.model:
         if args.rpn_score_thresh is not None:
             kwargs["rpn_score_thresh"] = args.rpn_score_thresh
-    if not args.prototype:
-        model = torchvision.models.detection.__dict__[args.model](
-            pretrained=args.pretrained, num_classes=num_classes, **kwargs
-        )
-    else:
-        model = prototype.models.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
+    model = torchvision.models.detection.__dict__[args.model](
+        weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
+    )
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
