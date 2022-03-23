@@ -1437,13 +1437,16 @@ def stanford_cars(info, root, config):
 def sun397(info, root, config):
     num_samples = 2
     categories = ["abbey", "bakery/shop", "bar"]
+    image_root = root / "SUN397"
     for category in categories:
+        image_folder_list = [category[0]] + category.split("/")
+        image_folder_name = pathlib.Path(*image_folder_list)
         create_image_folder(
-            root=root,
-            name="{}/{}".format(category[0], category),
-            file_name_fn=lambda idx: f"sun{idx:5d}.jpg",
+            root=image_root,
+            name=image_folder_name,
+            file_name_fn=lambda idx: f"sun{idx:05d}.jpg",
             num_examples=num_samples,
         )
 
-    make_tar(root, "SUN397.tar.gz")
+    make_tar(root, "SUN397.tar.gz", compression="gz")
     return num_samples * len(categories)

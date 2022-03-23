@@ -1,16 +1,14 @@
 import pathlib
-import re
 from typing import Any, Dict, List, Tuple
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter
 from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
+from torchvision.prototype.datasets.utils._internal import path_comparator, hint_sharding, hint_shuffling
 from torchvision.prototype.features import EncodedImage, Label
 
 
 class SUN397(Dataset):
 
-    _IMAGE_FILENAME_PATTERN = re.compile(r"sun_.*\.jpg")
     _DATA_ROOT_DIR = "SUN397"
 
     def _make_info(self) -> DatasetInfo:
@@ -44,15 +42,11 @@ class SUN397(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
-    def _filter_image_files(self, data: Tuple[str, Any]) -> bool:
-        match = self._IMAGE_FILENAME_PATTERN.match(pathlib.Path(data[0]).name)
-        return bool(match)
-
     def _make_datapipe(
         self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
-        dp = Filter(dp, self._filter_image_files)
+        dp = Filter(dp, path_comparator("suffix", ".jpg"))
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
         return Mapper(dp, self._prepare_sample)
