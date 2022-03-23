@@ -517,8 +517,6 @@ a model with random weights by calling its constructor:
     resnext101_32x8d = models.quantization.resnext101_32x8d()
     shufflenet_v2_x0_5 = models.quantization.shufflenet_v2_x0_5()
     shufflenet_v2_x1_0 = models.quantization.shufflenet_v2_x1_0()
-    shufflenet_v2_x1_5 = models.quantization.shufflenet_v2_x1_5()
-    shufflenet_v2_x2_0 = models.quantization.shufflenet_v2_x2_0()
 
 Obtaining a pre-trained quantized model can be done with a few lines of code:
 
