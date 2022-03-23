@@ -3,11 +3,12 @@ import inspect
 import sys
 from collections import OrderedDict
 from dataclasses import dataclass, fields
-from typing import Any, Callable, Dict
+from inspect import signature
+from typing import Any, Callable, Dict, cast
 
 from torchvision._utils import StrEnum
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from .._internally_replaced_utils import load_state_dict_from_url
 
 
 __all__ = ["WeightsEnum", "Weights", "get_weight"]
@@ -105,3 +106,38 @@ def get_weight(name: str) -> WeightsEnum:
         raise ValueError(f"The weight enum '{enum_name}' for the specific method couldn't be retrieved.")
 
     return weights_enum.from_str(value_name)
+
+
+def get_enum_from_fn(fn: Callable) -> WeightsEnum:
+    """
+    Internal method that gets the weight enum of a specific model builder method.
+    Might be removed after the handle_legacy_interface is removed.
+
+    Args:
+        fn (Callable): The builder method used to create the model.
+        weight_name (str): The name of the weight enum entry of the specific model.
+    Returns:
+        WeightsEnum: The requested weight enum.
+    """
+    sig = signature(fn)
+    if "weights" not in sig.parameters:
+        raise ValueError("The method is missing the 'weights' argument.")
+
+    ann = signature(fn).parameters["weights"].annotation
+    weights_enum = None
+    if isinstance(ann, type) and issubclass(ann, WeightsEnum):
+        weights_enum = ann
+    else:
+        # handle cases like Union[Optional, T]
+        # TODO: Replace ann.__args__ with typing.get_args(ann) after python >= 3.8
+        for t in ann.__args__:  # type: ignore[union-attr]
+            if isinstance(t, type) and issubclass(t, WeightsEnum):
+                weights_enum = t
+                break
+
+    if weights_enum is None:
+        raise ValueError(
+            "The WeightsEnum class for the specific method couldn't be retrieved. Make sure the typing info is correct."
+        )
+
+    return cast(WeightsEnum, weights_enum)
