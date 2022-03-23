@@ -279,6 +279,20 @@ def affine_segmentation_mask():
             translate=(translate, translate),
             scale=scale,
             shear=(shear, shear),
+
+
+@register_kernel_info_from_sample_inputs_fn
+def rotate_bounding_box():
+    for bounding_box, angle, expand, center in itertools.product(
+        make_bounding_boxes(), [-87, 15, 90], [True, False], [None, [12, 23]]  # angle  # expand  # center
+    ):
+        yield SampleInput(
+            bounding_box,
+            format=bounding_box.format,
+            image_size=bounding_box.image_size,
+            angle=angle,
+            expand=expand,
+            center=center,
         )
 
 
@@ -364,7 +378,7 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             np.max(transformed_points[:, 1]),
         ]
         out_bbox = features.BoundingBox(
-            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=(32, 32), dtype=torch.float32
+            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=bbox.image_size, dtype=torch.float32
         )
         out_bbox = convert_bounding_box_format(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
@@ -379,25 +393,25 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
         ],
         extra_dims=((4,),),
     ):
+        bboxes_format = bboxes.format
+        bboxes_image_size = bboxes.image_size
+
         output_bboxes = F.affine_bounding_box(
             bboxes,
-            bboxes.format,
-            image_size=image_size,
+            bboxes_format,
+            image_size=bboxes_image_size,
             angle=angle,
             translate=(translate, translate),
             scale=scale,
             shear=(shear, shear),
             center=center,
         )
-        if center is None:
-            center = [s // 2 for s in image_size[::-1]]
 
-        bboxes_format = bboxes.format
-        bboxes_image_size = bboxes.image_size
+        if center is None:
+            center = [s // 2 for s in bboxes_image_size[::-1]]
+
         if bboxes.ndim < 2:
-            bboxes = [
-                bboxes,
-            ]
+            bboxes = [bboxes]
 
         expected_bboxes = []
         for bbox in bboxes:
@@ -531,3 +545,147 @@ def test_correctness_affine_segmentation_mask_on_fixed_input(device):
     out_mask = F.affine_segmentation_mask(mask, 90, [0.0, 0.0], 64.0 / 32.0, [0.0, 0.0])
 
     torch.testing.assert_close(out_mask, expected_mask)
+
+
+@pytest.mark.parametrize("angle", range(-90, 90, 56))
+@pytest.mark.parametrize("expand", [True, False])
+@pytest.mark.parametrize("center", [None, (12, 14)])
+def test_correctness_rotate_bounding_box(angle, expand, center):
+    def _compute_expected_bbox(bbox, angle_, expand_, center_):
+        affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
+        affine_matrix = affine_matrix[:2, :]
+
+        image_size = bbox.image_size
+        bbox_xyxy = convert_bounding_box_format(
+            bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
+        )
+        points = np.array(
+            [
+                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
+                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
+                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
+                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
+                # image frame
+                [0.0, 0.0, 1.0],
+                [0.0, image_size[0], 1.0],
+                [image_size[1], image_size[0], 1.0],
+                [image_size[1], 0.0, 1.0],
+            ]
+        )
+        transformed_points = np.matmul(points, affine_matrix.T)
+        out_bbox = [
+            np.min(transformed_points[:4, 0]),
+            np.min(transformed_points[:4, 1]),
+            np.max(transformed_points[:4, 0]),
+            np.max(transformed_points[:4, 1]),
+        ]
+        if expand_:
+            tr_x = np.min(transformed_points[4:, 0])
+            tr_y = np.min(transformed_points[4:, 1])
+            out_bbox[0] -= tr_x
+            out_bbox[1] -= tr_y
+            out_bbox[2] -= tr_x
+            out_bbox[3] -= tr_y
+
+        out_bbox = features.BoundingBox(
+            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float32
+        )
+        out_bbox = convert_bounding_box_format(
+            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
+        )
+        return out_bbox.to(bbox.device)
+
+    image_size = (32, 38)
+
+    for bboxes in make_bounding_boxes(
+        image_sizes=[
+            image_size,
+        ],
+        extra_dims=((4,),),
+    ):
+        bboxes_format = bboxes.format
+        bboxes_image_size = bboxes.image_size
+
+        output_bboxes = F.rotate_bounding_box(
+            bboxes,
+            bboxes_format,
+            image_size=bboxes_image_size,
+            angle=angle,
+            expand=expand,
+            center=center,
+        )
+
+        if center is None:
+            center = [s // 2 for s in bboxes_image_size[::-1]]
+
+        if bboxes.ndim < 2:
+            bboxes = [bboxes]
+
+        expected_bboxes = []
+        for bbox in bboxes:
+            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            expected_bboxes.append(_compute_expected_bbox(bbox, -angle, expand, center))
+        if len(expected_bboxes) > 1:
+            expected_bboxes = torch.stack(expected_bboxes)
+        else:
+            expected_bboxes = expected_bboxes[0]
+        print("input:", bboxes)
+        print("output_bboxes:", output_bboxes)
+        print("expected_bboxes:", expected_bboxes)
+        torch.testing.assert_close(output_bboxes, expected_bboxes)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("expand", [False])  # expand=True does not match D2, analysis in progress
+def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
+    # Check transformation against known expected output
+    image_size = (64, 64)
+    # xyxy format
+    in_boxes = [
+        [1, 1, 5, 5],
+        [1, image_size[0] - 6, 5, image_size[0] - 2],
+        [image_size[1] - 6, image_size[0] - 6, image_size[1] - 2, image_size[0] - 2],
+        [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
+    ]
+    in_boxes = features.BoundingBox(
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
+    ).to(device)
+    # Tested parameters
+    angle = 45
+    center = None if expand else [12, 23]
+
+    # # Expected bboxes computed using Detectron2:
+    # from detectron2.data.transforms import RotationTransform, AugmentationList
+    # from detectron2.data.transforms import AugInput
+    # import cv2
+    # inpt = AugInput(im1, boxes=np.array(in_boxes, dtype="float32"))
+    # augs = AugmentationList([RotationTransform(*size, angle, expand=expand, center=center, interp=cv2.INTER_NEAREST), ])
+    # out = augs(inpt)
+    # print(inpt.boxes)
+    if expand:
+        expected_bboxes = [
+            [1.65937957, 42.67157288, 7.31623382, 48.32842712],
+            [41.96446609, 82.9766594, 47.62132034, 88.63351365],
+            [82.26955262, 42.67157288, 87.92640687, 48.32842712],
+            [31.35786438, 31.35786438, 59.64213562, 59.64213562],
+        ]
+    else:
+        expected_bboxes = [
+            [-11.33452378, 12.39339828, -5.67766953, 18.05025253],
+            [28.97056275, 52.69848481, 34.627417, 58.35533906],
+            [69.27564928, 12.39339828, 74.93250353, 18.05025253],
+            [18.36396103, 1.07968978, 46.64823228, 29.36396103],
+        ]
+
+    output_boxes = F.rotate_bounding_box(
+        in_boxes,
+        in_boxes.format,
+        in_boxes.image_size,
+        angle,
+        expand=expand,
+        center=center,
+    )
+
+    assert len(output_boxes) == len(expected_bboxes)
+    for a_out_box, out_box in zip(expected_bboxes, output_boxes.cpu()):
+        np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)
