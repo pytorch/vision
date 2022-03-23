@@ -39,7 +39,7 @@ class OnlineResource(abc.ABC):
 
         self._preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]]
         self._preprocess_type: Optional[str]
-        self._PREPROCESS_TYPE_CHOICES: List[Optional[str]] = ["extract", "decompress"]
+        self._PREPROCESS_TYPE_CHOICES: List[str] = ["extract", "decompress"]
         if extract:
             self._preprocess = self._extract
             self._preprocess_type = "extract"
