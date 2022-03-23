@@ -23,6 +23,7 @@ from torchvision.datasets.utils import (
     _get_redirect_url,
     _get_google_drive_file_id,
 )
+from typing_extensions import Literal
 
 
 class OnlineResource(abc.ABC):
@@ -31,19 +32,16 @@ class OnlineResource(abc.ABC):
         *,
         file_name: str,
         sha256: Optional[str] = None,
-        decompress: bool = False,
-        extract: bool = False,
+        preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], pathlib.Path]]] = None,
     ) -> None:
         self.file_name = file_name
         self.sha256 = sha256
 
-        self._preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]]
-        if extract:
-            self._preprocess = self._extract
-        elif decompress:
-            self._preprocess = self._decompress
-        else:
-            self._preprocess = None
+        if preprocess == "decompress":
+            preprocess = self._decompress
+        elif preprocess == "extract":
+            preprocess = self._extract
+        self._preprocess = preprocess
 
     @staticmethod
     def _extract(file: pathlib.Path) -> pathlib.Path:
@@ -163,7 +161,6 @@ class HttpResource(OnlineResource):
                 "file_name",
                 "sha256",
                 "_preprocess",
-                "_loader",
             )
         }
 
