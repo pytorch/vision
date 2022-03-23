@@ -27,6 +27,7 @@ from .transform import GeneralizedRCNNTransform
 __all__ = [
     "RetinaNet",
     "RetinaNet_ResNet50_FPN_Weights",
+    "RetinaNet_ResNet50_FPN_V2_Weights",
     "retinanet_resnet50_fpn",
     "retinanet_resnet50_fpn_v2",
 ]
