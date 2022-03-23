@@ -61,6 +61,8 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   if (result < 0) {
     LOG(ERROR) << "avcodec_decode_subtitle2 failed, err: "
                << Util::generateErrorDesc(result);
+    // free packet
+    av_packet_free(&avPacket);
     return result;
   } else if (result == 0) {
     result = pkt->size; // discard the rest of the package
@@ -75,6 +77,7 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
         pkt->pts, inputCtx_->streams[format_.stream]->time_base, timeBaseQ);
   }
 
+  av_packet_free(&avPacket);
   return result;
 }
 
