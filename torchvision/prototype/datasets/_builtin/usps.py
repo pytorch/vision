@@ -33,8 +33,7 @@ class USPS(Dataset):
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [USPS._RESOURCES[config.split]]
 
-    def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, Any]:
-        _filename, line = data
+    def _prepare_sample(self, line: str) -> Dict[str, Any]:
 
         raw_data = line.split()
         tmp_list = [x.split(":")[-1] for x in raw_data[1:]]
@@ -55,7 +54,7 @@ class USPS(Dataset):
         config: DatasetConfig,
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = Decompressor(resource_dps[0])
-        dp = LineReader(dp, decode=True)
+        dp = LineReader(dp, decode=True, return_path=False)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
         return Mapper(dp, self._prepare_sample)
