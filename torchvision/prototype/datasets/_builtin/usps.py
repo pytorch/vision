@@ -1,31 +1,11 @@
-import bz2
-import functools
-from typing import Any, Dict, List, Tuple, BinaryIO, Iterator
+from typing import Any, Dict, List, Tuple
 
 import numpy as np
 import torch
-from torchdata.datapipes.iter import IterDataPipe, IterableWrapper, LineReader, Mapper
+from torchdata.datapipes.iter import IterDataPipe, LineReader, Mapper, Decompressor
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, OnlineResource, HttpResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Image, Label
-
-
-class USPSFileReader(IterDataPipe[torch.Tensor]):
-    def __init__(self, datapipe: IterDataPipe[Tuple[Any, BinaryIO]]) -> None:
-        self.datapipe = datapipe
-
-    def __iter__(self) -> Iterator[Tuple[torch.Tensor, torch.Tensor]]:
-        for path, _ in self.datapipe:
-            with bz2.open(path) as fp:
-                datapipe = IterableWrapper([(path, fp)])
-                line_reader = LineReader(datapipe, decode=True)
-                for _, line in line_reader:
-                    raw_data = line.split()
-                    tmp_list = [x.split(":")[-1] for x in raw_data[1:]]
-                    img = np.asarray(tmp_list, dtype=np.float32).reshape((-1, 16, 16))
-                    img = ((img + 1) / 2 * 255).astype(dtype=np.uint8)
-                    target = int(raw_data[0]) - 1
-                    yield torch.from_numpy(img), torch.tensor(target)
 
 
 class USPS(Dataset):
@@ -54,10 +34,18 @@ class USPS(Dataset):
         return [USPS._RESOURCES[config.split]]
 
     def _prepare_sample(self, data: Tuple[torch.Tensor, torch.Tensor]) -> Dict[str, Any]:
-        image, label = data
+        _filename, line = data
+
+        raw_data = line.split()
+        tmp_list = [x.split(":")[-1] for x in raw_data[1:]]
+        img = np.asarray(tmp_list, dtype=np.float32).reshape((-1, 16, 16))
+        img = ((img + 1) / 2 * 255).astype(dtype=np.uint8)
+        img = torch.from_numpy(img)
+        target = int(raw_data[0]) - 1
+
         return dict(
-            image=Image(image),
-            label=Label(label, dtype=torch.int64, categories=self.categories),
+            image=Image(img),
+            label=Label(target, dtype=torch.int64, categories=self.categories),
         )
 
     def _make_datapipe(
@@ -66,7 +54,8 @@ class USPS(Dataset):
         *,
         config: DatasetConfig,
     ) -> IterDataPipe[Dict[str, Any]]:
-        dp = USPSFileReader(resource_dps[0])
+        dp = Decompressor(resource_dps[0])
+        dp = LineReader(dp, decode=True)
         dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
         return Mapper(dp, self._prepare_sample)
