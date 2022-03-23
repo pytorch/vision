@@ -2,7 +2,7 @@ import abc
 import hashlib
 import itertools
 import pathlib
-from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
+from typing import Optional, List, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
