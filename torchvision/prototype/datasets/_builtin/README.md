@@ -231,7 +231,7 @@ To generate the `$NAME.categories` file, run `python -m torchvision.prototype.da
 ### What if a resource file forms an I/O bottleneck?
 
 In general, we are ok with small performance hits of iterating archives rather than their extracted content. However, if
-the performance hit becomes significant, the archives can still be decompressed or extracted. To do this, the
-`decompress: bool` and `extract: bool` flags can be used for every `OnlineResource` individually. For more complex
-cases, each resource also accepts a `preprocess` callable that gets passed a `pathlib.Path` of the raw file and should
-return `pathlib.Path` of the preprocessed file or folder.
+the performance hit becomes significant, the archives can still be preprocessed. `OnlineResource` accepts the
+`preprocess` parameter that can be a `Callable[[pathlib.Path], pathlib.Path]` where the input points to the file to be
+preprocessed and the return value should be the result of the preprocessing to load. For convenience, `preprocess` also
+accepts `"decompress"` and `"extract"` to handle these common scenarios.
