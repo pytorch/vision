@@ -13,36 +13,40 @@ from torchvision.models.feature_extraction import create_feature_extractor, get_
 
 def get_available_models():
     # TODO add a registration mechanism to torchvision.models
-    return [k for k, v in models.__dict__.items() if callable(v) and k[0].lower() == k[0] and k[0] != "_"]
+    return [
+        k
+        for k, v in models.__dict__.items()
+        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
+    ]
 
 
 @pytest.mark.parametrize("backbone_name", ("resnet18", "resnet50"))
 def test_resnet_fpn_backbone(backbone_name):
     x = torch.rand(1, 3, 300, 300, dtype=torch.float32, device="cpu")
-    model = resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False)
+    model = resnet_fpn_backbone(backbone_name=backbone_name, weights=None)
     assert isinstance(model, BackboneWithFPN)
     y = model(x)
     assert list(y.keys()) == ["0", "1", "2", "3", "pool"]
 
     with pytest.raises(ValueError, match=r"Trainable layers should be in the range"):
-        resnet_fpn_backbone(backbone_name=backbone_name, pretrained=False, trainable_layers=6)
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, trainable_layers=6)
     with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
-        resnet_fpn_backbone(backbone_name, False, returned_layers=[0, 1, 2, 3])
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, returned_layers=[0, 1, 2, 3])
     with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
-        resnet_fpn_backbone(backbone_name, False, returned_layers=[2, 3, 4, 5])
+        resnet_fpn_backbone(backbone_name=backbone_name, weights=None, returned_layers=[2, 3, 4, 5])
 
 
 @pytest.mark.parametrize("backbone_name", ("mobilenet_v2", "mobilenet_v3_large", "mobilenet_v3_small"))
 def test_mobilenet_backbone(backbone_name):
     with pytest.raises(ValueError, match=r"Trainable layers should be in the range"):
-        mobilenet_backbone(backbone_name=backbone_name, pretrained=False, fpn=False, trainable_layers=-1)
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=False, trainable_layers=-1)
     with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
-        mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[-1, 0, 1, 2])
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True, returned_layers=[-1, 0, 1, 2])
     with pytest.raises(ValueError, match=r"Each returned layer should be in the range"):
-        mobilenet_backbone(backbone_name, False, fpn=True, returned_layers=[3, 4, 5, 6])
-    model_fpn = mobilenet_backbone(backbone_name, False, fpn=True)
+        mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True, returned_layers=[3, 4, 5, 6])
+    model_fpn = mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=True)
     assert isinstance(model_fpn, BackboneWithFPN)
-    model = mobilenet_backbone(backbone_name, False, fpn=False)
+    model = mobilenet_backbone(backbone_name=backbone_name, weights=None, fpn=False)
     assert isinstance(model, torch.nn.Sequential)
 
 
@@ -96,7 +100,7 @@ test_module_nodes = [
 
 class TestFxFeatureExtraction:
     inp = torch.rand(1, 3, 224, 224, dtype=torch.float32, device="cpu")
-    model_defaults = {"num_classes": 1, "pretrained": False}
+    model_defaults = {"num_classes": 1}
     leaf_modules = []
 
     def _create_feature_extractor(self, *args, **kwargs):

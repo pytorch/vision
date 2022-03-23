@@ -6,7 +6,7 @@ import torchvision
 HERE = osp.dirname(osp.abspath(__file__))
 ASSETS = osp.dirname(osp.dirname(HERE))
 
-model = torchvision.models.resnet18(pretrained=False)
+model = torchvision.models.resnet18()
 model.eval()
 
 traced_model = torch.jit.script(model)

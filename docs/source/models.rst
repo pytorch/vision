@@ -98,58 +98,6 @@ You can construct a model with random weights by calling its constructor:
     convnext_large = models.convnext_large()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
-These can be constructed by passing ``pretrained=True``:
-
-.. code:: python
-
-    import torchvision.models as models
-    resnet18 = models.resnet18(pretrained=True)
-    alexnet = models.alexnet(pretrained=True)
-    squeezenet = models.squeezenet1_0(pretrained=True)
-    vgg16 = models.vgg16(pretrained=True)
-    densenet = models.densenet161(pretrained=True)
-    inception = models.inception_v3(pretrained=True)
-    googlenet = models.googlenet(pretrained=True)
-    shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
-    mobilenet_v2 = models.mobilenet_v2(pretrained=True)
-    mobilenet_v3_large = models.mobilenet_v3_large(pretrained=True)
-    mobilenet_v3_small = models.mobilenet_v3_small(pretrained=True)
-    resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
-    wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
-    mnasnet = models.mnasnet1_0(pretrained=True)
-    efficientnet_b0 = models.efficientnet_b0(pretrained=True)
-    efficientnet_b1 = models.efficientnet_b1(pretrained=True)
-    efficientnet_b2 = models.efficientnet_b2(pretrained=True)
-    efficientnet_b3 = models.efficientnet_b3(pretrained=True)
-    efficientnet_b4 = models.efficientnet_b4(pretrained=True)
-    efficientnet_b5 = models.efficientnet_b5(pretrained=True)
-    efficientnet_b6 = models.efficientnet_b6(pretrained=True)
-    efficientnet_b7 = models.efficientnet_b7(pretrained=True)
-    efficientnet_v2_s = models.efficientnet_v2_s(pretrained=True)
-    efficientnet_v2_m = models.efficientnet_v2_m(pretrained=True)
-    efficientnet_v2_l = models.efficientnet_v2_l(pretrained=True)
-    regnet_y_400mf = models.regnet_y_400mf(pretrained=True)
-    regnet_y_800mf = models.regnet_y_800mf(pretrained=True)
-    regnet_y_1_6gf = models.regnet_y_1_6gf(pretrained=True)
-    regnet_y_3_2gf = models.regnet_y_3_2gf(pretrained=True)
-    regnet_y_8gf = models.regnet_y_8gf(pretrained=True)
-    regnet_y_16gf = models.regnet_y_16gf(pretrained=True)
-    regnet_y_32gf = models.regnet_y_32gf(pretrained=True)
-    regnet_x_400mf = models.regnet_x_400mf(pretrained=True)
-    regnet_x_800mf = models.regnet_x_800mf(pretrained=True)
-    regnet_x_1_6gf = models.regnet_x_1_6gf(pretrained=True)
-    regnet_x_3_2gf = models.regnet_x_3_2gf(pretrained=True)
-    regnet_x_8gf = models.regnet_x_8gf(pretrained=True)
-    regnet_x_16gf = models.regnet_x_16gf(pretrainedTrue)
-    regnet_x_32gf = models.regnet_x_32gf(pretrained=True)
-    vit_b_16 = models.vit_b_16(pretrained=True)
-    vit_b_32 = models.vit_b_32(pretrained=True)
-    vit_l_16 = models.vit_l_16(pretrained=True)
-    vit_l_32 = models.vit_l_32(pretrained=True)
-    convnext_tiny = models.convnext_tiny(pretrained=True)
-    convnext_small = models.convnext_small(pretrained=True)
-    convnext_base = models.convnext_base(pretrained=True)
-    convnext_large = models.convnext_large(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_HOME` environment variable. See
@@ -523,7 +471,7 @@ Obtaining a pre-trained quantized model can be done with a few lines of code:
 .. code:: python
 
     import torchvision.models as models
-    model = models.quantization.mobilenet_v2(pretrained=True, quantize=True)
+    model = models.quantization.mobilenet_v2(weights=MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1, quantize=True)
     model.eval()
     # run the model with quantized inputs and weights
     out = model(torch.rand(1, 3, 224, 224))
