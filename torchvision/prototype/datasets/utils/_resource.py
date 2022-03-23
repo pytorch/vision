@@ -37,10 +37,16 @@ class OnlineResource(abc.ABC):
         self.file_name = file_name
         self.sha256 = sha256
 
-        if preprocess == "decompress":
-            preprocess = self._decompress
-        elif preprocess == "extract":
-            preprocess = self._extract
+        if isinstance(preprocess, str):
+            if preprocess == "decompress":
+                preprocess = self._decompress
+            elif preprocess == "extract":
+                preprocess = self._extract
+            else:
+                raise ValueError(
+                    f"Only `'decompress'` or `'extract'` are valid if `preprocess` is passed as string,"
+                    f"but got {preprocess} instead."
+                )
         self._preprocess = preprocess
 
     @staticmethod
