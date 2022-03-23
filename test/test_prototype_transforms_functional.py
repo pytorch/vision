@@ -146,7 +146,7 @@ def make_segmentation_mask(size=None, *, num_categories=80, extra_dims=(), dtype
 
 
 def make_segmentation_masks(
-    image_sizes=((32, 32), (32, 42), (38, 24)),
+    image_sizes=((16, 16), (7, 33), (31, 9)),
     dtypes=(torch.long,),
     extra_dims=((), (4,), (2, 3)),
 ):
@@ -485,7 +485,7 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
                     expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
         return expected_mask.to(mask.device)
 
-    for mask in make_segmentation_masks(extra_dims=((), (4, ))):
+    for mask in make_segmentation_masks(extra_dims=((), (4,))):
         output_mask = F.affine_segmentation_mask(
             mask,
             angle=angle,
@@ -515,15 +515,13 @@ def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, ce
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 def test_correctness_affine_segmentation_mask_on_fixed_input(device):
-    # Check transformation against known expected output
+    # Check transformation against known expected output and CPU/CUDA devices
 
-    # Create a fixed input segmentation mask with 4 square masks
-    # in top-left, top-right, bottom-right corners and in the center
+    # Create a fixed input segmentation mask with 2 square masks
+    # in top-left, bottom-left corners
     mask = torch.zeros(1, 32, 32, dtype=torch.long, device=device)
     mask[0, 2:10, 2:10] = 1
     mask[0, 32 - 9 : 32 - 3, 3:9] = 2
-    mask[0, 1:11, 32 - 11 : 32 - 1] = 3
-    mask[0, 16 - 4 : 16 + 4, 16 - 4 : 16 + 4] = 4
 
     # Rotate 90 degrees and scale
     expected_mask = torch.rot90(mask, k=-1, dims=(-2, -1))
