@@ -294,6 +294,25 @@ def affine_bounding_box(
     ).view(original_shape)
 
 
+def affine_segmentation_mask(
+    img: torch.Tensor,
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return affine_image_tensor(
+        img,
+        angle=angle,
+        translate=translate,
+        scale=scale,
+        shear=shear,
+        interpolation=InterpolationMode.NEAREST,
+        center=center,
+    )
+
+
 def rotate_image_tensor(
     img: torch.Tensor,
     angle: float,
