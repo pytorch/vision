@@ -930,8 +930,6 @@ def food101(info, root, config):
     # Remove the extension from the list of images per category.
     image_ids_per_category = {k: [e.replace(".jpg", "") for e in v] for k, v in image_ids_per_category.items()}
 
-    print(image_ids_per_category)
-
     meta_folder = data_folder / "meta"
     meta_folder.mkdir()
 
