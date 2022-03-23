@@ -34,17 +34,12 @@ class USPS(Dataset):
         return [USPS._RESOURCES[config.split]]
 
     def _prepare_sample(self, line: str) -> Dict[str, Any]:
-
-        raw_data = line.split()
-        tmp_list = [x.split(":")[-1] for x in raw_data[1:]]
-        img = np.asarray(tmp_list, dtype=np.float32).reshape((-1, 16, 16))
-        img = ((img + 1) / 2 * 255).astype(dtype=np.uint8)
-        img = torch.from_numpy(img)
-        target = int(raw_data[0]) - 1
-
+        label, *values = line.strip().split(" ")
+        values = [float(value.split(":")[1]) for value in values]
+        pixels = torch.tensor(values).add_(1).div_(2)
         return dict(
-            image=Image(img),
-            label=Label(target, dtype=torch.int64, categories=self.categories),
+            image=Image(pixels.reshape(16, 16)),
+            label=Label(int(label) - 1, categories=self.categories),
         )
 
     def _make_datapipe(
