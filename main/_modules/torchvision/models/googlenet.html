@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+fc06a94 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+6f506d3 ) &#x25BC</a>
     </div>
     
 
@@ -323,6 +323,7 @@
   <h1>Source code for torchvision.models.googlenet</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
@@ -330,15 +331,15 @@
 <span class="kn">import</span> <span class="nn">torch.nn.functional</span> <span class="k">as</span> <span class="nn">F</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 
-<span class="kn">from</span> <span class="nn">.._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
+<span class="kn">from</span> <span class="nn">..transforms._presets</span> <span class="kn">import</span> <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">InterpolationMode</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span> <span class="nn">._api</span> <span class="kn">import</span> <span class="n">WeightsEnum</span><span class="p">,</span> <span class="n">Weights</span>
+<span class="kn">from</span> <span class="nn">._meta</span> <span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">handle_legacy_interface</span><span class="p">,</span> <span class="n">_ovewrite_named_param</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;GoogLeNet&quot;</span><span class="p">,</span> <span class="s2">&quot;googlenet&quot;</span><span class="p">,</span> <span class="s2">&quot;GoogLeNetOutputs&quot;</span><span class="p">,</span> <span class="s2">&quot;_GoogLeNetOutputs&quot;</span><span class="p">]</span>
 
-<span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="c1"># GoogLeNet ported from TensorFlow</span>
-    <span class="s2">&quot;googlenet&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/googlenet-1378be20.pth&quot;</span><span class="p">,</span>
-<span class="p">}</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;GoogLeNet&quot;</span><span class="p">,</span> <span class="s2">&quot;GoogLeNetOutputs&quot;</span><span class="p">,</span> <span class="s2">&quot;_GoogLeNetOutputs&quot;</span><span class="p">,</span> <span class="s2">&quot;GoogLeNet_Weights&quot;</span><span class="p">,</span> <span class="s2">&quot;googlenet&quot;</span><span class="p">]</span>
+
 
 <span class="n">GoogLeNetOutputs</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;GoogLeNetOutputs&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;logits&quot;</span><span class="p">,</span> <span class="s2">&quot;aux_logits2&quot;</span><span class="p">,</span> <span class="s2">&quot;aux_logits1&quot;</span><span class="p">])</span>
 <span class="n">GoogLeNetOutputs</span><span class="o">.</span><span class="vm">__annotations__</span> <span class="o">=</span> <span class="p">{</span><span class="s2">&quot;logits&quot;</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="s2">&quot;aux_logits2&quot;</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">],</span> <span class="s2">&quot;aux_logits1&quot;</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Tensor</span><span class="p">]}</span>
@@ -597,41 +598,65 @@
         <span class="k">return</span> <span class="n">F</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="googlenet"><a class="viewcode-back" href="../../../generated/torchvision.models.googlenet.html#torchvision.models.googlenet">[docs]</a><span class="k">def</span> <span class="nf">googlenet</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GoogLeNet</span><span class="p">:</span>
+<span class="k">class</span> <span class="nc">GoogLeNet_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/googlenet-1378be20.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;image_classification&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;GoogLeNet&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;publication_year&quot;</span><span class="p">:</span> <span class="mi">2014</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">6624904</span><span class="p">,</span>
+            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+            <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">15</span><span class="p">,</span> <span class="mi">15</span><span class="p">),</span>
+            <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
+            <span class="s2">&quot;interpolation&quot;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#googlenet&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">69.778</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">89.530</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span>
+
+
+<div class="viewcode-block" id="googlenet"><a class="viewcode-back" href="../../../generated/torchvision.models.googlenet.html#torchvision.models.googlenet">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">GoogLeNet_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">googlenet</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">GoogLeNet_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">GoogLeNet</span><span class="p">:</span>
     <span class="sa">r</span><span class="sd">&quot;&quot;&quot;GoogLeNet (Inception v1) model architecture from</span>
 <span class="sd">    `&quot;Going Deeper with Convolutions&quot; &lt;http://arxiv.org/abs/1409.4842&gt;`_.</span>
 <span class="sd">    The required minimum input size of the model is 15x15.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (GoogLeNet_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">        aux_logits (bool): If True, adds two auxiliary branches that can improve training.</span>
 <span class="sd">            Default: *False* when pretrained is True otherwise *True*</span>
 <span class="sd">        transform_input (bool): If True, preprocesses the input according to the method with which it</span>
-<span class="sd">            was trained on ImageNet. Default: True if ``pretrained=True``, else False.</span>
+<span class="sd">            was trained on ImageNet. Default: True if ``weights=GoogLeNet_Weights.IMAGENET1K_V1``, else False.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">GoogLeNet_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="n">original_aux_logits</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;aux_logits&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="k">if</span> <span class="s2">&quot;transform_input&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;transform_input&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="k">if</span> <span class="s2">&quot;aux_logits&quot;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">kwargs</span><span class="p">:</span>
-            <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;aux_logits&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="k">if</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;aux_logits&quot;</span><span class="p">]:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them&quot;</span>
-            <span class="p">)</span>
-        <span class="n">original_aux_logits</span> <span class="o">=</span> <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;aux_logits&quot;</span><span class="p">]</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;aux_logits&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">True</span>
-        <span class="n">kwargs</span><span class="p">[</span><span class="s2">&quot;init_weights&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">False</span>
-        <span class="n">model</span> <span class="o">=</span> <span class="n">GoogLeNet</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="s2">&quot;googlenet&quot;</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+            <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;transform_input&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;aux_logits&quot;</span><span class="p">,</span> <span class="kc">True</span><span class="p">)</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;init_weights&quot;</span><span class="p">,</span> <span class="kc">False</span><span class="p">)</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+
+    <span class="n">model</span> <span class="o">=</span> <span class="n">GoogLeNet</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">))</span>
         <span class="k">if</span> <span class="ow">not</span> <span class="n">original_aux_logits</span><span class="p">:</span>
             <span class="n">model</span><span class="o">.</span><span class="n">aux_logits</span> <span class="o">=</span> <span class="kc">False</span>
             <span class="n">model</span><span class="o">.</span><span class="n">aux1</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[assignment]</span>
             <span class="n">model</span><span class="o">.</span><span class="n">aux2</span> <span class="o">=</span> <span class="kc">None</span>  <span class="c1"># type: ignore[assignment]</span>
-        <span class="k">return</span> <span class="n">model</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
+                <span class="s2">&quot;auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them&quot;</span>
+            <span class="p">)</span>
 
-    <span class="k">return</span> <span class="n">GoogLeNet</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">model</span></div>
 </pre></div>
 
              </article>

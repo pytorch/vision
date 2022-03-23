@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+fc06a94 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+6f506d3 ) &#x25BC</a>
     </div>
     
 
@@ -321,7 +321,7 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.optical_flow.raft</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span>
+<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
@@ -331,8 +331,10 @@
 <span class="kn">from</span> <span class="nn">torch.nn.modules.instancenorm</span> <span class="kn">import</span> <span class="n">InstanceNorm2d</span>
 <span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">Conv2dNormActivation</span>
 
-<span class="kn">from</span> <span class="nn">..._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
+<span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">OpticalFlow</span><span class="p">,</span> <span class="n">InterpolationMode</span>
 <span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">Weights</span><span class="p">,</span> <span class="n">WeightsEnum</span>
+<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">handle_legacy_interface</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">grid_sample</span><span class="p">,</span> <span class="n">make_coords_grid</span><span class="p">,</span> <span class="n">upsample_flow</span>
 
 
@@ -340,13 +342,9 @@
     <span class="s2">&quot;RAFT&quot;</span><span class="p">,</span>
     <span class="s2">&quot;raft_large&quot;</span><span class="p">,</span>
     <span class="s2">&quot;raft_small&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Raft_Large_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;Raft_Small_Weights&quot;</span><span class="p">,</span>
 <span class="p">)</span>
-
-
-<span class="n">_MODELS_URLS</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;raft_large&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;raft_small&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth&quot;</span><span class="p">,</span>
-<span class="p">}</span>
 
 
 <span class="k">class</span> <span class="nc">ResidualBlock</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
@@ -836,10 +834,139 @@
         <span class="k">return</span> <span class="n">flow_predictions</span>
 
 
+<span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;optical_flow&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;RAFT&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;publication_year&quot;</span><span class="p">:</span> <span class="mi">2020</span><span class="p">,</span>
+    <span class="s2">&quot;interpolation&quot;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">Raft_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">C_T_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Chairs + Things, ported from original paper repo (raft-things.pth)</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_train_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.4411</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_train_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">2.7894</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_train_per_image_epe&quot;</span><span class="p">:</span> <span class="mf">5.0172</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_train_f1-all&quot;</span><span class="p">:</span> <span class="mf">17.4506</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Chairs + Things</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_train_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.3822</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_train_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">2.7161</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_train_per_image_epe&quot;</span><span class="p">:</span> <span class="mf">4.5118</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_train_f1-all&quot;</span><span class="p">:</span> <span class="mf">16.0679</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_SKHT_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Chairs + Things + Sintel fine-tuning, ported from original paper repo (raft-sintel.pth)</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_test_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.94</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_test_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">3.18</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_SKHT_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Chairs + Things + Sintel fine-tuning, i.e.:</span>
+        <span class="c1"># Chairs + Things + (Sintel + Kitti + HD1K + Things_clean)</span>
+        <span class="c1"># Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_test_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.819</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_test_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">3.067</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_SKHT_K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Chairs + Things + Sintel fine-tuning + Kitti fine-tuning, ported from the original repo (sintel-kitti.pth)</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V1-4a6a5039.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_test_f1-all&quot;</span><span class="p">:</span> <span class="mf">5.10</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">C_T_SKHT_K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Chairs + Things + Sintel fine-tuning + Kitti fine-tuning i.e.:</span>
+        <span class="c1"># Chairs + Things + (Sintel + Kitti + HD1K + Things_clean) + Kitti</span>
+        <span class="c1"># Same as CT_SKHT with extra fine-tuning on Kitti</span>
+        <span class="c1"># Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel and then on Kitti</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V2-b5c70766.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_test_f1-all&quot;</span><span class="p">:</span> <span class="mf">5.19</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">C_T_SKHT_V2</span>
+
+
+<span class="k">class</span> <span class="nc">Raft_Small_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">C_T_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Chairs + Things, ported from original paper repo (raft-small.pth)</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">990162</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_train_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">2.1231</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_train_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">3.2790</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_train_per_image_epe&quot;</span><span class="p">:</span> <span class="mf">7.6557</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_train_f1-all&quot;</span><span class="p">:</span> <span class="mf">25.2801</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">C_T_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="c1"># Chairs + Things</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">OpticalFlow</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">990162</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_train_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.9901</span><span class="p">,</span>
+            <span class="s2">&quot;sintel_train_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">3.2831</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_train_per_image_epe&quot;</span><span class="p">:</span> <span class="mf">7.5978</span><span class="p">,</span>
+            <span class="s2">&quot;kitti_train_f1-all&quot;</span><span class="p">:</span> <span class="mf">25.2369</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">C_T_V2</span>
+
+
 <span class="k">def</span> <span class="nf">_raft</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span>
-    <span class="n">arch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
-    <span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+    <span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
     <span class="n">progress</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
     <span class="c1"># Feature encoder</span>
     <span class="n">feature_encoder_layers</span><span class="p">,</span>
@@ -913,38 +1040,34 @@
         <span class="n">mask_predictor</span><span class="o">=</span><span class="n">mask_predictor</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>  <span class="c1"># not really needed, all params should be consumed by now</span>
     <span class="p">)</span>
-    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">_MODELS_URLS</span><span class="p">[</span><span class="n">arch</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">))</span>
 
     <span class="k">return</span> <span class="n">model</span>
 
 
-<div class="viewcode-block" id="raft_large"><a class="viewcode-back" href="../../../../generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.raft_large">[docs]</a><span class="k">def</span> <span class="nf">raft_large</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="raft_large"><a class="viewcode-back" href="../../../../generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.raft_large">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Large_Weights</span><span class="o">.</span><span class="n">C_T_SKHT_V2</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">raft_large</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Raft_Large_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAFT</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;RAFT model from</span>
 <span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
 
 <span class="sd">    Please see the example below for a tutorial on how to use this model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): Whether to use weights that have been pre-trained on</span>
-<span class="sd">            :class:`~torchvsion.datasets.FlyingChairs` + :class:`~torchvsion.datasets.FlyingThings3D`</span>
-<span class="sd">            with two fine-tuning steps:</span>
-
-<span class="sd">            - one on :class:`~torchvsion.datasets.Sintel` + :class:`~torchvsion.datasets.FlyingThings3D`</span>
-<span class="sd">            - one on :class:`~torchvsion.datasets.KittiFlow`.</span>
-
-<span class="sd">            This corresponds to the ``C+T+S/K`` strategy in the paper.</span>
-
-<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr.</span>
+<span class="sd">        weights(Raft_Large_weights, optional): The pretrained weights for the model</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class</span>
+<span class="sd">            to override any default.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        nn.Module: The model.</span>
+<span class="sd">        RAFT: The model.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">Raft_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">_raft</span><span class="p">(</span>
-        <span class="n">arch</span><span class="o">=</span><span class="s2">&quot;raft_large&quot;</span><span class="p">,</span>
-        <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
         <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
         <span class="c1"># Feature encoder</span>
         <span class="n">feature_encoder_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">64</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">,</span> <span class="mi">256</span><span class="p">),</span>
@@ -973,25 +1096,27 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="raft_small"><a class="viewcode-back" href="../../../../generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.raft_small">[docs]</a><span class="k">def</span> <span class="nf">raft_small</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<div class="viewcode-block" id="raft_small"><a class="viewcode-back" href="../../../../generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.raft_small">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Small_Weights</span><span class="o">.</span><span class="n">C_T_V2</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">raft_small</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Raft_Small_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAFT</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;RAFT &quot;small&quot; model from</span>
 <span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
 
 <span class="sd">    Please see the example below for a tutorial on how to use this model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): Whether to use weights that have been pre-trained on</span>
-<span class="sd">            :class:`~torchvsion.datasets.FlyingChairs` + :class:`~torchvsion.datasets.FlyingThings3D`.</span>
+<span class="sd">        weights(Raft_Small_weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class</span>
+<span class="sd">            to override any default.</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        nn.Module: The model.</span>
+<span class="sd">        RAFT: The model.</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">Raft_Small_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_raft</span><span class="p">(</span>
-        <span class="n">arch</span><span class="o">=</span><span class="s2">&quot;raft_small&quot;</span><span class="p">,</span>
-        <span class="n">pretrained</span><span class="o">=</span><span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span>
         <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">,</span>
         <span class="c1"># Feature encoder</span>
         <span class="n">feature_encoder_layers</span><span class="o">=</span><span class="p">(</span><span class="mi">32</span><span class="p">,</span> <span class="mi">32</span><span class="p">,</span> <span class="mi">64</span><span class="p">,</span> <span class="mi">96</span><span class="p">,</span> <span class="mi">128</span><span class="p">),</span>

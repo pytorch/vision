@@ -327,17 +327,19 @@ These boxes can now directly be used by detection models in torchvision.
 Here is demo with a Faster R-CNN model loaded from
 :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
 
-.. GENERATED FROM PYTHON SOURCE LINES 141-154
+.. GENERATED FROM PYTHON SOURCE LINES 141-156
 
 .. code-block:: default
 
 
-    from torchvision.models.detection import fasterrcnn_resnet50_fpn
+    from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
 
-    model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
+    weights = FasterRCNN_ResNet50_FPN_Weights.DEFAULT
+    model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
     print(img.size())
 
-    img = F.convert_image_dtype(img, torch.float)
+    tranforms = weights.transforms()
+    img = tranforms(img)
     target = {}
     target["boxes"] = boxes
     target["labels"] = labels = torch.ones((masks.size(0),), dtype=torch.int64)
@@ -359,7 +361,7 @@ Here is demo with a Faster R-CNN model loaded from
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 155-163
+.. GENERATED FROM PYTHON SOURCE LINES 157-165
 
 Converting Segmentation Dataset to Detection Dataset
 ----------------------------------------------------
@@ -370,7 +372,7 @@ One can similarly convert panoptic dataset to detection dataset.
 Here is an example where we re-purpose the dataset from the
 `PenFudan Detection Tutorial <https://pytorch.org/tutorials/intermediate/torchvision_tutorial.html>`_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 163-206
+.. GENERATED FROM PYTHON SOURCE LINES 165-208
 
 .. code-block:: default
 
@@ -427,7 +429,7 @@ Here is an example where we re-purpose the dataset from the
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.746 seconds)
+   **Total running time of the script:** ( 0 minutes  1.605 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_repurposing_annotations.py:

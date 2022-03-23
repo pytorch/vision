@@ -152,25 +152,21 @@ while using ``torch.jit.script`` to obtain a single scripted module.
 Let's define a ``Predictor`` module that transforms the input tensor and then
 applies an ImageNet model on it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 87-110
+.. GENERATED FROM PYTHON SOURCE LINES 87-106
 
 .. code-block:: default
 
 
-    from torchvision.models import resnet18
+    from torchvision.models import resnet18, ResNet18_Weights
 
 
     class Predictor(nn.Module):
 
         def __init__(self):
             super().__init__()
-            self.resnet18 = resnet18(pretrained=True, progress=False).eval()
-            self.transforms = nn.Sequential(
-                T.Resize([256, ]),  # We use single int value inside a list due to torchscript type restrictions
-                T.CenterCrop(224),
-                T.ConvertImageDtype(torch.float),
-                T.Normalize([0.485, 0.456, 0.406], [0.229, 0.224, 0.225])
-            )
+            weights = ResNet18_Weights.DEFAULT
+            self.resnet18 = resnet18(weights=weights, progress=False).eval()
+            self.transforms = weights.transforms()
 
         def forward(self, x: torch.Tensor) -> torch.Tensor:
             with torch.no_grad():
@@ -186,12 +182,12 @@ applies an ImageNet model on it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 111-113
+.. GENERATED FROM PYTHON SOURCE LINES 107-109
 
 Now, let's define scripted and non-scripted instances of ``Predictor`` and
 apply it on multiple tensor images of the same size
 
-.. GENERATED FROM PYTHON SOURCE LINES 113-122
+.. GENERATED FROM PYTHON SOURCE LINES 109-118
 
 .. code-block:: default
 
@@ -211,12 +207,12 @@ apply it on multiple tensor images of the same size
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 123-125
+.. GENERATED FROM PYTHON SOURCE LINES 119-121
 
 We can verify that the prediction of the scripted and non-scripted models are
 the same:
 
-.. GENERATED FROM PYTHON SOURCE LINES 125-135
+.. GENERATED FROM PYTHON SOURCE LINES 121-131
 
 .. code-block:: default
 
@@ -246,11 +242,11 @@ the same:
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 136-137
+.. GENERATED FROM PYTHON SOURCE LINES 132-133
 
 Since the model is scripted, it can be easily dumped on disk and re-used
 
-.. GENERATED FROM PYTHON SOURCE LINES 137-146
+.. GENERATED FROM PYTHON SOURCE LINES 133-142
 
 .. code-block:: default
 
@@ -273,7 +269,7 @@ Since the model is scripted, it can be easily dumped on disk and re-used
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  1.652 seconds)
+   **Total running time of the script:** ( 0 minutes  1.632 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_scripted_tensor_transforms.py:

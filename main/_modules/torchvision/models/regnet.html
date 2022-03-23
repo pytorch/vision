@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+fc06a94 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+6f506d3 ) &#x25BC</a>
     </div>
     
 
@@ -321,12 +321,7 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.regnet</h1><div class="highlight"><pre>
-<span></span><span class="c1"># Modified from</span>
-<span class="c1"># https://github.com/facebookresearch/ClassyVision/blob/main/classy_vision/models/anynet.py</span>
-<span class="c1"># https://github.com/facebookresearch/ClassyVision/blob/main/classy_vision/models/regnet.py</span>
-
-
-<span class="kn">import</span> <span class="nn">math</span>
+<span></span><span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
@@ -334,14 +329,31 @@
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span><span class="p">,</span> <span class="n">Tensor</span>
 
-<span class="kn">from</span> <span class="nn">.._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 <span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">Conv2dNormActivation</span><span class="p">,</span> <span class="n">SqueezeExcitation</span>
+<span class="kn">from</span> <span class="nn">..transforms._presets</span> <span class="kn">import</span> <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">InterpolationMode</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_make_divisible</span>
+<span class="kn">from</span> <span class="nn">._api</span> <span class="kn">import</span> <span class="n">WeightsEnum</span><span class="p">,</span> <span class="n">Weights</span>
+<span class="kn">from</span> <span class="nn">._meta</span> <span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">handle_legacy_interface</span><span class="p">,</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">_make_divisible</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;RegNet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_Y_400MF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_Y_800MF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_Y_1_6GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_Y_3_2GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_Y_8GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_Y_16GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_Y_32GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_Y_128GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_X_400MF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_X_800MF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_X_1_6GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_X_3_2GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_X_8GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_X_16GF_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;RegNet_X_32GF_Weights&quot;</span><span class="p">,</span>
     <span class="s2">&quot;regnet_y_400mf&quot;</span><span class="p">,</span>
     <span class="s2">&quot;regnet_y_800mf&quot;</span><span class="p">,</span>
     <span class="s2">&quot;regnet_y_1_6gf&quot;</span><span class="p">,</span>
@@ -358,24 +370,6 @@
     <span class="s2">&quot;regnet_x_16gf&quot;</span><span class="p">,</span>
     <span class="s2">&quot;regnet_x_32gf&quot;</span><span class="p">,</span>
 <span class="p">]</span>
-
-
-<span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;regnet_y_400mf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_y_400mf-c65dace8.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_y_800mf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_y_800mf-1b27b58c.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_y_1_6gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_y_1_6gf-b11a554e.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_y_3_2gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_y_3_2gf-b5a9779c.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_y_8gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_y_8gf-d0d0e4a8.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_y_16gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_y_16gf-9e6ed7dd.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_y_32gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_y_32gf-4dee3f7a.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_x_400mf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_x_400mf-adf1edd5.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_x_800mf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_x_800mf-ad17e45c.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_x_1_6gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_x_1_6gf-e3633e7f.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_x_3_2gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_x_3_2gf-f342aeae.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_x_8gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_x_8gf-03ceed89.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_x_16gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_x_16gf-2007eb11.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;regnet_x_32gf&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/regnet_x_32gf-9d47f8d0.pth&quot;</span><span class="p">,</span>
-<span class="p">}</span>
 
 
 <span class="k">class</span> <span class="nc">SimpleStemIN</span><span class="p">(</span><span class="n">Conv2dNormActivation</span><span class="p">):</span>
@@ -713,222 +707,655 @@
         <span class="k">return</span> <span class="n">x</span>
 
 
-<span class="k">def</span> <span class="nf">_regnet</span><span class="p">(</span><span class="n">arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">block_params</span><span class="p">:</span> <span class="n">BlockParams</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="k">def</span> <span class="nf">_regnet</span><span class="p">(</span>
+    <span class="n">block_params</span><span class="p">:</span> <span class="n">BlockParams</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">WeightsEnum</span><span class="p">],</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+
     <span class="n">norm_layer</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;norm_layer&quot;</span><span class="p">,</span> <span class="n">partial</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">,</span> <span class="n">eps</span><span class="o">=</span><span class="mf">1e-05</span><span class="p">,</span> <span class="n">momentum</span><span class="o">=</span><span class="mf">0.1</span><span class="p">))</span>
     <span class="n">model</span> <span class="o">=</span> <span class="n">RegNet</span><span class="p">(</span><span class="n">block_params</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="k">if</span> <span class="n">arch</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">model_urls</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;No checkpoint is available for model type </span><span class="si">{</span><span class="n">arch</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">)</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="n">arch</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">))</span>
+
     <span class="k">return</span> <span class="n">model</span>
 
 
-<span class="k">def</span> <span class="nf">regnet_y_400mf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;image_classification&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;RegNet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;publication_year&quot;</span><span class="p">:</span> <span class="mi">2020</span><span class="p">,</span>
+    <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">&quot;interpolation&quot;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_Y_400MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_400mf-c65dace8.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">4344144</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#small-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">74.046</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">91.716</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_400mf-e6988f5f.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">4344144</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">75.804</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">92.742</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_Y_800MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_800mf-1b27b58c.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">6432512</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#small-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">76.420</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.136</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_800mf-58fc7688.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">6432512</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.828</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.502</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_Y_1_6GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_1_6gf-b11a554e.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">11202430</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#small-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.950</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.966</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_1_6gf-0d7bc02a.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">11202430</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.876</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.444</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_Y_3_2GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_3_2gf-b5a9779c.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">19436338</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#medium-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.948</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.576</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_3_2gf-9180c971.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">19436338</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.982</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.972</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_Y_8GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_8gf-d0d0e4a8.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">39381472</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#medium-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.032</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.048</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_8gf-dc2b1b54.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">39381472</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.828</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.330</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_Y_16GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_16gf-9e6ed7dd.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">83590140</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#large-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.424</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.240</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_16gf-3e4a00f9.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">83590140</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.886</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.328</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_Y_32GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_32gf-4dee3f7a.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">145046770</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#large-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.878</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.340</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_32gf-8db6d4b5.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">145046770</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">83.368</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.498</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_Y_128GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="c1"># weights are not available yet.</span>
+    <span class="k">pass</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_X_400MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_400mf-adf1edd5.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5495976</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#small-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">72.834</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">90.950</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_400mf-62229a5f.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5495976</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">74.864</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">92.322</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_X_800MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_800mf-ad17e45c.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">7259656</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#small-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">75.212</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">92.348</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_800mf-94a99ebd.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">7259656</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.522</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.826</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_X_1_6GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_1_6gf-e3633e7f.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">9190136</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#small-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.040</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.440</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_1_6gf-a12f2b72.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">9190136</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">79.668</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.922</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_X_3_2GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_3_2gf-f342aeae.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">15296552</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#medium-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.364</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.992</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_3_2gf-7071aa85.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">15296552</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.196</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.430</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_X_8GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_8gf-03ceed89.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">39572648</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#medium-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">79.344</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.686</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_8gf-2b70d774.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">39572648</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.682</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.678</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_X_16GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_16gf-2007eb11.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">54278536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#medium-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.058</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.944</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_16gf-ba3796d7.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">54278536</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.716</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.196</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<span class="k">class</span> <span class="nc">RegNet_X_32GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_32gf-9d47f8d0.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">107811560</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#large-models&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.622</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.248</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_x_32gf-6eb8fdc6.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">107811560</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">83.014</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.288</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<div class="viewcode-block" id="regnet_y_400mf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_y_400mf.html#torchvision.models.regnet_y_400mf">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_400MF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_y_400mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_400MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_400MF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_Y_400MF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_Y_400MF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">27.89</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.09</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span> <span class="n">se_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_y_400mf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">regnet_y_800mf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<div class="viewcode-block" id="regnet_y_800mf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_y_800mf.html#torchvision.models.regnet_y_800mf">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_800MF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_y_800mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_800MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_800MF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_Y_800MF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_Y_800MF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">14</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">56</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">38.84</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.4</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">se_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_y_800mf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="regnet_y_1_6gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_y_1_6gf.html#torchvision.models.regnet_y_1_6gf">[docs]</a><span class="k">def</span> <span class="nf">regnet_y_1_6gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_1_6GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_y_1_6gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_1_6GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_1.6GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_Y_1_6GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_Y_1_6GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span>
         <span class="n">depth</span><span class="o">=</span><span class="mi">27</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">20.71</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.65</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">se_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_y_1_6gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">regnet_y_3_2gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<div class="viewcode-block" id="regnet_y_3_2gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_y_3_2gf.html#torchvision.models.regnet_y_3_2gf">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_3_2GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_y_3_2gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_3_2GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_3.2GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_Y_3_2GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_Y_3_2GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span>
         <span class="n">depth</span><span class="o">=</span><span class="mi">21</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">42.63</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.66</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">se_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_y_3_2gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<span class="k">def</span> <span class="nf">regnet_y_8gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<div class="viewcode-block" id="regnet_y_8gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_y_8gf.html#torchvision.models.regnet_y_8gf">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_8GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_y_8gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_8GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_8GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_Y_8GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_Y_8GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span>
         <span class="n">depth</span><span class="o">=</span><span class="mi">17</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">192</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">76.82</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.19</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">56</span><span class="p">,</span> <span class="n">se_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_y_8gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="regnet_y_16gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_y_16gf.html#torchvision.models.regnet_y_16gf">[docs]</a><span class="k">def</span> <span class="nf">regnet_y_16gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_16GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_y_16gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_16GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_16GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_Y_16GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_Y_16GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span>
         <span class="n">depth</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">200</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">106.23</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.48</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">112</span><span class="p">,</span> <span class="n">se_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_y_16gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">regnet_y_32gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<div class="viewcode-block" id="regnet_y_32gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_y_32gf.html#torchvision.models.regnet_y_32gf">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_Y_32GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_y_32gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_32GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_32GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_Y_32GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_Y_32GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span>
         <span class="n">depth</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">232</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">115.89</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.53</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">232</span><span class="p">,</span> <span class="n">se_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_y_32gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="regnet_y_128gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_y_128gf.html#torchvision.models.regnet_y_128gf">[docs]</a><span class="k">def</span> <span class="nf">regnet_y_128gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_y_128gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_Y_128GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetY_128GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 <span class="sd">    NOTE: Pretrained weights are not available for this model.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights (RegNet_Y_128GF_Weights, optional): The pretrained weights for the model</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_Y_128GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span>
         <span class="n">depth</span><span class="o">=</span><span class="mi">27</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">456</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">160.83</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.52</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">264</span><span class="p">,</span> <span class="n">se_ratio</span><span class="o">=</span><span class="mf">0.25</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span>
     <span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_y_128gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="regnet_x_400mf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_x_400mf.html#torchvision.models.regnet_x_400mf">[docs]</a><span class="k">def</span> <span class="nf">regnet_x_400mf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_400MF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_x_400mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_400MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_400MF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_X_400MF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_X_400MF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">24.48</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.54</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_x_400mf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="regnet_x_800mf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_x_800mf.html#torchvision.models.regnet_x_800mf">[docs]</a><span class="k">def</span> <span class="nf">regnet_x_800mf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_800MF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_x_800mf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_800MF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_800MF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_X_800MF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_X_800MF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">56</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">35.73</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.28</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_x_800mf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">regnet_x_1_6gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_1_6GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_x_1_6gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_1_6GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_1.6GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_X_1_6GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_X_1_6GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">18</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">34.01</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.25</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">24</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_x_1_6gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="regnet_x_3_2gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_x_3_2gf.html#torchvision.models.regnet_x_3_2gf">[docs]</a><span class="k">def</span> <span class="nf">regnet_x_3_2gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_3_2GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_x_3_2gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_3_2GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_3.2GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_X_3_2GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_X_3_2GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">25</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">88</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">26.31</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.25</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">48</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_x_3_2gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="regnet_x_8gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_x_8gf.html#torchvision.models.regnet_x_8gf">[docs]</a><span class="k">def</span> <span class="nf">regnet_x_8gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_8GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_x_8gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_8GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_8GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_X_8GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_X_8GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">23</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">80</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">49.56</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.88</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">120</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_x_8gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">regnet_x_16gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_16GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_x_16gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_16GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_16GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_X_16GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_X_16GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">22</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">216</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">55.59</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.1</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">128</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_x_16gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="regnet_x_32gf"><a class="viewcode-back" href="../../../generated/torchvision.models.regnet_x_32gf.html#torchvision.models.regnet_x_32gf">[docs]</a><span class="k">def</span> <span class="nf">regnet_x_32gf</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">RegNet_X_32GF_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">regnet_x_32gf</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">RegNet_X_32GF_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RegNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a RegNetX_32GF architecture from</span>
 <span class="sd">    `&quot;Designing Network Design Spaces&quot; &lt;https://arxiv.org/abs/2003.13678&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (RegNet_X_32GF_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">RegNet_X_32GF_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="n">params</span> <span class="o">=</span> <span class="n">BlockParams</span><span class="o">.</span><span class="n">from_init_params</span><span class="p">(</span><span class="n">depth</span><span class="o">=</span><span class="mi">23</span><span class="p">,</span> <span class="n">w_0</span><span class="o">=</span><span class="mi">320</span><span class="p">,</span> <span class="n">w_a</span><span class="o">=</span><span class="mf">69.86</span><span class="p">,</span> <span class="n">w_m</span><span class="o">=</span><span class="mf">2.0</span><span class="p">,</span> <span class="n">group_width</span><span class="o">=</span><span class="mi">168</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="s2">&quot;regnet_x_32gf&quot;</span><span class="p">,</span> <span class="n">params</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
-
-
-<span class="c1"># TODO(kazhang): Add RegNetZ_500MF and RegNetZ_4GF</span>
+    <span class="k">return</span> <span class="n">_regnet</span><span class="p">(</span><span class="n">params</span><span class="p">,</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 </pre></div>
 
              </article>

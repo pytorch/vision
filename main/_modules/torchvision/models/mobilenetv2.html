@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+fc06a94 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+6f506d3 ) &#x25BC</a>
     </div>
     
 
@@ -322,24 +322,22 @@
               
   <h1>Source code for torchvision.models.mobilenetv2</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">warnings</span>
+<span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">List</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
 
-<span class="kn">from</span> <span class="nn">.._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
 <span class="kn">from</span> <span class="nn">..ops.misc</span> <span class="kn">import</span> <span class="n">Conv2dNormActivation</span>
+<span class="kn">from</span> <span class="nn">..transforms._presets</span> <span class="kn">import</span> <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">InterpolationMode</span>
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_make_divisible</span>
+<span class="kn">from</span> <span class="nn">._api</span> <span class="kn">import</span> <span class="n">WeightsEnum</span><span class="p">,</span> <span class="n">Weights</span>
+<span class="kn">from</span> <span class="nn">._meta</span> <span class="kn">import</span> <span class="n">_IMAGENET_CATEGORIES</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">handle_legacy_interface</span><span class="p">,</span> <span class="n">_ovewrite_named_param</span><span class="p">,</span> <span class="n">_make_divisible</span>
 
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MobileNetV2&quot;</span><span class="p">,</span> <span class="s2">&quot;mobilenet_v2&quot;</span><span class="p">]</span>
-
-
-<span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;mobilenet_v2&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/mobilenet_v2-b0353104.pth&quot;</span><span class="p">,</span>
-<span class="p">}</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;MobileNetV2&quot;</span><span class="p">,</span> <span class="s2">&quot;MobileNet_V2_Weights&quot;</span><span class="p">,</span> <span class="s2">&quot;mobilenet_v2&quot;</span><span class="p">]</span>
 
 
 <span class="c1"># necessary for backwards compatibility</span>
@@ -519,19 +517,64 @@
         <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_forward_impl</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="mobilenet_v2"><a class="viewcode-back" href="../../../generated/torchvision.models.mobilenet_v2.html#torchvision.models.mobilenet_v2">[docs]</a><span class="k">def</span> <span class="nf">mobilenet_v2</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MobileNetV2</span><span class="p">:</span>
+<span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;image_classification&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;MobileNetV2&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;publication_year&quot;</span><span class="p">:</span> <span class="mi">2018</span><span class="p">,</span>
+    <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">3504872</span><span class="p">,</span>
+    <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
+    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">&quot;interpolation&quot;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">MobileNet_V2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/mobilenet_v2-b0353104.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">71.878</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">90.286</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/mobilenet_v2-7ebf99e0.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">72.154</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">90.822</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+
+
+<div class="viewcode-block" id="mobilenet_v2"><a class="viewcode-back" href="../../../generated/torchvision.models.mobilenet_v2.html#torchvision.models.mobilenet_v2">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">MobileNet_V2_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">mobilenet_v2</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MobileNet_V2_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MobileNetV2</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Constructs a MobileNetV2 architecture from</span>
 <span class="sd">    `&quot;MobileNetV2: Inverted Residuals and Linear Bottlenecks&quot; &lt;https://arxiv.org/abs/1801.04381&gt;`_.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on ImageNet</span>
+<span class="sd">        weights (MobileNet_V2_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">MobileNet_V2_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+
     <span class="n">model</span> <span class="o">=</span> <span class="n">MobileNetV2</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
-    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="s2">&quot;mobilenet_v2&quot;</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">))</span>
+
     <span class="k">return</span> <span class="n">model</span></div>
 </pre></div>
 

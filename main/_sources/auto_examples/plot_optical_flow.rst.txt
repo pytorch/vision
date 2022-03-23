@@ -33,7 +33,7 @@ The following example illustrates how torchvision can be used to predict flows
 using our implementation of the RAFT model. We will also see how to convert the
 predicted flows to RGB images for visualization.
 
-.. GENERATED FROM PYTHON SOURCE LINES 17-46
+.. GENERATED FROM PYTHON SOURCE LINES 17-45
 
 .. code-block:: default
 
@@ -42,7 +42,6 @@ predicted flows to RGB images for visualization.
     import torch
     import matplotlib.pyplot as plt
     import torchvision.transforms.functional as F
-    import torchvision.transforms as T
 
 
     plt.rcParams["savefig.bbox"] = "tight"
@@ -73,7 +72,7 @@ predicted flows to RGB images for visualization.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 47-55
+.. GENERATED FROM PYTHON SOURCE LINES 46-54
 
 Reading Videos Using Torchvision
 --------------------------------
@@ -84,7 +83,7 @@ The video we will use here is free of use from `pexels.com
 <https://www.pexels.com/video/a-man-playing-a-game-of-basketball-5192157/>`_,
 credits go to `Pavel Danilyuk <https://www.pexels.com/@pavel-danilyuk>`_.
 
-.. GENERATED FROM PYTHON SOURCE LINES 55-66
+.. GENERATED FROM PYTHON SOURCE LINES 54-65
 
 .. code-block:: default
 
@@ -106,7 +105,7 @@ credits go to `Pavel Danilyuk <https://www.pexels.com/@pavel-danilyuk>`_.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 67-74
+.. GENERATED FROM PYTHON SOURCE LINES 66-73
 
 :func:`~torchvision.io.read_video` returns the video frames, audio frames and
 the metadata associated with the video. In our case, we only need the video
@@ -116,7 +115,7 @@ Here we will just make 2 predictions between 2 pre-selected pairs of frames,
 namely frames (100, 101) and (150, 151). Each of these pairs corresponds to a
 single model input.
 
-.. GENERATED FROM PYTHON SOURCE LINES 74-84
+.. GENERATED FROM PYTHON SOURCE LINES 73-83
 
 .. code-block:: default
 
@@ -142,7 +141,7 @@ single model input.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 85-90
+.. GENERATED FROM PYTHON SOURCE LINES 84-89
 
 The RAFT model that we will use accepts RGB float images with pixel values in
 [-1, 1]. The frames we got from :func:`~torchvision.io.read_video` are int
@@ -150,29 +149,24 @@ images with values in [0, 255], so we will have to pre-process them. We also
 reduce the image sizes for the example to run faster. Image dimension must be
 divisible by 8.
 
-.. GENERATED FROM PYTHON SOURCE LINES 90-113
+.. GENERATED FROM PYTHON SOURCE LINES 89-107
 
 .. code-block:: default
 
 
+    from torchvision.models.optical_flow import Raft_Large_Weights
 
-    def preprocess(batch):
-        transforms = T.Compose(
-            [
-                T.ConvertImageDtype(torch.float32),
-                T.Normalize(mean=0.5, std=0.5),  # map [0, 1] into [-1, 1]
-                T.Resize(size=(520, 960)),
-            ]
-        )
-        batch = transforms(batch)
-        return batch
+    weights = Raft_Large_Weights.DEFAULT
+    transforms = weights.transforms()
 
 
-    # If you can, run this example on a GPU, it will be a lot faster.
-    device = "cuda" if torch.cuda.is_available() else "cpu"
+    def preprocess(img1_batch, img2_batch):
+        img1_batch = F.resize(img1_batch, size=[520, 960])
+        img2_batch = F.resize(img2_batch, size=[520, 960])
+        return transforms(img1_batch, img2_batch)
 
-    img1_batch = preprocess(img1_batch).to(device)
-    img2_batch = preprocess(img2_batch).to(device)
+
+    img1_batch, img2_batch = preprocess(img1_batch, img2_batch)
 
     print(f"shape = {img1_batch.shape}, dtype = {img1_batch.dtype}")
 
@@ -192,7 +186,7 @@ divisible by 8.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 114-121
+.. GENERATED FROM PYTHON SOURCE LINES 108-115
 
 Estimating Optical flow using RAFT
 ----------------------------------
@@ -202,14 +196,17 @@ architecture as the one described in the `original paper <https://arxiv.org/abs/
 We also provide the :func:`~torchvision.models.optical_flow.raft_small` model
 builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
-.. GENERATED FROM PYTHON SOURCE LINES 121-131
+.. GENERATED FROM PYTHON SOURCE LINES 115-128
 
 .. code-block:: default
 
 
     from torchvision.models.optical_flow import raft_large
 
-    model = raft_large(pretrained=True, progress=False).to(device)
+    # If you can, run this example on a GPU, it will be a lot faster.
+    device = "cuda" if torch.cuda.is_available() else "cpu"
+
+    model = raft_large(weights=Raft_Large_Weights.DEFAULT, progress=False).to(device)
     model = model.eval()
 
     list_of_flows = model(img1_batch.to(device), img2_batch.to(device))
@@ -232,7 +229,7 @@ builder, which is smaller and faster to run, sacrificing a bit of accuracy.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 132-144
+.. GENERATED FROM PYTHON SOURCE LINES 129-141
 
 The RAFT model outputs lists of predicted flows where each entry is a
 (N, 2, H, W) batch of predicted flows that corresponds to a given "iteration"
@@ -247,7 +244,7 @@ vertical displacement of each pixel from the first image to the second image.
 Note that the predicted flows are in "pixel" unit, they are not normalized
 w.r.t. the dimensions of the images.
 
-.. GENERATED FROM PYTHON SOURCE LINES 144-150
+.. GENERATED FROM PYTHON SOURCE LINES 141-147
 
 .. code-block:: default
 
@@ -269,12 +266,12 @@ w.r.t. the dimensions of the images.
 
     dtype = torch.float32
     shape = torch.Size([2, 2, 520, 960]) = (N, 2, H, W)
-    min = -3.862499713897705, max = 6.464077949523926
+    min = -3.8997113704681396, max = 6.40040922164917
 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 151-161
+.. GENERATED FROM PYTHON SOURCE LINES 148-158
 
 Visualizing predicted flows
 ---------------------------
@@ -287,7 +284,7 @@ the ball and the player. Note in particular the different predicted direction
 of the ball in the first image (going to the left) and in the second image
 (going up).
 
-.. GENERATED FROM PYTHON SOURCE LINES 161-172
+.. GENERATED FROM PYTHON SOURCE LINES 158-169
 
 .. code-block:: default
 
@@ -314,7 +311,7 @@ of the ball in the first image (going to the left) and in the second image
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 173-181
+.. GENERATED FROM PYTHON SOURCE LINES 170-178
 
 Bonus: Creating GIFs of predicted flows
 ---------------------------------------
@@ -325,7 +322,7 @@ snippet that can get you started with this. We comment out the code, because
 this example is being rendered on a machine without a GPU, and it would take
 too long to run it.
 
-.. GENERATED FROM PYTHON SOURCE LINES 181-194
+.. GENERATED FROM PYTHON SOURCE LINES 178-190
 
 .. code-block:: default
 
@@ -333,10 +330,9 @@ too long to run it.
     # from torchvision.io import write_jpeg
     # for i, (img1, img2) in enumerate(zip(frames, frames[1:])):
     #     # Note: it would be faster to predict batches of flows instead of individual flows
-    #     img1 = preprocess(img1[None]).to(device)
-    #     img2 = preprocess(img2[None]).to(device)
+    #     img1, img2 = preprocess(img1, img2)
 
-    #     list_of_flows = model(img1_batch, img2_batch)
+    #     list_of_flows = model(img1.to(device), img1.to(device))
     #     predicted_flow = list_of_flows[-1][0]
     #     flow_img = flow_to_image(predicted_flow).to("cpu")
     #     output_folder = "/tmp/"  # Update this to the folder of your choice
@@ -349,7 +345,7 @@ too long to run it.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 195-199
+.. GENERATED FROM PYTHON SOURCE LINES 191-195
 
 Once the .jpg flow images are saved, you can convert them into a video or a
 GIF using ffmpeg with e.g.:
@@ -359,7 +355,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  10.431 seconds)
+   **Total running time of the script:** ( 0 minutes  7.853 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:

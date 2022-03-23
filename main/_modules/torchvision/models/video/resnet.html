@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+fc06a94 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+6f506d3 ) &#x25BC</a>
     </div>
     
 
@@ -321,21 +321,28 @@
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
   <h1>Source code for torchvision.models.video.resnet</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
+<span></span><span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Tuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Type</span><span class="p">,</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Union</span>
 
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 
-<span class="kn">from</span> <span class="nn">..._internally_replaced_utils</span> <span class="kn">import</span> <span class="n">load_state_dict_from_url</span>
+<span class="kn">from</span> <span class="nn">...transforms._presets</span> <span class="kn">import</span> <span class="n">VideoClassification</span><span class="p">,</span> <span class="n">InterpolationMode</span>
 <span class="kn">from</span> <span class="nn">...utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
+<span class="kn">from</span> <span class="nn">.._api</span> <span class="kn">import</span> <span class="n">WeightsEnum</span><span class="p">,</span> <span class="n">Weights</span>
+<span class="kn">from</span> <span class="nn">.._meta</span> <span class="kn">import</span> <span class="n">_KINETICS400_CATEGORIES</span>
+<span class="kn">from</span> <span class="nn">.._utils</span> <span class="kn">import</span> <span class="n">handle_legacy_interface</span><span class="p">,</span> <span class="n">_ovewrite_named_param</span>
 
-<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span><span class="s2">&quot;r3d_18&quot;</span><span class="p">,</span> <span class="s2">&quot;mc3_18&quot;</span><span class="p">,</span> <span class="s2">&quot;r2plus1d_18&quot;</span><span class="p">]</span>
 
-<span class="n">model_urls</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;r3d_18&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/r3d_18-b3b3357e.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;mc3_18&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/mc3_18-a90a0ba3.pth&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;r2plus1d_18&quot;</span><span class="p">:</span> <span class="s2">&quot;https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth&quot;</span><span class="p">,</span>
-<span class="p">}</span>
+<span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
+    <span class="s2">&quot;VideoResNet&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;R3D_18_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MC3_18_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;R2Plus1D_18_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;r3d_18&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;mc3_18&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;r2plus1d_18&quot;</span><span class="p">,</span>
+<span class="p">]</span>
 
 
 <span class="k">class</span> <span class="nc">Conv3DSimple</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Conv3d</span><span class="p">):</span>
@@ -604,81 +611,153 @@
         <span class="k">return</span> <span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">(</span><span class="o">*</span><span class="n">layers</span><span class="p">)</span>
 
 
-<span class="k">def</span> <span class="nf">_video_resnet</span><span class="p">(</span><span class="n">arch</span><span class="p">:</span> <span class="nb">str</span><span class="p">,</span> <span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VideoResNet</span><span class="p">:</span>
-    <span class="n">model</span> <span class="o">=</span> <span class="n">VideoResNet</span><span class="p">(</span><span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+<span class="k">def</span> <span class="nf">_video_resnet</span><span class="p">(</span>
+    <span class="n">block</span><span class="p">:</span> <span class="n">Type</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">BasicBlock</span><span class="p">,</span> <span class="n">Bottleneck</span><span class="p">]],</span>
+    <span class="n">conv_makers</span><span class="p">:</span> <span class="n">Sequence</span><span class="p">[</span><span class="n">Type</span><span class="p">[</span><span class="n">Union</span><span class="p">[</span><span class="n">Conv3DSimple</span><span class="p">,</span> <span class="n">Conv3DNoTemporal</span><span class="p">,</span> <span class="n">Conv2Plus1D</span><span class="p">]]],</span>
+    <span class="n">layers</span><span class="p">:</span> <span class="n">List</span><span class="p">[</span><span class="nb">int</span><span class="p">],</span>
+    <span class="n">stem</span><span class="p">:</span> <span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">],</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">WeightsEnum</span><span class="p">],</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VideoResNet</span><span class="p">:</span>
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
 
-    <span class="k">if</span> <span class="n">pretrained</span><span class="p">:</span>
-        <span class="n">state_dict</span> <span class="o">=</span> <span class="n">load_state_dict_from_url</span><span class="p">(</span><span class="n">model_urls</span><span class="p">[</span><span class="n">arch</span><span class="p">],</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
-        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">state_dict</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">VideoResNet</span><span class="p">(</span><span class="n">block</span><span class="p">,</span> <span class="n">conv_makers</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">stem</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">))</span>
+
     <span class="k">return</span> <span class="n">model</span>
 
 
-<div class="viewcode-block" id="r3d_18"><a class="viewcode-back" href="../../../../generated/torchvision.models.video.r3d_18.html#torchvision.models.video.r3d_18">[docs]</a><span class="k">def</span> <span class="nf">r3d_18</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VideoResNet</span><span class="p">:</span>
+<span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;video_classification&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;publication_year&quot;</span><span class="p">:</span> <span class="mi">2017</span><span class="p">,</span>
+    <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">112</span><span class="p">,</span> <span class="mi">112</span><span class="p">),</span>
+    <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span>
+    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_KINETICS400_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">&quot;interpolation&quot;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
+    <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/video_classification&quot;</span><span class="p">,</span>
+<span class="p">}</span>
+
+
+<span class="k">class</span> <span class="nc">R3D_18_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/r3d_18-b3b3357e.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">VideoClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="p">(</span><span class="mi">112</span><span class="p">,</span> <span class="mi">112</span><span class="p">),</span> <span class="n">resize_size</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">171</span><span class="p">)),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;R3D&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">33371472</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">52.75</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">75.45</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span>
+
+
+<span class="k">class</span> <span class="nc">MC3_18_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/mc3_18-a90a0ba3.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">VideoClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="p">(</span><span class="mi">112</span><span class="p">,</span> <span class="mi">112</span><span class="p">),</span> <span class="n">resize_size</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">171</span><span class="p">)),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;MC3&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">11695440</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">53.90</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">76.29</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span>
+
+
+<span class="k">class</span> <span class="nc">R2Plus1D_18_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">KINETICS400_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/r2plus1d_18-91a641e6.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">VideoClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="p">(</span><span class="mi">112</span><span class="p">,</span> <span class="mi">112</span><span class="p">),</span> <span class="n">resize_size</span><span class="o">=</span><span class="p">(</span><span class="mi">128</span><span class="p">,</span> <span class="mi">171</span><span class="p">)),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;R(2+1)D&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">31505325</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">57.50</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">78.81</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">KINETICS400_V1</span>
+
+
+<div class="viewcode-block" id="r3d_18"><a class="viewcode-back" href="../../../../generated/torchvision.models.video.r3d_18.html#torchvision.models.video.r3d_18">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">R3D_18_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">r3d_18</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">R3D_18_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VideoResNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Construct 18 layer Resnet3D model as in</span>
 <span class="sd">    https://arxiv.org/abs/1711.11248</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on Kinetics-400</span>
+<span class="sd">        weights (R3D_18_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        nn.Module: R3D-18 network</span>
+<span class="sd">        VideoResNet: R3D-18 network</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">R3D_18_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">_video_resnet</span><span class="p">(</span>
-        <span class="s2">&quot;r3d_18&quot;</span><span class="p">,</span>
-        <span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">BasicBlock</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">Conv3DSimple</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+        <span class="n">BasicStem</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">,</span>
         <span class="n">progress</span><span class="p">,</span>
-        <span class="n">block</span><span class="o">=</span><span class="n">BasicBlock</span><span class="p">,</span>
-        <span class="n">conv_makers</span><span class="o">=</span><span class="p">[</span><span class="n">Conv3DSimple</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span>
-        <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-        <span class="n">stem</span><span class="o">=</span><span class="n">BasicStem</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="mc3_18"><a class="viewcode-back" href="../../../../generated/torchvision.models.video.mc3_18.html#torchvision.models.video.mc3_18">[docs]</a><span class="k">def</span> <span class="nf">mc3_18</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VideoResNet</span><span class="p">:</span>
+<div class="viewcode-block" id="mc3_18"><a class="viewcode-back" href="../../../../generated/torchvision.models.video.mc3_18.html#torchvision.models.video.mc3_18">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">MC3_18_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">mc3_18</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MC3_18_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VideoResNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Constructor for 18 layer Mixed Convolution network as in</span>
 <span class="sd">    https://arxiv.org/abs/1711.11248</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on Kinetics-400</span>
+<span class="sd">        weights (MC3_18_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        nn.Module: MC3 Network definition</span>
+<span class="sd">        VideoResNet: MC3 Network definition</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">MC3_18_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">_video_resnet</span><span class="p">(</span>
-        <span class="s2">&quot;mc3_18&quot;</span><span class="p">,</span>
-        <span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">BasicBlock</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">Conv3DSimple</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">Conv3DNoTemporal</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span>  <span class="c1"># type: ignore[list-item]</span>
+        <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+        <span class="n">BasicStem</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">,</span>
         <span class="n">progress</span><span class="p">,</span>
-        <span class="n">block</span><span class="o">=</span><span class="n">BasicBlock</span><span class="p">,</span>
-        <span class="n">conv_makers</span><span class="o">=</span><span class="p">[</span><span class="n">Conv3DSimple</span><span class="p">]</span> <span class="o">+</span> <span class="p">[</span><span class="n">Conv3DNoTemporal</span><span class="p">]</span> <span class="o">*</span> <span class="mi">3</span><span class="p">,</span>  <span class="c1"># type: ignore[list-item]</span>
-        <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-        <span class="n">stem</span><span class="o">=</span><span class="n">BasicStem</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="r2plus1d_18"><a class="viewcode-back" href="../../../../generated/torchvision.models.video.r2plus1d_18.html#torchvision.models.video.r2plus1d_18">[docs]</a><span class="k">def</span> <span class="nf">r2plus1d_18</span><span class="p">(</span><span class="n">pretrained</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VideoResNet</span><span class="p">:</span>
+<div class="viewcode-block" id="r2plus1d_18"><a class="viewcode-back" href="../../../../generated/torchvision.models.video.r2plus1d_18.html#torchvision.models.video.r2plus1d_18">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">R2Plus1D_18_Weights</span><span class="o">.</span><span class="n">KINETICS400_V1</span><span class="p">))</span>
+<span class="k">def</span> <span class="nf">r2plus1d_18</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">R2Plus1D_18_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VideoResNet</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;Constructor for the 18 layer deep R(2+1)D network as in</span>
 <span class="sd">    https://arxiv.org/abs/1711.11248</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        pretrained (bool): If True, returns a model pre-trained on Kinetics-400</span>
+<span class="sd">        weights (R2Plus1D_18_Weights, optional): The pretrained weights for the model</span>
 <span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
 
 <span class="sd">    Returns:</span>
-<span class="sd">        nn.Module: R(2+1)D-18 network</span>
+<span class="sd">        VideoResNet: R(2+1)D-18 network</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">R2Plus1D_18_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+
     <span class="k">return</span> <span class="n">_video_resnet</span><span class="p">(</span>
-        <span class="s2">&quot;r2plus1d_18&quot;</span><span class="p">,</span>
-        <span class="n">pretrained</span><span class="p">,</span>
+        <span class="n">BasicBlock</span><span class="p">,</span>
+        <span class="p">[</span><span class="n">Conv2Plus1D</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span>
+        <span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
+        <span class="n">R2Plus1dStem</span><span class="p">,</span>
+        <span class="n">weights</span><span class="p">,</span>
         <span class="n">progress</span><span class="p">,</span>
-        <span class="n">block</span><span class="o">=</span><span class="n">BasicBlock</span><span class="p">,</span>
-        <span class="n">conv_makers</span><span class="o">=</span><span class="p">[</span><span class="n">Conv2Plus1D</span><span class="p">]</span> <span class="o">*</span> <span class="mi">4</span><span class="p">,</span>
-        <span class="n">layers</span><span class="o">=</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">],</span>
-        <span class="n">stem</span><span class="o">=</span><span class="n">R2Plus1dStem</span><span class="p">,</span>
         <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
     <span class="p">)</span></div>
 </pre></div>
