@@ -58,7 +58,7 @@ class GeneralizedRCNN(nn.Module):
 
         """
         if self.training:
-            assert targets is not None
+            torch._assert(targets is not None, "targets should not be none when in training mode")
 
             for target in targets:
                 boxes = target["boxes"]
@@ -71,7 +71,10 @@ class GeneralizedRCNN(nn.Module):
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            assert len(val) == 2
+            torch._assert(
+                len(val) == 2,
+                f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}",
+            )
             original_image_sizes.append((val[0], val[1]))
 
         images, targets = self.transform(images, targets)

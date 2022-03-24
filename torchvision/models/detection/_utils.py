@@ -159,8 +159,14 @@ class BoxCoder:
         return targets
 
     def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
-        assert isinstance(boxes, (list, tuple))
-        assert isinstance(rel_codes, torch.Tensor)
+        torch._assert(
+            isinstance(boxes, (list, tuple)),
+            f"This function expects boxes of type list or tuple, instead  got {type(boxes)}",
+        )
+        torch._assert(
+            isinstance(rel_codes, torch.Tensor),
+            f"This function expects rel_codes of type torch.Tensor, instead  got {type(rel_codes)}",
+        )
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         box_sum = 0
@@ -333,7 +339,7 @@ class Matcher:
         """
         self.BELOW_LOW_THRESHOLD = -1
         self.BETWEEN_THRESHOLDS = -2
-        assert low_threshold <= high_threshold
+        torch._assert(low_threshold <= high_threshold, "low_threshold should be <= high_threshold")
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
@@ -371,7 +377,7 @@ class Matcher:
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
-            assert all_matches is not None
+            torch._assert(all_matches is not None, "all_matches should not be None")
             self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches

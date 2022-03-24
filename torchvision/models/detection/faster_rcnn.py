@@ -1,3 +1,4 @@
+import torch
 import torch.nn.functional as F
 from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
@@ -187,9 +188,9 @@ class FasterRCNN(GeneralizedRCNN):
                 "same for all the levels)"
             )
 
-        if not isinstance(rpn_anchor_generator, (AnchorGenerator, type(None))):
+        if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
             raise TypeError(
-                f"rpn_anchor_generator should be of type AnchorGenerator or None instead of {type(rpn_anchor_generator)}"
+                f"anchor_generator should be of type AnchorGenerator or None, instead  got {type(anchor_generator)}"
             )
         if not isinstance(box_roi_pool, (MultiScaleRoIAlign, type(None))):
             raise TypeError(
@@ -305,7 +306,10 @@ class FastRCNNPredictor(nn.Module):
 
     def forward(self, x):
         if x.dim() == 4:
-            assert list(x.shape[2:]) == [1, 1]
+            torch._assert(
+                list(x.shape[2:]) == [1, 1],
+                f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}",
+            )
         x = x.flatten(start_dim=1)
         scores = self.cls_score(x)
         bbox_deltas = self.bbox_pred(x)
