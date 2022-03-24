@@ -82,6 +82,7 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
         pkt->pts, inputCtx_->streams[format_.stream]->time_base, timeBaseQ);
   }
 
+  av_packet_free(&avPacket);
   return result;
 }
 

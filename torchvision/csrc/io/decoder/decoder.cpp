@@ -490,7 +490,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   avPacket = av_packet_alloc();
   if (avPacket == nullptr) {
     LOG(ERROR) << "decoder as not able to allocate the packet.";
-    return AVERROR_BUFFER_TOO_SMALL;
+    return AVERROR(ENOMEM);
   }
   avPacket->data = nullptr;
   avPacket->size = 0;
@@ -499,7 +499,6 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       std::chrono::milliseconds(workingTimeInMs);
   // return true if elapsed time less than timeout
   auto watcher = [end]() -> bool {
-    av_packet_free(&avPacket);
     return std::chrono::steady_clock::now() <= end;
   };
 
