@@ -440,7 +440,7 @@ def swin_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
     )
 
 
-def swin_samll(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+def swin_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_small architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
