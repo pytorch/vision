@@ -488,7 +488,8 @@ class RetinaNet(nn.Module):
 
         """
         if self.training:
-            torch._assert(targets is not None, "targets should not be none when in training mode")
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
             for target in targets:
                 boxes = target["boxes"]
                 torch._assert(
@@ -544,7 +545,8 @@ class RetinaNet(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            torch._assert(targets is not None, "targets should not be none when in training mode")
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
             # compute the losses
             losses = self.compute_loss(targets, head_outputs, anchors)
         else:

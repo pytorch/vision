@@ -311,7 +311,8 @@ class SSD(nn.Module):
             raise ValueError("In training mode, targets should be passed")
 
         if self.training:
-            torch._assert(targets is not None, "targets should not be none when in training mode")
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
@@ -362,7 +363,8 @@ class SSD(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            torch._assert(targets is not None, "targets should not be none when in training mode")
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
             matched_idxs = []
             for anchors_per_image, targets_per_image in zip(anchors, targets):
                 if targets_per_image["boxes"].numel() == 0:

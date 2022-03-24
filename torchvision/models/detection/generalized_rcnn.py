@@ -58,7 +58,8 @@ class GeneralizedRCNN(nn.Module):
 
         """
         if self.training:
-            torch._assert(targets is not None, "targets should not be none when in training mode")
+            if targets is None:
+                torch._assert(True, "targets should not be none when in training mode")
 
             for target in targets:
                 boxes = target["boxes"]
