@@ -1502,7 +1502,7 @@ class USPSMockData:
 
 
 @register_mock
-def USPS(info, root, config):
+def usps(info, root, config):
     num_samples = {"train": 15, "test": 7}[config["split"]]
 
     train = config.split == "train"

@@ -182,7 +182,7 @@ class TestGTSRB:
             assert sample["label"] == label_from_path
 
 
-@parametrize_dataset_mocks(DATASET_MOCKS["USPS"])
+@parametrize_dataset_mocks(DATASET_MOCKS["usps"])
 class TestUSPS:
     def test_label_matches_path(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
