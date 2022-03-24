@@ -490,7 +490,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   avPacket = av_packet_alloc();
   if (avPacket == nullptr) {
     LOG(ERROR) << "decoder as not able to allocate the packet.";
-    return ENOMEM;
+    return AVERROR_BUFFER_TOO_SMALL;
   }
   avPacket->data = nullptr;
   avPacket->size = 0;
