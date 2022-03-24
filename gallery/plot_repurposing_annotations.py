@@ -139,12 +139,14 @@ show(drawn_boxes)
 # Here is demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
 
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
+from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
 
-model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
+weights = FasterRCNN_ResNet50_FPN_Weights.DEFAULT
+model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 print(img.size())
 
-img = F.convert_image_dtype(img, torch.float)
+tranforms = weights.transforms()
+img = tranforms(img)
 target = {}
 target["boxes"] = boxes
 target["labels"] = labels = torch.ones((masks.size(0),), dtype=torch.int64)
