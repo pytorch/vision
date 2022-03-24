@@ -217,7 +217,6 @@ class RetinaNetRegressionHead(nn.Module):
         num_anchors (int): number of anchors to be predicted
         norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
     """
-
     _version = 2
 
     __annotations__ = {
