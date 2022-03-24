@@ -1,12 +1,17 @@
+from typing import Any, Optional, Union
+
 import torch
 import torch.nn.functional as F
 from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
-from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import misc as misc_nn_ops
-from ..mobilenetv3 import mobilenet_v3_large
-from ..resnet import resnet50
+from ...transforms._presets import ObjectDetection, InterpolationMode
+from .._api import WeightsEnum, Weights
+from .._meta import _COCO_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
+from ..resnet import ResNet50_Weights, resnet50
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers, _mobilenet_extractor
@@ -18,9 +23,12 @@ from .transform import GeneralizedRCNNTransform
 
 __all__ = [
     "FasterRCNN",
+    "FasterRCNN_ResNet50_FPN_Weights",
+    "FasterRCNN_MobileNet_V3_Large_FPN_Weights",
+    "FasterRCNN_MobileNet_V3_Large_320_FPN_Weights",
     "fasterrcnn_resnet50_fpn",
-    "fasterrcnn_mobilenet_v3_large_320_fpn",
     "fasterrcnn_mobilenet_v3_large_fpn",
+    "fasterrcnn_mobilenet_v3_large_320_fpn",
 ]
 
 
@@ -110,7 +118,7 @@ class FasterRCNN(GeneralizedRCNN):
         >>> from torchvision.models.detection.rpn import AnchorGenerator
         >>> # load a pre-trained model for classification and return
         >>> # only the features
-        >>> backbone = torchvision.models.mobilenet_v2(pretrained=True).features
+        >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # FasterRCNN needs to know the number of
         >>> # output channels in a backbone. For mobilenet_v2, it's 1280
         >>> # so we need to add it here
@@ -317,16 +325,70 @@ class FastRCNNPredictor(nn.Module):
         return scores, bbox_deltas
 
 
-model_urls = {
-    "fasterrcnn_resnet50_fpn_coco": "https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth",
-    "fasterrcnn_mobilenet_v3_large_320_fpn_coco": "https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth",
-    "fasterrcnn_mobilenet_v3_large_fpn_coco": "https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth",
+_COMMON_META = {
+    "task": "image_object_detection",
+    "architecture": "FasterRCNN",
+    "publication_year": 2015,
+    "categories": _COCO_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
+class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_coco-258fb6c6.pth",
+        transforms=ObjectDetection,
+        meta={
+            **_COMMON_META,
+            "num_params": 41755286,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn",
+            "map": 37.0,
+        },
+    )
+    DEFAULT = COCO_V1
+
+
+class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_fpn-fb6a3cc7.pth",
+        transforms=ObjectDetection,
+        meta={
+            **_COMMON_META,
+            "num_params": 19386354,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn",
+            "map": 32.8,
+        },
+    )
+    DEFAULT = COCO_V1
+
+
+class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/fasterrcnn_mobilenet_v3_large_320_fpn-907ea3f9.pth",
+        transforms=ObjectDetection,
+        meta={
+            **_COMMON_META,
+            "num_params": 19386354,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn",
+            "map": 22.8,
+        },
+    )
+    DEFAULT = COCO_V1
+
+
+@handle_legacy_interface(
+    weights=("pretrained", FasterRCNN_ResNet50_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def fasterrcnn_resnet50_fpn(
-    pretrained=False, progress=True, num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs
-):
+    *,
+    weights: Optional[FasterRCNN_ResNet50_FPN_Weights] = None,
+    progress: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+) -> FasterRCNN:
     """
     Constructs a Faster R-CNN model with a ResNet-50-FPN backbone.
 
@@ -363,7 +425,7 @@ def fasterrcnn_resnet50_fpn(
 
     Example::
 
-        >>> model = torchvision.models.detection.fasterrcnn_resnet50_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.fasterrcnn_resnet50_fpn(weights=FasterRCNN_ResNet50_FPN_Weights.DEFAULT)
         >>> # For training
         >>> images, boxes = torch.rand(4, 3, 600, 1200), torch.rand(4, 11, 4)
         >>> boxes[:, :, 2:4] = boxes[:, :, 0:2] + boxes[:, :, 2:4]
@@ -385,51 +447,60 @@ def fasterrcnn_resnet50_fpn(
         >>> torch.onnx.export(model, x, "faster_rcnn.onnx", opset_version = 11)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (FasterRCNN_ResNet50_FPN_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
     """
-    is_trained = pretrained or pretrained_backbone
+    weights = FasterRCNN_ResNet50_FPN_Weights.verify(weights)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
+
+    is_trained = weights is not None or weights_backbone is not None
     trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
     norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
-    if pretrained:
-        # no need to download the backbone if pretrained is set
-        pretrained_backbone = False
-
-    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer)
+    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
-    model = FasterRCNN(backbone, num_classes, **kwargs)
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls["fasterrcnn_resnet50_fpn_coco"], progress=progress)
-        model.load_state_dict(state_dict)
-        overwrite_eps(model, 0.0)
+    model = FasterRCNN(backbone, num_classes=num_classes, **kwargs)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+        if weights == FasterRCNN_ResNet50_FPN_Weights.COCO_V1:
+            overwrite_eps(model, 0.0)
+
     return model
 
 
 def _fasterrcnn_mobilenet_v3_large_fpn(
-    weights_name,
-    pretrained=False,
-    progress=True,
-    num_classes=91,
-    pretrained_backbone=True,
-    trainable_backbone_layers=None,
-    **kwargs,
-):
-    is_trained = pretrained or pretrained_backbone
+    *,
+    weights: Optional[Union[FasterRCNN_MobileNet_V3_Large_FPN_Weights, FasterRCNN_MobileNet_V3_Large_320_FPN_Weights]],
+    progress: bool,
+    num_classes: Optional[int],
+    weights_backbone: Optional[MobileNet_V3_Large_Weights],
+    trainable_backbone_layers: Optional[int],
+    **kwargs: Any,
+) -> FasterRCNN:
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
+
+    is_trained = weights is not None or weights_backbone is not None
     trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 6, 3)
     norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
-    if pretrained:
-        pretrained_backbone = False
-
-    backbone = mobilenet_v3_large(pretrained=pretrained_backbone, progress=progress, norm_layer=norm_layer)
+    backbone = mobilenet_v3_large(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _mobilenet_extractor(backbone, True, trainable_backbone_layers)
-
     anchor_sizes = (
         (
             32,
@@ -440,21 +511,29 @@ def _fasterrcnn_mobilenet_v3_large_fpn(
         ),
     ) * 3
     aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
-
     model = FasterRCNN(
         backbone, num_classes, rpn_anchor_generator=AnchorGenerator(anchor_sizes, aspect_ratios), **kwargs
     )
-    if pretrained:
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError(f"No checkpoint is available for model {weights_name}")
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
 
 
+@handle_legacy_interface(
+    weights=("pretrained", FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
+)
 def fasterrcnn_mobilenet_v3_large_320_fpn(
-    pretrained=False, progress=True, num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs
-):
+    *,
+    weights: Optional[FasterRCNN_MobileNet_V3_Large_320_FPN_Weights] = None,
+    progress: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = MobileNet_V3_Large_Weights.IMAGENET1K_V1,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+) -> FasterRCNN:
     """
     Constructs a low resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone tunned for mobile use-cases.
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
@@ -463,21 +542,23 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
 
     Example::
 
-        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn(weights=FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (FasterRCNN_MobileNet_V3_Large_320_FPN_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (MobileNet_V3_Large_Weights, optional): The pretrained weights for the backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
     """
-    weights_name = "fasterrcnn_mobilenet_v3_large_320_fpn_coco"
+    weights = FasterRCNN_MobileNet_V3_Large_320_FPN_Weights.verify(weights)
+    weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
+
     defaults = {
         "min_size": 320,
         "max_size": 640,
@@ -488,19 +569,28 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
 
     kwargs = {**defaults, **kwargs}
     return _fasterrcnn_mobilenet_v3_large_fpn(
-        weights_name,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         num_classes=num_classes,
-        pretrained_backbone=pretrained_backbone,
+        weights_backbone=weights_backbone,
         trainable_backbone_layers=trainable_backbone_layers,
         **kwargs,
     )
 
 
+@handle_legacy_interface(
+    weights=("pretrained", FasterRCNN_MobileNet_V3_Large_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", MobileNet_V3_Large_Weights.IMAGENET1K_V1),
+)
 def fasterrcnn_mobilenet_v3_large_fpn(
-    pretrained=False, progress=True, num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs
-):
+    *,
+    weights: Optional[FasterRCNN_MobileNet_V3_Large_FPN_Weights] = None,
+    progress: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[MobileNet_V3_Large_Weights] = MobileNet_V3_Large_Weights.IMAGENET1K_V1,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+) -> FasterRCNN:
     """
     Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
@@ -509,32 +599,33 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 
     Example::
 
-        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn(weights=FasterRCNN_MobileNet_V3_Large_FPN_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (FasterRCNN_MobileNet_V3_Large_FPN_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (MobileNet_V3_Large_Weights, optional): The pretrained weights for the backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
     """
-    weights_name = "fasterrcnn_mobilenet_v3_large_fpn_coco"
+    weights = FasterRCNN_MobileNet_V3_Large_FPN_Weights.verify(weights)
+    weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
+
     defaults = {
         "rpn_score_thresh": 0.05,
     }
 
     kwargs = {**defaults, **kwargs}
     return _fasterrcnn_mobilenet_v3_large_fpn(
-        weights_name,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         num_classes=num_classes,
-        pretrained_backbone=pretrained_backbone,
+        weights_backbone=weights_backbone,
         trainable_backbone_layers=trainable_backbone_layers,
         **kwargs,
     )

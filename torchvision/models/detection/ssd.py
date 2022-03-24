@@ -6,27 +6,42 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import boxes as box_ops
+from ...transforms._presets import ObjectDetection, InterpolationMode
 from ...utils import _log_api_usage_once
-from .. import vgg
+from .._api import WeightsEnum, Weights
+from .._meta import _COCO_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..vgg import VGG, VGG16_Weights, vgg16
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
 
-__all__ = ["SSD", "ssd300_vgg16"]
 
-model_urls = {
-    "ssd300_vgg16_coco": "https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
-}
+__all__ = [
+    "SSD300_VGG16_Weights",
+    "ssd300_vgg16",
+]
 
-backbone_urls = {
-    # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
-    # same input standardization method as the paper. Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
-    # Only the `features` weights have proper values, those on the `classifier` module are filled with nans.
-    "vgg16_features": "https://download.pytorch.org/models/vgg16_features-amdegroot-88682ab5.pth"
-}
+
+class SSD300_VGG16_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
+        transforms=ObjectDetection,
+        meta={
+            "task": "image_object_detection",
+            "architecture": "SSD",
+            "publication_year": 2015,
+            "num_params": 35641826,
+            "size": (300, 300),
+            "categories": _COCO_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
+            "map": 25.1,
+        },
+    )
+    DEFAULT = COCO_V1
 
 
 def _xavier_init(conv: nn.Module):
@@ -527,7 +542,7 @@ class SSDFeatureExtractorVGG(nn.Module):
         return OrderedDict([(str(i), v) for i, v in enumerate(output)])
 
 
-def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
+def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     backbone = backbone.features
     # Gather the indices of maxpools. These are the locations of output blocks.
     stage_indices = [0] + [i for i, b in enumerate(backbone) if isinstance(b, nn.MaxPool2d)][:-1]
@@ -547,14 +562,19 @@ def _vgg_extractor(backbone: vgg.VGG, highres: bool, trainable_layers: int):
     return SSDFeatureExtractorVGG(backbone, highres)
 
 
+@handle_legacy_interface(
+    weights=("pretrained", SSD300_VGG16_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", VGG16_Weights.IMAGENET1K_FEATURES),
+)
 def ssd300_vgg16(
-    pretrained: bool = False,
+    *,
+    weights: Optional[SSD300_VGG16_Weights] = None,
     progress: bool = True,
-    num_classes: int = 91,
-    pretrained_backbone: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[VGG16_Weights] = VGG16_Weights.IMAGENET1K_FEATURES,
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
-):
+) -> SSD:
     """Constructs an SSD model with input size 300x300 and a VGG16 backbone.
 
     Reference: `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
@@ -586,37 +606,38 @@ def ssd300_vgg16(
 
     Example:
 
-        >>> model = torchvision.models.detection.ssd300_vgg16(pretrained=True)
+        >>> model = torchvision.models.detection.ssd300_vgg16(weights=SSD300_VGG16_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 300), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (SSD300_VGG16_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (VGG16_Weights, optional): The pretrained weights for the backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 4.
     """
+    weights = SSD300_VGG16_Weights.verify(weights)
+    weights_backbone = VGG16_Weights.verify(weights_backbone)
+
     if "size" in kwargs:
-        warnings.warn("The size of the model is already fixed; ignoring the argument.")
+        warnings.warn("The size of the model is already fixed; ignoring the parameter.")
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
     trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 4
+        weights is not None or weights_backbone is not None, trainable_backbone_layers, 5, 4
     )
 
-    if pretrained:
-        # no need to download the backbone if pretrained is set
-        pretrained_backbone = False
-
     # Use custom backbones more appropriate for SSD
-    backbone = vgg.vgg16(pretrained=False, progress=progress)
-    if pretrained_backbone:
-        state_dict = load_state_dict_from_url(backbone_urls["vgg16_features"], progress=progress)
-        backbone.load_state_dict(state_dict)
-
+    backbone = vgg16(weights=weights_backbone, progress=progress)
     backbone = _vgg_extractor(backbone, False, trainable_backbone_layers)
     anchor_generator = DefaultBoxGenerator(
         [[2], [2, 3], [2, 3], [2, 3], [2], [2]],
@@ -629,12 +650,10 @@ def ssd300_vgg16(
         "image_mean": [0.48235, 0.45882, 0.40784],
         "image_std": [1.0 / 255.0, 1.0 / 255.0, 1.0 / 255.0],  # undo the 0-1 scaling of toTensor
     }
-    kwargs = {**defaults, **kwargs}
+    kwargs: Any = {**defaults, **kwargs}
     model = SSD(backbone, anchor_generator, (300, 300), num_classes, **kwargs)
-    if pretrained:
-        weights_name = "ssd300_vgg16_coco"
-        if model_urls.get(weights_name, None) is None:
-            raise ValueError(f"No checkpoint is available for model {weights_name}")
-        state_dict = load_state_dict_from_url(model_urls[weights_name], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
