@@ -43,18 +43,22 @@ int SubtitleStream::initFormat() {
 int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   // clean-up
   releaseSubtitle();
-  // check flush packet
-  AVPacket* avPacket;
-  avPacket = av_packet_alloc();
-  if (avPacket == nullptr) {
-    LOG(ERROR)
-        << "decoder as not able to allocate the subtitle-specific packet.";
-    return ENOMEM;
-  }
-  avPacket->data = nullptr;
-  avPacket->size = 0;
 
-  auto pkt = packet ? packet : avPacket;
+  auto pkt = packet;
+  if (pkt == nullptr) {
+    // check flush packet
+    AVPacket* avPacket;
+    avPacket = av_packet_alloc();
+    if (avPacket == nullptr) {
+      LOG(ERROR)
+          << "decoder as not able to allocate the subtitle-specific packet.";
+      return ENOMEM;
+    }
+    avPacket->data = nullptr;
+    avPacket->size = 0;
+    pkt = avPacket;
+  }
+
   int gotFramePtr = 0;
   // is these a better way than cast from const?
   int result =
