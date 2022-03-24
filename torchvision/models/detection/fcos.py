@@ -612,7 +612,7 @@ class FCOS(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            assert targets is not None
+            torch._assert(targets is not None, "targets should not be none when in training mode")
             # compute the losses
 
             losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
