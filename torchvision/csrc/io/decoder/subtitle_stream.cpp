@@ -44,20 +44,18 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   // clean-up
   releaseSubtitle();
 
-  auto pkt = packet;
-  if (pkt == nullptr) {
-    // check flush packet
-    AVPacket* avPacket;
-    avPacket = av_packet_alloc();
-    if (avPacket == nullptr) {
-      LOG(ERROR)
-          << "decoder as not able to allocate the subtitle-specific packet.";
-      return ENOMEM;
-    }
-    avPacket->data = nullptr;
-    avPacket->size = 0;
-    pkt = avPacket;
+  // FIXME: should this even be created?
+  AVPacket* avPacket;
+  avPacket = av_packet_alloc();
+  if (avPacket == nullptr) {
+    LOG(ERROR)
+        << "decoder as not able to allocate the subtitle-specific packet.";
+    return ENOMEM;
   }
+  avPacket->data = nullptr;
+  avPacket->size = 0;
+  // check flush packet
+  auto pkt = packet ? packet : avPacket;
 
   int gotFramePtr = 0;
   // is these a better way than cast from const?
@@ -67,7 +65,7 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   if (result < 0) {
     LOG(ERROR) << "avcodec_decode_subtitle2 failed, err: "
                << Util::generateErrorDesc(result);
-    // free packet
+    // free the packet we've created
     av_packet_free(&avPacket);
     return result;
   } else if (result == 0) {
@@ -83,7 +81,6 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
         pkt->pts, inputCtx_->streams[format_.stream]->time_base, timeBaseQ);
   }
 
-  av_packet_free(&avPacket);
   return result;
 }
 
