@@ -36,8 +36,7 @@ class Food101(Dataset):
             HttpResource(
                 url="http://data.vision.ee.ethz.ch/cvl/food-101.tar.gz",
                 sha256="d97d15e438b7f4498f96086a4f7e2fa42a32f2712e87d3295441b2b6314053a4",
-                decompress=True,
-                extract=True
+                preprocess="decompress",
             )
         ]
 
