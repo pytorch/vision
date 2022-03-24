@@ -575,8 +575,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
     av_packet_unref(avPacket);
   }
 
-  av_packet_unref(avPacket);
-
+  av_packet_free(&avPacket);
   VLOG(2) << "Interrupted loop"
           << ", interrupted_ " << interrupted_ << ", inRange_.any() "
           << inRange_.any() << ", decodedFrame " << decodedFrame << ", result "
@@ -588,7 +587,6 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   // 3. unrecoverable error or ENODATA (end of stream)
   // 4. decoded frames pts are out of the specified range
   // 5. success decoded frame
-  av_packet_free(&avPacket);
   if (interrupted_) {
     return EINTR;
   }
