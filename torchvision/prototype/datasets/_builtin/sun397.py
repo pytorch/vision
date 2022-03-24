@@ -8,25 +8,19 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
     INFINITE_BUFFER_SIZE,
+    getitem,
 )
 from torchvision.prototype.features import EncodedImage, Label
 
 
 class SUN397(Dataset):
-
-    _DATA_ROOT_DIR = "SUN397"
-    _SPLIT_NAME_MAPPER = {
-        "train": "Training",
-        "test": "Testing",
-    }
-
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
             "sun397",
             homepage="https://vision.princeton.edu/projects/2010/SUN/",
             valid_options=dict(
                 split=("train", "test"),
-                fold=tuple(range(1, 11)),
+                fold=tuple(str(fold) for fold in range(1, 11)),
             ),
         )
 
@@ -34,6 +28,7 @@ class SUN397(Dataset):
         images = HttpResource(
             "http://vision.princeton.edu/projects/2010/SUN/SUN397.tar.gz",
             sha256="f404130965a7ad77bed5ececc71e720ab50f3cc1e1bb257257610d38f3b928ec",
+            preprocess="decompress",
         )
         splits = HttpResource(
             "https://vision.princeton.edu/projects/2010/SUN/download/Partitions.zip",
@@ -41,34 +36,19 @@ class SUN397(Dataset):
         )
         return [images, splits]
 
-    def _get_category_from_path(self, path_str: str) -> str:
-        root_index = 0
-        for i, fname in enumerate(pathlib.Path(path_str).parts):
-            if fname == self._DATA_ROOT_DIR:
-                root_index = i
-        category = "/".join(pathlib.Path(path_str).parts[root_index + 2 : -1])
-        return category
+    def _image_key(self, data: Tuple[str, Any]) -> str:
+        path = pathlib.Path(data[0])
+        idx = list(reversed(path.parts)).index("SUN397") - 1
+        return f"/{path.relative_to(path.parents[idx]).as_posix()}"
 
-    def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
-        path_str, buffer = data
-        category = self._get_category_from_path(path_str)
+    def _prepare_sample(self, data: Tuple[str, Tuple[str, Any]]) -> Dict[str, Any]:
+        key, (path, buffer) = data
+        category = "/".join(key.split("/")[2:-1])
         return dict(
             label=Label.from_category(category, categories=self.categories),
-            path=path_str,
+            path=path,
             image=EncodedImage.from_file(buffer),
         )
-
-    def _image_key_fn(self, data: Tuple[str, Any]) -> str:
-        path_str, _ = data
-        category = self._get_category_from_path(path_str)
-        filename = pathlib.Path(path_str).name
-        return "/".join([category, filename])
-
-    def _split_key_fn(self, partial_path: str) -> str:
-        return partial_path[3:]
-
-    def _merge_fn(self, split_data: str, img_data: Tuple[str, Any]) -> Tuple[str, Any]:
-        return img_data
 
     def _make_datapipe(
         self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
@@ -77,12 +57,7 @@ class SUN397(Dataset):
 
         splits_dp = Filter(
             splits_dp,
-            path_comparator(
-                "name",
-                "{split_name}_{fold:02d}.txt".format(
-                    split_name=self._SPLIT_NAME_MAPPER[config.split], fold=config.fold
-                ),
-            ),
+            path_comparator("name", f"{config.split.capitalize()}ing_{int(config.fold):02d}.txt"),
         )
         splits_dp = LineReader(splits_dp, decode=True, return_path=False)
         splits_dp = hint_sharding(splits_dp)
@@ -90,18 +65,18 @@ class SUN397(Dataset):
 
         images_dp = Filter(images_dp, path_comparator("suffix", ".jpg"))
 
-        # Filter images that appeared in splits_dp
-        images_dp = IterKeyZipper(
+        dp = IterKeyZipper(
             splits_dp,
             images_dp,
-            key_fn=self._split_key_fn,
-            ref_key_fn=self._image_key_fn,
-            merge_fn=self._merge_fn,
+            key_fn=getitem(),
+            ref_key_fn=self._image_key,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(images_dp, self._prepare_sample)
+        return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         resources = self.resources(self.default_config)
-        dp = resources[0].load(root)
-        return sorted({self._get_category_from_path(path_str) for path_str, _ in dp})
+        meta_dp = resources[1].load(root)
+        categories_dp = Filter(meta_dp, path_comparator("name", "ClassName.txt"))
+        categories_dp = LineReader(categories_dp, decode=True, return_path=False)
+        return [category[3:] for category in categories_dp]
