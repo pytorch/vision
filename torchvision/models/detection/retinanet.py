@@ -113,10 +113,11 @@ class RetinaNetClassificationHead(nn.Module):
             conv.append(misc_nn_ops.Conv2dNormActivation(in_channels, in_channels, norm_layer=norm_layer))
         self.conv = nn.Sequential(*conv)
 
-        for layer in self.conv.children():
+        for layer in self.conv.modules():
             if isinstance(layer, nn.Conv2d):
                 torch.nn.init.normal_(layer.weight, std=0.01)
-                torch.nn.init.constant_(layer.bias, 0)
+                if layer.bias is not None:
+                    torch.nn.init.constant_(layer.bias, 0)
 
         self.cls_logits = nn.Conv2d(in_channels, num_anchors * num_classes, kernel_size=3, stride=1, padding=1)
         torch.nn.init.normal_(self.cls_logits.weight, std=0.01)
@@ -235,10 +236,11 @@ class RetinaNetRegressionHead(nn.Module):
         torch.nn.init.normal_(self.bbox_reg.weight, std=0.01)
         torch.nn.init.zeros_(self.bbox_reg.bias)
 
-        for layer in self.conv.children():
+        for layer in self.conv.modules():
             if isinstance(layer, nn.Conv2d):
                 torch.nn.init.normal_(layer.weight, std=0.01)
-                torch.nn.init.zeros_(layer.bias)
+                if layer.bias is not None:
+                    torch.nn.init.zeros_(layer.bias)
 
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
 
