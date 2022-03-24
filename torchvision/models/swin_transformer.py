@@ -75,13 +75,13 @@ def shifted_window_attention(
         qkv_weight (Tensor[in_dim, out_dim]): The weight tensor of query, key, value.
         proj_weight (Tensor[out_dim, out_dim]): The weight tensor of projection.
         relative_position_bias (Tensor): The learned relative position bias added to attention.
-        window_size (int)): The size of the window.
-        shift_size (int): Shift size for SW-MSA.
+        window_size (int): Window size.
         num_heads (int): Number of attention heads.
+        shift_size (int): Shift size for shifted window attention. Default: 0.
         attention_dropout (float): Dropout ratio of attention weight. Default: 0.0.
         dropout (float): Dropout ratio of output. Default: 0.0.
-        qkv_weight (Tensor[out_dim]): The bias tensor of query, key, value. Default: None.
-        proj_weight (Tensor[out_dim]): The bias tensor of projection. Default: None.
+        qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
+        proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
 
     Returns:
         Tensor[N, H, W, C]: The output tensor after shifted window attention.
@@ -230,9 +230,9 @@ class SwinTransformerBlock(nn.Module):
     Args:
         dim (int): Number of input channels.
         num_heads (int): Number of attention heads.
-        window_size (int): Window size.
-        shift_size (int): Shift size for SW-MSA.
-        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim.
+        window_size (int): Window size. Default: 7.
+        shift_size (int): Shift size for shifted window attention. Default: 0.
+        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
@@ -283,15 +283,15 @@ class SwinTransformer(nn.Module):
         patch_size (int): Patch size. Default: 4.
         num_classes (int): Number of classes for classification head. Default: 1000.
         embed_dim (int): Patch embedding dimension. Default: 96.
-        depths (List(int)): Depth of each Swin Transformer layer.
-        num_heads (List(int)): Number of attention heads in different layers.
+        depths (List(int)): Depth of each Swin Transformer layer. Default: [2, 2, 6, 2].
+        num_heads (List(int)): Number of attention heads in different layers. Default: [3, 6, 12, 24].
         window_size (int): Window size. Default: 7.
-        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.
-        dropout (float): Dropout rate. Default: 0.
-        attention_drop_rate (float): Attention dropout rate. Default: 0.
-        drop_path_rate (float): Stochastic depth rate. Default: 0.1.
-        block (nn.Module): SwinTransformer Block.
-        norm_layer (nn.Module): Normalization layer.
+        mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
+        dropout (float): Dropout rate. Default: 0.0.
+        attention_drop_rate (float): Attention dropout rate. Default: 0.0.
+        drop_path_rate (float): Stochastic depth rate. Default: 0.0.
+        block (nn.Module, optional): SwinTransformer Block. Default: None.
+        norm_layer (nn.Module, optional): Normalization layer. Default: None.
     """
 
     def __init__(
