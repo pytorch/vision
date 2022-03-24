@@ -567,7 +567,7 @@ class FCOS(nn.Module):
         if self.training:
 
             if targets is None:
-                torch._assert(True, "targets should not be none when in training mode")
+                torch._assert(False, "targets should not be none when in training mode")
             for target in targets:
                 boxes = target["boxes"]
                 torch._assert(
@@ -623,7 +623,7 @@ class FCOS(nn.Module):
         detections: List[Dict[str, Tensor]] = []
         if self.training:
             if targets is None:
-                torch._assert(True, "targets should not be none when in training mode")
+                torch._assert(False, "targets should not be none when in training mode")
             # compute the losses
 
             losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
