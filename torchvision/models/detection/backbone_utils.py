@@ -25,6 +25,7 @@ class BackboneWithFPN(nn.Module):
         in_channels_list (List[int]): number of channels for each feature map
             that is returned, in the order they are present in the OrderedDict
         out_channels (int): number of channels in the FPN.
+        norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
     Attributes:
         out_channels (int): the number of channels in the FPN
     """
@@ -36,6 +37,7 @@ class BackboneWithFPN(nn.Module):
         in_channels_list: List[int],
         out_channels: int,
         extra_blocks: Optional[ExtraFPNBlock] = None,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
 
@@ -47,6 +49,7 @@ class BackboneWithFPN(nn.Module):
             in_channels_list=in_channels_list,
             out_channels=out_channels,
             extra_blocks=extra_blocks,
+            norm_layer=norm_layer,
         )
         self.out_channels = out_channels
 

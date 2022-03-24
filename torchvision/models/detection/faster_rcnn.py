@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Callable, Optional, Union
 
 import torch.nn.functional as F
 from torch import nn
@@ -295,6 +295,35 @@ class TwoMLPHead(nn.Module):
         x = F.relu(self.fc7(x))
 
         return x
+
+
+class FastRCNNHeads(nn.Sequential):
+
+    def __init__(self, input_size, layers, output_channels, norm_layer: Optional[Callable[..., nn.Module]] = None):
+        """
+        Args:
+            input_size (Tuple[int, int, int]): the input size in CHW format.
+            layers (list): feature dimensions of each FCN layer
+            output_channels (int): output channels
+            norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
+        """
+        in_channels, in_height, in_width = input_size
+
+        l = []
+        previous_channels = in_channels
+        for layer_channels in layers:
+            l.append(misc_nn_ops.Conv2dNormActivation(previous_channels, layer_channels, norm_layer=norm_layer))
+            previous_channels = layer_channels
+        l.append(nn.Flatten())
+        l.append(nn.Linear(previous_channels * in_height * in_width, output_channels))
+        l.append(nn.ReLU(inplace=True))
+
+        super().__init__(*l)
+        for layer in self.modules():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, mode="fan_out", nonlinearity="relu")
+                if layer.bias is not None:
+                    nn.init.zeros_(layer.bias)
 
 
 class FastRCNNPredictor(nn.Module):

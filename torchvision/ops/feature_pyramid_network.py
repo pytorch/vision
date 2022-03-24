@@ -52,6 +52,7 @@ class FeaturePyramidNetwork(nn.Module):
             be performed. It is expected to take the fpn features, the original
             features and the names of the original features as input, and returns
             a new list of feature maps and their corresponding names
+        norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
 
     Examples::
 
