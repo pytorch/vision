@@ -40,12 +40,12 @@ class OxfordIITPet(Dataset):
         images = HttpResource(
             "https://www.robots.ox.ac.uk/~vgg/data/pets/data/images.tar.gz",
             sha256="67195c5e1c01f1ab5f9b6a5d22b8c27a580d896ece458917e61d459337fa318d",
-            decompress=True,
+            preprocess="decompress",
         )
         anns = HttpResource(
             "https://www.robots.ox.ac.uk/~vgg/data/pets/data/annotations.tar.gz",
             sha256="52425fb6de5c424942b7626b428656fcbd798db970a937df61750c0f1d358e91",
-            decompress=True,
+            preprocess="decompress",
         )
         return [images, anns]
 
