@@ -317,7 +317,7 @@ _model_tests_values = {
     },
     "retinanet_resnet50_fpn_v2": {
         "max_trainable": 5,
-        "n_trn_params_per_layer": [44, 74, 131, 170, 200, 203],
+        "n_trn_params_per_layer": [44, 54, 73, 86, 96, 97],
     },
     "keypointrcnn_resnet50_fpn": {
         "max_trainable": 5,
