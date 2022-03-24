@@ -1,6 +1,5 @@
-from typing import Any, Dict, List, Tuple
+from typing import Any, Dict, List
 
-import numpy as np
 import torch
 from torchdata.datapipes.iter import IterDataPipe, LineReader, Mapper, Decompressor
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, OnlineResource, HttpResource
