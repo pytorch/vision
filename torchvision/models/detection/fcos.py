@@ -558,15 +558,16 @@ class FCOS(nn.Module):
                 like `scores`, `labels` and `mask` (for Mask R-CNN models).
         """
         if self.training:
-            if targets is None:
-                raise ValueError("In training mode, targets should be passed")
+            torch._assert(targets is not None, "targets should not be none when in training mode")
             for target in targets:
                 boxes = target["boxes"]
-                if isinstance(boxes, torch.Tensor):
-                    if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
-                else:
-                    raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                torch._assert(
+                    isinstance(boxes, torch.Tensor), f"Expected target boxes to be of type Tensor, got {type(boxes)}."
+                )
+                torch._assert(
+                    len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                    f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                )
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
@@ -589,9 +590,9 @@ class FCOS(nn.Module):
                     # print the first degenerate box
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
-                    raise ValueError(
-                        "All bounding boxes should have positive height and width."
-                        f" Found invalid box {degen_bb} for target at index {target_idx}."
+                    torch._assert(
+                        False,
+                        f"All bounding boxes should have positive height and width. Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
         # get the features from the backbone

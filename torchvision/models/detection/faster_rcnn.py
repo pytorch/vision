@@ -188,9 +188,9 @@ class FasterRCNN(GeneralizedRCNN):
                 "same for all the levels)"
             )
 
-        if not isinstance(anchor_generator, (AnchorGenerator, type(None))):
+        if not isinstance(rpn_anchor_generator, (AnchorGenerator, type(None))):
             raise TypeError(
-                f"anchor_generator should be of type AnchorGenerator or None, instead  got {type(anchor_generator)}"
+                f"rpn_anchor_generator should be of type AnchorGenerator or None instead of {type(rpn_anchor_generator)}"
             )
         if not isinstance(box_roi_pool, (MultiScaleRoIAlign, type(None))):
             raise TypeError(
