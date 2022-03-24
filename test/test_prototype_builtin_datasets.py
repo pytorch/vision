@@ -202,5 +202,5 @@ class TestUSPS:
             assert isinstance(sample["image"].data, torch.FloatTensor)
             assert isinstance(sample["label"].data, torch.LongTensor)
 
-            # verify image size is (1, 16, 16
-            assert sample["image"].data.shape == (1, 16, 16)
+            # verify image size is (1, 16, 16)
+            assert sample["image"].shape == (1, 16, 16)
