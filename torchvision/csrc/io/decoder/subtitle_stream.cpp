@@ -46,8 +46,10 @@ int SubtitleStream::analyzePacket(const AVPacket* packet, bool* gotFrame) {
   // check flush packet
   AVPacket* avPacket;
   avPacket = av_packet_alloc();
-  if (avPacket == NULL) {
-    LOG(ERROR) << "decoder as not able to allocate the packet.";
+  if (avPacket == nullptr) {
+    LOG(ERROR)
+        << "decoder as not able to allocate the subtitle-specific packet.";
+    return ENOMEM;
   }
   avPacket->data = nullptr;
   avPacket->size = 0;
