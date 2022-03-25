@@ -274,13 +274,23 @@ class MaskRCNNHeads(nn.Sequential):
             dilation (int): dilation rate of kernel
             norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
         """
-        l = []
+        blocks = []
         next_feature = in_channels
         for layer_features in layers:
-            l.append(misc_nn_ops.Conv2dNormActivation(next_feature, layer_features, kernel_size=3, stride=1, padding=dilation, dilation=dilation, norm_layer=norm_layer))
+            blocks.append(
+                misc_nn_ops.Conv2dNormActivation(
+                    next_feature,
+                    layer_features,
+                    kernel_size=3,
+                    stride=1,
+                    padding=dilation,
+                    dilation=dilation,
+                    norm_layer=norm_layer,
+                )
+            )
             next_feature = layer_features
 
-        super().__init__(*l)
+        super().__init__(*blocks)
         for layer in self.modules():
             if isinstance(layer, nn.Conv2d):
                 nn.init.kaiming_normal_(layer.weight, mode="fan_out", nonlinearity="relu")

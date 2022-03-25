@@ -217,6 +217,7 @@ class RetinaNetRegressionHead(nn.Module):
         num_anchors (int): number of anchors to be predicted
         norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
     """
+
     _version = 2
 
     __annotations__ = {
@@ -814,9 +815,8 @@ def retinanet_resnet50_fpn_v2(
 
     is_trained = weights is not None or weights_backbone is not None
     trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
-    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
 
-    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
+    backbone = resnet50(weights=weights_backbone, progress=progress)
     backbone = _resnet_fpn_extractor(
         backbone, trainable_backbone_layers, returned_layers=[2, 3, 4], extra_blocks=LastLevelP6P7(2048, 256)
     )

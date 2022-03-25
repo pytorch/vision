@@ -118,6 +118,7 @@ def _resnet_fpn_extractor(
     trainable_layers: int,
     returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
+    norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> BackboneWithFPN:
 
     # select layers that wont be frozen
@@ -142,7 +143,9 @@ def _resnet_fpn_extractor(
     in_channels_stage2 = backbone.inplanes // 8
     in_channels_list = [in_channels_stage2 * 2 ** (i - 1) for i in returned_layers]
     out_channels = 256
-    return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
+    return BackboneWithFPN(
+        backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks, norm_layer=norm_layer
+    )
 
 
 def _validate_trainable_layers(
@@ -197,6 +200,7 @@ def _mobilenet_extractor(
     trainable_layers: int,
     returned_layers: Optional[List[int]] = None,
     extra_blocks: Optional[ExtraFPNBlock] = None,
+    norm_layer: Optional[Callable[..., nn.Module]] = None,
 ) -> nn.Module:
     backbone = backbone.features
     # Gather the indices of blocks which are strided. These are the locations of C1, ..., Cn-1 blocks.
@@ -225,7 +229,9 @@ def _mobilenet_extractor(
         return_layers = {f"{stage_indices[k]}": str(v) for v, k in enumerate(returned_layers)}
 
         in_channels_list = [backbone[stage_indices[i]].out_channels for i in returned_layers]
-        return BackboneWithFPN(backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks)
+        return BackboneWithFPN(
+            backbone, return_layers, in_channels_list, out_channels, extra_blocks=extra_blocks, norm_layer=norm_layer
+        )
     else:
         m = nn.Sequential(
             backbone,
