@@ -1431,3 +1431,94 @@ def stanford_cars(info, root, config):
         make_tar(root, "car_devkit.tgz", devkit, compression="gz")
 
     return num_samples
+
+
+@register_mock
+def places365(info, root, config):
+    num_samples = {"train": 5, "test": 4, "val": 3}[config.split]
+    categories = ["alley", "coffee_shop", "field/wild", "subway_station/platform"]
+    category_keys = [f"/{category[0]}/{category}" for category in categories]
+
+    if config.split == "train":
+        image_root = root / f"data_{config.image_res}"
+    else:
+        image_root = root / f"{config.split}_{config.image_res}"
+
+    keys_labels = []
+    for category_idx, category_key in enumerate(category_keys):
+        # Generate image files
+        if config.split == "train":
+            parts = category_key.split("/")
+            image_dir = pathlib.Path(*parts[1:])
+            image_prefix = ""
+            idx_start = 0
+        else:
+            image_dir = ""
+            image_prefix = f"Places365_{config.split}_"
+            idx_start = category_idx * num_samples
+
+        image_files = create_image_folder(
+            root=image_root,
+            name=image_dir,
+            file_name_fn=lambda idx: f"{image_prefix}{idx_start+idx:08d}.jpg",
+            num_examples=num_samples,
+        )
+
+        if config.split == "train":
+            keys_labels.extend(
+                [(f"/{image_file.relative_to(image_root).as_posix()}", category_idx) for image_file in image_files]
+            )
+        else:
+            keys_labels.extend(
+                [(image_file.relative_to(image_root).as_posix(), category_idx) for image_file in image_files]
+            )
+
+    meta_root = root
+    meta_filenames = {
+        "category": "categories_places365.txt",
+        "val": "places365_val.txt",
+        "test": "places365_test.txt",
+    }
+    if config.variant == "standard":
+        meta_filenames["train"] = "places365_train_standard.txt"
+    else:
+        meta_filenames["train"] = "places365_train_challenge.txt"
+
+    # Writing category
+    with open(meta_root / meta_filenames["category"], "w") as fh:
+        fh.write("\n".join([f"{category_keys[i]} {i}" for i in range(len(category_keys))]))
+
+    # Writing splits meta
+    all_splits = ["train", "val", "test"]
+    for split in all_splits:
+        if split == config.split:
+            with open(meta_root / meta_filenames[split], "w") as fh:
+                for i, key_label in enumerate(keys_labels):
+                    key, label = key_label
+                    if split != "test":
+                        fh.write(f"{key} {label}")
+                    else:
+                        fh.write(f"{key}")
+                    if i != len(keys_labels) - 1:
+                        fh.write("\n")
+        else:
+            # If not the same as config.split we will only produce one sample data
+            with open(meta_root / meta_filenames[split], "w") as fh:
+                if split == "train":
+                    fh.write("/s/subway_station/platform/00000001.jpg 2")
+                elif split == "val":
+                    fh.write("Places365_val_00000001.jpg 1")
+                elif split == "test":
+                    fh.write("Places365_test_00000001.jpg")
+
+    # Create image tar
+    if config.split == "train":
+        image_tar_name = f"train_{config.image_res}_places365{config.variant}.tar"
+    else:
+        image_tar_name = f"{config.split}_{config.image_res}.tar"
+    make_tar(root, image_tar_name, image_root)
+    # Create meta tar
+    meta_tar_name = f"filelist_places365-{config.variant}.tar"
+    make_tar(root, meta_tar_name, *[meta_root / meta_filename for meta_filename in meta_filenames.values()])
+
+    return num_samples * len(categories)
