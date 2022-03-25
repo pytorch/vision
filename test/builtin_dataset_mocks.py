@@ -16,7 +16,7 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, random_group
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, random_subsets
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision._utils import sequence_to_str
@@ -1456,10 +1456,11 @@ def sun397(info, root, config):
     partitions_root = root / "Partitions"
     partitions_root.mkdir()
 
+    splits = ["train", "test"]
     for fold in range(1, 11):
         random.shuffle(keys)
 
-        for split, keys_in_split in random_group(keys, ["train", "test"]).items():
+        for split, keys_in_split in zip(splits, random_subsets(keys, len(splits))):
             if split == config.split and str(fold) == config.fold:
                 num_samples = len(keys_in_split)
 

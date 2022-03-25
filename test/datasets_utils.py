@@ -954,22 +954,30 @@ def make_fake_flo_file(h, w, file_name):
         f.write(content)
 
 
-def random_group(collection, groups):
-    """Randomly put items into groups without overlap.
+def random_subsets(collection, n):
+    """Splits collection into non-overlapping subsets.
+
     Args:
-        collection: Collection of items to be grouped.
-        groups: Collection of group keys.
+        collection: Collection of items to be split.
+        n: Number of subsets.
+
     Returns:
-        Dictionary with ``groups`` as keys. Each value is a list of random items from ``collection`` without overlap
-            to the other values. Each list has at least length ``1``.
+        Tuple of subsets. Each subset is a list of random items from ``collection`` without overlap
+            to the other subsets. Each subset contains at least one element.
+
+    Examples:
+        >>> collection = range(10)
+        >>> random_subsets(collection, 2)
+        ([3, 5, 6, 7], [0, 1, 2, 4, 8, 9])
+        >>> random_subsets(collection, 3)
+        ([0, 1, 4, 8, 9], [2], [3, 5, 6, 7])
     """
     while True:
-        idcs = torch.randint(len(groups), (len(collection),)).tolist()
-        if len(set(idcs)) == len(groups):
+        idcs = torch.randint(n, (len(collection),)).tolist()
+        if len(set(idcs)) == n:
             break
 
-    idx_to_group = dict(zip(range(len(groups)), groups))
-    grouping = defaultdict(list)
+    subsets = tuple([] for _ in range(n))
     for idx, item in zip(idcs, collection):
-        grouping[idx_to_group[idx]].append(item)
-    return grouping
+        subsets[idx].append(item)
+    return subsets
