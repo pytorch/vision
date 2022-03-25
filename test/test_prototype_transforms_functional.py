@@ -403,12 +403,15 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             np.max(transformed_points[:, 1]),
         ]
         out_bbox = features.BoundingBox(
-            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=bbox.image_size, dtype=torch.float32
+            out_bbox,
+            format=features.BoundingBoxFormat.XYXY,
+            image_size=bbox.image_size,
+            dtype=torch.float32,
+            device=bbox.device,
         )
-        out_bbox = convert_bounding_box_format(
+        return convert_bounding_box_format(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
-        return out_bbox.to(bbox.device)
 
     image_size = (32, 38)
 
@@ -464,8 +467,8 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         [1, 1, 5, 5],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
-    ).to(device)
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+    )
     # Tested parameters
     angle = 63
     scale = 0.89
@@ -498,9 +501,7 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         shear=(0, 0),
     )
 
-    assert len(output_boxes) == len(expected_bboxes)
-    for a_out_box, out_box in zip(expected_bboxes, output_boxes.cpu()):
-        np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)
+    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
 
 @pytest.mark.parametrize("angle", [-54, 56])
@@ -616,12 +617,15 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             out_bbox[3] -= tr_y
 
         out_bbox = features.BoundingBox(
-            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float32
+            out_bbox,
+            format=features.BoundingBoxFormat.XYXY,
+            image_size=image_size,
+            dtype=torch.float32,
+            device=bbox.device,
         )
-        out_bbox = convert_bounding_box_format(
+        return convert_bounding_box_format(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
-        return out_bbox.to(bbox.device)
 
     image_size = (32, 38)
 
@@ -674,8 +678,8 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
         [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
-    ).to(device)
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+    )
     # Tested parameters
     angle = 45
     center = None if expand else [12, 23]
@@ -712,9 +716,7 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
         center=center,
     )
 
-    assert len(output_boxes) == len(expected_bboxes)
-    for a_out_box, out_box in zip(expected_bboxes, output_boxes.cpu()):
-        np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)
+    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
 
 @pytest.mark.parametrize("angle", range(-90, 90, 56))
@@ -725,27 +727,10 @@ def test_correctness_rotate_segmentation_mask(angle, expand, center):
         assert mask.ndim == 3 and mask.shape[0] == 1
 
         image_size = mask.shape[-2:]
-        print(image_size)
-        if expand_:
-            rot = math.radians(angle_)
-            h, w = image_size
-            print(h, w)
-            abs_cos, abs_sin = (abs(math.cos(rot)), abs(math.sin(rot)))
-            new_size_f = [
-                (h * abs_sin + w * abs_cos),
-                (h * abs_cos + w * abs_sin)
-            ]
-            center_ = [s * 0.5 for s in new_size_f]
-            print(center_)
-            image_size = (int(new_size_f[1]), int(new_size_f[0]))
-            print(image_size)
-
         affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
 
         inv_affine_matrix = np.linalg.inv(affine_matrix)
         inv_affine_matrix = inv_affine_matrix[:2, :]
-
-        print("image size:", image_size)
         expected_mask = torch.zeros(1, *image_size, dtype=mask.dtype)
 
         for out_y in range(expected_mask.shape[1]):
@@ -758,7 +743,6 @@ def test_correctness_rotate_segmentation_mask(angle, expand, center):
         return expected_mask.to(mask.device)
 
     for mask in make_segmentation_masks(extra_dims=((), (4,))):
-        print("\n-- mask:", mask.shape, center)
         output_mask = F.rotate_segmentation_mask(
             mask,
             angle=angle,
@@ -783,6 +767,4 @@ def test_correctness_rotate_segmentation_mask(angle, expand, center):
             expected_masks = torch.stack(expected_masks)
         else:
             expected_masks = expected_masks[0]
-        print("output_mask:", output_mask.shape)
-        print("expected_masks:", expected_masks.shape)
         torch.testing.assert_close(output_mask, expected_masks)
