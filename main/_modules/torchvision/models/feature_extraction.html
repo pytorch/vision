@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+d2dcbd5 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+6100458 ) &#x25BC</a>
     </div>
     
 
@@ -507,6 +507,23 @@
     <span class="k">return</span> <span class="n">result</span>
 
 
+<span class="k">def</span> <span class="nf">_set_default_tracer_kwargs</span><span class="p">(</span><span class="n">original_tr_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]])</span> <span class="o">-&gt;</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+    <span class="n">default_autowrap_modules</span> <span class="o">=</span> <span class="p">(</span><span class="n">math</span><span class="p">,</span> <span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="p">)</span>
+    <span class="n">default_leaf_modules</span> <span class="o">=</span> <span class="n">_get_leaf_modules_for_ops</span><span class="p">()</span>
+    <span class="n">result_tracer_kwargs</span> <span class="o">=</span> <span class="p">{}</span> <span class="k">if</span> <span class="n">original_tr_kwargs</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">else</span> <span class="n">original_tr_kwargs</span>
+    <span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">&quot;autowrap_modules&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">&quot;autowrap_modules&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">default_autowrap_modules</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s2">&quot;autowrap_modules&quot;</span> <span class="ow">in</span> <span class="n">result_tracer_kwargs</span>
+        <span class="k">else</span> <span class="n">default_autowrap_modules</span>
+    <span class="p">)</span>
+    <span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">&quot;leaf_modules&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span>
+        <span class="nb">list</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">result_tracer_kwargs</span><span class="p">[</span><span class="s2">&quot;leaf_modules&quot;</span><span class="p">]</span> <span class="o">+</span> <span class="n">default_leaf_modules</span><span class="p">))</span>
+        <span class="k">if</span> <span class="s2">&quot;leaf_modules&quot;</span> <span class="ow">in</span> <span class="n">result_tracer_kwargs</span>
+        <span class="k">else</span> <span class="n">default_leaf_modules</span>
+    <span class="p">)</span>
+    <span class="k">return</span> <span class="n">result_tracer_kwargs</span>
+
+
 <div class="viewcode-block" id="get_graph_node_names"><a class="viewcode-back" href="../../../generated/torchvision.models.feature_extraction.get_graph_node_names.html#torchvision.models.feature_extraction.get_graph_node_names">[docs]</a><span class="k">def</span> <span class="nf">get_graph_node_names</span><span class="p">(</span>
     <span class="n">model</span><span class="p">:</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">,</span>
     <span class="n">tracer_kwargs</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
@@ -535,7 +552,11 @@
 <span class="sd">        tracer_kwargs (dict, optional): a dictionary of keywork arguments for</span>
 <span class="sd">            ``NodePathTracer`` (they are eventually passed onto</span>
 <span class="sd">            `torch.fx.Tracer &lt;https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer&gt;`_).</span>
-<span class="sd">            By default it will be set to wrap and make leaf nodes all torchvision ops.</span>
+<span class="sd">            By default it will be set to wrap and make leaf nodes all torchvision ops:</span>
+<span class="sd">            {&quot;autowrap_modules&quot;: (math, torchvision.ops,),&quot;leaf_modules&quot;: _get_leaf_modules_for_ops(),}</span>
+<span class="sd">            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user</span>
+<span class="sd">            provided dictionary.</span>
+
 <span class="sd">        suppress_diff_warning (bool, optional): whether to suppress a warning</span>
 <span class="sd">            when there are discrepancies between the train and eval version of</span>
 <span class="sd">            the graph. Defaults to False.</span>
@@ -549,14 +570,7 @@
 <span class="sd">        &gt;&gt;&gt; model = torchvision.models.resnet18()</span>
 <span class="sd">        &gt;&gt;&gt; train_nodes, eval_nodes = get_graph_node_names(model)</span>
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">tracer_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">tracer_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;autowrap_modules&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="n">math</span><span class="p">,</span>
-                <span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="p">,</span>
-            <span class="p">),</span>
-            <span class="s2">&quot;leaf_modules&quot;</span><span class="p">:</span> <span class="n">_get_leaf_modules_for_ops</span><span class="p">(),</span>
-        <span class="p">}</span>
+    <span class="n">tracer_kwargs</span> <span class="o">=</span> <span class="n">_set_default_tracer_kwargs</span><span class="p">(</span><span class="n">tracer_kwargs</span><span class="p">)</span>
     <span class="n">is_training</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training</span>
     <span class="n">train_tracer</span> <span class="o">=</span> <span class="n">NodePathTracer</span><span class="p">(</span><span class="o">**</span><span class="n">tracer_kwargs</span><span class="p">)</span>
     <span class="n">train_tracer</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">())</span>
@@ -701,7 +715,10 @@
 <span class="sd">        tracer_kwargs (dict, optional): a dictionary of keywork arguments for</span>
 <span class="sd">            ``NodePathTracer`` (which passes them onto it&#39;s parent class</span>
 <span class="sd">            `torch.fx.Tracer &lt;https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer&gt;`_).</span>
-<span class="sd">            By default it will be set to wrap and make leaf nodes all torchvision ops.</span>
+<span class="sd">            By default it will be set to wrap and make leaf nodes all torchvision ops:</span>
+<span class="sd">            {&quot;autowrap_modules&quot;: (math, torchvision.ops,),&quot;leaf_modules&quot;: _get_leaf_modules_for_ops(),}</span>
+<span class="sd">            WARNING: In case the user provides tracer_kwargs, above default arguments will be appended to the user</span>
+<span class="sd">            provided dictionary.</span>
 <span class="sd">        suppress_diff_warning (bool, optional): whether to suppress a warning</span>
 <span class="sd">            when there are discrepancies between the train and eval version of</span>
 <span class="sd">            the graph. Defaults to False.</span>
@@ -746,14 +763,7 @@
 <span class="sd">        &gt;&gt;&gt;                    &#39;autowrap_functions&#39;: [leaf_function]})</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
-    <span class="k">if</span> <span class="n">tracer_kwargs</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="n">tracer_kwargs</span> <span class="o">=</span> <span class="p">{</span>
-            <span class="s2">&quot;autowrap_modules&quot;</span><span class="p">:</span> <span class="p">(</span>
-                <span class="n">math</span><span class="p">,</span>
-                <span class="n">torchvision</span><span class="o">.</span><span class="n">ops</span><span class="p">,</span>
-            <span class="p">),</span>
-            <span class="s2">&quot;leaf_modules&quot;</span><span class="p">:</span> <span class="n">_get_leaf_modules_for_ops</span><span class="p">(),</span>
-        <span class="p">}</span>
+    <span class="n">tracer_kwargs</span> <span class="o">=</span> <span class="n">_set_default_tracer_kwargs</span><span class="p">(</span><span class="n">tracer_kwargs</span><span class="p">)</span>
     <span class="n">is_training</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">training</span>
 
     <span class="k">if</span> <span class="nb">all</span><span class="p">(</span><span class="n">arg</span> <span class="ow">is</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">arg</span> <span class="ow">in</span> <span class="p">[</span><span class="n">return_nodes</span><span class="p">,</span> <span class="n">train_return_nodes</span><span class="p">,</span> <span class="n">eval_return_nodes</span><span class="p">]):</span>
