@@ -5,6 +5,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms.functional import convert_image_dtype
+from typing_extensions import Literal
 
 from ._utils import is_simple_tensor
 
@@ -44,6 +45,7 @@ class ConvertImageColorSpace(Transform):
         self,
         color_space: Union[str, features.ColorSpace],
         old_color_space: Optional[Union[str, features.ColorSpace]] = None,
+        gray_output_channels: Literal[1, 3] = 1,
     ) -> None:
         super().__init__()
 
@@ -55,23 +57,33 @@ class ConvertImageColorSpace(Transform):
             old_color_space = features.ColorSpace.from_str(old_color_space)
         self.old_color_space = old_color_space
 
+        self.gray_output_channels = gray_output_channels
+
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if isinstance(input, features.Image):
             output = F.convert_image_color_space_tensor(
-                input, old_color_space=input.color_space, new_color_space=self.color_space
+                input,
+                old_color_space=input.color_space,
+                new_color_space=self.color_space,
+                gray_output_channels=self.gray_output_channels,
             )
             return features.Image.new_like(input, output, color_space=self.color_space)
         elif is_simple_tensor(input):
             if self.old_color_space is None:
                 raise RuntimeError(
-                    f"In order to convert vanilla tensor images, `{type(self).__name__}(...)` "
+                    f"In order to convert simple tensor images, `{type(self).__name__}(...)` "
                     f"needs to be constructed with the `old_color_space=...` parameter."
                 )
 
             return F.convert_image_color_space_tensor(
-                input, old_color_space=self.old_color_space, new_color_space=self.color_space
+                input,
+                old_color_space=self.old_color_space,
+                new_color_space=self.color_space,
+                gray_output_channels=self.gray_output_channels,
             )
         elif isinstance(input, PIL.Image.Image):
-            return F.convert_image_color_space_pil(input, color_space=self.color_space)
+            return F.convert_image_color_space_pil(
+                input, color_space=self.color_space, gray_output_channels=self.gray_output_channels
+            )
         else:
             return input

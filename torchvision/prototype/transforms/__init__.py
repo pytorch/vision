@@ -21,3 +21,5 @@ from ._geometry import (
 from ._meta import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertImageColorSpace
 from ._misc import Identity, Normalize, ToDtype, Lambda
 from ._type_conversion import DecodeImage, LabelToOneHot
+
+from ._legacy import Grayscale, RandomGrayscale  # usort: skip

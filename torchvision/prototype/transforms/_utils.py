@@ -36,6 +36,22 @@ def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Im
     return channels, height, width
 
 
+def has_alpha_channel(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> bool:
+    if isinstance(image, features.Image):
+        color_space = image.color_space
+    elif isinstance(image, torch.Tensor):
+        color_space = features.Image.guess_color_space(image)
+    elif isinstance(image, PIL.Image.Image):
+        color_space = features.ColorSpace.from_pil_mode(image.mode)
+    else:
+        raise TypeError(f"unable to get color space from object of type {type(image).__name__}")
+
+    if color_space == features.ColorSpace.OTHER:
+        raise RuntimeError("FIXME")
+
+    return color_space in {features.ColorSpace.GRAY_ALPHA, features.ColorSpace.RGB_ALPHA}
+
+
 def _extract_types(sample: Any) -> Iterator[Type]:
     return query_recursively(lambda id, input: type(input), sample)
 
