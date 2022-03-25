@@ -1434,77 +1434,19 @@ def stanford_cars(info, root, config):
     return num_samples
 
 
-class USPSMockData:
-    @classmethod
-    def generate_images(cls, num_samples, shape, image_dtype, low, high):
-        return make_tensor((num_samples, *shape), dtype=image_dtype, low=low, high=high)
-
-    @classmethod
-    def generate_labels(cls, num_samples, label_dtype, low, high):
-        return make_tensor((num_samples,), dtype=label_dtype, low=low, high=high)
-
-    @classmethod
-    def generate(
-        cls,
-        root,
-        *,
-        num_categories,
-        num_samples=None,
-        data_file,
-        image_size=(16 * 16,),
-        image_dtype=torch.half,
-        label_dtype=torch.uint8,
-        compressor=None,
-    ):
-        if num_samples is None:
-            num_samples = len(num_categories)
-        if compressor is None:
-            compressor = bz2.open
-
-        image_data = cls.generate_images(
-            num_samples=num_samples,
-            shape=image_size,
-            image_dtype=image_dtype,
-            low=-1,
-            high=1,
-        )
-
-        label_data = cls.generate_labels(
-            num_samples=num_samples,
-            label_dtype=label_dtype,
-            low=0,
-            high=len(num_categories),
-        )
-
-        cls._create_binary_file(
-            root,
-            data_file,
-            image_data=image_data,
-            label_data=label_data,
-            compressor=compressor,
-        )
-
-        return num_samples
-
-    @classmethod
-    def _create_binary_file(cls, root, data_file, image_data, label_data, compressor):
-        with compressor(root / data_file, "wb") as f:
-            for image, label in zip(image_data, label_data):
-                encoded_label = str(label.item())
-                encoded_image = cls.encode_image(image)
-                encoded_bytes = bytes(f"{encoded_label} {encoded_image} \n", encoding="utf-8")
-                f.write(encoded_bytes)
-
-    @classmethod
-    def encode_image(cls, image):
-        data = [f"{i}:{value.item()}" for i, value in enumerate(image, start=1)]
-        return " ".join(data)
-
-
 @register_mock
 def usps(info, root, config):
-    num_samples = {"train": 15, "test": 7}[config["split"]]
+    num_samples = {"train": 15, "test": 7}[config.split]
 
-    train = config.split == "train"
-    data_file = f"usps.{'t.' if not train else ''}bz2"
-    return USPSMockData.generate(root, num_categories=info.categories, num_samples=num_samples, data_file=data_file)
+    with bz2.open(root / f"usps{'.t' if not config.split == 'train' else ''}.bz2", "wb") as fh:
+        lines = []
+        for _ in range(num_samples):
+            label = make_tensor(1, low=1, high=11, dtype=torch.int)
+            values = make_tensor(256, low=-1, high=1, dtype=torch.float)
+            lines.append(
+                " ".join([f"{int(label)}", *(f"{idx}:{float(value):.6f}" for idx, value in enumerate(values, 1))])
+            )
+
+        fh.write("\n".join(lines).encode())
+
+    return num_samples
