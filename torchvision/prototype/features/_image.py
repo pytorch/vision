@@ -33,19 +33,6 @@ class ColorSpace(StrEnum):
         else:
             return cls.OTHER
 
-    @classmethod
-    def guess_from_num_channels(cls, num_channels: int) -> ColorSpace:
-        if num_channels == 1:
-            return ColorSpace.GRAY
-        elif num_channels == 2:
-            return ColorSpace.GRAY_ALPHA
-        elif num_channels == 3:
-            return ColorSpace.RGB
-        elif num_channels == 4:
-            return ColorSpace.RGB_ALPHA
-        else:
-            return ColorSpace.OTHER
-
 
 class Image(_Feature):
     color_space: ColorSpace
@@ -102,7 +89,16 @@ class Image(_Feature):
             return ColorSpace.GRAY
 
         num_channels = data.shape[-3]
-        return ColorSpace.guess_from_num_channels(num_channels)
+        if num_channels == 1:
+            return ColorSpace.GRAY
+        elif num_channels == 2:
+            return ColorSpace.GRAY_ALPHA
+        elif num_channels == 3:
+            return ColorSpace.RGB
+        elif num_channels == 4:
+            return ColorSpace.RGB_ALPHA
+        else:
+            return ColorSpace.OTHER
 
     def show(self) -> None:
         # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
