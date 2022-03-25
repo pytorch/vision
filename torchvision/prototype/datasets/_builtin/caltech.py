@@ -32,7 +32,7 @@ class Caltech101(Dataset):
         images = HttpResource(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
             sha256="af6ece2f339791ca20f855943d8b55dd60892c0a25105fcd631ee3d6430f9926",
-            decompress=True,
+            preprocess="decompress",
         )
         anns = HttpResource(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",

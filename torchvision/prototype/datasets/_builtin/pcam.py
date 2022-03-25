@@ -91,7 +91,7 @@ class PCAM(Dataset):
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [  # = [images resource, targets resource]
-            GDriveResource(file_name=file_name, id=gdrive_id, sha256=sha256, decompress=True)
+            GDriveResource(file_name=file_name, id=gdrive_id, sha256=sha256, preprocess="decompress")
             for file_name, gdrive_id, sha256 in self._RESOURCES[config.split]
         ]
 

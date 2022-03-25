@@ -11,6 +11,7 @@ from torchdata.datapipes.iter import (
     Filter,
     Demultiplexer,
     TarArchiveLoader,
+    Enumerator,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -23,7 +24,6 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     BUILTIN_DIR,
     path_comparator,
-    Enumerator,
     getitem,
     read_mat,
     hint_sharding,

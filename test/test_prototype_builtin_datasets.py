@@ -1,5 +1,6 @@
 import functools
 import io
+import pickle
 from pathlib import Path
 
 import pytest
@@ -9,9 +10,9 @@ from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
-from torchvision.prototype.utils._internal import sequence_to_str
-
+from torchvision.prototype.features import Image, Label
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
@@ -53,6 +54,8 @@ class TestCommon:
 
         try:
             sample = next(iter(dataset))
+        except StopIteration:
+            raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
             raise AssertionError("Drawing a sample raised the error above.") from error
 
@@ -108,29 +111,15 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
-    @parametrize_dataset_mocks(
-        DATASET_MOCKS,
-        marks={
-            "cub200": pytest.mark.xfail(
-                reason="See https://github.com/pytorch/vision/pull/5187#issuecomment-1015479165"
-            )
-        },
-    )
-    def test_traversable(self, test_home, dataset_mock, config):
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_serializable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        traverse(dataset)
+        pickle.dumps(dataset)
 
-    @parametrize_dataset_mocks(
-        DATASET_MOCKS,
-        marks={
-            "cub200": pytest.mark.xfail(
-                reason="See https://github.com/pytorch/vision/pull/5187#issuecomment-1015479165"
-            )
-        },
-    )
+    @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
         def scan(graph):
@@ -192,3 +181,20 @@ class TestGTSRB:
         for sample in dataset:
             label_from_path = int(Path(sample["path"]).parent.name)
             assert sample["label"] == label_from_path
+
+
+@parametrize_dataset_mocks(DATASET_MOCKS["usps"])
+class TestUSPS:
+    def test_sample_content(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        for sample in dataset:
+            assert "image" in sample
+            assert "label" in sample
+
+            assert isinstance(sample["image"], Image)
+            assert isinstance(sample["label"], Label)
+
+            assert sample["image"].shape == (1, 16, 16)

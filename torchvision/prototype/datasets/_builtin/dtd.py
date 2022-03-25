@@ -49,7 +49,7 @@ class DTD(Dataset):
         archive = HttpResource(
             "https://www.robots.ox.ac.uk/~vgg/data/dtd/download/dtd-r1.0.1.tar.gz",
             sha256="e42855a52a4950a3b59612834602aa253914755c95b0cff9ead6d07395f8e205",
-            decompress=True,
+            preprocess="decompress",
         )
         return [archive]
 

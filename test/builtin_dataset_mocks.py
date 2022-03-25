@@ -1,3 +1,4 @@
+import bz2
 import collections.abc
 import csv
 import functools
@@ -20,8 +21,8 @@ import torch
 from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
+from torchvision._utils import sequence_to_str
 from torchvision.prototype.datasets._api import find
-from torchvision.prototype.utils._internal import sequence_to_str
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
@@ -1333,20 +1334,20 @@ def cub200(info, root, config):
 
 @register_mock
 def eurosat(info, root, config):
-    data_folder = pathlib.Path(root, "eurosat", "2750")
+    data_folder = root / "2750"
     data_folder.mkdir(parents=True)
 
     num_examples_per_class = 3
-    classes = ("AnnualCrop", "Forest")
-    for cls in classes:
+    categories = ["AnnualCrop", "Forest"]
+    for category in categories:
         create_image_folder(
             root=data_folder,
-            name=cls,
-            file_name_fn=lambda idx: f"{cls}_{idx}.jpg",
+            name=category,
+            file_name_fn=lambda idx: f"{category}_{idx + 1}.jpg",
             num_examples=num_examples_per_class,
         )
     make_zip(root, "EuroSAT.zip", data_folder)
-    return len(classes) * num_examples_per_class
+    return len(categories) * num_examples_per_class
 
 
 @register_mock
@@ -1394,3 +1395,62 @@ def pcam(info, root, config):
             compressed_file.write(compressed_data)
 
     return num_images
+
+
+@register_mock
+def stanford_cars(info, root, config):
+    import scipy.io as io
+    from numpy.core.records import fromarrays
+
+    num_samples = {"train": 5, "test": 7}[config["split"]]
+    num_categories = 3
+
+    devkit = root / "devkit"
+    devkit.mkdir(parents=True)
+
+    if config["split"] == "train":
+        images_folder_name = "cars_train"
+        annotations_mat_path = devkit / "cars_train_annos.mat"
+    else:
+        images_folder_name = "cars_test"
+        annotations_mat_path = root / "cars_test_annos_withlabels.mat"
+
+    create_image_folder(
+        root=root,
+        name=images_folder_name,
+        file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+        num_examples=num_samples,
+    )
+
+    make_tar(root, f"cars_{config.split}.tgz", images_folder_name)
+    bbox = np.random.randint(1, 200, num_samples, dtype=np.uint8)
+    classes = np.random.randint(1, num_categories + 1, num_samples, dtype=np.uint8)
+    fnames = [f"{i:5d}.jpg" for i in range(num_samples)]
+    rec_array = fromarrays(
+        [bbox, bbox, bbox, bbox, classes, fnames],
+        names=["bbox_x1", "bbox_y1", "bbox_x2", "bbox_y2", "class", "fname"],
+    )
+
+    io.savemat(annotations_mat_path, {"annotations": rec_array})
+    if config.split == "train":
+        make_tar(root, "car_devkit.tgz", devkit, compression="gz")
+
+    return num_samples
+
+
+@register_mock
+def usps(info, root, config):
+    num_samples = {"train": 15, "test": 7}[config.split]
+
+    with bz2.open(root / f"usps{'.t' if not config.split == 'train' else ''}.bz2", "wb") as fh:
+        lines = []
+        for _ in range(num_samples):
+            label = make_tensor(1, low=1, high=11, dtype=torch.int)
+            values = make_tensor(256, low=-1, high=1, dtype=torch.float)
+            lines.append(
+                " ".join([f"{int(label)}", *(f"{idx}:{float(value):.6f}" for idx, value in enumerate(values, 1))])
+            )
+
+        fh.write("\n".join(lines).encode())
+
+    return num_samples
