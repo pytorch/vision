@@ -328,6 +328,7 @@ class SSD(nn.Module):
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
+                return ({}, [{}]) # not reachable - added to make type checker happy
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
@@ -380,6 +381,7 @@ class SSD(nn.Module):
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
+                return ({}, [{}]) # not reachable - added to make type checker happy
             matched_idxs = []
             for anchors_per_image, targets_per_image in zip(anchors, targets):
                 if targets_per_image["boxes"].numel() == 0:
