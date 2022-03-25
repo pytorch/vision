@@ -650,7 +650,7 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
 
     # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
-    # Points are defined are shifted due to affine matrix torch convention about
+    # Points are shifted due to affine matrix torch convention about
     # the center point. Center is (0, 0) for image center pivot point (w * 0.5, h * 0.5)
     pts = torch.tensor(
         [
