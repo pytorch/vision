@@ -10,8 +10,8 @@ from torchdata.datapipes.iter import (
     FileLister,
     FileOpener,
     IterDataPipe,
-    ZipArchiveReader,
-    TarArchiveReader,
+    ZipArchiveLoader,
+    TarArchiveLoader,
     RarArchiveLoader,
 )
 from torchvision.datasets.utils import (
@@ -72,8 +72,8 @@ class OnlineResource(abc.ABC):
         return dp
 
     _ARCHIVE_LOADERS = {
-        ".tar": TarArchiveReader,
-        ".zip": ZipArchiveReader,
+        ".tar": TarArchiveLoader,
+        ".zip": ZipArchiveLoader,
         ".rar": RarArchiveLoader,
     }
 
