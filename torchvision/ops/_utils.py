@@ -113,11 +113,12 @@ def set_weight_decay(
                     other_params.append(p)
 
     param_groups = []
-    if norm_weight_decay is not None:
+    if len(norm_params) > 0:
         param_groups.append({"params": norm_params, "weight_decay": norm_weight_decay})
-    if bias_weight_decay is not None:
+    if len(bias_params) > 0:
         param_groups.append({"params": bias_params, "weight_decay": bias_weight_decay})
     for key in custom_params:
-        param_groups.append({"params": custom_params[key], "weight_decay": custom_keys_weight_decay[key]})
+        if len(custom_params[key]) > 0:
+            param_groups.append({"params": custom_params[key], "weight_decay": custom_keys_weight_decay[key]})
     param_groups.append({"params": other_params, "weight_decay": weight_decay})
     return param_groups
