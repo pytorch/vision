@@ -474,9 +474,8 @@ void Decoder::cleanUp() {
 
 // function does actual work, derived class calls it in working thread
 // periodically. On success method returns 0, ENODATA on EOF, ETIMEDOUT if
-// no frames got decoded in the specified timeout time, and error on
-// unrecoverable error or AVERROR_BUFFER_TOO_SMALL when unable to allocate 
-// packet.
+// no frames got decoded in the specified timeout time, AVERROR_BUFFER_TOO_SMALL
+// when unable to allocate packet and error on unrecoverable error
 int Decoder::getFrame(size_t workingTimeInMs) {
   if (inRange_.none()) {
     return ENODATA;
@@ -505,7 +504,10 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   int result = 0;
   size_t decodingErrors = 0;
   bool decodedFrame = false;
-  while (!interrupted_ && inRange_.any() && !decodedFrame && watcher()) {
+  while (!interrupted_ && inRange_.any() && !decodedFrame) {
+    if watcher() == false:
+      result = ETIMEDOUT
+      break;
     result = av_read_frame(inputCtx_, avPacket);
     if (result == AVERROR(EAGAIN)) {
       VLOG(4) << "Decoder is busy...";
@@ -582,8 +584,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
 
   // loop can be terminated, either by:
   // 1. explcitly iterrupted
-  // 2. terminated by workable timeout
-  // 3. unrecoverable error or ENODATA (end of stream)
+  // 3. unrecoverable error or ENODATA (end of stream) or ETIMEDOUT (timeout)
   // 4. decoded frames pts are out of the specified range
   // 5. success decoded frame
   if (interrupted_) {
