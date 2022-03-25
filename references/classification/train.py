@@ -229,17 +229,12 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
-    if hasattr(model, "no_weight_decay_keywords"):
-        custom_keys_weight_decay = {k: 0.0 for k in model.no_weight_decay_keywords()}
+    if args.norm_weight_decay is None:
+        parameters = model.parameters()
     else:
-        custom_keys_weight_decay = None
-    parameters = utils.set_weight_decay(
-        model,
-        args.weight_decay,
-        norm_weight_decay=args.norm_weight_decay,
-        bias_weight_decay=args.bias_weight_decay,
-        custom_keys_weight_decay=custom_keys_weight_decay,
-    )
+        param_groups = torchvision.ops._utils.split_normalization_params(model)
+        wd_groups = [args.norm_weight_decay, args.weight_decay]
+        parameters = [{"params": p, "weight_decay": w} for p, w in zip(param_groups, wd_groups) if p]
 
     opt_name = args.opt.lower()
     if opt_name.startswith("sgd"):
@@ -266,7 +261,7 @@ def main(args):
         main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
     elif args.lr_scheduler == "cosineannealinglr":
         main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=args.epochs - args.lr_warmup_epochs, eta_min=args.lr_cos_min
+            optimizer, T_max=args.epochs - args.lr_warmup_epochs
         )
     elif args.lr_scheduler == "exponentiallr":
         main_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_gamma)
@@ -397,12 +392,6 @@ def get_args_parser(add_help=True):
         default=None,
         type=float,
         help="weight decay for Normalization layers (default: None, same value as --wd)",
-    )
-    parser.add_argument(
-        "--bias-weight-decay",
-        default=None,
-        type=float,
-        help="weight decay for all bias parameters (default: None, same value as --wd)",
     )
     parser.add_argument(
         "--label-smoothing", default=0.0, type=float, help="label smoothing (default: 0.0)", dest="label_smoothing"
