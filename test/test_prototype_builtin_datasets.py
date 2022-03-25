@@ -184,7 +184,7 @@ class TestGTSRB:
 
 @parametrize_dataset_mocks(DATASET_MOCKS["usps"])
 class TestUSPS:
-    def test_label_matches_path(self, test_home, dataset_mock, config):
+    def test_sample_content(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
