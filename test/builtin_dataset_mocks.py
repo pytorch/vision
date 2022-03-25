@@ -16,7 +16,7 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, random_group
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision._utils import sequence_to_str
@@ -1429,5 +1429,71 @@ def stanford_cars(info, root, config):
     io.savemat(annotations_mat_path, {"annotations": rec_array})
     if config.split == "train":
         make_tar(root, "car_devkit.tgz", devkit, compression="gz")
+
+    return num_samples
+
+
+@register_mock
+def widerface(info, root, config):
+    labels_and_categories = [
+        (0, "Parade"),
+        (59, "people"),
+        (60, "Street_Battle"),
+    ]
+
+    image_folder = root / f"WIDER_{config.split}"
+    image_folder.mkdir()
+    image_files = []
+    for label, category in labels_and_categories:
+        image_files.extend(
+            create_image_folder(
+                image_folder / "images",
+                f"{label}--{category}",
+                lambda idx: f"{label}_{category}_{idx}.jpg",
+                num_examples=3,
+            )
+        )
+    make_zip(root, f"{image_folder.name}.zip")
+
+    random_group(image_files, ["train", "val", "test"])
+
+    anns_folder = root / "wider_face_split"
+    anns_folder.mkdir()
+    for split, image_files_in_split in random_group(image_files, ["train", "val", "test"]).items():
+        if split == "test":
+            with open(anns_folder / "wider_face_test_filelist.txt", "w") as file:
+                file.write(
+                    "\n".join(path.relative_to(path.parents[1]).as_posix() for path in image_files_in_split) + "\n"
+                )
+        else:
+            with open(anns_folder / f"wider_face_{split}_bbx_gt.txt", "w") as file:
+                for path in image_files_in_split:
+                    file.write(f"{path.relative_to(path.parents[1]).as_posix()}\n")
+
+                    num_objects = int(torch.randint(1, 5, ()))
+                    file.write(f"{num_objects}\n")
+                    for _ in range(num_objects):
+                        file.write(
+                            " ".join(
+                                [
+                                    str(attr)
+                                    for attr in [
+                                        *torch.randint(10, (4,)).tolist(),  # bounding box
+                                        int(torch.randint(3, ())),  # blur
+                                        int(torch.randint(2, ())),  # expression
+                                        int(torch.randint(2, ())),  # illumnation
+                                        int(torch.randint(2, ())),  # invalid
+                                        int(torch.randint(3, ())),  # occlusion
+                                        int(torch.randint(2, ())),  # pose
+                                    ]
+                                ]
+                            )
+                            + "\n"
+                        )
+
+        if split == config.split:
+            num_samples = len(image_files_in_split)
+
+    make_zip(root, f"{anns_folder.name}.zip")
 
     return num_samples

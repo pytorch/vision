@@ -18,3 +18,4 @@ from .semeion import SEMEION
 from .stanford_cars import StanfordCars
 from .svhn import SVHN
 from .voc import VOC
+from .widerface import WIDERFace
