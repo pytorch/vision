@@ -475,7 +475,8 @@ void Decoder::cleanUp() {
 // function does actual work, derived class calls it in working thread
 // periodically. On success method returns 0, ENODATA on EOF, ETIMEDOUT if
 // no frames got decoded in the specified timeout time, and error on
-// unrecoverable error.
+// unrecoverable error or AVERROR_BUFFER_TOO_SMALL when unable to allocate 
+// packet.
 int Decoder::getFrame(size_t workingTimeInMs) {
   if (inRange_.none()) {
     return ENODATA;
