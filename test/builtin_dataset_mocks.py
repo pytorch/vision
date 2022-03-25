@@ -16,7 +16,7 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, random_group
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision._utils import sequence_to_str
@@ -1435,56 +1435,44 @@ def stanford_cars(info, root, config):
 
 @register_mock
 def sun397(info, root, config):
-    import os
+    images_root = root / "SUN397"
+    images_root.mkdir()
 
-    num_samples_map = {"train": 5, "test": 3}
-    num_samples = num_samples_map[config["split"]]
-    num_samples_train = num_samples_map["train"]
-    num_samples_all = sum(num_samples_map.values())
+    categories = ["abbey", "airplane_cabin", "wrestling_ring/indoor"]
+    category_keys = [f"/{category[0]}/{category}" for category in categories]
 
-    categories = ["abbey", "bakery/shop", "bar"]
-    image_root = root / "SUN397"
-    partitions_root = root / "Partitions"
-    os.makedirs(partitions_root, exist_ok=True)
-    for category in categories:
-        image_folder_list = [category[0]] + category.split("/")
-        image_folder_name = pathlib.Path(*image_folder_list)
-        # Create mock images
-        create_image_folder(
-            root=image_root,
-            name=image_folder_name,
+    keys = []
+    for key in category_keys:
+        parts = key.split("/")
+        image_files = create_image_folder(
+            root=images_root.joinpath(*parts[1:-1]),
+            name=parts[-1],
             file_name_fn=lambda idx: f"sun_{idx:05d}.jpg",
-            num_examples=num_samples_all,
+            num_examples=5,
         )
 
-        # Create the partitions for 10 fold of train and test
-        for fold in range(1, 11):
-            shuffled_idxs = list(range(num_samples_all))
-            random.shuffle(shuffled_idxs)
-            split_data = {
-                "train": {
-                    "filename": f"Training_{fold:02d}.txt",
-                    "idxs": shuffled_idxs[:num_samples_train],
-                },
-                "test": {
-                    "filename": f"Testing_{fold:02d}.txt",
-                    "idxs": shuffled_idxs[num_samples_train:],
-                },
-            }
-            # Handle case if file with similar name and path exists before
-            write_mode = "a"
-            if category == categories[0]:
-                write_mode = "w"
+        keys.extend([f"/{image_file.relative_to(images_root).as_posix()}" for image_file in image_files])
 
-            for split, data in split_data.items():
-                filepath = pathlib.Path(partitions_root, data["filename"])
-                content = ["/" + "/".join((image_folder_name / f"sun_{idx:05d}.jpg").parts) for idx in data["idxs"]]
-                with open(filepath, write_mode) as f:
-                    f.write("\n".join(content))
-                    if category != categories[-1]:
-                        # We dont want to have an extra new line at the end
-                        f.write("\n")
+    partitions_root = root / "Partitions"
+    partitions_root.mkdir()
 
-    make_tar(root, "SUN397.tar.gz", image_root, compression="gz")
-    make_zip(root, "Partitions.zip", partitions_root)
-    return num_samples * len(categories)
+    for fold in range(1, 11):
+        random.shuffle(keys)
+
+        for split, keys_in_split in random_group(keys, ["train", "test"]).items():
+            if split == config.split and str(fold) == config.fold:
+                num_samples = len(keys_in_split)
+
+            with open(partitions_root / f"{split.capitalize()}ing_{fold:02d}.txt", "w") as fh:
+                fh.write("\n".join(sorted(keys_in_split)))
+
+    # Both archives contain this file. Although it shouldn't be used at runtime, it serves as sentinel to test the
+    # filtering of the correct files
+    for path in (images_root, partitions_root):
+        with open(path / "ClassName.txt", "w") as fh:
+            fh.write("\n".join(category_keys))
+
+    make_tar(root, f"{images_root.name}.tar.gz", compression="gz")
+    make_zip(root, f"{partitions_root.name}.zip")
+
+    return num_samples

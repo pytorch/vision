@@ -952,3 +952,24 @@ def make_fake_flo_file(h, w, file_name):
     )
     with open(file_name, "wb") as f:
         f.write(content)
+
+
+def random_group(collection, groups):
+    """Randomly put items into groups without overlap.
+    Args:
+        collection: Collection of items to be grouped.
+        groups: Collection of group keys.
+    Returns:
+        Dictionary with ``groups`` as keys. Each value is a list of random items from ``collection`` without overlap
+            to the other values. Each list has at least length ``1``.
+    """
+    while True:
+        idcs = torch.randint(len(groups), (len(collection),)).tolist()
+        if len(set(idcs)) == len(groups):
+            break
+
+    idx_to_group = dict(zip(range(len(groups)), groups))
+    grouping = defaultdict(list)
+    for idx, item in zip(idcs, collection):
+        grouping[idx_to_group[idx]].append(item)
+    return grouping
