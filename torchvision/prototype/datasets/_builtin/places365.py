@@ -23,7 +23,6 @@ from torchvision.prototype.features import EncodedImage, Label
 
 class Places365(Dataset):
 
-    # TODO: Complete the sha256!
     # Mapping the config options into filename and sha256 checksum
     _IMAGES_MAP = {
         ("standard", "large", "train"): (
@@ -80,7 +79,6 @@ class Places365(Dataset):
         if config.split != "train":
             variant = "_"
         img_filename, img_sha256 = self._IMAGES_MAP[(variant, config.image_res, config.split)]
-        # images = HttpResource(urljoin(self._BASE_URL, img_filename), sha256=img_sha256, preprocess="extract")
         images = HttpResource(urljoin(self._BASE_URL, img_filename), sha256=img_sha256)
 
         return [meta, images]
