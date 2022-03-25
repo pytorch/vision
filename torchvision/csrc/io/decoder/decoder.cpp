@@ -1,7 +1,6 @@
 #include "decoder.h"
 #include <c10/util/Logging.h>
 #include <libavutil/avutil.h>
-#include <cerrno>
 #include <future>
 #include <iostream>
 #include <mutex>
@@ -490,7 +489,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   avPacket = av_packet_alloc();
   if (avPacket == nullptr) {
     LOG(ERROR) << "decoder as not able to allocate the packet.";
-    return AVERROR(ENOMEM);
+    return AVERROR_BUFFER_TOO_SMALL;
   }
   avPacket->data = nullptr;
   avPacket->size = 0;
