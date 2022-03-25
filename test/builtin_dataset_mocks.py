@@ -1,3 +1,4 @@
+import bz2
 import collections.abc
 import csv
 import functools
@@ -1429,6 +1430,24 @@ def stanford_cars(info, root, config):
     io.savemat(annotations_mat_path, {"annotations": rec_array})
     if config.split == "train":
         make_tar(root, "car_devkit.tgz", devkit, compression="gz")
+
+    return num_samples
+
+
+@register_mock
+def usps(info, root, config):
+    num_samples = {"train": 15, "test": 7}[config.split]
+
+    with bz2.open(root / f"usps{'.t' if not config.split == 'train' else ''}.bz2", "wb") as fh:
+        lines = []
+        for _ in range(num_samples):
+            label = make_tensor(1, low=1, high=11, dtype=torch.int)
+            values = make_tensor(256, low=-1, high=1, dtype=torch.float)
+            lines.append(
+                " ".join([f"{int(label)}", *(f"{idx}:{float(value):.6f}" for idx, value in enumerate(values, 1))])
+            )
+
+        fh.write("\n".join(lines).encode())
 
     return num_samples
 
