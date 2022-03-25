@@ -12,7 +12,7 @@ from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import IterDataPipe, Shuffler
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
-
+from torchvision.prototype.features import Image, Label
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
@@ -180,3 +180,20 @@ class TestGTSRB:
         for sample in dataset:
             label_from_path = int(Path(sample["path"]).parent.name)
             assert sample["label"] == label_from_path
+
+
+@parametrize_dataset_mocks(DATASET_MOCKS["usps"])
+class TestUSPS:
+    def test_sample_content(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        for sample in dataset:
+            assert "image" in sample
+            assert "label" in sample
+
+            assert isinstance(sample["image"], Image)
+            assert isinstance(sample["label"], Label)
+
+            assert sample["image"].shape == (1, 16, 16)
