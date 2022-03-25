@@ -505,9 +505,10 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   size_t decodingErrors = 0;
   bool decodedFrame = false;
   while (!interrupted_ && inRange_.any() && !decodedFrame) {
-    if watcher() == false:
-      result = ETIMEDOUT
+    if (watcher() == false) {
+      result = ETIMEDOUT;
       break;
+    }
     result = av_read_frame(inputCtx_, avPacket);
     if (result == AVERROR(EAGAIN)) {
       VLOG(4) << "Decoder is busy...";
