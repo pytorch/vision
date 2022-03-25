@@ -67,10 +67,19 @@ def set_weight_decay(
     model: torch.nn.Module,
     weight_decay: float,
     norm_weight_decay: Optional[float] = None,
+    norm_classes: Optional[List[type]] = None,
     bias_weight_decay: Optional[float] = None,
     custom_keys_weight_decay: Optional[Dict[str, float]] = None,
 ):
-    norm_classes = (torch.nn.modules.batchnorm._BatchNorm, torch.nn.LayerNorm, torch.nn.GroupNorm)
+    if not norm_classes:
+        norm_classes = [
+            nn.modules.batchnorm._BatchNorm,
+            nn.LayerNorm,
+            nn.GroupNorm,
+            nn.modules.instancenorm._InstanceNorm,
+            nn.LocalResponseNorm,
+        ]
+    norm_classes = tuple(norm_classes)
 
     norm_params = []
     bias_params = []
@@ -87,21 +96,18 @@ def set_weight_decay(
                     continue
                 is_custom_key = False
                 for key in custom_params:
-                    if key in name:
+                    if key == name:
                         custom_params[key].append(p)
                         is_custom_key = True
                 if not is_custom_key:
                     other_params.append(p)
-        elif isinstance(module, norm_classes):
-            if norm_weight_decay is not None:
-                norm_params.extend(p for p in module.parameters() if p.requires_grad)
-            else:
-                other_params.extend(p for p in module.parameters() if p.requires_grad)
+        elif isinstance(module, norm_classes) and norm_weight_decay is not None:
+            norm_params.extend(p for p in module.parameters() if p.requires_grad)
         else:
             for name, p in module.named_parameters():
                 if not p.requires_grad:
                     continue
-                if name == "bias" and (bias_weight_decay is not None):
+                if name == "bias" and bias_weight_decay is not None:
                     bias_params.append(p)
                 else:
                     other_params.append(p)
@@ -115,4 +121,3 @@ def set_weight_decay(
         param_groups.append({"params": custom_params[key], "weight_decay": custom_keys_weight_decay[key]})
     param_groups.append({"params": other_params, "weight_decay": weight_decay})
     return param_groups
-    
