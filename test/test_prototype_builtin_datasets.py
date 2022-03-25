@@ -35,8 +35,7 @@ def test_coverage():
         )
 
 
-# This fails a test in case any warning is raised in torch, torchvision, or torchdata
-@pytest.mark.filterwarnings("error:::torch(vision|data)?.*")
+@pytest.mark.filterwarnings("error")
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, test_home, dataset_mock, config):
