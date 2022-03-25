@@ -190,17 +190,10 @@ class TestUSPS:
         dataset = datasets.load(dataset_mock.name, **config)
 
         for sample in dataset:
-            # check if correct keys exist
             assert "image" in sample
             assert "label" in sample
 
-            # check if correct instance type
             assert isinstance(sample["image"], Image)
             assert isinstance(sample["label"], Label)
 
-            # check is data type is correct
-            assert isinstance(sample["image"].data, torch.FloatTensor)
-            assert isinstance(sample["label"].data, torch.LongTensor)
-
-            # verify image size is (1, 16, 16)
             assert sample["image"].shape == (1, 16, 16)
