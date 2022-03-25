@@ -46,8 +46,8 @@ class Country211(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, path_comparator("parent.parent.name", self._SPLIT_NAME_MAPPER[config.split]))
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:

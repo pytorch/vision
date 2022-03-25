@@ -120,8 +120,7 @@ class TestCommon:
         pickle.dumps(dataset)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
-    def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
+    def test_shuffling_and_sharding(self, test_home, dataset_mock, config):
         def scan(graph):
             for node, sub_graph in graph.items():
                 yield node
@@ -131,8 +130,31 @@ class TestCommon:
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
-            raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
+        # The nodes are in reversed order, i.e the last datapipe in the dataset comes first
+        nodes = iter(scan(traverse(dataset)))
+
+        for node in nodes:
+            if isinstance(node, ShardingFilter):
+                break
+            elif isinstance(node, Shuffler):
+                raise AssertionError(
+                    "Found a `Shuffler` after a `ShardingFilter` in the graph. "
+                    "Please place the `dp = hint_shuffling(dp)` call before the `dp = hint_sharding(dp)` call."
+                )
+        else:
+            raise AssertionError(
+                "Found no `ShardingFilter` in the graph. "
+                "Please place a `dp = hint_sharding(dp)` call in the dataset implementation. "
+            )
+
+        for node in nodes:
+            if isinstance(node, Shuffler):
+                break
+        else:
+            raise AssertionError(
+                "Found no `Shuffler` in the graph. "
+                "Please place a `dp = hint_shuffling(dp)` call in the dataset implementation. "
+            )
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_save_load(self, test_home, dataset_mock, config):
