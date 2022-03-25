@@ -663,6 +663,10 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
 
+    # shift points to [0, w] and [0, h] interval to match PIL results
+    min_vals += torch.tensor((w * 0.5, h * 0.5))
+    max_vals += torch.tensor((w * 0.5, h * 0.5))
+
     # Truncate precision to 1e-4 to avoid ceil of Xe-15 to 1.0
     tol = 1e-4
     cmax = torch.ceil((max_vals / tol).trunc_() * tol)

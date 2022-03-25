@@ -361,6 +361,10 @@ def rotate_bounding_box(
     expand: bool = False,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    if center is not None and expand:
+        warnings.warn("The provided center argument is ignored if expand is True")
+        center = None
+
     original_shape = bounding_box.shape
     bounding_box = convert_bounding_box_format(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
@@ -371,6 +375,21 @@ def rotate_bounding_box(
     return convert_bounding_box_format(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
+
+
+def rotate_segmentation_mask(
+    img: torch.Tensor,
+    angle: float,
+    expand: bool = False,
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return rotate_image_tensor(
+        img,
+        angle=angle,
+        expand=expand,
+        interpolation=InterpolationMode.NEAREST,
+        center=center,
+    )
 
 
 pad_image_tensor = _FT.pad
