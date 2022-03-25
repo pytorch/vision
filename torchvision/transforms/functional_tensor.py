@@ -650,6 +650,8 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
     # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054
 
     # pts are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
+    # Points are defined are shifted due to affine matrix torch convention about
+    # the center point. Center is (0, 0) for image center pivot point (w * 0.5, h * 0.5)
     pts = torch.tensor(
         [
             [-0.5 * w, -0.5 * h, 1.0],
@@ -658,10 +660,14 @@ def _compute_output_size(matrix: List[float], w: int, h: int) -> Tuple[int, int]
             [0.5 * w, -0.5 * h, 1.0],
         ]
     )
-    theta = torch.tensor(matrix, dtype=torch.float).reshape(1, 2, 3)
-    new_pts = pts.view(1, 4, 3).bmm(theta.transpose(1, 2)).view(4, 2)
+    theta = torch.tensor(matrix, dtype=torch.float).view(2, 3)
+    new_pts = torch.matmul(pts, theta.T)
     min_vals, _ = new_pts.min(dim=0)
     max_vals, _ = new_pts.max(dim=0)
+
+    # shift points to [0, w] and [0, h] interval to match PIL results
+    min_vals += torch.tensor((w * 0.5, h * 0.5))
+    max_vals += torch.tensor((w * 0.5, h * 0.5))
 
     # Truncate precision to 1e-4 to avoid ceil of Xe-15 to 1.0
     tol = 1e-4
