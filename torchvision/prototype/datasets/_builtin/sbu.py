@@ -3,7 +3,8 @@ from typing import List, Any, Dict, Optional, Tuple
 
 import numpy as np
 from PIL import Image as pil_image
-from torchdata.datapipes.iter import IterDataPipe, Demultiplexer, LineReader, HttpReader, Zipper, Mapper
+from torch.utils.data.datapipes.utils.common import StreamWrapper
+from torchdata.datapipes.iter import IterDataPipe, Demultiplexer, LineReader, HttpReader, Zipper, Mapper, Filter
 from torchvision.prototype import features
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, OnlineResource, HttpResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
@@ -53,16 +54,22 @@ class SBU(Dataset):
         photo_captions_dp = LineReader(photo_captions_dp, decode=True, return_path=False)
 
         dp = Zipper(photo_urls_dp, photo_captions_dp)
+        dp = Filter(dp, lambda data: self._filter_by_content_type(data[0][1]))
         dp = hint_shuffling(dp)
         dp = hint_sharding(dp)
 
         return Mapper(dp, self._prepare_sample)
 
+    def _filter_by_content_type(self, stream: StreamWrapper) -> bool:
+        try:
+            return stream.headers["Content-Type"] == "image/jpeg"
+        except Exception:
+            return False
+
     def _prepare_sample(self, sample: Dict[str, Any]) -> Dict[str, Any]:
         image, caption = sample
         _, image = image
 
-        # TODO: handle missing images
         # TODO: check for method to convert to tensor without PIL and Numpy
         image = pil_image.open(io.BytesIO(image.data))
         image = np.array(image)
