@@ -4,7 +4,7 @@ from torch import Tensor
 
 def _upcast(t: Tensor) -> Tensor:
     # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
-    if not t.dtype in (torch.float32, torch.float64):
+    if t.dtype not in (torch.float32, torch.float64):
         return t.float()
     return t
 
