@@ -10,7 +10,7 @@ from torchdata.datapipes.iter import (
     Mapper,
     Filter,
     Demultiplexer,
-    TarArchiveReader,
+    TarArchiveLoader,
     Enumerator,
 )
 from torchvision.prototype.datasets.utils import (
@@ -158,7 +158,7 @@ class ImageNet(Dataset):
 
             # the train archive is a tar of tars
             if config.split == "train":
-                dp = TarArchiveReader(dp)
+                dp = TarArchiveLoader(dp)
 
             dp = hint_sharding(dp)
             dp = hint_shuffling(dp)

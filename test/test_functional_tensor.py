@@ -67,7 +67,7 @@ class TestRotate:
     IMG_W = 26
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    @pytest.mark.parametrize("height, width", [(26, IMG_W), (32, IMG_W)])
+    @pytest.mark.parametrize("height, width", [(7, 33), (26, IMG_W), (32, IMG_W)])
     @pytest.mark.parametrize(
         "center",
         [
@@ -77,7 +77,7 @@ class TestRotate:
         ],
     )
     @pytest.mark.parametrize("dt", ALL_DTYPES)
-    @pytest.mark.parametrize("angle", range(-180, 180, 17))
+    @pytest.mark.parametrize("angle", range(-180, 180, 34))
     @pytest.mark.parametrize("expand", [True, False])
     @pytest.mark.parametrize(
         "fill",
