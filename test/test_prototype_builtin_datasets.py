@@ -213,3 +213,18 @@ class TestUSPS:
             assert isinstance(sample["label"], Label)
 
             assert sample["image"].shape == (1, 16, 16)
+
+
+@parametrize_dataset_mocks(DATASET_MOCKS["sbu"])
+class TestSBU:
+    def test_sample_content(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        for sample in dataset:
+            assert "image" in sample
+            assert "caption" in sample
+
+            assert isinstance(sample["image"], Image)
+            assert isinstance(sample["caption"], str)

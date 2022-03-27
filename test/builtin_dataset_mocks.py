@@ -1459,12 +1459,17 @@ def usps(info, root, config):
 @register_mock
 def sbu(info, root, config):
     num_samples = 10
-    dataset_folder = root / "dataset"
+
+    dataset_folder = pathlib.Path(root).joinpath("dataset")
+    dataset_folder.mkdir(parents=True)
+
     photo_urls_file = "SBU_captioned_photo_dataset_urls.txt"
     photo_captions_file = "SBU_captioned_photo_dataset_captions.txt"
-    with open(dataset_folder / photo_urls_file, "w") as url_file, open(root / photo_captions_file, "w") as caption_file:
+    with open(dataset_folder.joinpath(photo_urls_file), "w") as url_file, open(
+        dataset_folder.joinpath(photo_captions_file), "w"
+    ) as caption_file:
         urls = [f"https://via.placeholder.com/{random.randint(100, 1000)}.jpg/09f/fff" for _ in range(num_samples)]
-        captions = [f"Random caption {i} for {url}" for i, url in enumerate(urls)]
+        captions = [f"Caption {i} for {url}" for i, url in enumerate(urls)]
         url_file.write("\n".join(urls))
         caption_file.write("\n".join(captions))
 
