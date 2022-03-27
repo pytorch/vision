@@ -1,3 +1,4 @@
+import bz2
 import collections.abc
 import csv
 import functools
@@ -9,6 +10,7 @@ import lzma
 import pathlib
 import pickle
 import random
+import warnings
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 
@@ -469,7 +471,10 @@ def imagenet(info, root, config):
         ]
         num_children = 1
         synsets.extend((0, "", "", "", num_children, [], 0, 0) for _ in range(5))
-        savemat(data_root / "meta.mat", dict(synsets=synsets))
+        with warnings.catch_warnings():
+            # The warning is not for savemat, but rather for some internals savemet is using
+            warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+            savemat(data_root / "meta.mat", dict(synsets=synsets))
 
         make_tar(root, devkit_root.with_suffix(".tar.gz").name, compression="gz")
     else:  # config.split == "test"
@@ -1481,5 +1486,23 @@ def stanford_cars(info, root, config):
     io.savemat(annotations_mat_path, {"annotations": rec_array})
     if config.split == "train":
         make_tar(root, "car_devkit.tgz", devkit, compression="gz")
+
+    return num_samples
+
+
+@register_mock
+def usps(info, root, config):
+    num_samples = {"train": 15, "test": 7}[config.split]
+
+    with bz2.open(root / f"usps{'.t' if not config.split == 'train' else ''}.bz2", "wb") as fh:
+        lines = []
+        for _ in range(num_samples):
+            label = make_tensor(1, low=1, high=11, dtype=torch.int)
+            values = make_tensor(256, low=-1, high=1, dtype=torch.float)
+            lines.append(
+                " ".join([f"{int(label)}", *(f"{idx}:{float(value):.6f}" for idx, value in enumerate(values, 1))])
+            )
+
+        fh.write("\n".join(lines).encode())
 
     return num_samples
