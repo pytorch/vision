@@ -1366,7 +1366,7 @@ class TestUtils:
 
         assert len(params[0]) == 92
         assert len(params[1]) == 82
- 
+
     @pytest.mark.parametrize("norm_weight_decay", [None, 0.0])
     @pytest.mark.parametrize("norm_layer", [None, nn.LayerNorm])
     @pytest.mark.parametrize("bias_weight_decay", [None, 0.0])
@@ -1388,7 +1388,7 @@ class TestUtils:
             bias_weight_decay=bias_weight_decay,
             custom_keys_weight_decay=custom_keys_weight_decay,
         )
- 
+
         if norm_weight_decay is None and bias_weight_decay is None and custom_keys_weight_decay is None:
             assert len(param_groups) == 1
             assert len(param_groups[0]["params"]) == 20
