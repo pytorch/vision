@@ -1,3 +1,5 @@
+from __future__ import annotations
+
 import math
 import numbers
 import warnings
@@ -32,19 +34,16 @@ class InterpolationMode(Enum):
     HAMMING = "hamming"
     LANCZOS = "lanczos"
 
-
-# TODO: Once torchscript supports Enums with staticmethod
-# this can be put into InterpolationMode as staticmethod
-def _interpolation_modes_from_int(i: int) -> InterpolationMode:
-    inverse_modes_mapping = {
-        0: InterpolationMode.NEAREST,
-        2: InterpolationMode.BILINEAR,
-        3: InterpolationMode.BICUBIC,
-        4: InterpolationMode.BOX,
-        5: InterpolationMode.HAMMING,
-        1: InterpolationMode.LANCZOS,
-    }
-    return inverse_modes_mapping[i]
+    @classmethod
+    def from_legacy_int(cls, legacy_int: int) -> InterpolationMode:
+        return {
+            0: InterpolationMode.NEAREST,
+            2: InterpolationMode.BILINEAR,
+            3: InterpolationMode.BICUBIC,
+            4: InterpolationMode.BOX,
+            5: InterpolationMode.HAMMING,
+            1: InterpolationMode.LANCZOS,
+        }[legacy_int]
 
 
 pil_modes_mapping = {
@@ -417,7 +416,7 @@ def resize(
             "Argument interpolation should be of type InterpolationMode instead of int. "
             "Please, use InterpolationMode enum."
         )
-        interpolation = _interpolation_modes_from_int(interpolation)
+        interpolation = InterpolationMode.from_legacy_int(interpolation)
 
     if not isinstance(interpolation, InterpolationMode):
         raise TypeError("Argument interpolation should be a InterpolationMode")
@@ -674,7 +673,7 @@ def perspective(
             "Argument interpolation should be of type InterpolationMode instead of int. "
             "Please, use InterpolationMode enum."
         )
-        interpolation = _interpolation_modes_from_int(interpolation)
+        interpolation = InterpolationMode.from_legacy_int(interpolation)
 
     if not isinstance(interpolation, InterpolationMode):
         raise TypeError("Argument interpolation should be a InterpolationMode")
@@ -1040,7 +1039,7 @@ def rotate(
             "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
             "Please use 'interpolation' instead."
         )
-        interpolation = _interpolation_modes_from_int(resample)
+        interpolation = InterpolationMode.from_legacy_int(resample)
 
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
@@ -1048,7 +1047,7 @@ def rotate(
             "Argument interpolation should be of type InterpolationMode instead of int. "
             "Please, use InterpolationMode enum."
         )
-        interpolation = _interpolation_modes_from_int(interpolation)
+        interpolation = InterpolationMode.from_legacy_int(interpolation)
 
     if not isinstance(angle, (int, float)):
         raise TypeError("Argument angle should be int or float")
@@ -1129,7 +1128,7 @@ def affine(
             "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
             "Please use 'interpolation' instead."
         )
-        interpolation = _interpolation_modes_from_int(resample)
+        interpolation = InterpolationMode.from_legacy_int(resample)
 
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
@@ -1137,7 +1136,7 @@ def affine(
             "Argument interpolation should be of type InterpolationMode instead of int. "
             "Please, use InterpolationMode enum."
         )
-        interpolation = _interpolation_modes_from_int(interpolation)
+        interpolation = InterpolationMode.from_legacy_int(interpolation)
 
     if fillcolor is not None:
         warnings.warn(

@@ -9,7 +9,7 @@ import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms.functional import pil_to_tensor, InterpolationMode
-from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
+from torchvision.transforms.transforms import _setup_size
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
@@ -131,7 +131,7 @@ class RandomResizedCrop(Transform):
                 "Argument interpolation should be of type InterpolationMode instead of int. "
                 "Please, use InterpolationMode enum."
             )
-            interpolation = _interpolation_modes_from_int(interpolation)
+            interpolation = InterpolationMode.from_legacy_int(interpolation)
 
         self.size = size
         self.scale = scale

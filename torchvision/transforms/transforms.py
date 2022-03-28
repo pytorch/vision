@@ -15,7 +15,7 @@ except ImportError:
 
 from ..utils import _log_api_usage_once
 from . import functional as F
-from .functional import InterpolationMode, _interpolation_modes_from_int
+from .functional import InterpolationMode
 
 
 __all__ = [
@@ -333,7 +333,7 @@ class Resize(torch.nn.Module):
                 "Argument interpolation should be of type InterpolationMode instead of int. "
                 "Please, use InterpolationMode enum."
             )
-            interpolation = _interpolation_modes_from_int(interpolation)
+            interpolation = InterpolationMode.from_legacy_int(interpolation)
 
         self.interpolation = interpolation
         self.antialias = antialias
@@ -771,7 +771,7 @@ class RandomPerspective(torch.nn.Module):
                 "Argument interpolation should be of type InterpolationMode instead of int. "
                 "Please, use InterpolationMode enum."
             )
-            interpolation = _interpolation_modes_from_int(interpolation)
+            interpolation = InterpolationMode.from_legacy_int(interpolation)
 
         self.interpolation = interpolation
         self.distortion_scale = distortion_scale
@@ -891,7 +891,7 @@ class RandomResizedCrop(torch.nn.Module):
                 "Argument interpolation should be of type InterpolationMode instead of int. "
                 "Please, use InterpolationMode enum."
             )
-            interpolation = _interpolation_modes_from_int(interpolation)
+            interpolation = InterpolationMode.from_legacy_int(interpolation)
 
         self.interpolation = interpolation
         self.scale = scale
@@ -1293,7 +1293,7 @@ class RandomRotation(torch.nn.Module):
                 "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
                 "Please use 'interpolation' instead."
             )
-            interpolation = _interpolation_modes_from_int(resample)
+            interpolation = InterpolationMode.from_legacy_int(resample)
 
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
@@ -1301,7 +1301,7 @@ class RandomRotation(torch.nn.Module):
                 "Argument interpolation should be of type InterpolationMode instead of int. "
                 "Please, use InterpolationMode enum."
             )
-            interpolation = _interpolation_modes_from_int(interpolation)
+            interpolation = InterpolationMode.from_legacy_int(interpolation)
 
         self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
 
@@ -1422,7 +1422,7 @@ class RandomAffine(torch.nn.Module):
                 "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
                 "Please use 'interpolation' instead."
             )
-            interpolation = _interpolation_modes_from_int(resample)
+            interpolation = InterpolationMode.from_legacy_int(resample)
 
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
@@ -1430,7 +1430,7 @@ class RandomAffine(torch.nn.Module):
                 "Argument interpolation should be of type InterpolationMode instead of int. "
                 "Please, use InterpolationMode enum."
             )
-            interpolation = _interpolation_modes_from_int(interpolation)
+            interpolation = InterpolationMode.from_legacy_int(interpolation)
 
         if fillcolor is not None:
             warnings.warn(
