@@ -568,7 +568,7 @@ class FCOS(nn.Module):
 
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}]) # # not reachable - added to make type checker happy
+                return ({}, [{}]) # not reachable - added to make type checker happy
             for target in targets:
                 boxes = target["boxes"]
                 torch._assert(
