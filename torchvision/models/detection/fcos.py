@@ -571,7 +571,7 @@ class FCOS(nn.Module):
                 return ({}, [{}])  # not reachable - added to make type checker happy
             for target in targets:
                 boxes = target["boxes"]
-                torch._assert(isinstance(boxes, torch.Tensor), f"Expected target boxes to be of type Tensor.")
+                torch._assert(isinstance(boxes, torch.Tensor), "Expected target boxes to be of type Tensor.")
                 torch._assert(
                     len(boxes.shape) == 2 and boxes.shape[-1] == 4,
                     f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
