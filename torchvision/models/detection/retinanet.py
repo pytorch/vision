@@ -531,7 +531,7 @@ class RetinaNet(nn.Module):
                     # print the first degenerate box
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
-                    raise ValueError(
+                    torch._assert(False,
                         "All bounding boxes should have positive height and width."
                         f" Found invalid box {degen_bb} for target at index {target_idx}."
                     )
