@@ -94,12 +94,9 @@ def set_weight_decay(
             for name, p in module.named_parameters(recurse=False):
                 if not p.requires_grad:
                     continue
-                is_custom_key = False
-                for key in custom_params:
-                    if key == name:
-                        custom_params[key].append(p)
-                        is_custom_key = True
-                if not is_custom_key:
+                if key in custom_params:
+                    custom_params[key].append(p)
+                else:
                     other_params.append(p)
         elif isinstance(module, norm_classes) and norm_weight_decay is not None:
             norm_params.extend(p for p in module.parameters() if p.requires_grad)
