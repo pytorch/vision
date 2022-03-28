@@ -112,10 +112,10 @@ that is only needed at runtime.
 Thus, all buffered datapipes should be used as early as possible, e.g. zipping two datapipes of file handles rather than
 trying to zip already loaded images.
 
-There are two special datapipes that are not used through their class, but through the functions `hint_sharding` and
-`hint_shuffling`. As the name implies they only hint part in the datapipe graph where sharding and shuffling should take
+There are two special datapipes that are not used through their class, but through the functions `hint_shuffling` and
+`hint_sharding`. As the name implies they only hint part in the datapipe graph where shuffling and sharding should take
 place, but are no-ops by default. They can be imported from `torchvision.prototype.datasets.utils._internal` and are
-required in each dataset.
+required in each dataset. `hint_shuffling` has to be placed before `hint_sharding`.
 
 Finally, each item in the final datapipe should be a dictionary with `str` keys. There is no standardization of the
 names (yet!).
