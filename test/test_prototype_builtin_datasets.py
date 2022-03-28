@@ -35,6 +35,7 @@ def test_coverage():
         )
 
 
+@pytest.mark.filterwarnings("error")
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, test_home, dataset_mock, config):
@@ -118,6 +119,9 @@ class TestCommon:
 
         pickle.dumps(dataset)
 
+    # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
+    #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
+    #  contain a custom test for that, but we opted to wait for a potential solution / test from torchdata for now.
     @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):

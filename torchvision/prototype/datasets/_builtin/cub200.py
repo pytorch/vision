@@ -199,8 +199,8 @@ class CUB200(Dataset):
 
             prepare_ann_fn = self._2010_prepare_ann
 
-        split_dp = hint_sharding(split_dp)
         split_dp = hint_shuffling(split_dp)
+        split_dp = hint_sharding(split_dp)
 
         dp = IterKeyZipper(
             split_dp,
