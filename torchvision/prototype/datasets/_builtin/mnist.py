@@ -105,8 +105,8 @@ class _MNISTBase(Dataset):
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
         dp = Zipper(images_dp, labels_dp)
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, functools.partial(self._prepare_sample, config=config))
 
 
