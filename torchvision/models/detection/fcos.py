@@ -568,12 +568,10 @@ class FCOS(nn.Module):
 
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}]) # not reachable - added to make type checker happy
+                return ({}, [{}])  # not reachable - added to make type checker happy
             for target in targets:
                 boxes = target["boxes"]
-                torch._assert(
-                    isinstance(boxes, torch.Tensor), f"Expected target boxes to be of type Tensor, got {type(boxes)}."
-                )
+                torch._assert(isinstance(boxes, torch.Tensor), f"Expected target boxes to be of type Tensor.")
                 torch._assert(
                     len(boxes.shape) == 2 and boxes.shape[-1] == 4,
                     f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
@@ -625,7 +623,7 @@ class FCOS(nn.Module):
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}]) # not reachable - added to make type checker happy
+                return ({}, [{}])  # not reachable - added to make type checker happy
             # compute the losses
             losses = self.compute_loss(targets, head_outputs, anchors, num_anchors_per_level)
         else:

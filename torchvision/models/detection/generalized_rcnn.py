@@ -60,11 +60,14 @@ class GeneralizedRCNN(nn.Module):
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}]) # not reachable - added to make type checker happy
+                return ({}, [{}])  # not reachable - added to make type checker happy
             for target in targets:
                 boxes = target["boxes"]
                 if isinstance(boxes, torch.Tensor):
-                    torch._assert(len(boxes.shape) == 2 and boxes.shape[-1] == 4, f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
+                    torch._assert(
+                        len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                        f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                    )
                 else:
                     torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
@@ -89,9 +92,10 @@ class GeneralizedRCNN(nn.Module):
                     # print the first degenerate box
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
-                    torch._assert(False,
+                    torch._assert(
+                        False,
                         "All bounding boxes should have positive height and width."
-                        f" Found invalid box {degen_bb} for target at index {target_idx}."
+                        f" Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
         features = self.backbone(images.tensors)

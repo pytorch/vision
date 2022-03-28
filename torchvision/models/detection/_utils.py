@@ -161,11 +161,11 @@ class BoxCoder:
     def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
         torch._assert(
             isinstance(boxes, (list, tuple)),
-            f"This function expects boxes of type list or tuple.",
+            "This function expects boxes of type list or tuple.",
         )
         torch._assert(
             isinstance(rel_codes, torch.Tensor),
-            f"This function expects rel_codes of type torch.Tensor.",
+            "This function expects rel_codes of type torch.Tensor.",
         )
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
@@ -379,7 +379,7 @@ class Matcher:
         if self.allow_low_quality_matches:
             if all_matches is None:
                 torch._assert(False, "all_matches should not be None")
-                return torch.empty((0), dtype=torch.int64) # not reachable - added to make type checker happy
+                return torch.empty((0), dtype=torch.int64)  # not reachable - added to make type checker happy
             self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches
