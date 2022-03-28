@@ -91,7 +91,7 @@ class PCAM(Dataset):
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [  # = [images resource, targets resource]
-            GDriveResource(file_name=file_name, id=gdrive_id, sha256=sha256, decompress=True)
+            GDriveResource(file_name=file_name, id=gdrive_id, sha256=sha256, preprocess="decompress")
             for file_name, gdrive_id, sha256 in self._RESOURCES[config.split]
         ]
 
@@ -99,7 +99,7 @@ class PCAM(Dataset):
         image, target = data  # They're both numpy arrays at this point
 
         return {
-            "image": features.Image(image),
+            "image": features.Image(image.transpose(2, 0, 1)),
             "label": Label(target.item()),
         }
 
@@ -113,6 +113,6 @@ class PCAM(Dataset):
         targets_dp = PCAMH5Reader(targets_dp, key="y")
 
         dp = Zipper(images_dp, targets_dp)
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)

@@ -4,9 +4,10 @@ from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar, Un
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, InterpolationMode, AutoAugmentPolicy, functional as F
+from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.prototype.utils._internal import query_recursively
-from torchvision.transforms.functional import pil_to_tensor, to_pil_image
+from torchvision.transforms.autoaugment import AutoAugmentPolicy
+from torchvision.transforms.functional import pil_to_tensor, to_pil_image, InterpolationMode
 
 from ._utils import get_image_dimensions, is_simple_tensor
 
