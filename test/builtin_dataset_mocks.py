@@ -906,7 +906,6 @@ def country211(info, root, config):
     return num_examples * len(classes)
 
 
-# TODO: Finish this mock. Inspired from dtd.
 @register_mock
 def food101(info, root, config):
     data_folder = root / "food101"
@@ -940,13 +939,17 @@ def food101(info, root, config):
     train_categories = categories[:2]
     test_categories = categories[2:]
 
-    with open(meta_folder / "train.json", "w") as file:
-        content = {category: image_ids_per_category[category] for category in train_categories}
-        json.dump(content, file)
+    with open(meta_folder / "train.txt", "w") as file:
+        for category in train_categories:
+            for img_id in image_ids_per_category[category]:
+                # Notice that the img_id is of the form category/img_id here.
+                file.write(f"{img_id}\n")
 
-    with open(meta_folder / "test.json", "w") as file:
-        content = {category: image_ids_per_category[category] for category in test_categories}
-        json.dump(content, file)
+    with open(meta_folder / "test.txt", "w") as file:
+        for category in test_categories:
+            for img_id in image_ids_per_category[category]:
+                # Notice that the img_id is of the form category/img_id here.
+                file.write(f"{img_id}\n")
 
     num_samples_map = {
         "train": len(train_categories) * num_images_per_class,

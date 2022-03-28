@@ -6,14 +6,11 @@ from torchdata.datapipes.iter import (
     Filter,
     Mapper,
     LineReader,
-    JsonParser,
     Demultiplexer,
-    UnBatcher,
     IterKeyZipper,
 )
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    MappingIterator,
     hint_shuffling,
     hint_sharding,
     path_comparator,
@@ -71,11 +68,8 @@ class Food101(Dataset):
         images_dp, split_dp = Demultiplexer(
             archive_dp, 2, self._classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
         )
-        split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.json"))
-        split_dp = JsonParser(split_dp)
-        split_dp = Mapper(split_dp, getitem(1))
-        split_dp: IterDataPipe[List[str]] = MappingIterator(split_dp, drop_key=True)
-        split_dp = UnBatcher(split_dp)
+        split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
+        split_dp = LineReader(split_dp, decode=True, return_path=False)
         split_dp = hint_sharding(split_dp)
         split_dp = hint_shuffling(split_dp)
 
