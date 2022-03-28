@@ -913,26 +913,20 @@ def country211(info, root, config):
 
 @register_mock
 def food101(info, root, config):
-    data_folder = root / "food101"
+    data_folder = root / "food-101"
 
     num_images_per_class = 3
     image_folder = data_folder / "images"
-    categories = ["apple_pie", "baby_back_ribs", "baklava"]
-    image_ids_per_category = {
-        category: [
-            str(path.relative_to(path.parents[1]).as_posix())
-            for path in create_image_folder(
-                image_folder,
-                category,
-                file_name_fn=lambda idx: f"{idx:04d}.jpg",
-                num_examples=num_images_per_class,
-            )
-        ]
-        for category in categories
-    }
-
-    # Remove the extension from the list of images per category.
-    image_ids_per_category = {k: [e.replace(".jpg", "") for e in v] for k, v in image_ids_per_category.items()}
+    categories = ["apple_pie", "baby_back_ribs", "waffles"]
+    image_ids = []
+    for category in categories:
+        image_files = create_image_folder(
+            image_folder,
+            category,
+            file_name_fn=lambda idx: f"{idx:04d}.jpg",
+            num_examples=num_images_per_class,
+        )
+        image_ids.extend(path.relative_to(path.parents[1]).with_suffix("").as_posix() for path in image_files)
 
     meta_folder = data_folder / "meta"
     meta_folder.mkdir()
@@ -941,27 +935,18 @@ def food101(info, root, config):
         for category in categories:
             file.write(f"{category}\n")
 
-    train_categories = categories[:2]
-    test_categories = categories[2:]
+    splits = ["train", "test"]
+    num_samples_map = {}
+    for offset, split in enumerate(splits):
+        image_ids_in_split = image_ids[offset :: len(splits)]
+        num_samples_map[split] = len(image_ids_in_split)
+        with open(meta_folder / f"{split}.txt", "w") as file:
+            for image_id in image_ids_in_split:
+                file.write(f"{image_id}\n")
 
-    with open(meta_folder / "train.txt", "w") as file:
-        for category in train_categories:
-            for img_id in image_ids_per_category[category]:
-                # Notice that the img_id is of the form category/img_id here.
-                file.write(f"{img_id}\n")
+    print(num_samples_map)
 
-    with open(meta_folder / "test.txt", "w") as file:
-        for category in test_categories:
-            for img_id in image_ids_per_category[category]:
-                # Notice that the img_id is of the form category/img_id here.
-                file.write(f"{img_id}\n")
-
-    num_samples_map = {
-        "train": len(train_categories) * num_images_per_class,
-        "test": len(test_categories) * num_images_per_class,
-    }
-
-    make_tar(root, "food-101.tar.gz", data_folder, compression="gz")
+    make_tar(root, f"{data_folder.name}.tar.gz", compression="gz")
 
     return num_samples_map[config.split]
 
