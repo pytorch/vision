@@ -49,6 +49,6 @@ class USPS(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = Decompressor(resource_dps[0])
         dp = LineReader(dp, decode=True, return_path=False)
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
