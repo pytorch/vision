@@ -944,8 +944,6 @@ def food101(info, root, config):
             for image_id in image_ids_in_split:
                 file.write(f"{image_id}\n")
 
-    print(num_samples_map)
-
     make_tar(root, f"{data_folder.name}.tar.gz", compression="gz")
 
     return num_samples_map[config.split]
