@@ -307,7 +307,7 @@ def rotate_segmentation_mask():
         make_segmentation_masks(extra_dims=((), (4,))),
         [-87, 15, 90],  # angle
         [True, False],  # expand
-        [None, [12, 23]]  # center
+        [None, [12, 23]],  # center
     ):
         if center is not None and expand:
             # Skip warning: The provided center argument is ignored if expand is True
@@ -579,7 +579,6 @@ def test_correctness_affine_segmentation_mask_on_fixed_input(device):
 @pytest.mark.parametrize("angle", range(-90, 90, 56))
 @pytest.mark.parametrize("expand, center", [(True, None), (False, None), (False, (12, 14))])
 def test_correctness_rotate_bounding_box(angle, expand, center):
-
     def _compute_expected_bbox(bbox, angle_, expand_, center_):
         affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
         affine_matrix = affine_matrix[:2, :]
@@ -719,17 +718,38 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
 
-@pytest.mark.parametrize("angle", range(-90, 90, 56))
+@pytest.mark.parametrize("angle", range(-90, 90, 37))
 @pytest.mark.parametrize("expand, center", [(True, None), (False, None), (False, (12, 14))])
 def test_correctness_rotate_segmentation_mask(angle, expand, center):
-
     def _compute_expected_mask(mask, angle_, expand_, center_):
         assert mask.ndim == 3 and mask.shape[0] == 1
-
         image_size = mask.shape[-2:]
         affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
-
         inv_affine_matrix = np.linalg.inv(affine_matrix)
+
+        if expand_:
+            # Pillow implementation on how to perform expand:
+            # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054-L2069
+            height, width = image_size
+            points = np.array(
+                [
+                    [0.0, 0.0, 1.0],
+                    [0.0, 1.0 * height, 1.0],
+                    [1.0 * width, 1.0 * height, 1.0],
+                    [1.0 * width, 0.0, 1.0],
+                ]
+            )
+            new_points = points @ inv_affine_matrix.T
+            min_vals = np.min(new_points, axis=0)[:2]
+            max_vals = np.max(new_points, axis=0)[:2]
+            cmax = np.ceil(np.trunc(max_vals * 1e4) * 1e-4)
+            cmin = np.floor(np.trunc((min_vals + 1e-8) * 1e4) * 1e-4)
+            new_width, new_height = (cmax - cmin).astype("int32").tolist()
+            tr = np.array([-(new_width - width) / 2.0, -(new_height - height) / 2.0, 1.0]) @ inv_affine_matrix.T
+
+            inv_affine_matrix[:2, 2] = tr[:2]
+            image_size = [new_height, new_width]
+
         inv_affine_matrix = inv_affine_matrix[:2, :]
         expected_mask = torch.zeros(1, *image_size, dtype=mask.dtype)
 
@@ -768,3 +788,19 @@ def test_correctness_rotate_segmentation_mask(angle, expand, center):
         else:
             expected_masks = expected_masks[0]
         torch.testing.assert_close(output_mask, expected_masks)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_rotate_segmentation_mask_on_fixed_input(device):
+    # Check transformation against known expected output and CPU/CUDA devices
+
+    # Create a fixed input segmentation mask with 2 square masks
+    # in top-left, bottom-left corners
+    mask = torch.zeros(1, 32, 32, dtype=torch.long, device=device)
+    mask[0, 2:10, 2:10] = 1
+    mask[0, 32 - 9 : 32 - 3, 3:9] = 2
+
+    # Rotate 90 degrees
+    expected_mask = torch.rot90(mask, k=1, dims=(-2, -1))
+    out_mask = F.rotate_segmentation_mask(mask, 90, expand=False)
+    torch.testing.assert_close(out_mask, expected_mask)
