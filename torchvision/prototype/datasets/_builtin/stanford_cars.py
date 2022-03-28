@@ -81,8 +81,8 @@ class StanfordCars(Dataset):
             targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
         targets_dp = StanfordCarsLabelReader(targets_dp)
         dp = Zipper(images_dp, targets_dp)
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
