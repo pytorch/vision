@@ -1,3 +1,4 @@
+import enum
 import functools
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, cast, Callable
@@ -43,6 +44,12 @@ class VOCDatasetInfo(DatasetInfo):
         return config
 
 
+class VOCDemux(enum.IntEnum):
+    SPLIT = 0
+    IMAGES = 1
+    ANNS = 2
+
+
 class VOC(Dataset):
     def _make_info(self) -> DatasetInfo:
         return VOCDatasetInfo(
@@ -85,13 +92,13 @@ class VOC(Dataset):
         path = pathlib.Path(data[0])
         return name in path.parent.parts[-depth:]
 
-    def _classify_archive(self, data: Tuple[str, Any], *, config: DatasetConfig) -> Optional[int]:
+    def _classify_archive(self, data: Tuple[str, Any], *, task: str) -> Optional[int]:
         if self._is_in_folder(data, name="ImageSets", depth=2):
-            return 0
+            return VOCDemux.SPLIT
         elif self._is_in_folder(data, name="JPEGImages"):
-            return 1
-        elif self._is_in_folder(data, name=self._ANNS_FOLDER[config.task]):
-            return 2
+            return VOCDemux.IMAGES
+        elif self._is_in_folder(data, name=self._ANNS_FOLDER[task]):
+            return VOCDemux.ANNS
         else:
             return None
 
@@ -146,7 +153,7 @@ class VOC(Dataset):
         split_dp, images_dp, anns_dp = Demultiplexer(
             archive_dp,
             3,
-            functools.partial(self._classify_archive, config=config),
+            functools.partial(self._classify_archive, task=config.task),
             drop_none=True,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
@@ -176,15 +183,20 @@ class VOC(Dataset):
             ),
         )
 
-    def _filter_detection_anns(self, data: Tuple[str, Any], *, config: DatasetConfig) -> bool:
-        return self._classify_archive(data, config=config) == 2
+    def _filter_detection_anns(self, data: Tuple[str, Any], *, task: str) -> bool:
+        return self._classify_archive(data, task=task) == VOCDemux.ANNS
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        config = self.info.make_config(task="detection")
+        task = "detection"
+        config = self.info.make_config(task=task)
+        resources = self.resources(config)
 
-        resource = self.resources(config)[0]
-        dp = resource.load(pathlib.Path(root) / self.name)
-        dp = Filter(dp, self._filter_detection_anns, fn_kwargs=dict(config=config))
+        dp = resources[0].load(root)
+        dp = Filter(dp, functools.partial(self._filter_detection_anns, task=task))
         dp = Mapper(dp, self._parse_detection_ann, input_col=1)
 
-        return sorted({instance["name"] for _, anns in dp for instance in anns["object"]})
+        categories = sorted({instance["name"] for _, anns in dp for instance in anns["object"]})
+        # We add a background category to be used during segmentation
+        categories.insert(0, "__background__")
+
+        return categories
