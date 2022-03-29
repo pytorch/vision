@@ -497,14 +497,14 @@ class RetinaNet(nn.Module):
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}])  # not reachable - added to make type checker happy
-            for target in targets:
-                boxes = target["boxes"]
-                torch._assert(isinstance(boxes, torch.Tensor), "Expected target boxes to be of type Tensor.")
-                torch._assert(
-                    len(boxes.shape) == 2 and boxes.shape[-1] == 4,
-                    "Expected target boxes to be a tensor of shape [N, 4].",
-                )
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    torch._assert(isinstance(boxes, torch.Tensor), "Expected target boxes to be of type Tensor.")
+                    torch._assert(
+                        len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                        "Expected target boxes to be a tensor of shape [N, 4].",
+                    )
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
@@ -554,9 +554,9 @@ class RetinaNet(nn.Module):
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}])  # not reachable - added to make type checker happy
-            # compute the losses
-            losses = self.compute_loss(targets, head_outputs, anchors)
+            else:
+                # compute the losses
+                losses = self.compute_loss(targets, head_outputs, anchors)
         else:
             # recover level sizes
             num_anchors_per_level = [x.size(2) * x.size(3) for x in features]

@@ -325,16 +325,16 @@ class SSD(nn.Module):
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}])  # not reachable - added to make type checker happy
-            for target in targets:
-                boxes = target["boxes"]
-                if isinstance(boxes, torch.Tensor):
-                    torch._assert(
-                        len(boxes.shape) == 2 and boxes.shape[-1] == 4,
-                        f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
-                    )
-                else:
-                    torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    if isinstance(boxes, torch.Tensor):
+                        torch._assert(
+                            len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                            f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                        )
+                    else:
+                        torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
@@ -379,21 +379,23 @@ class SSD(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
+            matched_idxs = []
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}])  # not reachable - added to make type checker happy
-            matched_idxs = []
-            for anchors_per_image, targets_per_image in zip(anchors, targets):
-                if targets_per_image["boxes"].numel() == 0:
-                    matched_idxs.append(
-                        torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device)
-                    )
-                    continue
+            else:
+                for anchors_per_image, targets_per_image in zip(anchors, targets):
+                    if targets_per_image["boxes"].numel() == 0:
+                        matched_idxs.append(
+                            torch.full(
+                                (anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device
+                            )
+                        )
+                        continue
 
-                match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
-                matched_idxs.append(self.proposal_matcher(match_quality_matrix))
+                    match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
+                    matched_idxs.append(self.proposal_matcher(match_quality_matrix))
 
-            losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
+                losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
         else:
             detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
             detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)

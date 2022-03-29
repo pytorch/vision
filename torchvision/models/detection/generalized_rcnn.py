@@ -60,16 +60,16 @@ class GeneralizedRCNN(nn.Module):
         if self.training:
             if targets is None:
                 torch._assert(False, "targets should not be none when in training mode")
-                return ({}, [{}])  # not reachable - added to make type checker happy
-            for target in targets:
-                boxes = target["boxes"]
-                if isinstance(boxes, torch.Tensor):
-                    torch._assert(
-                        len(boxes.shape) == 2 and boxes.shape[-1] == 4,
-                        f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
-                    )
-                else:
-                    torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    if isinstance(boxes, torch.Tensor):
+                        torch._assert(
+                            len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                            f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                        )
+                    else:
+                        torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:

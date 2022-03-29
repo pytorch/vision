@@ -379,8 +379,8 @@ class Matcher:
         if self.allow_low_quality_matches:
             if all_matches is None:
                 torch._assert(False, "all_matches should not be None")
-                return torch.empty((0), dtype=torch.int64)  # not reachable - added to make type checker happy
-            self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+            else:
+                self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches
 
