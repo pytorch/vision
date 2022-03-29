@@ -77,8 +77,8 @@ class CLEVR(Dataset):
         )
 
         images_dp = Filter(images_dp, path_comparator("parent.name", config.split))
-        images_dp = hint_sharding(images_dp)
         images_dp = hint_shuffling(images_dp)
+        images_dp = hint_sharding(images_dp)
 
         if config.split != "test":
             scenes_dp = Filter(scenes_dp, path_comparator("name", f"CLEVR_{config.split}_scenes.json"))

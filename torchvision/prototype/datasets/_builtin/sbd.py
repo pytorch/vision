@@ -103,8 +103,8 @@ class SBD(Dataset):
 
         split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
         split_dp = LineReader(split_dp, decode=True, return_path=False)
-        split_dp = hint_sharding(split_dp)
         split_dp = hint_shuffling(split_dp)
+        split_dp = hint_sharding(split_dp)
 
         dp = IterKeyZipper(
             split_dp,

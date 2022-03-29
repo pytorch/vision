@@ -93,8 +93,8 @@ class OxfordIITPet(Dataset):
         split_and_classification_dp = CSVDictParser(
             split_and_classification_dp, fieldnames=("image_id", "label", "species"), delimiter=" "
         )
-        split_and_classification_dp = hint_sharding(split_and_classification_dp)
         split_and_classification_dp = hint_shuffling(split_and_classification_dp)
+        split_and_classification_dp = hint_sharding(split_and_classification_dp)
 
         dp = IterKeyZipper(
             split_and_classification_dp,

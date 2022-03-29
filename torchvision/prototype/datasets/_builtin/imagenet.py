@@ -160,8 +160,8 @@ class ImageNet(Dataset):
             if config.split == "train":
                 dp = TarArchiveLoader(dp)
 
-            dp = hint_sharding(dp)
             dp = hint_shuffling(dp)
+            dp = hint_sharding(dp)
             dp = Mapper(dp, self._prepare_train_data if config.split == "train" else self._prepare_test_data)
         else:  # config.split == "val":
             images_dp, devkit_dp = resource_dps
@@ -176,8 +176,8 @@ class ImageNet(Dataset):
             label_dp = LineReader(label_dp, decode=True, return_path=False)
             label_dp = Mapper(label_dp, functools.partial(self._imagenet_label_to_wnid, wnids=wnids))
             label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
-            label_dp = hint_sharding(label_dp)
             label_dp = hint_shuffling(label_dp)
+            label_dp = hint_sharding(label_dp)
 
             dp = IterKeyZipper(
                 label_dp,
