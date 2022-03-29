@@ -1468,7 +1468,7 @@ def sbu(info, root, config):
     with open(dataset_folder.joinpath(photo_urls_file), "w") as url_file, open(
         dataset_folder.joinpath(photo_captions_file), "w"
     ) as caption_file:
-        urls = [f"https://via.placeholder.com/{random.randint(100, 1000)}.jpg/09f/fff" for _ in range(num_samples)]
+        urls = [f"https://via.placeholder.com/{random.randint(100, 1000)}.jpg" for _ in range(num_samples)]
         captions = [f"Caption {i} for {url}" for i, url in enumerate(urls)]
         url_file.write("\n".join(urls))
         caption_file.write("\n".join(captions))
