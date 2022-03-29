@@ -46,7 +46,7 @@ class SBU(Dataset):
 
         return data_folder
 
-    def _write_broken_urls_to_file(self, broken_urls, data_folder):
+    def _write_broken_urls_to_file(self, broken_urls, data_folder) -> None:
         with open(data_folder / "missing.txt", "w") as fh:
             fh.write("\n".join(broken_urls))
             print("Missing images are logged at:", data_folder / "missing.txt")
