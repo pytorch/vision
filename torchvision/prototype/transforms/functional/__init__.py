@@ -77,7 +77,6 @@ from ._type_conversion import (
     decode_image_with_pil,
     decode_video_with_av,
     label_to_one_hot,
-    to_tensor,
-    pil_to_tensor,
-    image_to_pil,
+    to_image_tensor,
+    to_image_pil,
 )

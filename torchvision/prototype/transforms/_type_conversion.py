@@ -1,4 +1,4 @@
-from typing import Any, Dict, Optional
+from typing import Any, Dict
 
 import numpy as np
 import PIL.Image
@@ -39,29 +39,26 @@ class LabelToOneHot(Transform):
         return f"num_categories={self.num_categories}"
 
 
-class ToTensor(Transform):
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, (PIL.Image.Image, np.ndarray)):
-            return F.to_tensor(input)
-        else:
-            return input
-
-
-class PILToTensor(Transform):
-    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if isinstance(input, PIL.Image.Image):
-            return F.pil_to_tensor(input)
-        else:
-            return input
-
-
-class ImageToPIL(Transform):
-    def __init__(self, mode: Optional[str] = None) -> None:
+class ToImageTensor(Transform):
+    def __init__(self, *, copy: bool = False) -> None:
         super().__init__()
-        self.mode = mode
+        self.copy = copy
 
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
-        if is_simple_tensor(input) or isinstance(input, (features.Image, np.ndarray)):
-            return F.image_to_pil(input, mode=self.mode)
+        if isinstance(input, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(input):
+            output = F.to_image_tensor(input, copy=self.copy)
+            return features.Image(output)
+        else:
+            return input
+
+
+class ToImagePIL(Transform):
+    def __init__(self, *, copy: bool = False) -> None:
+        super().__init__()
+        self.copy = copy
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(input):
+            return F.to_image_pil(input, copy=self.copy)
         else:
             return input

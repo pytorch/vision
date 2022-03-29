@@ -1,5 +1,5 @@
 import unittest.mock
-from typing import Dict, Any, Tuple
+from typing import Dict, Any, Tuple, Union
 
 import numpy as np
 import PIL.Image
@@ -7,7 +7,7 @@ import torch
 from torch.nn.functional import one_hot
 from torchvision.io.video import read_video
 from torchvision.prototype.utils._internal import ReadOnlyTensorBuffer
-from torchvision.transforms import functional as F
+from torchvision.transforms import functional as _F
 
 
 def decode_image_with_pil(encoded_image: torch.Tensor) -> torch.Tensor:
@@ -26,6 +26,21 @@ def label_to_one_hot(label: torch.Tensor, *, num_categories: int) -> torch.Tenso
     return one_hot(label, num_classes=num_categories)  # type: ignore[no-any-return]
 
 
-to_tensor = F.to_tensor
-pil_to_tensor = F.pil_to_tensor
-image_to_pil = F.to_pil_image
+def to_image_tensor(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], copy: bool = False) -> torch.Tensor:
+    if isinstance(image, torch.Tensor):
+        if copy:
+            return image.clone()
+        else:
+            return image
+
+    return _F.to_tensor(image)
+
+
+def to_image_pil(image: Union[torch.Tensor, PIL.Image.Image, np.ndarray], copy: bool = False) -> PIL.Image.Image:
+    if isinstance(image, PIL.Image.Image):
+        if copy:
+            return image.copy()
+        else:
+            return image
+
+    return _F.to_pil_image(to_image_tensor(image, copy=False))

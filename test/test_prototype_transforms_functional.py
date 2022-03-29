@@ -306,6 +306,10 @@ def rotate_bounding_box():
         and callable(kernel)
         and any(feature_type in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label"})
         and "pil" not in name
+        and name
+        not in {
+            "to_image_tensor",
+        }
     ],
 )
 def test_scriptable(kernel):
