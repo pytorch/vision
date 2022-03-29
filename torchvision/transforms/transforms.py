@@ -1156,6 +1156,9 @@ class ColorJitter(torch.nn.Module):
         hue (float or tuple of float (min, max)): How much to jitter hue.
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
+            To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
+            thus it does not work if you normalize your image to an interval with negative values,
+            or use an interpolation that generates negative values before using this function.
     """
 
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
