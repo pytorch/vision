@@ -9,9 +9,9 @@ from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.graph import traverse
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
-from torchvision.prototype.utils._internal import sequence_to_str
-
+from torchvision.prototype.features import Image, Label
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
@@ -34,6 +34,7 @@ def test_coverage():
         )
 
 
+@pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
     def test_info(self, name):
@@ -62,6 +63,8 @@ class TestCommon:
 
         try:
             sample = next(iter(dataset))
+        except StopIteration:
+            raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
             raise AssertionError("Drawing a sample raised the error above.") from error
 
@@ -109,6 +112,9 @@ class TestCommon:
 
         pickle.dumps(dataset)
 
+    # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
+    #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
+    #  contain a custom test for that, but we opted to wait for a potential solution / test from torchdata for now.
     @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
     @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
@@ -173,3 +179,21 @@ class TestGTSRB:
         for sample in dataset:
             label_from_path = int(Path(sample["path"]).parent.name)
             assert sample["label"] == label_from_path
+
+
+# FIXME: DATASET_MOCKS["usps"]
+@parametrize_dataset_mocks({})
+class TestUSPS:
+    def test_sample_content(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        for sample in dataset:
+            assert "image" in sample
+            assert "label" in sample
+
+            assert isinstance(sample["image"], Image)
+            assert isinstance(sample["label"], Label)
+
+            assert sample["image"].shape == (1, 16, 16)

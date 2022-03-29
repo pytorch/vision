@@ -1,5 +1,5 @@
 import pytest
-from torchvision.prototype.utils._internal import sequence_to_str
+from torchvision._utils import sequence_to_str
 
 
 @pytest.mark.parametrize(

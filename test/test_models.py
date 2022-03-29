@@ -4,7 +4,6 @@ import operator
 import os
 import pkgutil
 import sys
-import traceback
 import warnings
 from collections import OrderedDict
 from tempfile import TemporaryDirectory
@@ -81,7 +80,7 @@ def _get_expected_file(name=None):
 
     # Note: for legacy reasons, the reference file names all had "ModelTest.test_" in their names
     # We hardcode it here to avoid having to re-generate the reference files
-    expected_file = expected_file = os.path.join(expected_file_base, "ModelTester.test_" + name)
+    expected_file = os.path.join(expected_file_base, "ModelTester.test_" + name)
     expected_file += "_expect.pkl"
 
     if not ACCEPT and not os.path.exists(expected_file):
@@ -119,46 +118,22 @@ def _assert_expected(output, name, prec=None, atol=None, rtol=None):
         torch.testing.assert_close(output, expected, rtol=rtol, atol=atol, check_dtype=False)
 
 
-def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
+def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
     """Check that a nn.Module's results in TorchScript match eager and that it can be exported"""
 
-    def assert_export_import_module(m, args):
-        """Check that the results of a model are the same after saving and loading"""
-
-        def get_export_import_copy(m):
-            """Save and load a TorchScript model"""
-            with TemporaryDirectory() as dir:
-                path = os.path.join(dir, "script.pt")
-                m.save(path)
-                imported = torch.jit.load(path)
-            return imported
-
-        m_import = get_export_import_copy(m)
-        with torch.no_grad(), freeze_rng_state():
-            results = m(*args)
-        with torch.no_grad(), freeze_rng_state():
-            results_from_imported = m_import(*args)
-        tol = 3e-4
-        torch.testing.assert_close(results, results_from_imported, atol=tol, rtol=tol)
-
-    TEST_WITH_SLOW = os.getenv("PYTORCH_TEST_WITH_SLOW", "0") == "1"
-    if not TEST_WITH_SLOW or skip:
-        # TorchScript is not enabled, skip these tests
-        msg = (
-            f"The check_jit_scriptable test for {nn_module.__class__.__name__} was skipped. "
-            "This test checks if the module's results in TorchScript "
-            "match eager and that it can be exported. To run these "
-            "tests make sure you set the environment variable "
-            "PYTORCH_TEST_WITH_SLOW=1 and that the test is not "
-            "manually skipped."
-        )
-        warnings.warn(msg, RuntimeWarning)
-        return None
+    def get_export_import_copy(m):
+        """Save and load a TorchScript model"""
+        with TemporaryDirectory() as dir:
+            path = os.path.join(dir, "script.pt")
+            m.save(path)
+            imported = torch.jit.load(path)
+        return imported
 
     sm = torch.jit.script(nn_module)
 
-    with torch.no_grad(), freeze_rng_state():
-        eager_out = nn_module(*args)
+    if eager_out is None:
+        with torch.no_grad(), freeze_rng_state():
+            eager_out = nn_module(*args)
 
     with torch.no_grad(), freeze_rng_state():
         script_out = sm(*args)
@@ -166,14 +141,22 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, skip=False):
             script_out = unwrapper(script_out)
 
     torch.testing.assert_close(eager_out, script_out, atol=1e-4, rtol=1e-4)
-    assert_export_import_module(sm, args)
+
+    m_import = get_export_import_copy(sm)
+    with torch.no_grad(), freeze_rng_state():
+        imported_script_out = m_import(*args)
+        if unwrapper:
+            imported_script_out = unwrapper(imported_script_out)
+
+    torch.testing.assert_close(script_out, imported_script_out, atol=3e-4, rtol=3e-4)
 
 
-def _check_fx_compatible(model, inputs):
+def _check_fx_compatible(model, inputs, eager_out=None):
     model_fx = torch.fx.symbolic_trace(model)
-    out = model(inputs)
-    out_fx = model_fx(inputs)
-    torch.testing.assert_close(out, out_fx)
+    if eager_out is None:
+        eager_out = model(inputs)
+    fx_out = model_fx(inputs)
+    torch.testing.assert_close(eager_out, fx_out)
 
 
 def _check_input_backprop(model, inputs):
@@ -298,6 +281,24 @@ _model_params = {
         "rpn_post_nms_top_n_test": 1000,
     },
 }
+# speeding up slow models:
+slow_models = [
+    "convnext_base",
+    "convnext_large",
+    "resnext101_32x8d",
+    "wide_resnet101_2",
+    "efficientnet_b6",
+    "efficientnet_b7",
+    "efficientnet_v2_m",
+    "efficientnet_v2_l",
+    "regnet_y_16gf",
+    "regnet_y_32gf",
+    "regnet_y_128gf",
+    "regnet_x_16gf",
+    "regnet_x_32gf",
+]
+for m in slow_models:
+    _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
 
 # The following contains configuration and expected values to be used tests that are model specific
@@ -404,7 +405,7 @@ def test_mobilenet_norm_layer(model_fn):
     assert any(isinstance(x, nn.BatchNorm2d) for x in model.modules())
 
     def get_gn(num_channels):
-        return nn.GroupNorm(32, num_channels)
+        return nn.GroupNorm(1, num_channels)
 
     model = model_fn(norm_layer=get_gn)
     assert not (any(isinstance(x, nn.BatchNorm2d) for x in model.modules()))
@@ -412,7 +413,6 @@ def test_mobilenet_norm_layer(model_fn):
 
 
 def test_inception_v3_eval():
-    # replacement for models.inception_v3(pretrained=True) that does not download weights
     kwargs = {}
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
@@ -428,7 +428,7 @@ def test_inception_v3_eval():
 
 
 def test_fasterrcnn_double():
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, weights=None, weights_backbone=None)
     model.double()
     model.eval()
     input_shape = (3, 300, 300)
@@ -444,7 +444,6 @@ def test_fasterrcnn_double():
 
 
 def test_googlenet_eval():
-    # replacement for models.googlenet(pretrained=True) that does not download weights
     kwargs = {}
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
@@ -468,7 +467,7 @@ def test_fasterrcnn_switch_devices():
         assert "scores" in out[0]
         assert "labels" in out[0]
 
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, weights=None, weights_backbone=None)
     model.cuda()
     model.eval()
     input_shape = (3, 300, 300)
@@ -564,8 +563,8 @@ def test_classification_model(model_fn, dev):
     out = model(x)
     _assert_expected(out.cpu(), model_name, prec=0.1)
     assert out.shape[-1] == num_classes
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-    _check_fx_compatible(model, x)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
+    _check_fx_compatible(model, x, eager_out=out)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
@@ -584,7 +583,7 @@ def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 10,
-        "pretrained_backbone": False,
+        "weights_backbone": None,
         "input_shape": (1, 3, 32, 32),
     }
     model_name = model_fn.__name__
@@ -595,7 +594,7 @@ def test_segmentation_model(model_fn, dev):
     model.eval().to(device=dev)
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
-    out = model(x)["out"]
+    out = model(x)
 
     def check_out(out):
         prec = 0.01
@@ -615,17 +614,17 @@ def test_segmentation_model(model_fn, dev):
 
         return True  # Full validation performed
 
-    full_validation = check_out(out)
+    full_validation = check_out(out["out"])
 
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-    _check_fx_compatible(model, x)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
+    _check_fx_compatible(model, x, eager_out=out)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
-            out = model(x)["out"]
+            out = model(x)
             # See autocast_flaky_numerics comment at top of file.
             if model_name not in autocast_flaky_numerics:
-                full_validation &= check_out(out)
+                full_validation &= check_out(out["out"])
 
     if not full_validation:
         msg = (
@@ -646,7 +645,7 @@ def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 50,
-        "pretrained_backbone": False,
+        "weights_backbone": None,
         "input_shape": (3, 300, 300),
     }
     model_name = model_fn.__name__
@@ -665,6 +664,7 @@ def test_detection_model(model_fn, dev):
         assert len(out) == 1
 
         def compact(tensor):
+            tensor = tensor.cpu()
             size = tensor.size()
             elements_per_sample = functools.reduce(operator.mul, size[1:], 1)
             if elements_per_sample > 30:
@@ -715,7 +715,7 @@ def test_detection_model(model_fn, dev):
         return True  # Full validation performed
 
     full_validation = check_out(out)
-    _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None))
+    _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
     if dev == torch.device("cuda"):
         with torch.cuda.amp.autocast():
@@ -740,7 +740,7 @@ def test_detection_model(model_fn, dev):
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
-    model = model_fn(num_classes=50, pretrained_backbone=False)
+    model = model_fn(num_classes=50, weights=None, weights_backbone=None)
     input_shape = (3, 300, 300)
     x = [torch.rand(input_shape)]
 
@@ -750,7 +750,7 @@ def test_detection_model_validation(model_fn):
 
     # validate type
     targets = [{"boxes": 0.0}]
-    with pytest.raises(ValueError):
+    with pytest.raises(TypeError):
         model(x, targets=targets)
 
     # validate boxes shape
@@ -779,8 +779,8 @@ def test_video_model(model_fn, dev):
     # RNG always on CPU, to ensure x in cuda tests is bitwise identical to x in cpu tests
     x = torch.rand(input_shape).to(device=dev)
     out = model(x)
-    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-    _check_fx_compatible(model, x)
+    _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
+    _check_fx_compatible(model, x, eager_out=out)
     assert out.shape[-1] == 50
 
     if dev == torch.device("cuda"):
@@ -804,7 +804,6 @@ def test_quantized_classification_model(model_fn):
     defaults = {
         "num_classes": 5,
         "input_shape": (1, 3, 224, 224),
-        "pretrained": False,
         "quantize": True,
     }
     model_name = model_fn.__name__
@@ -820,8 +819,13 @@ def test_quantized_classification_model(model_fn):
     if model_name not in quantized_flaky_models:
         _assert_expected(out, model_name + "_quantized", prec=0.1)
         assert out.shape[-1] == 5
-        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None))
-        _check_fx_compatible(model, x)
+        _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
+        _check_fx_compatible(model, x, eager_out=out)
+    else:
+        try:
+            torch.jit.script(model)
+        except Exception as e:
+            raise AssertionError("model cannot be scripted.") from e
 
     kwargs["quantize"] = False
     for eval_mode in [True, False]:
@@ -842,12 +846,6 @@ def test_quantized_classification_model(model_fn):
 
         torch.ao.quantization.convert(model, inplace=True)
 
-    try:
-        torch.jit.script(model)
-    except Exception as e:
-        tb = traceback.format_exc()
-        raise AssertionError(f"model cannot be scripted. Traceback = {str(tb)}") from e
-
 
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_loading):
@@ -855,7 +853,7 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
     for trainable_layers in range(0, max_trainable + 1):
-        model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
+        model = model_fn(weights=None, weights_backbone="DEFAULT", trainable_backbone_layers=trainable_layers)
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]
