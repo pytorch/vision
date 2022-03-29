@@ -1,13 +1,16 @@
-import io
-from typing import List, Any, Dict, Optional, Tuple
+import pathlib
+from typing import List, Any, Dict, Optional, Tuple, BinaryIO
 
-import numpy as np
-from PIL import Image as pil_image
-from torch.utils.data.datapipes.utils.common import StreamWrapper
-from torchdata.datapipes.iter import IterDataPipe, Demultiplexer, LineReader, HttpReader, Zipper, Mapper, Filter
-from torchvision.prototype import features
+from torch.utils.model_zoo import tqdm
+from torchdata.datapipes.iter import IterDataPipe, Demultiplexer, LineReader, Zipper, Mapper, IterKeyZipper
 from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, OnlineResource, HttpResource
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
+from torchvision.prototype.datasets.utils._internal import (
+    hint_sharding,
+    hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_accessor,
+)
+from torchvision.prototype.features import EncodedImage
 
 
 class SBU(Dataset):
@@ -20,7 +23,7 @@ class SBU(Dataset):
             homepage="http://www.cs.virginia.edu/~vicente/sbucaptions/",
         )
 
-        def _preprocess(self, path: pathlib.Path) -> pathlib.Path:
+    def _preprocess(self, path: pathlib.Path) -> pathlib.Path:
         folder = OnlineResource._extract(path)
         data_folder = folder / "dataset"
         image_folder = data_folder / "images"
@@ -28,13 +31,25 @@ class SBU(Dataset):
         broken_urls = []
         with open(data_folder / "SBU_captioned_photo_dataset_urls.txt") as fh:
             urls = fh.read().splitlines()
+
+            # TODO: Use workers to download images
             for url in tqdm(urls):
                 try:
+                    # TODO: suppress print statements within HttpResource.download()
                     HttpResource(url).download(image_folder)
                 except Exception:
                     broken_urls.append(url)
 
-        return folder
+            if broken_urls:
+                print(f"Failed to download {len(broken_urls)} images")
+                self._write_broken_urls_to_file(broken_urls, data_folder)
+
+        return data_folder
+
+    def _write_broken_urls_to_file(self, broken_urls, data_folder):
+        with open(data_folder / "missing.txt", "w") as fh:
+            fh.write("\n".join(broken_urls))
+            print("Missing images are logged at:", data_folder / "missing.txt")
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [
@@ -76,12 +91,6 @@ class SBU(Dataset):
 
         dp = IterKeyZipper(images_dp, anns_dp, path_accessor("name"), buffer_size=INFINITE_BUFFER_SIZE)
         return Mapper(dp, self._prepare_sample)
-
-    def _filter_by_content_type(self, stream: StreamWrapper) -> bool:
-        try:
-            return stream.headers["Content-Type"] == "image/jpeg"
-        except Exception:
-            return False
 
     def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Tuple[str, str]]) -> Dict[str, Any]:
         (path, buffer), (_, caption) = data

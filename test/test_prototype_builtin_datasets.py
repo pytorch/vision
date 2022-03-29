@@ -13,7 +13,7 @@ from torchdata.datapipes.iter import IterDataPipe, Shuffler, ShardingFilter
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
-from torchvision.prototype.features import Image, Label
+from torchvision.prototype.features import EncodedImage, Label, Image
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
@@ -226,5 +226,5 @@ class TestSBU:
             assert "image" in sample
             assert "caption" in sample
 
-            assert isinstance(sample["image"], Image)
+            assert isinstance(sample["image"], EncodedImage)
             assert isinstance(sample["caption"], str)
