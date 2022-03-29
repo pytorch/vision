@@ -19,7 +19,6 @@ import numpy as np
 import torch
 import matplotlib.pyplot as plt
 import torchvision.transforms.functional as F
-import torchvision.transforms as T
 
 
 plt.rcParams["savefig.bbox"] = "tight"
@@ -88,24 +87,19 @@ plot(img1_batch)
 # reduce the image sizes for the example to run faster. Image dimension must be
 # divisible by 8.
 
+from torchvision.models.optical_flow import Raft_Large_Weights
 
-def preprocess(batch):
-    transforms = T.Compose(
-        [
-            T.ConvertImageDtype(torch.float32),
-            T.Normalize(mean=0.5, std=0.5),  # map [0, 1] into [-1, 1]
-            T.Resize(size=(520, 960)),
-        ]
-    )
-    batch = transforms(batch)
-    return batch
+weights = Raft_Large_Weights.DEFAULT
+transforms = weights.transforms()
 
 
-# If you can, run this example on a GPU, it will be a lot faster.
-device = "cuda" if torch.cuda.is_available() else "cpu"
+def preprocess(img1_batch, img2_batch):
+    img1_batch = F.resize(img1_batch, size=[520, 960])
+    img2_batch = F.resize(img2_batch, size=[520, 960])
+    return transforms(img1_batch, img2_batch)
 
-img1_batch = preprocess(img1_batch).to(device)
-img2_batch = preprocess(img2_batch).to(device)
+
+img1_batch, img2_batch = preprocess(img1_batch, img2_batch)
 
 print(f"shape = {img1_batch.shape}, dtype = {img1_batch.dtype}")
 
@@ -121,7 +115,10 @@ print(f"shape = {img1_batch.shape}, dtype = {img1_batch.dtype}")
 
 from torchvision.models.optical_flow import raft_large
 
-model = raft_large(pretrained=True, progress=False).to(device)
+# If you can, run this example on a GPU, it will be a lot faster.
+device = "cuda" if torch.cuda.is_available() else "cpu"
+
+model = raft_large(weights=Raft_Large_Weights.DEFAULT, progress=False).to(device)
 model = model.eval()
 
 list_of_flows = model(img1_batch.to(device), img2_batch.to(device))
@@ -182,10 +179,9 @@ plot(grid)
 # from torchvision.io import write_jpeg
 # for i, (img1, img2) in enumerate(zip(frames, frames[1:])):
 #     # Note: it would be faster to predict batches of flows instead of individual flows
-#     img1 = preprocess(img1[None]).to(device)
-#     img2 = preprocess(img2[None]).to(device)
+#     img1, img2 = preprocess(img1, img2)
 
-#     list_of_flows = model(img1_batch, img2_batch)
+#     list_of_flows = model(img1.to(device), img1.to(device))
 #     predicted_flow = list_of_flows[-1][0]
 #     flow_img = flow_to_image(predicted_flow).to("cpu")
 #     output_folder = "/tmp/"  # Update this to the folder of your choice

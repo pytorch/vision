@@ -32,7 +32,7 @@ class Caltech101(Dataset):
         images = HttpResource(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
             sha256="af6ece2f339791ca20f855943d8b55dd60892c0a25105fcd631ee3d6430f9926",
-            decompress=True,
+            preprocess="decompress",
         )
         anns = HttpResource(
             "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
@@ -107,8 +107,8 @@ class Caltech101(Dataset):
         images_dp, anns_dp = resource_dps
 
         images_dp = Filter(images_dp, self._is_not_background_image)
-        images_dp = hint_sharding(images_dp)
         images_dp = hint_shuffling(images_dp)
+        images_dp = hint_sharding(images_dp)
 
         anns_dp = Filter(anns_dp, self._is_ann)
 
@@ -167,8 +167,8 @@ class Caltech256(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, self._is_not_rogue_file)
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:

@@ -10,8 +10,8 @@ from torchdata.datapipes.iter import (
     FileLister,
     FileOpener,
     IterDataPipe,
-    ZipArchiveReader,
-    TarArchiveReader,
+    ZipArchiveLoader,
+    TarArchiveLoader,
     RarArchiveLoader,
 )
 from torchvision.datasets.utils import (
@@ -23,6 +23,7 @@ from torchvision.datasets.utils import (
     _get_redirect_url,
     _get_google_drive_file_id,
 )
+from typing_extensions import Literal
 
 
 class OnlineResource(abc.ABC):
@@ -31,19 +32,22 @@ class OnlineResource(abc.ABC):
         *,
         file_name: str,
         sha256: Optional[str] = None,
-        decompress: bool = False,
-        extract: bool = False,
+        preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], pathlib.Path]]] = None,
     ) -> None:
         self.file_name = file_name
         self.sha256 = sha256
 
-        self._preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]]
-        if extract:
-            self._preprocess = self._extract
-        elif decompress:
-            self._preprocess = self._decompress
-        else:
-            self._preprocess = None
+        if isinstance(preprocess, str):
+            if preprocess == "decompress":
+                preprocess = self._decompress
+            elif preprocess == "extract":
+                preprocess = self._extract
+            else:
+                raise ValueError(
+                    f"Only `'decompress'` or `'extract'` are valid if `preprocess` is passed as string,"
+                    f"but got {preprocess} instead."
+                )
+        self._preprocess = preprocess
 
     @staticmethod
     def _extract(file: pathlib.Path) -> pathlib.Path:
@@ -68,8 +72,8 @@ class OnlineResource(abc.ABC):
         return dp
 
     _ARCHIVE_LOADERS = {
-        ".tar": TarArchiveReader,
-        ".zip": ZipArchiveReader,
+        ".tar": TarArchiveLoader,
+        ".zip": ZipArchiveLoader,
         ".rar": RarArchiveLoader,
     }
 
@@ -163,7 +167,6 @@ class HttpResource(OnlineResource):
                 "file_name",
                 "sha256",
                 "_preprocess",
-                "_loader",
             )
         }
 
