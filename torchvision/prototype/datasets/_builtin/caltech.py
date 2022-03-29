@@ -115,7 +115,7 @@ class Caltech101(Dataset):
         dp = IterKeyZipper(
             images_dp,
             anns_dp,
-            key_fn=[self._images_key_fn, self._anns_key_fn],
+            key_fns=[self._images_key_fn, self._anns_key_fn],
             buffer_size=INFINITE_BUFFER_SIZE,
             keep_key=True,
         )

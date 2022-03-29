@@ -89,7 +89,7 @@ class CLEVR(Dataset):
             dp = IterKeyZipper(
                 images_dp,
                 scenes_dp,
-                key_fn=[path_accessor("name"), getitem("image_filename")],
+                key_fns=[path_accessor("name"), getitem("image_filename")],
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
         else:

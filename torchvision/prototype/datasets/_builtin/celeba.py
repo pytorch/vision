@@ -172,7 +172,7 @@ class CelebA(Dataset):
             splits_dp,
             images_dp,
             anns_dp,
-            key_fn=[getitem(0), path_accessor("name"), getitem(0, 0)],
+            key_fns=[getitem(0), path_accessor("name"), getitem(0, 0)],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, self._prepare_sample)

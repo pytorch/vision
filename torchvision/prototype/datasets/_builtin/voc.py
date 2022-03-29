@@ -158,7 +158,7 @@ class VOC(Dataset):
             split_dp,
             images_dp,
             anns_dp,
-            key_fn=[getitem(), path_accessor("stem"), path_accessor("stem")],
+            key_fns=[getitem(), path_accessor("stem"), path_accessor("stem")],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(

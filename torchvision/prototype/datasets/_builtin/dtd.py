@@ -95,7 +95,7 @@ class DTD(Dataset):
             splits_dp,
             joint_categories_dp,
             images_dp,
-            key_fn=[getitem(), getitem(0), self._image_key_fn],
+            key_fns=[getitem(), getitem(0), self._image_key_fn],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, self._prepare_sample)

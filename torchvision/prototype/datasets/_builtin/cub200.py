@@ -179,7 +179,7 @@ class CUB200(Dataset):
             anns_dp = IterKeyZipper(
                 bounding_boxes_dp,
                 segmentations_dp,
-                key_fn=[getitem(0), self._2011_segmentation_key],
+                key_fns=[getitem(0), self._2011_segmentation_key],
                 keep_key=True,
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
@@ -203,7 +203,7 @@ class CUB200(Dataset):
             split_dp,
             images_dp,
             anns_dp,
-            key_fn=[getitem(), path_accessor("name"), getitem(0)],
+            key_fns=[getitem(), path_accessor("name"), getitem(0)],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, functools.partial(self._prepare_sample, prepare_ann_fn=prepare_ann_fn))

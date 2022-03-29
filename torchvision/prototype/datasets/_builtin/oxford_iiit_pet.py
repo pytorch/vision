@@ -100,7 +100,7 @@ class OxfordIITPet(Dataset):
             split_and_classification_dp,
             segmentations_dp,
             images_dp,
-            key_fn=[getitem("image_id"), path_accessor("stem"), path_accessor("stem")],
+            key_fns=[getitem("image_id"), path_accessor("stem"), path_accessor("stem")],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, self._prepare_sample)

@@ -212,14 +212,14 @@ class Coco(Dataset):
         anns_dp = IterKeyZipper(
             anns_meta_dp,
             images_meta_dp,
-            key_fn=[getitem(0, "image_id"), getitem("id")],
+            key_fns=[getitem(0, "image_id"), getitem("id")],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
         dp = IterKeyZipper(
             anns_dp,
             images_dp,
-            key_fn=[getitem(1, "file_name"), path_accessor("name")],
+            key_fns=[getitem(1, "file_name"), path_accessor("name")],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
