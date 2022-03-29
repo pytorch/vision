@@ -103,7 +103,6 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
-    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_serializable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
@@ -115,7 +114,6 @@ class TestCommon:
     # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
     #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
     #  contain a custom test for that, but we opted to wait for a potential solution / test from torchdata for now.
-    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
     @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
@@ -127,7 +125,7 @@ class TestCommon:
         dataset_mock.prepare(test_home, config)
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
+        if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset, only_datapipe=True))):
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
