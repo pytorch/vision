@@ -68,11 +68,8 @@ class SBD(Dataset):
         else:
             return None
 
-    def _prepare_sample(self, data: Tuple[Tuple[Any, Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
-        split_and_image_data, ann_data = data
-        _, image_data = split_and_image_data
-        image_path, image_buffer = image_data
-        ann_path, ann_buffer = ann_data
+    def _prepare_sample(self, data: Tuple[str, Tuple[str, BinaryIO], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
+        _, (image_path, image_buffer), (ann_path, ann_buffer) = data
 
         anns = read_mat(ann_buffer, squeeze_me=True)["GTcls"]
 
@@ -105,19 +102,17 @@ class SBD(Dataset):
             split_dp = extra_split_dp
 
         split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
-        split_dp = LineReader(split_dp, decode=True)
+        split_dp = LineReader(split_dp, decode=True, return_path=False)
         split_dp = hint_sharding(split_dp)
         split_dp = hint_shuffling(split_dp)
 
-        dp = split_dp
-        for level, data_dp in enumerate((images_dp, anns_dp)):
-            dp = IterKeyZipper(
-                dp,
-                data_dp,
-                key_fn=getitem(*[0] * level, 1),
-                ref_key_fn=path_accessor("stem"),
-                buffer_size=INFINITE_BUFFER_SIZE,
-            )
+        dp = IterKeyZipper(
+            split_dp,
+            images_dp,
+            anns_dp,
+            key_fn=[getitem(), path_accessor("stem"), path_accessor("stem")],
+            buffer_size=INFINITE_BUFFER_SIZE,
+        )
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:

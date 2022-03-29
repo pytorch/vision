@@ -102,9 +102,9 @@ class CUB200(Dataset):
         return path.with_suffix(".jpg").name
 
     def _2011_prepare_ann(
-        self, data: Tuple[str, Tuple[List[str], Tuple[str, BinaryIO]]], image_size: Tuple[int, int]
+        self, data: Tuple[List[str], Tuple[str, BinaryIO]], image_size: Tuple[int, int]
     ) -> Dict[str, Any]:
-        _, (bounding_box_data, segmentation_data) = data
+        bounding_box_data, segmentation_data = data
         segmentation_path, segmentation_buffer = segmentation_data
         return dict(
             bounding_box=BoundingBox(
@@ -121,8 +121,8 @@ class CUB200(Dataset):
         path = pathlib.Path(data[0])
         return path.with_suffix(".jpg").name, data
 
-    def _2010_prepare_ann(self, data: Tuple[str, Tuple[str, BinaryIO]], image_size: Tuple[int, int]) -> Dict[str, Any]:
-        _, (path, buffer) = data
+    def _2010_prepare_ann(self, data: Tuple[str, BinaryIO], image_size: Tuple[int, int]) -> Dict[str, Any]:
+        path, buffer = data
         content = read_mat(buffer)
         return dict(
             ann_path=path,
@@ -136,13 +136,11 @@ class CUB200(Dataset):
 
     def _prepare_sample(
         self,
-        data: Tuple[Tuple[str, Tuple[str, BinaryIO]], Any],
+        data: Tuple[str, Tuple[str, BinaryIO], Tuple[str, Any]],
         *,
         prepare_ann_fn: Callable[[Any, Tuple[int, int]], Dict[str, Any]],
     ) -> Dict[str, Any]:
-        data, anns_data = data
-        _, image_data = data
-        path, buffer = image_data
+        _, (path, buffer), (_, anns_data) = data
 
         image = EncodedImage.from_file(buffer)
 
@@ -181,8 +179,7 @@ class CUB200(Dataset):
             anns_dp = IterKeyZipper(
                 bounding_boxes_dp,
                 segmentations_dp,
-                key_fn=getitem(0),
-                ref_key_fn=self._2011_segmentation_key,
+                key_fn=[getitem(0), self._2011_segmentation_key],
                 keep_key=True,
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
@@ -205,14 +202,8 @@ class CUB200(Dataset):
         dp = IterKeyZipper(
             split_dp,
             images_dp,
-            getitem(),
-            path_accessor("name"),
-            buffer_size=INFINITE_BUFFER_SIZE,
-        )
-        dp = IterKeyZipper(
-            dp,
             anns_dp,
-            getitem(0),
+            key_fn=[getitem(), path_accessor("name"), getitem(0)],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, functools.partial(self._prepare_sample, prepare_ann_fn=prepare_ann_fn))

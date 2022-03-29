@@ -58,16 +58,10 @@ class OxfordIITPet(Dataset):
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
         return pathlib.Path(data[0]).suffix == ".jpg"
 
-    def _filter_segmentations(self, data: Tuple[str, Any]) -> bool:
-        return not pathlib.Path(data[0]).name.startswith(".")
-
     def _prepare_sample(
-        self, data: Tuple[Tuple[Dict[str, str], Tuple[str, BinaryIO]], Tuple[str, BinaryIO]]
+        self, data: Tuple[Dict[str, str], Tuple[str, BinaryIO], Tuple[str, BinaryIO]]
     ) -> Dict[str, Any]:
-        ann_data, image_data = data
-        classification_data, segmentation_data = ann_data
-        segmentation_path, segmentation_buffer = segmentation_data
-        image_path, image_buffer = image_data
+        classification_data, (segmentation_path, segmentation_buffer), (image_path, image_buffer) = data
 
         return dict(
             label=Label(int(classification_data["label"]) - 1, categories=self.categories),
@@ -102,21 +96,11 @@ class OxfordIITPet(Dataset):
         split_and_classification_dp = hint_sharding(split_and_classification_dp)
         split_and_classification_dp = hint_shuffling(split_and_classification_dp)
 
-        segmentations_dp = Filter(segmentations_dp, self._filter_segmentations)
-
-        anns_dp = IterKeyZipper(
+        dp = IterKeyZipper(
             split_and_classification_dp,
             segmentations_dp,
-            key_fn=getitem("image_id"),
-            ref_key_fn=path_accessor("stem"),
-            buffer_size=INFINITE_BUFFER_SIZE,
-        )
-
-        dp = IterKeyZipper(
-            anns_dp,
             images_dp,
-            key_fn=getitem(0, "image_id"),
-            ref_key_fn=path_accessor("stem"),
+            key_fn=[getitem("image_id"), path_accessor("stem"), path_accessor("stem")],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, self._prepare_sample)
