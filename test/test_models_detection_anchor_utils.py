@@ -1,4 +1,3 @@
-from ast import Assert
 import pytest
 import torch
 from common_utils import assert_equal
