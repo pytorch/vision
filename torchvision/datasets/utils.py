@@ -243,6 +243,27 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
         _save_response_content(itertools.chain((first_chunk,), response_content_generator), fpath)
         response.close()
 
+        if md5 and not check_md5(fpath, md5):
+            msg = f"The MD5 checksum of the download file {fpath} does not match the one on record."
+            remediation_msg = (
+                "Please delete the file and try again. "
+                "If the issue persists, please report this to torchvision at https://github.com/pytorch/vision/issues."
+            )
+            # GDrive API responses should be smaller than 10kB
+            if os.stat(fpath).st_size < 10 * 1024:
+                with open(fpath) as fh:
+                    content = fh.read()
+                    # Regular expression to detect HTML. Copied from https://stackoverflow.com/a/70585604
+                    if re.search(r"</?\s*[a-z-][^>]*\s*>|(\&(?:[\w\d]+|#\d+|#x[a-f\d]+);)", content):
+                        remediation_msg = (
+                            f"We detected some HTML elements in the downloaded file. "
+                            f"This most likely means that the download triggered an unhandled API response by GDrive. "
+                            f"Please report this to torchvision at https://github.com/pytorch/vision/issues including "
+                            f"the response:\n\n{content}"
+                        )
+
+            raise RuntimeError(f"{msg} {remediation_msg}")
+
 
 def _get_confirm_token(response: requests.models.Response) -> Optional[str]:
     for key, value in response.cookies.items():
