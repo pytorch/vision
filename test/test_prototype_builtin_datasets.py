@@ -9,17 +9,7 @@ from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Shuffler,
-    ShardingFilter,
-    Demultiplexer,
-    Forker,
-    Grouper,
-    MaxTokenBucketizer,
-    UnZipper,
-    IterKeyZipper,
-)
+from torchdata.datapipes.iter import IterDataPipe, Shuffler, ShardingFilter
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
@@ -165,21 +155,14 @@ class TestCommon:
         dataset = datasets.load(dataset_mock.name, **config)
 
         for dp in extract_datapipes(dataset):
-            if isinstance(
-                dp,
-                (
-                    Shuffler,
-                    Demultiplexer,
-                    Forker,
-                    Grouper,
-                    MaxTokenBucketizer,
-                    UnZipper,
-                    IterKeyZipper,
-                ),
-            ):
-                # TODO: replace this with the proper sentinel as soon as https://github.com/pytorch/data/issues/335 is
-                #  resolved
-                assert dp.buffer_size == INFINITE_BUFFER_SIZE
+            try:
+                buffer_size = getattr(dp, "buffer_size")
+            except AttributeError:
+                continue
+
+            # TODO: replace this with the proper sentinel as soon as https://github.com/pytorch/data/issues/335 is
+            #  resolved
+            assert buffer_size == INFINITE_BUFFER_SIZE
 
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
