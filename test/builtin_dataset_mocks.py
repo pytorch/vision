@@ -10,6 +10,8 @@ import lzma
 import pathlib
 import pickle
 import random
+import re
+import shutil
 import warnings
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
@@ -72,6 +74,25 @@ class DatasetMock:
         available_file_names = {path.name for path in root.glob("*")}
         required_file_names = {resource.file_name for resource in self.dataset.resources(config)}
         missing_file_names = required_file_names - available_file_names
+        extra_file_names = available_file_names - required_file_names
+
+        # Some datasets need to provide already preprocessed data, for example if the preprocessing includes downloads
+        if extra_file_names:
+            for extra in extra_file_names.copy():
+                candidate_pattern = re.compile(fr"^{extra.split('.', 1)[0]}([.]\w+)*$")
+                try:
+                    missing = next(missing for missing in missing_file_names if candidate_pattern.match(missing))
+                except StopIteration:
+                    continue
+
+                extra_file_names.remove(extra)
+                missing_file_names.remove(missing)
+
+        if extra_file_names:
+            raise pytest.UsageError(
+                f"Dataset '{self.name}' created the files {sequence_to_str(sorted(extra_file_names))} "
+                f"for {config} in the mock data function, but they are not needed."
+            )
         if missing_file_names:
             raise pytest.UsageError(
                 f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
@@ -489,7 +510,7 @@ def imagenet(info, root, config):
 
 class CocoMockData:
     @classmethod
-    def _make_images_archive(cls, root, name, *, num_samples):
+    def _make_images_folder(cls, root, name, *, num_samples):
         image_paths = create_image_folder(
             root, name, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_samples
         )
@@ -499,8 +520,6 @@ class CocoMockData:
             with PIL.Image.open(path) as image:
                 width, height = image.size
             images_meta.append(dict(file_name=path.name, id=int(path.stem), width=width, height=height))
-
-        make_zip(root, f"{name}.zip")
 
         return images_meta
 
@@ -571,16 +590,22 @@ class CocoMockData:
         cls,
         root,
         *,
+        split,
         year,
         num_samples,
     ):
         annotations_dir = root / "annotations"
         annotations_dir.mkdir()
 
-        for split in ("train", "val"):
-            config_name = f"{split}{year}"
+        for split_ in ("train", "val"):
+            config_name = f"{split_}{year}"
 
-            images_meta = cls._make_images_archive(root, config_name, num_samples=num_samples)
+            images_meta = cls._make_images_folder(root, config_name, num_samples=num_samples)
+            if split_ == split:
+                make_zip(root, f"{config_name}.zip")
+            else:
+                shutil.rmtree(root / config_name)
+
             cls._make_annotations(
                 annotations_dir,
                 config_name,
@@ -594,7 +619,7 @@ class CocoMockData:
 
 @register_mock
 def coco(info, root, config):
-    return CocoMockData.generate(root, year=config.year, num_samples=5)
+    return CocoMockData.generate(root, split=config.split, year=config.year, num_samples=5)
 
 
 class SBDMockData:
@@ -766,10 +791,12 @@ class VOCMockData:
 
     @classmethod
     def generate(cls, root, *, year, trainval):
-        archive_folder = root
         if year == "2011":
-            archive_folder /= "TrainVal"
-        data_folder = archive_folder / "VOCdevkit" / f"VOC{year}"
+            archive_folder = root / "TrainVal"
+            data_folder = archive_folder / "VOCdevkit"
+        else:
+            archive_folder = data_folder = root / "VOCdevkit"
+        data_folder = data_folder / f"VOC{year}"
         data_folder.mkdir(parents=True, exist_ok=True)
 
         ids, num_samples_map = cls._make_split_files(data_folder, year=year, trainval=trainval)
@@ -779,7 +806,7 @@ class VOCMockData:
             (cls._make_detection_anns_folder, "Annotations", ".xml"),
         ]:
             make_folder_fn(data_folder, name, file_name_fn=lambda idx: ids[idx] + suffix, num_examples=len(ids))
-        make_tar(root, (cls._TRAIN_VAL_FILE_NAMES if trainval else cls._TEST_FILE_NAMES)[year], data_folder)
+        make_tar(root, (cls._TRAIN_VAL_FILE_NAMES if trainval else cls._TEST_FILE_NAMES)[year], archive_folder)
 
         return num_samples_map
 
@@ -1013,8 +1040,10 @@ def gtsrb(info, root, config):
                     }
                 )
 
+    archive_folder = root / "GTSRB"
+
     if config["split"] == "train":
-        train_folder = root / "GTSRB" / "Training"
+        train_folder = archive_folder / "Training"
         train_folder.mkdir(parents=True)
 
         for class_idx in classes:
@@ -1029,9 +1058,9 @@ def gtsrb(info, root, config):
                 num_examples=num_examples_per_class,
                 class_idx=int(class_idx),
             )
-        make_zip(root, "GTSRB-Training_fixed.zip", train_folder)
+        make_zip(root, "GTSRB-Training_fixed.zip", archive_folder)
     else:
-        test_folder = root / "GTSRB" / "Final_Test"
+        test_folder = archive_folder / "Final_Test"
         test_folder.mkdir(parents=True)
 
         create_image_folder(
@@ -1041,7 +1070,7 @@ def gtsrb(info, root, config):
             num_examples=num_examples,
         )
 
-        make_zip(root, "GTSRB_Final_Test_Images.zip", test_folder)
+        make_zip(root, "GTSRB_Final_Test_Images.zip", archive_folder)
 
         _make_ann_file(
             path=root / "GT-final_test.csv",
@@ -1405,11 +1434,11 @@ def stanford_cars(info, root, config):
     num_samples = {"train": 5, "test": 7}[config["split"]]
     num_categories = 3
 
-    devkit = root / "devkit"
-    devkit.mkdir(parents=True)
-
     if config["split"] == "train":
         images_folder_name = "cars_train"
+
+        devkit = root / "devkit"
+        devkit.mkdir()
         annotations_mat_path = devkit / "cars_train_annos.mat"
     else:
         images_folder_name = "cars_test"
