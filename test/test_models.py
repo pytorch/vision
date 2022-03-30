@@ -780,24 +780,24 @@ def test_detection_model_validation(model_fn):
     x = [torch.rand(input_shape)]
 
     # validate that targets are present in training
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         model(x)
 
     # validate type
     targets = [{"boxes": 0.0}]
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         model(x, targets=targets)
 
     # validate boxes shape
     for boxes in (torch.rand((4,)), torch.rand((1, 5))):
         targets = [{"boxes": boxes}]
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             model(x, targets=targets)
 
     # validate that no degenerate boxes are present
     boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
     targets = [{"boxes": boxes}]
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         model(x, targets=targets)
 
 

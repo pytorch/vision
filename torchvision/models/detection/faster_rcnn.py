@@ -1,5 +1,6 @@
 from typing import Any, Callable, List, Optional, Tuple, Union
 
+import torch
 import torch.nn.functional as F
 from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
@@ -354,10 +355,10 @@ class FastRCNNPredictor(nn.Module):
 
     def forward(self, x):
         if x.dim() == 4:
-            if list(x.shape[2:]) != [1, 1]:
-                raise ValueError(
-                    f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}"
-                )
+            torch._assert(
+                list(x.shape[2:]) == [1, 1],
+                f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}",
+            )
         x = x.flatten(start_dim=1)
         scores = self.cls_score(x)
         bbox_deltas = self.bbox_pred(x)

@@ -2,16 +2,7 @@ import enum
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO
 
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Shuffler,
-    Filter,
-    IterKeyZipper,
-    Demultiplexer,
-    LineReader,
-    CSVParser,
-)
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, LineReader, CSVParser
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -24,6 +15,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     path_comparator,
     getitem,
+    hint_shuffling,
 )
 from torchvision.prototype.features import Label, EncodedImage
 
@@ -49,7 +41,7 @@ class DTD(Dataset):
         archive = HttpResource(
             "https://www.robots.ox.ac.uk/~vgg/data/dtd/download/dtd-r1.0.1.tar.gz",
             sha256="e42855a52a4950a3b59612834602aa253914755c95b0cff9ead6d07395f8e205",
-            decompress=True,
+            preprocess="decompress",
         )
         return [archive]
 
@@ -98,7 +90,7 @@ class DTD(Dataset):
 
         splits_dp = Filter(splits_dp, path_comparator("name", f"{config.split}{config.fold}.txt"))
         splits_dp = LineReader(splits_dp, decode=True, return_path=False)
-        splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        splits_dp = hint_shuffling(splits_dp)
         splits_dp = hint_sharding(splits_dp)
 
         joint_categories_dp = CSVParser(joint_categories_dp, delimiter=" ")
