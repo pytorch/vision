@@ -1480,7 +1480,9 @@ def sun397(info, root, config):
         random.shuffle(keys)
 
         for split, keys_in_split in zip(splits, random_subsets(keys, len(splits))):
-            if split == config.split and str(fold) == config.fold:
+            if config.split == "all":
+                num_samples = len(keys)
+            elif config.split == f"{split}-{fold}":
                 num_samples = len(keys_in_split)
 
             with open(partitions_root / f"{split.capitalize()}ing_{fold:02d}.txt", "w") as fh:

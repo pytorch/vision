@@ -15,12 +15,18 @@ from torchvision.prototype.features import EncodedImage, Label
 
 class SUN397(Dataset):
     def _make_info(self) -> DatasetInfo:
+        # split can be either "all" where it get all the images (suitable for those who want custom data split)
+        # or it can be "train-{fold}" or "test-{fold}" where fold is a number between 1 to 10, this is suitable for
+        # those who want to reproduce the paper's result
+        split_choices = ["all"]
+        split_choices.extend([f"{split_type}-{fold}" for split_type in ["train", "test"] for fold in range(1, 11)])
+
+        # The default split = "all" for backward compatibility with previous datasets API
         return DatasetInfo(
             "sun397",
             homepage="https://vision.princeton.edu/projects/2010/SUN/",
             valid_options=dict(
-                split=("train", "test"),
-                fold=tuple(str(fold) for fold in range(1, 11)),
+                split=split_choices,
             ),
         )
 
@@ -50,29 +56,43 @@ class SUN397(Dataset):
             image=EncodedImage.from_file(buffer),
         )
 
+    def _prepare_sample_all(self, data: Tuple[str, Any]) -> Dict[str, Any]:
+        path, buffer = data
+        key = self._image_key(data)
+        category = "/".join(key.split("/")[2:-1])
+        return dict(
+            label=Label.from_category(category, categories=self.categories),
+            path=path,
+            image=EncodedImage.from_file(buffer),
+        )
+
     def _make_datapipe(
         self, resource_dps: List[IterDataPipe], *, config: DatasetConfig
     ) -> IterDataPipe[Dict[str, Any]]:
         images_dp, splits_dp = resource_dps
 
-        splits_dp = Filter(
-            splits_dp,
-            path_comparator("name", f"{config.split.capitalize()}ing_{int(config.fold):02d}.txt"),
-        )
-        splits_dp = LineReader(splits_dp, decode=True, return_path=False)
-        splits_dp = hint_sharding(splits_dp)
-        splits_dp = hint_shuffling(splits_dp)
-
         images_dp = Filter(images_dp, path_comparator("suffix", ".jpg"))
+        if config.split == "all":
+            dp = images_dp
+            return Mapper(dp, self._prepare_sample_all)
+        else:
+            split_type, fold = config.split.split("-")
+            splits_dp = Filter(
+                splits_dp,
+                path_comparator("name", f"{split_type.capitalize()}ing_{int(fold):02d}.txt"),
+            )
+            splits_dp = LineReader(splits_dp, decode=True, return_path=False)
+            splits_dp = hint_sharding(splits_dp)
+            splits_dp = hint_shuffling(splits_dp)
 
-        dp = IterKeyZipper(
-            splits_dp,
-            images_dp,
-            key_fn=getitem(),
-            ref_key_fn=self._image_key,
-            buffer_size=INFINITE_BUFFER_SIZE,
-        )
-        return Mapper(dp, self._prepare_sample)
+            dp = IterKeyZipper(
+                splits_dp,
+                images_dp,
+                key_fn=getitem(),
+                ref_key_fn=self._image_key,
+                buffer_size=INFINITE_BUFFER_SIZE,
+            )
+            return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> List[str]:
         resources = self.resources(self.default_config)
