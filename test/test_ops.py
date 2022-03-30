@@ -1367,7 +1367,7 @@ class TestUtils:
         assert len(params[0]) == 92
         assert len(params[1]) == 82
 
-    @pytest.mark.parametrize("norm_weight_decay", [None, 0.2]) 
+    @pytest.mark.parametrize("norm_weight_decay", [None, 0.2])
     @pytest.mark.parametrize("norm_layer", [None, nn.LayerNorm])
     @pytest.mark.parametrize("custom_keys_weight_decay", [None, [("class_token", 0.3), ("pos_embedding", 0.4)]])
     def test_set_weight_decay(self, norm_weight_decay, norm_layer, custom_keys_weight_decay):
@@ -1384,13 +1384,13 @@ class TestUtils:
             0.1,
             norm_weight_decay=norm_weight_decay,
             norm_classes=None if norm_layer is None else [norm_layer],
-            custom_keys_weight_decay=custom_keys_weight_decay
+            custom_keys_weight_decay=custom_keys_weight_decay,
         )
-        
+
         if norm_weight_decay is None and custom_keys_weight_decay is None:
             assert len(param_groups) == 1
             assert len(param_groups[0]["params"]) == 20
-        
+
         if norm_weight_decay is not None and custom_keys_weight_decay is None:
             assert len(param_groups) == 2
             param_groups.sort(key=lambda x: x["weight_decay"])
