@@ -8,6 +8,7 @@ import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.graph import traverse
+from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Shuffler,
@@ -29,6 +30,10 @@ assert_samples_equal = functools.partial(
 )
 
 
+def extract_datapipes(dp):
+    return get_all_graph_pipes(traverse(dp, only_datapipe=True))
+
+
 @pytest.fixture
 def test_home(mocker, tmp_path):
     mocker.patch("torchvision.prototype.datasets._api.home", return_value=str(tmp_path))
@@ -43,15 +48,6 @@ def test_coverage():
             f"are exposed through `torchvision.prototype.datasets.load()`, but are not tested. "
             f"Please add mock data to `test/builtin_dataset_mocks.py`."
         )
-
-
-def extract_datapipes(dp):
-    def scan(graph):
-        for node, sub_graph in graph.items():
-            yield node
-            yield from scan(sub_graph)
-
-    yield from scan(traverse(dp))
 
 
 @pytest.mark.filterwarnings("error")
