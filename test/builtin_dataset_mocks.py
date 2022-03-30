@@ -1440,7 +1440,7 @@ def stanford_cars(info, root, config):
 
 @register_mock
 def places365(info, root, config):
-    num_samples = {"train-challenge": 6, "train": 5, "test": 4, "val": 3}[config.split]
+    num_samples = {"train-challenge": 6, "train-standard": 5, "test": 4, "val": 3}[config.split]
     categories = ["alley", "field/wild", "subway_station/platform", "zen_garden"]
     category_keys = [f"/{category[0]}/{category}" for category in categories]
 

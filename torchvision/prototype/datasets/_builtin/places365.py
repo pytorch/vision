@@ -25,11 +25,11 @@ class Places365(Dataset):
 
     # Mapping the config options into filename and sha256 checksum
     _IMAGES_MAP = {
-        ("large", "train"): (
+        ("large", "train-standard"): (
             "train_large_places365standard.tar",
             "dd232ce786836fcb0aa6d30032a95de095e79ed9ff08faeb16309a89eb8f3c97",
         ),
-        ("small", "train"): (
+        ("small", "train-standard"): (
             "train_256_places365standard.tar",
             "0ade5d7d38c682aa0203014a2b99ad3bf608bf1de0f151dc0d80efba54660a0a",
         ),
@@ -66,7 +66,7 @@ class Places365(Dataset):
             homepage="http://places2.csail.mit.edu/index.html",
             valid_options=dict(
                 image_res=("large", "small"),
-                split=("train", "train-challenge", "val", "test"),
+                split=("train-standard", "train-challenge", "val", "test"),
             ),
         )
 
@@ -113,10 +113,7 @@ class Places365(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
 
         meta_dp, images_dp = resource_dps
-        if config.split == "train":
-            label_filename = "places365_train_standard.txt"
-        else:
-            label_filename = f"places365_{config.split.replace('-', '_')}.txt"
+        label_filename = f"places365_{config.split.replace('-', '_')}.txt"
         labels_dp = Filter(meta_dp, path_comparator("name", label_filename))
         labels_dp = CSVParser(labels_dp, delimiter=" ")
 
