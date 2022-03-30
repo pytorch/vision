@@ -7,11 +7,21 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
-from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
-from torchdata.datapipes.iter import IterDataPipe, Shuffler
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Shuffler,
+    ShardingFilter,
+    Demultiplexer,
+    Forker,
+    Grouper,
+    MaxTokenBucketizer,
+    UnZipper,
+    IterKeyZipper,
+)
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 from torchvision.prototype.features import Image, Label
 
 assert_samples_equal = functools.partial(
@@ -33,6 +43,15 @@ def test_coverage():
             f"are exposed through `torchvision.prototype.datasets.load()`, but are not tested. "
             f"Please add mock data to `test/builtin_dataset_mocks.py`."
         )
+
+
+def extract_datapipes(dp):
+    def scan(graph):
+        for node, sub_graph in graph.items():
+            yield node
+            yield from scan(sub_graph)
+
+    yield from scan(traverse(dp))
 
 
 @pytest.mark.filterwarnings("error")
@@ -125,16 +144,12 @@ class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
-        def scan(graph):
-            for node, sub_graph in graph.items():
-                yield node
-                yield from scan(sub_graph)
 
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
+        if not any(isinstance(dp, annotation_dp_type) for dp in extract_datapipes(dataset)):
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
@@ -147,6 +162,28 @@ class TestCommon:
             torch.save(sample, buffer)
             buffer.seek(0)
             assert_samples_equal(torch.load(buffer), sample)
+
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_infinite_buffer_size(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        for dp in extract_datapipes(dataset):
+            if isinstance(
+                dp,
+                (
+                    Shuffler,
+                    Demultiplexer,
+                    Forker,
+                    Grouper,
+                    MaxTokenBucketizer,
+                    UnZipper,
+                    IterKeyZipper,
+                ),
+            ):
+                # TODO: replace this with the proper sentinel as soon as https://github.com/pytorch/data/issues/335 is
+                #  resolved
+                assert dp.buffer_size == INFINITE_BUFFER_SIZE
 
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
