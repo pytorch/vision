@@ -518,7 +518,7 @@ def _box_loss(
     bbox_regression_per_image: Tensor,
     cnf: Optional[Dict[str, float]] = None,
 ) -> Tensor:
-    torch._assert(type not in ["l1", "smooth_l1", "giou"], f"Unsupported loss: {type}")
+    torch._assert(type in ["l1", "smooth_l1", "giou"], f"Unsupported loss: {type}")
 
     if type == "l1":
         target_regression = box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
