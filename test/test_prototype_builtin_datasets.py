@@ -155,14 +155,10 @@ class TestCommon:
         dataset = datasets.load(dataset_mock.name, **config)
 
         for dp in extract_datapipes(dataset):
-            try:
-                buffer_size = getattr(dp, "buffer_size")
-            except AttributeError:
-                continue
-
-            # TODO: replace this with the proper sentinel as soon as https://github.com/pytorch/data/issues/335 is
-            #  resolved
-            assert buffer_size == INFINITE_BUFFER_SIZE
+            if hasattr(dp, "buffer_size"):
+                # TODO: replace this with the proper sentinel as soon as https://github.com/pytorch/data/issues/335 is
+                #  resolved
+                assert dp.buffer_size == INFINITE_BUFFER_SIZE
 
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
