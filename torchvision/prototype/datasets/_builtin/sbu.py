@@ -1,4 +1,5 @@
 import pathlib
+import warnings
 from typing import List, Any, Dict, Optional, Tuple, BinaryIO
 
 from torch.utils.model_zoo import tqdm
