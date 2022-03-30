@@ -40,16 +40,16 @@ class SBU(Dataset):
                 except Exception:
                     broken_urls.append(url)
 
-            if broken_urls:
-                print(f"Failed to download {len(broken_urls)} images")
-                self._write_broken_urls_to_file(broken_urls, data_folder)
+        if broken_urls:
+            broken_urls_file = folder.parent / "broken_urls.txt"
+            warnings.warn(
+                f"Failed to download {len(broken_urls)} ({len(broken_urls) / len(urls):.2%}) images. "
+                f"They are logged in {broken_urls_file}."
+            )
+            with open(broken_urls_file, "w") as fh:
+                fh.write("\n".join(broken_urls) + "\n")
 
-        return data_folder
-
-    def _write_broken_urls_to_file(self, broken_urls: List, data_folder: pathlib.Path) -> None:
-        with open(data_folder / "missing.txt", "w") as fh:
-            fh.write("\n".join(broken_urls))
-            print("Missing images are logged at:", data_folder / "missing.txt")
+        return folder
 
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
         return [
