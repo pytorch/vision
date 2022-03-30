@@ -68,8 +68,7 @@ def set_weight_decay(
     weight_decay: float,
     norm_weight_decay: Optional[float] = None,
     norm_classes: Optional[List[type]] = None,
-    bias_weight_decay: Optional[float] = None,
-    custom_keys_weight_decay: Optional[Dict[str, float]] = None,
+    custom_keys_weight_decay: Optional[List[Tuple[str, float]]] = None,
 ):
     if not norm_classes:
         norm_classes = [
@@ -81,41 +80,48 @@ def set_weight_decay(
         ]
     norm_classes = tuple(norm_classes)
 
-    norm_params = []
-    bias_params = []
-    other_params = []
-    custom_params = {}
+    params = {
+        "other": [],
+        "norm": [],
+    }
+    params_weight_decay = {
+        "other": weight_decay,
+        "norm": norm_weight_decay,
+    }
+    custom_keys = []
     if custom_keys_weight_decay is not None:
-        for key in custom_keys_weight_decay:
-            custom_params[key] = []
+        for key, weight_decay in custom_keys_weight_decay:
+            params[key] = []
+            params_weight_decay[key] = weight_decay
+            custom_keys.append(key)
 
-    for module in model.modules():
-        if next(module.children(), None):
+    def _add_params(module, prefix=""):
+        # We firstly consider norm layers
+        if norm_weight_decay is not None and isinstance(module, norm_classes):
+            params["norm"].extend(p for p in module.parameters() if p.requires_grad)
+        else:
             for name, p in module.named_parameters(recurse=False):
                 if not p.requires_grad:
                     continue
-                if key in custom_params:
-                    custom_params[key].append(p)
-                else:
-                    other_params.append(p)
-        elif isinstance(module, norm_classes) and norm_weight_decay is not None:
-            norm_params.extend(p for p in module.parameters() if p.requires_grad)
-        else:
-            for name, p in module.named_parameters():
-                if not p.requires_grad:
-                    continue
-                if name == "bias" and bias_weight_decay is not None:
-                    bias_params.append(p)
-                else:
-                    other_params.append(p)
+                is_custom_key = False
+                for key in custom_keys:
+                    full_name = f"{prefix}.{name}" if prefix != "" else name
+                    if key in full_name:
+                        params[key].append(p)
+                        is_custom_key = True
+                        break
+                if not is_custom_key:
+                    params["other"].append(p)
+
+        for child_name, child_module in module.named_children():
+            child_prefix = f"{prefix}.{child_name}" if prefix != "" else child_name
+            _add_params(child_module, prefix=child_prefix)
+
+    _add_params(model)
 
     param_groups = []
-    if len(norm_params) > 0:
-        param_groups.append({"params": norm_params, "weight_decay": norm_weight_decay})
-    if len(bias_params) > 0:
-        param_groups.append({"params": bias_params, "weight_decay": bias_weight_decay})
-    for key in custom_params:
-        if len(custom_params[key]) > 0:
-            param_groups.append({"params": custom_params[key], "weight_decay": custom_keys_weight_decay[key]})
-    param_groups.append({"params": other_params, "weight_decay": weight_decay})
+    for key in params:
+        if len(params[key]) > 0:
+            print(key, len(params[key]))
+            param_groups.append({"params": params[key], "weight_decay": params_weight_decay[key]})
     return param_groups
