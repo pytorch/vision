@@ -322,28 +322,28 @@ class SSD(nn.Module):
     def forward(
         self, images: List[Tensor], targets: Optional[List[Dict[str, Tensor]]] = None
     ) -> Tuple[Dict[str, Tensor], List[Dict[str, Tensor]]]:
-        if self.training and targets is None:
-            raise ValueError("In training mode, targets should be passed")
-
         if self.training:
             if targets is None:
-                raise ValueError("targets should not be None")
-            for target in targets:
-                boxes = target["boxes"]
-                if isinstance(boxes, torch.Tensor):
-                    if len(boxes.shape) != 2 or boxes.shape[-1] != 4:
-                        raise ValueError(f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.")
-                else:
-                    raise TypeError(f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for target in targets:
+                    boxes = target["boxes"]
+                    if isinstance(boxes, torch.Tensor):
+                        torch._assert(
+                            len(boxes.shape) == 2 and boxes.shape[-1] == 4,
+                            f"Expected target boxes to be a tensor of shape [N, 4], got {boxes.shape}.",
+                        )
+                    else:
+                        torch._assert(False, f"Expected target boxes to be of type Tensor, got {type(boxes)}.")
 
         # get the original image sizes
         original_image_sizes: List[Tuple[int, int]] = []
         for img in images:
             val = img.shape[-2:]
-            if len(val) != 2:
-                raise ValueError(
-                    f"The last two dimensions of the input tensors should contain H and W, instead got {img.shape[-2:]}"
-                )
+            torch._assert(
+                len(val) == 2,
+                f"expecting the last two dimensions of the Tensor to be H and W instead got {img.shape[-2:]}",
+            )
             original_image_sizes.append((val[0], val[1]))
 
         # transform the input
@@ -357,9 +357,10 @@ class SSD(nn.Module):
                 if degenerate_boxes.any():
                     bb_idx = torch.where(degenerate_boxes.any(dim=1))[0][0]
                     degen_bb: List[float] = boxes[bb_idx].tolist()
-                    raise ValueError(
+                    torch._assert(
+                        False,
                         "All bounding boxes should have positive height and width."
-                        f" Found invalid box {degen_bb} for target at index {target_idx}."
+                        f" Found invalid box {degen_bb} for target at index {target_idx}.",
                     )
 
         # get the features from the backbone
@@ -378,21 +379,23 @@ class SSD(nn.Module):
         losses = {}
         detections: List[Dict[str, Tensor]] = []
         if self.training:
-            if targets is None:
-                raise ValueError("targets should not be None when in training mode")
-
             matched_idxs = []
-            for anchors_per_image, targets_per_image in zip(anchors, targets):
-                if targets_per_image["boxes"].numel() == 0:
-                    matched_idxs.append(
-                        torch.full((anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device)
-                    )
-                    continue
+            if targets is None:
+                torch._assert(False, "targets should not be none when in training mode")
+            else:
+                for anchors_per_image, targets_per_image in zip(anchors, targets):
+                    if targets_per_image["boxes"].numel() == 0:
+                        matched_idxs.append(
+                            torch.full(
+                                (anchors_per_image.size(0),), -1, dtype=torch.int64, device=anchors_per_image.device
+                            )
+                        )
+                        continue
 
-                match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
-                matched_idxs.append(self.proposal_matcher(match_quality_matrix))
+                    match_quality_matrix = box_ops.box_iou(targets_per_image["boxes"], anchors_per_image)
+                    matched_idxs.append(self.proposal_matcher(match_quality_matrix))
 
-            losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
+                losses = self.compute_loss(targets, head_outputs, anchors, matched_idxs)
         else:
             detections = self.postprocess_detections(head_outputs, anchors, images.image_sizes)
             detections = self.transform.postprocess(detections, images.image_sizes, original_image_sizes)
@@ -550,8 +553,10 @@ def _vgg_extractor(backbone: VGG, highres: bool, trainable_layers: int):
     num_stages = len(stage_indices)
 
     # find the index of the layer from which we wont freeze
-    if not 0 <= trainable_layers <= num_stages:
-        raise ValueError(f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}")
+    torch._assert(
+        0 <= trainable_layers <= num_stages,
+        f"trainable_layers should be in the range [0, {num_stages}]. Instead got {trainable_layers}",
+    )
     freeze_before = len(backbone) if trainable_layers == 0 else stage_indices[num_stages - trainable_layers]
 
     for b in backbone[:freeze_before]:

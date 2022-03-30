@@ -7,16 +7,21 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
-from torch.utils.data.datapipes.iter.grouping import ShardingFilterIterDataPipe as ShardingFilter
 from torch.utils.data.graph import traverse
-from torchdata.datapipes.iter import IterDataPipe, Shuffler
+from torch.utils.data.graph_settings import get_all_graph_pipes
+from torchdata.datapipes.iter import IterDataPipe, Shuffler, ShardingFilter
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 from torchvision.prototype.features import Image, Label
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
 )
+
+
+def extract_datapipes(dp):
+    return get_all_graph_pipes(traverse(dp, only_datapipe=True))
 
 
 @pytest.fixture
@@ -35,6 +40,7 @@ def test_coverage():
         )
 
 
+@pytest.mark.filterwarnings("error")
 class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, test_home, dataset_mock, config):
@@ -118,19 +124,18 @@ class TestCommon:
 
         pickle.dumps(dataset)
 
+    # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
+    #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
+    #  contain a custom test for that, but we opted to wait for a potential solution / test from torchdata for now.
     @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
-        def scan(graph):
-            for node, sub_graph in graph.items():
-                yield node
-                yield from scan(sub_graph)
 
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
+        if not any(isinstance(dp, annotation_dp_type) for dp in extract_datapipes(dataset)):
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
@@ -143,6 +148,17 @@ class TestCommon:
             torch.save(sample, buffer)
             buffer.seek(0)
             assert_samples_equal(torch.load(buffer), sample)
+
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_infinite_buffer_size(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        for dp in extract_datapipes(dataset):
+            if hasattr(dp, "buffer_size"):
+                # TODO: replace this with the proper sentinel as soon as https://github.com/pytorch/data/issues/335 is
+                #  resolved
+                assert dp.buffer_size == INFINITE_BUFFER_SIZE
 
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])

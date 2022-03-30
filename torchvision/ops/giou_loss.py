@@ -1,4 +1,14 @@
 import torch
+from torch import Tensor
+
+from ..utils import _log_api_usage_once
+
+
+def _upcast(t: Tensor) -> Tensor:
+    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
+    if t.dtype not in (torch.float32, torch.float64):
+        return t.float()
+    return t
 
 
 def generalized_box_iou_loss(
@@ -33,7 +43,11 @@ def generalized_box_iou_loss(
         A Metric and A Loss for Bounding Box Regression:
         https://arxiv.org/abs/1902.09630
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(generalized_box_iou_loss)
 
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
