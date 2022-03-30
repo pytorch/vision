@@ -18,7 +18,7 @@ from .._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
 from ..resnet import ResNet50_Weights, resnet50
 from . import _utils as det_utils
-from ._utils import overwrite_eps
+from ._utils import overwrite_eps, _box_loss
 from .anchor_utils import AnchorGenerator
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .transform import GeneralizedRCNNTransform
@@ -243,6 +243,7 @@ class RetinaNetRegressionHead(nn.Module):
                     torch.nn.init.zeros_(layer.bias)
 
         self.box_coder = det_utils.BoxCoder(weights=(1.0, 1.0, 1.0, 1.0))
+        self._loss_type = "l1"
 
     def _load_from_state_dict(
         self,
@@ -287,12 +288,15 @@ class RetinaNetRegressionHead(nn.Module):
             bbox_regression_per_image = bbox_regression_per_image[foreground_idxs_per_image, :]
             anchors_per_image = anchors_per_image[foreground_idxs_per_image, :]
 
-            # compute the regression targets
-            target_regression = self.box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
-
             # compute the loss
             losses.append(
-                torch.nn.functional.l1_loss(bbox_regression_per_image, target_regression, reduction="sum")
+                _box_loss(
+                    self._loss_type,
+                    self.box_coder,
+                    anchors_per_image,
+                    matched_gt_boxes_per_image,
+                    bbox_regression_per_image,
+                )
                 / max(1, num_foreground)
             )
 
@@ -827,6 +831,7 @@ def retinanet_resnet50_fpn_v2(
         num_classes,
         norm_layer=partial(nn.GroupNorm, 32),
     )
+    head.regression_head._loss_type = "giou"
     model = RetinaNet(backbone, num_classes, anchor_generator=anchor_generator, head=head, **kwargs)
 
     if weights is not None:
