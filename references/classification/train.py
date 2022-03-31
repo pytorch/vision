@@ -231,12 +231,11 @@ def main(args):
 
     custom_keys_weight_decay = None
     if hasattr(model, "no_weight_decay_keys"):
-        custom_keys_weight_decay = {k: 0.0 for k in model.no_weight_decay_keys()}
+        custom_keys_weight_decay = [(key, 0.0) for key in model.no_weight_decay_keys()]
     parameters = torchvision.ops._utils.set_weight_decay(
         model,
         args.weight_decay,
         norm_weight_decay=args.norm_weight_decay,
-        bias_weight_decay=args.bias_weight_decay,
         custom_keys_weight_decay=custom_keys_weight_decay,
     )
 
@@ -396,12 +395,6 @@ def get_args_parser(add_help=True):
         default=None,
         type=float,
         help="weight decay for Normalization layers (default: None, same value as --wd)",
-    )
-    parser.add_argument(
-        "--bias-weight-decay",
-        default=None,
-        type=float,
-        help="weight decay for bias parameter of all layers (default: None, same value as --wd)",
     )
     parser.add_argument(
         "--label-smoothing", default=0.0, type=float, help="label smoothing (default: 0.0)", dest="label_smoothing"
