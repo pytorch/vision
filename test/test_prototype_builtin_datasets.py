@@ -111,7 +111,10 @@ class TestCommon:
         next(iter(dataset.map(transforms.Identity())))
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_serializable_pickle(self, test_home, dataset_mock, config):
+    def test_serializable_pickle(self, mocker, test_home, dataset_mock, config):
+        if DILL_AVAILABLE:
+            mocker.patch("torch.utils.data.datapipes.datapipe.DILL_AVAILABLE", new=False)
+
         dataset_mock.prepare(test_home, config)
         dataset = datasets.load(dataset_mock.name, **config)
 
