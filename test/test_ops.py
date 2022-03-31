@@ -1379,7 +1379,7 @@ class TestUtils:
             hidden_dim=8,
             mlp_dim=4,
         )
-        param_groups = set_weight_decay(
+        param_groups = ops._utils.set_weight_decay(
             model,
             0.1,
             norm_weight_decay=norm_weight_decay,
