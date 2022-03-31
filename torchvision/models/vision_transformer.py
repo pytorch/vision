@@ -1,3 +1,4 @@
+import collections.abc as abc
 import math
 from collections import OrderedDict
 from functools import partial
@@ -284,7 +285,15 @@ def _vision_transformer(
     progress: bool,
     **kwargs: Any,
 ) -> VisionTransformer:
-    image_size = kwargs.pop("image_size", 224)
+
+    image_size = None
+    if "image_size" in kwargs:
+        image_size = kwargs.pop("image_size", None)
+    if image_size is None and weights is not None and "size" in weights.meta:
+        image_size = weights.meta["size"]
+        if isinstance(image_size, abc.Sequence):
+            image_size = image_size[0]
+    image_size = image_size or 224
 
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
@@ -313,6 +322,15 @@ _COMMON_META = {
     "interpolation": InterpolationMode.BILINEAR,
 }
 
+_COMMON_SWAG_META = {
+    "task": "image_classification",
+    "architecture": "ViT",
+    "publication_year": 2022,
+    "recipe": "https://github.com/facebookresearch/SWAG",
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BICUBIC,
+}
+
 
 class ViT_B_16_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
@@ -326,6 +344,20 @@ class ViT_B_16_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
             "acc@1": 81.072,
             "acc@5": 95.318,
+        },
+    )
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16_swag-9ac1b537.pth",
+        transforms=partial(
+            ImageClassification, resize_size=384, interpolation=InterpolationMode.BICUBIC, crop_size=384
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 86859496,
+            "size": (384, 384),
+            "min_size": (384, 384),
+            "acc@1": 85.29,
+            "acc@5": 97.65,
         },
     )
     DEFAULT = IMAGENET1K_V1
