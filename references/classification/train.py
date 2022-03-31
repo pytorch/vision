@@ -229,14 +229,17 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
-    custom_keys_weight_decay = None
-    if hasattr(model, "no_weight_decay_keys"):
-        custom_keys_weight_decay = [(key, 0.0) for key in model.no_weight_decay_keys()]
+    custom_keys_weight_decay = []
+    if args.bias_weight_decay is not None:
+        custom_keys_weight_decay.append(("bias", args.bias_weight_decay))
+    if args.transformer_weight_decay is not None:
+        for key in ["class_token", "position_embedding", "relative_position_bias"]:
+            custom_keys_weight_decay.append((key, args.transformer_weight_decay))
     parameters = torchvision.ops._utils.set_weight_decay(
         model,
         args.weight_decay,
         norm_weight_decay=args.norm_weight_decay,
-        custom_keys_weight_decay=custom_keys_weight_decay,
+        custom_keys_weight_decay=custom_keys_weight_decay if len(custom_keys_weight_decay) > 0 else None,
     )
 
     opt_name = args.opt.lower()
@@ -395,6 +398,18 @@ def get_args_parser(add_help=True):
         default=None,
         type=float,
         help="weight decay for Normalization layers (default: None, same value as --wd)",
+    )
+    parser.add_argument(
+        "--bias-weight-decay",
+        default=None,
+        type=float,
+        help="weight decay for bias parameters of all layers (default: None, same value as --wd)",
+    )
+    parser.add_argument(
+        "--transformer-weight-decay",
+        default=None,
+        type=float,
+        help="weight decay for special parameters for vision transformer models (default: None, same value as --wd)",
     )
     parser.add_argument(
         "--label-smoothing", default=0.0, type=float, help="label smoothing (default: 0.0)", dest="label_smoothing"
