@@ -119,7 +119,8 @@ class TestCommon:
 
     @pytest.mark.skipif(not DILL_AVAILABLE, reason="Package `dill` is not available.")
     # TODO: remove this as soon as dill is fully supported
-    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
+    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237", raises=RecursionError)
+    @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_serializable_dill(self, test_home, dataset_mock, config):
         import dill
 
