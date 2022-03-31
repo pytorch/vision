@@ -266,7 +266,7 @@ smoke_test_common: &smoke_test_common
 jobs:
   circleci_consistency:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - pip_install:
@@ -279,7 +279,7 @@ jobs:
 
   lint_python_and_config:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - pip_install:
@@ -298,7 +298,7 @@ jobs:
 
   lint_c:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - apt_install:
           args: libtinfo5
@@ -320,7 +320,7 @@ jobs:
 
   type_check_python:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - apt_install:
           args: libturbojpeg-dev
@@ -338,7 +338,7 @@ jobs:
 
   unittest_torchhub:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - install_torchvision
@@ -347,7 +347,7 @@ jobs:
 
   unittest_onnx:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - install_torchvision
@@ -359,7 +359,7 @@ jobs:
 
   unittest_prototype:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     resource_class: xlarge
     steps:
       - checkout
@@ -373,7 +373,7 @@ jobs:
 
   unittest_extended:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     resource_class: xlarge
     steps:
       - checkout
@@ -535,7 +535,7 @@ jobs:
   binary_android_build:
     <<: *torchvision_android_params
     docker:
-      - image: circleci/android:api-29-ndk
+      - image: cimg/android:api-29-ndk
     resource_class: xlarge
     steps:
     - attach_workspace:
@@ -554,7 +554,7 @@ jobs:
   binary_android_upload:
     <<: *torchvision_android_params
     docker:
-      - image: circleci/android:api-29-ndk
+      - image: cimg/android:api-29-ndk
     resource_class: xlarge
     steps:
     - attach_workspace:
@@ -613,7 +613,7 @@ jobs:
         description: "What whl subfolder to upload to, e.g., blank or cu100/ (trailing slash is important)"
         type: string
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - attach_workspace:
           at: ~/workspace
@@ -1037,7 +1037,7 @@ jobs:
   build_docs:
     <<: *binary_common
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     resource_class: 2xlarge+
     steps:
       - attach_workspace:
