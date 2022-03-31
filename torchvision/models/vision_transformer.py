@@ -325,7 +325,7 @@ _COMMON_META = {
 }
 
 _COMMON_SWAG_META = {
-    **COMMON_META,
+    **_COMMON_META,
     "recipe": "https://github.com/facebookresearch/SWAG",
     "interpolation": InterpolationMode.BICUBIC,
 }
