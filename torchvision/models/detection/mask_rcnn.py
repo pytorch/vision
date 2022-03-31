@@ -195,6 +195,7 @@ class MaskRCNN(FasterRCNN):
         mask_roi_pool=None,
         mask_head=None,
         mask_predictor=None,
+        **kwargs,
     ):
 
         if not isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None))):
@@ -254,6 +255,7 @@ class MaskRCNN(FasterRCNN):
             box_batch_size_per_image,
             box_positive_fraction,
             bbox_reg_weights,
+            **kwargs,
         )
 
         self.roi_heads.mask_roi_pool = mask_roi_pool
