@@ -325,11 +325,8 @@ _COMMON_META = {
 }
 
 _COMMON_SWAG_META = {
-    "task": "image_classification",
-    "architecture": "ViT",
-    "publication_year": 2022,
+    **COMMON_META,
     "recipe": "https://github.com/facebookresearch/SWAG",
-    "categories": _IMAGENET_CATEGORIES,
     "interpolation": InterpolationMode.BICUBIC,
 }
 
@@ -358,8 +355,8 @@ class ViT_B_16_Weights(WeightsEnum):
             "num_params": 86859496,
             "size": (384, 384),
             "min_size": (384, 384),
-            "acc@1": 85.29,
-            "acc@5": 97.65,
+            "acc@1": 85.304,
+            "acc@5": 97.650,
         },
     )
     DEFAULT = IMAGENET1K_V1
