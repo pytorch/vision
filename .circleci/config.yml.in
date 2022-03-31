@@ -535,7 +535,7 @@ jobs:
   binary_android_build:
     <<: *torchvision_android_params
     docker:
-      - image: cimg/android:api-29-ndk
+      - image: cimg/android:2022.03-ndk
     resource_class: xlarge
     steps:
     - attach_workspace:
@@ -554,7 +554,7 @@ jobs:
   binary_android_upload:
     <<: *torchvision_android_params
     docker:
-      - image: cimg/android:api-29-ndk
+      - image: cimg/android:2022.03-ndk
     resource_class: xlarge
     steps:
     - attach_workspace:
