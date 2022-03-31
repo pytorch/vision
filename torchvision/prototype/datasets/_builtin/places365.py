@@ -22,8 +22,17 @@ from torchvision.prototype.features import EncodedImage, Label
 
 
 class Places365(Dataset):
+    def _make_info(self) -> DatasetInfo:
+        return DatasetInfo(
+            name="places365",
+            homepage="http://places2.csail.mit.edu/index.html",
+            valid_options=dict(
+                image_res=("large", "small"),
+                split=("train-standard", "train-challenge", "val", "test"),
+            ),
+        )
 
-    # Mapping the config options into filename and sha256 checksum
+    # Dict[Tuple[image_res, split], Tuple[file_name, sha256]]
     _IMAGES_MAP = {
         ("large", "train-standard"): (
             "train_large_places365standard.tar",
@@ -41,12 +50,25 @@ class Places365(Dataset):
             "train_256_places365challenge.tar",
             "250d25cf7da1e69df2470bbc635571728b98301f52eb12ea5f21ca899911666a",
         ),
-        ("large", "val"): ("val_large.tar", "ddd71c418592a4c230645e238f9e52de77247461d68cd9a14a080a9ca6f27df6"),
-        ("large", "test"): ("test_large.tar", "4fae1d859035fe800a7697c27e5e69d78eb292d4cf12d84798c497b23b46b8e1"),
-        ("small", "val"): ("val_256.tar", "24b4e639ef12a0012af525bc4cb443e4ab4aaea8369a1fb009b70e4a4aad5d48"),
-        ("small", "test"): ("test_256.tar", "037ee8180369bdde46636341b92900d4bcb8ea000c026a1fd3e0e9827a8702a1"),
+        ("large", "val"): (
+            "val_large.tar",
+            "ddd71c418592a4c230645e238f9e52de77247461d68cd9a14a080a9ca6f27df6",
+        ),
+        ("large", "test"): (
+            "test_large.tar",
+            "4fae1d859035fe800a7697c27e5e69d78eb292d4cf12d84798c497b23b46b8e1",
+        ),
+        ("small", "val"): (
+            "val_256.tar",
+            "24b4e639ef12a0012af525bc4cb443e4ab4aaea8369a1fb009b70e4a4aad5d48",
+        ),
+        ("small", "test"): (
+            "test_256.tar",
+            "037ee8180369bdde46636341b92900d4bcb8ea000c026a1fd3e0e9827a8702a1",
+        ),
     }
 
+    # Dict[variant, Tuple[file_name, sha256]]
     _META_MAP = {
         "standard": (
             "filelist_places365-standard.tar",
@@ -60,21 +82,8 @@ class Places365(Dataset):
 
     _BASE_URL = "http://data.csail.mit.edu/places/places365/"
 
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            name="places365",
-            homepage="http://places2.csail.mit.edu/index.html",
-            valid_options=dict(
-                image_res=("large", "small"),
-                split=("train-standard", "train-challenge", "val", "test"),
-            ),
-        )
-
     def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        variant = "standard"
-        if config.split == "train-challenge":
-            variant = "challenge"
-        meta_filename, meta_sha256 = self._META_MAP[variant]
+        meta_filename, meta_sha256 = self._META_MAP["challenge" if config.split == "train-challenge" else "standard"]
         meta = HttpResource(urljoin(self._BASE_URL, meta_filename), sha256=meta_sha256)
 
         img_filename, img_sha256 = self._IMAGES_MAP[(config.image_res, config.split)]
@@ -85,11 +94,7 @@ class Places365(Dataset):
     def _image_key(self, data: Tuple[str, Any], *, split: str, image_res: str) -> str:
         path = pathlib.Path(data[0])
         if split.startswith("train"):
-            if image_res == "small":
-                root_dir = "data_256"
-            else:
-                root_dir = "data_large"
-            idx = list(reversed(path.parts)).index(root_dir) - 1
+            idx = list(reversed(path.parts)).index(f"data_{'256' if image_res == 'small' else 'large'}") - 1
             result = f"/{path.relative_to(path.parents[idx]).as_posix()}"
         else:
             result = path.name
@@ -98,7 +103,7 @@ class Places365(Dataset):
     def _prepare_sample(self, data: Tuple[List[str], Tuple[str, Any]]) -> Dict[str, Any]:
         key_label, (path, buffer) = data
         if len(key_label) == 1:
-            # This only happen when split == "test" since test data don't have label
+            # This only happen when split == "test" since test data doesn't have labels
             label = None
         else:
             label = Label(int(key_label[1]), categories=self.categories)
@@ -113,14 +118,12 @@ class Places365(Dataset):
     ) -> IterDataPipe[Dict[str, Any]]:
 
         meta_dp, images_dp = resource_dps
-        label_filename = f"places365_{config.split.replace('-', '_')}.txt"
-        labels_dp = Filter(meta_dp, path_comparator("name", label_filename))
+        labels_dp = Filter(meta_dp, path_comparator("name", f"places365_{config.split.replace('-', '_')}.txt"))
         labels_dp = CSVParser(labels_dp, delimiter=" ")
 
         labels_dp = hint_sharding(labels_dp)
         labels_dp = hint_shuffling(labels_dp)
 
-        # Join labels_dp with images_dp
         dp = IterKeyZipper(
             labels_dp,
             images_dp,

@@ -1444,19 +1444,14 @@ def places365(info, root, config):
     categories = ["alley", "field/wild", "subway_station/platform", "zen_garden"]
     category_keys = [f"/{category[0]}/{category}" for category in categories]
 
-    if config.image_res == "small":
-        image_res_suffix = "256"
-    else:
-        image_res_suffix = "large"
+    train = config.split.startswith("train")
+    variant = "challenge" if config.split == "train-challenge" else "standard"
 
-    if config.split.startswith("train"):
-        image_root = root / f"data_{image_res_suffix}"
-    else:
-        image_root = root / f"{config.split}_{image_res_suffix}"
+    image_res_suffix = "256" if config.image_res == "small" else "large"
+    image_root = root / (f"data_{image_res_suffix}" if train else f"{config.split}_{image_res_suffix}")
 
     keys_labels = []
     for category_idx, category_key in enumerate(category_keys):
-        # Generate image files
         if config.split.startswith("train"):
             parts = category_key.split("/")
             image_dir = pathlib.Path(*parts[1:])
@@ -1474,38 +1469,28 @@ def places365(info, root, config):
             num_examples=num_samples,
         )
 
-        if config.split.startswith("train"):
-            keys_labels.extend(
-                [(f"/{image_file.relative_to(image_root).as_posix()}", category_idx) for image_file in image_files]
-            )
-        else:
-            keys_labels.extend(
-                [(image_file.relative_to(image_root).as_posix(), category_idx) for image_file in image_files]
-            )
+        keys_labels.extend(
+            [
+                (("/" if train else "") + image_file.relative_to(image_root).as_posix(), category_idx)
+                for image_file in image_files
+            ]
+        )
 
-    meta_root = root
     meta_filenames = {
+        "train": f"places365_train_{variant}.txt",
         "category": "categories_places365.txt",
         "val": "places365_val.txt",
         "test": "places365_test.txt",
     }
-    variant = "standard"
-    if config.split == "train-challenge":
-        variant = "challenge"
-    if variant == "standard":
-        meta_filenames["train"] = "places365_train_standard.txt"
-    else:
-        meta_filenames["train"] = "places365_train_challenge.txt"
 
-    # Writing category
-    with open(meta_root / meta_filenames["category"], "w") as fh:
+    with open(root / meta_filenames["category"], "w") as fh:
         fh.write("\n".join([f"{category_keys[i]} {i}" for i in range(len(category_keys))]))
 
-    # Writing splits meta
     all_splits = ["train", "val", "test"]
     for split in all_splits:
-        if config.split.startswith(split):
-            with open(meta_root / meta_filenames[split], "w") as fh:
+        with open(root / meta_filenames[split], "w") as fh:
+            # If not the same as config.split we will only produce one sample data
+            if config.split.startswith(split):
                 for i, key_label in enumerate(keys_labels):
                     key, label = key_label
                     if split != "test":
@@ -1514,25 +1499,23 @@ def places365(info, root, config):
                         fh.write(f"{key}")
                     if i != len(keys_labels) - 1:
                         fh.write("\n")
-        else:
-            # If not the same as config.split we will only produce one sample data
-            with open(meta_root / meta_filenames[split], "w") as fh:
-                if split.startswith("train"):
-                    fh.write("/s/subway_station/platform/00000001.jpg 2")
-                elif split == "val":
-                    fh.write("Places365_val_00000001.jpg 1")
-                elif split == "test":
-                    fh.write("Places365_test_00000001.jpg")
+            elif train:
+                fh.write("/s/subway_station/platform/00000001.jpg 2")
+            elif split == "val":
+                fh.write("Places365_val_00000001.jpg 1")
+            else:  # split == "test":
+                fh.write("Places365_test_00000001.jpg")
 
-    # Create image tar
-    if config.split.startswith("train"):
-        image_tar_name = f"train_{image_res_suffix}_places365{variant}.tar"
-    else:
-        image_tar_name = f"{config.split}_{image_res_suffix}.tar"
-    make_tar(root, image_tar_name, image_root)
-    # Create meta tar
-    meta_tar_name = f"filelist_places365-{variant}.tar"
-    make_tar(root, meta_tar_name, *[meta_root / meta_filename for meta_filename in meta_filenames.values()])
+    make_tar(
+        root,
+        f"train_{image_res_suffix}_places365{variant}.tar" if train else f"{config.split}_{image_res_suffix}.tar",
+        image_root,
+    )
+    make_tar(
+        root,
+        f"filelist_places365-{variant}.tar",
+        *[root / meta_filename for meta_filename in meta_filenames.values()],
+    )
 
     return num_samples * len(categories)
 
