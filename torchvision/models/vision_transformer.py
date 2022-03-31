@@ -1,8 +1,7 @@
-import collections.abc as abc
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
 import torch
 import torch.nn as nn
@@ -287,17 +286,18 @@ def _vision_transformer(
 ) -> VisionTransformer:
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
-        if "size" in weights.meta:
-            if isinstance(weights.meta["size"], int):
-                _ovewrite_named_param(kwargs, "image_size", weights.meta["size"])
-            elif isinstance(weights.meta["size"], abc.Sequence):
-                torch._assert(
-                    weights.meta["size"][0] == weights.meta["size"][1],
-                    "Currently we only support a square image where width = height",
+        if isinstance(weights.meta["size"], int):
+            _ovewrite_named_param(kwargs, "image_size", weights.meta["size"])
+        elif isinstance(weights.meta["size"], Sequence):
+            if len(weights.meta["size"]) != 2 or weights.meta["size"][0] != weights.meta["size"][1]:
+                raise ValueError(
+                    f'size: {weights.meta["size"]} is not valid! Currently we only support a 2-dimensional square and width = height'
                 )
-                _ovewrite_named_param(kwargs, "image_size", weights.meta["size"][0])
-            else:
-                raise ValueError('weights.meta["size"] should have type of either an int or a Sequence[int]')
+            _ovewrite_named_param(kwargs, "image_size", weights.meta["size"][0])
+        else:
+            raise ValueError(
+                f'weights.meta["size"]: {weights.meta["size"]} is not valid, the type should be either an int or a Sequence[int]'
+            )
     image_size = kwargs.pop("image_size", 224)
 
     model = VisionTransformer(
@@ -326,6 +326,7 @@ _COMMON_META = {
 
 _COMMON_SWAG_META = {
     **_COMMON_META,
+    "publication_year": 2022,
     "recipe": "https://github.com/facebookresearch/SWAG",
     "interpolation": InterpolationMode.BICUBIC,
 }
@@ -348,7 +349,10 @@ class ViT_B_16_Weights(WeightsEnum):
     IMAGENET1K_SWAG_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_16_swag-9ac1b537.pth",
         transforms=partial(
-            ImageClassification, resize_size=384, interpolation=InterpolationMode.BICUBIC, crop_size=384
+            ImageClassification,
+            crop_size=384,
+            resize_size=384,
+            interpolation=InterpolationMode.BICUBIC,
         ),
         meta={
             **_COMMON_SWAG_META,
