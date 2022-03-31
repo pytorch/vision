@@ -96,21 +96,20 @@ def set_weight_decay(
             custom_keys.append(key)
 
     def _add_params(module, prefix=""):
-        # We firstly consider norm layers
-        if norm_weight_decay is not None and isinstance(module, norm_classes):
-            params["norm"].extend(p for p in module.parameters() if p.requires_grad)
-        else:
-            for name, p in module.named_parameters(recurse=False):
-                if not p.requires_grad:
-                    continue
-                is_custom_key = False
-                for key in custom_keys:
-                    full_name = f"{prefix}.{name}" if prefix != "" else name
-                    if key in full_name:
-                        params[key].append(p)
-                        is_custom_key = True
-                        break
-                if not is_custom_key:
+        for name, p in module.named_parameters(recurse=False):
+            if not p.requires_grad:
+                continue
+            is_custom_key = False
+            for key in custom_keys:
+                target_name = f"{prefix}.{name}" if prefix != "" and "." in key else name
+                if key == target_name:
+                    params[key].append(p)
+                    is_custom_key = True
+                    break
+            if not is_custom_key:
+                if norm_weight_decay is not None and isinstance(module, norm_classes):
+                    params["norm"].append(p)
+                else:
                     params["other"].append(p)
 
         for child_name, child_module in module.named_children():
