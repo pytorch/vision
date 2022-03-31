@@ -51,29 +51,29 @@ class CUB200(Dataset):
             archive = HttpResource(
                 "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/CUB_200_2011.tgz",
                 sha256="0c685df5597a8b24909f6a7c9db6d11e008733779a671760afef78feb49bf081",
-                decompress=True,
+                preprocess="decompress",
             )
             segmentations = HttpResource(
                 "http://www.vision.caltech.edu/visipedia-data/CUB-200-2011/segmentations.tgz",
                 sha256="dc77f6cffea0cbe2e41d4201115c8f29a6320ecb04fffd2444f51b8066e4b84f",
-                decompress=True,
+                preprocess="decompress",
             )
             return [archive, segmentations]
         else:  # config.year == "2010"
             split = HttpResource(
                 "http://www.vision.caltech.edu/visipedia-data/CUB-200/lists.tgz",
                 sha256="aeacbd5e3539ae84ea726e8a266a9a119c18f055cd80f3836d5eb4500b005428",
-                decompress=True,
+                preprocess="decompress",
             )
             images = HttpResource(
                 "http://www.vision.caltech.edu/visipedia-data/CUB-200/images.tgz",
                 sha256="2a6d2246bbb9778ca03aa94e2e683ccb4f8821a36b7f235c0822e659d60a803e",
-                decompress=True,
+                preprocess="decompress",
             )
             anns = HttpResource(
                 "http://www.vision.caltech.edu/visipedia-data/CUB-200/annotations.tgz",
                 sha256="c17b7841c21a66aa44ba8fe92369cc95dfc998946081828b1d7b8a4b716805c1",
-                decompress=True,
+                preprocess="decompress",
             )
             return [split, images, anns]
 
@@ -199,8 +199,8 @@ class CUB200(Dataset):
 
             prepare_ann_fn = self._2010_prepare_ann
 
-        split_dp = hint_sharding(split_dp)
         split_dp = hint_shuffling(split_dp)
+        split_dp = hint_sharding(split_dp)
 
         dp = IterKeyZipper(
             split_dp,

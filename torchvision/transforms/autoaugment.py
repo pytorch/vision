@@ -220,13 +220,13 @@ class AutoAugment(torch.nn.Module):
         else:
             raise ValueError(f"The provided policy {policy} is not recognized.")
 
-    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
             # op_name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
-            "TranslateX": (torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
-            "TranslateY": (torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+            "TranslateX": (torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+            "TranslateY": (torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
             "Rotate": (torch.linspace(0.0, 30.0, num_bins), True),
             "Brightness": (torch.linspace(0.0, 0.9, num_bins), True),
             "Color": (torch.linspace(0.0, 0.9, num_bins), True),
@@ -260,15 +260,16 @@ class AutoAugment(torch.nn.Module):
             PIL Image or Tensor: AutoAugmented image.
         """
         fill = self.fill
+        channels, height, width = F.get_dimensions(img)
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F.get_image_num_channels(img)
+                fill = [float(fill)] * channels
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
         transform_id, probs, signs = self.get_params(len(self.policies))
 
-        op_meta = self._augmentation_space(10, F.get_image_size(img))
+        op_meta = self._augmentation_space(10, (height, width))
         for i, (op_name, p, magnitude_id) in enumerate(self.policies[transform_id]):
             if probs[i] <= p:
                 magnitudes, signed = op_meta[op_name]
@@ -317,14 +318,14 @@ class RandAugment(torch.nn.Module):
         self.interpolation = interpolation
         self.fill = fill
 
-    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         return {
             # op_name: (magnitudes, signed)
             "Identity": (torch.tensor(0.0), False),
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
-            "TranslateX": (torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
-            "TranslateY": (torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+            "TranslateX": (torch.linspace(0.0, 150.0 / 331.0 * image_size[1], num_bins), True),
+            "TranslateY": (torch.linspace(0.0, 150.0 / 331.0 * image_size[0], num_bins), True),
             "Rotate": (torch.linspace(0.0, 30.0, num_bins), True),
             "Brightness": (torch.linspace(0.0, 0.9, num_bins), True),
             "Color": (torch.linspace(0.0, 0.9, num_bins), True),
@@ -344,13 +345,14 @@ class RandAugment(torch.nn.Module):
             PIL Image or Tensor: Transformed image.
         """
         fill = self.fill
+        channels, height, width = F.get_dimensions(img)
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F.get_image_num_channels(img)
+                fill = [float(fill)] * channels
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
-        op_meta = self._augmentation_space(self.num_magnitude_bins, F.get_image_size(img))
+        op_meta = self._augmentation_space(self.num_magnitude_bins, (height, width))
         for _ in range(self.num_ops):
             op_index = int(torch.randint(len(op_meta), (1,)).item())
             op_name = list(op_meta.keys())[op_index]
@@ -429,9 +431,10 @@ class TrivialAugmentWide(torch.nn.Module):
             PIL Image or Tensor: Transformed image.
         """
         fill = self.fill
+        channels, height, width = F.get_dimensions(img)
         if isinstance(img, Tensor):
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F.get_image_num_channels(img)
+                fill = [float(fill)] * channels
             elif fill is not None:
                 fill = [float(f) for f in fill]
 
@@ -503,13 +506,13 @@ class AugMix(torch.nn.Module):
         self.interpolation = interpolation
         self.fill = fill
 
-    def _augmentation_space(self, num_bins: int, image_size: List[int]) -> Dict[str, Tuple[Tensor, bool]]:
+    def _augmentation_space(self, num_bins: int, image_size: Tuple[int, int]) -> Dict[str, Tuple[Tensor, bool]]:
         s = {
             # op_name: (magnitudes, signed)
             "ShearX": (torch.linspace(0.0, 0.3, num_bins), True),
             "ShearY": (torch.linspace(0.0, 0.3, num_bins), True),
-            "TranslateX": (torch.linspace(0.0, image_size[0] / 3.0, num_bins), True),
-            "TranslateY": (torch.linspace(0.0, image_size[1] / 3.0, num_bins), True),
+            "TranslateX": (torch.linspace(0.0, image_size[1] / 3.0, num_bins), True),
+            "TranslateY": (torch.linspace(0.0, image_size[0] / 3.0, num_bins), True),
             "Rotate": (torch.linspace(0.0, 30.0, num_bins), True),
             "Posterize": (4 - (torch.arange(num_bins) / ((num_bins - 1) / 4)).round().int(), False),
             "Solarize": (torch.linspace(255.0, 0.0, num_bins), False),
@@ -547,16 +550,17 @@ class AugMix(torch.nn.Module):
             PIL Image or Tensor: Transformed image.
         """
         fill = self.fill
+        channels, height, width = F.get_dimensions(orig_img)
         if isinstance(orig_img, Tensor):
             img = orig_img
             if isinstance(fill, (int, float)):
-                fill = [float(fill)] * F.get_image_num_channels(img)
+                fill = [float(fill)] * channels
             elif fill is not None:
                 fill = [float(f) for f in fill]
         else:
             img = self._pil_to_tensor(orig_img)
 
-        op_meta = self._augmentation_space(self._PARAMETER_MAX, F.get_image_size(img))
+        op_meta = self._augmentation_space(self._PARAMETER_MAX, (height, width))
 
         orig_dims = list(img.shape)
         batch = img.view([1] * max(4 - img.ndim, 0) + orig_dims)

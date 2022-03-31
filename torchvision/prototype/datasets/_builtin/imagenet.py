@@ -2,8 +2,16 @@ import pathlib
 import re
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast, Union
 
-from torchdata.datapipes.iter import IterDataPipe, LineReader, IterKeyZipper, Mapper, Filter, Demultiplexer
-from torchdata.datapipes.iter import TarArchiveReader
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    LineReader,
+    IterKeyZipper,
+    Mapper,
+    Filter,
+    Demultiplexer,
+    TarArchiveLoader,
+    Enumerator,
+)
 from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     OnlineResource,
@@ -14,7 +22,6 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     BUILTIN_DIR,
     path_comparator,
-    Enumerator,
     getitem,
     read_mat,
     hint_sharding,
@@ -147,10 +154,10 @@ class ImageNet(Dataset2):
 
             # the train archive is a tar of tars
             if self._split == "train":
-                dp = TarArchiveReader(dp)
+                dp = TarArchiveLoader(dp)
 
-            dp = hint_sharding(dp)
             dp = hint_shuffling(dp)
+            dp = hint_sharding(dp)
             dp = Mapper(dp, self._prepare_train_data if self._split == "train" else self._prepare_test_data)
         else:  # config.split == "val":
             images_dp, devkit_dp = resource_dps
@@ -165,8 +172,8 @@ class ImageNet(Dataset2):
             label_dp = LineReader(label_dp, decode=True, return_path=False)
             label_dp = Mapper(label_dp, self._imagenet_label_to_wnid)
             label_dp: IterDataPipe[Tuple[int, str]] = Enumerator(label_dp, 1)
-            label_dp = hint_sharding(label_dp)
             label_dp = hint_shuffling(label_dp)
+            label_dp = hint_sharding(label_dp)
 
             dp = IterKeyZipper(
                 label_dp,

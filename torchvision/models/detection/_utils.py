@@ -159,8 +159,14 @@ class BoxCoder:
         return targets
 
     def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
-        assert isinstance(boxes, (list, tuple))
-        assert isinstance(rel_codes, torch.Tensor)
+        torch._assert(
+            isinstance(boxes, (list, tuple)),
+            "This function expects boxes of type list or tuple.",
+        )
+        torch._assert(
+            isinstance(rel_codes, torch.Tensor),
+            "This function expects rel_codes of type torch.Tensor.",
+        )
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         box_sum = 0
@@ -333,7 +339,7 @@ class Matcher:
         """
         self.BELOW_LOW_THRESHOLD = -1
         self.BETWEEN_THRESHOLDS = -2
-        assert low_threshold <= high_threshold
+        torch._assert(low_threshold <= high_threshold, "low_threshold should be <= high_threshold")
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
@@ -371,8 +377,10 @@ class Matcher:
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
-            assert all_matches is not None
-            self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+            if all_matches is None:
+                torch._assert(False, "all_matches should not be None")
+            else:
+                self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches
 
@@ -470,7 +478,12 @@ def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
     return out_channels
 
 
-def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Tensor:
+@torch.jit.unused
+def _fake_cast_onnx(v: Tensor) -> int:
+    return v  # type: ignore[return-value]
+
+
+def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
     """
     ONNX spec requires the k-value to be less than or equal to the number of inputs along
     provided dim. Certain models use the number of elements along a particular axis instead of K
@@ -487,8 +500,10 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> Tensor:
         axis(int): Axis along which we retreive the input size.
 
     Returns:
-        min_kval (Tensor): Appropriately selected k-value.
+        min_kval (int): Appropriately selected k-value.
     """
+    if not torch.jit.is_tracing():
+        return min(orig_kval, input.size(axis))
     axis_dim_val = torch._shape_as_tensor(input)[axis].unsqueeze(0)
     min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
-    return min_kval  # type: ignore[arg-type]
+    return _fake_cast_onnx(min_kval)

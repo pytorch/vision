@@ -166,17 +166,7 @@ class ExponentialMovingAverage(torch.optim.swa_utils.AveragedModel):
         def ema_avg(avg_model_param, model_param, num_averaged):
             return decay * avg_model_param + (1 - decay) * model_param
 
-        super().__init__(model, device, ema_avg)
-
-    def update_parameters(self, model):
-        for p_swa, p_model in zip(self.module.state_dict().values(), model.state_dict().values()):
-            device = p_swa.device
-            p_model_ = p_model.detach().to(device)
-            if self.n_averaged == 0:
-                p_swa.detach().copy_(p_model_)
-            else:
-                p_swa.detach().copy_(self.avg_fn(p_swa.detach(), p_model_, self.n_averaged.to(device)))
-        self.n_averaged += 1
+        super().__init__(model, device, ema_avg, use_buffers=True)
 
 
 def accuracy(output, target, topk=(1,)):
@@ -274,6 +264,7 @@ def init_distributed_mode(args):
     torch.distributed.init_process_group(
         backend=args.dist_backend, init_method=args.dist_url, world_size=args.world_size, rank=args.rank
     )
+    torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
 
 
@@ -339,22 +330,22 @@ def store_model_weights(model, checkpoint_path, checkpoint_key="model", strict=T
         from torchvision import models as M
 
         # Classification
-        model = M.mobilenet_v3_large(pretrained=False)
+        model = M.mobilenet_v3_large(weights=None)
         print(store_model_weights(model, './class.pth'))
 
         # Quantized Classification
-        model = M.quantization.mobilenet_v3_large(pretrained=False, quantize=False)
+        model = M.quantization.mobilenet_v3_large(weights=None, quantize=False)
         model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig('qnnpack')
         _ = torch.ao.quantization.prepare_qat(model, inplace=True)
         print(store_model_weights(model, './qat.pth'))
 
         # Object Detection
-        model = M.detection.fasterrcnn_mobilenet_v3_large_fpn(pretrained=False, pretrained_backbone=False)
+        model = M.detection.fasterrcnn_mobilenet_v3_large_fpn(weights=None, weights_backbone=None)
         print(store_model_weights(model, './obj.pth'))
 
         # Segmentation
-        model = M.segmentation.deeplabv3_mobilenet_v3_large(pretrained=False, pretrained_backbone=False, aux_loss=True)
+        model = M.segmentation.deeplabv3_mobilenet_v3_large(weights=None, weights_backbone=None, aux_loss=True)
         print(store_model_weights(model, './segm.pth', strict=False))
 
     Args:

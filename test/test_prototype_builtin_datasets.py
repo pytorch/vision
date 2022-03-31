@@ -1,5 +1,6 @@
 import functools
 import io
+import pickle
 from pathlib import Path
 
 import pytest
@@ -7,14 +8,20 @@ import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data.graph import traverse
+from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
-from torchvision.prototype.utils._internal import sequence_to_str
-
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
+from torchvision.prototype.features import Image, Label
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
 )
+
+
+def extract_datapipes(dp):
+    return get_all_graph_pipes(traverse(dp, only_datapipe=True))
 
 
 @pytest.fixture
@@ -33,6 +40,7 @@ def test_coverage():
         )
 
 
+@pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
     def test_info(self, name):
@@ -61,6 +69,8 @@ class TestCommon:
 
         try:
             sample = next(iter(dataset))
+        except StopIteration:
+            raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
             raise AssertionError("Drawing a sample raised the error above.") from error
 
@@ -100,41 +110,26 @@ class TestCommon:
         next(iter(dataset.map(transforms.Identity())))
 
     @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
-    @parametrize_dataset_mocks(
-        DATASET_MOCKS,
-        marks={
-            "cub200": pytest.mark.xfail(
-                reason="See https://github.com/pytorch/vision/pull/5187#issuecomment-1015479165"
-            )
-        },
-    )
-    def test_traversable(self, test_home, dataset_mock, config):
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_serializable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        traverse(dataset)
+        pickle.dumps(dataset)
 
+    # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
+    #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
+    #  contain a custom test for that, but we opted to wait for a potential solution / test from torchdata for now.
     @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237")
-    @parametrize_dataset_mocks(
-        DATASET_MOCKS,
-        marks={
-            "cub200": pytest.mark.xfail(
-                reason="See https://github.com/pytorch/vision/pull/5187#issuecomment-1015479165"
-            )
-        },
-    )
+    @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
-        def scan(graph):
-            for node, sub_graph in graph.items():
-                yield node
-                yield from scan(sub_graph)
 
         dataset_mock.prepare(test_home, config)
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not any(type(dp) is annotation_dp_type for dp in scan(traverse(dataset))):
+        if not any(isinstance(dp, annotation_dp_type) for dp in extract_datapipes(dataset)):
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
@@ -147,6 +142,17 @@ class TestCommon:
             torch.save(sample, buffer)
             buffer.seek(0)
             assert_samples_equal(torch.load(buffer), sample)
+
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_infinite_buffer_size(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        for dp in extract_datapipes(dataset):
+            if hasattr(dp, "buffer_size"):
+                # TODO: replace this with the proper sentinel as soon as https://github.com/pytorch/data/issues/335 is
+                #  resolved
+                assert dp.buffer_size == INFINITE_BUFFER_SIZE
 
 
 # FIXME: DATASET_MOCKS["qmnist"]
@@ -186,3 +192,21 @@ class TestGTSRB:
         for sample in dataset:
             label_from_path = int(Path(sample["path"]).parent.name)
             assert sample["label"] == label_from_path
+
+
+# FIXME: DATASET_MOCKS["usps"]
+@parametrize_dataset_mocks({})
+class TestUSPS:
+    def test_sample_content(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        for sample in dataset:
+            assert "image" in sample
+            assert "label" in sample
+
+            assert isinstance(sample["image"], Image)
+            assert isinstance(sample["label"], Label)
+
+            assert sample["image"].shape == (1, 16, 16)

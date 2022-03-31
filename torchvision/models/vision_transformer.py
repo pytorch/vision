@@ -6,24 +6,25 @@ from typing import Any, Callable, List, NamedTuple, Optional
 import torch
 import torch.nn as nn
 
-from .._internally_replaced_utils import load_state_dict_from_url
-from ..ops.misc import ConvNormActivation
+from ..ops.misc import Conv2dNormActivation
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param
+
 
 __all__ = [
     "VisionTransformer",
+    "ViT_B_16_Weights",
+    "ViT_B_32_Weights",
+    "ViT_L_16_Weights",
+    "ViT_L_32_Weights",
     "vit_b_16",
     "vit_b_32",
     "vit_l_16",
     "vit_l_32",
 ]
-
-model_urls = {
-    "vit_b_16": "https://download.pytorch.org/models/vit_b_16-c867db91.pth",
-    "vit_b_32": "https://download.pytorch.org/models/vit_b_32-d86f8d99.pth",
-    "vit_l_16": "https://download.pytorch.org/models/vit_l_16-852ce7e3.pth",
-    "vit_l_32": "https://download.pytorch.org/models/vit_l_32-c7638314.pth",
-}
 
 
 class ConvStemConfig(NamedTuple):
@@ -163,7 +164,7 @@ class VisionTransformer(nn.Module):
             for i, conv_stem_layer_config in enumerate(conv_stem_configs):
                 seq_proj.add_module(
                     f"conv_bn_relu_{i}",
-                    ConvNormActivation(
+                    Conv2dNormActivation(
                         in_channels=prev_channels,
                         out_channels=conv_stem_layer_config.out_channels,
                         kernel_size=conv_stem_layer_config.kernel_size,
@@ -274,17 +275,19 @@ class VisionTransformer(nn.Module):
 
 
 def _vision_transformer(
-    arch: str,
     patch_size: int,
     num_layers: int,
     num_heads: int,
     hidden_dim: int,
     mlp_dim: int,
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> VisionTransformer:
     image_size = kwargs.pop("image_size", 224)
+
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = VisionTransformer(
         image_size=image_size,
@@ -296,98 +299,180 @@ def _vision_transformer(
         **kwargs,
     )
 
-    if pretrained:
-        if arch not in model_urls:
-            raise ValueError(f"No checkpoint is available for model type '{arch}'!")
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
-        model.load_state_dict(state_dict)
+    if weights:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
 
-def vit_b_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+_COMMON_META = {
+    "task": "image_classification",
+    "architecture": "ViT",
+    "publication_year": 2020,
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
+
+
+class ViT_B_16_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16-c867db91.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 86567656,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
+            "acc@1": 81.072,
+            "acc@5": 95.318,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class ViT_B_32_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_32-d86f8d99.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 88224232,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32",
+            "acc@1": 75.912,
+            "acc@5": 92.466,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class ViT_L_16_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_16-852ce7e3.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=242),
+        meta={
+            **_COMMON_META,
+            "num_params": 304326632,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16",
+            "acc@1": 79.662,
+            "acc@5": 94.638,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class ViT_L_32_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_32-c7638314.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 306535400,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32",
+            "acc@1": 76.972,
+            "acc@5": 93.07,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+@handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.IMAGENET1K_V1))
+def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ViT_B_16_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    weights = ViT_B_16_Weights.verify(weights)
+
     return _vision_transformer(
-        arch="vit_b_16",
         patch_size=16,
         num_layers=12,
         num_heads=12,
         hidden_dim=768,
         mlp_dim=3072,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         **kwargs,
     )
 
 
-def vit_b_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+@handle_legacy_interface(weights=("pretrained", ViT_B_32_Weights.IMAGENET1K_V1))
+def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_b_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ViT_B_32_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    weights = ViT_B_32_Weights.verify(weights)
+
     return _vision_transformer(
-        arch="vit_b_32",
         patch_size=32,
         num_layers=12,
         num_heads=12,
         hidden_dim=768,
         mlp_dim=3072,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         **kwargs,
     )
 
 
-def vit_l_16(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+@handle_legacy_interface(weights=("pretrained", ViT_L_16_Weights.IMAGENET1K_V1))
+def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_16 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ViT_L_16_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    weights = ViT_L_16_Weights.verify(weights)
+
     return _vision_transformer(
-        arch="vit_l_16",
         patch_size=16,
         num_layers=24,
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         **kwargs,
     )
 
 
-def vit_l_32(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+@handle_legacy_interface(weights=("pretrained", ViT_L_32_Weights.IMAGENET1K_V1))
+def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_l_32 architecture from
     `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ViT_L_32_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    weights = ViT_L_32_Weights.verify(weights)
+
     return _vision_transformer(
-        arch="vit_l_32",
         patch_size=32,
         num_layers=24,
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         **kwargs,
     )
@@ -434,7 +519,10 @@ def interpolate_embeddings(
         # (1, seq_length, hidden_dim) -> (1, hidden_dim, seq_length)
         pos_embedding_img = pos_embedding_img.permute(0, 2, 1)
         seq_length_1d = int(math.sqrt(seq_length))
-        torch._assert(seq_length_1d * seq_length_1d == seq_length, "seq_length is not a perfect square!")
+        if seq_length_1d * seq_length_1d != seq_length:
+            raise ValueError(
+                f"seq_length is not a perfect square! Instead got seq_length_1d * seq_length_1d = {seq_length_1d * seq_length_1d } and seq_length = {seq_length}"
+            )
 
         # (1, hidden_dim, seq_length) -> (1, hidden_dim, seq_l_1d, seq_l_1d)
         pos_embedding_img = pos_embedding_img.reshape(1, hidden_dim, seq_length_1d, seq_length_1d)

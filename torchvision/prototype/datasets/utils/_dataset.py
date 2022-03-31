@@ -7,8 +7,9 @@ import pathlib
 from typing import Any, Dict, List, Optional, Sequence, Union, Tuple, Collection, Iterator
 
 from torch.utils.data import IterDataPipe
+from torchvision._utils import sequence_to_str
 from torchvision.datasets.utils import verify_str_arg
-from torchvision.prototype.utils._internal import FrozenBunch, make_repr, add_suggestion, sequence_to_str
+from torchvision.prototype.utils._internal import FrozenBunch, make_repr, add_suggestion
 
 from .._home import use_sharded_dataset
 from ._internal import BUILTIN_DIR, _make_sharded_datapipe

@@ -21,8 +21,14 @@ class RandomMixup(torch.nn.Module):
 
     def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False) -> None:
         super().__init__()
-        assert num_classes > 0, "Please provide a valid positive value for the num_classes."
-        assert alpha > 0, "Alpha param can't be zero."
+
+        if num_classes < 1:
+            raise ValueError(
+                f"Please provide a valid positive value for the num_classes. Got num_classes={num_classes}"
+            )
+
+        if alpha <= 0:
+            raise ValueError("Alpha param can't be zero.")
 
         self.num_classes = num_classes
         self.p = p
@@ -99,8 +105,10 @@ class RandomCutmix(torch.nn.Module):
 
     def __init__(self, num_classes: int, p: float = 0.5, alpha: float = 1.0, inplace: bool = False) -> None:
         super().__init__()
-        assert num_classes > 0, "Please provide a valid positive value for the num_classes."
-        assert alpha > 0, "Alpha param can't be zero."
+        if num_classes < 1:
+            raise ValueError("Please provide a valid positive value for the num_classes.")
+        if alpha <= 0:
+            raise ValueError("Alpha param can't be zero.")
 
         self.num_classes = num_classes
         self.p = p
@@ -141,7 +149,7 @@ class RandomCutmix(torch.nn.Module):
 
         # Implemented as on cutmix paper, page 12 (with minor corrections on typos).
         lambda_param = float(torch._sample_dirichlet(torch.tensor([self.alpha, self.alpha]))[0])
-        W, H = F.get_image_size(batch)
+        _, H, W = F.get_dimensions(batch)
 
         r_x = torch.randint(W, (1,))
         r_y = torch.randint(H, (1,))

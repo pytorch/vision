@@ -339,7 +339,8 @@ class RegionProposalNetwork(torch.nn.Module):
 
         losses = {}
         if self.training:
-            assert targets is not None
+            if targets is None:
+                raise ValueError("targets should not be None")
             labels, matched_gt_boxes = self.assign_targets_to_anchors(anchors, targets)
             regression_targets = self.box_coder.encode(matched_gt_boxes, anchors)
             loss_objectness, loss_rpn_box_reg = self.compute_loss(

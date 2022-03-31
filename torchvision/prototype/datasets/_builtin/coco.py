@@ -194,7 +194,8 @@ class Coco(Dataset2):
         images_dp, meta_dp = resource_dps
 
         if self._annotations is None:
-            dp = hint_sharding(images_dp)
+            dp = hint_shuffling(images_dp)
+            dp = hint_sharding(dp)
             dp = hint_shuffling(dp)
             return Mapper(dp, self._prepare_image)
 
@@ -216,8 +217,8 @@ class Coco(Dataset2):
         anns_meta_dp = Mapper(anns_meta_dp, getitem(1))
         anns_meta_dp = UnBatcher(anns_meta_dp)
         anns_meta_dp = Grouper(anns_meta_dp, group_key_fn=getitem("image_id"), buffer_size=INFINITE_BUFFER_SIZE)
-        anns_meta_dp = hint_sharding(anns_meta_dp)
         anns_meta_dp = hint_shuffling(anns_meta_dp)
+        anns_meta_dp = hint_sharding(anns_meta_dp)
 
         anns_dp = IterKeyZipper(
             anns_meta_dp,
