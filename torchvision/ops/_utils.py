@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Optional, Tuple, Union
 
 import torch
 from torch import nn, Tensor
@@ -122,6 +122,5 @@ def set_weight_decay(
     param_groups = []
     for key in params:
         if len(params[key]) > 0:
-            print(key, len(params[key]))
             param_groups.append({"params": params[key], "weight_decay": params_weight_decay[key]})
     return param_groups
