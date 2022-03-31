@@ -1,0 +1,7 @@
+# This file keeps git blame clean.
+# See https://docs.github.com/en/repositories/working-with-files/using-files/viewing-a-file#ignore-commits-in-the-blame-view
+
+# Add ufmt (usort + black) as code formatter (#4384)
+5f0edb97b46e5bff71dc19dedef05c5396eeaea2
+# update python syntax >=3.6 (#4585)
+d367a01a18a3ae6bee13d8be3b63fd6a581ea46f

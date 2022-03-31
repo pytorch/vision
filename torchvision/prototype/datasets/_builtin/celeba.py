@@ -155,8 +155,8 @@ class CelebA(Dataset):
 
         splits_dp = CelebACSVParser(splits_dp, fieldnames=("image_id", "split_id"))
         splits_dp = Filter(splits_dp, functools.partial(self._filter_split, split=config.split))
-        splits_dp = hint_sharding(splits_dp)
         splits_dp = hint_shuffling(splits_dp)
+        splits_dp = hint_sharding(splits_dp)
 
         anns_dp = Zipper(
             *[

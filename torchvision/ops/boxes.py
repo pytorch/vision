@@ -298,12 +298,6 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(generalized_box_iou)
-    # degenerate boxes gives inf / nan results
-    # so do an early check
-    if (boxes1[:, 2:] < boxes1[:, :2]).any():
-        raise ValueError("Some of the input boxes1 are invalid.")
-    if not (boxes2[:, 2:] >= boxes2[:, :2]).all():
-        raise ValueError("Some of the input boxes2 are invalid.")
 
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
