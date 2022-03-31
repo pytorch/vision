@@ -285,18 +285,20 @@ def _vision_transformer(
     progress: bool,
     **kwargs: Any,
 ) -> VisionTransformer:
-
-    image_size = None
-    if "image_size" in kwargs:
-        image_size = kwargs.pop("image_size", None)
-    if image_size is None and weights is not None and "size" in weights.meta:
-        image_size = weights.meta["size"]
-        if isinstance(image_size, abc.Sequence):
-            image_size = image_size[0]
-    image_size = image_size or 224
-
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if "size" in weights.meta:
+            if isinstance(weights.meta["size"], int):
+                _ovewrite_named_param(kwargs, "image_size", weights.meta["size"])
+            elif isinstance(weights.meta["size"], abc.Sequence):
+                torch._assert(
+                    weights.meta["size"][0] == weights.meta["size"][1],
+                    "Currently we only support a square image where width = height",
+                )
+                _ovewrite_named_param(kwargs, "image_size", weights.meta["size"][0])
+            else:
+                raise ValueError('weights.meta["size"] should have type of either an int or a Sequence[int]')
+    image_size = kwargs.pop("image_size", 224)
 
     model = VisionTransformer(
         image_size=image_size,
