@@ -427,7 +427,6 @@ class Swin_Tiny_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
-@handle_legacy_interface(weights=("pretrained", Swin_Tiny_Weights.IMAGENET1K_V1))
 def swin_tiny(*, weights: Optional[Swin_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
