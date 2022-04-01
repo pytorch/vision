@@ -49,7 +49,7 @@ def _urlretrieve(url: str, filename: str, chunk_size: int = 1024 * 32) -> None:
 
 
 def gen_bar_updater() -> Callable[[int, int, int], None]:
-    warnings.warn("The function `gen_bar_update` is deprecated since 0.13 and will be removed in 0.15.", FutureWarning)
+    warnings.warn("The function `gen_bar_update` is deprecated since 0.13 and will be removed in 0.15.")
     pbar = tqdm(total=None)
 
     def bar_update(count, block_size, total_size):
