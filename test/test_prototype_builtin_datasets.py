@@ -143,7 +143,7 @@ class TestCommon:
             shuffle=True,
             num_workers=num_workers,
             parallelism_mode=parallelism_mode,
-            timeout=5,
+            timeout=5 if num_workers > 0 else 0,
         )
 
         for _ in dl:
