@@ -9,18 +9,17 @@ from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.stochastic_depth import StochasticDepth
 from .convnext import Permute
 from .vision_transformer import MLPBlock
+from ..transforms._presets import ImageClassification, InterpolationMode
+from ..utils import _log_api_usage_once
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [
     "SwinTransformer",
     "swin_tiny",
 ]
-
-
-_MODELS_URLS = {
-    "swin_tiny": "",
-    "swin_base": "",
-}
 
 
 class PatchMerging(nn.Module):
@@ -69,7 +68,6 @@ def shifted_window_attention(
     """
     Window based multi-head self attention (W-MSA) module with relative position bias.
     It supports both of shifted and non-shifted window.
-
     Args:
         input (Tensor[N, H, W, C]): The input tensor or 4-dimensions.
         qkv_weight (Tensor[in_dim, out_dim]): The weight tensor of query, key, value.
@@ -82,7 +80,6 @@ def shifted_window_attention(
         dropout (float): Dropout ratio of output. Default: 0.0.
         qkv_bias (Tensor[out_dim], optional): The bias tensor of query, key, value. Default: None.
         proj_bias (Tensor[out_dim], optional): The bias tensor of projection. Default: None.
-
     Returns:
         Tensor[N, H, W, C]: The output tensor after shifted window attention.
     """
@@ -128,9 +125,8 @@ def shifted_window_attention(
         attn_mask = attn_mask.permute(0, 2, 1, 3).reshape(num_windows, window_size * window_size)
         attn_mask = attn_mask.unsqueeze(1) - attn_mask.unsqueeze(2)
         attn_mask = attn_mask.masked_fill(attn_mask != 0, float(-100.0)).masked_fill(attn_mask == 0, float(0.0))
-        attn = attn.view(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1)) + attn_mask.unsqueeze(
-            1
-        ).unsqueeze(0)
+        attn = attn.view(x.size(0) // num_windows, num_windows, num_heads, x.size(1), x.size(1))
+        attn = attn + attn_mask.unsqueeze(1).unsqueeze(0)
         attn = attn.view(-1, num_heads, x.size(1), x.size(1))
 
     attn = F.softmax(attn, dim=-1)
@@ -226,7 +222,6 @@ class ShiftedWindowAttention(nn.Module):
 class SwinTransformerBlock(nn.Module):
     """
     Swin Transformer Block.
-
     Args:
         dim (int): Number of input channels.
         num_heads (int): Number of attention heads.
@@ -278,7 +273,6 @@ class SwinTransformer(nn.Module):
     """
     Implements Swin Transformer from the `"Swin Transformer: Hierarchical Vision Transformer using
     Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_ paper.
-
     Args:
         patch_size (int): Patch size. Default: 4.
         num_classes (int): Number of classes for classification head. Default: 1000.
@@ -310,7 +304,7 @@ class SwinTransformer(nn.Module):
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
-
+        _log_api_usage_once(self)
         self.num_classes = num_classes
 
         if block is None:
@@ -355,15 +349,7 @@ class SwinTransformer(nn.Module):
             layers.append(nn.Sequential(*stage))
             # add patch merging layer
             if i_stage < (len(depths) - 1):
-                layers.append(
-                    # nn.Sequential(
-                    #     norm_layer(dim),
-                    #     Permute([0, 3, 1, 2]),
-                    #     nn.Conv2d(dim, dim * 2, kernel_size=2, stride=2, bias=False),
-                    #     Permute([0, 2, 3, 1]),
-                    # )
-                    PatchMerging(dim, norm_layer)
-                )
+                layers.append(PatchMerging(dim, norm_layer))
 
         self.features = nn.Sequential(*layers)
 
@@ -378,10 +364,6 @@ class SwinTransformer(nn.Module):
                 if m.bias is not None:
                     nn.init.zeros_(m.bias)
 
-    @torch.jit.ignore
-    def no_weight_decay_keywords(self):
-        return {"relative_position_bias_table"}
-
     def forward(self, x):
         x = self.features(x)
         x = self.norm(x)
@@ -393,16 +375,18 @@ class SwinTransformer(nn.Module):
 
 
 def _swin_transformer(
-    arch: str,
     embed_dim: int,
     depths: List[int],
     num_heads: List[int],
     window_size: int,
     stochastic_depth_prob: float,
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> SwinTransformer:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
     model = SwinTransformer(
         embed_dim=embed_dim,
         depths=depths,
@@ -411,15 +395,41 @@ def _swin_transformer(
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
     )
-    if pretrained:
-        if arch not in _MODELS_URLS:
-            raise ValueError(f"No checkpoint is available for model type {arch}")
-        state_dict = load_state_dict_from_url(_MODELS_URLS[arch], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
 
 
-def swin_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+_COMMON_META = {
+    "task": "image_classification",
+    "architecture": "SwinTransformer",
+    "publication_year": 2021,
+    "categories": _IMAGENET_CATEGORIES,
+    "interpolation": InterpolationMode.BICUBIC,
+}
+
+
+class Swin_Tiny_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16-c867db91.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 86567656,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swin_tiny",
+            "acc@1": 81.072,
+            "acc@5": 95.318,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+@handle_legacy_interface(weights=("pretrained", Swin_Tiny_Weights.IMAGENET1K_V1))
+def swin_tiny(*, weights: Optional[Swin_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
@@ -427,6 +437,8 @@ def swin_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
         pretrained (bool): If True, returns a model pre-trained on ImageNet
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    weights = Swin_Tiny_Weights.verify(weights)
+    
     return _swin_transformer(
         arch="swin_tiny",
         embed_dim=96,
@@ -434,7 +446,7 @@ def swin_tiny(pretrained: bool = False, progress: bool = True, **kwargs: Any) ->
         num_heads=[3, 6, 12, 24],
         window_size=7,
         stochastic_depth_prob=0.2,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         **kwargs,
     )
