@@ -168,9 +168,9 @@ commands:
       file_or_dir:
         type: string
     steps:
-      - run:
-          name: Install test utilities
-          command: pip install --progress-bar=off pytest pytest-mock
+      - pip_install:
+          args: pytest pytest-mock pytest-timeout
+          descr: Install test utilities
       - run:
           name: Run tests
           command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>

@@ -1,12 +1,13 @@
 import functools
 import io
-import pickle
+import os
 from pathlib import Path
 
 import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
+from torch.utils.data.dataloader_experimental import DataLoader2
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import IterDataPipe, Shuffler, ShardingFilter
@@ -116,13 +117,34 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
+    @pytest.mark.timeout(10)
+    @pytest.mark.parametrize("parallelism_mode", ["mp", "thread"])
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_serializable(self, test_home, dataset_mock, config):
+    def test_pipeline(self, test_home, dataset_mock, config, parallelism_mode):
         dataset_mock.prepare(test_home, config)
-
         dataset = datasets.load(dataset_mock.name, **config)
 
-        pickle.dumps(dataset)
+        transform = transforms.Compose(transforms.DecodeImage(), transforms.Resize([3, 3]))
+
+        # TODO: add a .collate() here as soon as https://github.com/pytorch/vision/pull/5233 is resolved
+        dp = dataset.map(transform).batch(2, drop_last=parallelism_mode == "thread")
+
+        # Maybe we can make this is a static method of the data_loader?
+        try:
+            num_workers = len(os.sched_getaffinity(0))
+        except Exception:
+            num_workers = os.cpu_count() or 1
+
+        dl = DataLoader2(
+            dp,
+            batch_size=None,
+            shuffle=True,
+            num_workers=num_workers,
+            parallelism_mode=parallelism_mode,
+        )
+
+        for _ in dl:
+            pass
 
     # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
     #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
