@@ -189,6 +189,6 @@ If you're a dataset owner and wish to update any part of it (description, citati
 Pre-trained Model License
 =========================
 
-Pre-trained models provided in this library may have their own license or terms and conditions to use. It is your responsibility to determine whether you have permission to use the model for your use case.
+The pre-trained models provided in this library may have their own licenses or terms and conditions derived from the dataset used for training. It is your responsibility to determine whether you have permission to use the models for your use case.
 
 More specifically, SWAG models are released under the CC-BY-NC 4.0 license. See `SWAG LICENSE <https://github.com/facebookresearch/SWAG/blob/main/LICENSE>`_ for additional details.
