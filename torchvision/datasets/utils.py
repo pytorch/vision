@@ -11,6 +11,7 @@ import tarfile
 import urllib
 import urllib.error
 import urllib.request
+import warnings
 import zipfile
 from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
 from urllib.parse import urlparse
@@ -23,7 +24,6 @@ from .._internally_replaced_utils import (
     _download_file_from_remote_location,
     _is_remote_location_available,
 )
-
 
 USER_AGENT = "pytorch/vision"
 
@@ -46,6 +46,19 @@ def _save_response_content(
 def _urlretrieve(url: str, filename: str, chunk_size: int = 1024 * 32) -> None:
     with urllib.request.urlopen(urllib.request.Request(url, headers={"User-Agent": USER_AGENT})) as response:
         _save_response_content(iter(lambda: response.read(chunk_size), b""), filename, length=response.length)
+
+
+def gen_bar_updater() -> Callable[[int, int, int], None]:
+    warnings.warn("The function `gen_bar_update` is deprecated since 0.13 and will be removed in 0.15.", FutureWarning)
+    pbar = tqdm(total=None)
+
+    def bar_update(count, block_size, total_size):
+        if pbar.total is None and total_size:
+            pbar.total = total_size
+        progress_bytes = count * block_size
+        pbar.update(progress_bytes - pbar.n)
+
+    return bar_update
 
 
 def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
