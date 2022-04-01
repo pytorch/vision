@@ -235,7 +235,7 @@ def main(args):
     if args.transformer_weight_decay is not None:
         for key in ["class_token", "position_embedding", "relative_position_bias"]:
             custom_keys_weight_decay.append((key, args.transformer_weight_decay))
-    parameters = torchvision.ops._utils.set_weight_decay(
+    parameters = utils.set_weight_decay(
         model,
         args.weight_decay,
         norm_weight_decay=args.norm_weight_decay,
