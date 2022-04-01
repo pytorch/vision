@@ -23,7 +23,10 @@ def _is_pil_image(img: Any) -> bool:
 @torch.jit.unused
 def get_dimensions(img: Any) -> List[int]:
     if _is_pil_image(img):
-        channels = len(img.getbands())
+        if hasattr(img, "getbands"):
+            channels = len(img.getbands())
+        else:
+            channels = img.channels
         width, height = img.size
         return [channels, height, width]
     raise TypeError(f"Unexpected type {type(img)}")
@@ -39,7 +42,10 @@ def get_image_size(img: Any) -> List[int]:
 @torch.jit.unused
 def get_image_num_channels(img: Any) -> int:
     if _is_pil_image(img):
-        return len(img.getbands())
+        if hasattr(img, "getbands"):
+            return len(img.getbands())
+        else:
+            return img.channels
     raise TypeError(f"Unexpected type {type(img)}")
 
 
@@ -148,7 +154,7 @@ def pad(
 
     if not isinstance(padding, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
-    if not isinstance(fill, (numbers.Number, str, tuple)):
+    if not isinstance(fill, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate fill arg")
     if not isinstance(padding_mode, str):
         raise TypeError("Got inappropriate padding_mode arg")
@@ -294,6 +300,12 @@ def _parse_fill(
             raise ValueError(msg.format(len(fill), num_bands))
 
         fill = tuple(fill)
+
+    if img.mode != "F":
+        if isinstance(fill, (list, tuple)):
+            fill = tuple(int(x) for x in fill)
+        else:
+            fill = int(fill)
 
     return {name: fill}
 

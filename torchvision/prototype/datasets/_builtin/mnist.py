@@ -6,25 +6,9 @@ import string
 from typing import Any, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO, Union, Sequence
 
 import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Demultiplexer,
-    Mapper,
-    Zipper,
-)
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
-    DatasetInfo,
-    HttpResource,
-    OnlineResource,
-)
-from torchvision.prototype.datasets.utils._internal import (
-    Decompressor,
-    INFINITE_BUFFER_SIZE,
-    hint_sharding,
-    hint_shuffling,
-)
+from torchdata.datapipes.iter import IterDataPipe, Demultiplexer, Mapper, Zipper, Decompressor
+from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, hint_sharding, hint_shuffling
 from torchvision.prototype.features import Image, Label
 from torchvision.prototype.utils._internal import fromfile
 
@@ -121,8 +105,8 @@ class _MNISTBase(Dataset):
         labels_dp = MNISTFileReader(labels_dp, start=start, stop=stop)
 
         dp = Zipper(images_dp, labels_dp)
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, functools.partial(self._prepare_sample, config=config))
 
 

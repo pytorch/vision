@@ -43,7 +43,7 @@ Since it expects tensors with a size of N x 3 x 299 x 299, to validate the model
 
 ```
 torchrun --nproc_per_node=8 train.py --model inception_v3\
-      --val-resize-size 342 --val-crop-size 299 --train-crop-size 299 --test-only --pretrained
+      --test-only --weights Inception_V3_Weights.IMAGENET1K_V1
 ```
 
 ### ResNet
@@ -88,7 +88,7 @@ Then we averaged the parameters of the last 3 checkpoints that improved the Acc@
 and [#3354](https://github.com/pytorch/vision/pull/3354) for details.
 
 
-### EfficientNet
+### EfficientNet-V1
 
 The weights of the B0-B4 variants are ported from Ross Wightman's [timm repo](https://github.com/rwightman/pytorch-image-models/blob/01cb46a9a50e3ba4be167965b5764e9702f09b30/timm/models/efficientnet.py#L95-L108).
 
@@ -96,23 +96,35 @@ The weights of the B5-B7 variants are ported from Luke Melas' [EfficientNet-PyTo
 
 All models were trained using Bicubic interpolation and each have custom crop and resize sizes. To validate the models use the following commands:
 ```
-torchrun --nproc_per_node=8 train.py --model efficientnet_b0 --interpolation bicubic\
-     --val-resize-size 256 --val-crop-size 224 --train-crop-size 224 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b1 --interpolation bicubic\
-      --val-resize-size 256 --val-crop-size 240 --train-crop-size 240 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b2 --interpolation bicubic\
-      --val-resize-size 288 --val-crop-size 288 --train-crop-size 288 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b3 --interpolation bicubic\
-      --val-resize-size 320 --val-crop-size 300 --train-crop-size 300 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b4 --interpolation bicubic\
-      --val-resize-size 384 --val-crop-size 380 --train-crop-size 380 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b5 --interpolation bicubic\
-      --val-resize-size 456 --val-crop-size 456 --train-crop-size 456 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b6 --interpolation bicubic\
-      --val-resize-size 528 --val-crop-size 528 --train-crop-size 528 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b7 --interpolation bicubic\
-      --val-resize-size 600 --val-crop-size 600 --train-crop-size 600 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b0 --test-only --weights EfficientNet_B0_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b1 --test-only --weights EfficientNet_B1_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b2 --test-only --weights EfficientNet_B2_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b3 --test-only --weights EfficientNet_B3_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b4 --test-only --weights EfficientNet_B4_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b5 --test-only --weights EfficientNet_B5_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b6 --test-only --weights EfficientNet_B6_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b7 --test-only --weights EfficientNet_B7_Weights.IMAGENET1K_V1
 ```
+
+
+### EfficientNet-V2
+```
+torchrun --nproc_per_node=8 train.py \
+--model $MODEL --batch-size 128 --lr 0.5 --lr-scheduler cosineannealinglr \
+--lr-warmup-epochs 5 --lr-warmup-method linear --auto-augment ta_wide --epochs 600 --random-erase 0.1 \
+--label-smoothing 0.1 --mixup-alpha 0.2 --cutmix-alpha 1.0 --weight-decay 0.00002 --norm-weight-decay 0.0 \
+--train-crop-size $TRAIN_SIZE --model-ema --val-crop-size $EVAL_SIZE --val-resize-size $EVAL_SIZE \
+--ra-sampler --ra-reps 4
+```
+Here `$MODEL` is one of `efficientnet_v2_s` and `efficientnet_v2_m`. 
+Note that the Small variant had a `$TRAIN_SIZE` of `300` and a `$EVAL_SIZE` of `384`, while the Medium `384` and `480` respectively.
+
+Note that the above command corresponds to training on a single node with 8 GPUs.
+For generatring the pre-trained weights, we trained with 4 nodes, each with 8 GPUs (for a total of 32 GPUs),
+and `--batch_size 32`.
+
+The weights of the Large variant are ported from the original paper rather than trained from scratch. See the `EfficientNet_V2_L_Weights` entry for their exact preprocessing transforms.
+
 
 ### RegNet
 

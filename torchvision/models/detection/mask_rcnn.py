@@ -1,17 +1,23 @@
 from collections import OrderedDict
+from typing import Any, Optional
 
 from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
-from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops import misc as misc_nn_ops
-from ..resnet import resnet50
+from ...transforms._presets import ObjectDetection, InterpolationMode
+from .._api import WeightsEnum, Weights
+from .._meta import _COCO_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..resnet import ResNet50_Weights, resnet50
 from ._utils import overwrite_eps
 from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers
 from .faster_rcnn import FasterRCNN
 
+
 __all__ = [
     "MaskRCNN",
+    "MaskRCNN_ResNet50_FPN_Weights",
     "maskrcnn_resnet50_fpn",
 ]
 
@@ -112,7 +118,7 @@ class MaskRCNN(FasterRCNN):
         >>>
         >>> # load a pre-trained model for classification and return
         >>> # only the features
-        >>> backbone = torchvision.models.mobilenet_v2(pretrained=True).features
+        >>> backbone = torchvision.models.mobilenet_v2(weights=MobileNet_V2_Weights.DEFAULT).features
         >>> # MaskRCNN needs to know the number of
         >>> # output channels in a backbone. For mobilenet_v2, it's 1280
         >>> # so we need to add it here
@@ -189,9 +195,13 @@ class MaskRCNN(FasterRCNN):
         mask_roi_pool=None,
         mask_head=None,
         mask_predictor=None,
+        **kwargs,
     ):
 
-        assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
+        if not isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None))):
+            raise TypeError(
+                f"mask_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(mask_roi_pool)}"
+            )
 
         if num_classes is not None:
             if mask_predictor is not None:
@@ -245,6 +255,7 @@ class MaskRCNN(FasterRCNN):
             box_batch_size_per_image,
             box_positive_fraction,
             bbox_reg_weights,
+            **kwargs,
         )
 
         self.roi_heads.mask_roi_pool = mask_roi_pool
@@ -296,14 +307,38 @@ class MaskRCNNPredictor(nn.Sequential):
             #     nn.init.constant_(param, 0)
 
 
-model_urls = {
-    "maskrcnn_resnet50_fpn_coco": "https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
-}
+class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth",
+        transforms=ObjectDetection,
+        meta={
+            "task": "image_object_detection",
+            "architecture": "MaskRCNN",
+            "publication_year": 2017,
+            "num_params": 44401393,
+            "categories": _COCO_CATEGORIES,
+            "interpolation": InterpolationMode.BILINEAR,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn",
+            "map": 37.9,
+            "map_mask": 34.6,
+        },
+    )
+    DEFAULT = COCO_V1
 
 
+@handle_legacy_interface(
+    weights=("pretrained", MaskRCNN_ResNet50_FPN_Weights.COCO_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def maskrcnn_resnet50_fpn(
-    pretrained=False, progress=True, num_classes=91, pretrained_backbone=True, trainable_backbone_layers=None, **kwargs
-):
+    *,
+    weights: Optional[MaskRCNN_ResNet50_FPN_Weights] = None,
+    progress: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+) -> MaskRCNN:
     """
     Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.
 
@@ -343,7 +378,7 @@ def maskrcnn_resnet50_fpn(
 
     Example::
 
-        >>> model = torchvision.models.detection.maskrcnn_resnet50_fpn(pretrained=True)
+        >>> model = torchvision.models.detection.maskrcnn_resnet50_fpn(weights=MaskRCNN_ResNet50_FPN_Weights.DEFAULT)
         >>> model.eval()
         >>> x = [torch.rand(3, 300, 400), torch.rand(3, 500, 400)]
         >>> predictions = model(x)
@@ -352,27 +387,34 @@ def maskrcnn_resnet50_fpn(
         >>> torch.onnx.export(model, x, "mask_rcnn.onnx", opset_version = 11)
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017
+        weights (MaskRCNN_ResNet50_FPN_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
-        pretrained_backbone (bool): If True, returns a model with backbone pre-trained on Imagenet
-        trainable_backbone_layers (int): number of trainable (not frozen) resnet layers starting from final block.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
     """
-    trainable_backbone_layers = _validate_trainable_layers(
-        pretrained or pretrained_backbone, trainable_backbone_layers, 5, 3
-    )
+    weights = MaskRCNN_ResNet50_FPN_Weights.verify(weights)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
-    if pretrained:
-        # no need to download the backbone if pretrained is set
-        pretrained_backbone = False
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
 
-    backbone = resnet50(pretrained=pretrained_backbone, progress=progress, norm_layer=misc_nn_ops.FrozenBatchNorm2d)
+    is_trained = weights is not None or weights_backbone is not None
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
+    norm_layer = misc_nn_ops.FrozenBatchNorm2d if is_trained else nn.BatchNorm2d
+
+    backbone = resnet50(weights=weights_backbone, progress=progress, norm_layer=norm_layer)
     backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers)
-    model = MaskRCNN(backbone, num_classes, **kwargs)
-    if pretrained:
-        state_dict = load_state_dict_from_url(model_urls["maskrcnn_resnet50_fpn_coco"], progress=progress)
-        model.load_state_dict(state_dict)
-        overwrite_eps(model, 0.0)
+    model = MaskRCNN(backbone, num_classes=num_classes, **kwargs)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+        if weights == MaskRCNN_ResNet50_FPN_Weights.COCO_V1:
+            overwrite_eps(model, 0.0)
+
     return model
