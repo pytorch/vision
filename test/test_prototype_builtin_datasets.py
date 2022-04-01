@@ -7,6 +7,7 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
+from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
@@ -40,7 +41,7 @@ def test_coverage():
         )
 
 
-@pytest.mark.filterwarnings("error")
+# @pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
     def test_info(self, name):
@@ -122,6 +123,22 @@ class TestCommon:
         dataset = datasets.load(dataset_mock.name, **config)
 
         pickle.dumps(dataset)
+
+    @pytest.mark.parametrize("num_workers", [0, 1])
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_data_loader(self, test_home, dataset_mock, config, num_workers):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        dl = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=num_workers,
+            collate_fn=lambda batch: batch,
+        )
+
+        for _ in dl:
+            pass
 
     # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
     #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
