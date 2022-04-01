@@ -152,10 +152,11 @@ commands:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
           descr: Install torchvision <<# parameters.editable >> in editable mode <</ parameters.editable >>
 
-  # Installs all extra dependencies that are needed in the torchvision.prototype namespace, but are not tracked in the
-  # project requirements.
   install_prototype_dependencies:
     steps:
+      - pip_install:
+          args: iopath
+          descr: Install third-party dependencies
       - pip_install:
           args: --pre torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu
           descr: Install torchdata from nightly releases
@@ -365,7 +366,7 @@ jobs:
       - install_torchvision
       - install_prototype_dependencies
       - pip_install:
-          args: scipy pycocotools h5py dill
+          args: scipy pycocotools h5py
           descr: Install optional dependencies
       - run_tests_selective:
           file_or_dir: test/test_prototype_*.py
