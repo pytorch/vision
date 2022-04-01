@@ -118,7 +118,7 @@ class TestCommon:
         next(iter(dataset.map(transforms.Identity())))
 
     @pytest.mark.timeout(10)
-    @pytest.mark.parametrize("parallelism_mode", ["mp", "thread"])
+    @pytest.mark.parametrize("parallelism_mode", [None, "mp", "thread"])
     @parametrize_dataset_mocks({name: mock for name, mock in DATASET_MOCKS.items() if name not in {"qmnist", "voc"}})
     def test_pipeline(self, test_home, dataset_mock, config, parallelism_mode):
         dataset_mock.prepare(test_home, config)
@@ -129,11 +129,14 @@ class TestCommon:
         # TODO: add a .collate() here as soon as https://github.com/pytorch/vision/pull/5233 is resolved
         dp = dataset.map(transform).batch(2, drop_last=parallelism_mode == "thread")
 
-        # Maybe we can make this is a static method of the data_loader?
-        try:
-            num_workers = len(os.sched_getaffinity(0))
-        except Exception:
-            num_workers = os.cpu_count() or 1
+        if parallelism_mode:
+            # Maybe we can make this is a static method of the data_loader?
+            try:
+                num_workers = len(os.sched_getaffinity(0))
+            except Exception:
+                num_workers = os.cpu_count() or 1
+        else:
+            num_workers = 0
 
         dl = DataLoader2(
             dp,
