@@ -412,6 +412,15 @@ _COMMON_META = {
     "interpolation": InterpolationMode.BILINEAR,
 }
 
+_COMMON_SWAG_META = {
+    **_COMMON_META,
+    "publication_year": 2022,
+    "size": (384, 384),
+    "recipe": "https://github.com/facebookresearch/SWAG",
+    "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
+    "interpolation": InterpolationMode.BICUBIC,
+}
+
 
 class RegNet_Y_400MF_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
@@ -566,6 +575,17 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "acc@5": 96.328,
         },
     )
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_16gf_swag-43afe44d.pth",
+        transforms=partial(ImageClassification, crop_size=384, resize_size=384, interpolation=InterpolationMode.BICUBIC),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 83590140,
+            # still mock
+            "acc@1": 86.02,
+            "acc@5": 98.05,
+        },
+    )
     DEFAULT = IMAGENET1K_V2
 
 
@@ -590,6 +610,17 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 83.368,
             "acc@5": 96.498,
+        },
+    )
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_32gf_swag-04fdfa75.pth",
+        transforms=partial(ImageClassification, crop_size=384, resize_size=384, interpolation=InterpolationMode.BICUBIC),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 145046770,
+            # still mock
+            "acc@1": 86.83,
+            "acc@5": 98.36,
         },
     )
     DEFAULT = IMAGENET1K_V2
