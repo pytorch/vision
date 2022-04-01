@@ -5,7 +5,6 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
@@ -413,16 +412,16 @@ _COMMON_META = {
 
 class Swin_Tiny_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/vit_b_16-c867db91.pth",
+        url="",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "num_params": 86567656,
+            "num_params": 28288354,
             "size": (224, 224),
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swin_tiny",
-            "acc@1": 81.072,
-            "acc@5": 95.318,
+            "acc@1": 81.222,
+            "acc@5": 95.332,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -434,7 +433,7 @@ def swin_tiny(*, weights: Optional[Swin_Tiny_Weights] = None, progress: bool = T
     Constructs a swin_tiny architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (Swin_Tiny_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = Swin_Tiny_Weights.verify(weights)
