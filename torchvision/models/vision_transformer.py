@@ -398,6 +398,24 @@ class ViT_L_16_Weights(WeightsEnum):
             "acc@5": 94.638,
         },
     )
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_16_swag-4f3808c9.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=512,
+            resize_size=512,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 305174504,
+            "size": (512, 512),
+            "min_size": (512, 512),
+            # Still mock:
+            "acc@1": 88.07,
+            "acc@5": 98.51,
+        },
+    )
     DEFAULT = IMAGENET1K_V1
 
 
