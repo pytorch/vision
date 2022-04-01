@@ -232,9 +232,9 @@ def main(args):
     custom_keys_weight_decay = []
     if args.bias_weight_decay is not None:
         custom_keys_weight_decay.append(("bias", args.bias_weight_decay))
-    if args.transformer_weight_decay is not None:
+    if args.transformer_embedding_decay is not None:
         for key in ["class_token", "position_embedding", "relative_position_bias"]:
-            custom_keys_weight_decay.append((key, args.transformer_weight_decay))
+            custom_keys_weight_decay.append((key, args.transformer_embedding_decay))
     parameters = utils.set_weight_decay(
         model,
         args.weight_decay,
@@ -406,10 +406,10 @@ def get_args_parser(add_help=True):
         help="weight decay for bias parameters of all layers (default: None, same value as --wd)",
     )
     parser.add_argument(
-        "--transformer-weight-decay",
+        "--transformer-embedding-decay",
         default=None,
         type=float,
-        help="weight decay for special parameters for vision transformer models (default: None, same value as --wd)",
+        help="weight decay for embedding parameters for vision transformer models (default: None, same value as --wd)",
     )
     parser.add_argument(
         "--label-smoothing", default=0.0, type=float, help="label smoothing (default: 0.0)", dest="label_smoothing"
