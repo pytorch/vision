@@ -187,6 +187,7 @@ class FasterRCNN(GeneralizedRCNN):
         box_batch_size_per_image=512,
         box_positive_fraction=0.25,
         bbox_reg_weights=None,
+        **kwargs,
     ):
 
         if not hasattr(backbone, "out_channels"):
@@ -268,7 +269,7 @@ class FasterRCNN(GeneralizedRCNN):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std, **kwargs)
 
         super().__init__(backbone, rpn, roi_heads, transform)
 
