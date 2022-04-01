@@ -7,7 +7,6 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
-from torch.utils.data._utils.serialization import DILL_AVAILABLE
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
@@ -111,26 +110,18 @@ class TestCommon:
         next(iter(dataset.map(transforms.Identity())))
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_serializable_pickle(self, mocker, test_home, dataset_mock, config):
-        if DILL_AVAILABLE:
-            mocker.patch("torch.utils.data.datapipes.datapipe.DILL_AVAILABLE", new=False)
+    def test_traversable(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
 
+        traverse(dataset, only_datapipe=False)
+
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_serializable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
         dataset = datasets.load(dataset_mock.name, **config)
 
         pickle.dumps(dataset)
-
-    @pytest.mark.skipif(not DILL_AVAILABLE, reason="Package `dill` is not available.")
-    # TODO: remove this as soon as dill is fully supported
-    @pytest.mark.xfail(reason="See https://github.com/pytorch/data/issues/237", raises=RecursionError)
-    @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_serializable_dill(self, test_home, dataset_mock, config):
-        import dill
-
-        dataset_mock.prepare(test_home, config)
-        dataset = datasets.load(dataset_mock.name, **config)
-
-        dill.dumps(dataset)
 
     # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
     #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
