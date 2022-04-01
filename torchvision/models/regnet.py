@@ -577,7 +577,9 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
     )
     IMAGENET1K_SWAG_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_16gf_swag-43afe44d.pth",
-        transforms=partial(ImageClassification, crop_size=384, resize_size=384, interpolation=InterpolationMode.BICUBIC),
+        transforms=partial(
+            ImageClassification, crop_size=384, resize_size=384, interpolation=InterpolationMode.BICUBIC
+        ),
         meta={
             **_COMMON_SWAG_META,
             "num_params": 83590140,
@@ -614,7 +616,9 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
     )
     IMAGENET1K_SWAG_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_32gf_swag-04fdfa75.pth",
-        transforms=partial(ImageClassification, crop_size=384, resize_size=384, interpolation=InterpolationMode.BICUBIC),
+        transforms=partial(
+            ImageClassification, crop_size=384, resize_size=384, interpolation=InterpolationMode.BICUBIC
+        ),
         meta={
             **_COMMON_SWAG_META,
             "num_params": 145046770,
