@@ -395,7 +395,7 @@ def _swin_transformer(
         **kwargs,
     )
 
-    if weights:
+    if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
