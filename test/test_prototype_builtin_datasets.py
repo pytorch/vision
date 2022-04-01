@@ -119,7 +119,7 @@ class TestCommon:
 
     @pytest.mark.timeout(10)
     @pytest.mark.parametrize("parallelism_mode", ["mp", "thread"])
-    @parametrize_dataset_mocks(DATASET_MOCKS)
+    @parametrize_dataset_mocks({name: mock for name, mock in DATASET_MOCKS.items() if name not in {"qmnist", "voc"}})
     def test_pipeline(self, test_home, dataset_mock, config, parallelism_mode):
         dataset_mock.prepare(test_home, config)
         dataset = datasets.load(dataset_mock.name, **config)
