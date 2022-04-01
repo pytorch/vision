@@ -117,7 +117,6 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
-    @pytest.mark.timeout(10)
     @pytest.mark.parametrize("parallelism_mode", [None, "mp", "thread"])
     @parametrize_dataset_mocks({name: mock for name, mock in DATASET_MOCKS.items() if name not in {"qmnist", "voc"}})
     def test_pipeline(self, test_home, dataset_mock, config, parallelism_mode):
@@ -144,6 +143,7 @@ class TestCommon:
             shuffle=True,
             num_workers=num_workers,
             parallelism_mode=parallelism_mode,
+            timeout=5,
         )
 
         for _ in dl:

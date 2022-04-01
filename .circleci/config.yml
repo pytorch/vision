@@ -169,7 +169,7 @@ commands:
         type: string
     steps:
       - pip_install:
-          args: pytest pytest-mock pytest-timeout
+          args: pytest pytest-mock
           descr: Install test utilities
       - run:
           name: Run tests
