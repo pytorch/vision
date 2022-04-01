@@ -451,9 +451,8 @@ class ViT_H_14_Weights(WeightsEnum):
             "num_params": 633470440,
             "size": (518, 518),
             "min_size": (518, 518),
-            # Still mock
-            "acc@1": 88.55,
-            "acc@5": 98.69,
+            "acc@1": 88.552,
+            "acc@5": 98.694,
         },
     )
     DEFAULT = IMAGENET1K_SWAG_V1
