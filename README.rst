@@ -186,9 +186,9 @@ This is a utility library that downloads and prepares public datasets. We do not
 
 If you're a dataset owner and wish to update any part of it (description, citation, etc.), or do not want your dataset to be included in this library, please get in touch through a GitHub issue. Thanks for your contribution to the ML community!
 
-Disclaimer on Models
-====================
+Pre-trained Model License
+=========================
 
-Pretrained models provided in this library may have their own license or term and condition to use. It is your responsibility to determine whether you have permission to use the model for your use case.
+Pre-trained models provided in this library may have their own license or terms and conditions to use. It is your responsibility to determine whether you have permission to use the model for your use case.
 
 More specifically, SWAG models are released under the CC-BY-NC 4.0 license. See `SWAG LICENSE <https://github.com/facebookresearch/SWAG/blob/main/LICENSE>`_ for additional details.
