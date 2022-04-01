@@ -7,8 +7,8 @@ from typing import Any, Dict, List, Union, Sequence, Tuple, cast
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, InterpolationMode, functional as F
-from torchvision.transforms.functional import pil_to_tensor
+from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.transforms.functional import pil_to_tensor, InterpolationMode
 from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
 from typing_extensions import Literal
 

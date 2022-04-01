@@ -15,12 +15,6 @@ from torch.utils.data.dataloader import default_collate
 from torchvision.transforms.functional import InterpolationMode
 
 
-try:
-    from torchvision import prototype
-except ImportError:
-    prototype = None
-
-
 def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, args, model_ema=None, scaler=None):
     model.train()
     metric_logger = utils.MetricLogger(delimiter="  ")
@@ -154,18 +148,13 @@ def load_data(traindir, valdir, args):
         print(f"Loading dataset_test from {cache_path}")
         dataset_test, _ = torch.load(cache_path)
     else:
-        if not args.prototype:
+        if args.weights and args.test_only:
+            weights = torchvision.models.get_weight(args.weights)
+            preprocessing = weights.transforms()
+        else:
             preprocessing = presets.ClassificationPresetEval(
                 crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
             )
-        else:
-            if args.weights:
-                weights = prototype.models.get_weight(args.weights)
-                preprocessing = weights.transforms()
-            else:
-                preprocessing = prototype.transforms.ImageClassificationEval(
-                    crop_size=val_crop_size, resize_size=val_resize_size, interpolation=interpolation
-                )
 
         dataset_test = torchvision.datasets.ImageFolder(
             valdir,
@@ -191,10 +180,6 @@ def load_data(traindir, valdir, args):
 
 
 def main(args):
-    if args.prototype and prototype is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-    if not args.prototype and args.weights:
-        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -236,10 +221,7 @@ def main(args):
     )
 
     print("Creating model")
-    if not args.prototype:
-        model = torchvision.models.__dict__[args.model](pretrained=args.pretrained, num_classes=num_classes)
-    else:
-        model = prototype.models.__dict__[args.model](weights=args.weights, num_classes=num_classes)
+    model = torchvision.models.__dict__[args.model](weights=args.weights, num_classes=num_classes)
     model.to(device)
 
     if args.distributed and args.sync_bn:
@@ -248,7 +230,7 @@ def main(args):
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
     if args.norm_weight_decay is None:
-        parameters = model.parameters()
+        parameters = [p for p in model.parameters() if p.requires_grad]
     else:
         param_groups = torchvision.ops._utils.split_normalization_params(model)
         wd_groups = [args.norm_weight_decay, args.weight_decay]
@@ -446,12 +428,6 @@ def get_args_parser(add_help=True):
         help="Only test the model",
         action="store_true",
     )
-    parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
-    )
     parser.add_argument("--auto-augment", default=None, type=str, help="auto augment policy (default: None)")
     parser.add_argument("--random-erase", default=0.0, type=float, help="random erasing probability (default: 0.0)")
 
@@ -495,14 +471,6 @@ def get_args_parser(add_help=True):
     parser.add_argument("--ra-sampler", action="store_true", help="whether to use Repeated Augmentation in training")
     parser.add_argument(
         "--ra-reps", default=3, type=int, help="number of repetitions for Repeated Augmentation (default: 3)"
-    )
-
-    # Prototype models only
-    parser.add_argument(
-        "--prototype",
-        dest="prototype",
-        help="Use prototype model builders instead those from main area",
-        action="store_true",
     )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
