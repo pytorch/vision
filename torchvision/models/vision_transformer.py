@@ -328,6 +328,7 @@ _COMMON_SWAG_META = {
     **_COMMON_META,
     "publication_year": 2022,
     "recipe": "https://github.com/facebookresearch/SWAG",
+    "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
     "interpolation": InterpolationMode.BICUBIC,
 }
 
