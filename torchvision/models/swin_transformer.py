@@ -7,13 +7,13 @@ from torch import nn, Tensor
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.stochastic_depth import StochasticDepth
-from .convnext import Permute
-from .vision_transformer import MLPBlock
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import handle_legacy_interface, _ovewrite_named_param
+from .convnext import Permute
+from .vision_transformer import MLPBlock
 
 
 __all__ = [
@@ -438,9 +438,8 @@ def swin_tiny(*, weights: Optional[Swin_Tiny_Weights] = None, progress: bool = T
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = Swin_Tiny_Weights.verify(weights)
-    
+
     return _swin_transformer(
-        arch="swin_tiny",
         embed_dim=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
