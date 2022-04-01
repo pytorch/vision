@@ -18,6 +18,9 @@ from .vision_transformer import MLPBlock
 __all__ = [
     "SwinTransformer",
     "swin_tiny",
+    "swin_small",
+    "swin_base",
+    "swin_large",
 ]
 
 
@@ -425,6 +428,18 @@ class Swin_Tiny_Weights(WeightsEnum):
         },
     )
     DEFAULT = IMAGENET1K_V1
+    
+    
+class Swin_Small_Weights(WeightsEnum):
+    pass
+
+
+class Swin_Base_Weights(WeightsEnum):
+    pass
+
+
+class Swin_Large_Weights(WeightsEnum):
+    pass
 
 
 def swin_tiny(*, weights: Optional[Swin_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
@@ -449,64 +464,67 @@ def swin_tiny(*, weights: Optional[Swin_Tiny_Weights] = None, progress: bool = T
     )
 
 
-def swin_small(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+def swin_small(*, weights: Optional[Swin_Small_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_small architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (Swin_Small_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    weights = Swin_Small_Weights.verify(weights)
+    
     return _swin_transformer(
-        arch="swin_tiny",
         embed_dim=96,
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
         window_size=7,
         stochastic_depth_prob=0.3,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         **kwargs,
     )
 
 
-def swin_base(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+def swin_base(*, weights: Optional[Swin_Base_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_base architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (Swin_Base_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    weights = Swin_Base_Weights.verify(weights)
+    
     return _swin_transformer(
-        arch="swin_tiny",
         embed_dim=128,
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
         window_size=7,
         stochastic_depth_prob=0.5,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         **kwargs,
     )
 
 
-def swin_large(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+def swin_large(*, weights: Optional[Swin_Large_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_large architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (Swin_Large_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
+    weights = Swin_Large_Weights.verify(weights)
+    
     return _swin_transformer(
-        arch="swin_tiny",
         embed_dim=192,
         depths=[2, 2, 18, 2],
         num_heads=[6, 12, 24, 48],
         window_size=7,
         stochastic_depth_prob=0.2,
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         **kwargs,
     )
