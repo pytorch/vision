@@ -424,7 +424,9 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-warmup-decay", default=0.01, type=float, help="the decay for lr")
     parser.add_argument("--lr-step-size", default=30, type=int, help="decrease lr every step-size epochs")
     parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
-    parser.add_argument("--lr-cos-min", default=0.0, type=float, help="minimum lr of cosine annealing schedule (default: 0.0)")
+    parser.add_argument(
+        "--lr-cos-min", default=0.0, type=float, help="minimum lr of cosine annealing schedule (default: 0.0)"
+    )
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
     parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
