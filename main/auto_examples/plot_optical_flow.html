@@ -202,7 +202,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+ccacdd7 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+d57133e ) &#x25BC</a>
     </div>
     
 
@@ -401,7 +401,12 @@ single model input.</p>
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">img1_batch</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_optical_flow_001.png" srcset="../_images/sphx_glr_plot_optical_flow_001.png" alt="plot optical flow" class = "sphx-glr-single-img"/><p>The RAFT model that we will use accepts RGB float images with pixel values in
+<img src="../_images/sphx_glr_plot_optical_flow_001.png" srcset="../_images/sphx_glr_plot_optical_flow_001.png" alt="plot optical flow" class = "sphx-glr-single-img"/><p class="sphx-glr-script-out">Out:</p>
+<div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>/home/circleci/project/torchvision/io/video.py:161: UserWarning: The pts_unit &#39;pts&#39; gives wrong results and will be removed in a follow-up version. Please use pts_unit &#39;sec&#39;.
+  &quot;The pts_unit &#39;pts&#39; gives wrong results and will be removed in a &quot;
+</pre></div>
+</div>
+<p>The RAFT model that we will use accepts RGB float images with pixel values in
 [-1, 1]. The frames we got from <a class="reference internal" href="../generated/torchvision.io.read_video.html#torchvision.io.read_video" title="torchvision.io.read_video"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_video()</span></code></a> are int
 images with values in [0, 255], so we will have to pre-process them. We also
 reduce the image sizes for the example to run faster. Image dimension must be
@@ -522,7 +527,7 @@ too long to run it.</p>
 <p>Once the .jpg flow images are saved, you can convert them into a video or a
 GIF using ffmpeg with e.g.:</p>
 <p>ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  9.269 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.512 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-optical-flow-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/2a47b9ed711ba2e43d352e94c9f29630/plot_optical_flow.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_optical_flow.py</span></code></a></p>
