@@ -115,7 +115,8 @@ def test_schema_meta_validation(model_fn):
                     incorrect_params.append(w)
         else:
             if w.meta.get("num_params") != weights_enum.DEFAULT.meta.get("num_params"):
-                incorrect_params.append(w)
+                if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
+                    incorrect_params.append(w)
         if not w.name.isupper():
             bad_names.append(w)
 

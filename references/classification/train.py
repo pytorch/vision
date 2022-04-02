@@ -229,12 +229,18 @@ def main(args):
 
     criterion = nn.CrossEntropyLoss(label_smoothing=args.label_smoothing)
 
-    if args.norm_weight_decay is None:
-        parameters = [p for p in model.parameters() if p.requires_grad]
-    else:
-        param_groups = torchvision.ops._utils.split_normalization_params(model)
-        wd_groups = [args.norm_weight_decay, args.weight_decay]
-        parameters = [{"params": p, "weight_decay": w} for p, w in zip(param_groups, wd_groups) if p]
+    custom_keys_weight_decay = []
+    if args.bias_weight_decay is not None:
+        custom_keys_weight_decay.append(("bias", args.bias_weight_decay))
+    if args.transformer_embedding_decay is not None:
+        for key in ["class_token", "position_embedding", "relative_position_bias"]:
+            custom_keys_weight_decay.append((key, args.transformer_embedding_decay))
+    parameters = utils.set_weight_decay(
+        model,
+        args.weight_decay,
+        norm_weight_decay=args.norm_weight_decay,
+        custom_keys_weight_decay=custom_keys_weight_decay if len(custom_keys_weight_decay) > 0 else None,
+    )
 
     opt_name = args.opt.lower()
     if opt_name.startswith("sgd"):
@@ -392,6 +398,18 @@ def get_args_parser(add_help=True):
         default=None,
         type=float,
         help="weight decay for Normalization layers (default: None, same value as --wd)",
+    )
+    parser.add_argument(
+        "--bias-weight-decay",
+        default=None,
+        type=float,
+        help="weight decay for bias parameters of all layers (default: None, same value as --wd)",
+    )
+    parser.add_argument(
+        "--transformer-embedding-decay",
+        default=None,
+        type=float,
+        help="weight decay for embedding parameters for vision transformer models (default: None, same value as --wd)",
     )
     parser.add_argument(
         "--label-smoothing", default=0.0, type=float, help="label smoothing (default: 0.0)", dest="label_smoothing"
