@@ -418,22 +418,9 @@ _COMMON_META = {
 
 
 class Swin_T_Weights(WeightsEnum):
-    IMAGENET1K_V1 = Weights(
-        url="",
-        transforms=partial(ImageClassification, crop_size=224),
-        meta={
-            **_COMMON_META,
-            "num_params": 28288354,
-            "size": (224, 224),
-            "min_size": (224, 224),
-            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swin_tiny",
-            "acc@1": 81.222,
-            "acc@5": 95.332,
-        },
-    )
-    DEFAULT = IMAGENET1K_V1
-    
-    
+    pass
+
+   
 class Swin_S_Weights(WeightsEnum):
     pass
 
@@ -477,7 +464,7 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, *
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = Swin_S_Weights.verify(weights)
-    
+
     return _swin_transformer(
         embed_dim=96,
         depths=[2, 2, 18, 2],
@@ -499,7 +486,7 @@ def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, *
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = Swin_B_Weights.verify(weights)
-    
+
     return _swin_transformer(
         embed_dim=128,
         depths=[2, 2, 18, 2],
@@ -521,7 +508,7 @@ def swin_l(*, weights: Optional[Swin_L_Weights] = None, progress: bool = True, *
         progress (bool): If True, displays a progress bar of the download to stderr
     """
     weights = Swin_L_Weights.verify(weights)
-    
+
     return _swin_transformer(
         embed_dim=192,
         depths=[2, 2, 18, 2],
