@@ -17,10 +17,14 @@ from .vision_transformer import MLPBlock
 
 __all__ = [
     "SwinTransformer",
-    "swin_tiny",
-    "swin_small",
-    "swin_base",
-    "swin_large",
+    "Swin_T_Weights",
+    "Swin_S_Weights",
+    "Swin_B_Weights",
+    "Swin_L_Weights",
+    "swin_t",
+    "swin_s",
+    "swin_b",
+    "swin_l",
 ]
 
 
@@ -413,7 +417,7 @@ _COMMON_META = {
 }
 
 
-class Swin_Tiny_Weights(WeightsEnum):
+class Swin_T_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="",
         transforms=partial(ImageClassification, crop_size=224),
@@ -430,27 +434,27 @@ class Swin_Tiny_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
     
     
-class Swin_Small_Weights(WeightsEnum):
+class Swin_S_Weights(WeightsEnum):
     pass
 
 
-class Swin_Base_Weights(WeightsEnum):
+class Swin_B_Weights(WeightsEnum):
     pass
 
 
-class Swin_Large_Weights(WeightsEnum):
+class Swin_L_Weights(WeightsEnum):
     pass
 
 
-def swin_tiny(*, weights: Optional[Swin_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
     Args:
-        weights (Swin_Tiny_Weights, optional): The pretrained weights for the model
+        weights (Swin_T_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    weights = Swin_Tiny_Weights.verify(weights)
+    weights = Swin_T_Weights.verify(weights)
 
     return _swin_transformer(
         embed_dim=96,
@@ -464,15 +468,15 @@ def swin_tiny(*, weights: Optional[Swin_Tiny_Weights] = None, progress: bool = T
     )
 
 
-def swin_small(*, weights: Optional[Swin_Small_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_small architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
     Args:
-        weights (Swin_Small_Weights, optional): The pretrained weights for the model
+        weights (Swin_S_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    weights = Swin_Small_Weights.verify(weights)
+    weights = Swin_S_Weights.verify(weights)
     
     return _swin_transformer(
         embed_dim=96,
@@ -486,15 +490,15 @@ def swin_small(*, weights: Optional[Swin_Small_Weights] = None, progress: bool =
     )
 
 
-def swin_base(*, weights: Optional[Swin_Base_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_base architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
     Args:
-        weights (Swin_Base_Weights, optional): The pretrained weights for the model
+        weights (Swin_B_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    weights = Swin_Base_Weights.verify(weights)
+    weights = Swin_B_Weights.verify(weights)
     
     return _swin_transformer(
         embed_dim=128,
@@ -508,15 +512,15 @@ def swin_base(*, weights: Optional[Swin_Base_Weights] = None, progress: bool = T
     )
 
 
-def swin_large(*, weights: Optional[Swin_Large_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+def swin_l(*, weights: Optional[Swin_L_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_large architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
     Args:
-        weights (Swin_Large_Weights, optional): The pretrained weights for the model
+        weights (Swin_L_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    weights = Swin_Large_Weights.verify(weights)
+    weights = Swin_L_Weights.verify(weights)
     
     return _swin_transformer(
         embed_dim=192,
