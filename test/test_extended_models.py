@@ -64,7 +64,6 @@ def test_get_weight(name, weight):
 )
 def test_naming_conventions(model_fn):
     weights_enum = _get_model_weights(model_fn)
-    print(weights_enum)
     assert weights_enum is not None
     assert len(weights_enum) == 0 or hasattr(weights_enum, "DEFAULT")
 
@@ -116,7 +115,8 @@ def test_schema_meta_validation(model_fn):
                     incorrect_params.append(w)
         else:
             if w.meta.get("num_params") != weights_enum.DEFAULT.meta.get("num_params"):
-                incorrect_params.append(w)
+                if w.meta.get("num_params") != sum(p.numel() for p in model_fn(weights=w).parameters()):
+                    incorrect_params.append(w)
         if not w.name.isupper():
             bad_names.append(w)
 
