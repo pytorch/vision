@@ -6,6 +6,7 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 
 from ..ops.stochastic_depth import StochasticDepth
+from ..transforms._presets import InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
