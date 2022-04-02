@@ -420,7 +420,7 @@ _COMMON_META = {
 class Swin_T_Weights(WeightsEnum):
     pass
 
-   
+
 class Swin_S_Weights(WeightsEnum):
     pass
 
