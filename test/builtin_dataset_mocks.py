@@ -10,7 +10,6 @@ import lzma
 import pathlib
 import pickle
 import random
-import re
 import warnings
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
@@ -78,16 +77,12 @@ class DatasetMock:
         # Such data will be included in the `extra_file_names` while the raw data will be in the `missing_file_names`.
         # This detects these cases and removes the corresponding entries from the sets since the files are neither extra
         # nor missing.
-        if extra_file_names:
-            for extra in extra_file_names.copy():
-                candidate_pattern = re.compile(fr"^{extra.split('.', 1)[0]}([.]\w+)*$")
-                try:
-                    missing = next(missing for missing in missing_file_names if candidate_pattern.match(missing))
-                except StopIteration:
-                    continue
-
-                extra_file_names.remove(extra)
-                missing_file_names.remove(missing)
+        if missing_file_names:
+            for missing in missing_file_names.copy():
+                extra_candidate = missing.split(".", 1)[0]
+                if extra_candidate in extra_file_names:
+                    missing_file_names.remove(missing)
+                    extra_file_names.remove(extra_candidate)
 
         if extra_file_names:
             raise pytest.UsageError(
@@ -933,7 +928,7 @@ def country211(info, root, config):
             file_name_fn=lambda idx: f"{idx}.jpg",
             num_examples=num_examples,
         )
-    make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
+    # make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
     return num_examples * len(classes)
 
 
