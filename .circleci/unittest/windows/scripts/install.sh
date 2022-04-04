@@ -12,6 +12,7 @@ this_dir="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
 eval "$(./conda/Scripts/conda.exe 'shell.bash' 'hook')"
 conda activate ./env
 
+conda list
 python -c "import av; print(av.__version__)"
 
 ## TODO, refactor the below logic to make it easy to understand how to get correct cuda_version.
