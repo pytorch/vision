@@ -41,7 +41,7 @@ def test_coverage():
         )
 
 
-# @pytest.mark.filterwarnings("error")
+@pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
     def test_info(self, name):
