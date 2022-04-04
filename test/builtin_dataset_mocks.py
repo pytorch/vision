@@ -928,7 +928,7 @@ def country211(info, root, config):
             file_name_fn=lambda idx: f"{idx}.jpg",
             num_examples=num_examples,
         )
-    # make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
+    make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
     return num_examples * len(classes)
 
 
