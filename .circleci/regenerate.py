@@ -233,8 +233,8 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows", "macos"]:
-        for device_type in ["cpu", "gpu"]:
+    for os_type in ["windows"]:
+        for device_type in ["cpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
@@ -258,7 +258,7 @@ def unittest_workflows(indentation=6):
 def cmake_workflows(indentation=6):
     jobs = []
     python_version = "3.8"
-    for os_type in ["linux", "windows", "macos"]:
+    for os_type in ["windows"]:
         # Skip OSX CUDA
         device_types = ["cpu", "gpu"] if os_type != "macos" else ["cpu"]
         for device in device_types:
