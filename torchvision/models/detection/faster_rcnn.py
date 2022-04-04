@@ -304,31 +304,34 @@ class TwoMLPHead(nn.Module):
         return x
 
 
-class FastRCNNHeads(nn.Sequential):
+class FastRCNNConvFCHead(nn.Sequential):
     def __init__(
         self,
         input_size: Tuple[int, int, int],
-        layers: List[int],
-        output_channels: int,
+        conv_layers: List[int],
+        fc_layers: List[int],
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ):
         """
         Args:
             input_size (Tuple[int, int, int]): the input size in CHW format.
-            layers (list): feature dimensions of each FCN layer
-            output_channels (int): output channels
+            conv_layers (list): feature dimensions of each Convolution layer
+            fc_layers (list): feature dimensions of each FCN layer
             norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
         """
         in_channels, in_height, in_width = input_size
 
         blocks = []
         previous_channels = in_channels
-        for layer_channels in layers:
-            blocks.append(misc_nn_ops.Conv2dNormActivation(previous_channels, layer_channels, norm_layer=norm_layer))
-            previous_channels = layer_channels
+        for current_channels in conv_layers:
+            blocks.append(misc_nn_ops.Conv2dNormActivation(previous_channels, current_channels, norm_layer=norm_layer))
+            previous_channels = current_channels
         blocks.append(nn.Flatten())
-        blocks.append(nn.Linear(previous_channels * in_height * in_width, output_channels))
-        blocks.append(nn.ReLU(inplace=True))
+        previous_channels = previous_channels * in_height * in_width
+        for current_channels in fc_layers:
+            blocks.append(nn.Linear(previous_channels, current_channels))
+            blocks.append(nn.ReLU(inplace=True))
+            previous_channels = current_channels
 
         super().__init__(*blocks)
         for layer in self.modules():
@@ -567,7 +570,7 @@ def fasterrcnn_resnet50_fpn_v2(
     backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers, norm_layer=nn.BatchNorm2d)
     rpn_anchor_generator = _default_anchorgen()
     rpn_head = RPNHead(backbone.out_channels, rpn_anchor_generator.num_anchors_per_location()[0], conv_depth=2)
-    box_head = FastRCNNHeads((backbone.out_channels, 7, 7), [256, 256, 256, 256], 1024, norm_layer=nn.BatchNorm2d)
+    box_head = FastRCNNConvFCHead((backbone.out_channels, 7, 7), [256, 256, 256, 256], [1024], norm_layer=nn.BatchNorm2d)
     model = FasterRCNN(
         backbone,
         num_classes=num_classes,
