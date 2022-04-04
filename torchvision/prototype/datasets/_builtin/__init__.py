@@ -17,4 +17,5 @@ from .sbd import SBD
 from .semeion import SEMEION
 from .stanford_cars import StanfordCars
 from .svhn import SVHN
+from .usps import USPS
 from .voc import VOC

@@ -1,5 +1,6 @@
 from typing import Any, Optional, Union
 
+import torch
 import torch.nn.functional as F
 from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
@@ -186,6 +187,7 @@ class FasterRCNN(GeneralizedRCNN):
         box_batch_size_per_image=512,
         box_positive_fraction=0.25,
         bbox_reg_weights=None,
+        **kwargs,
     ):
 
         if not hasattr(backbone, "out_channels"):
@@ -267,7 +269,7 @@ class FasterRCNN(GeneralizedRCNN):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+        transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std, **kwargs)
 
         super().__init__(backbone, rpn, roi_heads, transform)
 
@@ -313,10 +315,10 @@ class FastRCNNPredictor(nn.Module):
 
     def forward(self, x):
         if x.dim() == 4:
-            if list(x.shape[2:]) != [1, 1]:
-                raise ValueError(
-                    f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}"
-                )
+            torch._assert(
+                list(x.shape[2:]) == [1, 1],
+                f"x has the wrong shape, expecting the last two dimensions to be [1,1] instead of {list(x.shape[2:])}",
+            )
         x = x.flatten(start_dim=1)
         scores = self.cls_score(x)
         bbox_deltas = self.bbox_pred(x)
