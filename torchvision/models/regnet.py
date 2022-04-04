@@ -642,7 +642,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
             "acc@5": 98.69,
         },
     )
-    pass
+    DEFAULT = IMAGENET1K_SWAG_V1
 
 
 class RegNet_X_400MF_Weights(WeightsEnum):
