@@ -64,7 +64,7 @@ class ConvertImageColorSpace(Transform):
         elif is_simple_tensor(input):
             if self.old_color_space is None:
                 raise RuntimeError(
-                    f"In order to convert vanilla tensor images, `{type(self).__name__}(...)` "
+                    f"In order to convert simple tensor images, `{type(self).__name__}(...)` "
                     f"needs to be constructed with the `old_color_space=...` parameter."
                 )
 

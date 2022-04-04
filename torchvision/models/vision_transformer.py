@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
 import torch
 import torch.nn as nn
@@ -284,10 +284,21 @@ def _vision_transformer(
     progress: bool,
     **kwargs: Any,
 ) -> VisionTransformer:
-    image_size = kwargs.pop("image_size", 224)
-
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if isinstance(weights.meta["size"], int):
+            _ovewrite_named_param(kwargs, "image_size", weights.meta["size"])
+        elif isinstance(weights.meta["size"], Sequence):
+            if len(weights.meta["size"]) != 2 or weights.meta["size"][0] != weights.meta["size"][1]:
+                raise ValueError(
+                    f'size: {weights.meta["size"]} is not valid! Currently we only support a 2-dimensional square and width = height'
+                )
+            _ovewrite_named_param(kwargs, "image_size", weights.meta["size"][0])
+        else:
+            raise ValueError(
+                f'weights.meta["size"]: {weights.meta["size"]} is not valid, the type should be either an int or a Sequence[int]'
+            )
+    image_size = kwargs.pop("image_size", 224)
 
     model = VisionTransformer(
         image_size=image_size,
@@ -313,6 +324,14 @@ _COMMON_META = {
     "interpolation": InterpolationMode.BILINEAR,
 }
 
+_COMMON_SWAG_META = {
+    **_COMMON_META,
+    "publication_year": 2022,
+    "recipe": "https://github.com/facebookresearch/SWAG",
+    "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
+    "interpolation": InterpolationMode.BICUBIC,
+}
+
 
 class ViT_B_16_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
@@ -326,6 +345,23 @@ class ViT_B_16_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
             "acc@1": 81.072,
             "acc@5": 95.318,
+        },
+    )
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16_swag-9ac1b537.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=384,
+            resize_size=384,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 86859496,
+            "size": (384, 384),
+            "min_size": (384, 384),
+            "acc@1": 85.304,
+            "acc@5": 97.650,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -360,6 +396,23 @@ class ViT_L_16_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16",
             "acc@1": 79.662,
             "acc@5": 94.638,
+        },
+    )
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_16_swag-4f3808c9.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=512,
+            resize_size=512,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 305174504,
+            "size": (512, 512),
+            "min_size": (512, 512),
+            "acc@1": 88.064,
+            "acc@5": 98.512,
         },
     )
     DEFAULT = IMAGENET1K_V1
