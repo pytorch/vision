@@ -73,10 +73,14 @@ class DatasetMock:
         missing_file_names = required_file_names - available_file_names
         extra_file_names = available_file_names - required_file_names
 
-        # Some datasets need to provide already preprocessed data, for example if the preprocessing includes downloads.
-        # Such data will be included in the `extra_file_names` while the raw data will be in the `missing_file_names`.
-        # This detects these cases and removes the corresponding entries from the sets since the files are neither extra
-        # nor missing.
+        # Some datasets need to cannot provide the original resources, for example if the preprocessing step includes
+        # downloads. In such a case the mock data function might also provide the corresponding result of the
+        # preprocessing. For example, if the dataset requires the `foo.tar` file, but the preprocessing step extracts it
+        # to the `foo` folder and performs some more operations, the mock data function can provide the `foo` folder
+        # directly.
+        # In such a case `foo.tar` will be picked up in `missing_file_names` at first and `foo` in `extra_file_names`.
+        # Since `foo.tar` is not actually missing, but already in a preprocessed state, we remove the corresponding
+        # entries from both sets.
         if missing_file_names:
             for missing in missing_file_names.copy():
                 extra_candidate = missing.split(".")[0]
