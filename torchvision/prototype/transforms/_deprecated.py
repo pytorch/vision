@@ -15,7 +15,7 @@ from ._utils import is_simple_tensor
 
 
 class ToTensor(Transform):
-    def __init__(self):
+    def __init__(self) -> None:
         warnings.warn(
             "The transform `ToTensor()` is deprecated and will be removed in a future release. "
             "Instead, please use `transforms.ToImageTensor()`."
@@ -30,7 +30,7 @@ class ToTensor(Transform):
 
 
 class PILToTensor(Transform):
-    def __init__(self):
+    def __init__(self) -> None:
         warnings.warn(
             "The transform `PILToTensor()` is deprecated and will be removed in a future release. "
             "Instead, please use `transforms.ToImageTensor()`."
