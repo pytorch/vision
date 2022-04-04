@@ -195,6 +195,7 @@ class SSD(nn.Module):
         iou_thresh: float = 0.5,
         topk_candidates: int = 400,
         positive_fraction: float = 0.25,
+        **kwargs: Any,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -227,7 +228,7 @@ class SSD(nn.Module):
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
         self.transform = GeneralizedRCNNTransform(
-            min(size), max(size), image_mean, image_std, size_divisible=1, fixed_size=size
+            min(size), max(size), image_mean, image_std, size_divisible=1, fixed_size=size, **kwargs
         )
 
         self.score_thresh = score_thresh
