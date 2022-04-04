@@ -74,4 +74,10 @@ from ._geometry import (
     ten_crop_image_pil,
 )
 from ._misc import normalize_image_tensor, gaussian_blur_image_tensor
-from ._type_conversion import decode_image_with_pil, decode_video_with_av, label_to_one_hot
+from ._type_conversion import (
+    decode_image_with_pil,
+    decode_video_with_av,
+    label_to_one_hot,
+    to_image_tensor,
+    to_image_pil,
+)
