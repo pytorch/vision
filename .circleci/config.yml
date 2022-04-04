@@ -146,7 +146,7 @@ commands:
         default: true
     steps:
       - pip_install:
-          args: --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+          args: --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu
           descr: Install PyTorch from nightly releases
       - pip_install:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
@@ -158,11 +158,8 @@ commands:
           args: iopath
           descr: Install third-party dependencies
       - pip_install:
-          args: -r https://raw.githubusercontent.com/pytorch/data/main/requirements.txt
-          descr: Install torchdata build dependencies
-      - pip_install:
-          args: --no-build-isolation git+https://github.com/pytorch/data
-          descr: Install torchdata from source
+          args: --pre torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+          descr: Install torchdata from nightly releases
 
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
   # This command can be used if only a selection of tests need to be run, for ad-hoc files.
@@ -269,7 +266,7 @@ smoke_test_common: &smoke_test_common
 jobs:
   circleci_consistency:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - pip_install:
@@ -282,7 +279,7 @@ jobs:
 
   lint_python_and_config:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - pip_install:
@@ -301,7 +298,7 @@ jobs:
 
   lint_c:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - apt_install:
           args: libtinfo5
@@ -323,7 +320,7 @@ jobs:
 
   type_check_python:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - apt_install:
           args: libturbojpeg-dev
@@ -341,7 +338,7 @@ jobs:
 
   unittest_torchhub:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - install_torchvision
@@ -350,7 +347,7 @@ jobs:
 
   unittest_onnx:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - install_torchvision
@@ -362,7 +359,7 @@ jobs:
 
   unittest_prototype:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     resource_class: xlarge
     steps:
       - checkout
@@ -376,7 +373,7 @@ jobs:
 
   unittest_extended:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     resource_class: xlarge
     steps:
       - checkout
@@ -538,7 +535,7 @@ jobs:
   binary_android_build:
     <<: *torchvision_android_params
     docker:
-      - image: circleci/android:api-29-ndk
+      - image: cimg/android:2021.08-ndk
     resource_class: xlarge
     steps:
     - attach_workspace:
@@ -557,7 +554,7 @@ jobs:
   binary_android_upload:
     <<: *torchvision_android_params
     docker:
-      - image: circleci/android:api-29-ndk
+      - image: cimg/android:2021.08-ndk
     resource_class: xlarge
     steps:
     - attach_workspace:
@@ -616,7 +613,7 @@ jobs:
         description: "What whl subfolder to upload to, e.g., blank or cu100/ (trailing slash is important)"
         type: string
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - attach_workspace:
           at: ~/workspace
@@ -1040,7 +1037,7 @@ jobs:
   build_docs:
     <<: *binary_common
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     resource_class: 2xlarge+
     steps:
       - attach_workspace:
