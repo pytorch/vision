@@ -8,7 +8,7 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
-from torch.utils.data import DataLoader, default_collate
+from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
@@ -143,11 +143,7 @@ class TestCommon:
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        # Ugly hack: custom collate_fn because the default one doesn't handle None values
-        def collate_fn(batch):
-            return default_collate([x["image"] for x in batch])
-
-        dl = DataLoader(dataset, collate_fn=collate_fn)
+        dl = DataLoader(dataset, collate_fn=lambda batch: batch)
 
         next(iter(dl))
 
