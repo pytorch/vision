@@ -1,11 +1,9 @@
 from typing import Tuple, Optional
 
-import numpy as np
 import PIL.Image
 import torch
 from torchvision.prototype.features import BoundingBoxFormat, ColorSpace
 from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
-from typing_extensions import Literal
 
 get_dimensions_image_tensor = _FT.get_dimensions
 get_dimensions_image_pil = _FP.get_dimensions
@@ -84,21 +82,17 @@ def _add_alpha(image: torch.Tensor, alpha: Optional[torch.Tensor] = None) -> tor
     return torch.cat((image, alpha), dim=-3)
 
 
-def _expand_gray(gray: torch.Tensor, num_channels: int) -> torch.Tensor:
-    if num_channels == 1:
-        return gray
+def _gray_to_rgb(grayscale: torch.Tensor) -> torch.Tensor:
+    repeats = [1] * grayscale.ndim
+    repeats[-3] = 3
+    return grayscale.repeat(repeats)
 
-    repeats = [1] * gray.ndim
-    repeats[-3] = num_channels
-    return gray.repeat(repeats)
+
+_rgb_to_gray = _FT.rgb_to_grayscale
 
 
 def convert_image_color_space_tensor(
-    image: torch.Tensor,
-    old_color_space: ColorSpace,
-    new_color_space: ColorSpace,
-    gray_output_channels: int = 1,
-    copy: bool = True,
+    image: torch.Tensor, old_color_space: ColorSpace, new_color_space: ColorSpace, copy: bool = True
 ) -> torch.Tensor:
     if new_color_space == old_color_space:
         if copy:
@@ -112,27 +106,27 @@ def convert_image_color_space_tensor(
     if old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.GRAY_ALPHA:
         return _add_alpha(image)
     elif old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.RGB:
-        return _expand_gray(image, 3)
+        return _gray_to_rgb(image)
     elif old_color_space == ColorSpace.GRAY and new_color_space == ColorSpace.RGB_ALPHA:
-        return _add_alpha(_expand_gray(image, 3))
+        return _add_alpha(_gray_to_rgb(image))
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.GRAY:
         return _strip_alpha(image)
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB:
-        return _expand_gray(_strip_alpha(image), 3)
+        return _gray_to_rgb(_strip_alpha(image))
     elif old_color_space == ColorSpace.GRAY_ALPHA and new_color_space == ColorSpace.RGB_ALPHA:
         image, alpha = _split_alpha(image)
-        return _add_alpha(_expand_gray(image, 3), alpha)
+        return _add_alpha(_gray_to_rgb(image), alpha)
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY:
-        return _expand_gray(_FT.rgb_to_grayscale(image), gray_output_channels)
+        return _rgb_to_gray(image)
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.GRAY_ALPHA:
-        return _add_alpha(_expand_gray(_FT.rgb_to_grayscale(image), gray_output_channels))
+        return _add_alpha(_rgb_to_gray(image))
     elif old_color_space == ColorSpace.RGB and new_color_space == ColorSpace.RGB_ALPHA:
         return _add_alpha(image)
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY:
-        return _expand_gray(_FT.rgb_to_grayscale(_strip_alpha(image)), gray_output_channels)
+        return _rgb_to_gray(_strip_alpha(image))
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.GRAY_ALPHA:
         image, alpha = _split_alpha(image)
-        return _add_alpha(_expand_gray(_FT.rgb_to_grayscale(image), gray_output_channels), alpha)
+        return _add_alpha(_rgb_to_gray(image), alpha)
     elif old_color_space == ColorSpace.RGB_ALPHA and new_color_space == ColorSpace.RGB:
         return _strip_alpha(image)
     else:
@@ -148,10 +142,7 @@ _COLOR_SPACE_TO_PIL_MODE = {
 
 
 def convert_image_color_space_pil(
-    image: PIL.Image.Image,
-    color_space: ColorSpace,
-    gray_output_channels: Literal[1, 3] = 1,
-    copy: bool = True,
+    image: PIL.Image.Image, color_space: ColorSpace, copy: bool = True
 ) -> PIL.Image.Image:
     old_mode = image.mode
     try:
@@ -162,25 +153,4 @@ def convert_image_color_space_pil(
     if not copy and image.mode == new_mode:
         return image
 
-    output = image.convert(new_mode)
-    if color_space not in {ColorSpace.GRAY, ColorSpace.GRAY_ALPHA} or gray_output_channels == 1:
-        return output
-
-    data = torch.from_numpy(np.array(output)).unsqueeze(0)
-    if color_space == ColorSpace.GRAY:
-        alpha = None
-        color_space = ColorSpace.RGB
-    elif color_space == ColorSpace.GRAY_ALPHA:
-        data, alpha = _split_alpha(data)
-        color_space = ColorSpace.RGB_ALPHA
-    else:
-        raise RuntimeError(
-            f"`gray_output_channels == 3` is only supported for conversions to "
-            f"{ColorSpace.GRAY} and {ColorSpace.GRAY_ALPHA}, but got {color_space}."
-        )
-
-    data = _expand_gray(data, gray_output_channels)
-    if alpha is not None:
-        data = _add_alpha(data, alpha)
-
-    return PIL.Image.fromarray(data.permute(1, 2, 0).numpy(), mode=_COLOR_SPACE_TO_PIL_MODE[color_space])
+    return image.convert(new_mode)
