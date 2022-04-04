@@ -110,12 +110,13 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
+    @pytest.mark.parametrize("only_datapipe", [False, True])
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_traversable(self, test_home, dataset_mock, config):
+    def test_traversable(self, test_home, dataset_mock, config, only_datapipe):
         dataset_mock.prepare(test_home, config)
         dataset = datasets.load(dataset_mock.name, **config)
 
-        traverse(dataset, only_datapipe=False)
+        traverse(dataset, only_datapipe=only_datapipe)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_serializable(self, test_home, dataset_mock, config):
