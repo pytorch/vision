@@ -11,13 +11,11 @@ import pathlib
 import pickle
 import random
 import re
-import shutil
 import warnings
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 
 import numpy as np
-import PIL.Image
 import pytest
 import torch
 from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
@@ -510,18 +508,11 @@ def imagenet(info, root, config):
 
 class CocoMockData:
     @classmethod
-    def _make_images_folder(cls, root, name, *, num_samples):
-        image_paths = create_image_folder(
-            root, name, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_samples
-        )
-
-        images_meta = []
-        for path in image_paths:
-            with PIL.Image.open(path) as image:
-                width, height = image.size
-            images_meta.append(dict(file_name=path.name, id=int(path.stem), width=width, height=height))
-
-        return images_meta
+    def _make_images_meta(cls, *, num_samples):
+        return [
+            dict(file_name=f"{idx:012d}.jpg", id=idx, width=width, height=height)
+            for idx, (height, width) in enumerate(torch.randint(3, 11, size=(num_samples, 2), dtype=torch.int).tolist())
+        ]
 
     @classmethod
     def _make_annotations_json(
@@ -600,11 +591,16 @@ class CocoMockData:
         for split_ in ("train", "val"):
             config_name = f"{split_}{year}"
 
-            images_meta = cls._make_images_folder(root, config_name, num_samples=num_samples)
+            images_meta = cls._make_images_meta(num_samples=num_samples)
             if split_ == split:
+                create_image_folder(
+                    root,
+                    config_name,
+                    file_name_fn=lambda idx: images_meta[idx]["file_name"],
+                    num_examples=num_samples,
+                    size=lambda idx: (3, images_meta[idx]["height"], images_meta[idx]["width"]),
+                )
                 make_zip(root, f"{config_name}.zip")
-            else:
-                shutil.rmtree(root / config_name)
 
             cls._make_annotations(
                 annotations_dir,
