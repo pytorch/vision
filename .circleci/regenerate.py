@@ -29,12 +29,10 @@ RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
-        for os_type in ["linux", "macos", "win"]:
+        for os_type in ["win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu102", "cu113", "cu115", "rocm4.3.1", "rocm4.5.2"],
-                "win": ["cpu", "cu113", "cu115"],
-                "macos": ["cpu"],
+                "win": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -63,10 +61,6 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                             btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
                         )
 
-    if not filter_branch:
-        # Build on every pull request, but upload only on nightly and tags
-        w += build_doc_job("/.*/")
-        w += upload_doc_job("nightly")
     return indent(indentation, w)
 
 
