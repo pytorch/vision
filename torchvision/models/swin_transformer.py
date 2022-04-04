@@ -114,7 +114,7 @@ def shifted_window_attention(
     qkv = qkv.reshape(x.size(0), x.size(1), 3, num_heads, C // num_heads).permute(2, 0, 3, 1, 4)
     q, k, v = qkv[0], qkv[1], qkv[2]
     q = q * (C // num_heads) ** -0.5
-    attn = q @ k.transpose(-2, -1)
+    attn = q.matmul(k.transpose(-2, -1))
     # add relative position bias
     attn = attn + relative_position_bias
 
@@ -138,7 +138,7 @@ def shifted_window_attention(
     attn = F.softmax(attn, dim=-1)
     attn = F.dropout(attn, p=attention_dropout)
 
-    x = (attn @ v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
+    x = attn.matmul(v).transpose(1, 2).reshape(x.size(0), x.size(1), C)
     x = F.linear(x, proj_weight, proj_bias)
     x = F.dropout(x, p=dropout)
 
