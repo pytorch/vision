@@ -3,7 +3,7 @@ import os
 
 import pytest
 import torch
-from test.common_utils import needs_cuda
+from common_utils import needs_cuda
 from torchvision.io import _HAS_GPU_VIDEO_DECODER, VideoReader
 
 try:
