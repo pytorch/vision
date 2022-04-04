@@ -554,7 +554,6 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
     )
 
 
-@handle_legacy_interface(weights=("pretrained", ViT_H_14_Weights.IMAGENET1K_SWAG_V1))
 def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
     Constructs a vit_h_14 architecture from
