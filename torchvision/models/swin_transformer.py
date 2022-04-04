@@ -205,9 +205,10 @@ class ShiftedWindowAttention(nn.Module):
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def forward(self, x: Tensor):
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index].view(
+        relative_position_bias = self.relative_position_bias_table[self.relative_position_index] # type: ignore[index]
+        relative_position_bias = relative_position_bias.view(
             self.window_size * self.window_size, self.window_size * self.window_size, -1
-        )  # type: ignore[index]
+        )
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
 
         return shifted_window_attention(
