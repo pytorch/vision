@@ -324,7 +324,7 @@ def rotate_image_tensor(
     center_f = [0.0, 0.0]
     if center is not None:
         if expand:
-            warnings.warn("The provided center argument is ignored if expand is True")
+            warnings.warn("The provided center argument has no effect on the result if expand is True")
         else:
             _, height, width = get_dimensions_image_tensor(img)
             # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
@@ -345,7 +345,7 @@ def rotate_image_pil(
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     if center is not None and expand:
-        warnings.warn("The provided center argument is ignored if expand is True")
+        warnings.warn("The provided center argument has no effect on the result if expand is True")
         center = None
 
     return _FP.rotate(
@@ -362,7 +362,7 @@ def rotate_bounding_box(
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
     if center is not None and expand:
-        warnings.warn("The provided center argument is ignored if expand is True")
+        warnings.warn("The provided center argument has no effect on the result if expand is True")
         center = None
 
     original_shape = bounding_box.shape
