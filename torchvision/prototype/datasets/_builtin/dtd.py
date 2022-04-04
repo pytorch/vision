@@ -2,16 +2,7 @@ import enum
 import pathlib
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO
 
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Shuffler,
-    Filter,
-    IterKeyZipper,
-    Demultiplexer,
-    LineReader,
-    CSVParser,
-)
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, LineReader, CSVParser
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -24,6 +15,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     path_comparator,
     getitem,
+    hint_shuffling,
 )
 from torchvision.prototype.features import Label, EncodedImage
 
@@ -98,7 +90,7 @@ class DTD(Dataset):
 
         splits_dp = Filter(splits_dp, path_comparator("name", f"{config.split}{config.fold}.txt"))
         splits_dp = LineReader(splits_dp, decode=True, return_path=False)
-        splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        splits_dp = hint_shuffling(splits_dp)
         splits_dp = hint_sharding(splits_dp)
 
         joint_categories_dp = CSVParser(joint_categories_dp, delimiter=" ")
