@@ -637,9 +637,8 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 644812894,
-            # Still mock
-            "acc@1": 88.23,
-            "acc@5": 98.69,
+            "acc@1": 88.228,
+            "acc@5": 98.682,
         },
     )
     DEFAULT = IMAGENET1K_SWAG_V1
