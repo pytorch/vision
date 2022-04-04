@@ -14,8 +14,14 @@ from ._transform import _RandomApplyTransform
 from ._utils import is_simple_tensor
 
 
-# TODO: add deprecation warning
 class ToTensor(Transform):
+    def __init__(self):
+        warnings.warn(
+            "The transform `ToTensor()` is deprecated and will be removed in a future release. "
+            "Instead, please use `transforms.ToImageTensor()`."
+        )
+        super().__init__()
+
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if isinstance(input, (PIL.Image.Image, np.ndarray)):
             return _F.to_tensor(input)
@@ -23,8 +29,14 @@ class ToTensor(Transform):
             return input
 
 
-# TODO: add deprecation warning
 class PILToTensor(Transform):
+    def __init__(self):
+        warnings.warn(
+            "The transform `PILToTensor()` is deprecated and will be removed in a future release. "
+            "Instead, please use `transforms.ToImageTensor()`."
+        )
+        super().__init__()
+
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         if isinstance(input, PIL.Image.Image):
             return _F.pil_to_tensor(input)
@@ -32,9 +44,12 @@ class PILToTensor(Transform):
             return input
 
 
-# TODO: add deprecation warning
 class ToPILImage(Transform):
     def __init__(self, mode: Optional[str] = None) -> None:
+        warnings.warn(
+            "The transform `ToPILImage()` is deprecated and will be removed in a future release. "
+            "Instead, please use `transforms.ToImagePIL()`."
+        )
         super().__init__()
         self.mode = mode
 
