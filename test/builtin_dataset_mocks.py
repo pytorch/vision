@@ -79,7 +79,7 @@ class DatasetMock:
         # nor missing.
         if missing_file_names:
             for missing in missing_file_names.copy():
-                extra_candidate = missing.split(".", 1)[0]
+                extra_candidate = missing.split(".")[0]
                 if extra_candidate in extra_file_names:
                     missing_file_names.remove(missing)
                     extra_file_names.remove(extra_candidate)
@@ -928,7 +928,7 @@ def country211(info, root, config):
             file_name_fn=lambda idx: f"{idx}.jpg",
             num_examples=num_examples,
         )
-    make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
+    # make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
     return num_examples * len(classes)
 
 
