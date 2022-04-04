@@ -1,5 +1,6 @@
 import functools
 import io
+import os
 import pickle
 from pathlib import Path
 
@@ -7,8 +8,8 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
+from torch.utils.data import DataLoader, default_collate
 from torch.utils.data.graph import traverse
-from torch.utils.data import DataLoader
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
 from torchvision._utils import sequence_to_str
@@ -29,6 +30,23 @@ def extract_datapipes(dp):
 def test_home(mocker, tmp_path):
     mocker.patch("torchvision.prototype.datasets._api.home", return_value=str(tmp_path))
     yield tmp_path
+
+
+@pytest.fixture
+def ddp_fixture():
+    # Note: we only test DDP with world_size=1, but it should be enough for our purpose.
+    # If we ever need to go full DDP, we'll need to implement a much more complex logic, similar to
+    # MultiProcessTestCase from torch core.
+
+    os.environ["MASTER_ADDR"] = "localhost"
+    os.environ["MASTER_PORT"] = "29501"
+    torch.distributed.init_process_group(backend="gloo", world_size=1, rank=0)
+    torch.distributed.barrier()
+
+    yield
+
+    torch.distributed.barrier()
+    torch.distributed.destroy_process_group()
 
 
 def test_coverage():
@@ -120,27 +138,18 @@ class TestCommon:
         pickle.dumps(dataset)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_ddp(self, test_home, dataset_mock, config,):
+    def test_ddp(self, test_home, dataset_mock, config, ddp_fixture):
         dataset_mock.prepare(test_home, config)
-
-        import os
-        if not torch.distributed.is_initialized():
-            os.environ["MASTER_ADDR"] = "localhost"
-            os.environ["MASTER_PORT"] = "29501"
-            torch.distributed.init_process_group(backend="gloo", world_size=1, rank=0)
-            torch.distributed.barrier()
 
         dataset = datasets.load(dataset_mock.name, **config)
 
         # Ugly hack: custom collate_fn because the default one doesn't handle None values
-        from torch.utils.data import default_collate
         def collate_fn(batch):
             return default_collate([x["image"] for x in batch])
 
         dl = DataLoader(dataset, collate_fn=collate_fn)
 
         next(iter(dl))
-        # TODO: Do we need  to manually shut down DPP now??
 
     # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
     #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
