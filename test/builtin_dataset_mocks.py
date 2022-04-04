@@ -74,7 +74,10 @@ class DatasetMock:
         missing_file_names = required_file_names - available_file_names
         extra_file_names = available_file_names - required_file_names
 
-        # Some datasets need to provide already preprocessed data, for example if the preprocessing includes downloads
+        # Some datasets need to provide already preprocessed data, for example if the preprocessing includes downloads.
+        # Such data will be included in the `extra_file_names` while the raw data will be in the `missing_file_names`.
+        # This detects these cases and removes the corresponding entries from the sets since the files are neither extra
+        # nor missing.
         if extra_file_names:
             for extra in extra_file_names.copy():
                 candidate_pattern = re.compile(fr"^{extra.split('.', 1)[0]}([.]\w+)*$")
