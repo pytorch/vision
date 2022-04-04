@@ -138,8 +138,7 @@ class TestCommon:
             collate_fn=lambda batch: batch,
         )
 
-        for _ in dl:
-            pass
+        next(iter(dl))
 
     # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
     #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
