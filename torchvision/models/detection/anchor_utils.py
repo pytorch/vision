@@ -84,17 +84,14 @@ class AnchorGenerator(nn.Module):
     def grid_anchors(self, grid_sizes: List[List[int]], strides: List[List[Tensor]]) -> List[Tensor]:
         anchors = []
         cell_anchors = self.cell_anchors
-
-        if cell_anchors is None:
-            ValueError("cell_anchors should not be None")
-
-        if not (len(grid_sizes) == len(strides) == len(cell_anchors)):
-            raise ValueError(
-                "Anchors should be Tuple[Tuple[int]] because each feature "
-                "map could potentially have different sizes and aspect ratios. "
-                "There needs to be a match between the number of "
-                "feature maps passed and the number of sizes / aspect ratios specified."
-            )
+        torch._assert(cell_anchors is not None, "cell_anchors should not be None")
+        torch._assert(
+            len(grid_sizes) == len(strides) == len(cell_anchors),
+            "Anchors should be Tuple[Tuple[int]] because each feature "
+            "map could potentially have different sizes and aspect ratios. "
+            "There needs to be a match between the number of "
+            "feature maps passed and the number of sizes / aspect ratios specified.",
+        )
 
         for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
             grid_height, grid_width = size
