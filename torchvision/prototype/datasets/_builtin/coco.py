@@ -46,6 +46,10 @@ def _info() -> Dict[str, Any]:
 
 @register_dataset(NAME)
 class Coco(Dataset2):
+    """
+    - **homepage**: https://cocodataset.org/
+    """
+
     def __init__(
         self,
         root: Union[str, pathlib.Path],
@@ -55,9 +59,6 @@ class Coco(Dataset2):
         annotations: Optional[str] = "instances",
         **kwargs: Any,
     ) -> None:
-        """
-        - **homepage**: https://cocodataset.org/
-        """
         self._split = self._verify_str_arg(split, "split", {"train", "val"})
         self._year = self._verify_str_arg(year, "year", {"2017", "2014"})
         self._annotations = (
