@@ -14,15 +14,18 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
 )
 from torchvision.prototype.features import Label, BoundingBox, EncodedImage
+
 from .._api import register_dataset, register_info
 
 NAME = "gtsrb"
+
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
     return dict(
         categories=[f"{label:05d}" for label in range(43)],
-        )
+    )
+
 
 @register_dataset(NAME)
 class GTSRB(Dataset2):
@@ -30,7 +33,10 @@ class GTSRB(Dataset2):
 
     homepage="https://benchmark.ini.rub.de"
     """
-    def __init__(self, root: Union[str, pathlib.Path], *, split: str = "train", skip_integrity_check: bool = False) -> None:
+
+    def __init__(
+        self, root: Union[str, pathlib.Path], *, split: str = "train", skip_integrity_check: bool = False
+    ) -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "test"})
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
