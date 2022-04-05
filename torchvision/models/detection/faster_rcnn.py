@@ -1,4 +1,4 @@
-from typing import Any, Optional, Union
+from typing import Any, Callable, List, Optional, Tuple, Union
 
 import torch
 import torch.nn.functional as F
@@ -24,12 +24,20 @@ from .transform import GeneralizedRCNNTransform
 __all__ = [
     "FasterRCNN",
     "FasterRCNN_ResNet50_FPN_Weights",
+    "FasterRCNN_ResNet50_FPN_V2_Weights",
     "FasterRCNN_MobileNet_V3_Large_FPN_Weights",
     "FasterRCNN_MobileNet_V3_Large_320_FPN_Weights",
     "fasterrcnn_resnet50_fpn",
+    "fasterrcnn_resnet50_fpn_v2",
     "fasterrcnn_mobilenet_v3_large_fpn",
     "fasterrcnn_mobilenet_v3_large_320_fpn",
 ]
+
+
+def _default_anchorgen():
+    anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
+    aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
+    return AnchorGenerator(anchor_sizes, aspect_ratios)
 
 
 class FasterRCNN(GeneralizedRCNN):
@@ -216,9 +224,7 @@ class FasterRCNN(GeneralizedRCNN):
         out_channels = backbone.out_channels
 
         if rpn_anchor_generator is None:
-            anchor_sizes = ((32,), (64,), (128,), (256,), (512,))
-            aspect_ratios = ((0.5, 1.0, 2.0),) * len(anchor_sizes)
-            rpn_anchor_generator = AnchorGenerator(anchor_sizes, aspect_ratios)
+            rpn_anchor_generator = _default_anchorgen()
         if rpn_head is None:
             rpn_head = RPNHead(out_channels, rpn_anchor_generator.num_anchors_per_location()[0])
 
@@ -298,6 +304,43 @@ class TwoMLPHead(nn.Module):
         return x
 
 
+class FastRCNNConvFCHead(nn.Sequential):
+    def __init__(
+        self,
+        input_size: Tuple[int, int, int],
+        conv_layers: List[int],
+        fc_layers: List[int],
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+    ):
+        """
+        Args:
+            input_size (Tuple[int, int, int]): the input size in CHW format.
+            conv_layers (list): feature dimensions of each Convolution layer
+            fc_layers (list): feature dimensions of each FCN layer
+            norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None
+        """
+        in_channels, in_height, in_width = input_size
+
+        blocks = []
+        previous_channels = in_channels
+        for current_channels in conv_layers:
+            blocks.append(misc_nn_ops.Conv2dNormActivation(previous_channels, current_channels, norm_layer=norm_layer))
+            previous_channels = current_channels
+        blocks.append(nn.Flatten())
+        previous_channels = previous_channels * in_height * in_width
+        for current_channels in fc_layers:
+            blocks.append(nn.Linear(previous_channels, current_channels))
+            blocks.append(nn.ReLU(inplace=True))
+            previous_channels = current_channels
+
+        super().__init__(*blocks)
+        for layer in self.modules():
+            if isinstance(layer, nn.Conv2d):
+                nn.init.kaiming_normal_(layer.weight, mode="fan_out", nonlinearity="relu")
+                if layer.bias is not None:
+                    nn.init.zeros_(layer.bias)
+
+
 class FastRCNNPredictor(nn.Module):
     """
     Standard classification + bounding box regression layers
@@ -347,6 +390,10 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
         },
     )
     DEFAULT = COCO_V1
+
+
+class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
+    pass
 
 
 class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
@@ -477,6 +524,66 @@ def fasterrcnn_resnet50_fpn(
         model.load_state_dict(weights.get_state_dict(progress=progress))
         if weights == FasterRCNN_ResNet50_FPN_Weights.COCO_V1:
             overwrite_eps(model, 0.0)
+
+    return model
+
+
+def fasterrcnn_resnet50_fpn_v2(
+    *,
+    weights: Optional[FasterRCNN_ResNet50_FPN_V2_Weights] = None,
+    progress: bool = True,
+    num_classes: Optional[int] = None,
+    weights_backbone: Optional[ResNet50_Weights] = None,
+    trainable_backbone_layers: Optional[int] = None,
+    **kwargs: Any,
+) -> FasterRCNN:
+    """
+    Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone.
+
+    Reference: `"Benchmarking Detection Transfer Learning with Vision Transformers"
+    <https://arxiv.org/abs/2111.11429>`_.
+
+    :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more details.
+
+    Args:
+        weights (FasterRCNN_ResNet50_FPN_V2_Weights, optional): The pretrained weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+        num_classes (int, optional): number of output classes of the model (including the background)
+        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
+            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
+            passed (the default) this value is set to 3.
+    """
+    weights = FasterRCNN_ResNet50_FPN_V2_Weights.verify(weights)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
+
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+    elif num_classes is None:
+        num_classes = 91
+
+    is_trained = weights is not None or weights_backbone is not None
+    trainable_backbone_layers = _validate_trainable_layers(is_trained, trainable_backbone_layers, 5, 3)
+
+    backbone = resnet50(weights=weights_backbone, progress=progress)
+    backbone = _resnet_fpn_extractor(backbone, trainable_backbone_layers, norm_layer=nn.BatchNorm2d)
+    rpn_anchor_generator = _default_anchorgen()
+    rpn_head = RPNHead(backbone.out_channels, rpn_anchor_generator.num_anchors_per_location()[0], conv_depth=2)
+    box_head = FastRCNNConvFCHead(
+        (backbone.out_channels, 7, 7), [256, 256, 256, 256], [1024], norm_layer=nn.BatchNorm2d
+    )
+    model = FasterRCNN(
+        backbone,
+        num_classes=num_classes,
+        rpn_anchor_generator=rpn_anchor_generator,
+        rpn_head=rpn_head,
+        box_head=box_head,
+        **kwargs,
+    )
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
