@@ -903,6 +903,44 @@ def country211(info, root, config):
 
 
 # @register_mock
+def food101(info, root, config):
+    data_folder = root / "food-101"
+
+    num_images_per_class = 3
+    image_folder = data_folder / "images"
+    categories = ["apple_pie", "baby_back_ribs", "waffles"]
+    image_ids = []
+    for category in categories:
+        image_files = create_image_folder(
+            image_folder,
+            category,
+            file_name_fn=lambda idx: f"{idx:04d}.jpg",
+            num_examples=num_images_per_class,
+        )
+        image_ids.extend(path.relative_to(path.parents[1]).with_suffix("").as_posix() for path in image_files)
+
+    meta_folder = data_folder / "meta"
+    meta_folder.mkdir()
+
+    with open(meta_folder / "classes.txt", "w") as file:
+        for category in categories:
+            file.write(f"{category}\n")
+
+    splits = ["train", "test"]
+    num_samples_map = {}
+    for offset, split in enumerate(splits):
+        image_ids_in_split = image_ids[offset :: len(splits)]
+        num_samples_map[split] = len(image_ids_in_split)
+        with open(meta_folder / f"{split}.txt", "w") as file:
+            for image_id in image_ids_in_split:
+                file.write(f"{image_id}\n")
+
+    make_tar(root, f"{data_folder.name}.tar.gz", compression="gz")
+
+    return num_samples_map[config.split]
+
+
+# @register_mock
 def dtd(info, root, config):
     data_folder = root / "dtd"
 
