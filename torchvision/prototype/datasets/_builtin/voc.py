@@ -55,7 +55,7 @@ class VOC(Dataset2):
             self._split = self._verify_str_arg(split, "split", ("train", "val", "trainval", "test"))
         self._task = self._verify_str_arg(task, "task", ("detection", "segmentation"))
 
-        self._categories: List[str] = _info()["categories"]
+        self._categories = _info()["categories"]
 
         super().__init__(root, **kwargs)
 

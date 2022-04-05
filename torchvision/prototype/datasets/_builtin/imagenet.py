@@ -59,8 +59,8 @@ class ImageNet(Dataset2):
 
         info = _info()
         categories, wnids = info["categories"], info["wnids"]
-        self._categories: List[str] = categories
-        self._wnids: List[str] = wnids
+        self._categories = categories
+        self._wnids = wnids
         self._wnid_to_category = dict(zip(wnids, categories))
 
         super().__init__(root)
