@@ -43,7 +43,6 @@ class PatchMerging(nn.Module):
 
     def forward(self, x: Tensor):
         B, H, W, C = x.shape
-        # assert H % 2 == 0 and W % 2 == 0, f"input size ({H}*{W}) are not even."
 
         x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
         x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
@@ -264,10 +263,8 @@ class SwinTransformerBlock(nn.Module):
             attention_dropout=attention_dropout,
             dropout=dropout,
         )
-
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
-
         self.mlp = MLPBlock(dim, int(dim * mlp_ratio), dropout)
 
     def forward(self, x: Tensor):
@@ -357,7 +354,6 @@ class SwinTransformer(nn.Module):
             # add patch merging layer
             if i_stage < (len(depths) - 1):
                 layers.append(PatchMerging(dim, norm_layer))
-
         self.features = nn.Sequential(*layers)
 
         num_features = embed_dim * 2 ** (len(depths) - 1)
