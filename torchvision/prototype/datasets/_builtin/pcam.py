@@ -99,7 +99,7 @@ class PCAM(Dataset):
         image, target = data  # They're both numpy arrays at this point
 
         return {
-            "image": features.Image(image),
+            "image": features.Image(image.transpose(2, 0, 1)),
             "label": Label(target.item()),
         }
 
