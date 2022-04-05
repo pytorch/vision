@@ -15,8 +15,6 @@ from torchvision.prototype.features import EncodedImage
 
 
 class SBU(Dataset):
-    PHOTO_URLS = 0
-    PHOTO_CAPTIONS = 1
 
     def _make_info(self) -> DatasetInfo:
         return DatasetInfo(
