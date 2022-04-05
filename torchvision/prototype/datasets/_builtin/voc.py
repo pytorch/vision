@@ -55,6 +55,9 @@ class VOC(Dataset2):
             self._split = self._verify_str_arg(split, "split", ("train", "val", "trainval", "test"))
         self._task = self._verify_str_arg(task, "task", ("detection", "segmentation"))
 
+        self._anns_folder = "Annotations" if task == "detection" else "SegmentationClass"
+        self._split_folder = "Main" if task == "detection" else "Segmentation"
+
         self._categories = _info()["categories"]
 
         super().__init__(root, **kwargs)
@@ -75,14 +78,6 @@ class VOC(Dataset2):
         file_name, sha256 = (self._TEST_ARCHIVES if self._split == "test" else self._TRAIN_VAL_ARCHIVES)[self._year]
         archive = HttpResource(f"http://host.robots.ox.ac.uk/pascal/VOC/voc{self._year}/{file_name}", sha256=sha256)
         return [archive]
-
-    @property
-    def _anns_folder(self) -> str:
-        return "Annotations" if self._task == "detection" else "SegmentationClass"
-
-    @property
-    def _split_folder(self) -> str:
-        return "Main" if self._task == "detection" else "Segmentation"
 
     def _is_in_folder(self, data: Tuple[str, Any], *, name: str, depth: int = 1) -> bool:
         path = pathlib.Path(data[0])
