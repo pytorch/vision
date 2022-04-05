@@ -1,11 +1,10 @@
 try:
     import torchdata
-except (ModuleNotFoundError, TypeError) as error:
+except ModuleNotFoundError:
     raise ModuleNotFoundError(
         "`torchvision.prototype.datasets` depends on PyTorch's `torchdata` (https://github.com/pytorch/data). "
-        "You can install it with `pip install git+https://github.com/pytorch/data.git`. "
-        "Note that you cannot install it with `pip install torchdata`, since this is another package."
-    ) from error
+        "You can install it with `pip install --pre torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu"
+    ) from None
 
 from . import utils
 from ._home import home
