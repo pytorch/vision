@@ -303,12 +303,12 @@ def generate_table():
     weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum if "acc@1" in w.meta]
 
-    column_names = [("Weight", "Acc@1", "Acc@5", "#Params", "Recipe")]
+    column_names = ("**Weight**", "**Acc@1**", "**Acc@5**", "**Params**", "**Recipe**")
     content = [
         (str(w), w.meta["acc@1"], w.meta["acc@5"], f"{w.meta['num_params']:e}", f"`link <{w.meta['recipe']}>`__")
         for w in weights
     ]
-    table = tabulate(column_names + content, tablefmt="rst")
+    table = tabulate(content, headers=column_names, tablefmt="rst")
     print(table)
 
     with open("generated/classification_table.rst", "w") as table_file:
