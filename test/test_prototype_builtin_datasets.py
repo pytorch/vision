@@ -154,6 +154,13 @@ class TestCommon:
                 #  resolved
                 assert dp.buffer_size == INFINITE_BUFFER_SIZE
 
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_has_length(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        assert len(dataset) > 0
+
 
 # FIXME: DATASET_MOCKS["qmnist"]
 @parametrize_dataset_mocks({})
