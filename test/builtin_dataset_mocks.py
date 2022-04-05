@@ -1030,9 +1030,9 @@ def fer2013(info, root, config):
     return num_samples
 
 
-# @register_mock
-def gtsrb(info, root, config):
-    num_examples_per_class = 5 if config.split == "train" else 3
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def gtsrb(root, config):
+    num_examples_per_class = 5 if config["split"] == "train" else 3
     classes = ("00000", "00042", "00012")
     num_examples = num_examples_per_class * len(classes)
 
