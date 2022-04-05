@@ -233,7 +233,7 @@ def main(args):
     if args.bias_weight_decay is not None:
         custom_keys_weight_decay.append(("bias", args.bias_weight_decay))
     if args.transformer_embedding_decay is not None:
-        for key in ["class_token", "position_embedding", "relative_position_bias"]:
+        for key in ["class_token", "position_embedding", "relative_position_bias_table"]:
             custom_keys_weight_decay.append((key, args.transformer_embedding_decay))
     parameters = utils.set_weight_decay(
         model,
