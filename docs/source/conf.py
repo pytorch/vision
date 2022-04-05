@@ -292,5 +292,33 @@ def inject_minigalleries(app, what, name, obj, options, lines):
         lines.append("\n")
 
 
+def generate_table():
+
+    import torchvision.models as M
+    from tabulate import tabulate
+    import textwrap
+
+    # TODO: this is ugly af and incorrect. We'll need an automatic way to
+    # retrieve weight enums for each section, or manually list them.
+    weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("Weights")]
+    weights = [w for weight_enum in weight_enums for w in weight_enum if "acc@1" in w.meta]
+
+    column_names = [("Weight", "Acc@1", "Acc@5", "#Params", "Recipe")]
+    content = [
+        (str(w), w.meta["acc@1"], w.meta["acc@5"], f"{w.meta['num_params']:e}", f"`link <{w.meta['recipe']}>`__")
+        for w in weights
+    ]
+    table = tabulate(column_names + content, tablefmt="rst")
+    print(table)
+
+    with open("generated/classification_table.rst", "w") as table_file:
+        table_file.write(".. table::\n")
+        table_file.write("    :widths: 100 10 10 20 10\n\n")
+        table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
+
+
+
+generate_table()
+
 def setup(app):
     app.connect("autodoc-process-docstring", inject_minigalleries)
