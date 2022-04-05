@@ -27,6 +27,11 @@ from torchvision.transforms import InterpolationMode
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
+# FIXME: this is just for demo purposes
+from torchvision.prototype.transforms.functional import resize
+
+F.resize = resize
+
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize("fn", [F.get_image_size, F.get_image_num_channels, F.get_dimensions])

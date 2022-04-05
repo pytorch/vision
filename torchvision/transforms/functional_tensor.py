@@ -423,22 +423,9 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     return img
 
 
-def resize(
-    img: Tensor,
-    size: List[int],
-    interpolation: str = "bilinear",
-    max_size: Optional[int] = None,
-    antialias: Optional[bool] = None,
-) -> Tensor:
-    _assert_image_tensor(img)
-
+def _resize_parse_size(img, size: List[int], max_size: Optional[int]) -> Optional[Tuple[int, int]]:
     if not isinstance(size, (int, tuple, list)):
         raise TypeError("Got inappropriate size arg")
-    if not isinstance(interpolation, str):
-        raise TypeError("Got inappropriate interpolation arg")
-
-    if interpolation not in ["nearest", "bilinear", "bicubic"]:
-        raise ValueError("This interpolation mode is unsupported with Tensor input")
 
     if isinstance(size, tuple):
         size = list(size)
@@ -453,12 +440,6 @@ def resize(
                 "max_size should only be passed if size specifies the length of the smaller edge, "
                 "i.e. size should be an int or a sequence of length 1 in torchscript mode."
             )
-
-    if antialias is None:
-        antialias = False
-
-    if antialias and interpolation not in ["bilinear", "bicubic"]:
-        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
 
     _, h, w = get_dimensions(img)
 
@@ -479,11 +460,42 @@ def resize(
 
         new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
 
-        if (w, h) == (new_w, new_h):
-            return img
-
     else:  # specified both h and w
         new_w, new_h = size[1], size[0]
+
+    if (w, h) == (new_w, new_h):
+        return None
+    else:
+        return new_w, new_h
+
+
+def resize(
+    img: Tensor,
+    size: List[int],
+    interpolation: str = "bilinear",
+    max_size: Optional[int] = None,
+    antialias: Optional[bool] = None,
+) -> Tensor:
+    _assert_image_tensor(img)
+
+    size = _resize_parse_size(img, size, max_size)
+
+    if not isinstance(interpolation, str):
+        raise TypeError("Got inappropriate interpolation arg")
+
+    if interpolation not in ["nearest", "bilinear", "bicubic"]:
+        raise ValueError("This interpolation mode is unsupported with Tensor input")
+
+    if antialias is None:
+        antialias = False
+
+    if antialias and interpolation not in ["bilinear", "bicubic"]:
+        raise ValueError("Antialias option is supported for bilinear and bicubic interpolation modes only")
+
+    if size is None:
+        return img
+
+    new_w, new_h = size
 
     img, need_cast, need_squeeze, out_dtype = _cast_squeeze_in(img, [torch.float32, torch.float64])
 

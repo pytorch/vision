@@ -81,3 +81,5 @@ from ._type_conversion import (
     to_image_tensor,
     to_image_pil,
 )
+
+from ._deprecated import resize  # usort: skip
