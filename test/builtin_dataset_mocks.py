@@ -798,10 +798,23 @@ class VOCMockData:
         return num_samples_map
 
 
-# @register_mock
-def voc(info, root, config):
-    trainval = config.split != "test"
-    return VOCMockData.generate(root, year=config.year, trainval=trainval)[config.split]
+@register_mock(
+    configs=[
+        *combinations_grid(
+            split=("train", "val", "trainval"),
+            year=("2007", "2008", "2009", "2010", "2011", "2012"),
+            task=("detection", "segmentation"),
+        ),
+        *combinations_grid(
+            split=("test",),
+            year=("2007",),
+            task=("detection", "segmentation"),
+        ),
+    ],
+)
+def voc(root, config):
+    trainval = config["split"] != "test"
+    return VOCMockData.generate(root, year=config["year"], trainval=trainval)[config["split"]]
 
 
 class CelebAMockData:
