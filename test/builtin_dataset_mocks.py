@@ -695,22 +695,8 @@ def semeion(info, root, config):
     return num_samples
 
 
-@register_mock(
-    configs=[
-        *combinations_grid(
-            split=("train", "val", "trainval"),
-            year=("2007", "2008", "2009", "2010", "2011", "2012"),
-            task=("detection", "segmentation"),
-        ),
-        *combinations_grid(
-            split=("test",),
-            year=("2007",),
-            task=("detection", "segmentation"),
-        ),
-    ],
-)
-def voc(root, options):
-    TRAIN_VAL_FILE_NAMES = {
+class VOCMockData:
+    _TRAIN_VAL_FILE_NAMES = {
         "2007": "VOCtrainval_06-Nov-2007.tar",
         "2008": "VOCtrainval_14-Jul-2008.tar",
         "2009": "VOCtrainval_11-May-2009.tar",
@@ -718,11 +704,12 @@ def voc(root, options):
         "2011": "VOCtrainval_25-May-2011.tar",
         "2012": "VOCtrainval_11-May-2012.tar",
     }
-    TEST_FILE_NAMES = {
+    _TEST_FILE_NAMES = {
         "2007": "VOCtest_06-Nov-2007.tar",
     }
 
-    def make_split_files(root, *, year, trainval):
+    @classmethod
+    def _make_split_files(cls, root, *, year, trainval):
         split_folder = root / "ImageSets"
 
         if trainval:
@@ -746,14 +733,16 @@ def voc(root, options):
 
         return sorted(set(itertools.chain(*ids_map.values()))), {split: len(ids) for split, ids in ids_map.items()}
 
-    def make_detection_anns_folder(root, name, *, file_name_fn, num_examples):
+    @classmethod
+    def _make_detection_anns_folder(cls, root, name, *, file_name_fn, num_examples):
         folder = root / name
         folder.mkdir(parents=True, exist_ok=True)
 
         for idx in range(num_examples):
-            make_detection_ann_file(folder, file_name_fn(idx))
+            cls._make_detection_ann_file(folder, file_name_fn(idx))
 
-    def make_detection_ann_file(root, name):
+    @classmethod
+    def _make_detection_ann_file(cls, root, name):
         def add_child(parent, name, text=None):
             child = ET.SubElement(parent, name)
             child.text = str(text)
@@ -783,25 +772,43 @@ def voc(root, options):
         with open(root / name, "wb") as fh:
             fh.write(ET.tostring(annotation))
 
-    year = options["year"]
-    trainval = options["split"] != "test"
+    @classmethod
+    def generate(cls, root, *, year, trainval):
+        archive_folder = root
+        if year == "2011":
+            archive_folder /= "TrainVal"
+        data_folder = archive_folder / "VOCdevkit" / f"VOC{year}"
+        data_folder.mkdir(parents=True, exist_ok=True)
 
-    archive_folder = root
-    if year == "2011":
-        archive_folder /= "TrainVal"
-    data_folder = archive_folder / "VOCdevkit" / f"VOC{year}"
-    data_folder.mkdir(parents=True, exist_ok=True)
+        ids, num_samples_map = cls._make_split_files(data_folder, year=year, trainval=trainval)
+        for make_folder_fn, name, suffix in [
+            (create_image_folder, "JPEGImages", ".jpg"),
+            (create_image_folder, "SegmentationClass", ".png"),
+            (cls._make_detection_anns_folder, "Annotations", ".xml"),
+        ]:
+            make_folder_fn(data_folder, name, file_name_fn=lambda idx: ids[idx] + suffix, num_examples=len(ids))
+        make_tar(root, (cls._TRAIN_VAL_FILE_NAMES if trainval else cls._TEST_FILE_NAMES)[year], data_folder)
 
-    ids, num_samples_map = make_split_files(data_folder, year=year, trainval=trainval)
-    for make_folder_fn, name, suffix in [
-        (create_image_folder, "JPEGImages", ".jpg"),
-        (create_image_folder, "SegmentationClass", ".png"),
-        (make_detection_anns_folder, "Annotations", ".xml"),
-    ]:
-        make_folder_fn(data_folder, name, file_name_fn=lambda idx: ids[idx] + suffix, num_examples=len(ids))
-    make_tar(root, (TRAIN_VAL_FILE_NAMES if trainval else TEST_FILE_NAMES)[year], data_folder)
+        return num_samples_map
 
-    return num_samples_map[options["split"]]
+
+@register_mock(
+    configs=[
+        *combinations_grid(
+            split=("train", "val", "trainval"),
+            year=("2007", "2008", "2009", "2010", "2011", "2012"),
+            task=("detection", "segmentation"),
+        ),
+        *combinations_grid(
+            split=("test",),
+            year=("2007",),
+            task=("detection", "segmentation"),
+        ),
+    ],
+)
+def voc(root, config):
+    trainval = config["split"] != "test"
+    return VOCMockData.generate(root, year=config["year"], trainval=trainval)[config["split"]]
 
 
 class CelebAMockData:
