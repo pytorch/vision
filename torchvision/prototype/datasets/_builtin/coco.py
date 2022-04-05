@@ -68,7 +68,7 @@ class Coco(Dataset2):
 
         info = _info()
         categories, super_categories = info["categories"], info["super_categories"]
-        self._categories: List[str] = categories
+        self._categories = categories
         self._category_to_super_category = dict(zip(categories, super_categories))
 
         super().__init__(root, dependencies=("pycocotools",), **kwargs)
