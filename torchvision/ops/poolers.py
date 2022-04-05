@@ -104,7 +104,6 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
         approx_scale = float(s1) / float(s2)
         scale = 2 ** float(torch.tensor(approx_scale).log2().round())
         possible_scales.append(scale)
-    assert possible_scales[0] == possible_scales[1]
     return possible_scales[0]
 
 
@@ -112,7 +111,8 @@ def _infer_scale(feature: Tensor, original_size: List[int]) -> float:
 def _setup_scales(
     features: List[Tensor], image_shapes: List[Tuple[int, int]], canonical_scale: int, canonical_level: int
 ) -> Tuple[List[float], LevelMapper]:
-    assert len(image_shapes) != 0
+    if not image_shapes:
+        raise ValueError("images list should not be empty")
     max_x = 0
     max_y = 0
     for shape in image_shapes:
@@ -166,8 +166,8 @@ def _multiscale_roi_align(
     Returns:
         result (Tensor)
     """
-    assert scales is not None
-    assert mapper is not None
+    if scales is None or mapper is None:
+        raise ValueError("scales and mapper should not be None")
 
     num_levels = len(x_filtered)
     rois = _convert_to_roi_format(boxes)

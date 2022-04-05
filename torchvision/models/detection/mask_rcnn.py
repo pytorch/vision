@@ -191,7 +191,10 @@ class MaskRCNN(FasterRCNN):
         mask_predictor=None,
     ):
 
-        assert isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None)))
+        if not isinstance(mask_roi_pool, (MultiScaleRoIAlign, type(None))):
+            raise TypeError(
+                f"mask_roi_pool should be of type MultiScaleRoIAlign or None instead of {type(mask_roi_pool)}"
+            )
 
         if num_classes is not None:
             if mask_predictor is not None:
