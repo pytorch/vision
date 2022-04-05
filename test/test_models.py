@@ -280,6 +280,10 @@ _model_params = {
         "rpn_pre_nms_top_n_test": 1000,
         "rpn_post_nms_top_n_test": 1000,
     },
+    "vit_h_14": {
+        "image_size": 56,
+        "input_shape": (1, 3, 56, 56),
+    },
 }
 # speeding up slow models:
 slow_models = [
