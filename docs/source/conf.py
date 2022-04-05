@@ -311,7 +311,10 @@ def generate_table():
     table = tabulate(content, headers=column_names, tablefmt="rst")
     print(table)
 
-    with open("generated/classification_table.rst", "w") as table_file:
+    from pathlib import Path
+    generated_dir = Path("generated")
+    generated_dir.mkdir(exist_ok=True)
+    with open(generated_dir / "classification_table.rst", "w+") as table_file:
         table_file.write(".. table::\n")
         table_file.write("    :widths: 100 10 10 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
