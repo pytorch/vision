@@ -1,4 +1,5 @@
 import numbers
+import warnings
 from typing import Tuple, List, Optional, Sequence, Union
 
 import PIL.Image
@@ -197,23 +198,27 @@ def affine_image_pil(
     return _FP.affine(img, matrix, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
-def affine_bounding_box(
+def _affine_bounding_box_xyxy(
     bounding_box: torch.Tensor,
-    format: features.BoundingBoxFormat,
     image_size: Tuple[int, int],
     angle: float,
-    translate: List[float],
-    scale: float,
-    shear: List[float],
+    translate: Optional[List[float]] = None,
+    scale: Optional[float] = None,
+    shear: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
+    expand: bool = False,
 ) -> torch.Tensor:
-    original_shape = bounding_box.shape
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    ).view(-1, 4)
-
     dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
     device = bounding_box.device
+
+    if translate is None:
+        translate = [0.0, 0.0]
+
+    if scale is None:
+        scale = 1.0
+
+    if shear is None:
+        shear = [0.0, 0.0]
 
     if center is None:
         height, width = image_size
@@ -241,6 +246,47 @@ def affine_bounding_box(
     out_bbox_mins, _ = torch.min(transformed_points, dim=1)
     out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
     out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
+
+    if expand:
+        # Compute minimum point for transformed image frame:
+        # Points are Top-Left, Top-Right, Bottom-Left, Bottom-Right points.
+        height, width = image_size
+        points = torch.tensor(
+            [
+                [0.0, 0.0, 1.0],
+                [0.0, 1.0 * height, 1.0],
+                [1.0 * width, 1.0 * height, 1.0],
+                [1.0 * width, 0.0, 1.0],
+            ],
+            dtype=dtype,
+            device=device,
+        )
+        new_points = torch.matmul(points, affine_matrix.T)
+        tr, _ = torch.min(new_points, dim=0, keepdim=True)
+        # Translate bounding boxes
+        out_bboxes[:, 0::2] = out_bboxes[:, 0::2] - tr[:, 0]
+        out_bboxes[:, 1::2] = out_bboxes[:, 1::2] - tr[:, 1]
+
+    return out_bboxes
+
+
+def affine_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    image_size: Tuple[int, int],
+    angle: float,
+    translate: List[float],
+    scale: float,
+    shear: List[float],
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    original_shape = bounding_box.shape
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle, translate, scale, shear, center)
+
     # out_bboxes should be of shape [N boxes, 4]
 
     return convert_bounding_box_format(
@@ -258,9 +304,12 @@ def rotate_image_tensor(
 ) -> torch.Tensor:
     center_f = [0.0, 0.0]
     if center is not None:
-        _, height, width = get_dimensions_image_tensor(img)
-        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+        if expand:
+            warnings.warn("The provided center argument is ignored if expand is True")
+        else:
+            _, height, width = get_dimensions_image_tensor(img)
+            # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+            center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
@@ -276,9 +325,33 @@ def rotate_image_pil(
     fill: Optional[List[float]] = None,
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
+    if center is not None and expand:
+        warnings.warn("The provided center argument is ignored if expand is True")
+        center = None
+
     return _FP.rotate(
         img, angle, interpolation=pil_modes_mapping[interpolation], expand=expand, fill=fill, center=center
     )
+
+
+def rotate_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    image_size: Tuple[int, int],
+    angle: float,
+    expand: bool = False,
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    original_shape = bounding_box.shape
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    out_bboxes = _affine_bounding_box_xyxy(bounding_box, image_size, angle=-angle, center=center, expand=expand)
+
+    return convert_bounding_box_format(
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(original_shape)
 
 
 pad_image_tensor = _FT.pad
