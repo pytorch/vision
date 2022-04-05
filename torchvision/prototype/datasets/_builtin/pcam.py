@@ -60,9 +60,9 @@ class PCAM(Dataset2):
     homepage="https://github.com/basveeling/pcam"
     """
 
-    def __init__(self, root: Union[str, pathlib.Path], *, split: str = "train") -> None:
+    def __init__(self, root: Union[str, pathlib.Path], split: str = "train", *, skip_integrity_check: bool = False) -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "val", "test"})
-        super().__init__(root)
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
 
     _RESOURCES = {
         "train": (
