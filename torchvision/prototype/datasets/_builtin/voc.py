@@ -50,7 +50,7 @@ class VOC(Dataset2):
         split: str = "train",
         year: str = "2012",
         task: str = "detection",
-        **kwargs: Any,
+        skip_integrity_check: bool = False,
     ) -> None:
         self._year = self._verify_str_arg(year, "year", ("2007", "2008", "2009", "2010", "2011", "2012"))
         if split == "test" and year != "2007":
@@ -64,7 +64,7 @@ class VOC(Dataset2):
 
         self._categories = _info()["categories"]
 
-        super().__init__(root, **kwargs)
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
 
     _TRAIN_VAL_ARCHIVES = {
         "2007": ("VOCtrainval_06-Nov-2007.tar", "7d8cd951101b0957ddfd7a530bdc8a94f06121cfc1e511bb5937e973020c7508"),

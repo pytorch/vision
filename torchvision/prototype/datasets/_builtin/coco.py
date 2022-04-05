@@ -57,7 +57,7 @@ class Coco(Dataset2):
         split: str = "train",
         year: str = "2017",
         annotations: Optional[str] = "instances",
-        **kwargs: Any,
+        skip_integrity_check: bool = False,
     ) -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "val"})
         self._year = self._verify_str_arg(year, "year", {"2017", "2014"})
@@ -72,7 +72,7 @@ class Coco(Dataset2):
         self._categories = categories
         self._category_to_super_category = dict(zip(categories, super_categories))
 
-        super().__init__(root, dependencies=("pycocotools",), **kwargs)
+        super().__init__(root, dependencies=("pycocotools",), skip_integrity_check=skip_integrity_check)
 
     _IMAGE_URL_BASE = "http://images.cocodataset.org/zips"
 
