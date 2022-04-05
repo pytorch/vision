@@ -379,12 +379,15 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             np.max(transformed_points[:, 1]),
         ]
         out_bbox = features.BoundingBox(
-            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=bbox.image_size, dtype=torch.float32
+            out_bbox,
+            format=features.BoundingBoxFormat.XYXY,
+            image_size=bbox.image_size,
+            dtype=torch.float32,
+            device=bbox.device,
         )
-        out_bbox = convert_bounding_box_format(
+        return convert_bounding_box_format(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
-        return out_bbox.to(bbox.device)
 
     image_size = (32, 38)
 
@@ -439,8 +442,8 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         [1, 1, 5, 5],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
-    ).to(device)
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+    )
     # Tested parameters
     angle = 63
     scale = 0.89
@@ -473,9 +476,7 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         shear=(0, 0),
     )
 
-    assert len(output_boxes) == len(expected_bboxes)
-    for a_out_box, out_box in zip(expected_bboxes, output_boxes.cpu()):
-        np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)
+    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
 
 
 @pytest.mark.parametrize("angle", [-54, 56])
@@ -589,12 +590,15 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             out_bbox[3] -= tr_y
 
         out_bbox = features.BoundingBox(
-            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float32
+            out_bbox,
+            format=features.BoundingBoxFormat.XYXY,
+            image_size=image_size,
+            dtype=torch.float32,
+            device=bbox.device,
         )
-        out_bbox = convert_bounding_box_format(
+        return convert_bounding_box_format(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
-        return out_bbox.to(bbox.device)
 
     image_size = (32, 38)
 
@@ -630,9 +634,6 @@ def test_correctness_rotate_bounding_box(angle, expand, center):
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
-        print("input:", bboxes)
-        print("output_bboxes:", output_bboxes)
-        print("expected_bboxes:", expected_bboxes)
         torch.testing.assert_close(output_bboxes, expected_bboxes)
 
 
@@ -649,8 +650,8 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
         [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
-    ).to(device)
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+    )
     # Tested parameters
     angle = 45
     center = None if expand else [12, 23]
@@ -687,6 +688,4 @@ def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
         center=center,
     )
 
-    assert len(output_boxes) == len(expected_bboxes)
-    for a_out_box, out_box in zip(expected_bboxes, output_boxes.cpu()):
-        np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)
+    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
