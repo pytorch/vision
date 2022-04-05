@@ -182,8 +182,7 @@ class ImageNet(Dataset):
             dp = IterKeyZipper(
                 label_dp,
                 images_dp,
-                key_fn=getitem(0),
-                ref_key_fn=self._val_test_image_key,
+                key_fns=[getitem(0), self._val_test_image_key],
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
             dp = Mapper(dp, self._prepare_val_data)

@@ -113,7 +113,8 @@ class CelebA(Dataset):
     def _prepare_sample(
         self,
         data: Tuple[
-            Tuple[str, Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]],
+            Tuple[str, Dict[str, str]],
+            Tuple[str, BinaryIO],
             Tuple[
                 Tuple[str, Dict[str, str]],
                 Tuple[str, Dict[str, str]],
@@ -122,12 +123,9 @@ class CelebA(Dataset):
             ],
         ],
     ) -> Dict[str, Any]:
-        split_and_image_data, ann_data = data
-        _, (_, image_data) = split_and_image_data
-        path, buffer = image_data
+        _, (path, buffer), ((_, identity), (_, attributes), (_, bounding_box), (_, landmarks)) = data
 
         image = EncodedImage.from_file(buffer)
-        (_, identity), (_, attributes), (_, bounding_box), (_, landmarks) = ann_data
 
         return dict(
             path=path,
@@ -173,16 +171,8 @@ class CelebA(Dataset):
         dp = IterKeyZipper(
             splits_dp,
             images_dp,
-            key_fn=getitem(0),
-            ref_key_fn=path_accessor("name"),
-            buffer_size=INFINITE_BUFFER_SIZE,
-            keep_key=True,
-        )
-        dp = IterKeyZipper(
-            dp,
             anns_dp,
-            key_fn=getitem(0),
-            ref_key_fn=getitem(0, 0),
+            key_fns=[getitem(0), path_accessor("name"), getitem(0, 0)],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, self._prepare_sample)

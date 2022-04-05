@@ -62,13 +62,9 @@ class DTD(Dataset):
         # The split files contain hardcoded posix paths for the images, e.g. banded/banded_0001.jpg
         return str(path.relative_to(path.parents[1]).as_posix())
 
-    def _prepare_sample(self, data: Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
-        (_, joint_categories_data), image_data = data
-        _, *joint_categories = joint_categories_data
-        path, buffer = image_data
-
-        category = pathlib.Path(path).parent.name
-
+    def _prepare_sample(self, data: Tuple[str, List[str], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
+        id, (_, *joint_categories), (path, buffer) = data
+        category = id.split("/", 1)[0]
         return dict(
             joint_categories={category for category in joint_categories if category},
             label=Label.from_category(category, categories=self.categories),
@@ -98,15 +94,8 @@ class DTD(Dataset):
         dp = IterKeyZipper(
             splits_dp,
             joint_categories_dp,
-            key_fn=getitem(),
-            ref_key_fn=getitem(0),
-            buffer_size=INFINITE_BUFFER_SIZE,
-        )
-        dp = IterKeyZipper(
-            dp,
             images_dp,
-            key_fn=getitem(0),
-            ref_key_fn=self._image_key_fn,
+            key_fns=[getitem(), getitem(0), self._image_key_fn],
             buffer_size=INFINITE_BUFFER_SIZE,
         )
         return Mapper(dp, self._prepare_sample)

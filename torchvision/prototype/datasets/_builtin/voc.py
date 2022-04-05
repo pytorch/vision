@@ -120,14 +120,11 @@ class VOC(Dataset):
 
     def _prepare_sample(
         self,
-        data: Tuple[Tuple[Tuple[str, str], Tuple[str, BinaryIO]], Tuple[str, BinaryIO]],
+        data: Tuple[str, Tuple[str, BinaryIO], Tuple[str, BinaryIO]],
         *,
         prepare_ann_fn: Callable[[BinaryIO], Dict[str, Any]],
     ) -> Dict[str, Any]:
-        split_and_image_data, ann_data = data
-        _, image_data = split_and_image_data
-        image_path, image_buffer = image_data
-        ann_path, ann_buffer = ann_data
+        _, (image_path, image_buffer), (ann_path, ann_buffer) = data
 
         return dict(
             prepare_ann_fn(ann_buffer),
@@ -153,19 +150,17 @@ class VOC(Dataset):
 
         split_dp = Filter(split_dp, functools.partial(self._is_in_folder, name=self._SPLIT_FOLDER[config.task]))
         split_dp = Filter(split_dp, path_comparator("name", f"{config.split}.txt"))
-        split_dp = LineReader(split_dp, decode=True)
+        split_dp = LineReader(split_dp, decode=True, return_path=False)
         split_dp = hint_shuffling(split_dp)
         split_dp = hint_sharding(split_dp)
 
-        dp = split_dp
-        for level, data_dp in enumerate((images_dp, anns_dp)):
-            dp = IterKeyZipper(
-                dp,
-                data_dp,
-                key_fn=getitem(*[0] * level, 1),
-                ref_key_fn=path_accessor("stem"),
-                buffer_size=INFINITE_BUFFER_SIZE,
-            )
+        dp = IterKeyZipper(
+            split_dp,
+            images_dp,
+            anns_dp,
+            key_fns=[getitem(), path_accessor("stem"), path_accessor("stem")],
+            buffer_size=INFINITE_BUFFER_SIZE,
+        )
         return Mapper(
             dp,
             functools.partial(
