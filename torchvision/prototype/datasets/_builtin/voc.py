@@ -33,7 +33,7 @@ CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.ca
 
 
 @register_info(NAME)
-def info() -> Dict[str, Any]:
+def _info() -> Dict[str, Any]:
     return dict(categories=CATEGORIES)
 
 
@@ -55,6 +55,8 @@ class VOC(Dataset2):
             self._split = self._verify_str_arg(split, "split", ("train", "val", "trainval", "test"))
         self._task = self._verify_str_arg(task, "task", ("detection", "segmentation"))
 
+        self._categories: List[str] = _info()["categories"]
+
         super().__init__(root, **kwargs)
 
     _TRAIN_VAL_ARCHIVES = {
@@ -71,7 +73,8 @@ class VOC(Dataset2):
 
     def _resources(self) -> List[OnlineResource]:
         file_name, sha256 = (self._TEST_ARCHIVES if self._split == "test" else self._TRAIN_VAL_ARCHIVES)[self._year]
-        return [HttpResource(f"http://host.robots.ox.ac.uk/pascal/VOC/voc{self._year}/{file_name}", sha256=sha256)]
+        archive = HttpResource(f"http://host.robots.ox.ac.uk/pascal/VOC/voc{self._year}/{file_name}", sha256=sha256)
+        return [archive]
 
     @property
     def _anns_folder(self) -> str:
@@ -115,7 +118,9 @@ class VOC(Dataset2):
                 format="xyxy",
                 image_size=cast(Tuple[int, int], tuple(int(anns["size"][dim]) for dim in ("height", "width"))),
             ),
-            labels=Label([CATEGORIES.index(instance["name"]) for instance in instances], categories=CATEGORIES),
+            labels=Label(
+                [self._categories.index(instance["name"]) for instance in instances], categories=self._categories
+            ),
         )
 
     def _prepare_segmentation_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
@@ -138,8 +143,9 @@ class VOC(Dataset2):
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
+        archive_dp = resource_dps[0]
         split_dp, images_dp, anns_dp = Demultiplexer(
-            resource_dps[0],
+            archive_dp,
             3,
             self._classify_archive,
             drop_none=True,
