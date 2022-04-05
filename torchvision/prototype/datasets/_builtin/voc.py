@@ -39,6 +39,10 @@ def _info() -> Dict[str, Any]:
 
 @register_dataset(NAME)
 class VOC(Dataset2):
+    """
+    - **homepage**: http://host.robots.ox.ac.uk/pascal/VOC/
+    """
+
     def __init__(
         self,
         root: Union[str, pathlib.Path],
