@@ -40,6 +40,7 @@ def _info() -> Dict[str, Any]:
 class StanfordCars(Dataset2):
     """Stanford Cars dataset.
     homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
+    dependencies=scipy
     """
 
     def __init__(
@@ -105,7 +106,7 @@ class StanfordCars(Dataset2):
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self) -> List[str]:
-        resources = self.resources()
+        resources = self._resources()
 
         devkit_dp = resources[1].load(self._root)
         meta_dp = Filter(devkit_dp, path_comparator("name", "cars_meta.mat"))
