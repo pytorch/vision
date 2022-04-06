@@ -41,8 +41,8 @@ def _info() -> Dict[str, Any]:
 @register_dataset(NAME)
 class DTD(Dataset2):
     """DTD Dataset.
-    homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
-    """
+        homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
+        """
 
     def __init__(
         self,
