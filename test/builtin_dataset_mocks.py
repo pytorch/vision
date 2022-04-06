@@ -1013,13 +1013,14 @@ def dtd(info, root, config):
     return num_samples_map[config]
 
 
-# @register_mock
-def fer2013(info, root, config):
-    num_samples = 5 if config.split == "train" else 3
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def fer2013(root, config):
+    split = config["split"]
+    num_samples = 5 if split == "train" else 3
 
-    path = root / f"{config.split}.csv"
+    path = root / f"{split}.csv"
     with open(path, "w", newline="") as file:
-        field_names = ["emotion"] if config.split == "train" else []
+        field_names = ["emotion"] if split == "train" else []
         field_names.append("pixels")
 
         file.write(",".join(field_names) + "\n")
@@ -1029,7 +1030,7 @@ def fer2013(info, root, config):
             rowdict = {
                 "pixels": " ".join([str(int(pixel)) for pixel in torch.randint(256, (48 * 48,), dtype=torch.uint8)])
             }
-            if config.split == "train":
+            if split == "train":
                 rowdict["emotion"] = int(torch.randint(7, ()))
             writer.writerow(rowdict)
 
