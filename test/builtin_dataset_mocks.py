@@ -695,9 +695,9 @@ class SBDMockData:
         return num_samples_map
 
 
-# @register_mock
-def sbd(info, root, config):
-    return SBDMockData.generate(root)[config.split]
+@register_mock(configs=combinations_grid(split=("train", "val", "train_noval")))
+def sbd(root, config):
+    return SBDMockData.generate(root)[config["split"]]
 
 
 @register_mock(configs=[dict()])
