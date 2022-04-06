@@ -121,7 +121,7 @@ class SBD(Dataset):
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self, root: pathlib.Path) -> Tuple[str, ...]:
-        resources = self.resources(self.default_config)
+        resources = self._resources(self.default_config)
 
         dp = resources[0].load(root)
         dp = Filter(dp, path_comparator("name", "category_names.m"))

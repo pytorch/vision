@@ -73,6 +73,6 @@ class Country211(Dataset2):
         }[self._split]
 
     def _generate_categories(self) -> List[str]:
-        resources = self.resources()
-        dp = resources[0].load(self.root)
+        resources = self._resources()
+        dp = resources[0].load(self._root)
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})

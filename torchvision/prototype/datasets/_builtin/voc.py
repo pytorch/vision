@@ -218,7 +218,7 @@ class VOC(Dataset2):
         resources = self._resources()
 
         archive_dp = resources[0].load(self._root)
-        dp = Filter(archive_dp, self._filter_detection_anns)
+        dp = Filter(archive_dp, self._filter_anns)
         dp = Mapper(dp, self._parse_detection_ann, input_col=1)
 
         return sorted({instance["name"] for _, anns in dp for instance in anns["object"]})

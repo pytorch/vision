@@ -41,8 +41,9 @@ def _info() -> Dict[str, Any]:
 @register_dataset(NAME)
 class DTD(Dataset2):
     """DTD Dataset.
-        homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
+    homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
     """
+
     def __init__(
         self,
         root: Union[str, pathlib.Path],
@@ -134,7 +135,7 @@ class DTD(Dataset2):
         return self._classify_archive(data) == DTDDemux.IMAGES
 
     def _generate_categories(self) -> List[str]:
-        resources = self.resources()
+        resources = self._resources()
 
         dp = resources[0].load(self._root)
         dp = Filter(dp, self._filter_images)
