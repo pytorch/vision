@@ -92,6 +92,7 @@ You can construct a model with random weights by calling its constructor:
     vit_b_32 = models.vit_b_32()
     vit_l_16 = models.vit_l_16()
     vit_l_32 = models.vit_l_32()
+    vit_h_14 = models.vit_h_14()
     convnext_tiny = models.convnext_tiny()
     convnext_small = models.convnext_small()
     convnext_base = models.convnext_base()
@@ -213,6 +214,7 @@ vit_b_16                          81.072          95.318
 vit_b_32                          75.912          92.466
 vit_l_16                          79.662          94.638
 vit_l_32                          76.972          93.070
+vit_h_14                          88.552          98.694 
 convnext_tiny                     82.520          96.146
 convnext_small                    83.616          96.650
 convnext_base                     84.062          96.870
@@ -434,6 +436,7 @@ VisionTransformer
     vit_b_32
     vit_l_16
     vit_l_32
+    vit_h_14
 
 ConvNeXt
 --------

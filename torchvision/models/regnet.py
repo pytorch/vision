@@ -629,8 +629,19 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
 
 
 class RegNet_Y_128GF_Weights(WeightsEnum):
-    # weights are not available yet.
-    pass
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_128gf_swag-c8ce3e52.pth",
+        transforms=partial(
+            ImageClassification, crop_size=384, resize_size=384, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 644812894,
+            "acc@1": 88.228,
+            "acc@5": 98.682,
+        },
+    )
+    DEFAULT = IMAGENET1K_SWAG_V1
 
 
 class RegNet_X_400MF_Weights(WeightsEnum):
