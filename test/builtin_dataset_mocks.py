@@ -334,8 +334,8 @@ class CIFARMockData:
         make_tar(root, name, folder, compression="gz")
 
 
-# @register_mock
-def cifar10(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def cifar10(root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
 
@@ -349,11 +349,11 @@ def cifar10(info, root, config):
         labels_key="labels",
     )
 
-    return len(train_files if config.split == "train" else test_files)
+    return len(train_files if config["split"] == "train" else test_files)
 
 
-# @register_mock
-def cifar100(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def cifar100(root, config):
     train_files = ["train"]
     test_files = ["test"]
 
@@ -367,7 +367,7 @@ def cifar100(info, root, config):
         labels_key="fine_labels",
     )
 
-    return len(train_files if config.split == "train" else test_files)
+    return len(train_files if config["split"] == "train" else test_files)
 
 
 # @register_mock
@@ -600,9 +600,15 @@ class CocoMockData:
         return num_samples
 
 
-# @register_mock
-def coco(info, root, config):
-    return CocoMockData.generate(root, year=config.year, num_samples=5)
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "val"),
+        year=("2017", "2014"),
+        annotations=("instances", "captions", None),
+    )
+)
+def coco(root, config):
+    return CocoMockData.generate(root, year=config["year"], num_samples=5)
 
 
 class SBDMockData:
@@ -792,10 +798,23 @@ class VOCMockData:
         return num_samples_map
 
 
-# @register_mock
-def voc(info, root, config):
-    trainval = config.split != "test"
-    return VOCMockData.generate(root, year=config.year, trainval=trainval)[config.split]
+@register_mock(
+    configs=[
+        *combinations_grid(
+            split=("train", "val", "trainval"),
+            year=("2007", "2008", "2009", "2010", "2011", "2012"),
+            task=("detection", "segmentation"),
+        ),
+        *combinations_grid(
+            split=("test",),
+            year=("2007",),
+            task=("detection", "segmentation"),
+        ),
+    ],
+)
+def voc(root, config):
+    trainval = config["split"] != "test"
+    return VOCMockData.generate(root, year=config["year"], trainval=trainval)[config["split"]]
 
 
 class CelebAMockData:
@@ -891,14 +910,9 @@ def celeba(info, root, config):
     return CelebAMockData.generate(root)[config.split]
 
 
-# @register_mock
-def country211(info, root, config):
-    split_name_mapper = {
-        "train": "train",
-        "val": "valid",
-        "test": "test",
-    }
-    split_folder = pathlib.Path(root, "country211", split_name_mapper[config["split"]])
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def country211(root, config):
+    split_folder = pathlib.Path(root, "country211", "valid" if config["split"] == "val" else config["split"])
     split_folder.mkdir(parents=True, exist_ok=True)
 
     num_examples = {
@@ -1100,8 +1114,8 @@ def gtsrb(root, config):
     return num_examples
 
 
-# @register_mock
-def clevr(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def clevr(root, config):
     data_folder = root / "CLEVR_v1.0"
 
     num_samples_map = {
@@ -1142,7 +1156,7 @@ def clevr(info, root, config):
 
     make_zip(root, f"{data_folder.name}.zip", data_folder)
 
-    return num_samples_map[config.split]
+    return num_samples_map[config["split"]]
 
 
 class OxfordIIITPetMockData:
@@ -1416,13 +1430,13 @@ def svhn(info, root, config):
     return num_samples
 
 
-# @register_mock
-def pcam(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def pcam(root, config):
     import h5py
 
-    num_images = {"train": 2, "test": 3, "val": 4}[config.split]
+    num_images = {"train": 2, "test": 3, "val": 4}[config["split"]]
 
-    split = "valid" if config.split == "val" else config.split
+    split = "valid" if config["split"] == "val" else config["split"]
 
     images_io = io.BytesIO()
     with h5py.File(images_io, "w") as f:
