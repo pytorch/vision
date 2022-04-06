@@ -130,5 +130,5 @@ class PCAM(Dataset):
         dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return 262_144 if self._split == "train" else 32_768

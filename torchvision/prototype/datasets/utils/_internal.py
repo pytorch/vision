@@ -202,7 +202,7 @@ def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
     return Shuffler(datapipe, buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False)
 
 
-def read_categories_file(name: str) -> List[List[str]]:
+def read_categories_file(name: str) -> List[Union[str, Sequence[str]]]:
     path = BUILTIN_DIR / f"{name}.categories"
     with open(path, newline="") as file:
         rows = list(csv.reader(file))
