@@ -1108,8 +1108,8 @@ def gtsrb(info, root, config):
     return num_examples
 
 
-# @register_mock
-def clevr(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def clevr(root, config):
     data_folder = root / "CLEVR_v1.0"
 
     num_samples_map = {
@@ -1150,7 +1150,7 @@ def clevr(info, root, config):
 
     make_zip(root, f"{data_folder.name}.zip", data_folder)
 
-    return num_samples_map[config.split]
+    return num_samples_map[config["split"]]
 
 
 class OxfordIIITPetMockData:
