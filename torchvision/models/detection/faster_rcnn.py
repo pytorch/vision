@@ -399,7 +399,7 @@ class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 43712278,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/pull/5763",
             "map": 46.7,
         },
     )
