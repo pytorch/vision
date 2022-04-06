@@ -672,17 +672,22 @@ class RetinaNet(nn.Module):
         return self.eager_outputs(losses, detections)
 
 
+_COMMON_META = {
+    "task": "image_object_detection",
+    "architecture": "RetinaNet",
+    "publication_year": 2017,
+    "categories": _COCO_CATEGORIES,
+    "interpolation": InterpolationMode.BILINEAR,
+}
+
+
 class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
     COCO_V1 = Weights(
         url="https://download.pytorch.org/models/retinanet_resnet50_fpn_coco-eeacb38b.pth",
         transforms=ObjectDetection,
         meta={
-            "task": "image_object_detection",
-            "architecture": "RetinaNet",
-            "publication_year": 2017,
+            **_COMMON_META,
             "num_params": 34014999,
-            "categories": _COCO_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
             "map": 36.4,
         },
@@ -691,7 +696,17 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
 
 
 class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
-    pass
+    COCO_V1 = Weights(
+        url="",
+        transforms=ObjectDetection,
+        meta={
+            **_COMMON_META,
+            "num_params": 38198935,
+            "recipe": "",
+            "map": 41.5,
+        },
+    )
+    DEFAULT = COCO_V1
 
 
 @handle_legacy_interface(
