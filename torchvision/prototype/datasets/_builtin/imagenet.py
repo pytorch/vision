@@ -18,15 +18,14 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
     ManualDownloadResource,
     Dataset,
-    read_categories_file,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
-    BUILTIN_DIR,
     getitem,
     read_mat,
     hint_sharding,
     hint_shuffling,
+    read_categories_file,
     path_accessor,
 )
 from torchvision.prototype.features import Label, EncodedImage
@@ -38,7 +37,7 @@ NAME = "imagenet"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories, wnids = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+    categories, wnids = zip(*read_categories_file(NAME))
     return dict(categories=categories, wnids=wnids)
 
 

@@ -11,7 +11,7 @@ from torchdata.datapipes.iter import (
     IterKeyZipper,
     LineReader,
 )
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource, read_categories_file
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     read_mat,
@@ -20,7 +20,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     hint_sharding,
     hint_shuffling,
-    BUILTIN_DIR,
+    read_categories_file,
 )
 from torchvision.prototype.features import _Feature, EncodedImage
 
@@ -28,7 +28,7 @@ from .._api import register_dataset, register_info
 
 NAME = "sbd"
 
-CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+CATEGORIES, *_ = zip(*read_categories_file(NAME))
 
 
 @register_info(NAME)

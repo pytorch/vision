@@ -19,13 +19,12 @@ from torchvision.prototype.datasets.utils import (
     HttpResource,
     OnlineResource,
     Dataset,
-    read_categories_file,
 )
 from torchvision.prototype.datasets.utils._internal import (
     MappingIterator,
     INFINITE_BUFFER_SIZE,
-    BUILTIN_DIR,
     getitem,
+    read_categories_file,
     path_accessor,
     hint_sharding,
     hint_shuffling,
@@ -40,7 +39,7 @@ NAME = "coco"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories, super_categories = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+    categories, super_categories = zip(*read_categories_file(NAME))
     return dict(categories=categories, super_categories=super_categories)
 
 

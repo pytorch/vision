@@ -10,11 +10,6 @@ from torchvision.datasets.utils import verify_str_arg
 from ._resource import OnlineResource
 
 
-def read_categories_file(path: pathlib.Path) -> List[List[str]]:
-    with open(path, newline="") as file:
-        return [row for row in csv.reader(file)]
-
-
 class Dataset(IterDataPipe[Dict[str, Any]], abc.ABC):
     @staticmethod
     def _verify_str_arg(

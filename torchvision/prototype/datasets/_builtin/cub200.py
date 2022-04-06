@@ -17,7 +17,6 @@ from torchvision.prototype.datasets.utils import (
     Dataset,
     HttpResource,
     OnlineResource,
-    read_categories_file,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -26,8 +25,8 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
     getitem,
     path_comparator,
+    read_categories_file,
     path_accessor,
-    BUILTIN_DIR,
 )
 from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
@@ -38,7 +37,7 @@ csv.register_dialect("cub200", delimiter=" ")
 
 NAME = "cub200"
 
-CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+CATEGORIES, *_ = zip(*read_categories_file(NAME))
 
 
 @register_info(NAME)

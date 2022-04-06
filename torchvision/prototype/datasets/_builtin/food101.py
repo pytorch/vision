@@ -9,7 +9,7 @@ from torchdata.datapipes.iter import (
     Demultiplexer,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource, read_categories_file
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
     BUILTIN_DIR,
@@ -17,6 +17,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     getitem,
     INFINITE_BUFFER_SIZE,
+    read_categories_file,
 )
 from torchvision.prototype.features import Label, EncodedImage
 
@@ -28,9 +29,7 @@ NAME = "food101"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories = read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
-    categories = [c[0] for c in categories]
-    return dict(categories=categories)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)

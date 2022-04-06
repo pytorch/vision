@@ -2,15 +2,20 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource, read_categories_file
-from torchvision.prototype.datasets.utils._internal import path_comparator, hint_sharding, hint_shuffling, BUILTIN_DIR
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import (
+    path_comparator,
+    hint_sharding,
+    hint_shuffling,
+    read_categories_file,
+)
 from torchvision.prototype.features import EncodedImage, Label
 
 from .._api import register_dataset, register_info
 
 NAME = "country211"
 
-CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+CATEGORIES, *_ = zip(*read_categories_file(NAME))
 
 
 @register_info(NAME)
