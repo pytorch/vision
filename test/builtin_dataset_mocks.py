@@ -899,9 +899,9 @@ class CelebAMockData:
         return num_samples_map
 
 
-# @register_mock
-def celeba(info, root, config):
-    return CelebAMockData.generate(root)[config.split]
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def celeba(root, config):
+    return CelebAMockData.generate(root)[config["split"]]
 
 
 # @register_mock
