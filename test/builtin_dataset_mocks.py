@@ -1426,18 +1426,18 @@ def eurosat(root, config):
     return len(categories) * num_examples_per_class
 
 
-# @register_mock
-def svhn(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test", "extra")))
+def svhn(root, config):
     import scipy.io as sio
 
     num_samples = {
         "train": 2,
         "test": 3,
         "extra": 4,
-    }[config.split]
+    }[config["split"]]
 
     sio.savemat(
-        root / f"{config.split}_32x32.mat",
+        root / f"{config['split']}_32x32.mat",
         {
             "X": np.random.randint(256, size=(32, 32, 3, num_samples), dtype=np.uint8),
             "y": np.random.randint(10, size=(num_samples,), dtype=np.uint8),
