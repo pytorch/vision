@@ -14,7 +14,7 @@ from torchdata.datapipes.iter import (
     CSVDictParser,
 )
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
+    Dataset,
     DatasetInfo,
     HttpResource,
     OnlineResource,
@@ -47,7 +47,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class CUB200(Dataset2):
+class CUB200(Dataset):
     """
     - **homepage**: http://www.vision.caltech.edu/visipedia/CUB-200.html
     """

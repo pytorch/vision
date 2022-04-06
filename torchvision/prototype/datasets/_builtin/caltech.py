@@ -9,7 +9,7 @@ from torchdata.datapipes.iter import (
     Filter,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     read_mat,
@@ -31,7 +31,7 @@ def _caltech101_info() -> Dict[str, Any]:
 
 
 @register_dataset("caltech101")
-class Caltech101(Dataset2):
+class Caltech101(Dataset):
     """
     - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech101
     - **dependencies**:
@@ -161,7 +161,7 @@ def _caltech256_info() -> Dict[str, Any]:
 
 
 @register_dataset("caltech256")
-class Caltech256(Dataset2):
+class Caltech256(Dataset):
     """
     - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech256
     """

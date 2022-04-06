@@ -2,7 +2,7 @@ import pathlib
 from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, JsonParser, UnBatcher
-from torchvision.prototype.datasets.utils import Dataset2, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     hint_sharding,
@@ -24,7 +24,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class CLEVR(Dataset2):
+class CLEVR(Dataset):
     """
     - **homepage**: https://cs.stanford.edu/people/jcjohns/clevr/
     """

@@ -10,7 +10,7 @@ from torchdata.datapipes.iter import (
     IterKeyZipper,
 )
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
+    Dataset,
     GDriveResource,
     OnlineResource,
 )
@@ -68,7 +68,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class CelebA(Dataset2):
+class CelebA(Dataset):
     """
     - **homepage**: https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html
     """

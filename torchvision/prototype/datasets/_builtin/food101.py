@@ -9,7 +9,7 @@ from torchdata.datapipes.iter import (
     Demultiplexer,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
     BUILTIN_DIR,
@@ -34,7 +34,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class Food101(Dataset2):
+class Food101(Dataset):
     """Food 101 dataset
     homepage="https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101",
     """

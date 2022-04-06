@@ -2,7 +2,7 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper
-from torchvision.prototype.datasets.utils import Dataset2, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import EncodedImage, Label
 
@@ -29,7 +29,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class EuroSAT(Dataset2):
+class EuroSAT(Dataset):
     """EuroSAT Dataset.
     homepage="https://github.com/phelber/eurosat",
     """

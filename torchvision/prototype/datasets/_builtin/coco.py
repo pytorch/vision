@@ -19,7 +19,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     HttpResource,
     OnlineResource,
-    Dataset2,
+    Dataset,
 )
 from torchvision.prototype.datasets.utils._internal import (
     MappingIterator,
@@ -45,7 +45,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class Coco(Dataset2):
+class Coco(Dataset):
     """
     - **homepage**: https://cocodataset.org/
     - **dependencies**:

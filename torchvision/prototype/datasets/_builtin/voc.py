@@ -13,7 +13,7 @@ from torchdata.datapipes.iter import (
     LineReader,
 )
 from torchvision.datasets import VOCDetection
-from torchvision.prototype.datasets.utils import DatasetInfo, OnlineResource, HttpResource, Dataset2
+from torchvision.prototype.datasets.utils import DatasetInfo, OnlineResource, HttpResource, Dataset
 from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     getitem,
@@ -38,7 +38,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class VOC(Dataset2):
+class VOC(Dataset):
     """
     - **homepage**: http://host.robots.ox.ac.uk/pascal/VOC/
     """

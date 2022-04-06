@@ -7,7 +7,7 @@ from unicodedata import category
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
+    Dataset,
     OnlineResource,
     GDriveResource,
 )
@@ -51,7 +51,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class PCAM(Dataset2):
+class PCAM(Dataset):
     # TODO write proper docstring
     """PCAM Dataset
 

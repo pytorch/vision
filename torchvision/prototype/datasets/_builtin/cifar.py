@@ -10,7 +10,7 @@ from torchdata.datapipes.iter import (
     Filter,
     Mapper,
 )
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import hint_shuffling, path_comparator, hint_sharding, BUILTIN_DIR
 from torchvision.prototype.features import Label, Image
 
@@ -29,7 +29,7 @@ class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):
             yield from iter(zip(image_arrays, category_idcs))
 
 
-class _CifarBase(Dataset2):
+class _CifarBase(Dataset):
     _FILE_NAME: str
     _SHA256: str
     _LABELS_KEY: str

@@ -2,7 +2,7 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Iterator, BinaryIO, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
@@ -37,7 +37,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class StanfordCars(Dataset2):
+class StanfordCars(Dataset):
     """Stanford Cars dataset.
     homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
     dependencies=scipy

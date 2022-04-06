@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Optional, Tuple, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, CSVDictParser, Zipper, Demultiplexer
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
+    Dataset,
     OnlineResource,
     HttpResource,
 )
@@ -28,7 +28,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class GTSRB(Dataset2):
+class GTSRB(Dataset):
     """GTSRB Dataset
 
     homepage="https://benchmark.ini.rub.de"

@@ -120,72 +120,7 @@ class DatasetInfo:
         return make_repr(type(self).__name__, items)
 
 
-class Dataset(abc.ABC):
-    def __init__(self) -> None:
-        self._info = self._make_info()
-
-    @abc.abstractmethod
-    def _make_info(self) -> DatasetInfo:
-        pass
-
-    @property
-    def info(self) -> DatasetInfo:
-        return self._info
-
-    @property
-    def name(self) -> str:
-        return self.info.name
-
-    @property
-    def default_config(self) -> DatasetConfig:
-        return self.info.default_config
-
-    @property
-    def categories(self) -> Tuple[str, ...]:
-        return self.info.categories
-
-    @abc.abstractmethod
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        pass
-
-    @abc.abstractmethod
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-    ) -> IterDataPipe[Dict[str, Any]]:
-        pass
-
-    def supports_sharded(self) -> bool:
-        return False
-
-    def load(
-        self,
-        root: Union[str, pathlib.Path],
-        *,
-        config: Optional[DatasetConfig] = None,
-        skip_integrity_check: bool = False,
-    ) -> IterDataPipe[Dict[str, Any]]:
-        if not config:
-            config = self.info.default_config
-
-        if use_sharded_dataset() and self.supports_sharded():
-            root = os.path.join(root, *config.values())
-            dataset_size = self.info.extra["sizes"][config]
-            return _make_sharded_datapipe(root, dataset_size)  # type: ignore[no-any-return]
-
-        self.info.check_dependencies()
-        resource_dps = [
-            resource.load(root, skip_integrity_check=skip_integrity_check) for resource in self.resources(config)
-        ]
-        return self._make_datapipe(resource_dps, config=config)
-
-    def _generate_categories(self, root: pathlib.Path) -> Sequence[Union[str, Sequence[str]]]:
-        raise NotImplementedError
-
-
-class Dataset2(IterDataPipe[Dict[str, Any]], abc.ABC):
+class Dataset(IterDataPipe[Dict[str, Any]], abc.ABC):
     @staticmethod
     def _verify_str_arg(
         value: str,

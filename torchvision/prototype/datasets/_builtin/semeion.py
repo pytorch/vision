@@ -9,7 +9,7 @@ from torchdata.datapipes.iter import (
     CSVParser,
 )
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
+    Dataset,
     HttpResource,
     OnlineResource,
 )
@@ -27,7 +27,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class SEMEION(Dataset2):
+class SEMEION(Dataset):
     """Semeion dataset
     homepage="https://archive.ics.uci.edu/ml/datasets/Semeion+Handwritten+Digit",
     """

@@ -4,7 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, LineReader, CSVParser
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
+    Dataset,
     DatasetInfo,
     HttpResource,
     OnlineResource,
@@ -39,7 +39,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class DTD(Dataset2):
+class DTD(Dataset):
     """DTD Dataset.
     homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
     """

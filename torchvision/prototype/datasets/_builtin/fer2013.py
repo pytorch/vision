@@ -4,7 +4,7 @@ from typing import Any, Dict, List, cast, Union
 import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, CSVDictParser
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
+    Dataset,
     OnlineResource,
     KaggleDownloadResource,
 )
@@ -25,7 +25,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class FER2013(Dataset2):
+class FER2013(Dataset):
     """FER 2013 Dataset
     homepage="https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge"
     """

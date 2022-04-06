@@ -18,7 +18,7 @@ from torchvision.prototype.datasets.utils import (
     DatasetInfo,
     OnlineResource,
     ManualDownloadResource,
-    Dataset2,
+    Dataset,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -53,7 +53,7 @@ class ImageNetDemux(enum.IntEnum):
 
 
 @register_dataset(NAME)
-class ImageNet(Dataset2):
+class ImageNet(Dataset):
     """
     - **homepage**: https://www.image-net.org/
     """

@@ -2,7 +2,7 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import path_comparator, hint_sharding, hint_shuffling, BUILTIN_DIR
 from torchvision.prototype.features import EncodedImage, Label
 
@@ -19,7 +19,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class Country211(Dataset2):
+class Country211(Dataset):
     """
     - **homepage**: https://github.com/openai/CLIP/blob/main/data/country211.md
     """

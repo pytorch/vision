@@ -11,7 +11,7 @@ from torchdata.datapipes.iter import (
     IterKeyZipper,
     LineReader,
 )
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     read_mat,
@@ -37,7 +37,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class SBD(Dataset2):
+class SBD(Dataset):
     """
     - **homepage**: http://home.bharathh.info/pubs/codes/SBD/download.html
     - **dependencies**:
