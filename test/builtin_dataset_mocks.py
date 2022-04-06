@@ -685,10 +685,10 @@ def sbd(info, root, config):
     return SBDMockData.generate(root)[config.split]
 
 
-# @register_mock
-def semeion(info, root, config):
+@register_mock(configs=[dict()])
+def semeion(root, config):
     num_samples = 3
-    num_categories = len(info.categories)
+    num_categories = 10
 
     images = torch.rand(num_samples, 256)
     labels = one_hot(torch.randint(num_categories, size=(num_samples,)), num_classes=num_categories)
