@@ -151,4 +151,4 @@ class OxfordIIITPet(Dataset2):
         return [" ".join(part.title() for part in raw_category.split("_")) for raw_category in raw_categories]
 
     def __len__(self) -> int:
-        3_680 if self._split == "trainval" else 3_669
+        return 3_680 if self._split == "trainval" else 3_669
