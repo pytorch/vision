@@ -1,10 +1,11 @@
 import math
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from torch import Tensor, nn
-from torchvision.ops.misc import FrozenBatchNorm2d
+from torch.nn import functional as F
+from torchvision.ops import FrozenBatchNorm2d, generalized_box_iou_loss
 
 
 class BalancedPositiveNegativeSampler:
@@ -507,3 +508,26 @@ def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
     axis_dim_val = torch._shape_as_tensor(input)[axis].unsqueeze(0)
     min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
     return _fake_cast_onnx(min_kval)
+
+
+def _box_loss(
+    type: str,
+    box_coder: BoxCoder,
+    anchors_per_image: Tensor,
+    matched_gt_boxes_per_image: Tensor,
+    bbox_regression_per_image: Tensor,
+    cnf: Optional[Dict[str, float]] = None,
+) -> Tensor:
+    torch._assert(type in ["l1", "smooth_l1", "giou"], f"Unsupported loss: {type}")
+
+    if type == "l1":
+        target_regression = box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+        return F.l1_loss(bbox_regression_per_image, target_regression, reduction="sum")
+    elif type == "smooth_l1":
+        target_regression = box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+        beta = cnf["beta"] if cnf is not None and "beta" in cnf else 1.0
+        return F.smooth_l1_loss(bbox_regression_per_image, target_regression, reduction="sum", beta=beta)
+    else:  # giou
+        bbox_per_image = box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
+        eps = cnf["eps"] if cnf is not None and "eps" in cnf else 1e-7
+        return generalized_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
