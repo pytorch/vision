@@ -96,7 +96,7 @@ class Food101(Dataset2):
         return Mapper(dp, self._prepare_sample)
 
     def _generate_categories(self) -> List[str]:
-        resources = self.resources()
+        resources = self._resources()
         dp = resources[0].load(self._root)
         dp = Filter(dp, path_comparator("name", "classes.txt"))
         dp = LineReader(dp, decode=True, return_path=False)

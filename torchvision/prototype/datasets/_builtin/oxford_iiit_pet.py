@@ -136,12 +136,11 @@ class OxfordIIITPet(Dataset2):
         return self._classify_anns(data) == OxfordIIITPetDemux.SPLIT_AND_CLASSIFICATION
 
     def _generate_categories(self) -> List[str]:
-        config = self.default_config
-        resources = self.resources(config)
+        resources = self._resources()
 
         dp = resources[1].load(self._root)
         dp = Filter(dp, self._filter_split_and_classification_anns)
-        dp = Filter(dp, path_comparator("name", f"{config.split}.txt"))
+        dp = Filter(dp, path_comparator("name", "trainval.txt"))
         dp = CSVDictParser(dp, fieldnames=("image_id", "label"), delimiter=" ")
 
         raw_categories_and_labels = {(data["image_id"].rsplit("_", 1)[0], data["label"]) for data in dp}

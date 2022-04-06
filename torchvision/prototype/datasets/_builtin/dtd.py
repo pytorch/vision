@@ -135,7 +135,7 @@ class DTD(Dataset2):
         return self._classify_archive(data) == DTDDemux.IMAGES
 
     def _generate_categories(self) -> List[str]:
-        resources = self.resources()
+        resources = self._resources()
 
         dp = resources[0].load(self._root)
         dp = Filter(dp, self._filter_images)
