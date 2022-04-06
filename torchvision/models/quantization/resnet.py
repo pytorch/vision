@@ -17,7 +17,7 @@ from ...transforms._presets import ImageClassification, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
-from .utils import _fuse_modules, _replace_relu, quantize_model
+from .utils import _fuse_modules, _replace_relu, quantize_model, QuantizationWorkflowType
 
 
 __all__ = [
@@ -134,11 +134,16 @@ def _resnet(
         if "backend" in weights.meta:
             _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
+    quantization_workflow_type = kwargs.pop("quantization_workflow_type", QuantizationWorkflowType.EAGER_MODE)
 
-    model = QuantizableResNet(block, layers, **kwargs)
-    _replace_relu(model)
+    if quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE:
+        model = ResNet(block, layers, **kwargs)
+    else:
+        model = QuantizableResNet(block, layers, **kwargs)
+        _replace_relu(model)
+
     if quantize:
-        quantize_model(model, backend)
+        model = quantize_model(model, backend, quantization_workflow_type)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
