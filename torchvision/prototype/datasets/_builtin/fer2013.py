@@ -67,7 +67,4 @@ class FER2013(Dataset2):
         return Mapper(dp, self._prepare_sample)
 
     def __len__(self) -> int:
-        return {
-            "train": 28_709,
-            "test": 3_589,
-        }[self._split]
+        return 28_709 if self._split == "train" else 3_589
