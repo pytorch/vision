@@ -34,6 +34,8 @@ def _caltech101_info() -> Dict[str, Any]:
 class Caltech101(Dataset2):
     """
     - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech101
+    - **dependencies**:
+        - <scipy `https://scipy.org/`>_
     """
 
     def __init__(
@@ -45,8 +47,7 @@ class Caltech101(Dataset2):
 
         super().__init__(
             root,
-            # TODO: this will only be available after https://github.com/pytorch/vision/pull/5473
-            # dependencies=("scipy",),
+            dependencies=("scipy",),
             skip_integrity_check=skip_integrity_check,
         )
 
