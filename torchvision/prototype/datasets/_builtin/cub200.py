@@ -170,11 +170,11 @@ class CUB200(Dataset2):
         _, image_data = data
         path, buffer = image_data
 
-        # image = EncodedImage.from_file(buffer)
+        image = EncodedImage.from_file(buffer)
 
         return dict(
-            # prepare_ann_fn(anns_data, image.image_size),
-            # image=image,
+            prepare_ann_fn(anns_data, image.image_size),
+            image=image,
             label=Label(int(pathlib.Path(path).parent.name.rsplit(".", 1)[0]), categories=self._categories),
         )
 
@@ -250,7 +250,7 @@ class CUB200(Dataset2):
         self._year = "2011"
         resources = self.resources()
 
-        dp = resources[0].load(self.root)
+        dp = resources[0].load(self._root)
         dp = Filter(dp, path_comparator("name", "classes.txt"))
         dp = CSVDictParser(dp, fieldnames=("label", "category"), dialect="cub200")
 
