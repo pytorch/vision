@@ -334,8 +334,8 @@ class CIFARMockData:
         make_tar(root, name, folder, compression="gz")
 
 
-# @register_mock
-def cifar10(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def cifar10(root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
 
@@ -349,11 +349,11 @@ def cifar10(info, root, config):
         labels_key="labels",
     )
 
-    return len(train_files if config.split == "train" else test_files)
+    return len(train_files if config["split"] == "train" else test_files)
 
 
-# @register_mock
-def cifar100(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def cifar100(root, config):
     train_files = ["train"]
     test_files = ["test"]
 
@@ -367,7 +367,7 @@ def cifar100(info, root, config):
         labels_key="fine_labels",
     )
 
-    return len(train_files if config.split == "train" else test_files)
+    return len(train_files if config["split"] == "train" else test_files)
 
 
 # @register_mock
