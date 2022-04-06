@@ -112,7 +112,4 @@ class GTSRB(Dataset2):
         return Mapper(dp, self._prepare_sample)
 
     def __len__(self) -> int:
-        return {
-            "train": 26_640,
-            "test": 12_630,
-        }[self._split]
+        return 26_640 if self._split == "train" else 12_630
