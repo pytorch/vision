@@ -111,7 +111,7 @@ class GTSRB(Dataset2):
 
         return Mapper(dp, self._prepare_sample)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return {
             "train": 26_640,
             "test": 12_630,
