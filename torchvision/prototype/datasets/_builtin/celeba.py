@@ -81,11 +81,6 @@ class CelebA(Dataset2):
         skip_integrity_check: bool = False,
     ) -> None:
         self._split = self._verify_str_arg(split, "split", ("train", "val", "test"))
-        self._split_id = {
-            "train": "0",
-            "val": "1",
-            "test": "2",
-        }[split]
 
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
@@ -123,7 +118,12 @@ class CelebA(Dataset2):
         return [splits, images, identities, attributes, bounding_boxes, landmarks]
 
     def _filter_split(self, data: Tuple[str, Dict[str, str]]) -> bool:
-        return data[1]["split_id"] == self._split_id
+        split_id = {
+            "train": "0",
+            "val": "1",
+            "test": "2",
+        }[self._split]
+        return data[1]["split_id"] == split_id
 
     def _prepare_sample(
         self,
