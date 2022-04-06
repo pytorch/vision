@@ -53,7 +53,7 @@ class DTD(Dataset2):
     ) -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "val", "test"})
 
-        if not 1 <= fold <= 10:
+        if not (1 <= fold <= 10):
             raise ValueError(f"The fold parameter should be an integer in [1, 10]. Got {fold}")
         self._fold = fold
 

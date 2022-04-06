@@ -965,7 +965,7 @@ def food101(info, root, config):
     return num_samples_map[config.split]
 
 
-@register_mock(configs=combinations_grid(split=("train", "val", "test"), fold=(1, 4)))
+@register_mock(configs=combinations_grid(split=("train", "val", "test"), fold=(1, 4, 10)))
 def dtd(root, config):
     data_folder = root / "dtd"
 
