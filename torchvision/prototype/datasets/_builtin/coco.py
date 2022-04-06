@@ -48,6 +48,8 @@ def _info() -> Dict[str, Any]:
 class Coco(Dataset2):
     """
     - **homepage**: https://cocodataset.org/
+    - **dependencies**:
+        - <pycocotools `https://github.com/cocodataset/cocoapi`>_
     """
 
     def __init__(
