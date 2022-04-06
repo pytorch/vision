@@ -103,7 +103,4 @@ class Food101(Dataset2):
         return list(dp)
 
     def __len__(self) -> int:
-        return {
-            "train": 75_750,
-            "test": 25_250,
-        }[self._split]
+        return 75_750 if self._split == "train" else 25_250
