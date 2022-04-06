@@ -130,5 +130,4 @@ class PCAM(Dataset2):
         return Mapper(dp, self._prepare_sample)
 
     def __len__(self):
-        # TODO imlement len
-        return 3
+        return 262_144 if self._split == "train" else 32_768
