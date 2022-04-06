@@ -54,7 +54,17 @@ class ImageNetDemux(enum.IntEnum):
 
 @register_dataset(NAME)
 class ImageNet(Dataset2):
-    def __init__(self, root: Union[str, pathlib.Path], *, split: str = "train") -> None:
+    """
+    - **homepage**: https://www.image-net.org/
+    """
+
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        split: str = "train",
+        skip_integrity_check: bool = False,
+    ) -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "val", "test"})
 
         info = _info()
@@ -63,7 +73,7 @@ class ImageNet(Dataset2):
         self._wnids = wnids
         self._wnid_to_category = dict(zip(wnids, categories))
 
-        super().__init__(root)
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
 
     _IMAGES_CHECKSUMS = {
         "train": "b08200a27a8e34218a0e58fde36b0fe8f73bc377f4acea2d91602057c3ca45bb",
