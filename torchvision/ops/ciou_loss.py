@@ -1,5 +1,7 @@
 import math
+
 import torch
+
 
 def ciou_loss(
     boxes1: torch.Tensor,
@@ -9,7 +11,7 @@ def ciou_loss(
 ) -> torch.Tensor:
 
     """
-    Original Implementation from 
+    Original Implementation from
     https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
 
 
@@ -26,15 +28,15 @@ def ciou_loss(
 
     Complete Intersection over Union Loss (Zhaohui Zheng et. al)
     https://arxiv.org/abs/1911.08287
-    
+
     """
 
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-    if (x2<x1).all():
+    if (x2 < x1).all():
         raise ValueError("x1 is larger than x2")
-    if (y2<y1).all():
+    if (y2 < y1).all():
         raise ValueError("y1 is larger than y2")
 
     # Intersection keypoints
