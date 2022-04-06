@@ -176,8 +176,7 @@ class TestCommon:
                 assert dp.buffer_size == INFINITE_BUFFER_SIZE
 
 
-# FIXME: DATASET_MOCKS["qmnist"]
-@parametrize_dataset_mocks({})
+@parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
 class TestQMNIST:
     def test_extra_label(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
