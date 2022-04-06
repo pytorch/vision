@@ -600,9 +600,15 @@ class CocoMockData:
         return num_samples
 
 
-# @register_mock
-def coco(info, root, config):
-    return CocoMockData.generate(root, year=config.year, num_samples=5)
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "val"),
+        year=("2017", "2014"),
+        annotations=("instances", "captions", None),
+    )
+)
+def coco(root, config):
+    return CocoMockData.generate(root, year=config["year"], num_samples=5)
 
 
 class SBDMockData:
