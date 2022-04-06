@@ -2,7 +2,6 @@ import io
 import pathlib
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple, Iterator, Union
-from unicodedata import category
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features
@@ -130,5 +129,5 @@ class PCAM(Dataset2):
         dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
 
-    def __len__(self):
+    def __len__(self) -> int:
         return 262_144 if self._split == "train" else 32_768
