@@ -214,58 +214,64 @@ class MNISTMockData:
         return num_samples
 
 
-# @register_mock
-def mnist(info, root, config):
-    train = config.split == "train"
-    images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
-    labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
+def mnist(root, config):
+    prefix = "train" if config["split"] == "train" else "t10k"
     return MNISTMockData.generate(
         root,
-        num_categories=len(info.categories),
-        images_file=images_file,
-        labels_file=labels_file,
+        num_categories=10,
+        images_file=f"{prefix}-images-idx3-ubyte.gz",
+        labels_file=f"{prefix}-labels-idx1-ubyte.gz",
     )
 
 
-# DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
+DATASET_MOCKS.update(
+    {
+        name: DatasetMock(name, mock_data_fn=mnist, configs=combinations_grid(split=("train", "test")))
+        for name in ["mnist", "fashionmnist", "kmnist"]
+    }
+)
 
 
-# @register_mock
-def emnist(info, root, config):
-    # The image sets that merge some lower case letters in their respective upper case variant, still use dense
-    # labels in the data files. Thus, num_categories != len(categories) there.
-    num_categories = defaultdict(
-        lambda: len(info.categories), {image_set: 47 for image_set in ("Balanced", "By_Merge")}
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "test"),
+        image_set=("Balanced", "By_Merge", "By_Class", "Letters", "Digits", "MNIST"),
     )
-
+)
+def emnist(root, config):
     num_samples_map = {}
     file_names = set()
-    for config_ in info._configs:
-        prefix = f"emnist-{config_.image_set.replace('_', '').lower()}-{config_.split}"
+    for split, image_set in itertools.product(
+        ("train", "test"),
+        ("Balanced", "By_Merge", "By_Class", "Letters", "Digits", "MNIST"),
+    ):
+        prefix = f"emnist-{image_set.replace('_', '').lower()}-{split}"
         images_file = f"{prefix}-images-idx3-ubyte.gz"
         labels_file = f"{prefix}-labels-idx1-ubyte.gz"
         file_names.update({images_file, labels_file})
-        num_samples_map[config_] = MNISTMockData.generate(
+        num_samples_map[(split, image_set)] = MNISTMockData.generate(
             root,
-            num_categories=num_categories[config_.image_set],
+            # The image sets that merge some lower case letters in their respective upper case variant, still use dense
+            # labels in the data files. Thus, num_categories != len(categories) there.
+            num_categories=47 if config["image_set"] in ("Balanced", "By_Merge") else 62,
             images_file=images_file,
             labels_file=labels_file,
         )
 
     make_zip(root, "emnist-gzip.zip", *file_names)
 
-    return num_samples_map[config]
+    return num_samples_map[(config["split"], config["image_set"])]
 
 
-# @register_mock
-def qmnist(info, root, config):
-    num_categories = len(info.categories)
-    if config.split == "train":
+@register_mock(configs=combinations_grid(split=("train", "test", "test10k", "test50k", "nist")))
+def qmnist(root, config):
+    num_categories = 10
+    if config["split"] == "train":
         num_samples = num_samples_gen = num_categories + 2
         prefix = "qmnist-train"
         suffix = ".gz"
         compressor = gzip.open
-    elif config.split.startswith("test"):
+    elif config["split"].startswith("test"):
         # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create
         # more than 10000 images for the dataset to not be empty.
         num_samples_gen = 10001
@@ -273,11 +279,11 @@ def qmnist(info, root, config):
             "test": num_samples_gen,
             "test10k": min(num_samples_gen, 10_000),
             "test50k": num_samples_gen - 10_000,
-        }[config.split]
+        }[config["split"]]
         prefix = "qmnist-test"
         suffix = ".gz"
         compressor = gzip.open
-    else:  # config.split == "nist"
+    else:  # config["split"] == "nist"
         num_samples = num_samples_gen = num_categories + 3
         prefix = "xnist"
         suffix = ".xz"
@@ -370,8 +376,8 @@ def cifar100(root, config):
     return len(train_files if config["split"] == "train" else test_files)
 
 
-# @register_mock
-def caltech101(info, root, config):
+@register_mock(configs=[dict()])
+def caltech101(root, config):
     def create_ann_file(root, name):
         import scipy.io
 
@@ -390,15 +396,17 @@ def caltech101(info, root, config):
     images_root = root / "101_ObjectCategories"
     anns_root = root / "Annotations"
 
-    ann_category_map = {
-        "Faces_2": "Faces",
-        "Faces_3": "Faces_easy",
-        "Motorbikes_16": "Motorbikes",
-        "Airplanes_Side_2": "airplanes",
+    image_category_map = {
+        "Faces": "Faces_2",
+        "Faces_easy": "Faces_3",
+        "Motorbikes": "Motorbikes_16",
+        "airplanes": "Airplanes_Side_2",
     }
 
+    categories = ["Faces", "Faces_easy", "Motorbikes", "airplanes", "yin_yang"]
+
     num_images_per_category = 2
-    for category in info.categories:
+    for category in categories:
         create_image_folder(
             root=images_root,
             name=category,
@@ -407,7 +415,7 @@ def caltech101(info, root, config):
         )
         create_ann_folder(
             root=anns_root,
-            name=ann_category_map.get(category, category),
+            name=image_category_map.get(category, category),
             file_name_fn=lambda idx: f"annotation_{idx + 1:04d}.mat",
             num_examples=num_images_per_category,
         )
@@ -417,19 +425,26 @@ def caltech101(info, root, config):
 
     make_tar(root, f"{anns_root.name}.tar", anns_root)
 
-    return num_images_per_category * len(info.categories)
+    return num_images_per_category * len(categories)
 
 
-# @register_mock
-def caltech256(info, root, config):
+@register_mock(configs=[dict()])
+def caltech256(root, config):
     dir = root / "256_ObjectCategories"
     num_images_per_category = 2
 
-    for idx, category in enumerate(info.categories, 1):
+    categories = [
+        (1, "ak47"),
+        (127, "laptop-101"),
+        (198, "spider"),
+        (257, "clutter"),
+    ]
+
+    for category_idx, category in categories:
         files = create_image_folder(
             dir,
-            name=f"{idx:03d}.{category}",
-            file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx + 1:04d}.jpg",
+            name=f"{category_idx:03d}.{category}",
+            file_name_fn=lambda image_idx: f"{category_idx:03d}_{image_idx + 1:04d}.jpg",
             num_examples=num_images_per_category,
         )
         if category == "spider":
@@ -437,7 +452,7 @@ def caltech256(info, root, config):
 
     make_tar(root, f"{dir.name}.tar", dir)
 
-    return num_images_per_category * len(info.categories)
+    return num_images_per_category * len(categories)
 
 
 @register_mock(configs=combinations_grid(split=("train", "val", "test")))
@@ -600,9 +615,15 @@ class CocoMockData:
         return num_samples
 
 
-# @register_mock
-def coco(info, root, config):
-    return CocoMockData.generate(root, year=config.year, num_samples=5)
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "val"),
+        year=("2017", "2014"),
+        annotations=("instances", "captions", None),
+    )
+)
+def coco(root, config):
+    return CocoMockData.generate(root, year=config["year"], num_samples=5)
 
 
 class SBDMockData:
@@ -679,10 +700,10 @@ def sbd(info, root, config):
     return SBDMockData.generate(root)[config.split]
 
 
-# @register_mock
-def semeion(info, root, config):
+@register_mock(configs=[dict()])
+def semeion(root, config):
     num_samples = 3
-    num_categories = len(info.categories)
+    num_categories = 10
 
     images = torch.rand(num_samples, 256)
     labels = one_hot(torch.randint(num_categories, size=(num_samples,)), num_classes=num_categories)
@@ -899,9 +920,9 @@ class CelebAMockData:
         return num_samples_map
 
 
-# @register_mock
-def celeba(info, root, config):
-    return CelebAMockData.generate(root)[config.split]
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def celeba(root, config):
+    return CelebAMockData.generate(root)[config["split"]]
 
 
 @register_mock(configs=combinations_grid(split=("train", "val", "test")))
@@ -927,8 +948,8 @@ def country211(root, config):
     return num_examples * len(classes)
 
 
-# @register_mock
-def food101(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def food101(root, config):
     data_folder = root / "food-101"
 
     num_images_per_class = 3
@@ -962,11 +983,11 @@ def food101(info, root, config):
 
     make_tar(root, f"{data_folder.name}.tar.gz", compression="gz")
 
-    return num_samples_map[config.split]
+    return num_samples_map[config["split"]]
 
 
-# @register_mock
-def dtd(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test"), fold=(1, 4, 10)))
+def dtd(root, config):
     data_folder = root / "dtd"
 
     num_images_per_class = 3
@@ -1006,20 +1027,21 @@ def dtd(info, root, config):
             with open(meta_folder / f"{split}{fold}.txt", "w") as file:
                 file.write("\n".join(image_ids_in_config) + "\n")
 
-            num_samples_map[info.make_config(split=split, fold=str(fold))] = len(image_ids_in_config)
+            num_samples_map[(split, fold)] = len(image_ids_in_config)
 
     make_tar(root, "dtd-r1.0.1.tar.gz", data_folder, compression="gz")
 
-    return num_samples_map[config]
+    return num_samples_map[config["split"], config["fold"]]
 
 
-# @register_mock
-def fer2013(info, root, config):
-    num_samples = 5 if config.split == "train" else 3
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def fer2013(root, config):
+    split = config["split"]
+    num_samples = 5 if split == "train" else 3
 
-    path = root / f"{config.split}.csv"
+    path = root / f"{split}.csv"
     with open(path, "w", newline="") as file:
-        field_names = ["emotion"] if config.split == "train" else []
+        field_names = ["emotion"] if split == "train" else []
         field_names.append("pixels")
 
         file.write(",".join(field_names) + "\n")
@@ -1029,7 +1051,7 @@ def fer2013(info, root, config):
             rowdict = {
                 "pixels": " ".join([str(int(pixel)) for pixel in torch.randint(256, (48 * 48,), dtype=torch.uint8)])
             }
-            if config.split == "train":
+            if split == "train":
                 rowdict["emotion"] = int(torch.randint(7, ()))
             writer.writerow(rowdict)
 
@@ -1038,9 +1060,9 @@ def fer2013(info, root, config):
     return num_samples
 
 
-# @register_mock
-def gtsrb(info, root, config):
-    num_examples_per_class = 5 if config.split == "train" else 3
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def gtsrb(root, config):
+    num_examples_per_class = 5 if config["split"] == "train" else 3
     classes = ("00000", "00042", "00012")
     num_examples = num_examples_per_class * len(classes)
 
@@ -1214,9 +1236,9 @@ class OxfordIIITPetMockData:
         return num_samples_map
 
 
-# @register_mock
-def oxford_iiit_pet(info, root, config):
-    return OxfordIIITPetMockData.generate(root)[config.split]
+@register_mock(name="oxford-iiit-pet", configs=combinations_grid(split=("trainval", "test")))
+def oxford_iiit_pet(root, config):
+    return OxfordIIITPetMockData.generate(root)[config["split"]]
 
 
 class _CUB200MockData:
@@ -1386,8 +1408,8 @@ def cub200(root, config):
     return num_samples_map[config["split"]]
 
 
-# @register_mock
-def eurosat(info, root, config):
+@register_mock(configs=[dict()])
+def eurosat(root, config):
     data_folder = root / "2750"
     data_folder.mkdir(parents=True)
 
@@ -1424,13 +1446,13 @@ def svhn(info, root, config):
     return num_samples
 
 
-# @register_mock
-def pcam(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def pcam(root, config):
     import h5py
 
-    num_images = {"train": 2, "test": 3, "val": 4}[config.split]
+    num_images = {"train": 2, "test": 3, "val": 4}[config["split"]]
 
-    split = "valid" if config.split == "val" else config.split
+    split = "valid" if config["split"] == "val" else config["split"]
 
     images_io = io.BytesIO()
     with h5py.File(images_io, "w") as f:
