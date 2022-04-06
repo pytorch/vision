@@ -34,6 +34,7 @@ __all__ = [
     "path_comparator",
     "read_flo",
     "hint_sharding",
+    "hint_shuffling",
 ]
 
 K = TypeVar("K")
@@ -196,4 +197,4 @@ def hint_sharding(datapipe: IterDataPipe) -> ShardingFilter:
 
 
 def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
-    return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)
+    return Shuffler(datapipe, buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False)
