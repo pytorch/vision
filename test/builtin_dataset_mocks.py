@@ -1380,10 +1380,10 @@ class CUB2002010MockData(_CUB200MockData):
         return num_samples_map
 
 
-# @register_mock
-def cub200(info, root, config):
-    num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
-    return num_samples_map[config.split]
+@register_mock(configs=combinations_grid(split=("train", "test"), year=("2010", "2011")))
+def cub200(root, config):
+    num_samples_map = (CUB2002011MockData if config["year"] == "2011" else CUB2002010MockData).generate(root)
+    return num_samples_map[config["split"]]
 
 
 # @register_mock
