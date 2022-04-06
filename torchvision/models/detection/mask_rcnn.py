@@ -381,7 +381,7 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "publication_year": 2021,
             "num_params": 46359409,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/pull/5773",
             "map": 47.4,
             "map_mask": 41.8,
         },
