@@ -1214,9 +1214,9 @@ class OxfordIIITPetMockData:
         return num_samples_map
 
 
-# @register_mock
-def oxford_iiit_pet(info, root, config):
-    return OxfordIIITPetMockData.generate(root)[config.split]
+@register_mock(name="oxford-iiit-pet", configs=combinations_grid(split=("trainval", "test")))
+def oxford_iiit_pet(root, config):
+    return OxfordIIITPetMockData.generate(root)[config["split"]]
 
 
 class _CUB200MockData:
