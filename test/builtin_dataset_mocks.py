@@ -370,8 +370,8 @@ def cifar100(info, root, config):
     return len(train_files if config.split == "train" else test_files)
 
 
-# @register_mock
-def caltech101(info, root, config):
+@register_mock(configs=[dict()])
+def caltech101(root, config):
     def create_ann_file(root, name):
         import scipy.io
 
@@ -390,15 +390,17 @@ def caltech101(info, root, config):
     images_root = root / "101_ObjectCategories"
     anns_root = root / "Annotations"
 
-    ann_category_map = {
-        "Faces_2": "Faces",
-        "Faces_3": "Faces_easy",
-        "Motorbikes_16": "Motorbikes",
-        "Airplanes_Side_2": "airplanes",
+    image_category_map = {
+        "Faces": "Faces_2",
+        "Faces_easy": "Faces_3",
+        "Motorbikes": "Motorbikes_16",
+        "airplanes": "Airplanes_Side_2",
     }
 
+    categories = ["Faces", "Faces_easy", "Motorbikes", "airplanes", "yin_yang"]
+
     num_images_per_category = 2
-    for category in info.categories:
+    for category in categories:
         create_image_folder(
             root=images_root,
             name=category,
@@ -407,7 +409,7 @@ def caltech101(info, root, config):
         )
         create_ann_folder(
             root=anns_root,
-            name=ann_category_map.get(category, category),
+            name=image_category_map.get(category, category),
             file_name_fn=lambda idx: f"annotation_{idx + 1:04d}.mat",
             num_examples=num_images_per_category,
         )
@@ -417,19 +419,26 @@ def caltech101(info, root, config):
 
     make_tar(root, f"{anns_root.name}.tar", anns_root)
 
-    return num_images_per_category * len(info.categories)
+    return num_images_per_category * len(categories)
 
 
-# @register_mock
-def caltech256(info, root, config):
+@register_mock(configs=[dict()])
+def caltech256(root, config):
     dir = root / "256_ObjectCategories"
     num_images_per_category = 2
 
-    for idx, category in enumerate(info.categories, 1):
+    categories = [
+        (1, "ak47"),
+        (127, "laptop-101"),
+        (198, "spider"),
+        (257, "clutter"),
+    ]
+
+    for category_idx, category in categories:
         files = create_image_folder(
             dir,
-            name=f"{idx:03d}.{category}",
-            file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx + 1:04d}.jpg",
+            name=f"{category_idx:03d}.{category}",
+            file_name_fn=lambda image_idx: f"{category_idx:03d}_{image_idx + 1:04d}.jpg",
             num_examples=num_images_per_category,
         )
         if category == "spider":
@@ -437,7 +446,7 @@ def caltech256(info, root, config):
 
     make_tar(root, f"{dir.name}.tar", dir)
 
-    return num_images_per_category * len(info.categories)
+    return num_images_per_category * len(categories)
 
 
 @register_mock(configs=combinations_grid(split=("train", "val", "test")))
