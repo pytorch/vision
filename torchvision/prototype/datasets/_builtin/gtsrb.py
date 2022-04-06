@@ -38,6 +38,7 @@ class GTSRB(Dataset2):
         self, root: Union[str, pathlib.Path], *, split: str = "train", skip_integrity_check: bool = False
     ) -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "test"})
+        self._categories = _info()["categories"]
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
     _URL_ROOT = "https://sid.erda.dk/public/archives/daaeac0d7ce1152aea9b61d9f1e19370/"
@@ -87,7 +88,7 @@ class GTSRB(Dataset2):
         return {
             "path": path,
             "image": EncodedImage.from_file(buffer),
-            "label": Label(label),
+            "label": Label(label, categories=self._categories),
             "bounding_box": bounding_box,
         }
 
@@ -111,5 +112,7 @@ class GTSRB(Dataset2):
         return Mapper(dp, self._prepare_sample)
 
     def __len__(self):
-        # TODO: Implement len
-        return 4
+        return {
+            "train": 26_640,
+            "test": 12_630,
+        }[self._split]
