@@ -1386,8 +1386,8 @@ def cub200(info, root, config):
     return num_samples_map[config.split]
 
 
-# @register_mock
-def eurosat(info, root, config):
+@register_mock(configs=[dict()])
+def eurosat(root, config):
     data_folder = root / "2750"
     data_folder.mkdir(parents=True)
 
