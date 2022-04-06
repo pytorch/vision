@@ -1473,18 +1473,19 @@ def pcam(root, config):
     return num_images
 
 
-# @register_mock
-def stanford_cars(info, root, config):
+@register_mock(name="stanford-cars", configs=combinations_grid(split=("train", "test")))
+def stanford_cars(root, config):
     import scipy.io as io
     from numpy.core.records import fromarrays
 
-    num_samples = {"train": 5, "test": 7}[config["split"]]
+    split = config["split"]
+    num_samples = {"train": 5, "test": 7}[split]
     num_categories = 3
 
     devkit = root / "devkit"
     devkit.mkdir(parents=True)
 
-    if config["split"] == "train":
+    if split == "train":
         images_folder_name = "cars_train"
         annotations_mat_path = devkit / "cars_train_annos.mat"
     else:
@@ -1498,7 +1499,7 @@ def stanford_cars(info, root, config):
         num_examples=num_samples,
     )
 
-    make_tar(root, f"cars_{config.split}.tgz", images_folder_name)
+    make_tar(root, f"cars_{split}.tgz", images_folder_name)
     bbox = np.random.randint(1, 200, num_samples, dtype=np.uint8)
     classes = np.random.randint(1, num_categories + 1, num_samples, dtype=np.uint8)
     fnames = [f"{i:5d}.jpg" for i in range(num_samples)]
@@ -1508,7 +1509,7 @@ def stanford_cars(info, root, config):
     )
 
     io.savemat(annotations_mat_path, {"annotations": rec_array})
-    if config.split == "train":
+    if split == "train":
         make_tar(root, "car_devkit.tgz", devkit, compression="gz")
 
     return num_samples
