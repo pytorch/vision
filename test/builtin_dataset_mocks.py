@@ -334,8 +334,8 @@ class CIFARMockData:
         make_tar(root, name, folder, compression="gz")
 
 
-# @register_mock
-def cifar10(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def cifar10(root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
 
@@ -349,11 +349,11 @@ def cifar10(info, root, config):
         labels_key="labels",
     )
 
-    return len(train_files if config.split == "train" else test_files)
+    return len(train_files if config["split"] == "train" else test_files)
 
 
-# @register_mock
-def cifar100(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def cifar100(root, config):
     train_files = ["train"]
     test_files = ["test"]
 
@@ -367,7 +367,7 @@ def cifar100(info, root, config):
         labels_key="fine_labels",
     )
 
-    return len(train_files if config.split == "train" else test_files)
+    return len(train_files if config["split"] == "train" else test_files)
 
 
 @register_mock(configs=[dict()])
@@ -609,9 +609,15 @@ class CocoMockData:
         return num_samples
 
 
-# @register_mock
-def coco(info, root, config):
-    return CocoMockData.generate(root, year=config.year, num_samples=5)
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "val"),
+        year=("2017", "2014"),
+        annotations=("instances", "captions", None),
+    )
+)
+def coco(root, config):
+    return CocoMockData.generate(root, year=config["year"], num_samples=5)
 
 
 class SBDMockData:
@@ -908,19 +914,14 @@ class CelebAMockData:
         return num_samples_map
 
 
-# @register_mock
-def celeba(info, root, config):
-    return CelebAMockData.generate(root)[config.split]
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def celeba(root, config):
+    return CelebAMockData.generate(root)[config["split"]]
 
 
-# @register_mock
-def country211(info, root, config):
-    split_name_mapper = {
-        "train": "train",
-        "val": "valid",
-        "test": "test",
-    }
-    split_folder = pathlib.Path(root, "country211", split_name_mapper[config["split"]])
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def country211(root, config):
+    split_folder = pathlib.Path(root, "country211", "valid" if config["split"] == "val" else config["split"])
     split_folder.mkdir(parents=True, exist_ok=True)
 
     num_examples = {
@@ -941,8 +942,8 @@ def country211(info, root, config):
     return num_examples * len(classes)
 
 
-# @register_mock
-def food101(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def food101(root, config):
     data_folder = root / "food-101"
 
     num_images_per_class = 3
@@ -976,11 +977,11 @@ def food101(info, root, config):
 
     make_tar(root, f"{data_folder.name}.tar.gz", compression="gz")
 
-    return num_samples_map[config.split]
+    return num_samples_map[config["split"]]
 
 
-# @register_mock
-def dtd(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test"), fold=(1, 4, 10)))
+def dtd(root, config):
     data_folder = root / "dtd"
 
     num_images_per_class = 3
@@ -1020,11 +1021,11 @@ def dtd(info, root, config):
             with open(meta_folder / f"{split}{fold}.txt", "w") as file:
                 file.write("\n".join(image_ids_in_config) + "\n")
 
-            num_samples_map[info.make_config(split=split, fold=str(fold))] = len(image_ids_in_config)
+            num_samples_map[(split, fold)] = len(image_ids_in_config)
 
     make_tar(root, "dtd-r1.0.1.tar.gz", data_folder, compression="gz")
 
-    return num_samples_map[config]
+    return num_samples_map[config["split"], config["fold"]]
 
 
 # @register_mock
@@ -1052,9 +1053,9 @@ def fer2013(info, root, config):
     return num_samples
 
 
-# @register_mock
-def gtsrb(info, root, config):
-    num_examples_per_class = 5 if config.split == "train" else 3
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def gtsrb(root, config):
+    num_examples_per_class = 5 if config["split"] == "train" else 3
     classes = ("00000", "00042", "00012")
     num_examples = num_examples_per_class * len(classes)
 
@@ -1122,8 +1123,8 @@ def gtsrb(info, root, config):
     return num_examples
 
 
-# @register_mock
-def clevr(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def clevr(root, config):
     data_folder = root / "CLEVR_v1.0"
 
     num_samples_map = {
@@ -1164,7 +1165,7 @@ def clevr(info, root, config):
 
     make_zip(root, f"{data_folder.name}.zip", data_folder)
 
-    return num_samples_map[config.split]
+    return num_samples_map[config["split"]]
 
 
 class OxfordIIITPetMockData:
@@ -1438,13 +1439,13 @@ def svhn(info, root, config):
     return num_samples
 
 
-# @register_mock
-def pcam(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def pcam(root, config):
     import h5py
 
-    num_images = {"train": 2, "test": 3, "val": 4}[config.split]
+    num_images = {"train": 2, "test": 3, "val": 4}[config["split"]]
 
-    split = "valid" if config.split == "val" else config.split
+    split = "valid" if config["split"] == "val" else config["split"]
 
     images_io = io.BytesIO()
     with h5py.File(images_io, "w") as f:
