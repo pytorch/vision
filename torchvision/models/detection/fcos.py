@@ -373,6 +373,7 @@ class FCOS(nn.Module):
         nms_thresh: float = 0.6,
         detections_per_img: int = 100,
         topk_candidates: int = 1000,
+        **kwargs,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -410,7 +411,7 @@ class FCOS(nn.Module):
             image_mean = [0.485, 0.456, 0.406]
         if image_std is None:
             image_std = [0.229, 0.224, 0.225]
-        self.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std)
+        self.transform = GeneralizedRCNNTransform(min_size, max_size, image_mean, image_std, **kwargs)
 
         self.center_sampling_radius = center_sampling_radius
         self.score_thresh = score_thresh

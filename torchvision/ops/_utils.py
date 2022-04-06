@@ -43,7 +43,13 @@ def split_normalization_params(
 ) -> Tuple[List[Tensor], List[Tensor]]:
     # Adapted from https://github.com/facebookresearch/ClassyVision/blob/659d7f78/classy_vision/generic/util.py#L501
     if not norm_classes:
-        norm_classes = [nn.modules.batchnorm._BatchNorm, nn.LayerNorm, nn.GroupNorm]
+        norm_classes = [
+            nn.modules.batchnorm._BatchNorm,
+            nn.LayerNorm,
+            nn.GroupNorm,
+            nn.modules.instancenorm._InstanceNorm,
+            nn.LocalResponseNorm,
+        ]
 
     for t in norm_classes:
         if not issubclass(t, nn.Module):
