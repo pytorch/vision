@@ -248,7 +248,7 @@ class CUB200(Dataset2):
 
     def _generate_categories(self) -> List[str]:
         self._year = "2011"
-        resources = self.resources()
+        resources = self._resources()
 
         dp = resources[0].load(self._root)
         dp = Filter(dp, path_comparator("name", "classes.txt"))
