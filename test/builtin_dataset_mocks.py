@@ -904,14 +904,9 @@ def celeba(info, root, config):
     return CelebAMockData.generate(root)[config.split]
 
 
-# @register_mock
-def country211(info, root, config):
-    split_name_mapper = {
-        "train": "train",
-        "val": "valid",
-        "test": "test",
-    }
-    split_folder = pathlib.Path(root, "country211", split_name_mapper[config["split"]])
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def country211(root, config):
+    split_folder = pathlib.Path(root, "country211", "valid" if config["split"] == "val" else config["split"])
     split_folder.mkdir(parents=True, exist_ok=True)
 
     num_examples = {
