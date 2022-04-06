@@ -1,7 +1,5 @@
 import math
-
 import torch
-
 
 def ciou_loss(
     boxes1: torch.Tensor,
@@ -11,33 +9,33 @@ def ciou_loss(
 ) -> torch.Tensor:
 
     """
-    Original Implementation from
+    Original Implementation from 
     https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
 
 
     Args:
         boxes1 : (Tensor[N, 4] or Tensor[4]) first set of boxes
         boxes2 : (Tensor[N, 4] or Tensor[4]) second set of boxes
-        reduction: (string, optional) Specifies the reduction to apply to the output:
-
+        reduction : (string, optional) Specifies the reduction to apply to the output:
             ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: No reduction will be
             applied to the output. ``'mean'``: The output will be averaged.
             ``'sum'``: The output will be summed. Default: ``'none'``
-        eps (float, optional): small number to prevent division by zero. Default: 1e-7
+        eps : (float, optional): small number to prevent division by zero. Default: 1e-7
 
     Reference:
 
     Complete Intersection over Union Loss (Zhaohui Zheng et. al)
     https://arxiv.org/abs/1911.08287
-
+    
     """
 
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-    # TODO: use torch._assert_async() when pytorch 1.8 support is dropped
-    assert (x2 >= x1).all(), "bad box: x1 larger than x2"
-    assert (y2 >= y1).all(), "bad box: y1 larger than y2"
+    if (x2<x1).all():
+        raise ValueError("x1 is larger than x2")
+    if (y2<y1).all():
+        raise ValueError("y1 is larger than y2")
 
     # Intersection keypoints
     xkis1 = torch.max(x1, x1g)
