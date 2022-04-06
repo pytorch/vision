@@ -697,12 +697,12 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
 
 class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
     COCO_V1 = Weights(
-        url="",
+        url="https://download.pytorch.org/models/retinanet_resnet50_fpn_v2_coco-5905b1c5.pth",
         transforms=ObjectDetection,
         meta={
             **_COMMON_META,
             "num_params": 38198935,
-            "recipe": "",
+            "recipe": "https://github.com/pytorch/vision/pull/5756",
             "map": 41.5,
         },
     )
