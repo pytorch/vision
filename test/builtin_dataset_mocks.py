@@ -1515,11 +1515,11 @@ def stanford_cars(root, config):
     return num_samples
 
 
-# @register_mock
-def usps(info, root, config):
-    num_samples = {"train": 15, "test": 7}[config.split]
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def usps(root, config):
+    num_samples = {"train": 15, "test": 7}[config["split"]]
 
-    with bz2.open(root / f"usps{'.t' if not config.split == 'train' else ''}.bz2", "wb") as fh:
+    with bz2.open(root / f"usps{'.t' if not config['split'] == 'train' else ''}.bz2", "wb") as fh:
         lines = []
         for _ in range(num_samples):
             label = make_tensor(1, low=1, high=11, dtype=torch.int)
