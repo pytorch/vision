@@ -53,7 +53,7 @@ class SBD(Dataset2):
     ) -> None:
         self._split = self._verify_str_arg(split, "split", ("train", "val", "train_noval"))
 
-        self._categories = _info()["categories"]
+        self._categories = CATEGORIES
 
         super().__init__(root, dependencies=("scipy",), skip_integrity_check=skip_integrity_check)
 
