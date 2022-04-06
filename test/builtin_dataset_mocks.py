@@ -933,8 +933,8 @@ def country211(root, config):
     return num_examples * len(classes)
 
 
-# @register_mock
-def food101(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def food101(root, config):
     data_folder = root / "food-101"
 
     num_images_per_class = 3
@@ -968,7 +968,7 @@ def food101(info, root, config):
 
     make_tar(root, f"{data_folder.name}.tar.gz", compression="gz")
 
-    return num_samples_map[config.split]
+    return num_samples_map[config["split"]]
 
 
 @register_mock(configs=combinations_grid(split=("train", "val", "test"), fold=(1, 4, 10)))
