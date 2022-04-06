@@ -202,11 +202,11 @@ class Dataset2(IterDataPipe[Dict[str, Any]], abc.ABC):
         for dependency in dependencies:
             try:
                 importlib.import_module(dependency)
-            except ModuleNotFoundError as error:
+            except ModuleNotFoundError:
                 raise ModuleNotFoundError(
                     f"{type(self).__name__}() depends on the third-party package '{dependency}'. "
                     f"Please install it, for example with `pip install {dependency}`."
-                ) from error
+                ) from None
 
         self._root = pathlib.Path(root).expanduser().resolve()
         resources = [
