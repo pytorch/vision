@@ -600,9 +600,15 @@ class CocoMockData:
         return num_samples
 
 
-# @register_mock
-def coco(info, root, config):
-    return CocoMockData.generate(root, year=config.year, num_samples=5)
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "val"),
+        year=("2017", "2014"),
+        annotations=("instances", "captions", None),
+    )
+)
+def coco(root, config):
+    return CocoMockData.generate(root, year=config["year"], num_samples=5)
 
 
 class SBDMockData:
@@ -1424,13 +1430,13 @@ def svhn(info, root, config):
     return num_samples
 
 
-# @register_mock
-def pcam(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def pcam(root, config):
     import h5py
 
-    num_images = {"train": 2, "test": 3, "val": 4}[config.split]
+    num_images = {"train": 2, "test": 3, "val": 4}[config["split"]]
 
-    split = "valid" if config.split == "val" else config.split
+    split = "valid" if config["split"] == "val" else config["split"]
 
     images_io = io.BytesIO()
     with h5py.File(images_io, "w") as f:
