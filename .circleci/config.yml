@@ -320,7 +320,7 @@ jobs:
 
   type_check_python:
     docker:
-      - image: cimg/python:3.10
+      - image: cimg/python:3.7
     steps:
       - apt_install:
           args: libturbojpeg-dev
