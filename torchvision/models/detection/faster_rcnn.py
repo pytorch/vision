@@ -398,6 +398,7 @@ class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
         transforms=ObjectDetection,
         meta={
             **_COMMON_META,
+            "publication_year": 2021,
             "num_params": 43712278,
             "recipe": "https://github.com/pytorch/vision/pull/5763",
             "map": 46.7,
