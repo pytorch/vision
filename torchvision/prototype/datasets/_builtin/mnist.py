@@ -411,5 +411,5 @@ class QMNIST(_MNISTBase):
             "test": 60_000,
             "test10k": 10_000,
             "test50k": 50_000,
-            "nist": 402953,
+            "nist": 402_953,
         }[self._split]
