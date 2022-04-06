@@ -2,6 +2,7 @@ import io
 import pathlib
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple, Iterator, Union
+from unicodedata import category
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features
@@ -46,10 +47,7 @@ _Resource = namedtuple("_Resource", ("file_name", "gdrive_id", "sha256"))
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    return dict(
-        categories=[0, 1],
-        dependencies=["h5py"],
-    )
+    return dict(categories=["0", "1"])
 
 
 @register_dataset(NAME)
@@ -60,9 +58,12 @@ class PCAM(Dataset2):
     homepage="https://github.com/basveeling/pcam"
     """
 
-    def __init__(self, root: Union[str, pathlib.Path], split: str = "train", *, skip_integrity_check: bool = False) -> None:
+    def __init__(
+        self, root: Union[str, pathlib.Path], split: str = "train", *, skip_integrity_check: bool = False
+    ) -> None:
         self._split = self._verify_str_arg(split, "split", {"train", "val", "test"})
-        super().__init__(root, skip_integrity_check=skip_integrity_check)
+        self._categories = _info()["categories"]
+        super().__init__(root, skip_integrity_check=skip_integrity_check, dependencies=("h5py",))
 
     _RESOURCES = {
         "train": (
@@ -114,7 +115,7 @@ class PCAM(Dataset2):
 
         return {
             "image": features.Image(image.transpose(2, 0, 1)),
-            "label": Label(target.item()),
+            "label": Label(target.item(), categories=self._categories),
         }
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
