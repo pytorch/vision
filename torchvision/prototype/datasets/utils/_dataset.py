@@ -1,124 +1,18 @@
 import abc
 import csv
 import importlib
-import itertools
-import os
 import pathlib
-from typing import Any, Dict, List, Optional, Sequence, Union, Tuple, Collection, Iterator
+from typing import Any, Dict, List, Optional, Sequence, Union, Collection, Iterator
 
 from torch.utils.data import IterDataPipe
-from torchvision._utils import sequence_to_str
 from torchvision.datasets.utils import verify_str_arg
-from torchvision.prototype.utils._internal import FrozenBunch, make_repr, add_suggestion
 
-from .._home import use_sharded_dataset
-from ._internal import BUILTIN_DIR, _make_sharded_datapipe
 from ._resource import OnlineResource
-
-
-class DatasetConfig(FrozenBunch):
-    # This needs to be Frozen because we often pass configs as partial(func, config=config)
-    # and partial() requires the parameters to be hashable.
-    pass
 
 
 def read_categories_file(path: pathlib.Path) -> List[List[str]]:
     with open(path, newline="") as file:
         return [row for row in csv.reader(file)]
-
-class DatasetInfo:
-    def __init__(
-        self,
-        name: str,
-        *,
-        dependencies: Collection[str] = (),
-        categories: Optional[Union[int, Sequence[str], str, pathlib.Path]] = None,
-        citation: Optional[str] = None,
-        homepage: Optional[str] = None,
-        license: Optional[str] = None,
-        valid_options: Optional[Dict[str, Sequence[Any]]] = None,
-        extra: Optional[Dict[str, Any]] = None,
-    ) -> None:
-        self.name = name.lower()
-
-        self.dependecies = dependencies
-
-        if categories is None:
-            path = BUILTIN_DIR / f"{self.name}.categories"
-            categories = path if path.exists() else []
-        if isinstance(categories, int):
-            categories = [str(label) for label in range(categories)]
-        elif isinstance(categories, (str, pathlib.Path)):
-            path = pathlib.Path(categories).expanduser().resolve()
-            categories, *_ = zip(*self.read_categories_file(path))
-        self.categories = tuple(categories)
-
-        self.citation = citation
-        self.homepage = homepage
-        self.license = license
-
-        self._valid_options = valid_options or dict()
-        self._configs = tuple(
-            DatasetConfig(**dict(zip(self._valid_options.keys(), combination)))
-            for combination in itertools.product(*self._valid_options.values())
-        )
-
-        self.extra = FrozenBunch(extra or dict())
-
-    @property
-    def default_config(self) -> DatasetConfig:
-        return self._configs[0]
-
-    @staticmethod
-
-    def make_config(self, **options: Any) -> DatasetConfig:
-        if not self._valid_options and options:
-            raise ValueError(
-                f"Dataset {self.name} does not take any options, "
-                f"but got {sequence_to_str(list(options), separate_last=' and')}."
-            )
-
-        for name, arg in options.items():
-            if name not in self._valid_options:
-                raise ValueError(
-                    add_suggestion(
-                        f"Unknown option '{name}' of dataset {self.name}.",
-                        word=name,
-                        possibilities=sorted(self._valid_options.keys()),
-                    )
-                )
-
-            valid_args = self._valid_options[name]
-
-            if arg not in valid_args:
-                raise ValueError(
-                    add_suggestion(
-                        f"Invalid argument '{arg}' for option '{name}' of dataset {self.name}.",
-                        word=arg,
-                        possibilities=valid_args,
-                    )
-                )
-
-        return DatasetConfig(self.default_config, **options)
-
-    def check_dependencies(self) -> None:
-        for dependency in self.dependecies:
-            try:
-                importlib.import_module(dependency)
-            except ModuleNotFoundError as error:
-                raise ModuleNotFoundError(
-                    f"Dataset '{self.name}' depends on the third-party package '{dependency}'. "
-                    f"Please install it, for example with `pip install {dependency}`."
-                ) from error
-
-    def __repr__(self) -> str:
-        items = [("name", self.name)]
-        for key in ("citation", "homepage", "license"):
-            value = getattr(self, key)
-            if value is not None:
-                items.append((key, value))
-        items.extend(sorted((key, sequence_to_str(value)) for key, value in self._valid_options.items()))
-        return make_repr(type(self).__name__, items)
 
 
 class Dataset(IterDataPipe[Dict[str, Any]], abc.ABC):
