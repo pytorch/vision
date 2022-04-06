@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Dict, List, cast, Union
+from typing import Any, Dict, List, Union
 
 import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, CSVDictParser

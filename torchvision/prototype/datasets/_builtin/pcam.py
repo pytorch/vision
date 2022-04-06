@@ -2,7 +2,6 @@ import io
 import pathlib
 from collections import namedtuple
 from typing import Any, Dict, List, Optional, Tuple, Iterator, Union
-from unicodedata import category
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features

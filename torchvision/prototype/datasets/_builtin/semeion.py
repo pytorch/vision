@@ -2,7 +2,6 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Union
 
 import torch
-from pytest import skip
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,

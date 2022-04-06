@@ -2,7 +2,6 @@ import collections.abc
 import difflib
 import io
 import mmap
-import os.path
 import platform
 from typing import (
     Any,

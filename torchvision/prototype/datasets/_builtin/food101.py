@@ -12,7 +12,6 @@ from torchdata.datapipes.iter import (
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
-    BUILTIN_DIR,
     hint_sharding,
     path_comparator,
     getitem,
