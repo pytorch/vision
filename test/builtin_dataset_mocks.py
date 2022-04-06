@@ -965,8 +965,8 @@ def food101(info, root, config):
     return num_samples_map[config.split]
 
 
-# @register_mock
-def dtd(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test"), fold=(1, 4)))
+def dtd(root, config):
     data_folder = root / "dtd"
 
     num_images_per_class = 3
@@ -1006,11 +1006,11 @@ def dtd(info, root, config):
             with open(meta_folder / f"{split}{fold}.txt", "w") as file:
                 file.write("\n".join(image_ids_in_config) + "\n")
 
-            num_samples_map[info.make_config(split=split, fold=str(fold))] = len(image_ids_in_config)
+            num_samples_map[(split, fold)] = len(image_ids_in_config)
 
     make_tar(root, "dtd-r1.0.1.tar.gz", data_folder, compression="gz")
 
-    return num_samples_map[config]
+    return num_samples_map[config["split"], config["fold"]]
 
 
 # @register_mock
