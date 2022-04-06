@@ -13,7 +13,7 @@ from torchdata.datapipes.iter import (
     LineReader,
 )
 from torchvision.datasets import VOCDetection
-from torchvision.prototype.datasets.utils import DatasetInfo, OnlineResource, HttpResource, Dataset
+from torchvision.prototype.datasets.utils import OnlineResource, HttpResource, Dataset, read_categories_file
 from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     getitem,
@@ -29,7 +29,7 @@ from .._api import register_dataset, register_info
 
 NAME = "voc"
 
-CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
 
 
 @register_info(NAME)

@@ -5,9 +5,9 @@ from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, LineReader, CSVParser
 from torchvision.prototype.datasets.utils import (
     Dataset,
-    DatasetInfo,
     HttpResource,
     OnlineResource,
+    read_categories_file,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -33,7 +33,7 @@ class DTDDemux(enum.IntEnum):
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories = DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
+    categories = read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
     categories = [c[0] for c in categories]
     return dict(categories=categories)
 

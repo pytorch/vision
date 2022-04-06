@@ -15,9 +15,9 @@ from torchdata.datapipes.iter import (
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
-    DatasetInfo,
     HttpResource,
     OnlineResource,
+    read_categories_file,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -38,7 +38,7 @@ csv.register_dialect("cub200", delimiter=" ")
 
 NAME = "cub200"
 
-CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
 
 
 @register_info(NAME)

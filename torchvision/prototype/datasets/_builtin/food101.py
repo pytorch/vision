@@ -9,7 +9,7 @@ from torchdata.datapipes.iter import (
     Demultiplexer,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource, read_categories_file
 from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
     BUILTIN_DIR,
@@ -28,7 +28,7 @@ NAME = "food101"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories = DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
+    categories = read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
     categories = [c[0] for c in categories]
     return dict(categories=categories)
 

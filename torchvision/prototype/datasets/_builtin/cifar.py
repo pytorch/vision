@@ -10,7 +10,7 @@ from torchdata.datapipes.iter import (
     Filter,
     Mapper,
 )
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource, read_categories_file
 from torchvision.prototype.datasets.utils._internal import hint_shuffling, path_comparator, hint_sharding, BUILTIN_DIR
 from torchvision.prototype.features import Label, Image
 
@@ -92,7 +92,7 @@ class _CifarBase(Dataset):
         return cast(List[str], next(iter(dp))[self._CATEGORIES_KEY])
 
 
-CIFAR10_CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "cifar10.categories"))
+CIFAR10_CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / "cifar10.categories"))
 
 
 @register_info("cifar10")
@@ -118,7 +118,7 @@ class Cifar10(_CifarBase):
         return path.name.startswith("data" if self._split == "train" else "test")
 
 
-CIFAR100_CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "cifar100.categories"))
+CIFAR100_CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / "cifar100.categories"))
 
 
 @register_info("cifar100")

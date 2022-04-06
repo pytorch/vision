@@ -16,10 +16,10 @@ from torchdata.datapipes.iter import (
     UnBatcher,
 )
 from torchvision.prototype.datasets.utils import (
-    DatasetInfo,
     HttpResource,
     OnlineResource,
     Dataset,
+    read_categories_file,
 )
 from torchvision.prototype.datasets.utils._internal import (
     MappingIterator,
@@ -40,7 +40,7 @@ NAME = "coco"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories, super_categories = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+    categories, super_categories = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
     return dict(categories=categories, super_categories=super_categories)
 
 

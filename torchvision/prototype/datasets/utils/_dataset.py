@@ -22,6 +22,10 @@ class DatasetConfig(FrozenBunch):
     pass
 
 
+def read_categories_file(path: pathlib.Path) -> List[List[str]]:
+    with open(path, newline="") as file:
+        return [row for row in csv.reader(file)]
+
 class DatasetInfo:
     def __init__(
         self,
@@ -66,9 +70,6 @@ class DatasetInfo:
         return self._configs[0]
 
     @staticmethod
-    def read_categories_file(path: pathlib.Path) -> List[List[str]]:
-        with open(path, newline="") as file:
-            return [row for row in csv.reader(file)]
 
     def make_config(self, **options: Any) -> DatasetConfig:
         if not self._valid_options and options:

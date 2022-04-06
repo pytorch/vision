@@ -2,7 +2,7 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Iterator, BinaryIO, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource, read_categories_file
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
@@ -31,7 +31,7 @@ NAME = "stanford-cars"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories = DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
+    categories = read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
     categories = [c[0] for c in categories]
     return dict(categories=categories)
 

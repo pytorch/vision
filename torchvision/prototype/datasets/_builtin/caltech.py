@@ -9,7 +9,7 @@ from torchdata.datapipes.iter import (
     Filter,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource, read_categories_file
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     read_mat,
@@ -22,7 +22,7 @@ from torchvision.prototype.features import Label, BoundingBox, _Feature, Encoded
 from .._api import register_dataset, register_info
 
 
-CALTECH101_CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "caltech101.categories"))
+CALTECH101_CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / "caltech101.categories"))
 
 
 @register_info("caltech101")
@@ -152,7 +152,7 @@ class Caltech101(Dataset):
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
 
-CALTECH256_CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "caltech256.categories"))
+CALTECH256_CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / "caltech256.categories"))
 
 
 @register_info("caltech256")

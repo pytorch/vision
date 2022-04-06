@@ -15,10 +15,10 @@ from torchdata.datapipes.iter import (
     Enumerator,
 )
 from torchvision.prototype.datasets.utils import (
-    DatasetInfo,
     OnlineResource,
     ManualDownloadResource,
     Dataset,
+    read_categories_file,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
@@ -38,7 +38,7 @@ NAME = "imagenet"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories, wnids = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+    categories, wnids = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
     return dict(categories=categories, wnids=wnids)
 
 

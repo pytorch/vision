@@ -11,7 +11,7 @@ from torchdata.datapipes.iter import (
     IterKeyZipper,
     LineReader,
 )
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource, read_categories_file
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     read_mat,
@@ -28,7 +28,7 @@ from .._api import register_dataset, register_info
 
 NAME = "sbd"
 
-CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+CATEGORIES, *_ = zip(*read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
 
 
 @register_info(NAME)
