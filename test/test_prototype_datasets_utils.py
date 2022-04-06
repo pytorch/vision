@@ -113,8 +113,9 @@ def test_missing_dependency_error():
 
         def _datapipe(self, resource_dps):
             pass
+
         def __len__(self):
             pass
-    
+
     with pytest.raises(ModuleNotFoundError, match="depends on the third-party package 'fake_dependency'"):
         DummyDataset()
