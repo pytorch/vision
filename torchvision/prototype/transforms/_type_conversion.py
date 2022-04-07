@@ -1,7 +1,11 @@
 from typing import Any, Dict
 
+import numpy as np
+import PIL.Image
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
+
+from ._utils import is_simple_tensor
 
 
 class DecodeImage(Transform):
@@ -33,3 +37,28 @@ class LabelToOneHot(Transform):
             return ""
 
         return f"num_categories={self.num_categories}"
+
+
+class ToImageTensor(Transform):
+    def __init__(self, *, copy: bool = False) -> None:
+        super().__init__()
+        self.copy = copy
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(input):
+            output = F.to_image_tensor(input, copy=self.copy)
+            return features.Image(output)
+        else:
+            return input
+
+
+class ToImagePIL(Transform):
+    def __init__(self, *, copy: bool = False) -> None:
+        super().__init__()
+        self.copy = copy
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, (features.Image, PIL.Image.Image, np.ndarray)) or is_simple_tensor(input):
+            return F.to_image_pil(input, copy=self.copy)
+        else:
+            return input
