@@ -55,6 +55,8 @@ class ImageNetDemux(enum.IntEnum):
 class ImageNet(Dataset):
     """
     - **homepage**: https://www.image-net.org/
+    - **dependencies**:
+        - <scipy `https://scipy.org/`>_
     """
 
     def __init__(
