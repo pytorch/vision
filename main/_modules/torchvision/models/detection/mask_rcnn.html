@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+081db72 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+a9899a4 ) &#x25BC</a>
     </div>
     
 
@@ -322,7 +322,7 @@
               
   <h1>Source code for torchvision.models.detection.mask_rcnn</h1><div class="highlight"><pre>
 <span></span><span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Optional</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span>
 
 <span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">nn</span>
 <span class="kn">from</span> <span class="nn">torchvision.ops</span> <span class="kn">import</span> <span class="n">MultiScaleRoIAlign</span>
@@ -335,13 +335,15 @@
 <span class="kn">from</span> <span class="nn">..resnet</span> <span class="kn">import</span> <span class="n">ResNet50_Weights</span><span class="p">,</span> <span class="n">resnet50</span>
 <span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">overwrite_eps</span>
 <span class="kn">from</span> <span class="nn">.backbone_utils</span> <span class="kn">import</span> <span class="n">_resnet_fpn_extractor</span><span class="p">,</span> <span class="n">_validate_trainable_layers</span>
-<span class="kn">from</span> <span class="nn">.faster_rcnn</span> <span class="kn">import</span> <span class="n">FasterRCNN</span>
+<span class="kn">from</span> <span class="nn">.faster_rcnn</span> <span class="kn">import</span> <span class="n">FasterRCNN</span><span class="p">,</span> <span class="n">FastRCNNConvFCHead</span><span class="p">,</span> <span class="n">RPNHead</span><span class="p">,</span> <span class="n">_default_anchorgen</span>
 
 
 <span class="n">__all__</span> <span class="o">=</span> <span class="p">[</span>
     <span class="s2">&quot;MaskRCNN&quot;</span><span class="p">,</span>
     <span class="s2">&quot;MaskRCNN_ResNet50_FPN_Weights&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;MaskRCNN_ResNet50_FPN_V2_Weights&quot;</span><span class="p">,</span>
     <span class="s2">&quot;maskrcnn_resnet50_fpn&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;maskrcnn_resnet50_fpn_v2&quot;</span><span class="p">,</span>
 <span class="p">]</span>
 
 
@@ -587,28 +589,68 @@
 
 
 <span class="k">class</span> <span class="nc">MaskRCNNHeads</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">dilation</span><span class="p">):</span>
+    <span class="n">_version</span> <span class="o">=</span> <span class="mi">2</span>
+
+    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">in_channels</span><span class="p">,</span> <span class="n">layers</span><span class="p">,</span> <span class="n">dilation</span><span class="p">,</span> <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">):</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            in_channels (int): number of input channels</span>
 <span class="sd">            layers (list): feature dimensions of each FCN layer</span>
 <span class="sd">            dilation (int): dilation rate of kernel</span>
+<span class="sd">            norm_layer (callable, optional): Module specifying the normalization layer to use. Default: None</span>
 <span class="sd">        &quot;&quot;&quot;</span>
-        <span class="n">d</span> <span class="o">=</span> <span class="n">OrderedDict</span><span class="p">()</span>
+        <span class="n">blocks</span> <span class="o">=</span> <span class="p">[]</span>
         <span class="n">next_feature</span> <span class="o">=</span> <span class="n">in_channels</span>
-        <span class="k">for</span> <span class="n">layer_idx</span><span class="p">,</span> <span class="n">layer_features</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">layers</span><span class="p">,</span> <span class="mi">1</span><span class="p">):</span>
-            <span class="n">d</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;mask_fcn</span><span class="si">{</span><span class="n">layer_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">(</span>
-                <span class="n">next_feature</span><span class="p">,</span> <span class="n">layer_features</span><span class="p">,</span> <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span> <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span> <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span>
+        <span class="k">for</span> <span class="n">layer_features</span> <span class="ow">in</span> <span class="n">layers</span><span class="p">:</span>
+            <span class="n">blocks</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">misc_nn_ops</span><span class="o">.</span><span class="n">Conv2dNormActivation</span><span class="p">(</span>
+                    <span class="n">next_feature</span><span class="p">,</span>
+                    <span class="n">layer_features</span><span class="p">,</span>
+                    <span class="n">kernel_size</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+                    <span class="n">stride</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                    <span class="n">padding</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span>
+                    <span class="n">dilation</span><span class="o">=</span><span class="n">dilation</span><span class="p">,</span>
+                    <span class="n">norm_layer</span><span class="o">=</span><span class="n">norm_layer</span><span class="p">,</span>
+                <span class="p">)</span>
             <span class="p">)</span>
-            <span class="n">d</span><span class="p">[</span><span class="sa">f</span><span class="s2">&quot;relu</span><span class="si">{</span><span class="n">layer_idx</span><span class="si">}</span><span class="s2">&quot;</span><span class="p">]</span> <span class="o">=</span> <span class="n">nn</span><span class="o">.</span><span class="n">ReLU</span><span class="p">(</span><span class="n">inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
             <span class="n">next_feature</span> <span class="o">=</span> <span class="n">layer_features</span>
 
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">d</span><span class="p">)</span>
-        <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">named_parameters</span><span class="p">():</span>
-            <span class="k">if</span> <span class="s2">&quot;weight&quot;</span> <span class="ow">in</span> <span class="n">name</span><span class="p">:</span>
-                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">param</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
-            <span class="c1"># elif &quot;bias&quot; in name:</span>
-            <span class="c1">#     nn.init.constant_(param, 0)</span>
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="o">*</span><span class="n">blocks</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">layer</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">modules</span><span class="p">():</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">layer</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Conv2d</span><span class="p">):</span>
+                <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">kaiming_normal_</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">weight</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s2">&quot;fan_out&quot;</span><span class="p">,</span> <span class="n">nonlinearity</span><span class="o">=</span><span class="s2">&quot;relu&quot;</span><span class="p">)</span>
+                <span class="k">if</span> <span class="n">layer</span><span class="o">.</span><span class="n">bias</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">nn</span><span class="o">.</span><span class="n">init</span><span class="o">.</span><span class="n">zeros_</span><span class="p">(</span><span class="n">layer</span><span class="o">.</span><span class="n">bias</span><span class="p">)</span>
+
+    <span class="k">def</span> <span class="nf">_load_from_state_dict</span><span class="p">(</span>
+        <span class="bp">self</span><span class="p">,</span>
+        <span class="n">state_dict</span><span class="p">,</span>
+        <span class="n">prefix</span><span class="p">,</span>
+        <span class="n">local_metadata</span><span class="p">,</span>
+        <span class="n">strict</span><span class="p">,</span>
+        <span class="n">missing_keys</span><span class="p">,</span>
+        <span class="n">unexpected_keys</span><span class="p">,</span>
+        <span class="n">error_msgs</span><span class="p">,</span>
+    <span class="p">):</span>
+        <span class="n">version</span> <span class="o">=</span> <span class="n">local_metadata</span><span class="o">.</span><span class="n">get</span><span class="p">(</span><span class="s2">&quot;version&quot;</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+
+        <span class="k">if</span> <span class="n">version</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">version</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">num_blocks</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">num_blocks</span><span class="p">):</span>
+                <span class="k">for</span> <span class="nb">type</span> <span class="ow">in</span> <span class="p">[</span><span class="s2">&quot;weight&quot;</span><span class="p">,</span> <span class="s2">&quot;bias&quot;</span><span class="p">]:</span>
+                    <span class="n">old_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}</span><span class="s2">mask_fcn</span><span class="si">{</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="si">}</span><span class="s2">.</span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">new_key</span> <span class="o">=</span> <span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">prefix</span><span class="si">}{</span><span class="n">i</span><span class="si">}</span><span class="s2">.0.</span><span class="si">{</span><span class="nb">type</span><span class="si">}</span><span class="s2">&quot;</span>
+                    <span class="n">state_dict</span><span class="p">[</span><span class="n">new_key</span><span class="p">]</span> <span class="o">=</span> <span class="n">state_dict</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old_key</span><span class="p">)</span>
+
+        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="n">_load_from_state_dict</span><span class="p">(</span>
+            <span class="n">state_dict</span><span class="p">,</span>
+            <span class="n">prefix</span><span class="p">,</span>
+            <span class="n">local_metadata</span><span class="p">,</span>
+            <span class="n">strict</span><span class="p">,</span>
+            <span class="n">missing_keys</span><span class="p">,</span>
+            <span class="n">unexpected_keys</span><span class="p">,</span>
+            <span class="n">error_msgs</span><span class="p">,</span>
+        <span class="p">)</span>
 
 
 <span class="k">class</span> <span class="nc">MaskRCNNPredictor</span><span class="p">(</span><span class="n">nn</span><span class="o">.</span><span class="n">Sequential</span><span class="p">):</span>
@@ -630,20 +672,41 @@
             <span class="c1">#     nn.init.constant_(param, 0)</span>
 
 
+<span class="n">_COMMON_META</span> <span class="o">=</span> <span class="p">{</span>
+    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;image_object_detection&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;MaskRCNN&quot;</span><span class="p">,</span>
+    <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_COCO_CATEGORIES</span><span class="p">,</span>
+    <span class="s2">&quot;interpolation&quot;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
+<span class="p">}</span>
+
+
 <span class="k">class</span> <span class="nc">MaskRCNN_ResNet50_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
-            <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;image_object_detection&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;MaskRCNN&quot;</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;publication_year&quot;</span><span class="p">:</span> <span class="mi">2017</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">44401393</span><span class="p">,</span>
-            <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_COCO_CATEGORIES</span><span class="p">,</span>
-            <span class="s2">&quot;interpolation&quot;</span><span class="p">:</span> <span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BILINEAR</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn&quot;</span><span class="p">,</span>
             <span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="mf">37.9</span><span class="p">,</span>
             <span class="s2">&quot;map_mask&quot;</span><span class="p">:</span> <span class="mf">34.6</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span>
+
+
+<span class="k">class</span> <span class="nc">MaskRCNN_ResNet50_FPN_V2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/maskrcnn_resnet50_fpn_v2_coco-73cbd019.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
+            <span class="s2">&quot;publication_year&quot;</span><span class="p">:</span> <span class="mi">2021</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">46359409</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5773&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;map&quot;</span><span class="p">:</span> <span class="mf">47.4</span><span class="p">,</span>
+            <span class="s2">&quot;map_mask&quot;</span><span class="p">:</span> <span class="mf">41.8</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span>
@@ -741,6 +804,68 @@
             <span class="n">overwrite_eps</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
 
     <span class="k">return</span> <span class="n">model</span></div>
+
+
+<span class="k">def</span> <span class="nf">maskrcnn_resnet50_fpn_v2</span><span class="p">(</span>
+    <span class="o">*</span><span class="p">,</span>
+    <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">MaskRCNN_ResNet50_FPN_V2_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+    <span class="n">num_classes</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">weights_backbone</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNet50_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+    <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
+<span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MaskRCNN</span><span class="p">:</span>
+    <span class="sd">&quot;&quot;&quot;</span>
+<span class="sd">    Constructs an improved MaskRCNN model with a ResNet-50-FPN backbone.</span>
+
+<span class="sd">    Reference: `&quot;Benchmarking Detection Transfer Learning with Vision Transformers&quot;</span>
+<span class="sd">    &lt;https://arxiv.org/abs/2111.11429&gt;`_.</span>
+
+<span class="sd">    :func:`~torchvision.models.detection.maskrcnn_resnet50_fpn` for more details.</span>
+
+<span class="sd">    Args:</span>
+<span class="sd">        weights (MaskRCNN_ResNet50_FPN_V2_Weights, optional): The pretrained weights for the model</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        num_classes (int, optional): number of output classes of the model (including the background)</span>
+<span class="sd">        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone</span>
+<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.</span>
+<span class="sd">            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is</span>
+<span class="sd">            passed (the default) this value is set to 3.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">weights</span> <span class="o">=</span> <span class="n">MaskRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
+    <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">weights_backbone</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="n">_ovewrite_value_param</span><span class="p">(</span><span class="n">num_classes</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
+    <span class="k">elif</span> <span class="n">num_classes</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">num_classes</span> <span class="o">=</span> <span class="mi">91</span>
+
+    <span class="n">is_trained</span> <span class="o">=</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">weights_backbone</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="n">trainable_backbone_layers</span> <span class="o">=</span> <span class="n">_validate_trainable_layers</span><span class="p">(</span><span class="n">is_trained</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="mi">5</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights_backbone</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">)</span>
+    <span class="n">backbone</span> <span class="o">=</span> <span class="n">_resnet_fpn_extractor</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">trainable_backbone_layers</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">)</span>
+    <span class="n">rpn_anchor_generator</span> <span class="o">=</span> <span class="n">_default_anchorgen</span><span class="p">()</span>
+    <span class="n">rpn_head</span> <span class="o">=</span> <span class="n">RPNHead</span><span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="n">rpn_anchor_generator</span><span class="o">.</span><span class="n">num_anchors_per_location</span><span class="p">()[</span><span class="mi">0</span><span class="p">],</span> <span class="n">conv_depth</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">box_head</span> <span class="o">=</span> <span class="n">FastRCNNConvFCHead</span><span class="p">(</span>
+        <span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="mi">7</span><span class="p">,</span> <span class="mi">7</span><span class="p">),</span> <span class="p">[</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">],</span> <span class="p">[</span><span class="mi">1024</span><span class="p">],</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span>
+    <span class="p">)</span>
+    <span class="n">mask_head</span> <span class="o">=</span> <span class="n">MaskRCNNHeads</span><span class="p">(</span><span class="n">backbone</span><span class="o">.</span><span class="n">out_channels</span><span class="p">,</span> <span class="p">[</span><span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">,</span> <span class="mi">256</span><span class="p">],</span> <span class="mi">1</span><span class="p">,</span> <span class="n">norm_layer</span><span class="o">=</span><span class="n">nn</span><span class="o">.</span><span class="n">BatchNorm2d</span><span class="p">)</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">MaskRCNN</span><span class="p">(</span>
+        <span class="n">backbone</span><span class="p">,</span>
+        <span class="n">num_classes</span><span class="o">=</span><span class="n">num_classes</span><span class="p">,</span>
+        <span class="n">rpn_anchor_generator</span><span class="o">=</span><span class="n">rpn_anchor_generator</span><span class="p">,</span>
+        <span class="n">rpn_head</span><span class="o">=</span><span class="n">rpn_head</span><span class="p">,</span>
+        <span class="n">box_head</span><span class="o">=</span><span class="n">box_head</span><span class="p">,</span>
+        <span class="n">mask_head</span><span class="o">=</span><span class="n">mask_head</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">kwargs</span><span class="p">,</span>
+    <span class="p">)</span>
+
+    <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">get_state_dict</span><span class="p">(</span><span class="n">progress</span><span class="o">=</span><span class="n">progress</span><span class="p">))</span>
+
+    <span class="k">return</span> <span class="n">model</span>
 </pre></div>
 
              </article>
@@ -867,37 +992,6 @@
         <div class="footer-links-col follow-us-col">
           <ul>
             <li class="list-title">Stay Connected</li>
-            <li>
-              <div id="mc_embed_signup">
-                <form
-                  action="https://twitter.us14.list-manage.com/subscribe/post?u=75419c71fe0a935e53dfa4a3f&id=91d0dccd39"
-                  method="post"
-                  id="mc-embedded-subscribe-form"
-                  name="mc-embedded-subscribe-form"
-                  class="email-subscribe-form validate"
-                  target="_blank"
-                  novalidate>
-                  <div id="mc_embed_signup_scroll" class="email-subscribe-form-fields-wrapper">
-                    <div class="mc-field-group">
-                      <label for="mce-EMAIL" style="display:none;">Email Address</label>
-                      <input type="email" value="" name="EMAIL" class="required email" id="mce-EMAIL" placeholder="Email Address">
-                    </div>
-
-                    <div id="mce-responses" class="clear">
-                      <div class="response" id="mce-error-response" style="display:none"></div>
-                      <div class="response" id="mce-success-response" style="display:none"></div>
-                    </div>    <!-- real people should not fill this in and expect good things - do not remove this or risk form bot signups-->
-
-                    <div style="position: absolute; left: -5000px;" aria-hidden="true"><input type="text" name="b_75419c71fe0a935e53dfa4a3f_91d0dccd39" tabindex="-1" value=""></div>
-
-                    <div class="clear">
-                      <input type="submit" value="" name="subscribe" id="mc-embedded-subscribe" class="button email-subscribe-button">
-                    </div>
-                  </div>
-                </form>
-              </div>
-
-            </li>
           </ul>
 
           <div class="footer-social-icons">
