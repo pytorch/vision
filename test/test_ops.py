@@ -1492,7 +1492,9 @@ class TestFocalLoss:
 
     def _generate_diverse_input_target_pair(self, shape=(5, 2), **kwargs):
         # This function will return inputs and targets with shape: (shape[0]*9, shape[1])
-        inputs_targets_range_type = [
+        inputs = []
+        targets = []
+        for input_range_type, target_range_type in [
             ("small", "zeros"),
             ("small", "ones"),
             ("small", "random_binary"),
@@ -1502,19 +1504,11 @@ class TestFocalLoss:
             ("random", "zeros"),
             ("random", "ones"),
             ("random", "random_binary"),
-        ]
-        inputs = self._logit(
-            torch.concat(
-                [
-                    self._generate_tensor_with_range_type(shape, x[0], **kwargs).squeeze()
-                    for x in inputs_targets_range_type
-                ]
-            )
-        )
-        targets = torch.concat(
-            [self._generate_tensor_with_range_type(shape, x[1], **kwargs).squeeze() for x in inputs_targets_range_type]
-        )
-        return inputs, targets
+        ]:
+            inputs.append(self._logit(self._generate_tensor_with_range_type(shape, input_range_type, **kwargs)))
+            targets.append(self._generate_tensor_with_range_type(shape, target_range_type, **kwargs))
+
+        return torch.cat(inputs), torch.cat(targets)
 
     @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
     @pytest.mark.parametrize("gamma", [0, 2])
