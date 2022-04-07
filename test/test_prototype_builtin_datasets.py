@@ -203,8 +203,7 @@ class TestQMNIST:
             assert key in sample and isinstance(sample[key], type)
 
 
-# FIXME: DATASET_MOCKS["gtsrb"]
-@parametrize_dataset_mocks({})
+@parametrize_dataset_mocks(DATASET_MOCKS["gtsrb"])
 class TestGTSRB:
     def test_label_matches_path(self, test_home, dataset_mock, config):
         # We read the labels from the csv files instead. But for the trainset, the labels are also part of the path.
@@ -221,8 +220,7 @@ class TestGTSRB:
             assert sample["label"] == label_from_path
 
 
-# FIXME: DATASET_MOCKS["usps"]
-@parametrize_dataset_mocks({})
+@parametrize_dataset_mocks(DATASET_MOCKS["usps"])
 class TestUSPS:
     def test_sample_content(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
