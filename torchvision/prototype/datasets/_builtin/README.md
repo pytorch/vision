@@ -68,7 +68,7 @@ class constructor, e.g. `super().__init__(..., dependencies=("scipy",))`. Their 
 checked if a user tries to load the dataset. Within the implementation of the dataset, import these packages lazily to
 avoid missing dependencies at import time.
 
-## `_resources(self)`
+### `_resources(self)`
 
 Returns `List[datasets.utils.OnlineResource]` of all the files that need to be present locally before the dataset can be
 build. The download will happen automatically.
