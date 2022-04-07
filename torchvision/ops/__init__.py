@@ -7,6 +7,7 @@ from .boxes import (
     box_area,
     box_iou,
     generalized_box_iou,
+    distance_box_iou,
     masks_to_boxes,
 )
 from .boxes import box_convert
@@ -15,6 +16,7 @@ from .drop_block import drop_block2d, DropBlock2d, drop_block3d, DropBlock3d
 from .feature_pyramid_network import FeaturePyramidNetwork
 from .focal_loss import sigmoid_focal_loss
 from .giou_loss import generalized_box_iou_loss
+from .diou_loss import distance_box_iou_loss
 from .misc import FrozenBatchNorm2d, Conv2dNormActivation, Conv3dNormActivation, SqueezeExcitation
 from .poolers import MultiScaleRoIAlign
 from .ps_roi_align import ps_roi_align, PSRoIAlign
@@ -38,6 +40,7 @@ __all__ = [
     "box_area",
     "box_iou",
     "generalized_box_iou",
+    "distance_box_iou",
     "roi_align",
     "RoIAlign",
     "roi_pool",
@@ -56,6 +59,7 @@ __all__ = [
     "Conv3dNormActivation",
     "SqueezeExcitation",
     "generalized_box_iou_loss",
+    "distance_box_iou_loss",
     "drop_block2d",
     "DropBlock2d",
     "drop_block3d",
