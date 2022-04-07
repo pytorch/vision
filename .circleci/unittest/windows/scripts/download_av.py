@@ -17,7 +17,7 @@ path = {
 }
 
 wheel = f"av-9.1.1-{python_tag}-{abi_tag}-win_amd64.whl"
-print(wheel)
+print(root / wheel)
 
 archive = f"{wheel}.zip"
 
