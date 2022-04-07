@@ -1,6 +1,9 @@
+import pathlib
 import sys
 import zipfile
 from urllib.request import urlopen
+
+root = pathlib.Path(sys.argv[1])
 
 major, minor, *_ = sys.version_info
 
@@ -20,8 +23,8 @@ archive = f"{wheel}.zip"
 
 url = f"https://github.com/PyAV-Org/PyAV/files/{path[minor]}/{archive}"
 
-with open(archive, "wb") as fh, urlopen(url) as response:
+with open(root / archive, "wb") as fh, urlopen(url) as response:
     fh.write(response.read())
 
-with zipfile.ZipFile(archive) as fh:
+with zipfile.ZipFile(root / archive) as fh:
     fh.extractall()
