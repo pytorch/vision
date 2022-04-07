@@ -18,7 +18,7 @@ import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, random_subsets
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision._utils import sequence_to_str
@@ -1490,5 +1490,53 @@ def usps(info, root, config):
             )
 
         fh.write("\n".join(lines).encode())
+
+    return num_samples
+
+
+@register_mock
+def sun397(info, root, config):
+    images_root = root / "SUN397"
+    images_root.mkdir()
+
+    categories = ["abbey", "airplane_cabin", "wrestling_ring/indoor"]
+    category_keys = [f"/{category[0]}/{category}" for category in categories]
+
+    keys = []
+    for key in category_keys:
+        parts = key.split("/")
+        image_files = create_image_folder(
+            root=images_root.joinpath(*parts[1:-1]),
+            name=parts[-1],
+            file_name_fn=lambda idx: f"sun_{idx:05d}.jpg",
+            num_examples=5,
+        )
+
+        keys.extend([f"/{image_file.relative_to(images_root).as_posix()}" for image_file in image_files])
+
+    partitions_root = root / "Partitions"
+    partitions_root.mkdir()
+
+    splits = ["train", "test"]
+    for fold in range(1, 11):
+        random.shuffle(keys)
+
+        for split, keys_in_split in zip(splits, random_subsets(keys, len(splits))):
+            if config.split == "all":
+                num_samples = len(keys)
+            elif config.split == f"{split}-{fold}":
+                num_samples = len(keys_in_split)
+
+            with open(partitions_root / f"{split.capitalize()}ing_{fold:02d}.txt", "w") as fh:
+                fh.write("\n".join(sorted(keys_in_split)))
+
+    # Both archives contain this file. Although it shouldn't be used at runtime, it serves as sentinel to test the
+    # filtering of the correct files
+    for path in (images_root, partitions_root):
+        with open(path / "ClassName.txt", "w") as fh:
+            fh.write("\n".join(category_keys))
+
+    make_tar(root, f"{images_root.name}.tar.gz", compression="gz")
+    make_zip(root, f"{partitions_root.name}.zip")
 
     return num_samples

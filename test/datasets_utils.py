@@ -952,3 +952,32 @@ def make_fake_flo_file(h, w, file_name):
     )
     with open(file_name, "wb") as f:
         f.write(content)
+
+
+def random_subsets(collection, n):
+    """Splits collection into non-overlapping subsets.
+
+    Args:
+        collection: Collection of items to be split.
+        n: Number of subsets.
+
+    Returns:
+        Tuple of subsets. Each subset is a list of random items from ``collection`` without overlap
+            to the other subsets. Each subset contains at least one element.
+
+    Examples:
+        >>> collection = range(10)
+        >>> random_subsets(collection, 2)
+        ([3, 5, 6, 7], [0, 1, 2, 4, 8, 9])
+        >>> random_subsets(collection, 3)
+        ([0, 1, 4, 8, 9], [2], [3, 5, 6, 7])
+    """
+    while True:
+        idcs = torch.randint(n, (len(collection),)).tolist()
+        if len(set(idcs)) == n:
+            break
+
+    subsets = tuple([] for _ in range(n))
+    for idx, item in zip(idcs, collection):
+        subsets[idx].append(item)
+    return subsets
