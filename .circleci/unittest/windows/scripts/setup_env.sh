@@ -41,40 +41,8 @@ conda activate "${env_dir}"
 
 ####################################################### DEBUG
 
-conda install -c conda-forge wget unzip
+WHEEL=$(python download_av.py)
 
-PYTHON_TAG="cp${PYTHON_VERSION//./}"
-
-case $PYTHON_VERSION in
-  "3.7")
-    URL_PATH=8420289
-    ABI_TAG="${PYTHON_TAG}m"
-    ;;
-
-  "3.8")
-    URL_PATH=8420292
-    ABI_TAG=$PYTHON_TAG
-    ;;
-
-  "3.9")
-    URL_PATH=8420298
-    ABI_TAG=$PYTHON_TAG
-    ;;
-
-  "3.10")
-    URL_PATH=8420300
-    ABI_TAG=$PYTHON_TAG
-    ;;
-esac
-
-WHEEL="av-9.1.1-${PYTHON_TAG}-${ABI_TAG}-win_amd64.whl"
-echo $WHEEL
-
-ARCHIVE="${WHEEL}.zip"
-echo $ARCHIVE
-
-wget "https://github.com/PyAV-Org/PyAV/files/${URL_PATH}/${ARCHIVE}"
-unzip -u $ARCHIVE
 pip install $WHEEL
 
 pip list
