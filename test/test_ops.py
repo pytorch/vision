@@ -9,6 +9,7 @@ import numpy as np
 import pytest
 import torch
 import torch.fx
+import torch.nn.functional as F
 from common_utils import assert_equal, cpu_and_gpu, needs_cuda
 from PIL import Image
 from torch import nn, Tensor
@@ -1448,6 +1449,141 @@ class TestDropBlock:
         assert len(graph_node_names) == 2
         assert len(graph_node_names[0]) == len(graph_node_names[1])
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
+
+
+def focal_loss_device_and_dtype():
+    # This is a helper function to provide list of device and dtype pair for TestFocalLoss
+    # We need this because torch.half is not fully supported on cpu
+    # For instance, torch.log(torch.rand(1, dtype=torch.half)) will produce error currently
+    def augment_need_cuda_param(x):
+        if x[0] == "cuda":
+            return pytest.param(x, marks=pytest.mark.needs_cuda)
+        return x
+
+    result = [
+        (device, dtype)
+        for device in ["cpu", "cuda"]
+        for dtype in [torch.float32, torch.half]
+        if (device, dtype) != ("cpu", torch.half)
+    ]
+    result = [augment_need_cuda_param(x) for x in result]
+    return result
+
+
+class TestFocalLoss:
+    def _logit(self, p: Tensor) -> Tensor:
+        return torch.log(p / (1 - p))
+
+    def _get_subt(self, p: float, targets: Tensor):
+        return p * targets + (1 - p) * target
+
+    def _generate_tensor_with_range_type(self, shape, range_type, **kwargs):
+        if range_type != "random_binary":
+            range_map = {
+                "small": (0.0, 0.2),
+                "big": (0.8, 1.0),
+                "zeros": (0.0, 0.0),
+                "ones": (1.0, 1.0),
+                "random": (0.0, 1.0),
+            }
+            range = range_map[range_type]
+            return (range[1] - range[0]) * torch.rand(shape, **kwargs) + range[0]
+        else:
+            return torch.randint(0, 2, shape, **kwargs)
+
+    def _generate_diverse_input_target_pair(self, shape=(5, 2), **kwargs):
+        # This function will return inputs and targets with shape: (shape[0]*9, shape[1])
+        inputs_targets_range_type = [
+            ("small", "zeros"),
+            ("small", "ones"),
+            ("small", "random_binary"),
+            ("big", "zeros"),
+            ("big", "ones"),
+            ("big", "random_binary"),
+            ("random", "zeros"),
+            ("random", "ones"),
+            ("random", "random_binary"),
+        ]
+        inputs = self._logit(
+            torch.concat(
+                [
+                    self._generate_tensor_with_range_type(shape, x[0], **kwargs).squeeze()
+                    for x in inputs_targets_range_type
+                ]
+            )
+        )
+        targets = torch.concat(
+            [self._generate_tensor_with_range_type(shape, x[1], **kwargs).squeeze() for x in inputs_targets_range_type]
+        )
+        return inputs, targets
+
+    @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
+    @pytest.mark.parametrize("gamma", [0, 2])
+    @pytest.mark.parametrize("device_dtype", focal_loss_device_and_dtype())
+    @pytest.mark.parametrize("seed", [0, 1])
+    def test_correct_ratio(self, alpha, gamma, device_dtype, seed) -> None:
+        # For testing the ratio with manual calculation, we require the reduction to be "none"
+        reduction = "none"
+        device, dtype = device_dtype
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        ce_loss = F.binary_cross_entropy_with_logits(inputs, targets, reduction=reduction)
+
+        assert torch.all(focal_loss <= ce_loss)
+
+        loss_ratio = (focal_loss / ce_loss).squeeze()
+        prob = torch.sigmoid(inputs)
+        p_t = prob * targets + (1 - prob) * (1 - targets)
+        correct_ratio = (1.0 - p_t) ** gamma
+        if alpha >= 0:
+            alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
+            correct_ratio = correct_ratio * alpha_t
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(correct_ratio, loss_ratio, rtol=tol, atol=tol)
+
+    @pytest.mark.parametrize("reduction", ["mean", "sum"])
+    @pytest.mark.parametrize("device_dtype", focal_loss_device_and_dtype())
+    @pytest.mark.parametrize("seed", [2, 3])
+    def test_equal_ce_loss(self, reduction, device_dtype, seed) -> None:
+        # focal loss should be equal ce_loss if alpha=-1 and gamma=0
+        alpha = -1
+        gamma = 0
+        device, dtype = device_dtype
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        inputs_fl = inputs.clone().requires_grad_()
+        targets_fl = targets.clone()
+        inputs_ce = inputs.clone().requires_grad_()
+        targets_ce = targets.clone()
+        focal_loss = ops.sigmoid_focal_loss(inputs_fl, targets_fl, gamma=gamma, alpha=alpha, reduction=reduction)
+        ce_loss = F.binary_cross_entropy_with_logits(inputs_ce, targets_ce, reduction=reduction)
+
+        assert torch.all(focal_loss <= ce_loss)
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(focal_loss.data, ce_loss.data, rtol=tol, atol=tol)
+
+        focal_loss.backward()
+        ce_loss.backward()
+        torch.testing.assert_close(inputs_fl.grad.data, inputs_ce.grad.data, rtol=tol, atol=tol)
+
+    @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
+    @pytest.mark.parametrize("gamma", [0, 2])
+    @pytest.mark.parametrize("reduction", ["none", "mean", "sum"])
+    @pytest.mark.parametrize("device_dtype", focal_loss_device_and_dtype())
+    @pytest.mark.parametrize("seed", [4, 5])
+    def test_jit(self, alpha, gamma, reduction, device_dtype, seed) -> None:
+        device, dtype = device_dtype
+        script_fn = torch.jit.script(ops.sigmoid_focal_loss)
+        torch.random.manual_seed(seed)
+        inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
+        focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
 
 
 if __name__ == "__main__":
