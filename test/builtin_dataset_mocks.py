@@ -1477,6 +1477,88 @@ def stanford_cars(info, root, config):
 
 
 @register_mock
+def places365(info, root, config):
+    num_samples = {"train-challenge": 6, "train-standard": 5, "test": 4, "val": 3}[config.split]
+    categories = ["alley", "field/wild", "subway_station/platform", "zen_garden"]
+    category_keys = [f"/{category[0]}/{category}" for category in categories]
+
+    train = config.split.startswith("train")
+    variant = "challenge" if config.split == "train-challenge" else "standard"
+
+    image_res_suffix = "256" if config.image_res == "small" else "large"
+    image_root = root / (f"data_{image_res_suffix}" if train else f"{config.split}_{image_res_suffix}")
+
+    keys_labels = []
+    for category_idx, category_key in enumerate(category_keys):
+        if config.split.startswith("train"):
+            parts = category_key.split("/")
+            image_dir = pathlib.Path(*parts[1:])
+            image_prefix = ""
+            idx_start = 0
+        else:
+            image_dir = ""
+            image_prefix = f"Places365_{config.split}_"
+            idx_start = category_idx * num_samples
+
+        image_files = create_image_folder(
+            root=image_root,
+            name=image_dir,
+            file_name_fn=lambda idx: f"{image_prefix}{idx_start+idx:08d}.jpg",
+            num_examples=num_samples,
+        )
+
+        keys_labels.extend(
+            [
+                (("/" if train else "") + image_file.relative_to(image_root).as_posix(), category_idx)
+                for image_file in image_files
+            ]
+        )
+
+    meta_filenames = {
+        "train": f"places365_train_{variant}.txt",
+        "category": "categories_places365.txt",
+        "val": "places365_val.txt",
+        "test": "places365_test.txt",
+    }
+
+    with open(root / meta_filenames["category"], "w") as fh:
+        fh.write("\n".join([f"{category_keys[i]} {i}" for i in range(len(category_keys))]))
+
+    all_splits = ["train", "val", "test"]
+    for split in all_splits:
+        with open(root / meta_filenames[split], "w") as fh:
+            # If not the same as config.split we will only produce one sample data
+            if config.split.startswith(split):
+                for i, key_label in enumerate(keys_labels):
+                    key, label = key_label
+                    if split != "test":
+                        fh.write(f"{key} {label}")
+                    else:
+                        fh.write(f"{key}")
+                    if i != len(keys_labels) - 1:
+                        fh.write("\n")
+            elif train:
+                fh.write("/s/subway_station/platform/00000001.jpg 2")
+            elif split == "val":
+                fh.write("Places365_val_00000001.jpg 1")
+            else:  # split == "test":
+                fh.write("Places365_test_00000001.jpg")
+
+    make_tar(
+        root,
+        f"train_{image_res_suffix}_places365{variant}.tar" if train else f"{config.split}_{image_res_suffix}.tar",
+        image_root,
+    )
+    make_tar(
+        root,
+        f"filelist_places365-{variant}.tar",
+        *[root / meta_filename for meta_filename in meta_filenames.values()],
+    )
+
+    return num_samples * len(categories)
+
+
+@register_mock
 def usps(info, root, config):
     num_samples = {"train": 15, "test": 7}[config.split]
 
