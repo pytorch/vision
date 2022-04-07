@@ -224,7 +224,7 @@ def draw_bounding_boxes(
     colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
 
     if font is None and font_size != 10:
-        warnings.warn("Argument font_size will be unused as font is not set.")
+        warnings.warn("Argument 'font_size' will be unused as 'font' is not set.")
 
     # Handle Grayscale images
     if image.size(0) == 1:
