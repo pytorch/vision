@@ -38,6 +38,11 @@ conda activate "${env_dir}"
 #printf "* Installing dependencies (except PyTorch)\n"
 #conda env update --file "${this_dir}/environment.yml" --prune
 
+
+####################################################### DEBUG
+
+conda install -c conda-forge wget unzip
+
 PYTHON_TAG="cp${PYTHON_VERSION//./}"
 
 case $PYTHON_VERSION in
