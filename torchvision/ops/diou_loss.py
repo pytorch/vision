@@ -12,9 +12,6 @@ def distance_box_iou_loss(
     eps: float = 1e-7,
 ) -> torch.Tensor:
     """
-    Original implementation from:
-    https://github.com/facebookresearch/detectron2/blob/dfe8d368c8b7cc2be42c5c3faf9bdcc3c08257b1/detectron2/layers/losses.py#L66
-
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
     distance between boxes' centers isn't zero. Indeed, for two exactly overlapping
     boxes, the distance IoU is the same as the IoU loss.
@@ -37,6 +34,8 @@ def distance_box_iou_loss(
         https://arxiv.org/abs/1911.08287
 
     """
+    # Original implementation from:
+    # https://github.com/facebookresearch/detectron2/blob/dfe8d368c8b7cc2be42c5c3faf9bdcc3c08257b1/detectron2/layers/losses.py#L5
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(distance_box_iou_loss)
 
@@ -44,11 +43,6 @@ def distance_box_iou_loss(
     boxes2 = _upcast(boxes2)
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
-
-    if (x2 < x1).all():
-        raise ValueError("x1 is larger than x2")
-    if (y2 < y1).all():
-        raise ValueError("y1 is larger than y2")
 
     # Intersection keypoints
     xkis1 = torch.max(x1, x1g)
