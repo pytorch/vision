@@ -27,7 +27,7 @@ from .._api import register_dataset, register_info
 NAME = "my-dataset"
 
 @register_info(NAME)
-def info() -> Dict[str, Any]:
+def _info() -> Dict[str, Any]:
   return dict(
       ...
   )
@@ -48,7 +48,7 @@ class MyDataset(Dataset):
         ...
 ```
 
-In addition to the dataset, you also need to implement an `info()` function that takes no arguments and returns a
+In addition to the dataset, you also need to implement an `_info()` function that takes no arguments and returns a
 dictionary of static information. The most common use case is to provide human-readable categories.
 [See below](#how-do-i-handle-a-dataset-that-defines-many-categories) how to handle cases with many categories.
 
