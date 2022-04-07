@@ -1479,15 +1479,14 @@ class TestFocalLoss:
 
     def _generate_tensor_with_range_type(self, shape, range_type, **kwargs):
         if range_type != "random_binary":
-            range_map = {
+            low, high = {
                 "small": (0.0, 0.2),
                 "big": (0.8, 1.0),
                 "zeros": (0.0, 0.0),
                 "ones": (1.0, 1.0),
                 "random": (0.0, 1.0),
-            }
-            range = range_map[range_type]
-            return (range[1] - range[0]) * torch.rand(shape, **kwargs) + range[0]
+            }[range_type]
+            return torch.testing.make_tensor(shape, low=low, high=high, **kwargs)
         else:
             return torch.randint(0, 2, shape, **kwargs)
 
