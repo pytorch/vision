@@ -64,8 +64,7 @@ class CUB200(Dataset):
 
         super().__init__(
             root,
-            # TODO: this will only be available after https://github.com/pytorch/vision/pull/5473
-            # dependencies=("scipy",),
+            dependencies=("scipy",),
             skip_integrity_check=skip_integrity_check,
         )
 
