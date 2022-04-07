@@ -15,12 +15,10 @@ from .._api import register_dataset, register_info
 
 NAME = "country211"
 
-CATEGORIES, *_ = zip(*read_categories_file(NAME))
-
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    return dict(categories=CATEGORIES)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)

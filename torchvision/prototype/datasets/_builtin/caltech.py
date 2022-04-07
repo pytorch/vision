@@ -22,12 +22,9 @@ from torchvision.prototype.features import Label, BoundingBox, _Feature, Encoded
 from .._api import register_dataset, register_info
 
 
-CALTECH101_CATEGORIES, *_ = zip(*read_categories_file("caltech101"))
-
-
 @register_info("caltech101")
 def _caltech101_info() -> Dict[str, Any]:
-    return dict(categories=CALTECH101_CATEGORIES)
+    return dict(categories=read_categories_file("caltech101"))
 
 
 @register_dataset("caltech101")
@@ -152,12 +149,9 @@ class Caltech101(Dataset):
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
 
-CALTECH256_CATEGORIES, *_ = zip(*read_categories_file("caltech256"))
-
-
 @register_info("caltech256")
 def _caltech256_info() -> Dict[str, Any]:
-    return dict(categories=CALTECH256_CATEGORIES)
+    return dict(categories=read_categories_file("caltech256"))
 
 
 @register_dataset("caltech256")

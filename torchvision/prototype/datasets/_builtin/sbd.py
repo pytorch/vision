@@ -28,12 +28,10 @@ from .._api import register_dataset, register_info
 
 NAME = "sbd"
 
-CATEGORIES, *_ = zip(*read_categories_file(NAME))
-
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    return dict(categories=CATEGORIES)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)
@@ -53,7 +51,7 @@ class SBD(Dataset):
     ) -> None:
         self._split = self._verify_str_arg(split, "split", ("train", "val", "train_noval"))
 
-        self._categories = CATEGORIES
+        self._categories = _info()["categories"]
 
         super().__init__(root, dependencies=("scipy",), skip_integrity_check=skip_integrity_check)
 

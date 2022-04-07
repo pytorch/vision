@@ -40,7 +40,7 @@ class _CifarBase(Dataset):
     _LABELS_KEY: str
     _META_FILE_NAME: str
     _CATEGORIES_KEY: str
-    # _categories: List[str]
+    _categories: List[str]
 
     def __init__(
         self,
@@ -97,12 +97,9 @@ class _CifarBase(Dataset):
         return cast(List[str], next(iter(dp))[self._CATEGORIES_KEY])
 
 
-CIFAR10_CATEGORIES, *_ = zip(*read_categories_file("cifar10"))
-
-
 @register_info("cifar10")
 def _cifar10_info() -> Dict[str, Any]:
-    return dict(categories=CIFAR10_CATEGORIES)
+    return dict(categories=read_categories_file("cifar10"))
 
 
 @register_dataset("cifar10")
@@ -123,12 +120,9 @@ class Cifar10(_CifarBase):
         return path.name.startswith("data" if self._split == "train" else "test")
 
 
-CIFAR100_CATEGORIES, *_ = zip(*read_categories_file("cifar100"))
-
-
 @register_info("cifar100")
 def _cifar100_info() -> Dict[str, Any]:
-    return dict(categories=CIFAR10_CATEGORIES)
+    return dict(categories=read_categories_file("cifar100"))
 
 
 @register_dataset("cifar100")
