@@ -10,8 +10,13 @@ from torchdata.datapipes.iter import (
     Filter,
     Mapper,
 )
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import hint_shuffling, path_comparator, hint_sharding, BUILTIN_DIR
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import (
+    hint_shuffling,
+    path_comparator,
+    hint_sharding,
+    read_categories_file,
+)
 from torchvision.prototype.features import Label, Image
 
 from .._api import register_dataset, register_info
@@ -29,13 +34,13 @@ class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):
             yield from iter(zip(image_arrays, category_idcs))
 
 
-class _CifarBase(Dataset2):
+class _CifarBase(Dataset):
     _FILE_NAME: str
     _SHA256: str
     _LABELS_KEY: str
     _META_FILE_NAME: str
     _CATEGORIES_KEY: str
-    # _categories: List[str]
+    _categories: List[str]
 
     def __init__(
         self,
@@ -92,12 +97,9 @@ class _CifarBase(Dataset2):
         return cast(List[str], next(iter(dp))[self._CATEGORIES_KEY])
 
 
-CIFAR10_CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "cifar10.categories"))
-
-
 @register_info("cifar10")
 def _cifar10_info() -> Dict[str, Any]:
-    return dict(categories=CIFAR10_CATEGORIES)
+    return dict(categories=read_categories_file("cifar10"))
 
 
 @register_dataset("cifar10")
@@ -118,12 +120,9 @@ class Cifar10(_CifarBase):
         return path.name.startswith("data" if self._split == "train" else "test")
 
 
-CIFAR100_CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "cifar100.categories"))
-
-
 @register_info("cifar100")
 def _cifar100_info() -> Dict[str, Any]:
-    return dict(categories=CIFAR10_CATEGORIES)
+    return dict(categories=read_categories_file("cifar100"))
 
 
 @register_dataset("cifar100")

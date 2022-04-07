@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, CSVDictParser
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
-    DatasetInfo,
+    Dataset,
     HttpResource,
     OnlineResource,
 )
@@ -13,9 +12,9 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     hint_sharding,
     hint_shuffling,
-    BUILTIN_DIR,
     getitem,
     path_accessor,
+    read_categories_file,
     path_comparator,
 )
 from torchvision.prototype.features import Label, EncodedImage
@@ -33,13 +32,11 @@ class OxfordIIITPetDemux(enum.IntEnum):
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories = DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
-    categories = [c[0] for c in categories]
-    return dict(categories=categories)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)
-class OxfordIIITPet(Dataset2):
+class OxfordIIITPet(Dataset):
     """Oxford IIIT Pet Dataset
     homepage="https://www.robots.ox.ac.uk/~vgg/data/pets/",
     """

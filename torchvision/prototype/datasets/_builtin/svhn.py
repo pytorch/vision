@@ -8,7 +8,7 @@ from torchdata.datapipes.iter import (
     UnBatcher,
 )
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
+    Dataset,
     HttpResource,
     OnlineResource,
 )
@@ -30,7 +30,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class SVHN(Dataset2):
+class SVHN(Dataset):
     """SVHN Dataset.
     homepage="http://ufldl.stanford.edu/housenumbers/",
     dependencies = scipy

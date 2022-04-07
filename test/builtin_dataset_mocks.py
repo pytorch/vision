@@ -68,7 +68,7 @@ class DatasetMock:
 
         mock_info = self._parse_mock_info(self.mock_data_fn(root, config))
 
-        with unittest.mock.patch.object(datasets.utils.Dataset2, "__init__"):
+        with unittest.mock.patch.object(datasets.utils.Dataset, "__init__"):
             required_file_names = {
                 resource.file_name for resource in datasets.load(self.name, root=root, **config)._resources()
             }

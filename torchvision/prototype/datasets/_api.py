@@ -2,12 +2,12 @@ import pathlib
 from typing import Any, Dict, List, Callable, Type, Optional, Union, TypeVar
 
 from torchvision.prototype.datasets import home
-from torchvision.prototype.datasets.utils import Dataset2
+from torchvision.prototype.datasets.utils import Dataset
 from torchvision.prototype.utils._internal import add_suggestion
 
 
 T = TypeVar("T")
-D = TypeVar("D", bound=Type[Dataset2])
+D = TypeVar("D", bound=Type[Dataset])
 
 BUILTIN_INFOS: Dict[str, Dict[str, Any]] = {}
 
@@ -56,7 +56,7 @@ def info(name: str) -> Dict[str, Any]:
     return find(BUILTIN_INFOS, name)
 
 
-def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **config: Any) -> Dataset2:
+def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **config: Any) -> Dataset:
     dataset_cls = find(BUILTIN_DATASETS, name)
 
     if root is None:

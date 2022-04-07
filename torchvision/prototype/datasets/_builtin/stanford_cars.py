@@ -2,13 +2,13 @@ import pathlib
 from typing import Any, Dict, List, Tuple, Iterator, BinaryIO, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
     path_comparator,
     read_mat,
-    BUILTIN_DIR,
+    read_categories_file,
 )
 from torchvision.prototype.features import BoundingBox, EncodedImage, Label
 
@@ -31,13 +31,11 @@ NAME = "stanford-cars"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories = DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
-    categories = [c[0] for c in categories]
-    return dict(categories=categories)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)
-class StanfordCars(Dataset2):
+class StanfordCars(Dataset):
     """Stanford Cars dataset.
     homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
     dependencies=scipy

@@ -4,8 +4,7 @@ from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, LineReader, CSVParser
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
-    DatasetInfo,
+    Dataset,
     HttpResource,
     OnlineResource,
 )
@@ -13,8 +12,8 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     hint_sharding,
     path_comparator,
-    BUILTIN_DIR,
     getitem,
+    read_categories_file,
     hint_shuffling,
 )
 from torchvision.prototype.features import Label, EncodedImage
@@ -33,13 +32,11 @@ class DTDDemux(enum.IntEnum):
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories = DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
-    categories = [c[0] for c in categories]
-    return dict(categories=categories)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)
-class DTD(Dataset2):
+class DTD(Dataset):
     """DTD Dataset.
     homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
     """

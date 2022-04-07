@@ -16,16 +16,15 @@ from torchdata.datapipes.iter import (
     UnBatcher,
 )
 from torchvision.prototype.datasets.utils import (
-    DatasetInfo,
     HttpResource,
     OnlineResource,
-    Dataset2,
+    Dataset,
 )
 from torchvision.prototype.datasets.utils._internal import (
     MappingIterator,
     INFINITE_BUFFER_SIZE,
-    BUILTIN_DIR,
     getitem,
+    read_categories_file,
     path_accessor,
     hint_sharding,
     hint_shuffling,
@@ -40,12 +39,12 @@ NAME = "coco"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories, super_categories = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
+    categories, super_categories = zip(*read_categories_file(NAME))
     return dict(categories=categories, super_categories=super_categories)
 
 
 @register_dataset(NAME)
-class Coco(Dataset2):
+class Coco(Dataset):
     """
     - **homepage**: https://cocodataset.org/
     - **dependencies**:
