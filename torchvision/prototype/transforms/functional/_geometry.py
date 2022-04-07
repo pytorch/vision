@@ -428,8 +428,6 @@ def crop_bounding_box(
     height: int,
     width: int,
 ) -> torch.Tensor:
-    pass
-
     shape = bounding_box.shape
 
     bounding_box = convert_bounding_box_format(
