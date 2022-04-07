@@ -7,7 +7,7 @@ from urllib.request import urlopen
 
 
 def main(args):
-    print(args)
+    print(f"Downloading {args.url} to {args.output_document}")
     with open(args.output_document, "wb") as fh, urlopen(args.url) as response:
         fh.write(response.read())
 

@@ -41,8 +41,6 @@ conda activate "${env_dir}"
 
 ####################################################### DEBUG
 
-####################################################### DEBUG
-
 PYTHON_TAG="cp${PYTHON_VERSION//./}"
 
 case $PYTHON_VERSION in
@@ -70,7 +68,6 @@ esac
 WHEEL="av-9.1.1-${PYTHON_TAG}-${ABI_TAG}-win_amd64.whl"
 ARCHIVE="${WHEEL}.zip"
 URL="https://github.com/PyAV-Org/PyAV/files/${URL_PATH}/${ARCHIVE}"
-echo $URL
 
 python "${this_dir}/wget.py" $URL
 python "${this_dir}/unzip.py" "${ARCHIVE}"
