@@ -422,11 +422,8 @@ crop_image_pil = _FP.crop
 def crop_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
-    image_size: Tuple[int, int],
     top: int,
     left: int,
-    height: int,
-    width: int,
 ) -> torch.Tensor:
     shape = bounding_box.shape
 
