@@ -7,9 +7,10 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
+from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
-from torchdata.datapipes.iter import IterDataPipe, Shuffler, ShardingFilter
+from torchdata.datapipes.iter import Shuffler, ShardingFilter
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
@@ -42,14 +43,24 @@ def test_coverage():
 
 @pytest.mark.filterwarnings("error")
 class TestCommon:
+    @pytest.mark.parametrize("name", datasets.list_datasets())
+    def test_info(self, name):
+        try:
+            info = datasets.info(name)
+        except ValueError:
+            raise AssertionError("No info available.") from None
+
+        if not (isinstance(info, dict) and all(isinstance(key, str) for key in info.keys())):
+            raise AssertionError("Info should be a dictionary with string keys.")
+
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not isinstance(dataset, IterDataPipe):
-            raise AssertionError(f"Loading the dataset should return an IterDataPipe, but got {type(dataset)} instead.")
+        if not isinstance(dataset, datasets.utils.Dataset):
+            raise AssertionError(f"Loading the dataset should return an Dataset, but got {type(dataset)} instead.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_sample(self, test_home, dataset_mock, config):
@@ -76,24 +87,7 @@ class TestCommon:
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        num_samples = 0
-        for _ in dataset:
-            num_samples += 1
-
-        assert num_samples == mock_info["num_samples"]
-
-    @parametrize_dataset_mocks(DATASET_MOCKS)
-    def test_decoding(self, test_home, dataset_mock, config):
-        dataset_mock.prepare(test_home, config)
-
-        dataset = datasets.load(dataset_mock.name, **config)
-
-        undecoded_features = {key for key, value in next(iter(dataset)).items() if isinstance(value, io.IOBase)}
-        if undecoded_features:
-            raise AssertionError(
-                f"The values of key(s) "
-                f"{sequence_to_str(sorted(undecoded_features), separate_last='and ')} were not decoded."
-            )
+        assert len(list(dataset)) == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_no_vanilla_tensors(self, test_home, dataset_mock, config):
@@ -116,13 +110,35 @@ class TestCommon:
 
         next(iter(dataset.map(transforms.Identity())))
 
+    @pytest.mark.parametrize("only_datapipe", [False, True])
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_traversable(self, test_home, dataset_mock, config, only_datapipe):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        traverse(dataset, only_datapipe=only_datapipe)
+
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_serializable(self, test_home, dataset_mock, config):
         dataset_mock.prepare(test_home, config)
-
         dataset = datasets.load(dataset_mock.name, **config)
 
         pickle.dumps(dataset)
+
+    @pytest.mark.parametrize("num_workers", [0, 1])
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_data_loader(self, test_home, dataset_mock, config, num_workers):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        dl = DataLoader(
+            dataset,
+            batch_size=2,
+            num_workers=num_workers,
+            collate_fn=lambda batch: batch,
+        )
+
+        next(iter(dl))
 
     # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
     #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
@@ -132,7 +148,6 @@ class TestCommon:
     def test_has_annotations(self, test_home, dataset_mock, config, annotation_dp_type):
 
         dataset_mock.prepare(test_home, config)
-
         dataset = datasets.load(dataset_mock.name, **config)
 
         if not any(isinstance(dp, annotation_dp_type) for dp in extract_datapipes(dataset)):
@@ -160,6 +175,13 @@ class TestCommon:
                 #  resolved
                 assert dp.buffer_size == INFINITE_BUFFER_SIZE
 
+    @parametrize_dataset_mocks(DATASET_MOCKS)
+    def test_has_length(self, test_home, dataset_mock, config):
+        dataset_mock.prepare(test_home, config)
+        dataset = datasets.load(dataset_mock.name, **config)
+
+        assert len(dataset) > 0
+
 
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
 class TestQMNIST:
@@ -186,7 +208,7 @@ class TestGTSRB:
     def test_label_matches_path(self, test_home, dataset_mock, config):
         # We read the labels from the csv files instead. But for the trainset, the labels are also part of the path.
         # This test makes sure that they're both the same
-        if config.split != "train":
+        if config["split"] != "train":
             return
 
         dataset_mock.prepare(test_home, config)
