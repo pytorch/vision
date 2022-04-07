@@ -41,7 +41,7 @@ conda activate "${env_dir}"
 
 ####################################################### DEBUG
 
-WHEEL=$(python "${this_dir}/download_av.py" $"{this_dir}")
+WHEEL=$(python "${this_dir}/download_av.py" "${this_dir}")
 
 pip install "${this_dir}/$WHEEL"
 
