@@ -7,7 +7,7 @@ from typing import Any, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO, U
 
 import torch
 from torchdata.datapipes.iter import IterDataPipe, Demultiplexer, Mapper, Zipper, Decompressor
-from torchvision.prototype.datasets.utils import Dataset2, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, hint_sharding, hint_shuffling
 from torchvision.prototype.features import Image, Label
 from torchvision.prototype.utils._internal import fromfile
@@ -58,7 +58,7 @@ class MNISTFileReader(IterDataPipe[torch.Tensor]):
                 yield read(dtype=dtype, count=count).reshape(shape)
 
 
-class _MNISTBase(Dataset2):
+class _MNISTBase(Dataset):
     _URL_BASE: Union[str, Sequence[str]]
 
     @abc.abstractmethod

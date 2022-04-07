@@ -14,8 +14,7 @@ from torchdata.datapipes.iter import (
     CSVDictParser,
 )
 from torchvision.prototype.datasets.utils import (
-    Dataset2,
-    DatasetInfo,
+    Dataset,
     HttpResource,
     OnlineResource,
 )
@@ -26,8 +25,8 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
     getitem,
     path_comparator,
+    read_categories_file,
     path_accessor,
-    BUILTIN_DIR,
 )
 from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
@@ -38,16 +37,14 @@ csv.register_dialect("cub200", delimiter=" ")
 
 NAME = "cub200"
 
-CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
-
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    return dict(categories=CATEGORIES)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)
-class CUB200(Dataset2):
+class CUB200(Dataset):
     """
     - **homepage**: http://www.vision.caltech.edu/visipedia/CUB-200.html
     """

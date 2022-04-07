@@ -11,7 +11,7 @@ from torchdata.datapipes.iter import (
     IterKeyZipper,
     LineReader,
 )
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     read_mat,
@@ -20,7 +20,7 @@ from torchvision.prototype.datasets.utils._internal import (
     path_comparator,
     hint_sharding,
     hint_shuffling,
-    BUILTIN_DIR,
+    read_categories_file,
 )
 from torchvision.prototype.features import _Feature, EncodedImage
 
@@ -28,16 +28,14 @@ from .._api import register_dataset, register_info
 
 NAME = "sbd"
 
-CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories"))
-
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    return dict(categories=CATEGORIES)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)
-class SBD(Dataset2):
+class SBD(Dataset):
     """
     - **homepage**: http://home.bharathh.info/pubs/codes/SBD/download.html
     - **dependencies**:
@@ -53,7 +51,7 @@ class SBD(Dataset2):
     ) -> None:
         self._split = self._verify_str_arg(split, "split", ("train", "val", "train_noval"))
 
-        self._categories = CATEGORIES
+        self._categories = _info()["categories"]
 
         super().__init__(root, dependencies=("scipy",), skip_integrity_check=skip_integrity_check)
 

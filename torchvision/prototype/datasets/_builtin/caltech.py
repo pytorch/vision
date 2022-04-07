@@ -9,29 +9,26 @@ from torchdata.datapipes.iter import (
     Filter,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     read_mat,
     hint_sharding,
     hint_shuffling,
-    BUILTIN_DIR,
+    read_categories_file,
 )
 from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
 from .._api import register_dataset, register_info
 
 
-CALTECH101_CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "caltech101.categories"))
-
-
 @register_info("caltech101")
 def _caltech101_info() -> Dict[str, Any]:
-    return dict(categories=CALTECH101_CATEGORIES)
+    return dict(categories=read_categories_file("caltech101"))
 
 
 @register_dataset("caltech101")
-class Caltech101(Dataset2):
+class Caltech101(Dataset):
     """
     - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech101
     - **dependencies**:
@@ -152,16 +149,13 @@ class Caltech101(Dataset2):
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
 
-CALTECH256_CATEGORIES, *_ = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / "caltech256.categories"))
-
-
 @register_info("caltech256")
 def _caltech256_info() -> Dict[str, Any]:
-    return dict(categories=CALTECH256_CATEGORIES)
+    return dict(categories=read_categories_file("caltech256"))
 
 
 @register_dataset("caltech256")
-class Caltech256(Dataset2):
+class Caltech256(Dataset):
     """
     - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech256
     """

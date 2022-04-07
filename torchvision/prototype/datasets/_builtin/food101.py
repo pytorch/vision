@@ -9,14 +9,14 @@ from torchdata.datapipes.iter import (
     Demultiplexer,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import Dataset2, DatasetInfo, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
-    BUILTIN_DIR,
     hint_sharding,
     path_comparator,
     getitem,
     INFINITE_BUFFER_SIZE,
+    read_categories_file,
 )
 from torchvision.prototype.features import Label, EncodedImage
 
@@ -28,13 +28,11 @@ NAME = "food101"
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
-    categories = DatasetInfo.read_categories_file(BUILTIN_DIR / f"{NAME}.categories")
-    categories = [c[0] for c in categories]
-    return dict(categories=categories)
+    return dict(categories=read_categories_file(NAME))
 
 
 @register_dataset(NAME)
-class Food101(Dataset2):
+class Food101(Dataset):
     """Food 101 dataset
     homepage="https://data.vision.ee.ethz.ch/cvl/datasets_extra/food-101",
     """

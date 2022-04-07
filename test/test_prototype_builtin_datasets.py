@@ -59,7 +59,7 @@ class TestCommon:
 
         dataset = datasets.load(dataset_mock.name, **config)
 
-        if not isinstance(dataset, datasets.utils.Dataset2):
+        if not isinstance(dataset, datasets.utils.Dataset):
             raise AssertionError(f"Loading the dataset should return an Dataset, but got {type(dataset)} instead.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)

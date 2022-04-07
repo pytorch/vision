@@ -3,7 +3,7 @@ from typing import Any, Dict, List, Union
 
 import torch
 from torchdata.datapipes.iter import IterDataPipe, LineReader, Mapper, Decompressor
-from torchvision.prototype.datasets.utils import Dataset2, OnlineResource, HttpResource
+from torchvision.prototype.datasets.utils import Dataset, OnlineResource, HttpResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Image, Label
 
@@ -18,7 +18,7 @@ def _info() -> Dict[str, Any]:
 
 
 @register_dataset(NAME)
-class USPS(Dataset2):
+class USPS(Dataset):
     """USPS Dataset
     homepage="https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#usps",
     """
