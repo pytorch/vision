@@ -168,6 +168,15 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
 
 
+def test_draw_boxes_warning():
+    img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+    labels = ["a", "b", "c", "d"]
+    colors = ["green", "#FF00FF", (0, 255, 0), "red"]
+
+    with pytest.warns(UserWarning, match="Argument font_size will be unused as font is not set."):
+        utils.draw_bounding_boxes(img, boxes, labels=labels, colors=colors, fill=True, font_size=11)
+
+
 @pytest.mark.parametrize(
     "colors",
     [
