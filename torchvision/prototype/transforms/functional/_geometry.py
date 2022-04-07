@@ -434,7 +434,7 @@ def crop_bounding_box(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
-    # Crop and optionally pad:
+    # Crop or implicit pad if left and/or top have negative values:
     bounding_box[:, 0::2] -= left
     bounding_box[:, 1::2] -= top
 
