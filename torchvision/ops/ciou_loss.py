@@ -1,9 +1,17 @@
 import math
-
+from ..utils import _log_api_usage_once
 import torch
+from torch import Tensor
 
 
-def ciou_loss(
+def _upcast(t: Tensor) -> Tensor:
+    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
+    if t.dtype not in (torch.float32, torch.float64):
+        return t.float()
+    return t
+
+
+def complete_box_iou_loss(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,
     reduction: str = "none",
@@ -11,9 +19,10 @@ def ciou_loss(
 ) -> torch.Tensor:
 
     """
-    Original Implementation from
-    https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
-
+    This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``, and The two boxes should have the
+    same dimensions.
 
     Args:
         boxes1 : (Tensor[N, 4] or Tensor[4]) first set of boxes
@@ -22,7 +31,7 @@ def ciou_loss(
             ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: No reduction will be
             applied to the output. ``'mean'``: The output will be averaged.
             ``'sum'``: The output will be summed. Default: ``'none'``
-        eps : (float, optional): small number to prevent division by zero. Default: 1e-7
+        eps : (float): small number to prevent division by zero. Default: 1e-7
 
     Reference:
 
@@ -30,17 +39,21 @@ def ciou_loss(
     https://arxiv.org/abs/1911.08287
 
     """
+    
+    #Original Implementation : https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
+
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(complete_box_iou_loss) 
+
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
 
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-    if (x2 < x1).all():
-        raise ValueError("x1 is larger than x2")
-    if (y2 < y1).all():
-        raise ValueError("y1 is larger than y2")
 
     # Intersection keypoints
-    xkis1 = torch.max(x1, x1g)
+    xkis1 = torch.max(x1, x1g)  
     ykis1 = torch.max(y1, y1g)
     xkis2 = torch.min(x2, x2g)
     ykis2 = torch.min(y2, y2g)
@@ -74,7 +87,7 @@ def ciou_loss(
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
 
-    # Eqn. (10)
+
     loss = 1 - iou + (distance / diag_len) + alpha * v
     if reduction == "mean":
         loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
