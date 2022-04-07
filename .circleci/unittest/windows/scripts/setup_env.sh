@@ -42,13 +42,13 @@ conda activate "${env_dir}"
 ####################################################### DEBUG
 
 WHEEL=$(python "${this_dir}/download_av.py" "${this_dir}")
-echo $WHEEL
+printf $WHEEL
 
-ls
-echo "---"
-ls "${this_dir}"
-
-pip install $WHEEL
-
-pip list
-python -c "import av"
+#ls
+#echo "---"
+#ls "${this_dir}"
+#
+#pip install $WHEEL
+#
+#pip list
+#python -c "import av"
