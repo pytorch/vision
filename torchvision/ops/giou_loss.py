@@ -36,7 +36,7 @@ def generalized_box_iou_loss(
             ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: No reduction will be
             applied to the output. ``'mean'``: The output will be averaged.
             ``'sum'``: The output will be summed. Default: ``'none'``
-        eps (float, optional): small number to prevent division by zero. Default: 1e-7
+        eps (float): small number to prevent division by zero. Default: 1e-7
 
     Reference:
         Hamid Rezatofighi et. al: Generalized Intersection over Union:
