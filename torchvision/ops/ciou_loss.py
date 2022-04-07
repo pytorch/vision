@@ -1,7 +1,9 @@
 import math
-from ..utils import _log_api_usage_once
+
 import torch
 from torch import Tensor
+
+from ..utils import _log_api_usage_once
 
 
 def _upcast(t: Tensor) -> Tensor:
@@ -9,7 +11,7 @@ def _upcast(t: Tensor) -> Tensor:
     if t.dtype not in (torch.float32, torch.float64):
         return t.float()
     return t
-
+#[0.0000, 0.8125, 1.1923, 1.2500]
 
 def complete_box_iou_loss(
     boxes1: torch.Tensor,
@@ -39,11 +41,11 @@ def complete_box_iou_loss(
     https://arxiv.org/abs/1911.08287
 
     """
-    
-    #Original Implementation : https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
+
+    # Original Implementation : https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(complete_box_iou_loss) 
+        _log_api_usage_once(complete_box_iou_loss)
 
     boxes1 = _upcast(boxes1)
     boxes2 = _upcast(boxes2)
@@ -51,9 +53,8 @@ def complete_box_iou_loss(
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-
     # Intersection keypoints
-    xkis1 = torch.max(x1, x1g)  
+    xkis1 = torch.max(x1, x1g)
     ykis1 = torch.max(y1, y1g)
     xkis2 = torch.min(x2, x2g)
     ykis2 = torch.min(y2, y2g)
@@ -86,7 +87,6 @@ def complete_box_iou_loss(
     v = (4 / (math.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2)
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
-
 
     loss = 1 - iou + (distance / diag_len) + alpha * v
     if reduction == "mean":

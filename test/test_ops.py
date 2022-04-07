@@ -16,6 +16,7 @@ from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
 from torchvision.models.feature_extraction import get_graph_node_names
+from torchvision.ops.ciou_loss import complete_box_iou_loss
 
 
 class RoIOpTesterModuleWrapper(nn.Module):
@@ -1450,5 +1451,25 @@ class TestDropBlock:
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
+class TestCIOULoss:
+    box1 = ([-1, -1, 1, 1],[-1, -1, 1, 1],[-1, -1, 1, 1],[-1, -1, 1, 1])
+    box2 = ([-1, -1, 1, 1], [0, 0, 1, 1], [0, 1, 1, 2], [1, 1, 2, 2])
+
+    box1 = torch.tensor(box1)
+    box2 = torch.tensor(box2)
+
+    @pytest.mark.parametrize("reduction", ("none", "mean", "sum"))
+    def test_ciou_loss(self,box1,box2,reduction):
+        out = complete_box_iou_loss(box1, box2, reduction)
+        if reduction == "none":
+            assert out ==  [0.0000, 0.8125, 1.1923, 1.2500] 
+
+        elif reduction == "mean":
+            assert out == 0.8137
+
+        else :
+            assert out == 3.2548
+
+            
 if __name__ == "__main__":
     pytest.main([__file__])
