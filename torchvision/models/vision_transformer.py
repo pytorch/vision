@@ -379,9 +379,8 @@ class ViT_B_16_Weights(WeightsEnum):
             "num_params": 86567656,
             "size": (224, 224),
             "min_size": (224, 224),
-            # Still mocks
-            "acc@1": 85.304,
-            "acc@5": 97.650,
+            "acc@1": 81.886,
+            "acc@5": 96.180,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -448,9 +447,8 @@ class ViT_L_16_Weights(WeightsEnum):
             "num_params": 304326632,
             "size": (224, 224),
             "min_size": (224, 224),
-            # Still mocks
-            "acc@1": 88.064,
-            "acc@5": 98.512,
+            "acc@1": 85.146,
+            "acc@5": 97.422,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -504,9 +502,8 @@ class ViT_H_14_Weights(WeightsEnum):
             "num_params": 632045800,
             "size": (224, 224),
             "min_size": (224, 224),
-            # Still mocks
-            "acc@1": 88.552,
-            "acc@5": 98.694,
+            "acc@1": 85.708,
+            "acc@5": 97.730,
         },
     )
     DEFAULT = IMAGENET1K_SWAG_V1

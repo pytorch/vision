@@ -595,9 +595,8 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 83590140,
-            # Still mocks
-            "acc@1": 86.012,
-            "acc@5": 98.054,
+            "acc@1": 83.976,
+            "acc@5": 97.244,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -646,9 +645,8 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 145046770,
-            # Still mocks
-            "acc@1": 86.838,
-            "acc@5": 98.362,
+            "acc@1": 84.622,
+            "acc@5": 97.480,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -675,9 +673,8 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 644812894,
-            # Still mocks
-            "acc@1": 88.228,
-            "acc@5": 98.682,
+            "acc@1": 86.068,
+            "acc@5": 97.844,
         },
     )
     DEFAULT = IMAGENET1K_SWAG_V1
