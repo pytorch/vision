@@ -1557,7 +1557,10 @@ class TestFocalLoss:
         torch.random.manual_seed(seed)
         inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
         focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
-        scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        with torch.jit.fuser("fuser2"):
+            # Use fuser2 to prevent the bug from fuser that will be triggered in following condition:
+            # dtype=torch.half, device="cuda"
+            scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
 
         tol = 1e-3 if dtype is torch.half else 1e-5
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
