@@ -164,7 +164,7 @@ def draw_bounding_boxes(
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
-    font_size: int = None,
+    font_size: Optional[int] = None,
 ) -> torch.Tensor:
 
     """
@@ -224,7 +224,7 @@ def draw_bounding_boxes(
     colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
 
     if font is None and font_size is not None:
-        warnings.warn("Argument 'font_size' will be unused as 'font' is not set.")
+        warnings.warn("Argument 'font_size' will be ignored since 'font' is not set.")
         font_size = None
     elif font is not None and font_size is None:
         font_size = 10
