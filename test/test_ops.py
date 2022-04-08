@@ -1452,23 +1452,23 @@ class TestDropBlock:
 
 
 class TestFocalLoss:
-    def _logit(self, p: Tensor) -> Tensor:
-        return torch.log(p / (1 - p))
-
-    def _generate_tensor_with_range_type(self, shape, range_type, **kwargs):
-        if range_type != "random_binary":
-            low, high = {
-                "small": (0.0, 0.2),
-                "big": (0.8, 1.0),
-                "zeros": (0.0, 0.0),
-                "ones": (1.0, 1.0),
-                "random": (0.0, 1.0),
-            }[range_type]
-            return torch.testing.make_tensor(shape, low=low, high=high, **kwargs)
-        else:
-            return torch.randint(0, 2, shape, **kwargs)
-
     def _generate_diverse_input_target_pair(self, shape=(5, 2), **kwargs):
+        def logit(p: Tensor) -> Tensor:
+            return torch.log(p / (1 - p))
+
+        def generate_tensor_with_range_type(shape, range_type, **kwargs):
+            if range_type != "random_binary":
+                low, high = {
+                    "small": (0.0, 0.2),
+                    "big": (0.8, 1.0),
+                    "zeros": (0.0, 0.0),
+                    "ones": (1.0, 1.0),
+                    "random": (0.0, 1.0),
+                }[range_type]
+                return torch.testing.make_tensor(shape, low=low, high=high, **kwargs)
+            else:
+                return torch.randint(0, 2, shape, **kwargs)
+
         # This function will return inputs and targets with shape: (shape[0]*9, shape[1])
         inputs = []
         targets = []
@@ -1483,8 +1483,8 @@ class TestFocalLoss:
             ("random", "ones"),
             ("random", "random_binary"),
         ]:
-            inputs.append(self._logit(self._generate_tensor_with_range_type(shape, input_range_type, **kwargs)))
-            targets.append(self._generate_tensor_with_range_type(shape, target_range_type, **kwargs))
+            inputs.append(logit(generate_tensor_with_range_type(shape, input_range_type, **kwargs)))
+            targets.append(generate_tensor_with_range_type(shape, target_range_type, **kwargs))
 
         return torch.cat(inputs), torch.cat(targets)
 
@@ -1557,10 +1557,13 @@ class TestFocalLoss:
         torch.random.manual_seed(seed)
         inputs, targets = self._generate_diverse_input_target_pair(dtype=dtype, device=device)
         focal_loss = ops.sigmoid_focal_loss(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
-        with torch.jit.fuser("fuser2"):
-            # Use fuser2 to prevent the bug from fuser that will be triggered in following condition:
-            # dtype=torch.half, device="cuda"
+        if device == "cpu":
             scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
+        else:
+            with torch.jit.fuser("fuser2"):
+                # Use fuser2 to prevent the bug from fuser that will be triggered in following condition:
+                # dtype=torch.half, device="cuda"
+                scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
 
         tol = 1e-3 if dtype is torch.half else 1e-5
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
