@@ -1561,8 +1561,8 @@ class TestFocalLoss:
             scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
         else:
             with torch.jit.fuser("fuser2"):
-                # Use fuser2 to prevent the bug from fuser that will be triggered in following condition:
-                # dtype=torch.half, device="cuda"
+                # Use fuser2 to prevent a bug on fuser: https://github.com/pytorch/pytorch/issues/75476
+                # We may remove this condition once the bug is resolved
                 scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
 
         tol = 1e-3 if dtype is torch.half else 1e-5
