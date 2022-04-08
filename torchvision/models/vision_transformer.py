@@ -367,6 +367,9 @@ class ViT_B_16_Weights(WeightsEnum):
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        # This model has trunk weight from weakly supervised learning described in https://arxiv.org/pdf/2201.08371.pdf
+        # with only linear head finetuned to IMAGENET1K dataset
+        # This model is suitable for users that want to fine tune the pretrained trunk on other downstream datasets
         url="https://download.pytorch.org/models/vit_b_16_lc_swag-4e70ced5.pth",
         transforms=partial(
             ImageClassification,
@@ -435,6 +438,9 @@ class ViT_L_16_Weights(WeightsEnum):
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        # This model has trunk weight from weakly supervised learning described in https://arxiv.org/pdf/2201.08371.pdf
+        # with only linear head finetuned to IMAGENET1K dataset
+        # This model is suitable for users that want to fine tune the pretrained trunk on other downstream datasets
         url="https://download.pytorch.org/models/vit_l_16_lc_swag-4d563306.pth",
         transforms=partial(
             ImageClassification,
@@ -490,6 +496,9 @@ class ViT_H_14_Weights(WeightsEnum):
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        # This model has trunk weight from weakly supervised learning described in https://arxiv.org/pdf/2201.08371.pdf
+        # with only linear head finetuned to IMAGENET1K dataset
+        # This model is suitable for users that want to fine tune the pretrained trunk on other downstream datasets
         url="https://download.pytorch.org/models/vit_h_14_lc_swag-c1eb923e.pth",
         transforms=partial(
             ImageClassification,
