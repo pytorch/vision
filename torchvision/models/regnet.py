@@ -587,6 +587,19 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "acc@5": 98.054,
         },
     )
+    IMAGENET1K_SWAG_LC_V1 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_16gf_lc_swag-f3ec0043.pth",
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 83590140,
+            # Still mocks
+            "acc@1": 86.012,
+            "acc@5": 98.054,
+        },
+    )
     DEFAULT = IMAGENET1K_V2
 
 
@@ -625,6 +638,19 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "acc@5": 98.362,
         },
     )
+    IMAGENET1K_SWAG_LC_V1 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_32gf_lc_swag-e1583746.pth",
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 145046770,
+            # Still mocks
+            "acc@1": 86.838,
+            "acc@5": 98.362,
+        },
+    )
     DEFAULT = IMAGENET1K_V2
 
 
@@ -637,6 +663,19 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 644812894,
+            "acc@1": 88.228,
+            "acc@5": 98.682,
+        },
+    )
+    IMAGENET1K_SWAG_LC_V1 = Weights(
+        url="https://download.pytorch.org/models/regnet_y_128gf_lc_swag-cbe8ce12.pth",
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 644812894,
+            # Still mocks
             "acc@1": 88.228,
             "acc@5": 98.682,
         },

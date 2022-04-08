@@ -366,6 +366,24 @@ class ViT_B_16_Weights(WeightsEnum):
             "acc@5": 97.650,
         },
     )
+    IMAGENET1K_SWAG_LC_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16_lc_swag-4e70ced5.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 86567656,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            # Still mocks
+            "acc@1": 85.304,
+            "acc@5": 97.650,
+        },
+    )
     DEFAULT = IMAGENET1K_V1
 
 
@@ -417,6 +435,24 @@ class ViT_L_16_Weights(WeightsEnum):
             "acc@5": 98.512,
         },
     )
+    IMAGENET1K_SWAG_LC_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_16_lc_swag-4d563306.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 304326632,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            # Still mocks
+            "acc@1": 88.064,
+            "acc@5": 98.512,
+        },
+    )
     DEFAULT = IMAGENET1K_V1
 
 
@@ -451,6 +487,24 @@ class ViT_H_14_Weights(WeightsEnum):
             "num_params": 633470440,
             "size": (518, 518),
             "min_size": (518, 518),
+            "acc@1": 88.552,
+            "acc@5": 98.694,
+        },
+    )
+    IMAGENET1K_SWAG_LC_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_h_14_lc_swag-c1eb923e.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 632045800,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            # Still mocks
             "acc@1": 88.552,
             "acc@5": 98.694,
         },
