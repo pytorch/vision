@@ -366,7 +366,7 @@ class ViT_B_16_Weights(WeightsEnum):
             "acc@5": 97.650,
         },
     )
-    IMAGENET1K_SWAG_LC_V1 = Weights(
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_16_lc_swag-4e70ced5.pth",
         transforms=partial(
             ImageClassification,
@@ -434,7 +434,7 @@ class ViT_L_16_Weights(WeightsEnum):
             "acc@5": 98.512,
         },
     )
-    IMAGENET1K_SWAG_LC_V1 = Weights(
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_16_lc_swag-4d563306.pth",
         transforms=partial(
             ImageClassification,
@@ -489,7 +489,7 @@ class ViT_H_14_Weights(WeightsEnum):
             "acc@5": 98.694,
         },
     )
-    IMAGENET1K_SWAG_LC_V1 = Weights(
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
         url="https://download.pytorch.org/models/vit_h_14_lc_swag-c1eb923e.pth",
         transforms=partial(
             ImageClassification,

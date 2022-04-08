@@ -587,7 +587,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "acc@5": 98.054,
         },
     )
-    IMAGENET1K_SWAG_LC_V1 = Weights(
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_16gf_lc_swag-f3ec0043.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
@@ -637,7 +637,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "acc@5": 98.362,
         },
     )
-    IMAGENET1K_SWAG_LC_V1 = Weights(
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_32gf_lc_swag-e1583746.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
@@ -665,7 +665,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
             "acc@5": 98.682,
         },
     )
-    IMAGENET1K_SWAG_LC_V1 = Weights(
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
         url="https://download.pytorch.org/models/regnet_y_128gf_lc_swag-cbe8ce12.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=224, interpolation=InterpolationMode.BICUBIC
