@@ -25,11 +25,11 @@ def sigmoid_focal_loss(
                 positive vs negative examples or -1 for ignore. Default = 0.25
         gamma: (float) Exponent of the modulating factor (1 - p_t) to
                balance easy vs hard examples.
-        reduction: (string) 'none' | 'mean' | 'sum'
-                 'none': No reduction will be applied to the output.
-                 'mean': The output will be averaged.
-                 'sum': The output will be summed.
-                 Default is 'none'
+        reduction: (string) ``'none'`` | ``'mean'`` | ``'sum'``
+                 ``'none'``: No reduction will be applied to the output.
+                 ``'mean'``: The output will be averaged.
+                 ``'sum'``: The output will be summed.
+                 Default is ``'none'``.
     Returns:
         Loss tensor with the reduction option applied.
     """
