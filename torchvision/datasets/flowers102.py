@@ -65,7 +65,7 @@ class Flowers102(VisionDataset):
         image_ids = set_ids[self._splits_map[self._split]].tolist()
 
         labels = loadmat(self._base_folder / self._file_dict["label"][0], squeeze_me=True)
-        image_id_to_label = dict(enumerate(labels["labels"].tolist(), 1))
+        image_id_to_label = dict(enumerate((labels["labels"] - 1).tolist(), 1))
 
         self._labels = []
         self._image_files = []

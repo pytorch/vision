@@ -5,7 +5,7 @@ import pytest
 import torch
 from datasets_utils import make_fake_flo_file
 from torchvision.datasets._optical_flow import _read_flo as read_flo_ref
-from torchvision.prototype.datasets.utils import HttpResource, GDriveResource
+from torchvision.prototype.datasets.utils import HttpResource, GDriveResource, Dataset
 from torchvision.prototype.datasets.utils._internal import read_flo, fromfile
 
 
@@ -101,3 +101,21 @@ class TestHttpResource:
         assert redirected_resource.file_name == file_name
         assert redirected_resource.sha256 == sha256_sentinel
         assert redirected_resource._preprocess is preprocess_sentinel
+
+
+def test_missing_dependency_error():
+    class DummyDataset(Dataset):
+        def __init__(self):
+            super().__init__(root="root", dependencies=("fake_dependency",))
+
+        def _resources(self):
+            pass
+
+        def _datapipe(self, resource_dps):
+            pass
+
+        def __len__(self):
+            pass
+
+    with pytest.raises(ModuleNotFoundError, match="depends on the third-party package 'fake_dependency'"):
+        DummyDataset()
