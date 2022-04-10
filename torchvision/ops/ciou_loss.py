@@ -4,16 +4,7 @@ import torch
 from torch import Tensor
 
 from ..utils import _log_api_usage_once
-
-
-def _upcast(t: Tensor) -> Tensor:
-    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
-    if t.dtype not in (torch.float32, torch.float64):
-        return t.float()
-    return t
-
-
-# [0.0000, 0.8125, 1.1923, 1.2500]
+from .giou_loss import _upcast
 
 
 def complete_box_iou_loss(
@@ -24,6 +15,10 @@ def complete_box_iou_loss(
 ) -> torch.Tensor:
 
     """
+    Gradient-friendly IoU loss with an additional penalty that is non-zero when the
+    boxes do not overlap overlap area, This loss function considers important geometrical
+    factors such as  overlap area, normalized central point distance and aspect ratio.
+
     This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.
     Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
     ``0 <= x1 < x2`` and ``0 <= y1 < y2``, and The two boxes should have the

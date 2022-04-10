@@ -1452,25 +1452,31 @@ class TestDropBlock:
 
 
 class TestCIOULoss:
-    box1 = ([-1, -1, 1, 1],[-1, -1, 1, 1],[-1, -1, 1, 1],[-1, -1, 1, 1])
-    box2 = ([-1, -1, 1, 1], [0, 0, 1, 1], [0, 1, 1, 2], [1, 1, 2, 2])
+    box1 = torch.tensor([-1, -1, 1, 1], dtype = torch.dtype)
+    box2 = torch.tensor([0, 0 , 1, ], dtype=  torch.dtype)
+    box3 = torch.tensor( [0, 1, 1, 2 ], dtype = torch.dtype)
+    box4 = torch.tensor([1, 1, 2 , 2], dtype=torch.dtype)
+    box1s = torch.stack([box2, box2], dim=0)
+    box2s = torch.stack([box3, box4], dim=0)
 
-    box1 = torch.tensor(box1)
-    box2 = torch.tensor(box2)
+    
+    @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.half])
+    def test_ciou_loss(self,box1,box2,expected_output,dtype, reduction="none"):
 
-    @pytest.mark.parametrize("box1", (box1,))
-    @pytest.mark.parametrize("box2", (box2,))
-    @pytest.mark.parametrize("reduction", ("none", "mean", "sum"))
-    def test_ciou_loss(self,box1,box2,reduction):
-        out = complete_box_iou_loss(box1, box2, reduction)
-        if reduction == "none":
-            assert out ==  [0.0000, 0.8125, 1.1923, 1.2500] 
+        box1 = torch.tensor(box1,dtype=dtype)
+        box2 = torch.tensor(box2,dtype=dtype)
+        output = ops.complete_box_iou_loss(box1,box2,reduction="none")
+        expected_output = torch.tensor(expected_output, dtype = dtype)
+        tol = 1e-5 if dtype != torch.half else 1e-3
+        torch.testing.assert_close(output , expected_output,rtol=tol ,atol = tol)
+    
+    test_ciou_loss(box1, box1, 0 )
 
-        elif reduction == "mean":
-            assert out == 0.8137
+    test_ciou_loss(box1, box2, 0.8125)
 
-        else :
-            assert out == 3.2548
+    test_ciou_loss(box1, box3, 1.1923)
+
+    test_ciou_loss(box1, box4, 1.2500)
 
             
 if __name__ == "__main__":
