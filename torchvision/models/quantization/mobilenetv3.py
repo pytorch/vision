@@ -4,6 +4,7 @@ from typing import Any, List, Optional, Union
 import torch
 from torch import nn, Tensor
 from torch.ao.quantization import QuantStub, DeQuantStub
+import torch.ao.quantization.quantize_fx
 
 from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
 from ...transforms._presets import ImageClassification, InterpolationMode
@@ -135,20 +136,30 @@ def _mobilenet_v3_model(
         if "backend" in weights.meta:
             _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "qnnpack")
+    fx_mode = kwargs.pop("fx_mode", False)
 
     model = QuantizableMobileNetV3(inverted_residual_setting, last_channel, block=QuantizableInvertedResidual, **kwargs)
     _replace_relu(model)
 
     if quantize:
-        model.fuse_model(is_qat=True)
-        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
-        torch.ao.quantization.prepare_qat(model, inplace=True)
+        qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
+        if fx_mode:
+            qconfig_dict = {"": qconfig}
+            model = torch.ao.quantization.quantize_fx.fuse_fx(model)
+            model = torch.ao.quantization.quantize_fx.prepare_qat_fx(model, qconfig_dict)
+        else:
+            model.qconfig = qconfig
+            model.fuse_model(is_qat=True)
+            torch.ao.quantization.prepare_qat(model, inplace=True)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     if quantize:
-        torch.ao.quantization.convert(model, inplace=True)
+        if fx_mode:
+            model = torch.ao.quantization.quantize_fx.convert_fx(model)
+        else:
+            torch.ao.quantization.convert(model, inplace=True)
         model.eval()
 
     return model

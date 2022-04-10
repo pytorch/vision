@@ -5,6 +5,7 @@ import time
 
 import torch
 import torch.ao.quantization
+import torch.ao.quantization.quantize_fx
 import torch.utils.data
 import torchvision
 import utils
@@ -46,13 +47,19 @@ def main(args):
 
     print("Creating model", args.model)
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    model = torchvision.models.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
+    model = torchvision.models.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only, fx_mode=args.fx)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
-        model.fuse_model(is_qat=True)
-        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
-        torch.ao.quantization.prepare_qat(model, inplace=True)
+        qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
+        if args.fx:
+            qconfig_dict = {"": qconfig}
+            model = torch.ao.quantization.quantize_fx.fuse_fx(model)
+            model = torch.ao.quantization.quantize_fx.prepare_qat_fx(model, qconfig_dict)
+        else:
+            model.qconfig = qconfig
+            model.fuse_model(is_qat=True)
+            torch.ao.quantization.prepare_qat(model, inplace=True)
 
         if args.distributed and args.sync_bn:
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -84,13 +91,22 @@ def main(args):
             ds, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True
         )
         model.eval()
-        model.fuse_model(is_qat=False)
-        model.qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
-        torch.ao.quantization.prepare(model, inplace=True)
+        qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
+        if args.fx:
+            qconfig_dict = {"": qconfig}
+            model = torch.ao.quantization.quantize_fx.fuse_fx(model)
+            model = torch.ao.quantization.quantize_fx.prepare_fx(model, qconfig_dict)
+        else:
+            model.qconfig = qconfig
+            model.fuse_model(is_qat=False)
+            torch.ao.quantization.prepare(model, inplace=True)
         # Calibrate first
         print("Calibrating")
         evaluate(model, criterion, data_loader_calibration, device=device, print_freq=1)
-        torch.ao.quantization.convert(model, inplace=True)
+        if args.fx:
+            model = torch.ao.quantization.quantize_fx.convert_fx(model)
+        else:
+            torch.ao.quantization.convert(model, inplace=True)
         if args.output_dir:
             print("Saving quantized model")
             if utils.is_main_process():
@@ -125,7 +141,10 @@ def main(args):
             quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device("cpu"))
-            torch.ao.quantization.convert(quantized_eval_model, inplace=True)
+            if args.fx:
+                quantized_eval_model = torch.ao.quantization.quantize_fx.convert_fx(quantized_eval_model)
+            else:
+                torch.ao.quantization.convert(quantized_eval_model, inplace=True)
 
             print("Evaluate Quantized model")
             evaluate(quantized_eval_model, criterion, data_loader_test, device=torch.device("cpu"))
@@ -231,6 +250,12 @@ def get_args_parser(add_help=True):
         "--post-training-quantize",
         dest="post_training_quantize",
         help="Post training quantize the model",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--fx",
+        dest="fx",
+        help="Use FX quantization",
         action="store_true",
     )
 

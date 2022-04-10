@@ -170,11 +170,12 @@ def googlenet(
         if "backend" in weights.meta:
             _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
+    fx_mode = kwargs.pop("fx_mode", False)
 
     model = QuantizableGoogLeNet(**kwargs)
     _replace_relu(model)
     if quantize:
-        quantize_model(model, backend)
+        quantize_model(model, backend, fx_mode)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
