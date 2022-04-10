@@ -1,10 +1,8 @@
 import math
-from multiprocessing import reduction
 import os
 from abc import ABC, abstractmethod
 from functools import lru_cache
 from itertools import product
-import re
 from typing import Callable, List, Tuple
 
 import numpy as np
