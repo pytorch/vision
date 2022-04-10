@@ -1458,6 +1458,8 @@ class TestCIOULoss:
     box1 = torch.tensor(box1)
     box2 = torch.tensor(box2)
 
+    @pytest.mark.parametrize("box1", (box1,))
+    @pytest.mark.parametrize("box2", (box2,))
     @pytest.mark.parametrize("reduction", ("none", "mean", "sum"))
     def test_ciou_loss(self,box1,box2,reduction):
         out = complete_box_iou_loss(box1, box2, reduction)

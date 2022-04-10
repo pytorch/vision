@@ -11,7 +11,10 @@ def _upcast(t: Tensor) -> Tensor:
     if t.dtype not in (torch.float32, torch.float64):
         return t.float()
     return t
-#[0.0000, 0.8125, 1.1923, 1.2500]
+
+
+# [0.0000, 0.8125, 1.1923, 1.2500]
+
 
 def complete_box_iou_loss(
     boxes1: torch.Tensor,
