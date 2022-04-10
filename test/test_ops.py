@@ -1452,10 +1452,10 @@ class TestDropBlock:
 
 
 class TestCIOULoss:
-    box1 = torch.tensor([-1, -1, 1, 1], dtype = torch.dtype)
-    box2 = torch.tensor([0, 0 , 1, ], dtype=  torch.dtype)
-    box3 = torch.tensor( [0, 1, 1, 2 ], dtype = torch.dtype)
-    box4 = torch.tensor([1, 1, 2 , 2], dtype=torch.dtype)
+    box1 = torch.tensor([-1, -1, 1, 1], )
+    box2 = torch.tensor([0, 0 , 1, ])
+    box3 = torch.tensor( [0, 1, 1, 2 ])
+    box4 = torch.tensor([1, 1, 2 , 2],)
     box1s = torch.stack([box2, box2], dim=0)
     box2s = torch.stack([box3, box4], dim=0)
 
