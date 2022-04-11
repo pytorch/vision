@@ -1,3 +1,4 @@
+import csv
 import functools
 import pathlib
 import pickle
@@ -9,6 +10,7 @@ from typing import (
     Any,
     Tuple,
     TypeVar,
+    List,
     Iterator,
     Dict,
     IO,
@@ -198,3 +200,11 @@ def hint_sharding(datapipe: IterDataPipe) -> ShardingFilter:
 
 def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
     return Shuffler(datapipe, buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False)
+
+
+def read_categories_file(name: str) -> List[Union[str, Sequence[str]]]:
+    path = BUILTIN_DIR / f"{name}.categories"
+    with open(path, newline="") as file:
+        rows = list(csv.reader(file))
+        rows = [row[0] if len(row) == 1 else row for row in rows]
+        return rows

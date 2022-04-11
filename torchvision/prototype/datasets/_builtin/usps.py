@@ -1,22 +1,39 @@
-from typing import Any, Dict, List
+import pathlib
+from typing import Any, Dict, List, Union
 
 import torch
 from torchdata.datapipes.iter import IterDataPipe, LineReader, Mapper, Decompressor
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, OnlineResource, HttpResource
+from torchvision.prototype.datasets.utils import Dataset, OnlineResource, HttpResource
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Image, Label
 
+from .._api import register_dataset, register_info
 
+NAME = "usps"
+
+
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    return dict(categories=[str(c) for c in range(10)])
+
+
+@register_dataset(NAME)
 class USPS(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "usps",
-            homepage="https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#usps",
-            valid_options=dict(
-                split=("train", "test"),
-            ),
-            categories=10,
-        )
+    """USPS Dataset
+    homepage="https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass.html#usps",
+    """
+
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        split: str = "train",
+        skip_integrity_check: bool = False,
+    ) -> None:
+        self._split = self._verify_str_arg(split, "split", {"train", "test"})
+
+        self._categories = _info()["categories"]
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
 
     _URL = "https://www.csie.ntu.edu.tw/~cjlin/libsvmtools/datasets/multiclass"
 
@@ -29,8 +46,8 @@ class USPS(Dataset):
         ),
     }
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        return [USPS._RESOURCES[config.split]]
+    def _resources(self) -> List[OnlineResource]:
+        return [USPS._RESOURCES[self._split]]
 
     def _prepare_sample(self, line: str) -> Dict[str, Any]:
         label, *values = line.strip().split(" ")
@@ -38,17 +55,15 @@ class USPS(Dataset):
         pixels = torch.tensor(values).add_(1).div_(2)
         return dict(
             image=Image(pixels.reshape(16, 16)),
-            label=Label(int(label) - 1, categories=self.categories),
+            label=Label(int(label) - 1, categories=self._categories),
         )
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         dp = Decompressor(resource_dps[0])
         dp = LineReader(dp, decode=True, return_path=False)
         dp = hint_shuffling(dp)
         dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
+
+    def __len__(self) -> int:
+        return 7_291 if self._split == "train" else 2_007

@@ -7,6 +7,7 @@ import os
 import os.path
 import pathlib
 import re
+import sys
 import tarfile
 import urllib
 import urllib.error
@@ -62,7 +63,10 @@ def gen_bar_updater() -> Callable[[int, int, int], None]:
 
 
 def calculate_md5(fpath: str, chunk_size: int = 1024 * 1024) -> str:
-    md5 = hashlib.md5()
+    # Setting the `usedforsecurity` flag does not change anything about the functionality, but indicates that we are
+    # not using the MD5 checksum for cryptography. This enables its usage in restricted environments like FIPS. Without
+    # it torchvision.datasets is unusable in these environments since we perform a MD5 check everywhere.
+    md5 = hashlib.md5(**dict(usedforsecurity=False) if sys.version_info >= (3, 9) else dict())
     with open(fpath, "rb") as f:
         for chunk in iter(lambda: f.read(chunk_size), b""):
             md5.update(chunk)
