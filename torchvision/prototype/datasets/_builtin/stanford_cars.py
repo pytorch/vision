@@ -1,10 +1,18 @@
 import pathlib
-from typing import Any, Dict, List, Tuple, Iterator, BinaryIO
+from typing import Any, Dict, List, Tuple, Iterator, BinaryIO, Union
 
 from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper, Zipper
-from torchvision.prototype.datasets.utils import Dataset, DatasetConfig, DatasetInfo, HttpResource, OnlineResource
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, path_comparator, read_mat
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import (
+    hint_sharding,
+    hint_shuffling,
+    path_comparator,
+    read_mat,
+    read_categories_file,
+)
 from torchvision.prototype.features import BoundingBox, EncodedImage, Label
+
+from .._api import register_dataset, register_info
 
 
 class StanfordCarsLabelReader(IterDataPipe[Tuple[int, int, int, int, int, str]]):
@@ -18,16 +26,31 @@ class StanfordCarsLabelReader(IterDataPipe[Tuple[int, int, int, int, int, str]])
                 yield tuple(ann)  # type: ignore[misc]
 
 
+NAME = "stanford-cars"
+
+
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    return dict(categories=read_categories_file(NAME))
+
+
+@register_dataset(NAME)
 class StanfordCars(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            name="stanford-cars",
-            homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
-            dependencies=("scipy",),
-            valid_options=dict(
-                split=("test", "train"),
-            ),
-        )
+    """Stanford Cars dataset.
+    homepage="https://ai.stanford.edu/~jkrause/cars/car_dataset.html",
+    dependencies=scipy
+    """
+
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        split: str = "train",
+        skip_integrity_check: bool = False,
+    ) -> None:
+        self._split = self._verify_str_arg(split, "split", {"train", "test"})
+        self._categories = _info()["categories"]
+        super().__init__(root, skip_integrity_check=skip_integrity_check, dependencies=("scipy",))
 
     _URL_ROOT = "https://ai.stanford.edu/~jkrause/"
     _URLS = {
@@ -44,9 +67,9 @@ class StanfordCars(Dataset):
         "car_devkit": "512b227b30e2f0a8aab9e09485786ab4479582073a144998da74d64b801fd288",
     }
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        resources: List[OnlineResource] = [HttpResource(self._URLS[config.split], sha256=self._CHECKSUM[config.split])]
-        if config.split == "train":
+    def _resources(self) -> List[OnlineResource]:
+        resources: List[OnlineResource] = [HttpResource(self._URLS[self._split], sha256=self._CHECKSUM[self._split])]
+        if self._split == "train":
             resources.append(HttpResource(url=self._URLS["car_devkit"], sha256=self._CHECKSUM["car_devkit"]))
 
         else:
@@ -65,32 +88,29 @@ class StanfordCars(Dataset):
         return dict(
             path=path,
             image=image,
-            label=Label(target[4] - 1, categories=self.categories),
+            label=Label(target[4] - 1, categories=self._categories),
             bounding_box=BoundingBox(target[:4], format="xyxy", image_size=image.image_size),
         )
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
 
         images_dp, targets_dp = resource_dps
-        if config.split == "train":
+        if self._split == "train":
             targets_dp = Filter(targets_dp, path_comparator("name", "cars_train_annos.mat"))
         targets_dp = StanfordCarsLabelReader(targets_dp)
         dp = Zipper(images_dp, targets_dp)
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
 
-    def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        config = self.info.make_config(split="train")
-        resources = self.resources(config)
+    def _generate_categories(self) -> List[str]:
+        resources = self._resources()
 
-        devkit_dp = resources[1].load(root)
+        devkit_dp = resources[1].load(self._root)
         meta_dp = Filter(devkit_dp, path_comparator("name", "cars_meta.mat"))
         _, meta_file = next(iter(meta_dp))
 
         return list(read_mat(meta_file, squeeze_me=True)["class_names"])
+
+    def __len__(self) -> int:
+        return 8_144 if self._split == "train" else 8_041

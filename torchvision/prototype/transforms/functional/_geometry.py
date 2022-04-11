@@ -324,7 +324,7 @@ def rotate_image_tensor(
     center_f = [0.0, 0.0]
     if center is not None:
         if expand:
-            warnings.warn("The provided center argument is ignored if expand is True")
+            warnings.warn("The provided center argument has no effect on the result if expand is True")
         else:
             _, height, width = get_dimensions_image_tensor(img)
             # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
@@ -345,7 +345,7 @@ def rotate_image_pil(
     center: Optional[List[float]] = None,
 ) -> PIL.Image.Image:
     if center is not None and expand:
-        warnings.warn("The provided center argument is ignored if expand is True")
+        warnings.warn("The provided center argument has no effect on the result if expand is True")
         center = None
 
     return _FP.rotate(
@@ -361,6 +361,10 @@ def rotate_bounding_box(
     expand: bool = False,
     center: Optional[List[float]] = None,
 ) -> torch.Tensor:
+    if center is not None and expand:
+        warnings.warn("The provided center argument has no effect on the result if expand is True")
+        center = None
+
     original_shape = bounding_box.shape
     bounding_box = convert_bounding_box_format(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
@@ -371,6 +375,21 @@ def rotate_bounding_box(
     return convert_bounding_box_format(
         out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
     ).view(original_shape)
+
+
+def rotate_segmentation_mask(
+    img: torch.Tensor,
+    angle: float,
+    expand: bool = False,
+    center: Optional[List[float]] = None,
+) -> torch.Tensor:
+    return rotate_image_tensor(
+        img,
+        angle=angle,
+        expand=expand,
+        interpolation=InterpolationMode.NEAREST,
+        center=center,
+    )
 
 
 pad_image_tensor = _FT.pad
@@ -398,6 +417,27 @@ def pad_bounding_box(
 
 crop_image_tensor = _FT.crop
 crop_image_pil = _FP.crop
+
+
+def crop_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    top: int,
+    left: int,
+) -> torch.Tensor:
+    shape = bounding_box.shape
+
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    # Crop or implicit pad if left and/or top have negative values:
+    bounding_box[:, 0::2] -= left
+    bounding_box[:, 1::2] -= top
+
+    return convert_bounding_box_format(
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(shape)
 
 
 def perspective_image_tensor(

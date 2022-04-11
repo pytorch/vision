@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, NamedTuple, Optional
+from typing import Any, Callable, List, NamedTuple, Optional, Sequence
 
 import torch
 import torch.nn as nn
@@ -20,10 +20,12 @@ __all__ = [
     "ViT_B_32_Weights",
     "ViT_L_16_Weights",
     "ViT_L_32_Weights",
+    "ViT_H_14_Weights",
     "vit_b_16",
     "vit_b_32",
     "vit_l_16",
     "vit_l_32",
+    "vit_h_14",
 ]
 
 
@@ -284,10 +286,21 @@ def _vision_transformer(
     progress: bool,
     **kwargs: Any,
 ) -> VisionTransformer:
-    image_size = kwargs.pop("image_size", 224)
-
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if isinstance(weights.meta["size"], int):
+            _ovewrite_named_param(kwargs, "image_size", weights.meta["size"])
+        elif isinstance(weights.meta["size"], Sequence):
+            if len(weights.meta["size"]) != 2 or weights.meta["size"][0] != weights.meta["size"][1]:
+                raise ValueError(
+                    f'size: {weights.meta["size"]} is not valid! Currently we only support a 2-dimensional square and width = height'
+                )
+            _ovewrite_named_param(kwargs, "image_size", weights.meta["size"][0])
+        else:
+            raise ValueError(
+                f'weights.meta["size"]: {weights.meta["size"]} is not valid, the type should be either an int or a Sequence[int]'
+            )
+    image_size = kwargs.pop("image_size", 224)
 
     model = VisionTransformer(
         image_size=image_size,
@@ -313,6 +326,14 @@ _COMMON_META = {
     "interpolation": InterpolationMode.BILINEAR,
 }
 
+_COMMON_SWAG_META = {
+    **_COMMON_META,
+    "publication_year": 2022,
+    "recipe": "https://github.com/facebookresearch/SWAG",
+    "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
+    "interpolation": InterpolationMode.BICUBIC,
+}
+
 
 class ViT_B_16_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
@@ -326,6 +347,23 @@ class ViT_B_16_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
             "acc@1": 81.072,
             "acc@5": 95.318,
+        },
+    )
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16_swag-9ac1b537.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=384,
+            resize_size=384,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 86859496,
+            "size": (384, 384),
+            "min_size": (384, 384),
+            "acc@1": 85.304,
+            "acc@5": 97.650,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -362,6 +400,23 @@ class ViT_L_16_Weights(WeightsEnum):
             "acc@5": 94.638,
         },
     )
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_16_swag-4f3808c9.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=512,
+            resize_size=512,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 305174504,
+            "size": (512, 512),
+            "min_size": (512, 512),
+            "acc@1": 88.064,
+            "acc@5": 98.512,
+        },
+    )
     DEFAULT = IMAGENET1K_V1
 
 
@@ -380,6 +435,27 @@ class ViT_L_32_Weights(WeightsEnum):
         },
     )
     DEFAULT = IMAGENET1K_V1
+
+
+class ViT_H_14_Weights(WeightsEnum):
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_h_14_swag-80465313.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=518,
+            resize_size=518,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 633470440,
+            "size": (518, 518),
+            "min_size": (518, 518),
+            "acc@1": 88.552,
+            "acc@5": 98.694,
+        },
+    )
+    DEFAULT = IMAGENET1K_SWAG_V1
 
 
 @handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.IMAGENET1K_V1))
@@ -472,6 +548,29 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+    """
+    Constructs a vit_h_14 architecture from
+    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
+
+    Args:
+        weights (ViT_H_14_Weights, optional): The pretrained weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    weights = ViT_H_14_Weights.verify(weights)
+
+    return _vision_transformer(
+        patch_size=14,
+        num_layers=32,
+        num_heads=16,
+        hidden_dim=1280,
+        mlp_dim=5120,
         weights=weights,
         progress=progress,
         **kwargs,
