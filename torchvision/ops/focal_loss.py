@@ -24,7 +24,7 @@ def sigmoid_focal_loss(
         alpha: (float) Weighting factor in range (0,1) to balance
                 positive vs negative examples or -1 for ignore. Default = 0.25
         gamma: (float) Exponent of the modulating factor (1 - p_t) to
-               balance easy vs hard examples.
+               balance easy vs hard examples. Default = 2
         reduction: (string) ``'none'`` | ``'mean'`` | ``'sum'``
                  ``'none'``: No reduction will be applied to the output.
                  ``'mean'``: The output will be averaged.
