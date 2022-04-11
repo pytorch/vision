@@ -1451,8 +1451,6 @@ class TestDropBlock:
         assert len(graph_node_names[0]) == 1 + op_obj.n_inputs
 
 
-       
-
 class TestFocalLoss:
     def _generate_diverse_input_target_pair(self, shape=(5, 2), **kwargs):
         def logit(p: Tensor) -> Tensor:
@@ -1572,27 +1570,32 @@ class TestFocalLoss:
 
 
 class TestCIOULoss:
-
-    @pytest.mark.parametrize("dtype", [torch.float16, torch.float32, torch.half])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    def test_ciou_loss(self,dtype,device):
-        box1 = torch.tensor([-1,-1, 1, 1], dtype=dtype, device = device)
-        box2 = torch.tensor([ 0, 0, 1, 1], dtype=dtype, device = device)
-        box3 = torch.tensor([ 0, 1, 1, 2], dtype=dtype, device = device)
-        box4 = torch.tensor([ 1, 1, 2, 2], dtype=dtype, device = device)
+    def test_ciou_loss(self, dtype, device):
+        box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
+        box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
+        box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
+        box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
 
-        box1s = torch.stack([box2, box2], dim=0,)
-        box2s = torch.stack([box3, box4], dim=0,)
+        box1s = torch.stack(
+            [box2, box2],
+            dim=0,
+        )
+        box2s = torch.stack(
+            [box3, box4],
+            dim=0,
+        )
 
-        def assert_ciou_loss(box1,box2,expected_output,reduction="none"):
+        def assert_ciou_loss(box1, box2, expected_output, reduction="none"):
             box1 = torch.tensor(box1)
             box2 = torch.tensor(box2)
-            output = ops.complete_box_iou_loss(box1,box2,reduction=reduction)
-            expected_output = torch.tensor(expected_output, dtype = dtype)
+            output = ops.complete_box_iou_loss(box1, box2, reduction=reduction)
+            expected_output = torch.tensor(expected_output, dtype=dtype)
             tol = 1e-5 if dtype != torch.half else 1e-3
-            torch.testing.assert_close(output , expected_output,rtol=tol ,atol = tol)
-    
-        assert_ciou_loss(box1, box1, 0 )
+            torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
+
+        assert_ciou_loss(box1, box1, 0)
 
         assert_ciou_loss(box1, box2, 0.8125)
 
@@ -1600,8 +1603,9 @@ class TestCIOULoss:
 
         assert_ciou_loss(box1, box4, 1.2500)
 
-        assert_ciou_loss(box1s, box2s, 1.2250, reduction = "mean")
-        assert_ciou_loss(box1s, box2s, 2.4500, reduction = "sum")
+        assert_ciou_loss(box1s, box2s, 1.2250, reduction="mean")
+        assert_ciou_loss(box1s, box2s, 2.4500, reduction="sum")
+
 
 if __name__ == "__main__":
     pytest.main([__file__])
