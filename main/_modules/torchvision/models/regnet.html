@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+a2748e4 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+15c0f32 ) &#x25BC</a>
     </div>
     
 
@@ -898,7 +898,7 @@
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.328</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">IMAGENET1K_SWAG_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+    <span class="n">IMAGENET1K_SWAG_E2E_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_16gf_swag-43afe44d.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
@@ -908,6 +908,19 @@
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">83590140</span><span class="p">,</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">86.012</span><span class="p">,</span>
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">98.054</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">IMAGENET1K_SWAG_LINEAR_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_16gf_lc_swag-f3ec0043.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
+        <span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5793&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">83590140</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">83.976</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">97.244</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
@@ -936,7 +949,7 @@
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.498</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">IMAGENET1K_SWAG_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+    <span class="n">IMAGENET1K_SWAG_E2E_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_32gf_swag-04fdfa75.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
@@ -948,11 +961,24 @@
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">98.362</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
+    <span class="n">IMAGENET1K_SWAG_LINEAR_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_32gf_lc_swag-e1583746.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
+        <span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5793&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">145046770</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">84.622</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">97.480</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
 
 
 <span class="k">class</span> <span class="nc">RegNet_Y_128GF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
-    <span class="n">IMAGENET1K_SWAG_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+    <span class="n">IMAGENET1K_SWAG_E2E_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_128gf_swag-c8ce3e52.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
             <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">384</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
@@ -964,7 +990,20 @@
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">98.682</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_SWAG_V1</span>
+    <span class="n">IMAGENET1K_SWAG_LINEAR_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
+        <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/regnet_y_128gf_lc_swag-cbe8ce12.pth&quot;</span><span class="p">,</span>
+        <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span>
+            <span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">interpolation</span><span class="o">=</span><span class="n">InterpolationMode</span><span class="o">.</span><span class="n">BICUBIC</span>
+        <span class="p">),</span>
+        <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
+            <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
+            <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5793&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">644812894</span><span class="p">,</span>
+            <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">86.068</span><span class="p">,</span>
+            <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">97.844</span><span class="p">,</span>
+        <span class="p">},</span>
+    <span class="p">)</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_SWAG_E2E_V1</span>
 
 
 <span class="k">class</span> <span class="nc">RegNet_X_400MF_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
