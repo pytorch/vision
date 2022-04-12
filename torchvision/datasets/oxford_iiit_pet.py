@@ -42,7 +42,6 @@ class OxfordIIITPet(VisionDataset):
         root: str,
         split: str = "trainval",
         target_types: Union[Sequence[str], str] = "category",
-        transforms: Optional[Callable] = None,
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
         download: bool = False,
@@ -54,7 +53,7 @@ class OxfordIIITPet(VisionDataset):
             verify_str_arg(target_type, "target_types", self._VALID_TARGET_TYPES) for target_type in target_types
         ]
 
-        super().__init__(root, transforms=transforms, transform=transform, target_transform=target_transform)
+        super().__init__(root, transform=transform, target_transform=target_transform)
         self._base_folder = pathlib.Path(self.root) / "oxford-iiit-pet"
         self._images_folder = self._base_folder / "images"
         self._anns_folder = self._base_folder / "annotations"
@@ -106,8 +105,11 @@ class OxfordIIITPet(VisionDataset):
         else:
             target = tuple(target)
 
-        if self.transforms:
-            image, target = self.transforms(image, target)
+        if self.transform is not None:
+            image = self.transform(image)
+
+        if self.target_transform is not None:
+            target = self.target_transform(target)
 
         return image, target
 
