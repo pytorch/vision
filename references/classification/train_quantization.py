@@ -1,15 +1,22 @@
 import copy
 import datetime
+from enum import Enum
 import os
 import time
 
 import torch
 import torch.ao.quantization
+import torch.ao.quantization.quantize_fx
 import torch.utils.data
 import torchvision
 import utils
 from torch import nn
 from train import train_one_epoch, evaluate, load_data
+
+
+class QuantizationWorkflowType(Enum):
+    EAGER_MODE_QUANTIZATION = 1
+    FX_GRAPH_MODE_QUANTIZATION = 2
 
 
 def main(args):
@@ -21,6 +28,14 @@ def main(args):
 
     if args.post_training_quantize and args.distributed:
         raise RuntimeError("Post training quantization example should not be performed on distributed mode")
+
+    # Validate quantization workflow type
+    quantization_workflow_type = args.quantization_workflow_type.upper()
+    if quantization_workflow_type not in QuantizationWorkflowType.__members__:
+        raise RuntimeError("Unknown workflow type '%s', please choose from: %s" %
+                           (args.quantization_workflow_type,
+                            str(tuple([t.lower() for t in QuantizationWorkflowType.__members__]))))
+    use_fx_graph_mode_quantization = quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE_QUANTIZATION
 
     # Set backend engine to ensure that quantized model runs on the correct kernels
     if args.backend not in torch.backends.quantized.supported_engines:
@@ -45,14 +60,23 @@ def main(args):
     )
 
     print("Creating model", args.model)
+    if use_fx_graph_mode_quantization:
+        model_namespace = torchvision.models
+    else:
+        model_namespace = torchvision.models.quantization
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    model = torchvision.models.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
+    model = model_namespace.__dict__[args.model](weights=args.weights, quantize=args.test_only)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
-        model.fuse_model(is_qat=True)
-        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
-        torch.ao.quantization.prepare_qat(model, inplace=True)
+        qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
+        if use_fx_graph_mode_quantization:
+            qconfig_dict = {"": qconfig}
+            model = torch.ao.quantization.quantize_fx.prepare_qat_fx(model, qconfig_dict)
+        else:
+            model.fuse_model(is_qat=True)
+            model.qconfig = qconfig
+            torch.ao.quantization.prepare_qat(model, inplace=True)
 
         if args.distributed and args.sync_bn:
             model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -84,13 +108,21 @@ def main(args):
             ds, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True
         )
         model.eval()
-        model.fuse_model(is_qat=False)
-        model.qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
-        torch.ao.quantization.prepare(model, inplace=True)
+        qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
+        if use_fx_graph_mode_quantization:
+            qconfig_dict = {"": qconfig}
+            model = torch.ao.quantization.quantize_fx.prepare_fx(model, qconfig_dict)
+        else:
+            model.fuse_model(is_qat=False)
+            model.qconfig = qconfig
+            torch.ao.quantization.prepare(model, inplace=True)
         # Calibrate first
         print("Calibrating")
         evaluate(model, criterion, data_loader_calibration, device=device, print_freq=1)
-        torch.ao.quantization.convert(model, inplace=True)
+        if use_fx_graph_mode_quantization:
+            model = torch.ao.quantization.quantize_fx.convert_fx(model)
+        else:
+            torch.ao.quantization.convert(model, inplace=True)
         if args.output_dir:
             print("Saving quantized model")
             if utils.is_main_process():
@@ -125,7 +157,10 @@ def main(args):
             quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device("cpu"))
-            torch.ao.quantization.convert(quantized_eval_model, inplace=True)
+            if use_fx_graph_mode_quantization:
+                quantized_eval_model = torch.ao.quantization.quantize_fx.convert_fx(quantized_eval_model)
+            else:
+                torch.ao.quantization.convert(quantized_eval_model, inplace=True)
 
             print("Evaluate Quantized model")
             evaluate(quantized_eval_model, criterion, data_loader_test, device=torch.device("cpu"))
@@ -232,6 +267,12 @@ def get_args_parser(add_help=True):
         dest="post_training_quantize",
         help="Post training quantize the model",
         action="store_true",
+    )
+    parser.add_argument(
+        "--quantization-workflow-type",
+        default="eager_mode_quantization",
+        type=str,
+        help="The quantization workflow type to use, either 'eager_mode_quantization' (default) or 'fx_graph_mode_quantization'",
     )
 
     # distributed training parameters
