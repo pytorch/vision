@@ -1,7 +1,7 @@
 from typing import Any, cast, TypeVar, Union, Optional, Type, Callable, Tuple, Sequence, Mapping
 
 import torch
-from torch._C import _TensorBase, DisableTorchFunction
+from torch._C import DisableTorchFunction
 
 
 F = TypeVar("F", bound="_Feature")
@@ -16,13 +16,14 @@ class _Feature(torch.Tensor):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> F:
-        return cast(
-            F,
-            torch.Tensor._make_subclass(
-                cast(_TensorBase, cls),
-                torch.as_tensor(data, dtype=dtype, device=device),  # type: ignore[arg-type]
-                requires_grad,
-            ),
+        return (
+            torch.as_tensor(  # type: ignore[return-value]
+                data,
+                dtype=dtype,
+                device=device,  # type: ignore[arg-type]
+            )
+            .as_subclass(cls)  # type: ignore[arg-type]
+            .requires_grad_(requires_grad)
         )
 
     @classmethod
@@ -70,12 +71,17 @@ class _Feature(torch.Tensor):
 
         Exceptions to this are:
 
-        - :func:`torch.clone`
+        - :meth:`torch.Tensor.clone`
         - :meth:`torch.Tensor.to`
         """
-        kwargs = kwargs or dict()
+        # Since super().__torch_function__ has no hook to prevent the coercing of the output into the input type, we
+        # need to reimplement the functionality.
+
+        if not all(issubclass(cls, t) for t in types):
+            return NotImplemented
+
         with DisableTorchFunction():
-            output = func(*args, **kwargs)
+            output = func(*args, **kwargs or dict())
 
         if func is torch.Tensor.clone:
             return cls.new_like(args[0], output)
