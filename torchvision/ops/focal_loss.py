@@ -28,8 +28,7 @@ def sigmoid_focal_loss(
         reduction (string, optional): ``'none'`` | ``'mean'`` | ``'sum'``
                 ``'none'``: No reduction will be applied to the output.
                 ``'mean'``: The output will be averaged.
-                ``'sum'``: The output will be summed.
-                Default: ``'none'``
+                ``'sum'``: The output will be summed. Default: ``'none'``
     Returns:
         Loss tensor with the reduction option applied.
     """
