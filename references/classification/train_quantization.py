@@ -1,8 +1,8 @@
 import copy
 import datetime
-from enum import Enum
 import os
 import time
+from enum import Enum
 
 import torch
 import torch.ao.quantization
@@ -32,9 +32,10 @@ def main(args):
     # Validate quantization workflow type
     quantization_workflow_type = args.quantization_workflow_type.upper()
     if quantization_workflow_type not in QuantizationWorkflowType.__members__:
-        raise RuntimeError("Unknown workflow type '%s', please choose from: %s" %
-                           (args.quantization_workflow_type,
-                            str(tuple([t.lower() for t in QuantizationWorkflowType.__members__]))))
+        raise RuntimeError(
+            "Unknown workflow type '%s', please choose from: %s"
+            % (args.quantization_workflow_type, str(tuple([t.lower() for t in QuantizationWorkflowType.__members__])))
+        )
     use_fx_graph_mode_quantization = quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE_QUANTIZATION
 
     # Set backend engine to ensure that quantized model runs on the correct kernels
