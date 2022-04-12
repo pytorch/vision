@@ -1,5 +1,6 @@
 import copy
 import datetime
+from enum import Enum
 import os
 import time
 
@@ -13,6 +14,11 @@ from torch import nn
 from train import train_one_epoch, evaluate, load_data
 
 
+class QuantizationWorkflowType(Enum):
+    EAGER_MODE_QUANTIZATION = 1
+    FX_GRAPH_MODE_QUANTIZATION = 2
+
+
 def main(args):
     if args.output_dir:
         utils.mkdir(args.output_dir)
@@ -22,6 +28,14 @@ def main(args):
 
     if args.post_training_quantize and args.distributed:
         raise RuntimeError("Post training quantization example should not be performed on distributed mode")
+
+    # Validate quantization workflow type
+    quantization_workflow_type = args.quantization_workflow_type.upper()
+    if quantization_workflow_type not in QuantizationWorkflowType.__members__:
+        raise RuntimeError("Unknown workflow type '%s', please choose from: %s" %
+                           (args.quantization_workflow_type,
+                            str(tuple([t.lower() for t in QuantizationWorkflowType.__members__]))))
+    use_fx_graph_mode_quantization = quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE_QUANTIZATION
 
     # Set backend engine to ensure that quantized model runs on the correct kernels
     if args.backend not in torch.backends.quantized.supported_engines:
@@ -46,19 +60,22 @@ def main(args):
     )
 
     print("Creating model", args.model)
+    if use_fx_graph_mode_quantization:
+        model_namespace = torchvision.models
+    else:
+        model_namespace = torchvision.models.quantization
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    model = torchvision.models.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only, fx_mode=args.fx)
+    model = model_namespace.__dict__[args.model](weights=args.weights, quantize=args.test_only)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
         qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
-        if args.fx:
+        if use_fx_graph_mode_quantization:
             qconfig_dict = {"": qconfig}
-            model = torch.ao.quantization.quantize_fx.fuse_fx(model)
             model = torch.ao.quantization.quantize_fx.prepare_qat_fx(model, qconfig_dict)
         else:
-            model.qconfig = qconfig
             model.fuse_model(is_qat=True)
+            model.qconfig = qconfig
             torch.ao.quantization.prepare_qat(model, inplace=True)
 
         if args.distributed and args.sync_bn:
@@ -92,18 +109,17 @@ def main(args):
         )
         model.eval()
         qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
-        if args.fx:
+        if use_fx_graph_mode_quantization:
             qconfig_dict = {"": qconfig}
-            model = torch.ao.quantization.quantize_fx.fuse_fx(model)
             model = torch.ao.quantization.quantize_fx.prepare_fx(model, qconfig_dict)
         else:
-            model.qconfig = qconfig
             model.fuse_model(is_qat=False)
+            model.qconfig = qconfig
             torch.ao.quantization.prepare(model, inplace=True)
         # Calibrate first
         print("Calibrating")
         evaluate(model, criterion, data_loader_calibration, device=device, print_freq=1)
-        if args.fx:
+        if use_fx_graph_mode_quantization:
             model = torch.ao.quantization.quantize_fx.convert_fx(model)
         else:
             torch.ao.quantization.convert(model, inplace=True)
@@ -141,7 +157,7 @@ def main(args):
             quantized_eval_model = copy.deepcopy(model_without_ddp)
             quantized_eval_model.eval()
             quantized_eval_model.to(torch.device("cpu"))
-            if args.fx:
+            if use_fx_graph_mode_quantization:
                 quantized_eval_model = torch.ao.quantization.quantize_fx.convert_fx(quantized_eval_model)
             else:
                 torch.ao.quantization.convert(quantized_eval_model, inplace=True)
@@ -253,10 +269,10 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
     parser.add_argument(
-        "--fx",
-        dest="fx",
-        help="Use FX quantization",
-        action="store_true",
+        "--quantization-workflow-type",
+        default="eager_mode_quantization",
+        type=str,
+        help="The quantization workflow type to use, either 'eager_mode_quantization' (default) or 'fx_graph_mode_quantization'",
     )
 
     # distributed training parameters

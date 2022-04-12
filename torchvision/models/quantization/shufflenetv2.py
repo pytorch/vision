@@ -89,12 +89,11 @@ def _shufflenetv2(
         if "backend" in weights.meta:
             _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
-    fx_mode = kwargs.pop("fx_mode", False)
 
     model = QuantizableShuffleNetV2(stages_repeats, stages_out_channels, **kwargs)
     _replace_relu(model)
     if quantize:
-        quantize_model(model, backend, fx_mode)
+        quantize_model(model, backend)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
