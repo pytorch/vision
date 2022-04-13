@@ -22,4 +22,4 @@ from ._meta import ConvertBoundingBoxFormat, ConvertImageDtype, ConvertImageColo
 from ._misc import Identity, Normalize, ToDtype, Lambda
 from ._type_conversion import DecodeImage, LabelToOneHot
 
-from ._legacy import Grayscale, RandomGrayscale  # usort: skip
+from ._deprecated import Grayscale, RandomGrayscale, ToTensor, ToPILImage, PILToTensor  # usort: skip

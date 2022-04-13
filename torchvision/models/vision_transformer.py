@@ -20,10 +20,12 @@ __all__ = [
     "ViT_B_32_Weights",
     "ViT_L_16_Weights",
     "ViT_L_32_Weights",
+    "ViT_H_14_Weights",
     "vit_b_16",
     "vit_b_32",
     "vit_l_16",
     "vit_l_32",
+    "vit_h_14",
 ]
 
 
@@ -347,7 +349,7 @@ class ViT_B_16_Weights(WeightsEnum):
             "acc@5": 95.318,
         },
     )
-    IMAGENET1K_SWAG_V1 = Weights(
+    IMAGENET1K_SWAG_E2E_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_16_swag-9ac1b537.pth",
         transforms=partial(
             ImageClassification,
@@ -362,6 +364,24 @@ class ViT_B_16_Weights(WeightsEnum):
             "min_size": (384, 384),
             "acc@1": 85.304,
             "acc@5": 97.650,
+        },
+    )
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16_lc_swag-4e70ced5.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5793",
+            "num_params": 86567656,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "acc@1": 81.886,
+            "acc@5": 96.180,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -398,7 +418,7 @@ class ViT_L_16_Weights(WeightsEnum):
             "acc@5": 94.638,
         },
     )
-    IMAGENET1K_SWAG_V1 = Weights(
+    IMAGENET1K_SWAG_E2E_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_16_swag-4f3808c9.pth",
         transforms=partial(
             ImageClassification,
@@ -413,6 +433,24 @@ class ViT_L_16_Weights(WeightsEnum):
             "min_size": (512, 512),
             "acc@1": 88.064,
             "acc@5": 98.512,
+        },
+    )
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_16_lc_swag-4d563306.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5793",
+            "num_params": 304326632,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "acc@1": 85.146,
+            "acc@5": 97.422,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -433,6 +471,45 @@ class ViT_L_32_Weights(WeightsEnum):
         },
     )
     DEFAULT = IMAGENET1K_V1
+
+
+class ViT_H_14_Weights(WeightsEnum):
+    IMAGENET1K_SWAG_E2E_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_h_14_swag-80465313.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=518,
+            resize_size=518,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 633470440,
+            "size": (518, 518),
+            "min_size": (518, 518),
+            "acc@1": 88.552,
+            "acc@5": 98.694,
+        },
+    )
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_h_14_lc_swag-c1eb923e.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5793",
+            "num_params": 632045800,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "acc@1": 85.708,
+            "acc@5": 97.730,
+        },
+    )
+    DEFAULT = IMAGENET1K_SWAG_E2E_V1
 
 
 @handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.IMAGENET1K_V1))
@@ -525,6 +602,29 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+    """
+    Constructs a vit_h_14 architecture from
+    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
+
+    Args:
+        weights (ViT_H_14_Weights, optional): The pretrained weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    weights = ViT_H_14_Weights.verify(weights)
+
+    return _vision_transformer(
+        patch_size=14,
+        num_layers=32,
+        num_heads=16,
+        hidden_dim=1280,
+        mlp_dim=5120,
         weights=weights,
         progress=progress,
         **kwargs,

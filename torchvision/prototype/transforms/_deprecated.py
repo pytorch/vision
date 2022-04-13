@@ -1,14 +1,63 @@
-from __future__ import annotations
-
 import warnings
-from typing import Any, Dict
+from typing import Any, Dict, Optional
 
+import numpy as np
+import PIL.Image
+from torchvision.prototype import features
 from torchvision.prototype.features import ColorSpace
 from torchvision.prototype.transforms import Transform
+from torchvision.transforms import functional as _F
 from typing_extensions import Literal
 
 from ._meta import ConvertImageColorSpace
 from ._transform import _RandomApplyTransform
+from ._utils import is_simple_tensor
+
+
+class ToTensor(Transform):
+    def __init__(self) -> None:
+        warnings.warn(
+            "The transform `ToTensor()` is deprecated and will be removed in a future release. "
+            "Instead, please use `transforms.ToImageTensor()`."
+        )
+        super().__init__()
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, (PIL.Image.Image, np.ndarray)):
+            return _F.to_tensor(input)
+        else:
+            return input
+
+
+class PILToTensor(Transform):
+    def __init__(self) -> None:
+        warnings.warn(
+            "The transform `PILToTensor()` is deprecated and will be removed in a future release. "
+            "Instead, please use `transforms.ToImageTensor()`."
+        )
+        super().__init__()
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, PIL.Image.Image):
+            return _F.pil_to_tensor(input)
+        else:
+            return input
+
+
+class ToPILImage(Transform):
+    def __init__(self, mode: Optional[str] = None) -> None:
+        warnings.warn(
+            "The transform `ToPILImage()` is deprecated and will be removed in a future release. "
+            "Instead, please use `transforms.ToImagePIL()`."
+        )
+        super().__init__()
+        self.mode = mode
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if is_simple_tensor(input) or isinstance(input, (features.Image, np.ndarray)):
+            return _F.to_pil_image(input, mode=self.mode)
+        else:
+            return input
 
 
 class Grayscale(Transform):
