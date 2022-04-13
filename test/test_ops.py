@@ -1620,7 +1620,7 @@ class TestGeneralizedBoxIouLoss:
         assert box2.grad is not None, "box2.grad should not be None after backward is called"
 
         loss = ops.generalized_box_iou_loss(box1, box2, reduction="none")
-        assert loss.numel()== 0
+        assert loss.numel() == 0, "giou_loss for two empty box should be empty"
 
 
 if __name__ == "__main__":
