@@ -172,7 +172,7 @@ def test_draw_invalid_boxes():
 def test_draw_boxes_warning():
     img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
 
-    with pytest.warns(UserWarning, match=re.escape("Argument 'font_size' will be unused as 'font' is not set.")):
+    with pytest.warns(UserWarning, match=re.escape("Argument 'font_size' will be ignored since 'font' is not set.")):
         utils.draw_bounding_boxes(img, boxes, font_size=11)
 
 
