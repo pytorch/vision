@@ -1588,10 +1588,9 @@ class TestCIOULoss:
         )
 
         def assert_ciou_loss(box1, box2, expected_output, reduction="none"):
-            box1 = torch.tensor(box1)
-            box2 = torch.tensor(box2)
+            
             output = ops.complete_box_iou_loss(box1, box2, reduction=reduction)
-            expected_output = torch.tensor(expected_output, dtype=dtype)
+            expected_output = torch.tensor(expected_output, device = device)
             tol = 1e-5 if dtype != torch.half else 1e-3
             torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
 
