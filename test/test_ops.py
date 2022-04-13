@@ -1126,6 +1126,8 @@ class BoxTestBase(ABC):
     def _run_test(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
         def assert_close(box: Tensor, expected: Tensor, tolerance):
             out = self._perform_box_operation(box)
+            print("The computed box is: ", out)
+            print("The expected one is: ", expected)
             torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         for dtype in dtypes:
@@ -1256,7 +1258,7 @@ class TestGenBoxIou(BoxTestBase):
     def test_giou_jit(self) -> None:
         self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
 
-class TestDistanceIoU(BoxTestBase):
+class TestDistanceBoxIoU(BoxTestBase):
     def _target_fn(self) -> Tuple[bool, Callable]:
         return (True, ops.distance_box_iou)
 
@@ -1265,7 +1267,7 @@ class TestDistanceIoU(BoxTestBase):
 
     # TODO: Update this.
     def _generate_int_expected() -> List[List[float]]:
-        return [[1.0, 0.25, -0.7778], [0.25, 1.0, -0.8611], [-0.7778, -0.8611, 1.0]]
+        return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
 
     def _generate_float_input() -> List[List[float]]:
         return [
@@ -1280,10 +1282,9 @@ class TestDistanceIoU(BoxTestBase):
     @pytest.mark.parametrize(
         "test_input, dtypes, tolerance, expected",
         [
-            # TODO: Fix this test.
-            # pytest.param(
-            #     _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
-            # ),
+            pytest.param(
+                _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
+            ),
             pytest.param(_generate_float_input(), [torch.float16], 0.002, _generate_float_expected()),
             pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.001, _generate_float_expected()),
         ],
@@ -1293,6 +1294,47 @@ class TestDistanceIoU(BoxTestBase):
 
     def test_distance_iou_jit(self) -> None:
         self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+
+class TestDistanceIoULoss:
+    # Inspired and adapted from:
+    # https://github.com/pytorch/vision/pull/5776/files#diff-d183f2afc51d6a59bc70094e8f476d2468c45e415500f6eb60abad955e065156
+
+    @staticmethod
+    def assert_distance_iou_loss(box1, box2, expected_output, dtype, reduction="none"):
+        output = ops.distance_box_iou_loss(box1, box2, reduction=reduction)
+        expected_output = torch.tensor(expected_output, dtype=dtype)
+        tol = 1e-5 if dtype != torch.half else 1e-3
+        torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
+
+    # TODO: torch.half as a dtype doesn't pass the test, investigate...
+    @pytest.mark.parametrize("dtype", [torch.float32])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_distance_iou_loss(self, dtype, device):
+        box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
+        box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
+        box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
+        box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
+
+        box1s = torch.stack(
+            [box2, box2],
+            dim=0,
+        )
+        box2s = torch.stack(
+            [box3, box4],
+            dim=0,
+        )
+
+
+        self.assert_distance_iou_loss(box1, box1, 0.0, dtype)
+
+        self.assert_distance_iou_loss(box1, box2, 0.8125, dtype)
+
+        self.assert_distance_iou_loss(box1, box3, 1.1923, dtype)
+
+        self.assert_distance_iou_loss(box1, box4, 1.2500, dtype)
+
+        self.assert_distance_iou_loss(box1s, box2s, 1.2250, dtype, reduction="mean")
+        self.assert_distance_iou_loss(box1s, box2s, 2.4500, dtype, reduction="sum")
 
 
 class TestMasksToBoxes:
