@@ -1301,9 +1301,9 @@ class TestDistanceIoULoss:
     # https://github.com/pytorch/vision/pull/5776/files#diff-d183f2afc51d6a59bc70094e8f476d2468c45e415500f6eb60abad955e065156
 
     @staticmethod
-    def assert_distance_iou_loss(box1, box2, expected_output, dtype, reduction="none"):
+    def assert_distance_iou_loss(box1, box2, expected_output, dtype, device, reduction="none"):
         output = ops.distance_box_iou_loss(box1, box2, reduction=reduction)
-        expected_output = torch.tensor(expected_output, dtype=dtype)
+        expected_output = torch.tensor(expected_output, dtype=dtype, device=device)
         tol = 1e-5 if dtype != torch.half else 1e-3
         torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
 
@@ -1325,16 +1325,16 @@ class TestDistanceIoULoss:
             dim=0,
         )
 
-        self.assert_distance_iou_loss(box1, box1, 0.0, dtype)
+        self.assert_distance_iou_loss(box1, box1, 0.0, dtype, device)
 
-        self.assert_distance_iou_loss(box1, box2, 0.8125, dtype)
+        self.assert_distance_iou_loss(box1, box2, 0.8125, dtype, device)
 
-        self.assert_distance_iou_loss(box1, box3, 1.1923, dtype)
+        self.assert_distance_iou_loss(box1, box3, 1.1923, dtype, device)
 
-        self.assert_distance_iou_loss(box1, box4, 1.2500, dtype)
+        self.assert_distance_iou_loss(box1, box4, 1.2500, dtype, device)
 
-        self.assert_distance_iou_loss(box1s, box2s, 1.2250, dtype, reduction="mean")
-        self.assert_distance_iou_loss(box1s, box2s, 2.4500, dtype, reduction="sum")
+        self.assert_distance_iou_loss(box1s, box2s, 1.2250, dtype, device, reduction="mean")
+        self.assert_distance_iou_loss(box1s, box2s, 2.4500, dtype, device, reduction="sum")
 
 
 class TestMasksToBoxes:
