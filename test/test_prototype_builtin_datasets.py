@@ -1,4 +1,5 @@
 import functools
+import gc
 import io
 import pickle
 from pathlib import Path
@@ -29,6 +30,12 @@ def extract_datapipes(dp):
 def test_home(mocker, tmp_path):
     mocker.patch("torchvision.prototype.datasets._api.home", return_value=str(tmp_path))
     yield tmp_path
+
+
+@pytest.fixture(autouse=True)
+def garbage_collection():
+    yield
+    gc.collect()
 
 
 def test_coverage():
