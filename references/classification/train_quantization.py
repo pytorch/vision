@@ -70,13 +70,12 @@ def main(args):
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
-        qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
         if use_fx_graph_mode_quantization:
-            qconfig_dict = {"": qconfig}
+            qconfig_dict = torch.ao.quantization.get_default_qat_qconfig_dict(args.backend)
             model = torch.ao.quantization.quantize_fx.prepare_qat_fx(model, qconfig_dict)
         else:
             model.fuse_model(is_qat=True)
-            model.qconfig = qconfig
+            model.qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
             torch.ao.quantization.prepare_qat(model, inplace=True)
 
         if args.distributed and args.sync_bn:
@@ -109,13 +108,12 @@ def main(args):
             ds, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True
         )
         model.eval()
-        qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
         if use_fx_graph_mode_quantization:
-            qconfig_dict = {"": qconfig}
+            qconfig_dict = torch.ao.quantization.get_default_qconfig_dict(args.backend)
             model = torch.ao.quantization.quantize_fx.prepare_fx(model, qconfig_dict)
         else:
             model.fuse_model(is_qat=False)
-            model.qconfig = qconfig
+            model.qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
             torch.ao.quantization.prepare(model, inplace=True)
         # Calibrate first
         print("Calibrating")
