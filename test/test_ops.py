@@ -79,7 +79,7 @@ class RoIOpTester(ABC):
         rois_dtype = self.dtype if rois_dtype is None else rois_dtype
         pool_size = 5
         # n_channels % (pool_size ** 2) == 0 required for PS opeartions.
-        n_channels = 2 * (pool_size ** 2)
+        n_channels = 2 * (pool_size**2)
         x = torch.rand(2, n_channels, 10, 10, dtype=x_dtype, device=device)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
@@ -115,7 +115,7 @@ class RoIOpTester(ABC):
     def test_backward(self, seed, device, contiguous):
         torch.random.manual_seed(seed)
         pool_size = 2
-        x = torch.rand(1, 2 * (pool_size ** 2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
+        x = torch.rand(1, 2 * (pool_size**2), 5, 5, dtype=self.dtype, device=device, requires_grad=True)
         if not contiguous:
             x = x.permute(0, 1, 3, 2)
         rois = torch.tensor(
@@ -1588,9 +1588,9 @@ class TestCIOULoss:
         )
 
         def assert_ciou_loss(box1, box2, expected_output, reduction="none"):
-            
+
             output = ops.complete_box_iou_loss(box1, box2, reduction=reduction)
-            expected_output = torch.tensor(expected_output, device = device)
+            expected_output = torch.tensor(expected_output, device=device, dtype=dtype)
             tol = 1e-5 if dtype != torch.half else 1e-3
             torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
 
