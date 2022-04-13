@@ -1,10 +1,10 @@
-
 import torch
-import math
-from .boxes import _upcast
-from ..utils import _log_api_usage_once
 
-# TODO: Some parts can be refactored between gIoU, cIoU, and dIoU.
+from ..utils import _log_api_usage_once
+from .boxes import _upcast
+
+
+# TODO: Some parts can be refactored between gIoU, cIoU, and dIoU.
 def distance_box_iou_loss(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,
@@ -61,7 +61,7 @@ def distance_box_iou_loss(
     yc1 = torch.min(y1, y1g)
     xc2 = torch.max(x2, x2g)
     yc2 = torch.max(y2, y2g)
-    # The diagonal distance of the smallest enclosing box squared
+    # The diagonal distance of the smallest enclosing box squared
     diagonal_distance_squared = ((xc2 - xc1) ** 2) + ((yc2 - yc1) ** 2) + eps
 
     # centers of boxes
@@ -69,11 +69,11 @@ def distance_box_iou_loss(
     y_p = (y2 + y1) / 2
     x_g = (x1g + x2g) / 2
     y_g = (y1g + y2g) / 2
-    # The distance between boxes' centers squared.
+    # The distance between boxes' centers squared.
     centers_distance_squared = ((x_p - x_g) ** 2) + ((y_p - y_g) ** 2)
 
-    # The distance IoU is the IoU penalized by a normalized
-    # distance between boxes' centers squared.
+    # The distance IoU is the IoU penalized by a normalized
+    # distance between boxes' centers squared.
     diou = iou - (centers_distance_squared / diagonal_distance_squared)
     loss = 1 - diou
     if reduction == "mean":

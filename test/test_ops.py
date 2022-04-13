@@ -1126,8 +1126,6 @@ class BoxTestBase(ABC):
     def _run_test(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
         def assert_close(box: Tensor, expected: Tensor, tolerance):
             out = self._perform_box_operation(box)
-            print("The computed box is: ", out)
-            print("The expected one is: ", expected)
             torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
 
         for dtype in dtypes:
@@ -1258,6 +1256,7 @@ class TestGenBoxIou(BoxTestBase):
     def test_giou_jit(self) -> None:
         self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
 
+
 class TestDistanceBoxIoU(BoxTestBase):
     def _target_fn(self) -> Tuple[bool, Callable]:
         return (True, ops.distance_box_iou)
@@ -1265,7 +1264,7 @@ class TestDistanceBoxIoU(BoxTestBase):
     def _generate_int_input() -> List[List[int]]:
         return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
 
-    # TODO: Update this.
+    # TODO: Update this.
     def _generate_int_expected() -> List[List[float]]:
         return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
 
@@ -1295,8 +1294,9 @@ class TestDistanceBoxIoU(BoxTestBase):
     def test_distance_iou_jit(self) -> None:
         self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
 
+
 class TestDistanceIoULoss:
-    # Inspired and adapted from:
+    # Inspired and adapted from:
     # https://github.com/pytorch/vision/pull/5776/files#diff-d183f2afc51d6a59bc70094e8f476d2468c45e415500f6eb60abad955e065156
 
     @staticmethod
@@ -1306,7 +1306,7 @@ class TestDistanceIoULoss:
         tol = 1e-5 if dtype != torch.half else 1e-3
         torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
 
-    # TODO: torch.half as a dtype doesn't pass the test, investigate...
+    # TODO: torch.half as a dtype doesn't pass the test, investigate...
     @pytest.mark.parametrize("dtype", [torch.float32])
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_distance_iou_loss(self, dtype, device):
@@ -1323,7 +1323,6 @@ class TestDistanceIoULoss:
             [box3, box4],
             dim=0,
         )
-
 
         self.assert_distance_iou_loss(box1, box1, 0.0, dtype)
 

@@ -310,10 +310,11 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
 
     return iou - (areai - union) / areai
 
+
 # Implementation inspired from the generalized_box_iou one.
 # TODO: Some refactoring and homogenization could be done with
-# the loss function in diou_loss.
-def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps:float= 1e-7) -> Tensor:
+# the loss function in diou_loss.
+def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tensor:
     """
     Return distance intersection-over-union (Jaccard index) between two sets of boxes.
 
@@ -339,19 +340,18 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps:float= 1e-7) -> Tensor:
     rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
 
     whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
-    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2)  + eps
-
+    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
 
     # centers of boxes
     x_p = boxes1[:, None, :2].sum() / 2
     y_p = boxes1[:, None, 2:].sum() / 2
     x_g = boxes2[:, :2].sum() / 2
     y_g = boxes2[:, 2:].sum() / 2
-    # The distance between boxes' centers squared.
+    # The distance between boxes' centers squared.
     centers_distance_squared = (_upcast(x_p - x_g) ** 2) + (_upcast(y_p - y_g) ** 2)
 
-    # The distance IoU is the IoU penalized by a normalized
-    # distance between boxes' centers squared.
+    # The distance IoU is the IoU penalized by a normalized
+    # distance between boxes' centers squared.
     return iou - (centers_distance_squared / diagonal_distance_squared)
 
 
