@@ -1,11 +1,7 @@
-from typing import Any, Dict, List, Tuple, BinaryIO
+from typing import Any, BinaryIO, Dict, List, Tuple
 
 import numpy as np
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    UnBatcher,
-)
+from torchdata.datapipes.iter import IterDataPipe, Mapper, UnBatcher
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -14,11 +10,11 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    read_mat,
     hint_sharding,
     hint_shuffling,
+    read_mat,
 )
-from torchvision.prototype.features import Label, Image
+from torchvision.prototype.features import Image, Label
 
 
 class SVHN(Dataset):

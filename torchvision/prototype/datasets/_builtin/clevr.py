@@ -1,7 +1,15 @@
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, JsonParser, UnBatcher
+from torchdata.datapipes.iter import (
+    Demultiplexer,
+    Filter,
+    IterDataPipe,
+    IterKeyZipper,
+    JsonParser,
+    Mapper,
+    UnBatcher,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -10,14 +18,14 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
+    getitem,
     hint_sharding,
     hint_shuffling,
-    path_comparator,
+    INFINITE_BUFFER_SIZE,
     path_accessor,
-    getitem,
+    path_comparator,
 )
-from torchvision.prototype.features import Label, EncodedImage
+from torchvision.prototype.features import EncodedImage, Label
 
 
 class CLEVR(Dataset):

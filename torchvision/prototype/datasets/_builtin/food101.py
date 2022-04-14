@@ -1,23 +1,29 @@
 from pathlib import Path
-from typing import Any, Tuple, List, Dict, Optional, BinaryIO
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
 from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Filter,
-    Mapper,
-    LineReader,
     Demultiplexer,
+    Filter,
+    IterDataPipe,
     IterKeyZipper,
+    LineReader,
+    Mapper,
 )
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    DatasetConfig,
+    DatasetInfo,
+    HttpResource,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import (
-    hint_shuffling,
-    hint_sharding,
-    path_comparator,
     getitem,
+    hint_sharding,
+    hint_shuffling,
     INFINITE_BUFFER_SIZE,
+    path_comparator,
 )
-from torchvision.prototype.features import Label, EncodedImage
+from torchvision.prototype.features import EncodedImage, Label
 
 
 class Food101(Dataset):

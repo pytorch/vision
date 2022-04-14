@@ -3,11 +3,15 @@ from typing import Callable, Dict, List, Optional, Union
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
-from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
+from torchvision.ops.feature_pyramid_network import (
+    ExtraFPNBlock,
+    FeaturePyramidNetwork,
+    LastLevelMaxPool,
+)
 
 from .. import mobilenet, resnet
-from .._api import WeightsEnum, get_enum_from_fn
-from .._utils import IntermediateLayerGetter, handle_legacy_interface
+from .._api import get_enum_from_fn, WeightsEnum
+from .._utils import handle_legacy_interface, IntermediateLayerGetter
 
 
 class BackboneWithFPN(nn.Module):

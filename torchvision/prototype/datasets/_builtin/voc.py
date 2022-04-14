@@ -1,15 +1,15 @@
 import functools
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, cast, Callable
+from typing import Any, BinaryIO, Callable, cast, Dict, List, Optional, Tuple
 from xml.etree import ElementTree
 
 from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
     Demultiplexer,
+    Filter,
+    IterDataPipe,
     IterKeyZipper,
     LineReader,
+    Mapper,
 )
 from torchvision.datasets import VOCDetection
 from torchvision.prototype.datasets.utils import (
@@ -20,14 +20,14 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    path_accessor,
     getitem,
-    INFINITE_BUFFER_SIZE,
-    path_comparator,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_accessor,
+    path_comparator,
 )
-from torchvision.prototype.features import BoundingBox, Label, EncodedImage
+from torchvision.prototype.features import BoundingBox, EncodedImage, Label
 
 
 class VOCDatasetInfo(DatasetInfo):

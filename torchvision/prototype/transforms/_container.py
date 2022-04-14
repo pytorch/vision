@@ -1,4 +1,4 @@
-from typing import Any, Optional, List, Dict
+from typing import Any, Dict, List, Optional
 
 import torch
 from torchvision.prototype.transforms import Transform

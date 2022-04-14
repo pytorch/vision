@@ -1,35 +1,35 @@
 import functools
 import pathlib
 import re
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Match, cast
+from typing import Any, BinaryIO, cast, Dict, List, Match, Optional, Tuple
 
 from torchdata.datapipes.iter import (
-    IterDataPipe,
-    LineReader,
-    IterKeyZipper,
-    Mapper,
-    Filter,
     Demultiplexer,
-    TarArchiveLoader,
     Enumerator,
+    Filter,
+    IterDataPipe,
+    IterKeyZipper,
+    LineReader,
+    Mapper,
+    TarArchiveLoader,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    OnlineResource,
     ManualDownloadResource,
+    OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
     BUILTIN_DIR,
-    path_comparator,
     getitem,
-    read_mat,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_comparator,
+    read_mat,
 )
-from torchvision.prototype.features import Label, EncodedImage
+from torchvision.prototype.features import EncodedImage, Label
 from torchvision.prototype.utils._internal import FrozenMapping
 
 

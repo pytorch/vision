@@ -1,4 +1,4 @@
-from torchvision.transforms import functional_tensor as _FT, functional_pil as _FP
+from torchvision.transforms import functional_pil as _FP, functional_tensor as _FT
 
 adjust_brightness_image_tensor = _FT.adjust_brightness
 adjust_brightness_image_pil = _FP.adjust_brightness

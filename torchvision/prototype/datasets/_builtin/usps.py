@@ -1,8 +1,14 @@
 from typing import Any, Dict, List
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, LineReader, Mapper, Decompressor
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo, DatasetConfig, OnlineResource, HttpResource
+from torchdata.datapipes.iter import Decompressor, IterDataPipe, LineReader, Mapper
+from torchvision.prototype.datasets.utils import (
+    Dataset,
+    DatasetConfig,
+    DatasetInfo,
+    HttpResource,
+    OnlineResource,
+)
 from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
 from torchvision.prototype.features import Image, Label
 

@@ -1,8 +1,8 @@
 import functools
-from typing import Any, List, Type, Callable, Dict
+from typing import Any, Callable, Dict, List, Type
 
 import torch
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 
 
 class Identity(Transform):

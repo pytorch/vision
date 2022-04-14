@@ -6,7 +6,12 @@ from torch import Tensor
 from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once
-from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
+from ._box_convert import (
+    _box_cxcywh_to_xyxy,
+    _box_xywh_to_xyxy,
+    _box_xyxy_to_cxcywh,
+    _box_xyxy_to_xywh,
+)
 
 
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:

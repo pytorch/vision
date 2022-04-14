@@ -1,17 +1,17 @@
 import csv
 import functools
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Callable
+from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple
 
 from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
-    IterKeyZipper,
-    Demultiplexer,
-    LineReader,
-    CSVParser,
     CSVDictParser,
+    CSVParser,
+    Demultiplexer,
+    Filter,
+    IterDataPipe,
+    IterKeyZipper,
+    LineReader,
+    Mapper,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -21,15 +21,15 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
-    read_mat,
+    getitem,
     hint_sharding,
     hint_shuffling,
-    getitem,
-    path_comparator,
+    INFINITE_BUFFER_SIZE,
     path_accessor,
+    path_comparator,
+    read_mat,
 )
-from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
+from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
 
 csv.register_dialect("cub200", delimiter=" ")
 

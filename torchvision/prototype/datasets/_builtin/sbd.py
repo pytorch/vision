@@ -1,15 +1,15 @@
 import pathlib
 import re
-from typing import Any, Dict, List, Optional, Tuple, cast, BinaryIO
+from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple
 
 import numpy as np
 from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
     Demultiplexer,
     Filter,
+    IterDataPipe,
     IterKeyZipper,
     LineReader,
+    Mapper,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
@@ -19,13 +19,13 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
-    read_mat,
     getitem,
-    path_accessor,
-    path_comparator,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_accessor,
+    path_comparator,
+    read_mat,
 )
 from torchvision.prototype.features import _Feature, EncodedImage
 

@@ -1,5 +1,5 @@
 import unittest.mock
-from typing import Dict, Any, Tuple, Union
+from typing import Any, Dict, Tuple, Union
 
 import numpy as np
 import PIL.Image

@@ -5,7 +5,7 @@ future versions without warning. The classes should be accessed only via the tra
 from typing import Optional, Tuple
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 
 from . import functional as F, InterpolationMode
 

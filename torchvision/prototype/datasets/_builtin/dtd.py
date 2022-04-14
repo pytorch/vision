@@ -1,8 +1,16 @@
 import enum
 import pathlib
-from typing import Any, Dict, List, Optional, Tuple, BinaryIO
+from typing import Any, BinaryIO, Dict, List, Optional, Tuple
 
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, LineReader, CSVParser
+from torchdata.datapipes.iter import (
+    CSVParser,
+    Demultiplexer,
+    Filter,
+    IterDataPipe,
+    IterKeyZipper,
+    LineReader,
+    Mapper,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -11,13 +19,13 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
-    hint_sharding,
-    path_comparator,
     getitem,
+    hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_comparator,
 )
-from torchvision.prototype.features import Label, EncodedImage
+from torchvision.prototype.features import EncodedImage, Label
 
 
 class DTDDemux(enum.IntEnum):
