@@ -36,7 +36,9 @@ def main(args):
             "Unknown workflow type '%s', please choose from: %s"
             % (args.quantization_workflow_type, str(tuple([t.lower() for t in QuantizationWorkflowType.__members__])))
         )
-    use_fx_graph_mode_quantization = quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE_QUANTIZATION
+    use_fx_graph_mode_quantization = (
+        QuantizationWorkflowType[quantization_workflow_type] == QuantizationWorkflowType.FX_GRAPH_MODE_QUANTIZATION
+    )
 
     # Set backend engine to ensure that quantized model runs on the correct kernels
     if args.backend not in torch.backends.quantized.supported_engines:
@@ -61,12 +63,11 @@ def main(args):
     )
 
     print("Creating model", args.model)
-    if use_fx_graph_mode_quantization:
-        model_namespace = torchvision.models
-    else:
-        model_namespace = torchvision.models.quantization
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    model = model_namespace.__dict__[args.model](weights=args.weights, quantize=args.test_only)
+    if use_fx_graph_mode_quantization:
+        model = torchvision.models.__dict__[args.model](weights=args.weights)
+    else:
+        model = torchvision.models.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
