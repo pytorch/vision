@@ -22,6 +22,7 @@
 
 import os
 import textwrap
+from pathlib import Path
 
 import pytorch_sphinx_theme
 import torchvision
@@ -313,10 +314,8 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines.append("")
 
 
-def generate_table():
+def generate_classification_table():
 
-    # TODO: this is ugly af and incorrect. We'll need an automatic way to
-    # retrieve weight enums for each section, or manually list them.
     weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum if "acc@1" in w.meta]
 
@@ -336,8 +335,6 @@ def generate_table():
     ]
     table = tabulate(content, headers=column_names, tablefmt="rst")
 
-    from pathlib import Path
-
     generated_dir = Path("generated")
     generated_dir.mkdir(exist_ok=True)
     with open(generated_dir / "classification_table.rst", "w+") as table_file:
@@ -346,7 +343,7 @@ def generate_table():
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
 
-generate_table()
+generate_classification_table()
 
 
 def setup(app):
