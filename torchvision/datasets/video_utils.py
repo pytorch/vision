@@ -2,7 +2,7 @@ import bisect
 import math
 import warnings
 from fractions import Fraction
-from typing import Any, Dict, List, Optional, Callable, Union, Tuple, TypeVar, cast
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, TypeVar, Union
 
 import torch
 from torchvision.io import (

@@ -1,5 +1,5 @@
 import os
-from typing import Any, Dict, List, Tuple, Optional, Callable
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 from torch import Tensor
 

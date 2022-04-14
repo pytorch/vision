@@ -1,7 +1,7 @@
 import math
 import warnings
 from fractions import Fraction
-from typing import List, Tuple, Dict, Optional, Union
+from typing import Dict, List, Optional, Tuple, Union
 
 import torch
 

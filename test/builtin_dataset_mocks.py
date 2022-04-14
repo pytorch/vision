@@ -12,13 +12,13 @@ import pickle
 import random
 import warnings
 import xml.etree.ElementTree as ET
-from collections import defaultdict, Counter
+from collections import Counter, defaultdict
 
 import numpy as np
 import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import create_image_file, create_image_folder, make_tar, make_zip
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision._utils import sequence_to_str

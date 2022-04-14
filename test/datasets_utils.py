@@ -22,7 +22,7 @@ import pytest
 import torch
 import torchvision.datasets
 import torchvision.io
-from common_utils import get_tmp_dir, disable_console_output
+from common_utils import disable_console_output, get_tmp_dir
 
 
 __all__ = [

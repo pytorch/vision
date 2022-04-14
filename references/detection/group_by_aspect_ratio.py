@@ -2,7 +2,7 @@ import bisect
 import copy
 import math
 from collections import defaultdict
-from itertools import repeat, chain
+from itertools import chain, repeat
 
 import numpy as np
 import torch

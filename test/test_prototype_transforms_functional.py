@@ -10,7 +10,9 @@ from common_utils import cpu_and_gpu
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
-from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
+from torchvision.prototype.transforms.functional._meta import (
+    convert_bounding_box_format,
+)
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
 
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")

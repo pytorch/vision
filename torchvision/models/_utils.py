@@ -2,7 +2,7 @@ import functools
 import inspect
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, Optional, TypeVar, Callable, Tuple, Union
+from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
 
 from torch import nn
 
