@@ -1259,24 +1259,24 @@ class TestGenBoxIou(BoxTestBase):
 
 
 class TestDistanceBoxIoU(BoxTestBase):
-    def _target_fn(self) -> Tuple[bool, Callable]:
+    def _target_fn(self):
         return (True, ops.distance_box_iou)
 
-    def _generate_int_input() -> List[List[int]]:
+    def _generate_int_input():
         return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
 
     # TODO: Update this.
-    def _generate_int_expected() -> List[List[float]]:
+    def _generate_int_expected():
         return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
 
-    def _generate_float_input() -> List[List[float]]:
+    def _generate_float_input():
         return [
             [285.3538, 185.5758, 1193.5110, 851.4551],
             [285.1472, 188.7374, 1192.4984, 851.0669],
             [279.2440, 197.9812, 1189.4746, 849.2019],
         ]
 
-    def _generate_float_expected() -> List[List[float]]:
+    def _generate_float_expected():
         return [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
@@ -1289,10 +1289,10 @@ class TestDistanceBoxIoU(BoxTestBase):
             pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.001, _generate_float_expected()),
         ],
     )
-    def test_distance_iou(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
+    def test_distance_iou(self, test_input, dtypes, tolerance, expected):
         self._run_test(test_input, dtypes, tolerance, expected)
 
-    def test_distance_iou_jit(self) -> None:
+    def test_distance_iou_jit(self):
         self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
 
 
@@ -1304,10 +1304,13 @@ class TestDistanceIoULoss:
     def assert_distance_iou_loss(box1, box2, expected_output, dtype, device, reduction="none"):
         output = ops.distance_box_iou_loss(box1, box2, reduction=reduction)
         expected_output = torch.tensor(expected_output, dtype=dtype, device=device)
+        print("I am the output dtype", output.dtype)
+        print("I am the expected dtype", expected_output.dtype)
         tol = 1e-5 if dtype != torch.half else 1e-3
         torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
 
-    # TODO: torch.half as a dtype doesn't pass the test, investigate...
+    # TODO: torch.half as a dtype doesn't pass the test.
+    # In fact, probably there is an ops that autocasts to float32.
     @pytest.mark.parametrize("dtype", [torch.float32])
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_distance_iou_loss(self, dtype, device):
