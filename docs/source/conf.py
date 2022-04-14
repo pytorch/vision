@@ -21,9 +21,12 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import os
+import textwrap
 
 import pytorch_sphinx_theme
 import torchvision
+import torchvision.models as M
+from tabulate import tabulate
 
 
 # -- General configuration ------------------------------------------------
@@ -292,5 +295,61 @@ def inject_minigalleries(app, what, name, obj, options, lines):
         lines.append("\n")
 
 
+def inject_weight_metadata(app, what, name, obj, options, lines):
+
+    if obj.__name__.endswith("_Weights"):
+        lines[:] = ["The model builder above accepts the following values as the ``weights`` parameter:"]
+        lines.append("")
+        for field in obj:
+            lines += [f"**{str(field)}**:", ""]
+
+            table = []
+            for k, v in field.meta.items():
+                if k != "categories":
+                    table.append((str(k), str(v)))
+            table = tabulate(table, tablefmt="rst")
+            lines += [".. table::", ""]
+            lines += textwrap.indent(table, " " * 4).split("\n")
+            lines.append("")
+
+
+def generate_table():
+
+    # TODO: this is ugly af and incorrect. We'll need an automatic way to
+    # retrieve weight enums for each section, or manually list them.
+    weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("Weights")]
+    weights = [w for weight_enum in weight_enums for w in weight_enum if "acc@1" in w.meta]
+
+    def get_weight_link(w):
+        return f":class:`{w} <{type(w).__name__}>`"
+
+    column_names = ("**Weight**", "**Acc@1**", "**Acc@5**", "**Params**", "**Recipe**")
+    content = [
+        (
+            get_weight_link(w),
+            w.meta["acc@1"],
+            w.meta["acc@5"],
+            f"{w.meta['num_params']/1e6:.1f}M",
+            f"`link <{w.meta['recipe']}>`__",
+        )
+        for w in weights
+    ]
+    table = tabulate(content, headers=column_names, tablefmt="rst")
+
+    from pathlib import Path
+
+    generated_dir = Path("generated")
+    generated_dir.mkdir(exist_ok=True)
+    with open(generated_dir / "classification_table.rst", "w+") as table_file:
+        table_file.write(".. table::\n")
+        table_file.write("    :widths: 100 10 10 20 10\n\n")
+        table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
+
+
+generate_table()
+
+
 def setup(app):
+
     app.connect("autodoc-process-docstring", inject_minigalleries)
+    app.connect("autodoc-process-docstring", inject_weight_metadata)
