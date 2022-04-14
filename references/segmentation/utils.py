@@ -30,11 +30,7 @@ class SmoothedValue:
         """
         Warning: does not synchronize the deque!
         """
-        if not is_dist_avail_and_initialized():
-            return
-        t = torch.tensor([self.count, self.total], dtype=torch.float64, device="cuda")
-        dist.barrier()
-        dist.all_reduce(t)
+        t = reduce_across_processes([self.count, self.total])
         t = t.tolist()
         self.count = int(t[0])
         self.total = t[1]
@@ -92,12 +88,7 @@ class ConfusionMatrix:
         return acc_global, acc, iu
 
     def reduce_from_all_processes(self):
-        if not torch.distributed.is_available():
-            return
-        if not torch.distributed.is_initialized():
-            return
-        torch.distributed.barrier()
-        torch.distributed.all_reduce(self.mat)
+        reduce_across_processes(self.mat)
 
     def __str__(self):
         acc_global, acc, iu = self.compute()
@@ -296,3 +287,14 @@ def init_distributed_mode(args):
     )
     torch.distributed.barrier()
     setup_for_distributed(args.rank == 0)
+
+
+def reduce_across_processes(val):
+    if not is_dist_avail_and_initialized():
+        # nothing to sync, but we still convert to tensor for consistency with the distributed case.
+        return torch.tensor(val)
+
+    t = torch.tensor(val, device="cuda")
+    dist.barrier()
+    dist.all_reduce(t)
+    return t

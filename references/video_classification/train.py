@@ -50,6 +50,7 @@ def evaluate(model, criterion, data_loader, device):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
+    num_processed_samples = 0
     with torch.inference_mode():
         for video, target in metric_logger.log_every(data_loader, 100, header):
             video = video.to(device, non_blocking=True)
@@ -64,7 +65,22 @@ def evaluate(model, criterion, data_loader, device):
             metric_logger.update(loss=loss.item())
             metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
             metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+            num_processed_samples += batch_size
     # gather the stats from all processes
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    if (
+        hasattr(data_loader.dataset, "__len__")
+        and len(data_loader.dataset) != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
+        # See FIXME above
+        warnings.warn(
+            f"It looks like the dataset has {len(data_loader.dataset)} samples, but {num_processed_samples} "
+            "samples were used for the validation, which might bias the results. "
+            "Try adjusting the batch size and / or the world size. "
+            "Setting the world size to 1 is always a safe bet."
+        )
+
     metric_logger.synchronize_between_processes()
 
     print(
@@ -99,7 +115,11 @@ def main(args):
 
     device = torch.device(args.device)
 
-    torch.backends.cudnn.benchmark = True
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
 
     # Data loading code
     print("Loading data")
@@ -173,7 +193,7 @@ def main(args):
     test_sampler = UniformClipSampler(dataset_test.video_clips, args.clips_per_video)
     if args.distributed:
         train_sampler = DistributedSampler(train_sampler)
-        test_sampler = DistributedSampler(test_sampler)
+        test_sampler = DistributedSampler(test_sampler, shuffle=False)
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -248,6 +268,9 @@ def main(args):
             scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
@@ -334,6 +357,9 @@ def parse_args():
         dest="test_only",
         help="Only test the model",
         action="store_true",
+    )
+    parser.add_argument(
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
 
     # distributed training parameters
