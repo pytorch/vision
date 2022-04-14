@@ -223,11 +223,12 @@ def draw_bounding_boxes(
 
     colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
 
-    if font is None and font_size is not None:
-        warnings.warn("Argument 'font_size' will be ignored since 'font' is not set.")
-        font_size = None
-    elif font is not None and font_size is None:
-        font_size = 10
+    if font is None:
+        if font_size is not None:
+            warnings.warn("Argument 'font_size' will be ignored since 'font' is not set.")
+        ImageFont.load_default()
+    else:
+        ImageFont.truetype(font=font, size=font_size or 10)
 
     # Handle Grayscale images
     if image.size(0) == 1:
@@ -241,8 +242,6 @@ def draw_bounding_boxes(
         draw = ImageDraw.Draw(img_to_draw, "RGBA")
     else:
         draw = ImageDraw.Draw(img_to_draw)
-
-    txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
     for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
         if fill:
