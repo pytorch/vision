@@ -306,8 +306,11 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
             table = []
             for k, v in field.meta.items():
-                if k != "categories":
-                    table.append((str(k), str(v)))
+                if k == "categories":
+                    continue
+                elif k == "recipe":
+                    v = f"`link <{v}>`__"
+                table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
             lines += [".. table::", ""]
             lines += textwrap.indent(table, " " * 4).split("\n")
@@ -317,15 +320,12 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 def generate_classification_table():
 
     weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("Weights")]
-    weights = [w for weight_enum in weight_enums for w in weight_enum if "acc@1" in w.meta]
-
-    def get_weight_link(w):
-        return f":class:`{w} <{type(w).__name__}>`"
+    weights = [w for weight_enum in weight_enums for w in weight_enum]
 
     column_names = ("**Weight**", "**Acc@1**", "**Acc@5**", "**Params**", "**Recipe**")
     content = [
         (
-            get_weight_link(w),
+            f":class:`{w} <{type(w).__name__}>`",
             w.meta["acc@1"],
             w.meta["acc@5"],
             f"{w.meta['num_params']/1e6:.1f}M",
