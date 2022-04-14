@@ -83,7 +83,7 @@ Instead of relying directly on `black` however, we rely on
 [ufmt](https://github.com/omnilib/ufmt), for compatibility reasons with Facebook
 internal infrastructure.
 
-To format your code, install `ufmt` with `pip install ufmt` and use e.g.:
+To format your code, install `ufmt` with `pip install ufmt==1.3.2 black==21.9b0 usort==0.6.4` and use e.g.:
 
 ```bash
 ufmt format torchvision
@@ -186,10 +186,9 @@ You can also choose to only build a subset of the examples by using the
 example ``EXAMPLES_PATTERN="transforms" make html`` will only build the examples
 with "transforms" in their name.
 
-### New model
+### New architecture or improved model weights
 
-More details on how to add a new model will be provided later. Please, do not send any PR with a new model without discussing 
-it in an issue as, most likely, it will not be accepted.
+Please refer to the guidelines in [Contributing to Torchvision - Models](https://github.com/pytorch/vision/blob/main/CONTRIBUTING_MODELS.md).
  
 ### New dataset
 

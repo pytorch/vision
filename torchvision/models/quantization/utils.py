@@ -1,3 +1,5 @@
+from typing import Any, List, Optional, Union
+
 import torch
 from torch import nn
 
@@ -39,4 +41,11 @@ def quantize_model(model: nn.Module, backend: str) -> None:
     model(_dummy_input_data)
     torch.ao.quantization.convert(model, inplace=True)
 
-    return
+
+def _fuse_modules(
+    model: nn.Module, modules_to_fuse: Union[List[str], List[List[str]]], is_qat: Optional[bool], **kwargs: Any
+):
+    if is_qat is None:
+        is_qat = model.training
+    method = torch.ao.quantization.fuse_modules_qat if is_qat else torch.ao.quantization.fuse_modules
+    return method(model, modules_to_fuse, **kwargs)

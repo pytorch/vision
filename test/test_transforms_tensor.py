@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 import pytest
@@ -14,9 +15,11 @@ from common_utils import (
     cpu_and_gpu,
     assert_equal,
 )
+from PIL import Image
 from torchvision import transforms as T
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as F
+from torchvision.transforms.autoaugment import _apply_op
 
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
@@ -718,11 +721,84 @@ def test_trivialaugmentwide(device, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-@pytest.mark.parametrize("augmentation", [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide])
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "fill",
+    [
+        None,
+        85,
+        (10, -10, 10),
+        0.7,
+        [0.0, 0.0, 0.0],
+        [
+            1,
+        ],
+        1,
+    ],
+)
+def test_augmix(device, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    class DeterministicAugMix(T.AugMix):
+        def _sample_dirichlet(self, params: torch.Tensor) -> torch.Tensor:
+            # patch the method to ensure that the order of rand calls doesn't affect the outcome
+            return params.softmax(dim=-1)
+
+    transform = DeterministicAugMix(fill=fill)
+    s_transform = torch.jit.script(transform)
+    for _ in range(25):
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
+@pytest.mark.parametrize("augmentation", [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide, T.AugMix])
 def test_autoaugment_save(augmentation, tmpdir):
     transform = augmentation()
     s_transform = torch.jit.script(transform)
     s_transform.save(os.path.join(tmpdir, "t_autoaugment.pt"))
+
+
+@pytest.mark.parametrize("interpolation", [F.InterpolationMode.NEAREST, F.InterpolationMode.BILINEAR])
+@pytest.mark.parametrize("mode", ["X", "Y"])
+def test_autoaugment__op_apply_shear(interpolation, mode):
+    # We check that torchvision's implementation of shear is equivalent
+    # to official CIFAR10 autoaugment implementation:
+    # https://github.com/tensorflow/models/blob/885fda091c46c59d6c7bb5c7e760935eacc229da/research/autoaugment/augmentation_transforms.py#L273-L290
+    image_size = 32
+
+    def shear(pil_img, level, mode, resample):
+        if mode == "X":
+            matrix = (1, level, 0, 0, 1, 0)
+        elif mode == "Y":
+            matrix = (1, 0, 0, level, 1, 0)
+        return pil_img.transform((image_size, image_size), Image.AFFINE, matrix, resample=resample)
+
+    t_img, pil_img = _create_data(image_size, image_size)
+
+    resample_pil = {
+        F.InterpolationMode.NEAREST: Image.NEAREST,
+        F.InterpolationMode.BILINEAR: Image.BILINEAR,
+    }[interpolation]
+
+    level = 0.3
+    expected_out = shear(pil_img, level, mode=mode, resample=resample_pil)
+
+    # Check pil output vs expected pil
+    out = _apply_op(pil_img, op_name=f"Shear{mode}", magnitude=level, interpolation=interpolation, fill=0)
+    assert out == expected_out
+
+    if interpolation == F.InterpolationMode.BILINEAR:
+        # We skip bilinear mode for tensors as
+        # affine transformation results are not exactly the same
+        # between tensors and pil images
+        # MAE as around 1.40
+        # Max Abs error can be 163 or 170
+        return
+
+    # Check tensor output vs expected pil
+    out = _apply_op(t_img, op_name=f"Shear{mode}", magnitude=level, interpolation=interpolation, fill=0)
+    _assert_approx_equal_tensor_to_pil(out, expected_out)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -883,6 +959,17 @@ def test_random_apply(device):
 )
 @pytest.mark.parametrize("channels", [1, 3])
 def test_gaussian_blur(device, channels, meth_kwargs):
+    if all(
+        [
+            device == "cuda",
+            channels == 1,
+            meth_kwargs["kernel_size"] in [23, [23]],
+            torch.version.cuda == "11.3",
+            sys.platform in ("win32", "cygwin"),
+        ]
+    ):
+        pytest.skip("Fails on Windows, see https://github.com/pytorch/vision/issues/5464")
+
     tol = 1.0 + 1e-10
     torch.manual_seed(12)
     _test_class_op(

@@ -137,7 +137,7 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
     return batch_tensor
 
 
-assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=1e-6)
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
 
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
@@ -187,7 +187,7 @@ def _assert_approx_equal_tensor_to_pil(
     tensor = tensor.to(torch.float)
     pil_tensor = pil_tensor.to(torch.float)
     err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
-    assert err < tol
+    assert err < tol, f"{err} vs {tol}"
 
 
 def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
@@ -195,7 +195,7 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
     for i in range(len(batch_tensors)):
         img_tensor = batch_tensors[i, ...]
         transformed_img = fn(img_tensor, **fn_kwargs)
-        assert_equal(transformed_img, transformed_batch[i, ...])
+        torch.testing.assert_close(transformed_img, transformed_batch[i, ...], rtol=0, atol=1e-6)
 
     if scripted_fn_atol >= 0:
         scripted_fn = torch.jit.script(fn)

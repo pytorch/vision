@@ -6,6 +6,7 @@ from torchvision.transforms.functional import InterpolationMode
 class ClassificationPresetTrain:
     def __init__(
         self,
+        *,
         crop_size,
         mean=(0.485, 0.456, 0.406),
         std=(0.229, 0.224, 0.225),
@@ -22,6 +23,8 @@ class ClassificationPresetTrain:
                 trans.append(autoaugment.RandAugment(interpolation=interpolation))
             elif auto_augment_policy == "ta_wide":
                 trans.append(autoaugment.TrivialAugmentWide(interpolation=interpolation))
+            elif auto_augment_policy == "augmix":
+                trans.append(autoaugment.AugMix(interpolation=interpolation))
             else:
                 aa_policy = autoaugment.AutoAugmentPolicy(auto_augment_policy)
                 trans.append(autoaugment.AutoAugment(policy=aa_policy, interpolation=interpolation))
@@ -44,6 +47,7 @@ class ClassificationPresetTrain:
 class ClassificationPresetEval:
     def __init__(
         self,
+        *,
         crop_size,
         resize_size=256,
         mean=(0.485, 0.456, 0.406),

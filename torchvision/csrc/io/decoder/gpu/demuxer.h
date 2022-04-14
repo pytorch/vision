@@ -15,11 +15,10 @@ class Demuxer {
   bool bMp4H264, bMp4HEVC, bMp4MPEG4;
   unsigned int frameCount = 0;
   int iVideoStream;
-  int64_t userTimeScale = 0;
   double timeBase = 0.0;
 
  public:
-  Demuxer(const char* filePath, int64_t timeScale = 1000 /*Hz*/) {
+  Demuxer(const char* filePath) {
     avformat_network_init();
     TORCH_CHECK(
         0 <= avformat_open_input(&fmtCtx, filePath, NULL, NULL),
@@ -52,7 +51,6 @@ class Demuxer {
     eVideoCodec = fmtCtx->streams[iVideoStream]->codecpar->codec_id;
     AVRational rTimeBase = fmtCtx->streams[iVideoStream]->time_base;
     timeBase = av_q2d(rTimeBase);
-    userTimeScale = timeScale;
 
     bMp4H264 = eVideoCodec == AV_CODEC_ID_H264 &&
         (!strcmp(fmtCtx->iformat->long_name, "QuickTime / MOV") ||
