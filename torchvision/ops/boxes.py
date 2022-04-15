@@ -311,7 +311,19 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     return iou - (areai - union) / areai
 
 
-def complete_box_iou(boxes1, boxes2, eps=1e-5):
+def complete_box_iou(boxes1, boxes2, eps=1e-7):
+    """
+    Return complete intersection-over-union (Jaccard index) between two sets of boxes.
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+    Args:
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
+        eps (float, optional): small number to prevent division by zero. Default: 1e-7
+    Returns:
+        Tensor[N, M]: the NxM matrix containing the pairwise complete IoU values
+        for every element in boxes1 and boxes2
+    """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(complete_box_iou)
 
