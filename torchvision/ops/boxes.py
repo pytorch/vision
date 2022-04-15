@@ -342,7 +342,6 @@ def complete_box_iou(boxes1, boxes2, eps=1e-5):
     v = (4 / (torch.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2) + eps
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
-    # print(f"iou: {iou}  \n dist: {centers_distance_squared/diagonal_distance_squared} \n , alpha {alpha} \n and v -{v}")
     return iou - (centers_distance_squared / diagonal_distance_squared) + alpha * v
 
 
