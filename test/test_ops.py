@@ -1569,7 +1569,6 @@ class TestFocalLoss:
         torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
 
 
-
 class TestGeneralizedBoxIouLoss:
     # We refer to original test: https://github.com/facebookresearch/fvcore/blob/main/tests/test_giou_loss.py
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -1625,7 +1624,6 @@ class TestGeneralizedBoxIouLoss:
         assert loss.numel() == 0, "giou_loss for two empty box should be empty"
 
 
-
 class TestCIOULoss:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -1661,6 +1659,23 @@ class TestCIOULoss:
 
         assert_ciou_loss(box1s, box2s, 1.2250, reduction="mean")
         assert_ciou_loss(box1s, box2s, 2.4500, reduction="sum")
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_empty_inputs(self, dtype, device) -> None:
+        box1 = torch.randn([0, 4], dtype=dtype).requires_grad_()
+        box2 = torch.randn([0, 4], dtype=dtype).requires_grad_()
+
+        loss = ops.complete_box_iou_loss(box1, box2, reduction="mean")
+        loss.backward()
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(loss, torch.tensor(0.0), rtol=tol, atol=tol)
+        assert box1.grad is not None, "box1.grad should not be None after backward is called"
+        assert box2.grad is not None, "box2.grad should not be None after backward is called"
+
+        loss = ops.complete_box_iou_loss(box1, box2, reduction="none")
+        assert loss.numel() == 0, "ciou_loss for two empty box should be empty"
 
 
 if __name__ == "__main__":
