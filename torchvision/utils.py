@@ -226,9 +226,9 @@ def draw_bounding_boxes(
     if font is None:
         if font_size is not None:
             warnings.warn("Argument 'font_size' will be ignored since 'font' is not set.")
-        ImageFont.load_default()
+        txt_font = ImageFont.load_default()
     else:
-        ImageFont.truetype(font=font, size=font_size or 10)
+        txt_font = ImageFont.truetype(font=font, size=font_size or 10)
 
     # Handle Grayscale images
     if image.size(0) == 1:
