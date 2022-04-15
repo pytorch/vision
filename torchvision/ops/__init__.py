@@ -7,6 +7,7 @@ from .boxes import (
     box_area,
     box_iou,
     generalized_box_iou,
+    complete_box_iou,
     masks_to_boxes,
 )
 from .boxes import box_convert

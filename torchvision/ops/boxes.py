@@ -311,6 +311,41 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     return iou - (areai - union) / areai
 
 
+def complete_box_iou(boxes1, boxes2, eps=1e-5):
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(complete_box_iou)
+
+    inter, union = _box_inter_union(boxes1, boxes2)
+    iou = inter / union
+
+    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+
+    whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
+    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2)
+
+    # centers of boxes
+    x_p = boxes1[:, None, :2].sum() / 2
+    y_p = boxes1[:, None, 2:].sum() / 2
+    x_g = boxes2[:, :2].sum() / 2
+    y_g = boxes2[:, 2:].sum() / 2
+
+    # The distance between boxes' centers squared.
+    centers_distance_squared = (_upcast(x_p - x_g) ** 2) + (_upcast(y_p - y_g) ** 2)
+
+    w_pred = boxes1[:, 2] - boxes1[:, 0]
+    h_pred = boxes1[:, 3] - boxes1[:, 1]
+
+    w_gt = boxes2[:, 2] - boxes2[:, 0]
+    h_gt = boxes2[:, 3] - boxes2[:, 1]
+
+    v = (4 / (torch.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2) + eps
+    with torch.no_grad():
+        alpha = v / (1 - iou + v + eps)
+    # print(f"iou: {iou}  \n dist: {centers_distance_squared/diagonal_distance_squared} \n , alpha {alpha} \n and v -{v}")
+    return iou - (centers_distance_squared / diagonal_distance_squared) + alpha * v
+
+
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     """
     Compute the bounding boxes around the provided masks.
