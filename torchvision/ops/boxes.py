@@ -311,7 +311,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     return iou - (areai - union) / areai
 
 
-def complete_box_iou(boxes1, boxes2, eps=1e-7):
+def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tensor:
     """
     Return complete intersection-over-union (Jaccard index) between two sets of boxes.
     Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
