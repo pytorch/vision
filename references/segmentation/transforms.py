@@ -1,4 +1,5 @@
 import random
+from typing import Tuple
 
 import numpy as np
 import torch
@@ -98,3 +99,58 @@ class Normalize:
     def __call__(self, image, target):
         image = F.normalize(image, mean=self.mean, std=self.std)
         return image, target
+
+
+class SimpleCopyPaste(torch.nn.Module):
+    def __init__(self, p: float = 0.5, inplace: bool = False):
+        super().__init__()
+        self.p = p
+        self.inplace = inplace
+
+    def forward(self, batch: torch.Tensor, target: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        # validate inputs
+        if batch.ndim != 4:
+            raise ValueError(f"Batch ndim should be 4. Got {batch.ndim}.")
+        if target.ndim != 3:
+            raise ValueError(f"Target ndim should be 3. Got {target.ndim}.")
+        if not batch.is_floating_point():
+            raise TypeError(f"Batch dtype should be a float tensor. Got {batch.dtype}.")
+        if target.dtype != torch.int64:
+            raise TypeError(f"Target dtype should be torch.int64. Got {target.dtype}")
+
+        # check inplace
+        if not self.inplace:
+            batch = batch.clone()
+            target = target.clone()
+
+        batch_rolled = batch.roll(1, 0)
+        target_rolled = target.roll(1, 0)
+
+        # TODO: Apply random scale jittering and random horizontal flipping
+
+        # TODO: Pad images smaller than their original size with gray pixel values
+
+        # TODO: select a random subset of objects from one of the images and paste them onto the other image
+
+        # TODO: Smooth out the edges of the pasted objects using a Gaussian filter on the mask
+
+        # get binary paste mask
+        paste_binary_mask = (target_rolled != 0).to(target_rolled.dtype)
+        # delete pixels from source mask using paste mask
+        target.mul_(1 - paste_binary_mask)
+        # Combine paste mask with source mask
+        target.add_(target_rolled)
+
+        # get paste image using paste image mask
+        paste_image = batch_rolled * torch.unsqueeze(paste_binary_mask, 1)
+        # delete pixels from source image using paste binary mask
+        batch.mul_(torch.unsqueeze(1 - paste_binary_mask, 1))
+        # Combine paste image with source image
+        batch.add_(paste_image)
+
+        return batch, target
+
+    def __repr__(self) -> str:
+        s = f"{self.__class__.__name__}(" f", p={self.p}" f", inplace={self.inplace}" f")"
+        return s
