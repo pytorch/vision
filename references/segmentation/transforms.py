@@ -4,7 +4,7 @@ from typing import Tuple
 import numpy as np
 import torch
 from torchvision import transforms as T
-from torchvision.transforms import functional as F
+from torchvision.transforms import functional as F, InterpolationMode
 
 
 def pad_if_smaller(img, size, fill=0):
@@ -101,11 +101,134 @@ class Normalize:
         return image, target
 
 
+class ScaleJitter:
+    """Randomly resizes the image and its mask within the specified scale range.
+    The class implements the Scale Jitter augmentation as described in the paper
+    `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
+
+    Args:
+        target_size (tuple of ints): The target size for the transform provided in (height, weight) format.
+        scale_range (tuple of ints): scaling factor interval, e.g (a, b), then scale is randomly sampled from the
+            range a <= scale <= b.
+        interpolation (InterpolationMode): Desired interpolation enum defined by
+            :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
+    """
+
+    def __init__(
+        self,
+        target_size: Tuple[int, int],
+        scale_range: Tuple[float, float] = (0.1, 2.0),
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ):
+        super().__init__()
+        self.target_size = target_size
+        self.scale_range = scale_range
+        self.interpolation = interpolation
+
+    def __call__(self, image: torch.Tensor, target: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        if isinstance(image, torch.Tensor):
+            if image.ndimension() not in {2, 3}:
+                raise ValueError(f"image should be 2/3 dimensional. Got {image.ndimension()} dimensions.")
+            elif image.ndimension() == 2:
+                image = image.unsqueeze(0)
+
+        _, orig_height, orig_width = F.get_dimensions(image)
+
+        scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
+        r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
+        new_width = int(orig_width * r)
+        new_height = int(orig_height * r)
+
+        image = F.resize(image, [new_height, new_width], interpolation=self.interpolation)
+        target = F.resize(torch.unsqueeze(target, 0), [new_height, new_width], interpolation=InterpolationMode.NEAREST)
+
+        return image, target
+
+
+class FixedSizeCrop:
+    def __init__(self, size, fill=0, padding_mode="constant"):
+        super().__init__()
+        size = tuple(T.transforms._setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
+        self.crop_height = size[0]
+        self.crop_width = size[1]
+        self.fill = fill
+        self.padding_mode = padding_mode
+
+    def _pad(self, image, target, padding):
+        # Taken from the functional_tensor.py pad
+        if isinstance(padding, int):
+            pad_left = pad_right = pad_top = pad_bottom = padding
+        elif len(padding) == 1:
+            pad_left = pad_right = pad_top = pad_bottom = padding[0]
+        elif len(padding) == 2:
+            pad_left = pad_right = padding[0]
+            pad_top = pad_bottom = padding[1]
+        elif len(padding) == 4:
+            pad_left = padding[0]
+            pad_top = padding[1]
+            pad_right = padding[2]
+            pad_bottom = padding[3]
+        else:
+            # TODO: fix this error
+            raise ValueError("padding ndim should be int, (int, int) or (int, int, int, int)")
+
+        padding = [pad_left, pad_top, pad_right, pad_bottom]
+        image = F.pad(image, padding, self.fill, self.padding_mode)
+        target = F.pad(target, padding, 0, self.padding_mode)
+
+        return image, target
+
+    def _crop(self, image, target, top, left, height, width):
+        image = F.crop(image, top, left, height, width)
+        target = F.crop(target, top, left, height, width)
+        return image, target
+
+    def __call__(self, img, target=None):
+        _, height, width = F.get_dimensions(img)
+        new_height = min(height, self.crop_height)
+        new_width = min(width, self.crop_width)
+
+        if new_height != height or new_width != width:
+            offset_height = max(height - self.crop_height, 0)
+            offset_width = max(width - self.crop_width, 0)
+
+            r = torch.rand(1)
+            top = int(offset_height * r)
+            left = int(offset_width * r)
+
+            img, target = self._crop(img, target, top, left, new_height, new_width)
+
+        pad_bottom = max(self.crop_height - new_height, 0)
+        pad_right = max(self.crop_width - new_width, 0)
+        if pad_bottom != 0 or pad_right != 0:
+            img, target = self._pad(img, target, [0, 0, pad_right, pad_bottom])
+
+        return img, target
+
+
 class SimpleCopyPaste(torch.nn.Module):
-    def __init__(self, p: float = 0.5, inplace: bool = False):
+    def __init__(self, p: float = 0.5, jittering_type="LSJ", inplace: bool = False):
         super().__init__()
         self.p = p
         self.inplace = inplace
+
+        # TODO: Apply random scale jittering ( resize and crop )
+        if jittering_type == "LSJ":
+            scale_range = (0.1, 2.0)
+        elif jittering_type == "SSJ":
+            scale_range = (0.8, 1.25)
+        else:
+            # TODO: add invalid option error
+            raise ValueError("Invalid jittering type")
+
+        self.transforms = Compose(
+            [
+                ScaleJitter(target_size=(1024, 1024), scale_range=scale_range),
+                FixedSizeCrop(size=(1024, 1024), fill=105),
+                RandomHorizontalFlip(0.5),
+            ]
+        )
 
     def forward(self, batch: torch.Tensor, target: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
 
@@ -120,16 +243,15 @@ class SimpleCopyPaste(torch.nn.Module):
             raise TypeError(f"Target dtype should be torch.int64. Got {target.dtype}")
 
         # check inplace
-        if not self.inplace:
-            batch = batch.clone()
-            target = target.clone()
+        for i, (image, mask) in enumerate(zip(batch, target)):
+            batch[i], target[i] = self.transforms(image, mask)
+
+        # if not self.inplace:
+        #     batch = batch.clone()
+        #     target = target.clone()
 
         batch_rolled = batch.roll(1, 0)
         target_rolled = target.roll(1, 0)
-
-        # TODO: Apply random scale jittering and random horizontal flipping
-
-        # TODO: Pad images smaller than their original size with gray pixel values
 
         # TODO: select a random subset of objects from one of the images and paste them onto the other image
 
