@@ -79,7 +79,7 @@ class EncoderBlock(nn.Module):
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
+        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
         x = self.dropout(x)
@@ -349,7 +349,7 @@ class ViT_B_16_Weights(WeightsEnum):
             "acc@5": 95.318,
         },
     )
-    IMAGENET1K_SWAG_V1 = Weights(
+    IMAGENET1K_SWAG_E2E_V1 = Weights(
         url="https://download.pytorch.org/models/vit_b_16_swag-9ac1b537.pth",
         transforms=partial(
             ImageClassification,
@@ -364,6 +364,24 @@ class ViT_B_16_Weights(WeightsEnum):
             "min_size": (384, 384),
             "acc@1": 85.304,
             "acc@5": 97.650,
+        },
+    )
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_b_16_lc_swag-4e70ced5.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5793",
+            "num_params": 86567656,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "acc@1": 81.886,
+            "acc@5": 96.180,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -400,7 +418,7 @@ class ViT_L_16_Weights(WeightsEnum):
             "acc@5": 94.638,
         },
     )
-    IMAGENET1K_SWAG_V1 = Weights(
+    IMAGENET1K_SWAG_E2E_V1 = Weights(
         url="https://download.pytorch.org/models/vit_l_16_swag-4f3808c9.pth",
         transforms=partial(
             ImageClassification,
@@ -415,6 +433,24 @@ class ViT_L_16_Weights(WeightsEnum):
             "min_size": (512, 512),
             "acc@1": 88.064,
             "acc@5": 98.512,
+        },
+    )
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_l_16_lc_swag-4d563306.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5793",
+            "num_params": 304326632,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "acc@1": 85.146,
+            "acc@5": 97.422,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -438,7 +474,7 @@ class ViT_L_32_Weights(WeightsEnum):
 
 
 class ViT_H_14_Weights(WeightsEnum):
-    IMAGENET1K_SWAG_V1 = Weights(
+    IMAGENET1K_SWAG_E2E_V1 = Weights(
         url="https://download.pytorch.org/models/vit_h_14_swag-80465313.pth",
         transforms=partial(
             ImageClassification,
@@ -455,7 +491,25 @@ class ViT_H_14_Weights(WeightsEnum):
             "acc@5": 98.694,
         },
     )
-    DEFAULT = IMAGENET1K_SWAG_V1
+    IMAGENET1K_SWAG_LINEAR_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_h_14_lc_swag-c1eb923e.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=224,
+            resize_size=224,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5793",
+            "num_params": 632045800,
+            "size": (224, 224),
+            "min_size": (224, 224),
+            "acc@1": 85.708,
+            "acc@5": 97.730,
+        },
+    )
+    DEFAULT = IMAGENET1K_SWAG_E2E_V1
 
 
 @handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.IMAGENET1K_V1))

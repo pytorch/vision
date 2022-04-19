@@ -131,7 +131,7 @@ __global__ void ps_roi_pool_backward_kernel_impl(
     for (int h = hstart; h < hend; ++h) {
       for (int w = wstart; w < wend; ++w) {
         int grad_input_index = h * width + w;
-        atomicAdd(grad_input_offset + grad_input_index, diff_val);
+        gpuAtomicAdd(grad_input_offset + grad_input_index, diff_val);
       }
     }
   }

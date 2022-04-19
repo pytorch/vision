@@ -226,7 +226,7 @@ def get_graph_node_names(
 
     Args:
         model (nn.Module): model for which we'd like to print node names
-        tracer_kwargs (dict, optional): a dictionary of keywork arguments for
+        tracer_kwargs (dict, optional): a dictionary of keyword arguments for
             ``NodePathTracer`` (they are eventually passed onto
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
             By default it will be set to wrap and make leaf nodes all torchvision ops:
@@ -389,7 +389,7 @@ def create_feature_extractor(
             for train mode are different than those from eval mode.
             If this is specified, ``train_return_nodes`` must also be specified,
             and `return_nodes` should not be specified.
-        tracer_kwargs (dict, optional): a dictionary of keywork arguments for
+        tracer_kwargs (dict, optional): a dictionary of keyword arguments for
             ``NodePathTracer`` (which passes them onto it's parent class
             `torch.fx.Tracer <https://pytorch.org/docs/stable/fx.html#torch.fx.Tracer>`_).
             By default it will be set to wrap and make leaf nodes all torchvision ops:
