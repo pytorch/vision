@@ -385,7 +385,7 @@ __global__ void deformable_col2im_kernel(
             std::abs(y - yp) < 1 && std::abs(x - xp) < 1) {
           index_t grad_pos = ((b * channels + c) * height + yp) * width + xp;
           scalar_t weight = (1 - std::abs(y - yp)) * (1 - std::abs(x - xp));
-          atomicAdd(grad_im + grad_pos, mask_value * weight * col[index]);
+          gpuAtomicAdd(grad_im + grad_pos, mask_value * weight * col[index]);
         }
       }
     }
