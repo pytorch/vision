@@ -102,6 +102,8 @@ class Normalize:
 
 
 class ScaleJitter:
+    # Referenced from references/detection/transforms.py
+
     """Randomly resizes the image and its mask within the specified scale range.
     The class implements the Scale Jitter augmentation as described in the paper
     `"Simple Copy-Paste is a Strong Data Augmentation Method for Instance Segmentation" <https://arxiv.org/abs/2012.07177>`_.
@@ -125,7 +127,7 @@ class ScaleJitter:
         self.scale_range = scale_range
         self.interpolation = interpolation
 
-    def __call__(self, image: torch.Tensor, target: torch.Tensor = None) -> Tuple[torch.Tensor, torch.Tensor]:
+    def __call__(self, image: torch.Tensor, target: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
 
         if isinstance(image, torch.Tensor):
             if image.ndimension() not in {2, 3}:
@@ -147,6 +149,8 @@ class ScaleJitter:
 
 
 class FixedSizeCrop:
+    # Referenced from references/detection/transforms.py
+
     def __init__(self, size, fill=0, padding_mode="constant"):
         super().__init__()
         size = tuple(T.transforms._setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
@@ -156,7 +160,6 @@ class FixedSizeCrop:
         self.padding_mode = padding_mode
 
     def _pad(self, image, target, padding):
-        # Taken from the functional_tensor.py pad
         if isinstance(padding, int):
             pad_left = pad_right = pad_top = pad_bottom = padding
         elif len(padding) == 1:
