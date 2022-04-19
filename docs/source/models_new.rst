@@ -37,6 +37,7 @@ weights:
    :maxdepth: 1
 
    models/resnet
+   models/squeezenet
    models/vgg
 
 
