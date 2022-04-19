@@ -1,7 +1,7 @@
-import contextlib
 import functools
 import gc
 import io
+import itertools
 import pickle
 from pathlib import Path
 
@@ -84,10 +84,12 @@ class TestCommon:
         except Exception as error:
             raise AssertionError("Drawing a sample raised the error above.") from error
 
-        with contextlib.suppress(StopIteration):
-            demux = next(dp for dp in extract_datapipes(dataset) if isinstance(dp, _DemultiplexerIterDataPipe))
-            if any(bool(buffer) for buffer in demux.child_buffers):
-                print("Found some data in the buffer")
+        for dp in extract_datapipes(dataset):
+            if not isinstance(dp, _DemultiplexerIterDataPipe):
+                continue
+
+            for _, buffer in itertools.chain.from_iterable(dp.child_buffers):
+                buffer.close()
 
         if not isinstance(sample, dict):
             raise AssertionError(f"Samples should be dictionaries, but got {type(sample)} instead.")
