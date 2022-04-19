@@ -133,8 +133,7 @@ def _check_jit_scriptable(nn_module, args, unwrapper=None, eager_out=None):
 
     if eager_out is None:
         with torch.no_grad(), freeze_rng_state():
-            if unwrapper:
-                eager_out = nn_module(*args)
+            eager_out = nn_module(*args)
 
     with torch.no_grad(), freeze_rng_state():
         script_out = sm(*args)
@@ -196,11 +195,14 @@ script_model_unwrapper = {
     "googlenet": lambda x: x.logits,
     "inception_v3": lambda x: x.logits,
     "fasterrcnn_resnet50_fpn": lambda x: x[1],
+    "fasterrcnn_resnet50_fpn_v2": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_fpn": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_320_fpn": lambda x: x[1],
     "maskrcnn_resnet50_fpn": lambda x: x[1],
+    "maskrcnn_resnet50_fpn_v2": lambda x: x[1],
     "keypointrcnn_resnet50_fpn": lambda x: x[1],
     "retinanet_resnet50_fpn": lambda x: x[1],
+    "retinanet_resnet50_fpn_v2": lambda x: x[1],
     "ssd300_vgg16": lambda x: x[1],
     "ssdlite320_mobilenet_v3_large": lambda x: x[1],
     "fcos_resnet50_fpn": lambda x: x[1],
@@ -228,6 +230,7 @@ autocast_flaky_numerics = (
     "fcn_resnet101",
     "lraspp_mobilenet_v3_large",
     "maskrcnn_resnet50_fpn",
+    "maskrcnn_resnet50_fpn_v2",
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
@@ -247,6 +250,13 @@ _model_params = {
         "max_size": 224,
         "input_shape": (3, 224, 224),
     },
+    "retinanet_resnet50_fpn_v2": {
+        "num_classes": 20,
+        "score_thresh": 0.01,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
     "keypointrcnn_resnet50_fpn": {
         "num_classes": 2,
         "min_size": 224,
@@ -255,6 +265,12 @@ _model_params = {
         "input_shape": (3, 224, 224),
     },
     "fasterrcnn_resnet50_fpn": {
+        "num_classes": 20,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
+    "fasterrcnn_resnet50_fpn_v2": {
         "num_classes": 20,
         "min_size": 224,
         "max_size": 224,
@@ -273,6 +289,12 @@ _model_params = {
         "max_size": 224,
         "input_shape": (3, 224, 224),
     },
+    "maskrcnn_resnet50_fpn_v2": {
+        "num_classes": 10,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
     "fasterrcnn_mobilenet_v3_large_fpn": {
         "box_score_thresh": 0.02076,
     },
@@ -280,6 +302,10 @@ _model_params = {
         "box_score_thresh": 0.02076,
         "rpn_pre_nms_top_n_test": 1000,
         "rpn_post_nms_top_n_test": 1000,
+    },
+    "vit_h_14": {
+        "image_size": 56,
+        "input_shape": (1, 3, 56, 56),
     },
 }
 # speeding up slow models:
@@ -308,6 +334,10 @@ _model_tests_values = {
         "max_trainable": 5,
         "n_trn_params_per_layer": [36, 46, 65, 78, 88, 89],
     },
+    "retinanet_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [44, 74, 131, 170, 200, 203],
+    },
     "keypointrcnn_resnet50_fpn": {
         "max_trainable": 5,
         "n_trn_params_per_layer": [48, 58, 77, 90, 100, 101],
@@ -316,9 +346,17 @@ _model_tests_values = {
         "max_trainable": 5,
         "n_trn_params_per_layer": [30, 40, 59, 72, 82, 83],
     },
+    "fasterrcnn_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [50, 80, 137, 176, 206, 209],
+    },
     "maskrcnn_resnet50_fpn": {
         "max_trainable": 5,
         "n_trn_params_per_layer": [42, 52, 71, 84, 94, 95],
+    },
+    "maskrcnn_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [66, 96, 153, 192, 222, 225],
     },
     "fasterrcnn_mobilenet_v3_large_fpn": {
         "max_trainable": 6,
@@ -414,7 +452,6 @@ def test_mobilenet_norm_layer(model_fn):
 
 
 def test_inception_v3_eval():
-    # replacement for models.inception_v3(pretrained=True) that does not download weights
     kwargs = {}
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
@@ -430,7 +467,7 @@ def test_inception_v3_eval():
 
 
 def test_fasterrcnn_double():
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, weights=None, weights_backbone=None)
     model.double()
     model.eval()
     input_shape = (3, 300, 300)
@@ -446,7 +483,6 @@ def test_fasterrcnn_double():
 
 
 def test_googlenet_eval():
-    # replacement for models.googlenet(pretrained=True) that does not download weights
     kwargs = {}
     kwargs["transform_input"] = True
     kwargs["aux_logits"] = True
@@ -470,7 +506,7 @@ def test_fasterrcnn_switch_devices():
         assert "scores" in out[0]
         assert "labels" in out[0]
 
-    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, pretrained_backbone=False)
+    model = models.detection.fasterrcnn_resnet50_fpn(num_classes=50, weights=None, weights_backbone=None)
     model.cuda()
     model.eval()
     input_shape = (3, 300, 300)
@@ -586,7 +622,7 @@ def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 10,
-        "pretrained_backbone": False,
+        "weights_backbone": None,
         "input_shape": (1, 3, 32, 32),
     }
     model_name = model_fn.__name__
@@ -648,7 +684,7 @@ def test_detection_model(model_fn, dev):
     set_rng_seed(0)
     defaults = {
         "num_classes": 50,
-        "pretrained_backbone": False,
+        "weights_backbone": None,
         "input_shape": (3, 300, 300),
     }
     model_name = model_fn.__name__
@@ -743,29 +779,29 @@ def test_detection_model(model_fn, dev):
 @pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
-    model = model_fn(num_classes=50, pretrained_backbone=False)
+    model = model_fn(num_classes=50, weights=None, weights_backbone=None)
     input_shape = (3, 300, 300)
     x = [torch.rand(input_shape)]
 
     # validate that targets are present in training
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         model(x)
 
     # validate type
     targets = [{"boxes": 0.0}]
-    with pytest.raises(TypeError):
+    with pytest.raises(AssertionError):
         model(x, targets=targets)
 
     # validate boxes shape
     for boxes in (torch.rand((4,)), torch.rand((1, 5))):
         targets = [{"boxes": boxes}]
-        with pytest.raises(ValueError):
+        with pytest.raises(AssertionError):
             model(x, targets=targets)
 
     # validate that no degenerate boxes are present
     boxes = torch.tensor([[1, 3, 1, 4], [2, 4, 3, 4]])
     targets = [{"boxes": boxes}]
-    with pytest.raises(ValueError):
+    with pytest.raises(AssertionError):
         model(x, targets=targets)
 
 
@@ -807,7 +843,6 @@ def test_quantized_classification_model(model_fn):
     defaults = {
         "num_classes": 5,
         "input_shape": (1, 3, 224, 224),
-        "pretrained": False,
         "quantize": True,
     }
     model_name = model_fn.__name__
@@ -857,7 +892,7 @@ def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_load
     max_trainable = _model_tests_values[model_name]["max_trainable"]
     n_trainable_params = []
     for trainable_layers in range(0, max_trainable + 1):
-        model = model_fn(pretrained=False, pretrained_backbone=True, trainable_backbone_layers=trainable_layers)
+        model = model_fn(weights=None, weights_backbone="DEFAULT", trainable_backbone_layers=trainable_layers)
 
         n_trainable_params.append(len([p for p in model.parameters() if p.requires_grad]))
     assert n_trainable_params == _model_tests_values[model_name]["n_trn_params_per_layer"]

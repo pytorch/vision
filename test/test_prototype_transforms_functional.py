@@ -138,6 +138,22 @@ def make_one_hot_labels(
         yield make_one_hot_label(extra_dims_)
 
 
+def make_segmentation_mask(size=None, *, num_categories=80, extra_dims=(), dtype=torch.long):
+    size = size or torch.randint(16, 33, (2,)).tolist()
+    shape = (*extra_dims, 1, *size)
+    data = make_tensor(shape, low=0, high=num_categories, dtype=dtype)
+    return features.SegmentationMask(data)
+
+
+def make_segmentation_masks(
+    image_sizes=((16, 16), (7, 33), (31, 9)),
+    dtypes=(torch.long,),
+    extra_dims=((), (4,), (2, 3)),
+):
+    for image_size, dtype, extra_dims_ in itertools.product(image_sizes, dtypes, extra_dims):
+        yield make_segmentation_mask(size=image_size, dtype=dtype, extra_dims=extra_dims_)
+
+
 class SampleInput:
     def __init__(self, *args, **kwargs):
         self.args = args
@@ -212,7 +228,7 @@ def resize_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def affine_image_tensor():
     for image, angle, translate, scale, shear in itertools.product(
-        make_images(extra_dims=()),
+        make_images(extra_dims=((), (4,))),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
@@ -248,6 +264,74 @@ def affine_bounding_box():
         )
 
 
+@register_kernel_info_from_sample_inputs_fn
+def affine_segmentation_mask():
+    for mask, angle, translate, scale, shear in itertools.product(
+        make_segmentation_masks(extra_dims=((), (4,))),
+        [-87, 15, 90],  # angle
+        [5, -5],  # translate
+        [0.77, 1.27],  # scale
+        [0, 12],  # shear
+    ):
+        yield SampleInput(
+            mask,
+            angle=angle,
+            translate=(translate, translate),
+            scale=scale,
+            shear=(shear, shear),
+        )
+
+
+@register_kernel_info_from_sample_inputs_fn
+def rotate_bounding_box():
+    for bounding_box, angle, expand, center in itertools.product(
+        make_bounding_boxes(), [-87, 15, 90], [True, False], [None, [12, 23]]
+    ):
+        if center is not None and expand:
+            # Skip warning: The provided center argument is ignored if expand is True
+            continue
+
+        yield SampleInput(
+            bounding_box,
+            format=bounding_box.format,
+            image_size=bounding_box.image_size,
+            angle=angle,
+            expand=expand,
+            center=center,
+        )
+
+
+@register_kernel_info_from_sample_inputs_fn
+def rotate_segmentation_mask():
+    for mask, angle, expand, center in itertools.product(
+        make_segmentation_masks(extra_dims=((), (4,))),
+        [-87, 15, 90],  # angle
+        [True, False],  # expand
+        [None, [12, 23]],  # center
+    ):
+        if center is not None and expand:
+            # Skip warning: The provided center argument is ignored if expand is True
+            continue
+
+        yield SampleInput(
+            mask,
+            angle=angle,
+            expand=expand,
+            center=center,
+        )
+
+
+@register_kernel_info_from_sample_inputs_fn
+def crop_bounding_box():
+    for bounding_box, top, left in itertools.product(make_bounding_boxes(), [-8, 0, 9], [-8, 0, 9]):
+        yield SampleInput(
+            bounding_box,
+            format=bounding_box.format,
+            top=top,
+            left=left,
+        )
+
+
 @pytest.mark.parametrize(
     "kernel",
     [
@@ -257,6 +341,10 @@ def affine_bounding_box():
         and callable(kernel)
         and any(feature_type in name for feature_type in {"image", "segmentation_mask", "bounding_box", "label"})
         and "pil" not in name
+        and name
+        not in {
+            "to_image_tensor",
+        }
     ],
 )
 def test_scriptable(kernel):
@@ -330,12 +418,15 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
             np.max(transformed_points[:, 1]),
         ]
         out_bbox = features.BoundingBox(
-            out_bbox, format=features.BoundingBoxFormat.XYXY, image_size=(32, 32), dtype=torch.float32
+            out_bbox,
+            format=features.BoundingBoxFormat.XYXY,
+            image_size=bbox.image_size,
+            dtype=torch.float32,
+            device=bbox.device,
         )
-        out_bbox = convert_bounding_box_format(
+        return convert_bounding_box_format(
             out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
         )
-        return out_bbox.to(bbox.device)
 
     image_size = (32, 38)
 
@@ -345,31 +436,32 @@ def test_correctness_affine_bounding_box(angle, translate, scale, shear, center)
         ],
         extra_dims=((4,),),
     ):
+        bboxes_format = bboxes.format
+        bboxes_image_size = bboxes.image_size
+
         output_bboxes = F.affine_bounding_box(
             bboxes,
-            bboxes.format,
-            image_size=image_size,
+            bboxes_format,
+            image_size=bboxes_image_size,
             angle=angle,
             translate=(translate, translate),
             scale=scale,
             shear=(shear, shear),
             center=center,
         )
-        if center is None:
-            center = [s // 2 for s in image_size[::-1]]
 
-        bboxes_format = bboxes.format
-        bboxes_image_size = bboxes.image_size
+        center_ = center
+        if center_ is None:
+            center_ = [s * 0.5 for s in bboxes_image_size[::-1]]
+
         if bboxes.ndim < 2:
-            bboxes = [
-                bboxes,
-            ]
+            bboxes = [bboxes]
 
         expected_bboxes = []
         for bbox in bboxes:
             bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
             expected_bboxes.append(
-                _compute_expected_bbox(bbox, angle, (translate, translate), scale, (shear, shear), center)
+                _compute_expected_bbox(bbox, angle, (translate, translate), scale, (shear, shear), center_)
             )
         if len(expected_bboxes) > 1:
             expected_bboxes = torch.stack(expected_bboxes)
@@ -390,8 +482,8 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         [1, 1, 5, 5],
     ]
     in_boxes = features.BoundingBox(
-        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64
-    ).to(device)
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+    )
     # Tested parameters
     angle = 63
     scale = 0.89
@@ -424,6 +516,347 @@ def test_correctness_affine_bounding_box_on_fixed_input(device):
         shear=(0, 0),
     )
 
-    assert len(output_boxes) == len(expected_bboxes)
-    for a_out_box, out_box in zip(expected_bboxes, output_boxes.cpu()):
-        np.testing.assert_allclose(out_box.cpu().numpy(), a_out_box)
+    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
+
+
+@pytest.mark.parametrize("angle", [-54, 56])
+@pytest.mark.parametrize("translate", [-7, 8])
+@pytest.mark.parametrize("scale", [0.89, 1.12])
+@pytest.mark.parametrize("shear", [4])
+@pytest.mark.parametrize("center", [None, (12, 14)])
+def test_correctness_affine_segmentation_mask(angle, translate, scale, shear, center):
+    def _compute_expected_mask(mask, angle_, translate_, scale_, shear_, center_):
+        assert mask.ndim == 3 and mask.shape[0] == 1
+        affine_matrix = _compute_affine_matrix(angle_, translate_, scale_, shear_, center_)
+        inv_affine_matrix = np.linalg.inv(affine_matrix)
+        inv_affine_matrix = inv_affine_matrix[:2, :]
+
+        expected_mask = torch.zeros_like(mask.cpu())
+        for out_y in range(expected_mask.shape[1]):
+            for out_x in range(expected_mask.shape[2]):
+                output_pt = np.array([out_x + 0.5, out_y + 0.5, 1.0])
+                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype(np.int32)
+                in_x, in_y = input_pt[:2]
+                if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
+                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+        return expected_mask.to(mask.device)
+
+    for mask in make_segmentation_masks(extra_dims=((), (4,))):
+        output_mask = F.affine_segmentation_mask(
+            mask,
+            angle=angle,
+            translate=(translate, translate),
+            scale=scale,
+            shear=(shear, shear),
+            center=center,
+        )
+
+        center_ = center
+        if center_ is None:
+            center_ = [s * 0.5 for s in mask.shape[-2:][::-1]]
+
+        if mask.ndim < 4:
+            masks = [mask]
+        else:
+            masks = [m for m in mask]
+
+        expected_masks = []
+        for mask in masks:
+            expected_mask = _compute_expected_mask(mask, angle, (translate, translate), scale, (shear, shear), center_)
+            expected_masks.append(expected_mask)
+        if len(expected_masks) > 1:
+            expected_masks = torch.stack(expected_masks)
+        else:
+            expected_masks = expected_masks[0]
+        torch.testing.assert_close(output_mask, expected_masks)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_affine_segmentation_mask_on_fixed_input(device):
+    # Check transformation against known expected output and CPU/CUDA devices
+
+    # Create a fixed input segmentation mask with 2 square masks
+    # in top-left, bottom-left corners
+    mask = torch.zeros(1, 32, 32, dtype=torch.long, device=device)
+    mask[0, 2:10, 2:10] = 1
+    mask[0, 32 - 9 : 32 - 3, 3:9] = 2
+
+    # Rotate 90 degrees and scale
+    expected_mask = torch.rot90(mask, k=-1, dims=(-2, -1))
+    expected_mask = torch.nn.functional.interpolate(expected_mask[None, :].float(), size=(64, 64), mode="nearest")
+    expected_mask = expected_mask[0, :, 16 : 64 - 16, 16 : 64 - 16].long()
+
+    out_mask = F.affine_segmentation_mask(mask, 90, [0.0, 0.0], 64.0 / 32.0, [0.0, 0.0])
+
+    torch.testing.assert_close(out_mask, expected_mask)
+
+
+@pytest.mark.parametrize("angle", range(-90, 90, 56))
+@pytest.mark.parametrize("expand, center", [(True, None), (False, None), (False, (12, 14))])
+def test_correctness_rotate_bounding_box(angle, expand, center):
+    def _compute_expected_bbox(bbox, angle_, expand_, center_):
+        affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
+        affine_matrix = affine_matrix[:2, :]
+
+        image_size = bbox.image_size
+        bbox_xyxy = convert_bounding_box_format(
+            bbox, old_format=bbox.format, new_format=features.BoundingBoxFormat.XYXY
+        )
+        points = np.array(
+            [
+                [bbox_xyxy[0].item(), bbox_xyxy[1].item(), 1.0],
+                [bbox_xyxy[2].item(), bbox_xyxy[1].item(), 1.0],
+                [bbox_xyxy[0].item(), bbox_xyxy[3].item(), 1.0],
+                [bbox_xyxy[2].item(), bbox_xyxy[3].item(), 1.0],
+                # image frame
+                [0.0, 0.0, 1.0],
+                [0.0, image_size[0], 1.0],
+                [image_size[1], image_size[0], 1.0],
+                [image_size[1], 0.0, 1.0],
+            ]
+        )
+        transformed_points = np.matmul(points, affine_matrix.T)
+        out_bbox = [
+            np.min(transformed_points[:4, 0]),
+            np.min(transformed_points[:4, 1]),
+            np.max(transformed_points[:4, 0]),
+            np.max(transformed_points[:4, 1]),
+        ]
+        if expand_:
+            tr_x = np.min(transformed_points[4:, 0])
+            tr_y = np.min(transformed_points[4:, 1])
+            out_bbox[0] -= tr_x
+            out_bbox[1] -= tr_y
+            out_bbox[2] -= tr_x
+            out_bbox[3] -= tr_y
+
+        out_bbox = features.BoundingBox(
+            out_bbox,
+            format=features.BoundingBoxFormat.XYXY,
+            image_size=image_size,
+            dtype=torch.float32,
+            device=bbox.device,
+        )
+        return convert_bounding_box_format(
+            out_bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox.format, copy=False
+        )
+
+    image_size = (32, 38)
+
+    for bboxes in make_bounding_boxes(
+        image_sizes=[
+            image_size,
+        ],
+        extra_dims=((4,),),
+    ):
+        bboxes_format = bboxes.format
+        bboxes_image_size = bboxes.image_size
+
+        output_bboxes = F.rotate_bounding_box(
+            bboxes,
+            bboxes_format,
+            image_size=bboxes_image_size,
+            angle=angle,
+            expand=expand,
+            center=center,
+        )
+
+        center_ = center
+        if center_ is None:
+            center_ = [s * 0.5 for s in bboxes_image_size[::-1]]
+
+        if bboxes.ndim < 2:
+            bboxes = [bboxes]
+
+        expected_bboxes = []
+        for bbox in bboxes:
+            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            expected_bboxes.append(_compute_expected_bbox(bbox, -angle, expand, center_))
+        if len(expected_bboxes) > 1:
+            expected_bboxes = torch.stack(expected_bboxes)
+        else:
+            expected_bboxes = expected_bboxes[0]
+        torch.testing.assert_close(output_bboxes, expected_bboxes)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("expand", [False])  # expand=True does not match D2
+def test_correctness_rotate_bounding_box_on_fixed_input(device, expand):
+    # Check transformation against known expected output
+    image_size = (64, 64)
+    # xyxy format
+    in_boxes = [
+        [1, 1, 5, 5],
+        [1, image_size[0] - 6, 5, image_size[0] - 2],
+        [image_size[1] - 6, image_size[0] - 6, image_size[1] - 2, image_size[0] - 2],
+        [image_size[1] // 2 - 10, image_size[0] // 2 - 10, image_size[1] // 2 + 10, image_size[0] // 2 + 10],
+    ]
+    in_boxes = features.BoundingBox(
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, dtype=torch.float64, device=device
+    )
+    # Tested parameters
+    angle = 45
+    center = None if expand else [12, 23]
+
+    # # Expected bboxes computed using Detectron2:
+    # from detectron2.data.transforms import RotationTransform, AugmentationList
+    # from detectron2.data.transforms import AugInput
+    # import cv2
+    # inpt = AugInput(im1, boxes=np.array(in_boxes, dtype="float32"))
+    # augs = AugmentationList([RotationTransform(*size, angle, expand=expand, center=center, interp=cv2.INTER_NEAREST), ])
+    # out = augs(inpt)
+    # print(inpt.boxes)
+    if expand:
+        expected_bboxes = [
+            [1.65937957, 42.67157288, 7.31623382, 48.32842712],
+            [41.96446609, 82.9766594, 47.62132034, 88.63351365],
+            [82.26955262, 42.67157288, 87.92640687, 48.32842712],
+            [31.35786438, 31.35786438, 59.64213562, 59.64213562],
+        ]
+    else:
+        expected_bboxes = [
+            [-11.33452378, 12.39339828, -5.67766953, 18.05025253],
+            [28.97056275, 52.69848481, 34.627417, 58.35533906],
+            [69.27564928, 12.39339828, 74.93250353, 18.05025253],
+            [18.36396103, 1.07968978, 46.64823228, 29.36396103],
+        ]
+
+    output_boxes = F.rotate_bounding_box(
+        in_boxes,
+        in_boxes.format,
+        in_boxes.image_size,
+        angle,
+        expand=expand,
+        center=center,
+    )
+
+    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
+
+
+@pytest.mark.parametrize("angle", range(-90, 90, 37))
+@pytest.mark.parametrize("expand, center", [(True, None), (False, None), (False, (12, 14))])
+def test_correctness_rotate_segmentation_mask(angle, expand, center):
+    def _compute_expected_mask(mask, angle_, expand_, center_):
+        assert mask.ndim == 3 and mask.shape[0] == 1
+        image_size = mask.shape[-2:]
+        affine_matrix = _compute_affine_matrix(angle_, [0.0, 0.0], 1.0, [0.0, 0.0], center_)
+        inv_affine_matrix = np.linalg.inv(affine_matrix)
+
+        if expand_:
+            # Pillow implementation on how to perform expand:
+            # https://github.com/python-pillow/Pillow/blob/11de3318867e4398057373ee9f12dcb33db7335c/src/PIL/Image.py#L2054-L2069
+            height, width = image_size
+            points = np.array(
+                [
+                    [0.0, 0.0, 1.0],
+                    [0.0, 1.0 * height, 1.0],
+                    [1.0 * width, 1.0 * height, 1.0],
+                    [1.0 * width, 0.0, 1.0],
+                ]
+            )
+            new_points = points @ inv_affine_matrix.T
+            min_vals = np.min(new_points, axis=0)[:2]
+            max_vals = np.max(new_points, axis=0)[:2]
+            cmax = np.ceil(np.trunc(max_vals * 1e4) * 1e-4)
+            cmin = np.floor(np.trunc((min_vals + 1e-8) * 1e4) * 1e-4)
+            new_width, new_height = (cmax - cmin).astype("int32").tolist()
+            tr = np.array([-(new_width - width) / 2.0, -(new_height - height) / 2.0, 1.0]) @ inv_affine_matrix.T
+
+            inv_affine_matrix[:2, 2] = tr[:2]
+            image_size = [new_height, new_width]
+
+        inv_affine_matrix = inv_affine_matrix[:2, :]
+        expected_mask = torch.zeros(1, *image_size, dtype=mask.dtype)
+
+        for out_y in range(expected_mask.shape[1]):
+            for out_x in range(expected_mask.shape[2]):
+                output_pt = np.array([out_x + 0.5, out_y + 0.5, 1.0])
+                input_pt = np.floor(np.dot(inv_affine_matrix, output_pt)).astype(np.int32)
+                in_x, in_y = input_pt[:2]
+                if 0 <= in_x < mask.shape[2] and 0 <= in_y < mask.shape[1]:
+                    expected_mask[0, out_y, out_x] = mask[0, in_y, in_x]
+        return expected_mask.to(mask.device)
+
+    for mask in make_segmentation_masks(extra_dims=((), (4,))):
+        output_mask = F.rotate_segmentation_mask(
+            mask,
+            angle=angle,
+            expand=expand,
+            center=center,
+        )
+
+        center_ = center
+        if center_ is None:
+            center_ = [s * 0.5 for s in mask.shape[-2:][::-1]]
+
+        if mask.ndim < 4:
+            masks = [mask]
+        else:
+            masks = [m for m in mask]
+
+        expected_masks = []
+        for mask in masks:
+            expected_mask = _compute_expected_mask(mask, -angle, expand, center_)
+            expected_masks.append(expected_mask)
+        if len(expected_masks) > 1:
+            expected_masks = torch.stack(expected_masks)
+        else:
+            expected_masks = expected_masks[0]
+        torch.testing.assert_close(output_mask, expected_masks)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_rotate_segmentation_mask_on_fixed_input(device):
+    # Check transformation against known expected output and CPU/CUDA devices
+
+    # Create a fixed input segmentation mask with 2 square masks
+    # in top-left, bottom-left corners
+    mask = torch.zeros(1, 32, 32, dtype=torch.long, device=device)
+    mask[0, 2:10, 2:10] = 1
+    mask[0, 32 - 9 : 32 - 3, 3:9] = 2
+
+    # Rotate 90 degrees
+    expected_mask = torch.rot90(mask, k=1, dims=(-2, -1))
+    out_mask = F.rotate_segmentation_mask(mask, 90, expand=False)
+    torch.testing.assert_close(out_mask, expected_mask)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "top, left, height, width, expected_bboxes",
+    [
+        [8, 12, 30, 40, [(-2.0, 7.0, 13.0, 27.0), (38.0, -3.0, 58.0, 14.0), (33.0, 38.0, 44.0, 54.0)]],
+        [-8, 12, 70, 40, [(-2.0, 23.0, 13.0, 43.0), (38.0, 13.0, 58.0, 30.0), (33.0, 54.0, 44.0, 70.0)]],
+    ],
+)
+def test_correctness_crop_bounding_box(device, top, left, height, width, expected_bboxes):
+
+    # Expected bboxes computed using Albumentations:
+    # import numpy as np
+    # from albumentations.augmentations.crops.functional import crop_bbox_by_coords, normalize_bbox, denormalize_bbox
+    # expected_bboxes = []
+    # for in_box in in_boxes:
+    #     n_in_box = normalize_bbox(in_box, *size)
+    #     n_out_box = crop_bbox_by_coords(
+    #         n_in_box, (left, top, left + width, top + height), height, width, *size
+    #     )
+    #     out_box = denormalize_bbox(n_out_box, height, width)
+    #     expected_bboxes.append(out_box)
+
+    size = (64, 76)
+    # xyxy format
+    in_boxes = [
+        [10.0, 15.0, 25.0, 35.0],
+        [50.0, 5.0, 70.0, 22.0],
+        [45.0, 46.0, 56.0, 62.0],
+    ]
+    in_boxes = features.BoundingBox(in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=size, device=device)
+
+    output_boxes = F.crop_bounding_box(
+        in_boxes,
+        in_boxes.format,
+        top,
+        left,
+    )
+
+    torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
