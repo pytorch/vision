@@ -319,7 +319,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
 def generate_classification_table():
 
-    weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("Weights")]
+    weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("_Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
     column_names = ("**Weight**", "**Acc@1**", "**Acc@5**", "**Params**", "**Recipe**")

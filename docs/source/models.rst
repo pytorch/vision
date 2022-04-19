@@ -34,7 +34,7 @@ weights:
    models/vgg
 
 
-Table of all available classificaiton weights
+Table of all available classification weights
 ---------------------------------------------
 
 Accuracies are reported on ImageNet
