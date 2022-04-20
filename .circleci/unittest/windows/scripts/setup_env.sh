@@ -45,22 +45,22 @@ PYTHON_TAG="cp${PYTHON_VERSION//./}"
 
 case $PYTHON_VERSION in
   "3.7")
-    URL_PATH=8420289
+    URL_PATH=8518679
     ABI_TAG="${PYTHON_TAG}m"
     ;;
 
   "3.8")
-    URL_PATH=8420292
+    URL_PATH=8518681
     ABI_TAG=$PYTHON_TAG
     ;;
 
   "3.9")
-    URL_PATH=8420298
+    URL_PATH=8518683
     ABI_TAG=$PYTHON_TAG
     ;;
 
   "3.10")
-    URL_PATH=8420300
+    URL_PATH=8518684
     ABI_TAG=$PYTHON_TAG
     ;;
 esac
