@@ -129,7 +129,7 @@ class FeaturePyramidNetwork(nn.Module):
                         old_key = f"{prefix}{block}.{i}.{type}"
                         new_key = f"{prefix}{block}.{i}.0.{type}"
                         if old_key in state_dict:
-                           state_dict[new_key] = state_dict.pop(old_key)
+                            state_dict[new_key] = state_dict.pop(old_key)
 
         super()._load_from_state_dict(
             state_dict,
