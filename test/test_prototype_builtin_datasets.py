@@ -9,7 +9,6 @@ import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data import DataLoader
-from torch.utils.data.datapipes.iter.combining import _DemultiplexerIterDataPipe
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
@@ -82,13 +81,6 @@ class TestCommon:
             raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
             raise AssertionError("Drawing a sample raised the error above.") from error
-
-        # for dp in extract_datapipes(dataset):
-        #     if not isinstance(dp, _DemultiplexerIterDataPipe):
-        #         continue
-        #
-        #     for dq in dp.child_buffers:
-        #         dq.clear()
 
         if not isinstance(sample, dict):
             raise AssertionError(f"Samples should be dictionaries, but got {type(sample)} instead.")
