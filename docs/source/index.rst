@@ -34,6 +34,7 @@ architectures, and common image transformations for computer vision.
    transforms
    models
    datasets
+   prototype_datasets
    utils
    ops
    io
