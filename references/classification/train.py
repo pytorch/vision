@@ -59,7 +59,6 @@ def train_one_epoch(model, criterion, optimizer, data_loader, device, epoch, arg
 
 
 def evaluate(model, criterion, data_loader, device, print_freq=100, log_suffix=""):
-
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = f"Test: {log_suffix}"
