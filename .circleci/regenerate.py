@@ -29,10 +29,12 @@ RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
-        for os_type in ["win"]:
+        for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "win": ["cpu"],
+                "linux": ["cpu", "cu102", "cu113", "cu115", "rocm4.5.2", "rocm5.0"],
+                "win": ["cpu", "cu113", "cu115"],
+                "macos": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -61,6 +63,10 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
                             btype, os_type, python_version, cu_version, unicode, prefix, upload, filter_branch=fb
                         )
 
+    if not filter_branch:
+        # Build on every pull request, but upload only on nightly and tags
+        w += build_doc_job("/.*/")
+        w += upload_doc_job("nightly")
     return indent(indentation, w)
 
 
@@ -233,8 +239,8 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["windows"]:
-        for device_type in ["cpu"]:
+    for os_type in ["linux", "windows", "macos"]:
+        for device_type in ["cpu", "gpu"]:
             if os_type == "macos" and device_type == "gpu":
                 continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
@@ -258,7 +264,7 @@ def unittest_workflows(indentation=6):
 def cmake_workflows(indentation=6):
     jobs = []
     python_version = "3.8"
-    for os_type in ["windows"]:
+    for os_type in ["linux", "windows", "macos"]:
         # Skip OSX CUDA
         device_types = ["cpu", "gpu"] if os_type != "macos" else ["cpu"]
         for device in device_types:
