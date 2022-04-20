@@ -28,7 +28,9 @@ class Weights:
         meta (Dict[str, Any]): Stores meta-data related to the weights of the model and its configuration. These can be
             informative attributes (for example the number of parameters/flops, recipe link/methods used in training
             etc), configuration parameters (for example the `num_classes`) needed to construct the model or important
-            meta-data (for example the `classes` of a classification model) needed to use the model.
+            meta-data (for example the `classes` of a classification model) needed to use the model. These meta-data
+            are considered part of the documentation and as a result there are no BC guarnatees (fields can be added,
+            removed and modified on future releases).
     """
 
     url: str
