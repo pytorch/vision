@@ -371,7 +371,7 @@ jobs:
           args: scipy pycocotools h5py
           descr: Install optional dependencies
       - run_tests_selective:
-          file_or_dir: test/test_prototype_builtin_datasets.py::TestCommon::test_sample
+          file_or_dir: test/test_prototype_*.py
 
   unittest_extended:
     docker:
