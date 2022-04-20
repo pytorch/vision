@@ -1,7 +1,6 @@
 import functools
 import gc
 import io
-import itertools
 import pickle
 from pathlib import Path
 
@@ -88,8 +87,8 @@ class TestCommon:
             if not isinstance(dp, _DemultiplexerIterDataPipe):
                 continue
 
-            for _, buffer in itertools.chain.from_iterable(dp.child_buffers):
-                buffer.close()
+            for dq in dp.child_buffers:
+                dq.clear()
 
         if not isinstance(sample, dict):
             raise AssertionError(f"Samples should be dictionaries, but got {type(sample)} instead.")
