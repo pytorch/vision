@@ -301,13 +301,13 @@ __global__ void roi_align_backward_kernel_impl(
         T g4 = grad_output_this_bin * w4 / count;
 
         if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
-          atomicAdd(
+          gpuAtomicAdd(
               offset_grad_input + y_low * width + x_low, static_cast<T>(g1));
-          atomicAdd(
+          gpuAtomicAdd(
               offset_grad_input + y_low * width + x_high, static_cast<T>(g2));
-          atomicAdd(
+          gpuAtomicAdd(
               offset_grad_input + y_high * width + x_low, static_cast<T>(g3));
-          atomicAdd(
+          gpuAtomicAdd(
               offset_grad_input + y_high * width + x_high, static_cast<T>(g4));
         } // if
       } // ix

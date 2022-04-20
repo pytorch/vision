@@ -21,9 +21,13 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import os
+import textwrap
+from pathlib import Path
 
 import pytorch_sphinx_theme
 import torchvision
+import torchvision.models as M
+from tabulate import tabulate
 
 
 # -- General configuration ------------------------------------------------
@@ -292,5 +296,78 @@ def inject_minigalleries(app, what, name, obj, options, lines):
         lines.append("\n")
 
 
+def inject_weight_metadata(app, what, name, obj, options, lines):
+    """This hook is used to generate docs for the models weights.
+
+    Objects like ResNet18_Weights are enums with fields, where each field is a Weight object.
+    Enums aren't easily documented in Python so the solution we're going for is to:
+
+    - add an autoclass directive in the model's builder docstring, e.g.
+
+    ```
+    .. autoclass:: torchvision.models.ResNet34_Weights
+        :members:
+    ```
+
+    (see resnet.py for an example)
+    - then this hook is called automatically when building the docs, and it generates the text that gets
+      used within the autoclass directive.
+    """
+
+    if obj.__name__.endswith("_Weights"):
+        lines[:] = [
+            "The model builder above accepts the following values as the ``weights`` parameter.",
+            f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
+        ]
+        lines.append("")
+        for field in obj:
+            lines += [f"**{str(field)}**:", ""]
+            if field == obj.DEFAULT:
+                lines += [f"This weight is also available as ``{obj.__name__}.DEFAULT``.", ""]
+
+            table = []
+            for k, v in field.meta.items():
+                if k == "categories":
+                    continue
+                elif k == "recipe":
+                    v = f"`link <{v}>`__"
+                table.append((str(k), str(v)))
+            table = tabulate(table, tablefmt="rst")
+            lines += [".. table::", ""]
+            lines += textwrap.indent(table, " " * 4).split("\n")
+            lines.append("")
+
+
+def generate_classification_table():
+
+    weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("_Weights")]
+    weights = [w for weight_enum in weight_enums for w in weight_enum]
+
+    column_names = ("**Weight**", "**Acc@1**", "**Acc@5**", "**Params**", "**Recipe**")
+    content = [
+        (
+            f":class:`{w} <{type(w).__name__}>`",
+            w.meta["acc@1"],
+            w.meta["acc@5"],
+            f"{w.meta['num_params']/1e6:.1f}M",
+            f"`link <{w.meta['recipe']}>`__",
+        )
+        for w in weights
+    ]
+    table = tabulate(content, headers=column_names, tablefmt="rst")
+
+    generated_dir = Path("generated")
+    generated_dir.mkdir(exist_ok=True)
+    with open(generated_dir / "classification_table.rst", "w+") as table_file:
+        table_file.write(".. table::\n")
+        table_file.write("    :widths: 100 10 10 20 10\n\n")
+        table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
+
+
+generate_classification_table()
+
+
 def setup(app):
+
     app.connect("autodoc-process-docstring", inject_minigalleries)
+    app.connect("autodoc-process-docstring", inject_weight_metadata)
