@@ -860,14 +860,14 @@ jobs:
       - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
-#      - run:
-#          name: Run tests
-#          command: .circleci/unittest/windows/scripts/run_test.sh
-#      - run:
-#          name: Post process
-#          command: .circleci/unittest/windows/scripts/post_process.sh
-#      - store_test_results:
-#          path: test-results
+      - run:
+          name: Run tests
+          command: .circleci/unittest/windows/scripts/run_test.sh
+      - run:
+          name: Post process
+          command: .circleci/unittest/windows/scripts/post_process.sh
+      - store_test_results:
+          path: test-results
 
   unittest_windows_gpu:
     <<: *binary_common

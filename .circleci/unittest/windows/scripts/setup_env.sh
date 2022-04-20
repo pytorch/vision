@@ -73,6 +73,3 @@ python "${this_dir}/wget.py" $URL
 python "${this_dir}/unzip.py" "${ARCHIVE}"
 
 pip install $WHEEL
-
-pip list
-python -c "import av"
