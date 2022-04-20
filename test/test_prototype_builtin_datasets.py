@@ -1,5 +1,4 @@
 import functools
-import gc
 import io
 import pickle
 from pathlib import Path
@@ -32,12 +31,6 @@ def test_home(mocker, tmp_path):
     yield tmp_path
 
 
-@pytest.fixture(autouse=True)
-def garbage_collection():
-    yield
-    gc.collect()
-
-
 def test_coverage():
     untested_datasets = set(datasets.list_datasets()) - DATASET_MOCKS.keys()
     if untested_datasets:
@@ -48,7 +41,8 @@ def test_coverage():
         )
 
 
-# @pytest.mark.filterwarnings("error")
+@pytest.mark.filterwarnings("ignore::ResourceWarning")
+@pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
     def test_info(self, name):
