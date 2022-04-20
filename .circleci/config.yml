@@ -359,7 +359,7 @@ jobs:
 
   unittest_prototype:
     docker:
-      - image: cimg/python:3.10
+      - image: cimg/python:3.8
     resource_class: xlarge
     steps:
       - checkout
