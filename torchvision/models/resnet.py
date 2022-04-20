@@ -556,12 +556,23 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", ResNet18_Weights.IMAGENET1K_V1))
 def resnet18(*, weights: Optional[ResNet18_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    r"""ResNet-18 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
+    """ResNet-18 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     Args:
-        weights (ResNet18_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNet18_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNet18_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ResNet18_Weights
+        :members:
     """
     weights = ResNet18_Weights.verify(weights)
 
@@ -570,12 +581,23 @@ def resnet18(*, weights: Optional[ResNet18_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", ResNet34_Weights.IMAGENET1K_V1))
 def resnet34(*, weights: Optional[ResNet34_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    r"""ResNet-34 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
+    """ResNet-34 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     Args:
-        weights (ResNet34_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNet34_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNet34_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ResNet34_Weights
+        :members:
     """
     weights = ResNet34_Weights.verify(weights)
 
@@ -584,12 +606,23 @@ def resnet34(*, weights: Optional[ResNet34_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", ResNet50_Weights.IMAGENET1K_V1))
 def resnet50(*, weights: Optional[ResNet50_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    r"""ResNet-50 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
+    """ResNet-50 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     Args:
-        weights (ResNet50_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNet50_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNet50_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ResNet50_Weights
+        :members:
     """
     weights = ResNet50_Weights.verify(weights)
 
@@ -598,12 +631,23 @@ def resnet50(*, weights: Optional[ResNet50_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", ResNet101_Weights.IMAGENET1K_V1))
 def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    r"""ResNet-101 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
+    """ResNet-101 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     Args:
-        weights (ResNet101_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNet101_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNet101_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ResNet101_Weights
+        :members:
     """
     weights = ResNet101_Weights.verify(weights)
 
@@ -612,12 +656,23 @@ def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = T
 
 @handle_legacy_interface(weights=("pretrained", ResNet152_Weights.IMAGENET1K_V1))
 def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    r"""ResNet-152 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_.
+    """ResNet-152 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     Args:
-        weights (ResNet152_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNet152_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNet152_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ResNet152_Weights
+        :members:
     """
     weights = ResNet152_Weights.verify(weights)
 

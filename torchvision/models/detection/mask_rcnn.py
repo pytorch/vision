@@ -317,7 +317,8 @@ class MaskRCNNHeads(nn.Sequential):
                 for type in ["weight", "bias"]:
                     old_key = f"{prefix}mask_fcn{i+1}.{type}"
                     new_key = f"{prefix}{i}.0.{type}"
-                    state_dict[new_key] = state_dict.pop(old_key)
+                    if old_key in state_dict:
+                        state_dict[new_key] = state_dict.pop(old_key)
 
         super()._load_from_state_dict(
             state_dict,
