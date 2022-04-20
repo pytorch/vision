@@ -242,3 +242,13 @@ def _ovewrite_value_param(param: Optional[V], new_value: V) -> V:
         if param != new_value:
             raise ValueError(f"The parameter '{param}' expected value {new_value} but got {param} instead.")
     return new_value
+
+
+class _ModelURLs(dict):
+    def __getitem__(self, item):
+        warnings.warn("Using me is deprecated!")
+        return super().__getitem__(item)
+
+    def register(self, url, name):
+        self[name] = url
+        return url
