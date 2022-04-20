@@ -45,7 +45,8 @@ def _v1_to_v2_weights(state_dict, prefix):
         for type in ["weight", "bias"]:
             old_key = f"{prefix}conv.{2*i}.{type}"
             new_key = f"{prefix}conv.{i}.0.{type}"
-            state_dict[new_key] = state_dict.pop(old_key)
+            if old_key in state_dict:
+                state_dict[new_key] = state_dict.pop(old_key)
 
 
 def _default_anchorgen():
