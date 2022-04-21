@@ -206,6 +206,10 @@ def draw_bounding_boxes(
 
     num_boxes = boxes.shape[0]
 
+    if num_boxes == 0:
+        warnings.warn(f"boxes doesn't contain any box. No box was drawn")
+        return image.to(out_dtype)
+
     if labels is None:
         labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
     elif len(labels) != num_boxes:
@@ -305,6 +309,10 @@ def draw_segmentation_masks(
     num_masks = masks.size()[0]
     if colors is not None and num_masks > len(colors):
         raise ValueError(f"There are more masks ({num_masks}) than colors ({len(colors)})")
+
+    if num_masks == 0:
+        warnings.warn(f"masks doesn't contain any mask. No mask was drawn")
+        return image.to(out_dtype) 
 
     if colors is None:
         colors = _generate_color_palette(num_masks)
