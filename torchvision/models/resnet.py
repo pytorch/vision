@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -306,7 +306,6 @@ _COMMON_META = {
     "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
@@ -317,7 +316,6 @@ class ResNet18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 11689512,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 69.758,
@@ -334,7 +332,6 @@ class ResNet34_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 21797672,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 73.314,
@@ -351,7 +348,6 @@ class ResNet50_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 76.130,
@@ -364,7 +360,6 @@ class ResNet50_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621",
             "acc@1": 80.858,
@@ -381,7 +376,6 @@ class ResNet101_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 77.374,
@@ -394,7 +388,6 @@ class ResNet101_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 81.886,
@@ -411,7 +404,6 @@ class ResNet152_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "acc@1": 78.312,
@@ -424,7 +416,6 @@ class ResNet152_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 82.284,
@@ -441,7 +432,6 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
-            "publication_year": 2016,
             "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 77.618,
@@ -454,7 +444,6 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
-            "publication_year": 2016,
             "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 81.198,
@@ -471,7 +460,6 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
-            "publication_year": 2016,
             "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "acc@1": 79.312,
@@ -484,7 +472,6 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "ResNeXt",
-            "publication_year": 2016,
             "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 82.834,
@@ -501,7 +488,6 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "WideResNet",
-            "publication_year": 2016,
             "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "acc@1": 78.468,
@@ -514,7 +500,6 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "WideResNet",
-            "publication_year": 2016,
             "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "acc@1": 81.602,
@@ -531,7 +516,6 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "WideResNet",
-            "publication_year": 2016,
             "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "acc@1": 78.848,
@@ -544,7 +528,6 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "architecture": "WideResNet",
-            "publication_year": 2016,
             "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "acc@1": 82.510,
