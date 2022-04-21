@@ -1,5 +1,6 @@
 #include <ATen/ATen.h>
 #include <torch/library.h>
+#include <ATen/Parallel.h>
 
 namespace vision {
 namespace ops {
@@ -57,31 +58,28 @@ at::Tensor nms_kernel_impl(
     auto iy2 = y2[i];
     auto iarea = areas[i];
 
-#ifdef _OPENMP
-#if (_OPENMP >= 201307)
-#pragma omp parallel for simd schedule( \
-    static) if (omp_get_max_threads() > 1 && !omp_in_parallel())
-#else
-#pragma omp parallel for schedule( \
-    static) if (omp_get_max_threads() > 1 && !omp_in_parallel())
-#endif
-#endif
-    for (int64_t _j = _i + 1; _j < ndets; _j++) {
-      auto j = order[_j];
-      if (suppressed[j] == 1)
-        continue;
-      auto xx1 = std::max(ix1, x1[j]);
-      auto yy1 = std::max(iy1, y1[j]);
-      auto xx2 = std::min(ix2, x2[j]);
-      auto yy2 = std::min(iy2, y2[j]);
+    at::parallel_for(
+      _i + 1,
+      ndets,
+      1,
+      [&](int64_t begin, int64_t end) {
+        for (int64_t _j = begin; _j < end; _j++) {
+          auto j = order[_j];
+          if (suppressed[j] == 1)
+            continue;
+          auto xx1 = std::max(ix1, x1[j]);
+          auto yy1 = std::max(iy1, y1[j]);
+          auto xx2 = std::min(ix2, x2[j]);
+          auto yy2 = std::min(iy2, y2[j]);
 
-      auto w = std::max(static_cast<scalar_t>(0), xx2 - xx1 + static_cast<scalar_t>(bias));
-      auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1 + static_cast<scalar_t>(bias));
-      auto inter = w * h;
-      auto ovr = inter / (iarea + areas[j] - inter);
-      if (ovr > iou_threshold)
-        suppressed[j] = 1;
-    }
+          auto w = std::max(static_cast<scalar_t>(0), xx2 - xx1 + static_cast<scalar_t>(bias));
+          auto h = std::max(static_cast<scalar_t>(0), yy2 - yy1 + static_cast<scalar_t>(bias));
+          auto inter = w * h;
+          auto ovr = inter / (iarea + areas[j] - inter);
+          if (ovr > iou_threshold)
+            suppressed[j] = 1;
+        }
+      });
   }
   return keep_t.narrow(/*dim=*/0, /*start=*/0, /*length=*/num_to_keep);
 }
