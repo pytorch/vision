@@ -6,7 +6,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
-from ...transforms._presets import ObjectDetection, InterpolationMode
+from ...transforms._presets import ObjectDetection
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
@@ -372,9 +372,7 @@ class FastRCNNPredictor(nn.Module):
 _COMMON_META = {
     "task": "image_object_detection",
     "architecture": "FasterRCNN",
-    "publication_year": 2015,
     "categories": _COCO_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
@@ -398,7 +396,6 @@ class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
         transforms=ObjectDetection,
         meta={
             **_COMMON_META,
-            "publication_year": 2021,
             "num_params": 43712278,
             "recipe": "https://github.com/pytorch/vision/pull/5763",
             "map": 46.7,

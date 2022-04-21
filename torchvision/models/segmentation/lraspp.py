@@ -5,7 +5,7 @@ from typing import Any, Dict, Optional
 from torch import nn, Tensor
 from torch.nn import functional as F
 
-from ...transforms._presets import SemanticSegmentation, InterpolationMode
+from ...transforms._presets import SemanticSegmentation
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
@@ -100,10 +100,8 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
         meta={
             "task": "image_semantic_segmentation",
             "architecture": "LRASPP",
-            "publication_year": 2019,
             "num_params": 3221538,
             "categories": _VOC_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
             "mIoU": 57.9,
             "acc": 91.2,

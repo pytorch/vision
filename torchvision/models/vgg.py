@@ -4,7 +4,7 @@ from typing import Union, List, Dict, Any, Optional, cast
 import torch
 import torch.nn as nn
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -109,11 +109,9 @@ def _vgg(cfg: str, batch_norm: bool, weights: Optional[WeightsEnum], progress: b
 _COMMON_META = {
     "task": "image_classification",
     "architecture": "VGG",
-    "publication_year": 2014,
     "size": (224, 224),
     "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
 }
 
