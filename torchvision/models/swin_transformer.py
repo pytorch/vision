@@ -278,34 +278,34 @@ class SwinTransformer(nn.Module):
     Implements Swin Transformer from the `"Swin Transformer: Hierarchical Vision Transformer using
     Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_ paper.
     Args:
-        patch_size (int): Patch size. Default: 4.
-        num_classes (int): Number of classes for classification head. Default: 1000.
-        embed_dim (int): Patch embedding dimension. Default: 96.
-        depths (List(int)): Depth of each Swin Transformer layer. Default: [2, 2, 6, 2].
-        num_heads (List(int)): Number of attention heads in different layers. Default: [3, 6, 12, 24].
+        patch_size (int): Patch size.
+        embed_dim (int): Patch embedding dimension.
+        depths (List(int)): Depth of each Swin Transformer layer.
+        num_heads (List(int)): Number of attention heads in different layers.
         window_size (int): Window size. Default: 7.
         mlp_ratio (float): Ratio of mlp hidden dim to embedding dim. Default: 4.0.
         dropout (float): Dropout rate. Default: 0.0.
-        attention_drop_rate (float): Attention dropout rate. Default: 0.0.
-        drop_path_rate (float): Stochastic depth rate. Default: 0.0.
+        attention_dropout (float): Attention dropout rate. Default: 0.0.
+        stochastic_depth_prob (float): Stochastic depth rate. Default: 0.0.
+        num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
     """
 
     def __init__(
         self,
-        patch_size: int = 4,
-        num_classes: int = 1000,
-        embed_dim: int = 96,
-        depths: List[int] = [2, 2, 6, 2],
-        num_heads: List[int] = [3, 6, 12, 24],
+        patch_size: int,
+        embed_dim: int,
+        depths: List[int],
+        num_heads: List[int],
         window_size: int = 7,
         mlp_ratio: float = 4.0,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
-        block: Optional[Callable[..., nn.Module]] = None,
+        num_classes: int = 1000,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
+        block: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -378,6 +378,7 @@ class SwinTransformer(nn.Module):
 
 
 def _swin_transformer(
+    patch_size: int,
     embed_dim: int,
     depths: List[int],
     num_heads: List[int],
@@ -391,6 +392,7 @@ def _swin_transformer(
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
 
     model = SwinTransformer(
+        patch_size=patch_size,
         embed_dim=embed_dim,
         depths=depths,
         num_heads=num_heads,
@@ -441,6 +443,7 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, *
     weights = Swin_T_Weights.verify(weights)
 
     return _swin_transformer(
+        patch_size=4,
         embed_dim=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
@@ -463,6 +466,7 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, *
     weights = Swin_S_Weights.verify(weights)
 
     return _swin_transformer(
+        patch_size=4,
         embed_dim=96,
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
@@ -485,6 +489,7 @@ def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, *
     weights = Swin_B_Weights.verify(weights)
 
     return _swin_transformer(
+        patch_size=4,
         embed_dim=128,
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
@@ -507,6 +512,7 @@ def swin_l(*, weights: Optional[Swin_L_Weights] = None, progress: bool = True, *
     weights = Swin_L_Weights.verify(weights)
 
     return _swin_transformer(
+        patch_size=4,
         embed_dim=192,
         depths=[2, 2, 18, 2],
         num_heads=[6, 12, 24, 48],
