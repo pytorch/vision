@@ -1,5 +1,7 @@
-from .boxes import distance_box_iou
 import torch
+
+from .boxes import distance_box_iou
+
 
 def distance_box_iou_loss(
     boxes1: torch.Tensor,
@@ -44,6 +46,6 @@ def distance_box_iou_loss(
         loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
     elif reduction == "sum":
         loss = loss.sum()
-    # Cast the loss to the same dtype as the input boxes
+    # Cast the loss to the same dtype as the input boxes
     loss = loss.to(boxes1.dtype)
     return loss
