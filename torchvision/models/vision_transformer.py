@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, NamedTuple, Optional, Sequence
+from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Dict
 
 import torch
 import torch.nn as nn
@@ -79,7 +79,7 @@ class EncoderBlock(nn.Module):
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
+        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
         x = self.dropout(x)
@@ -318,20 +318,16 @@ def _vision_transformer(
     return model
 
 
-_COMMON_META = {
+_COMMON_META: Dict[str, Any] = {
     "task": "image_classification",
     "architecture": "ViT",
-    "publication_year": 2020,
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
-_COMMON_SWAG_META = {
+_COMMON_SWAG_META: Dict[str, Any] = {
     **_COMMON_META,
-    "publication_year": 2022,
     "recipe": "https://github.com/facebookresearch/SWAG",
     "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
-    "interpolation": InterpolationMode.BICUBIC,
 }
 
 

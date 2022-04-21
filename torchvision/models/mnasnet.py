@@ -6,7 +6,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -214,11 +214,9 @@ class MNASNet(torch.nn.Module):
 _COMMON_META = {
     "task": "image_classification",
     "architecture": "MNASNet",
-    "publication_year": 2018,
     "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/1e100/mnasnet_trainer",
 }
 

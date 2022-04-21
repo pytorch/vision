@@ -5,7 +5,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
-from ...transforms._presets import ObjectDetection, InterpolationMode
+from ...transforms._presets import ObjectDetection
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
@@ -317,7 +317,8 @@ class MaskRCNNHeads(nn.Sequential):
                 for type in ["weight", "bias"]:
                     old_key = f"{prefix}mask_fcn{i+1}.{type}"
                     new_key = f"{prefix}{i}.0.{type}"
-                    state_dict[new_key] = state_dict.pop(old_key)
+                    if old_key in state_dict:
+                        state_dict[new_key] = state_dict.pop(old_key)
 
         super()._load_from_state_dict(
             state_dict,
@@ -353,7 +354,6 @@ _COMMON_META = {
     "task": "image_object_detection",
     "architecture": "MaskRCNN",
     "categories": _COCO_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
@@ -363,7 +363,6 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
         transforms=ObjectDetection,
         meta={
             **_COMMON_META,
-            "publication_year": 2017,
             "num_params": 44401393,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn",
             "map": 37.9,
@@ -379,7 +378,6 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
         transforms=ObjectDetection,
         meta={
             **_COMMON_META,
-            "publication_year": 2021,
             "num_params": 46359409,
             "recipe": "https://github.com/pytorch/vision/pull/5773",
             "map": 47.4,

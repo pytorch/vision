@@ -4,7 +4,7 @@ from typing import Tuple, Optional, Callable, List, Sequence, Type, Any, Union
 import torch.nn as nn
 from torch import Tensor
 
-from ...transforms._presets import VideoClassification, InterpolationMode
+from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _KINETICS400_CATEGORIES
@@ -310,11 +310,9 @@ def _video_resnet(
 
 _COMMON_META = {
     "task": "video_classification",
-    "publication_year": 2017,
     "size": (112, 112),
     "min_size": (1, 1),
     "categories": _KINETICS400_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
 }
 
