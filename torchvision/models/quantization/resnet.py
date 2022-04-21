@@ -147,12 +147,9 @@ def _resnet(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "backend": "fbgemm",
-    "quantization": "Post Training Quantization",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
 }
 
@@ -163,7 +160,6 @@ class ResNet18_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
             "num_params": 11689512,
             "unquantized": ResNet18_Weights.IMAGENET1K_V1,
             "acc@1": 69.494,
@@ -179,7 +175,6 @@ class ResNet50_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
             "num_params": 25557032,
             "unquantized": ResNet50_Weights.IMAGENET1K_V1,
             "acc@1": 75.920,
@@ -191,7 +186,6 @@ class ResNet50_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
             "num_params": 25557032,
             "unquantized": ResNet50_Weights.IMAGENET1K_V2,
             "acc@1": 80.282,
@@ -207,7 +201,6 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNeXt",
             "num_params": 88791336,
             "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V1,
             "acc@1": 78.986,
@@ -219,7 +212,6 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "ResNeXt",
             "num_params": 88791336,
             "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V2,
             "acc@1": 82.574,
