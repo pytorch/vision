@@ -439,8 +439,6 @@ _COMMON_META = {
 _COMMON_META_V1 = {
     **_COMMON_META,
     "architecture": "EfficientNet",
-    "publication_year": 2019,
-    "interpolation": InterpolationMode.BICUBIC,
     "min_size": (1, 1),
 }
 
@@ -448,8 +446,6 @@ _COMMON_META_V1 = {
 _COMMON_META_V2 = {
     **_COMMON_META,
     "architecture": "EfficientNetV2",
-    "publication_year": 2021,
-    "interpolation": InterpolationMode.BILINEAR,
     "min_size": (33, 33),
 }
 
@@ -494,7 +490,6 @@ class EfficientNet_B1_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 7794184,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning",
-            "interpolation": InterpolationMode.BILINEAR,
             "size": (240, 240),
             "acc@1": 79.838,
             "acc@5": 94.934,
