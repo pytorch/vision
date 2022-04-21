@@ -38,7 +38,8 @@ def unfold(tensor: torch.Tensor, size: int, step: int, dilation: int = 1) -> tor
     `step` between windows. The distance between each element
     in a window is given by `dilation`.
     """
-    assert tensor.dim() == 1
+    if tensor.dim() != 1:
+        raise ValueError(f"tensor should have 1 dimension instead of {tensor.dim()}")
     o_stride = tensor.stride(0)
     numel = tensor.numel()
     new_stride = (step * o_stride, dilation * o_stride)

@@ -1,9 +1,5 @@
-import enum
+import csv
 import functools
-import gzip
-import lzma
-import os
-import os.path
 import pathlib
 import pickle
 from typing import BinaryIO
@@ -14,9 +10,9 @@ from typing import (
     Any,
     Tuple,
     TypeVar,
+    List,
     Iterator,
     Dict,
-    Optional,
     IO,
     Sized,
 )
@@ -35,13 +31,12 @@ __all__ = [
     "BUILTIN_DIR",
     "read_mat",
     "MappingIterator",
-    "Enumerator",
     "getitem",
     "path_accessor",
     "path_comparator",
-    "Decompressor",
     "read_flo",
     "hint_sharding",
+    "hint_shuffling",
 ]
 
 K = TypeVar("K")
@@ -73,15 +68,6 @@ class MappingIterator(IterDataPipe[Union[Tuple[K, D], D]]):
     def __iter__(self) -> Iterator[Union[Tuple[K, D], D]]:
         for mapping in self.datapipe:
             yield from iter(mapping.values() if self.drop_key else mapping.items())
-
-
-class Enumerator(IterDataPipe[Tuple[int, D]]):
-    def __init__(self, datapipe: IterDataPipe[D], start: int = 0) -> None:
-        self.datapipe = datapipe
-        self.start = start
-
-    def __iter__(self) -> Iterator[Tuple[int, D]]:
-        yield from enumerate(self.datapipe, self.start)
 
 
 def _getitem_closure(obj: Any, *, items: Sequence[Any]) -> Any:
@@ -121,50 +107,6 @@ def _path_comparator_closure(data: Tuple[str, Any], *, accessor: Callable[[Tuple
 
 def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
     return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
-
-
-class CompressionType(enum.Enum):
-    GZIP = "gzip"
-    LZMA = "lzma"
-
-
-class Decompressor(IterDataPipe[Tuple[str, BinaryIO]]):
-    types = CompressionType
-
-    _DECOMPRESSORS: Dict[CompressionType, Callable[[BinaryIO], BinaryIO]] = {
-        types.GZIP: lambda file: cast(BinaryIO, gzip.GzipFile(fileobj=file)),
-        types.LZMA: lambda file: cast(BinaryIO, lzma.LZMAFile(file)),
-    }
-
-    def __init__(
-        self,
-        datapipe: IterDataPipe[Tuple[str, BinaryIO]],
-        *,
-        type: Optional[Union[str, CompressionType]] = None,
-    ) -> None:
-        self.datapipe = datapipe
-        if isinstance(type, str):
-            type = self.types(type.upper())
-        self.type = type
-
-    def _detect_compression_type(self, path: str) -> CompressionType:
-        if self.type:
-            return self.type
-
-        # TODO: this needs to be more elaborate
-        ext = os.path.splitext(path)[1]
-        if ext == ".gz":
-            return self.types.GZIP
-        elif ext == ".xz":
-            return self.types.LZMA
-        else:
-            raise RuntimeError("FIXME")
-
-    def __iter__(self) -> Iterator[Tuple[str, BinaryIO]]:
-        for path, file in self.datapipe:
-            type = self._detect_compression_type(path)
-            decompressor = self._DECOMPRESSORS[type]
-            yield path, decompressor(file)
 
 
 class PicklerDataPipe(IterDataPipe):
@@ -257,4 +199,12 @@ def hint_sharding(datapipe: IterDataPipe) -> ShardingFilter:
 
 
 def hint_shuffling(datapipe: IterDataPipe[D]) -> Shuffler[D]:
-    return Shuffler(datapipe, default=False, buffer_size=INFINITE_BUFFER_SIZE)
+    return Shuffler(datapipe, buffer_size=INFINITE_BUFFER_SIZE).set_shuffle(False)
+
+
+def read_categories_file(name: str) -> List[Union[str, Sequence[str]]]:
+    path = BUILTIN_DIR / f"{name}.categories"
+    with open(path, newline="") as file:
+        rows = list(csv.reader(file))
+        rows = [row[0] if len(row) == 1 else row for row in rows]
+        return rows

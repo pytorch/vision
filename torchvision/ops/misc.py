@@ -119,14 +119,14 @@ class ConvNormActivation(torch.nn.Sequential):
 
 class Conv2dNormActivation(ConvNormActivation):
     """
-    Configurable block used for Convolution2d-Normalzation-Activation blocks.
+    Configurable block used for Convolution2d-Normalization-Activation blocks.
 
     Args:
         in_channels (int): Number of channels in the input image
-        out_channels (int): Number of channels produced by the Convolution-Normalzation-Activation block
+        out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block
         kernel_size: (int, optional): Size of the convolving kernel. Default: 3
         stride (int, optional): Stride of the convolution. Default: 1
-        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in wich case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
+        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
         groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1
         norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm2d``
         activation_layer (Callable[..., torch.nn.Module], optinal): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
@@ -169,14 +169,14 @@ class Conv2dNormActivation(ConvNormActivation):
 
 class Conv3dNormActivation(ConvNormActivation):
     """
-    Configurable block used for Convolution3d-Normalzation-Activation blocks.
+    Configurable block used for Convolution3d-Normalization-Activation blocks.
 
     Args:
         in_channels (int): Number of channels in the input video.
-        out_channels (int): Number of channels produced by the Convolution-Normalzation-Activation block
+        out_channels (int): Number of channels produced by the Convolution-Normalization-Activation block
         kernel_size: (int, optional): Size of the convolving kernel. Default: 3
         stride (int, optional): Stride of the convolution. Default: 1
-        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in wich case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
+        padding (int, tuple or str, optional): Padding added to all four sides of the input. Default: None, in which case it will calculated as ``padding = (kernel_size - 1) // 2 * dilation``
         groups (int, optional): Number of blocked connections from input channels to output channels. Default: 1
         norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``torch.nn.BatchNorm3d``
         activation_layer (Callable[..., torch.nn.Module], optinal): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
@@ -219,7 +219,7 @@ class Conv3dNormActivation(ConvNormActivation):
 class SqueezeExcitation(torch.nn.Module):
     """
     This block implements the Squeeze-and-Excitation block from https://arxiv.org/abs/1709.01507 (see Fig. 1).
-    Parameters ``activation``, and ``scale_activation`` correspond to ``delta`` and ``sigma`` in in eq. 3.
+    Parameters ``activation``, and ``scale_activation`` correspond to ``delta`` and ``sigma`` in eq. 3.
 
     Args:
         input_channels (int): Number of channels in the input image

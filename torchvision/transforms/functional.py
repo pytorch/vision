@@ -120,7 +120,7 @@ def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
 
-def to_tensor(pic):
+def to_tensor(pic) -> Tensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     This function does not support torchscript.
 
@@ -448,11 +448,11 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             .. note::
                 In torchscript mode padding as single int is not supported, use a sequence of
                 length 1: ``[padding, ]``.
-        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
+        fill (number or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
+            Only int or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
@@ -880,6 +880,9 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
             If img is PIL Image mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
+            Note: the pixel values of the input image has to be non-negative for conversion to HSV space;
+            thus it does not work if you normalize your image to an interval with negative values,
+            or use an interpolation that generates negative values before using this function.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -931,11 +934,7 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 
 def _get_inverse_affine_matrix(
-    center: List[float],
-    angle: float,
-    translate: List[float],
-    scale: float,
-    shear: List[float],
+    center: List[float], angle: float, translate: List[float], scale: float, shear: List[float], inverted: bool = True
 ) -> List[float]:
     # Helper method to compute inverse matrix for affine transformation
 
@@ -970,18 +969,26 @@ def _get_inverse_affine_matrix(
     c = math.sin(rot - sy) / math.cos(sy)
     d = -math.sin(rot - sy) * math.tan(sx) / math.cos(sy) + math.cos(rot)
 
-    # Inverted rotation matrix with scale and shear
-    # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
-    matrix = [d, -b, 0.0, -c, a, 0.0]
-    matrix = [x / scale for x in matrix]
-
-    # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
-    matrix[2] += matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
-    matrix[5] += matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
-
-    # Apply center translation: C * RSS^-1 * C^-1 * T^-1
-    matrix[2] += cx
-    matrix[5] += cy
+    if inverted:
+        # Inverted rotation matrix with scale and shear
+        # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
+        matrix = [d, -b, 0.0, -c, a, 0.0]
+        matrix = [x / scale for x in matrix]
+        # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
+        matrix[2] += matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
+        matrix[5] += matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
+        # Apply center translation: C * RSS^-1 * C^-1 * T^-1
+        matrix[2] += cx
+        matrix[5] += cy
+    else:
+        matrix = [a, b, 0.0, c, d, 0.0]
+        matrix = [x * scale for x in matrix]
+        # Apply inverse of center translation: RSS * C^-1
+        matrix[2] += matrix[0] * (-cx) + matrix[1] * (-cy)
+        matrix[5] += matrix[3] * (-cx) + matrix[4] * (-cy)
+        # Apply translation and center : T * C * RSS * C^-1
+        matrix[2] += cx + tx
+        matrix[5] += cy + ty
 
     return matrix
 

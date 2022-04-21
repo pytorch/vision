@@ -400,11 +400,11 @@ class Pad(torch.nn.Module):
             .. note::
                 In torchscript mode padding as single int is not supported, use a sequence of
                 length 1: ``[padding, ]``.
-        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (number or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
+            Only int or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
@@ -428,7 +428,7 @@ class Pad(torch.nn.Module):
         if not isinstance(padding, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate padding arg")
 
-        if not isinstance(fill, (numbers.Number, str, tuple)):
+        if not isinstance(fill, (numbers.Number, tuple, list)):
             raise TypeError("Got inappropriate fill arg")
 
         if padding_mode not in ["constant", "edge", "reflect", "symmetric"]:
@@ -595,11 +595,11 @@ class RandomCrop(torch.nn.Module):
         pad_if_needed (boolean): It will pad the image if smaller than the
             desired size to avoid raising an exception. Since cropping is done
             after padding, the padding seems to be done at a random offset.
-        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
+        fill (number or tuple): Pixel fill value for constant fill. Default is 0. If a tuple of
             length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
+            Only int or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
@@ -980,7 +980,7 @@ class FiveCrop(torch.nn.Module):
     Example:
          >>> transform = Compose([
          >>>    FiveCrop(size), # this is a list of PIL Images
-         >>>    Lambda(lambda crops: torch.stack([ToTensor()(crop) for crop in crops])) # returns a 4D tensor
+         >>>    Lambda(lambda crops: torch.stack([PILToTensor()(crop) for crop in crops])) # returns a 4D tensor
          >>> ])
          >>> #In your test loop you can do the following:
          >>> input, target = batch # input is a 5d tensor, target is 2d
@@ -1029,7 +1029,7 @@ class TenCrop(torch.nn.Module):
     Example:
          >>> transform = Compose([
          >>>    TenCrop(size), # this is a list of PIL Images
-         >>>    Lambda(lambda crops: torch.stack([ToTensor()(crop) for crop in crops])) # returns a 4D tensor
+         >>>    Lambda(lambda crops: torch.stack([PILToTensor()(crop) for crop in crops])) # returns a 4D tensor
          >>> ])
          >>> #In your test loop you can do the following:
          >>> input, target = batch # input is a 5d tensor, target is 2d
@@ -1156,6 +1156,9 @@ class ColorJitter(torch.nn.Module):
         hue (float or tuple of float (min, max)): How much to jitter hue.
             hue_factor is chosen uniformly from [-hue, hue] or the given [min, max].
             Should have 0<= hue <= 0.5 or -0.5 <= min <= max <= 0.5.
+            To jitter hue, the pixel values of the input image has to be non-negative for conversion to HSV space;
+            thus it does not work if you normalize your image to an interval with negative values,
+            or use an interpolation that generates negative values before using this function.
     """
 
     def __init__(self, brightness=0, contrast=0, saturation=0, hue=0):
@@ -1894,7 +1897,7 @@ class RandomPosterize(torch.nn.Module):
 
     Args:
         bits (int): number of bits to keep for each channel (0-8)
-        p (float): probability of the image being color inverted. Default value is 0.5
+        p (float): probability of the image being posterized. Default value is 0.5
     """
 
     def __init__(self, bits, p=0.5):
@@ -1927,7 +1930,7 @@ class RandomSolarize(torch.nn.Module):
 
     Args:
         threshold (float): all pixels equal or above this value are inverted.
-        p (float): probability of the image being color inverted. Default value is 0.5
+        p (float): probability of the image being solarized. Default value is 0.5
     """
 
     def __init__(self, threshold, p=0.5):
@@ -1960,7 +1963,7 @@ class RandomAdjustSharpness(torch.nn.Module):
         sharpness_factor (float):  How much to adjust the sharpness. Can be
             any non negative number. 0 gives a blurred image, 1 gives the
             original image while 2 increases the sharpness by a factor of 2.
-        p (float): probability of the image being color inverted. Default value is 0.5
+        p (float): probability of the image being sharpened. Default value is 0.5
     """
 
     def __init__(self, sharpness_factor, p=0.5):

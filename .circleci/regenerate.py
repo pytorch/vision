@@ -32,7 +32,7 @@ def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, 
         for os_type in ["linux", "macos", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
-                "linux": ["cpu", "cu102", "cu113", "cu115", "rocm4.3.1", "rocm4.5.2"],
+                "linux": ["cpu", "cu102", "cu113", "cu115", "rocm4.5.2", "rocm5.0"],
                 "win": ["cpu", "cu113", "cu115"],
                 "macos": ["cpu"],
             }
@@ -84,9 +84,10 @@ def workflow_pair(btype, os_type, python_version, cu_version, unicode, prefix=""
 
     if upload:
         w.append(generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, filter_branch=filter_branch))
-        if filter_branch == "nightly" and os_type in ["linux", "win"]:
-            pydistro = "pip" if btype == "wheel" else "conda"
-            w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
+        # disable smoke tests, they are broken and needs to be fixed
+        # if filter_branch == "nightly" and os_type in ["linux", "win"]:
+        #     pydistro = "pip" if btype == "wheel" else "conda"
+        #     w.append(generate_smoketest_workflow(pydistro, base_workflow_name, filter_branch, python_version, os_type))
 
     return w
 
