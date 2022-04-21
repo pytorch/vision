@@ -437,3 +437,72 @@ class RandomShortestSize(nn.Module):
                 )
 
         return image, target
+
+
+class SimpleCopyPaste(torch.nn.Module):
+    def __init__(self, p: float = 0.5, jittering_type="LSJ", inplace: bool = False):
+        super().__init__()
+        self.p = p
+        self.inplace = inplace
+
+        # TODO: Apply random scale jittering ( resize and crop )
+        if jittering_type == "LSJ":
+            scale_range = (0.1, 2.0)
+        elif jittering_type == "SSJ":
+            scale_range = (0.8, 1.25)
+        else:
+            # TODO: add invalid option error
+            raise ValueError("Invalid jittering type")
+
+        self.transforms = Compose(
+            [
+                ScaleJitter(target_size=(1024, 1024), scale_range=scale_range),
+                FixedSizeCrop(size=(1024, 1024), fill=105),
+                RandomHorizontalFlip(0.5),
+            ]
+        )
+
+    def forward(self, batch: torch.Tensor, target: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+
+        # validate inputs
+        # if batch.ndim != 4:
+        #     raise ValueError(f"Batch ndim should be 4. Got {batch.ndim}.")
+        # if target.ndim != 3:
+        #     raise ValueError(f"Target ndim should be 3. Got {target.ndim}.")
+        # if not batch.is_floating_point():
+        #     raise TypeError(f"Batch dtype should be a float tensor. Got {batch.dtype}.")
+        # if target.dtype != torch.int64:
+        #     raise TypeError(f"Target dtype should be torch.int64. Got {target.dtype}")
+
+        for i, (image, mask) in enumerate(zip(batch, target)):
+            batch[i], target[i] = self.transforms(image, mask)
+
+        batch_rolled = batch.roll(1, 0)
+        target_rolled = target[-1:] + target[:-1]  # noqa: F841
+
+        # TODO: select a random subset of objects from one of the images and paste them onto the other image
+
+        # TODO: Smooth out the edges of the pasted objects using a Gaussian filter on the mask
+
+        # TODO: update masks and boxes and labels
+        # - uodate mask
+        # - update boxes
+        # - concat labels
+
+        # get paste binary mask from rolled
+        # subtract form image
+        # get pixels from paste image
+        # paste onto new image
+
+        # get paste image using paste image mask
+        paste_image = batch_rolled * torch.unsqueeze(paste_binary_mask, 1)
+        # delete pixels from source image using paste binary mask
+        batch.mul_(torch.unsqueeze(1 - paste_binary_mask, 1))
+        # Combine paste image with source image
+        batch.add_(paste_image)
+
+        return batch, target
+
+    def __repr__(self) -> str:
+        s = f"{self.__class__.__name__}(" f", p={self.p}" f", inplace={self.inplace}" f")"
+        return s
