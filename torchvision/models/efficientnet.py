@@ -662,8 +662,6 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
-
-
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B0_Weights.IMAGENET1K_V1))
 def efficientnet_b0(
     *, weights: Optional[EfficientNet_B0_Weights] = None, progress: bool = True, **kwargs: Any
@@ -690,8 +688,6 @@ def efficientnet_b0(
 
     inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b0", width_mult=1.0, depth_mult=1.0)
     return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
-
-
 
 
 @handle_legacy_interface(weights=("pretrained", EfficientNet_B1_Weights.IMAGENET1K_V1))
