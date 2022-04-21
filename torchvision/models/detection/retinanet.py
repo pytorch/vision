@@ -674,9 +674,8 @@ class RetinaNet(nn.Module):
 
 
 _COMMON_META = {
-    "task": "image_object_detection",
-    "architecture": "RetinaNet",
     "categories": _COCO_CATEGORIES,
+    "min_size": (1, 1),
 }
 
 

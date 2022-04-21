@@ -30,11 +30,9 @@ class SSD300_VGG16_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
         transforms=ObjectDetection,
         meta={
-            "task": "image_object_detection",
-            "architecture": "SSD",
             "num_params": 35641826,
-            "size": (300, 300),
             "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
             "map": 25.1,
         },

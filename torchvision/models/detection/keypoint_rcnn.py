@@ -308,10 +308,9 @@ class KeypointRCNNPredictor(nn.Module):
 
 
 _COMMON_META = {
-    "task": "image_object_detection",
-    "architecture": "KeypointRCNN",
     "categories": _COCO_PERSON_CATEGORIES,
     "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES,
+    "min_size": (1, 1),
 }
 
 
