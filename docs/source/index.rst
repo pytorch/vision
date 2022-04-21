@@ -38,6 +38,7 @@ architectures, and common image transformations for computer vision.
    ops
    io
    feature_extraction
+   models_new
 
 .. toctree::
    :maxdepth: 1
