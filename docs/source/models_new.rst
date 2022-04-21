@@ -40,6 +40,7 @@ weights:
    models/resnet
    models/squeezenet
    models/vgg
+   models/vision_transformer
 
 
 Table of all available classification weights

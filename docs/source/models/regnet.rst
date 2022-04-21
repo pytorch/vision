@@ -3,8 +3,8 @@ RegNet
 
 .. currentmodule:: torchvision.models
 
-Theregnet model is based on the `Designing Network Design Spaces 
-<https://arxiv.org/pdf/2003.13678.pdf>`__ paper.
+The RegNet model is based on the `Designing Network Design Spaces
+<https://arxiv.org/pdf/2003.13678.pdf>`_ paper.
 
 
 Model builders
@@ -35,4 +35,3 @@ more details about this class.
    regnet_x_8gf
    regnet_x_16gf
    regnet_x_32gf
-
