@@ -6,7 +6,9 @@ ifneq ($(EXAMPLES_PATTERN),)
 endif
 
 # You can set these variables from the command line.
-SPHINXOPTS    = -W -j auto $(EXAMPLES_PATTERN_OPTS)
+# TODO: Once the models doc revamp is done, set back the -W option to raise
+# errors on warnings. See https://github.com/pytorch/vision/pull/5821#discussion_r850500693
+SPHINXOPTS    = -j auto $(EXAMPLES_PATTERN_OPTS)
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = torchvision
 SOURCEDIR     = source

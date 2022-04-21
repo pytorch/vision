@@ -422,21 +422,16 @@ crop_image_pil = _FP.crop
 def crop_bounding_box(
     bounding_box: torch.Tensor,
     format: features.BoundingBoxFormat,
-    image_size: Tuple[int, int],
     top: int,
     left: int,
-    height: int,
-    width: int,
 ) -> torch.Tensor:
-    pass
-
     shape = bounding_box.shape
 
     bounding_box = convert_bounding_box_format(
         bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
     ).view(-1, 4)
 
-    # Crop and optionally pad:
+    # Crop or implicit pad if left and/or top have negative values:
     bounding_box[:, 0::2] -= left
     bounding_box[:, 1::2] -= top
 
@@ -545,6 +540,19 @@ def resized_crop_image_pil(
 ) -> PIL.Image.Image:
     img = crop_image_pil(img, top, left, height, width)
     return resize_image_pil(img, size, interpolation=interpolation)
+
+
+def resized_crop_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+) -> torch.Tensor:
+    bounding_box = crop_bounding_box(bounding_box, format, top, left)
+    return resize_bounding_box(bounding_box, size, (height, width))
 
 
 def _parse_five_crop_size(size: List[int]) -> List[int]:

@@ -327,11 +327,8 @@ def crop_bounding_box():
         yield SampleInput(
             bounding_box,
             format=bounding_box.format,
-            image_size=bounding_box.image_size,
             top=top,
             left=left,
-            height=top + 10,  # this argument is unused
-            width=left + 10,  # this argument is unused
         )
 
 
@@ -858,11 +855,8 @@ def test_correctness_crop_bounding_box(device, top, left, height, width, expecte
     output_boxes = F.crop_bounding_box(
         in_boxes,
         in_boxes.format,
-        in_boxes.image_size,
         top,
         left,
-        height,
-        width,
     )
 
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
