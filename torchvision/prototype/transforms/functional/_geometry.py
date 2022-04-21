@@ -440,7 +440,7 @@ def crop_bounding_box(
     ).view(shape)
 
 
-def crop_segmentation_mask(img: torch.Tensor, top: int, left: int, height: int, width: int):
+def crop_segmentation_mask(img: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
     return crop_image_tensor(img, top, left, height, width)
 
 
