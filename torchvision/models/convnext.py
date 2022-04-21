@@ -204,8 +204,6 @@ def _convnext(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "ConvNeXt",
     "size": (224, 224),
     "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,

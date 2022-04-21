@@ -430,7 +430,6 @@ def _efficientnet_conf(
 
 
 _COMMON_META = {
-    "task": "image_classification",
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
 }
@@ -438,14 +437,12 @@ _COMMON_META = {
 
 _COMMON_META_V1 = {
     **_COMMON_META,
-    "architecture": "EfficientNet",
     "min_size": (1, 1),
 }
 
 
 _COMMON_META_V2 = {
     **_COMMON_META,
-    "architecture": "EfficientNetV2",
     "min_size": (33, 33),
 }
 

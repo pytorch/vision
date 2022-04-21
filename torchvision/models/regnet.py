@@ -403,8 +403,6 @@ def _regnet(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "RegNet",
     "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,

@@ -319,8 +319,6 @@ def _vision_transformer(
 
 
 _COMMON_META: Dict[str, Any] = {
-    "task": "image_classification",
-    "architecture": "ViT",
     "categories": _IMAGENET_CATEGORIES,
 }
 

@@ -511,19 +511,12 @@ class RAFT(nn.Module):
         return flow_predictions
 
 
-_COMMON_META = {
-    "task": "optical_flow",
-    "architecture": "RAFT",
-}
-
-
 class Raft_Large_Weights(WeightsEnum):
     C_T_V1 = Weights(
         # Chairs + Things, ported from original paper repo (raft-things.pth)
         url="https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth",
         transforms=OpticalFlow,
         meta={
-            **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_train_cleanpass_epe": 1.4411,
@@ -538,7 +531,6 @@ class Raft_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
         transforms=OpticalFlow,
         meta={
-            **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_train_cleanpass_epe": 1.3822,
@@ -553,7 +545,6 @@ class Raft_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth",
         transforms=OpticalFlow,
         meta={
-            **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_test_cleanpass_epe": 1.94,
@@ -568,7 +559,6 @@ class Raft_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
         transforms=OpticalFlow,
         meta={
-            **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_test_cleanpass_epe": 1.819,
@@ -581,7 +571,6 @@ class Raft_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V1-4a6a5039.pth",
         transforms=OpticalFlow,
         meta={
-            **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "kitti_test_f1-all": 5.10,
@@ -596,7 +585,6 @@ class Raft_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V2-b5c70766.pth",
         transforms=OpticalFlow,
         meta={
-            **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "kitti_test_f1-all": 5.19,
@@ -612,7 +600,6 @@ class Raft_Small_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth",
         transforms=OpticalFlow,
         meta={
-            **_COMMON_META,
             "num_params": 990162,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "sintel_train_cleanpass_epe": 2.1231,
@@ -626,7 +613,6 @@ class Raft_Small_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
         transforms=OpticalFlow,
         meta={
-            **_COMMON_META,
             "num_params": 990162,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "sintel_train_cleanpass_epe": 1.9901,

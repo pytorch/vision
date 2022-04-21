@@ -107,8 +107,6 @@ def _vgg(cfg: str, batch_norm: bool, weights: Optional[WeightsEnum], progress: b
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "VGG",
     "size": (224, 224),
     "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,

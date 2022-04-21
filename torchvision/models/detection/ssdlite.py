@@ -189,8 +189,6 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
         transforms=ObjectDetection,
         meta={
-            "task": "image_object_detection",
-            "architecture": "SSDLite",
             "num_params": 3440060,
             "size": (320, 320),
             "categories": _COCO_CATEGORIES,

@@ -48,8 +48,6 @@ class FCNHead(nn.Sequential):
 
 
 _COMMON_META = {
-    "task": "image_semantic_segmentation",
-    "architecture": "FCN",
     "categories": _VOC_CATEGORIES,
 }
 

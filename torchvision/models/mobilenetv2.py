@@ -195,8 +195,6 @@ class MobileNetV2(nn.Module):
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "MobileNetV2",
     "num_params": 3504872,
     "size": (224, 224),
     "min_size": (1, 1),
