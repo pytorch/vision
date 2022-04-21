@@ -5,7 +5,7 @@ from torch import nn
 from torchvision.ops import MultiScaleRoIAlign
 
 from ...ops import misc as misc_nn_ops
-from ...transforms._presets import ObjectDetection, InterpolationMode
+from ...transforms._presets import ObjectDetection
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_PERSON_CATEGORIES, _COCO_PERSON_KEYPOINT_NAMES
 from .._utils import handle_legacy_interface, _ovewrite_value_param
@@ -310,10 +310,8 @@ class KeypointRCNNPredictor(nn.Module):
 _COMMON_META = {
     "task": "image_object_detection",
     "architecture": "KeypointRCNN",
-    "publication_year": 2017,
     "categories": _COCO_PERSON_CATEGORIES,
     "keypoint_names": _COCO_PERSON_KEYPOINT_NAMES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
