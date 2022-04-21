@@ -338,13 +338,7 @@ def resized_crop_bounding_box():
         make_bounding_boxes(), [-8, 9], [-8, 9], [32, 22], [34, 20], [(32, 32), (16, 18)]
     ):
         yield SampleInput(
-            bounding_box,
-            format=bounding_box.format,
-            top=top,
-            left=left,
-            height=height,
-            width=width,
-            size=size
+            bounding_box, format=bounding_box.format, top=top, left=left, height=height, width=width, size=size
         )
 
 
