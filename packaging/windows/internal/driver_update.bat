@@ -1,11 +1,11 @@
-set "DRIVER_DOWNLOAD_LINK=https://ossci-windows.s3.amazonaws.com/461.09-data-center-tesla-desktop-winserver-2019-2016-international.exe"
-curl --retry 3 -kL %DRIVER_DOWNLOAD_LINK% --output 461.09-data-center-tesla-desktop-winserver-2019-2016-international.exe
+set "DRIVER_DOWNLOAD_LINK=https://ossci-windows.s3.amazonaws.com/471.41-data-center-tesla-desktop-winserver-2019-2016-international.exe"
+curl --retry 3 -kL %DRIVER_DOWNLOAD_LINK% --output 471.41-data-center-tesla-desktop-winserver-2019-2016-international.exe
 if errorlevel 1 exit /b 1
 
-start /wait 461.09-data-center-tesla-desktop-winserver-2019-2016-international.exe -s -noreboot
+start /wait 471.41-data-center-tesla-desktop-winserver-2019-2016-international.exe -s -noreboot
 if errorlevel 1 exit /b 1
 
-del 461.09-data-center-tesla-desktop-winserver-2019-2016-international.exe || ver > NUL
+del 471.09-data-center-tesla-desktop-winserver-2019-2016-international.exe || ver > NUL
 
 setlocal EnableDelayedExpansion
 set NVIDIA_GPU_EXISTS=0
