@@ -1265,7 +1265,6 @@ class TestDistanceBoxIoU(BoxTestBase):
     def _generate_int_input():
         return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
 
-    # TODO: Update this.
     def _generate_int_expected():
         return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
 
@@ -1304,14 +1303,10 @@ class TestDistanceIoULoss:
     def assert_distance_iou_loss(box1, box2, expected_output, dtype, device, reduction="none"):
         output = ops.distance_box_iou_loss(box1, box2, reduction=reduction)
         expected_output = torch.tensor(expected_output, dtype=dtype, device=device)
-        print("I am the output dtype", output.dtype)
-        print("I am the expected dtype", expected_output.dtype)
         tol = 1e-5 if dtype != torch.half else 1e-3
         torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
 
-    # TODO: torch.half as a dtype doesn't pass the test.
-    # In fact, probably there is an ops that autocasts to float32.
-    @pytest.mark.parametrize("dtype", [torch.float32])
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_distance_iou_loss(self, dtype, device):
         box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
@@ -1330,14 +1325,14 @@ class TestDistanceIoULoss:
 
         self.assert_distance_iou_loss(box1, box1, 0.0, dtype, device)
 
-        self.assert_distance_iou_loss(box1, box2, 0.8125, dtype, device)
+        self.assert_distance_iou_loss(box1, box2, 0.8750, dtype, device)
 
         self.assert_distance_iou_loss(box1, box3, 1.1923, dtype, device)
 
-        self.assert_distance_iou_loss(box1, box4, 1.2500, dtype, device)
+        self.assert_distance_iou_loss(box1, box4, 1.2778, dtype, device)
 
-        self.assert_distance_iou_loss(box1s, box2s, 1.2250, dtype, device, reduction="mean")
-        self.assert_distance_iou_loss(box1s, box2s, 2.4500, dtype, device, reduction="sum")
+        self.assert_distance_iou_loss(box1s, box2s, 1.9000, dtype, device, reduction="mean")
+        self.assert_distance_iou_loss(box1s, box2s, 3.8000, dtype, device, reduction="sum")
 
 
 class TestMasksToBoxes:
