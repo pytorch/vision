@@ -207,7 +207,7 @@ def draw_bounding_boxes(
     num_boxes = boxes.shape[0]
 
     if num_boxes == 0:
-        warnings.warn(f"boxes doesn't contain any box. No box was drawn")
+        warnings.warn("boxes doesn't contain any box. No box was drawn")
         return image.to(torch.uint8)
 
     if labels is None:
@@ -313,7 +313,7 @@ def draw_segmentation_masks(
     out_dtype = torch.uint8
 
     if num_masks == 0:
-        warnings.warn(f"masks doesn't contain any mask. No mask was drawn")
+        warnings.warn("masks doesn't contain any mask. No mask was drawn")
         return image.to(out_dtype)
 
     if colors is None:
