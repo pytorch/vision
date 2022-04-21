@@ -9,7 +9,7 @@ from ..utils import _log_api_usage_once
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
 
 
-def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
+def nms(boxes: Tensor, scores: Tensor, iou_threshold: float, bias: float = 0.0) -> Tensor:
     """
     Performs non-maximum suppression (NMS) on the boxes according
     to their intersection-over-union (IoU).
@@ -37,7 +37,7 @@ def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(nms)
     _assert_has_ops()
-    return torch.ops.torchvision.nms(boxes, scores, iou_threshold)
+    return torch.ops.torchvision.nms(boxes, scores, iou_threshold, bias)
 
 
 def batched_nms(
