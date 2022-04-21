@@ -11,7 +11,8 @@ template <typename scalar_t>
 at::Tensor qnms_kernel_impl(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    double iou_threshold) {
+    double iou_threshold,
+    double bias) {
   TORCH_CHECK(!dets.is_cuda(), "dets must be a CPU tensor");
   TORCH_CHECK(!scores.is_cuda(), "scores must be a CPU tensor");
   TORCH_CHECK(
@@ -50,7 +51,7 @@ at::Tensor qnms_kernel_impl(
     // integral promotion rules will likely prevent it (see
     // https://stackoverflow.com/questions/32959564/subtraction-of-two-unsigned-gives-signed
     // for more details).
-    areas[i] = (x2[i].val_ - x1[i].val_) * (y2[i].val_ - y1[i].val_);
+    areas[i] = (x2[i].val_ - x1[i].val_ + static_cast<float>(bias)) * (y2[i].val_ - y1[i].val_ + static_cast<float>(bias));
   }
 
   int64_t num_to_keep = 0;
@@ -78,8 +79,8 @@ at::Tensor qnms_kernel_impl(
       float xx2 = std::min(ix2val, (float)x2[j].val_);
       float yy2 = std::min(iy2val, (float)y2[j].val_);
 
-      auto w = std::max(0.f, xx2 - xx1); // * scale (gets canceled below)
-      auto h = std::max(0.f, yy2 - yy1); // * scale (gets canceled below)
+      auto w = std::max(0.f, xx2 - xx1 + static_cast<float>(bias)); // * scale (gets canceled below)
+      auto h = std::max(0.f, yy2 - yy1 + static_cast<float>(bias)); // * scale (gets canceled below)
       auto inter = w * h;
       auto ovr = inter / (iarea + areas[j] - inter);
       if (ovr > iou_threshold)
@@ -92,7 +93,8 @@ at::Tensor qnms_kernel_impl(
 at::Tensor qnms_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    double iou_threshold) {
+    double iou_threshold,
+    double bias) {
   TORCH_CHECK(
       dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
   TORCH_CHECK(
@@ -115,7 +117,7 @@ at::Tensor qnms_kernel(
   auto result = at::empty({0});
 
   AT_DISPATCH_QINT_TYPES(dets.scalar_type(), "qnms_kernel", [&] {
-    result = qnms_kernel_impl<scalar_t>(dets, scores, iou_threshold);
+    result = qnms_kernel_impl<scalar_t>(dets, scores, iou_threshold, bias);
   });
   return result;
 }

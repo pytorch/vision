@@ -10,17 +10,18 @@ namespace ops {
 at::Tensor nms(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    double iou_threshold) {
+    double iou_threshold,
+    const double bias) {
   C10_LOG_API_USAGE_ONCE("torchvision.csrc.ops.nms.nms");
   static auto op = c10::Dispatcher::singleton()
                        .findSchemaOrThrow("torchvision::nms", "")
                        .typed<decltype(nms)>();
-  return op.call(dets, scores, iou_threshold);
+  return op.call(dets, scores, iou_threshold, bias);
 }
 
 TORCH_LIBRARY_FRAGMENT(torchvision, m) {
   m.def(TORCH_SELECTIVE_SCHEMA(
-      "torchvision::nms(Tensor dets, Tensor scores, float iou_threshold) -> Tensor"));
+      "torchvision::nms(Tensor dets, Tensor scores, float iou_threshold, float bias) -> Tensor"));
 }
 
 } // namespace ops

@@ -12,12 +12,14 @@ namespace {
 at::Tensor nms_autocast(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    double iou_threshold) {
+    double iou_threshold,
+    double bias) {
   c10::impl::ExcludeDispatchKeyGuard no_autocast(c10::DispatchKey::Autocast);
   return nms(
       at::autocast::cached_cast(at::kFloat, dets),
       at::autocast::cached_cast(at::kFloat, scores),
-      iou_threshold);
+      iou_threshold,
+      bias);
 }
 
 } // namespace

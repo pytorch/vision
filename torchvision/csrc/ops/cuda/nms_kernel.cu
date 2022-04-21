@@ -80,9 +80,11 @@ __global__ void nms_kernel_impl(
 at::Tensor nms_kernel(
     const at::Tensor& dets,
     const at::Tensor& scores,
-    double iou_threshold) {
+    double iou_threshold,
+    double bias) {
   TORCH_CHECK(dets.is_cuda(), "dets must be a CUDA tensor");
   TORCH_CHECK(scores.is_cuda(), "scores must be a CUDA tensor");
+  TORCH_CHECK(bias == 0.0, "CUDA nms kernel bias parameter must be zero");
 
   TORCH_CHECK(
       dets.dim() == 2, "boxes should be a 2d tensor, got ", dets.dim(), "D");
