@@ -191,6 +191,7 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
         meta={
             "num_params": 3440060,
             "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
             "map": 21.3,
         },

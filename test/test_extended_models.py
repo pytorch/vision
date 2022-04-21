@@ -80,9 +80,9 @@ def test_naming_conventions(model_fn):
 @run_if_test_with_extended
 def test_schema_meta_validation(model_fn):
     # TODO: add list of permitted fields
-    classification_fields = ["categories", "acc@1", "acc@5", "min_size"]
+    classification_fields = ["categories", "acc@1", "acc@5"]
     defaults = {
-        "all": ["recipe", "num_params"],
+        "all": ["recipe", "num_params", "min_size"],
         "models": classification_fields,
         "detection": ["categories", "map"],
         "quantization": classification_fields + ["backend", "unquantized"],

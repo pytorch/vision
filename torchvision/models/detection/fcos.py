@@ -653,6 +653,7 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
         meta={
             "num_params": 32269600,
             "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
             "map": 39.2,
         },

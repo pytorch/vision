@@ -32,6 +32,7 @@ class SSD300_VGG16_Weights(WeightsEnum):
         meta={
             "num_params": 35641826,
             "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
             "map": 25.1,
         },

@@ -130,6 +130,7 @@ def _deeplabv3_resnet(
 
 _COMMON_META = {
     "categories": _VOC_CATEGORIES,
+    "min_size": (1, 1),
 }
 
 

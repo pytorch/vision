@@ -100,6 +100,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
         meta={
             "num_params": 3221538,
             "categories": _VOC_CATEGORIES,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
             "mIoU": 57.9,
             "acc": 91.2,

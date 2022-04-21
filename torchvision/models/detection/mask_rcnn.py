@@ -352,6 +352,7 @@ class MaskRCNNPredictor(nn.Sequential):
 
 _COMMON_META = {
     "categories": _COCO_CATEGORIES,
+    "min_size": (1, 1),
 }
 
 

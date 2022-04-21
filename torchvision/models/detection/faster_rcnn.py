@@ -371,6 +371,7 @@ class FastRCNNPredictor(nn.Module):
 
 _COMMON_META = {
     "categories": _COCO_CATEGORIES,
+    "min_size": (1, 1),
 }
 
 
