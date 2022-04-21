@@ -512,7 +512,7 @@ class RAFT(nn.Module):
 
 
 _COMMON_META = {
-    "min_size": (64, 64),
+    "min_size": (128, 128),
 }
 
 
