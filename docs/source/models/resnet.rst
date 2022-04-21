@@ -10,7 +10,7 @@ The ResNet model is based on the `Deep Residual Learning for Image Recognition
 Model builders
 --------------
 
-The following model builders can be used to instanciate a ResNet model, with or
+The following model builders can be used to instantiate a ResNet model, with or
 without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.resnet.ResNet`` base class. Please refer to the `source
 code
