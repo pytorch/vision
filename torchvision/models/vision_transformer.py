@@ -321,17 +321,13 @@ def _vision_transformer(
 _COMMON_META = {
     "task": "image_classification",
     "architecture": "ViT",
-    "publication_year": 2020,
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 _COMMON_SWAG_META = {
     **_COMMON_META,
-    "publication_year": 2022,
     "recipe": "https://github.com/facebookresearch/SWAG",
     "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
-    "interpolation": InterpolationMode.BICUBIC,
 }
 
 

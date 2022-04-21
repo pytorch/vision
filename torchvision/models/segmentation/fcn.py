@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from torch import nn
 
-from ...transforms._presets import SemanticSegmentation, InterpolationMode
+from ...transforms._presets import SemanticSegmentation
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
@@ -50,9 +50,7 @@ class FCNHead(nn.Sequential):
 _COMMON_META = {
     "task": "image_semantic_segmentation",
     "architecture": "FCN",
-    "publication_year": 2014,
     "categories": _VOC_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
