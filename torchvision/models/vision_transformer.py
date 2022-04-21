@@ -315,7 +315,7 @@ _COMMON_META: Dict[str, Any] = {
     "categories": _IMAGENET_CATEGORIES,
 }
 
-_COMMON_SWAG_META: Dict[str, Any] = {
+_COMMON_SWAG_META = {
     **_COMMON_META,
     "recipe": "https://github.com/facebookresearch/SWAG",
     "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
