@@ -102,7 +102,6 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "backend": "fbgemm",

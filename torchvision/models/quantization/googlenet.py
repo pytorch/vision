@@ -112,7 +112,6 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             "num_params": 6624904,
-            "size": (224, 224),
             "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
             "backend": "fbgemm",

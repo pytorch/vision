@@ -309,7 +309,6 @@ def _video_resnet(
 
 
 _COMMON_META = {
-    "size": (112, 112),
     "min_size": (1, 1),
     "categories": _KINETICS400_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",

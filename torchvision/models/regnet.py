@@ -403,14 +403,12 @@ def _regnet(
 
 
 _COMMON_META = {
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
 }
 
 _COMMON_SWAG_META = {
     **_COMMON_META,
-    "size": (384, 384),
     "recipe": "https://github.com/facebookresearch/SWAG",
     "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
 }

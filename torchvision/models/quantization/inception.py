@@ -178,7 +178,6 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=299, resize_size=342),
         meta={
             "num_params": 27161264,
-            "size": (299, 299),
             "min_size": (75, 75),
             "categories": _IMAGENET_CATEGORIES,
             "backend": "fbgemm",

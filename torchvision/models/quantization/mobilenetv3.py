@@ -160,7 +160,6 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             "num_params": 5483032,
-            "size": (224, 224),
             "min_size": (1, 1),
             "categories": _IMAGENET_CATEGORIES,
             "backend": "qnnpack",

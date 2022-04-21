@@ -31,7 +31,6 @@ class SSD300_VGG16_Weights(WeightsEnum):
         transforms=ObjectDetection,
         meta={
             "num_params": 35641826,
-            "size": (300, 300),
             "categories": _COCO_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
             "map": 25.1,

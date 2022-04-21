@@ -266,7 +266,6 @@ def _densenet(
 
 
 _COMMON_META = {
-    "size": (224, 224),
     "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/116",

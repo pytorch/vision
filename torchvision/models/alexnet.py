@@ -58,7 +58,6 @@ class AlexNet_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             "num_params": 61100840,
-            "size": (224, 224),
             "min_size": (63, 63),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
