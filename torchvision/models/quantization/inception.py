@@ -7,13 +7,13 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torchvision.models import inception as inception_module
-from torchvision.models.inception import InceptionOutputs, Inception_V3_Weights
+from torchvision.models.inception import Inception3, InceptionOutputs, Inception_V3_Weights
 
 from ...transforms._presets import ImageClassification, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
-from .utils import _fuse_modules, _replace_relu, quantize_model
+from .utils import _fuse_modules, _replace_relu, quantize_model, QuantizationWorkflowType
 
 
 __all__ = [
@@ -239,11 +239,16 @@ def inception_v3(
         if "backend" in weights.meta:
             _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
+    quantization_workflow_type = kwargs.pop("quantization_workflow_type", QuantizationWorkflowType.EAGER_MODE)
 
-    model = QuantizableInception3(**kwargs)
-    _replace_relu(model)
+    if quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE:
+        model = Inception3(**kwargs)
+    else:
+        model = QuantizableInception3(**kwargs)
+        _replace_relu(model)
+
     if quantize:
-        quantize_model(model, backend)
+        model = quantize_model(model, backend, quantization_workflow_type)
 
     if weights is not None:
         if quantize and not original_aux_logits:

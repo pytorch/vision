@@ -10,8 +10,8 @@ from ...transforms._presets import ImageClassification, InterpolationMode
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights
-from .utils import _fuse_modules, _replace_relu, quantize_model
+from ..shufflenetv2 import ShuffleNetV2, ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights
+from .utils import _fuse_modules, _replace_relu, quantize_model, QuantizationWorkflowType
 
 
 __all__ = [
@@ -40,7 +40,7 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
         return out
 
 
-class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
+class QuantizableShuffleNetV2(ShuffleNetV2):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)  # type: ignore[misc]
@@ -89,11 +89,16 @@ def _shufflenetv2(
         if "backend" in weights.meta:
             _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "fbgemm")
+    quantization_workflow_type = kwargs.pop("quantization_workflow_type", QuantizationWorkflowType.EAGER_MODE)
 
-    model = QuantizableShuffleNetV2(stages_repeats, stages_out_channels, **kwargs)
-    _replace_relu(model)
+    if quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE:
+        model = ShuffleNetV2(stages_repeats, stages_out_channels, **kwargs)
+    else:
+        model = QuantizableShuffleNetV2(stages_repeats, stages_out_channels, **kwargs)
+        _replace_relu(model)
+
     if quantize:
-        quantize_model(model, backend)
+        model = quantize_model(model, backend, quantization_workflow_type)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
