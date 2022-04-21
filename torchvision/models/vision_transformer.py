@@ -79,7 +79,7 @@ class EncoderBlock(nn.Module):
         self.mlp = MLPBlock(hidden_dim, mlp_dim, dropout)
 
     def forward(self, input: torch.Tensor):
-        torch._assert(input.dim() == 3, f"Expected (seq_length, batch_size, hidden_dim) got {input.shape}")
+        torch._assert(input.dim() == 3, f"Expected (batch_size, seq_length, hidden_dim) got {input.shape}")
         x = self.ln_1(input)
         x, _ = self.self_attention(query=x, key=x, value=x, need_weights=False)
         x = self.dropout(x)
