@@ -288,10 +288,7 @@ def _vision_transformer(
 ) -> VisionTransformer:
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
-        if weights.meta["min_size"][0] != weights.meta["min_size"][1]:
-            raise ValueError(
-                f'min_size: {weights.meta["min_size"]} is not valid! Currently we only support a 2-dimensional square and width = height'
-            )
+        assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
         _ovewrite_named_param(kwargs, "image_size", weights.meta["min_size"][0])
     image_size = kwargs.pop("image_size", 224)
 
