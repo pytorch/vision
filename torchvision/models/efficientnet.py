@@ -3,7 +3,7 @@ import math
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Optional, List, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Optional, List, Sequence, Tuple, Union
 
 import torch
 from torch import nn, Tensor
@@ -429,7 +429,7 @@ def _efficientnet_conf(
     return inverted_residual_setting, last_channel
 
 
-_COMMON_META = {
+_COMMON_META: Dict[str, Any] = {
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
 }
