@@ -208,7 +208,7 @@ def draw_bounding_boxes(
 
     if num_boxes == 0:
         warnings.warn(f"boxes doesn't contain any box. No box was drawn")
-        return image.to(out_dtype)
+        return image.to(torch.uint8)
 
     if labels is None:
         labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
@@ -310,9 +310,11 @@ def draw_segmentation_masks(
     if colors is not None and num_masks > len(colors):
         raise ValueError(f"There are more masks ({num_masks}) than colors ({len(colors)})")
 
+    out_dtype = torch.uint8
+
     if num_masks == 0:
         warnings.warn(f"masks doesn't contain any mask. No mask was drawn")
-        return image.to(out_dtype) 
+        return image.to(out_dtype)
 
     if colors is None:
         colors = _generate_color_palette(num_masks)
@@ -323,8 +325,6 @@ def draw_segmentation_masks(
         raise ValueError("colors must be a tuple or a string, or a list thereof")
     if isinstance(colors[0], tuple) and len(colors[0]) != 3:
         raise ValueError("It seems that you passed a tuple of colors instead of a list of colors")
-
-    out_dtype = torch.uint8
 
     colors_ = []
     for color in colors:
