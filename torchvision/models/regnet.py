@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 from torch import nn, Tensor
@@ -402,17 +402,13 @@ def _regnet(
     return model
 
 
-_COMMON_META = {
-    "task": "image_classification",
-    "architecture": "RegNet",
-    "size": (224, 224),
+_COMMON_META: Dict[str, Any] = {
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
 }
 
 _COMMON_SWAG_META = {
     **_COMMON_META,
-    "size": (384, 384),
     "recipe": "https://github.com/facebookresearch/SWAG",
     "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
 }
