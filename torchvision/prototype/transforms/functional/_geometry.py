@@ -436,6 +436,10 @@ def crop_bounding_box(
     )
 
 
+def crop_segmentation_mask(img: torch.Tensor, top: int, left: int, height: int, width: int) -> torch.Tensor:
+    return crop_image_tensor(img, top, left, height, width)
+
+
 def perspective_image_tensor(
     img: torch.Tensor,
     perspective_coeffs: List[float],
