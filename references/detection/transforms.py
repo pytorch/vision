@@ -1,8 +1,10 @@
+import copy
 from typing import List, Tuple, Dict, Optional, Union
 
 import torch
 import torchvision
 from torch import nn, Tensor
+from torchvision import ops
 from torchvision.transforms import functional as F
 from torchvision.transforms import transforms as T, InterpolationMode
 
@@ -440,10 +442,8 @@ class RandomShortestSize(nn.Module):
 
 
 class SimpleCopyPaste(torch.nn.Module):
-    def __init__(self, p: float = 0.5, jittering_type="LSJ", inplace: bool = False):
+    def __init__(self, jittering_type: str = "LSJ"):
         super().__init__()
-        self.p = p
-        self.inplace = inplace
 
         # TODO: Apply random scale jittering ( resize and crop )
         if jittering_type == "LSJ":
@@ -462,44 +462,52 @@ class SimpleCopyPaste(torch.nn.Module):
             ]
         )
 
+    def combine_masks(self, masks):
+        return masks.sum(dim=0).greater(0)
+
     def forward(self, batch: torch.Tensor, target: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
 
         # validate inputs
-        # if batch.ndim != 4:
-        #     raise ValueError(f"Batch ndim should be 4. Got {batch.ndim}.")
-        # if target.ndim != 3:
-        #     raise ValueError(f"Target ndim should be 3. Got {target.ndim}.")
-        # if not batch.is_floating_point():
-        #     raise TypeError(f"Batch dtype should be a float tensor. Got {batch.dtype}.")
-        # if target.dtype != torch.int64:
-        #     raise TypeError(f"Target dtype should be torch.int64. Got {target.dtype}")
+        if batch.ndim != 4:
+            raise ValueError(f"Batch ndim should be 4. Got {batch.ndim}.")
+        if not batch.is_floating_point():
+            raise TypeError(f"Batch dtype should be a float tensor. Got {batch.dtype}.")
 
         for i, (image, mask) in enumerate(zip(batch, target)):
             batch[i], target[i] = self.transforms(image, mask)
 
-        batch_rolled = batch.roll(1, 0)
-        target_rolled = target[-1:] + target[:-1]  # noqa: F841
+        batch_rolled = batch.roll(1, 0).detach().clone()
+        target_rolled = copy.deepcopy(target[-1:] + target[:-1])
 
         # TODO: select a random subset of objects from one of the images and paste them onto the other image
 
         # TODO: Smooth out the edges of the pasted objects using a Gaussian filter on the mask
 
-        # TODO: update masks and boxes and labels
-        # - uodate mask
-        # - update boxes
-        # - concat labels
+        paste_masks = []
 
-        # get paste binary mask from rolled
-        # subtract form image
-        # get pixels from paste image
-        # paste onto new image
+        for source_image, paste_image, source_data, paste_data in zip(batch, batch_rolled, target, target_rolled):
+            paste_alpha_mask = self.combine_masks(paste_data["masks"])
+            paste_masks.append(paste_alpha_mask)
 
-        # get paste image using paste image mask
-        paste_image = batch_rolled * torch.unsqueeze(paste_binary_mask, 1)
-        # delete pixels from source image using paste binary mask
-        batch.mul_(torch.unsqueeze(1 - paste_binary_mask, 1))
-        # Combine paste image with source image
-        batch.add_(paste_image)
+            for i, mask in enumerate(source_data["masks"]):
+                source_data["masks"][i] = mask ^ paste_alpha_mask & mask
+
+            mask_filter = source_data["masks"].sum((2, 1)).not_equal(0)
+            filtered_masks = source_data["masks"][mask_filter]
+            source_data["boxes"] = ops.masks_to_boxes(filtered_masks)
+            # TODO: update area
+
+            source_data["masks"] = torch.cat((source_data["masks"], paste_data["masks"]))
+            source_data["boxes"] = torch.cat((source_data["boxes"], paste_data["boxes"]))
+            source_data["labels"] = torch.cat((source_data["labels"], paste_data["labels"]))
+            source_data["area"] = torch.cat((source_data["area"], paste_data["area"]))
+            source_data["iscrowd"] = torch.cat((source_data["iscrowd"], paste_data["iscrowd"]))
+
+        paste_masks = torch.stack(paste_masks)
+        batch.mul_(torch.unsqueeze(torch.logical_not(paste_masks), 1))
+
+        paste_images = batch_rolled * torch.unsqueeze(paste_masks, 1)
+        batch.add_(paste_images)
 
         return batch, target
 
