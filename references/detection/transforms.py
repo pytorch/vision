@@ -445,7 +445,6 @@ class SimpleCopyPaste(torch.nn.Module):
     def __init__(self, jittering_type: str = "LSJ"):
         super().__init__()
 
-        # TODO: Apply random scale jittering ( resize and crop )
         if jittering_type == "LSJ":
             scale_range = (0.1, 2.0)
         elif jittering_type == "SSJ":
@@ -476,6 +475,7 @@ class SimpleCopyPaste(torch.nn.Module):
         for i, (image, mask) in enumerate(zip(batch, target)):
             batch[i], target[i] = self.transforms(image, mask)
 
+        # create copy of batch and target as the original will be modified
         batch_rolled = batch.roll(1, 0).detach().clone()
         target_rolled = copy.deepcopy(target[-1:] + target[:-1])
 
@@ -483,26 +483,33 @@ class SimpleCopyPaste(torch.nn.Module):
 
         # TODO: Smooth out the edges of the pasted objects using a Gaussian filter on the mask
 
+        # collect binary paste masks for all images
         paste_masks = []
 
         for source_image, paste_image, source_data, paste_data in zip(batch, batch_rolled, target, target_rolled):
             paste_alpha_mask = self.combine_masks(paste_data["masks"])
             paste_masks.append(paste_alpha_mask)
 
+            # update original masks
             for i, mask in enumerate(source_data["masks"]):
                 source_data["masks"][i] = mask ^ paste_alpha_mask & mask
 
+            # remove masks where no annotations are present (all values are 0)
             mask_filter = source_data["masks"].sum((2, 1)).not_equal(0)
             filtered_masks = source_data["masks"][mask_filter]
+
+            # update bboxes based on new masks
             source_data["boxes"] = ops.masks_to_boxes(filtered_masks)
             # TODO: update area
 
+            # concatenate paste data with original data
             source_data["masks"] = torch.cat((source_data["masks"], paste_data["masks"]))
             source_data["boxes"] = torch.cat((source_data["boxes"], paste_data["boxes"]))
             source_data["labels"] = torch.cat((source_data["labels"], paste_data["labels"]))
             source_data["area"] = torch.cat((source_data["area"], paste_data["area"]))
             source_data["iscrowd"] = torch.cat((source_data["iscrowd"], paste_data["iscrowd"]))
 
+        # update the original images with paste images
         paste_masks = torch.stack(paste_masks)
         batch.mul_(torch.unsqueeze(torch.logical_not(paste_masks), 1))
 
