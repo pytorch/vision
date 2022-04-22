@@ -929,11 +929,20 @@ class RegNet_X_32GF_Weights(WeightsEnum):
 def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_400MF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_Y_400MF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_Y_400MF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_Y_400MF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_Y_400MF_Weights
+        :members:
     """
     weights = RegNet_Y_400MF_Weights.verify(weights)
 
@@ -945,11 +954,20 @@ def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress
 def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_800MF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_Y_800MF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_Y_800MF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_Y_800MF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_Y_800MF_Weights
+        :members:
     """
     weights = RegNet_Y_800MF_Weights.verify(weights)
 
@@ -961,11 +979,20 @@ def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress
 def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_1.6GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_Y_1_6GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_Y_1_6GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_Y_1_6GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_Y_1_6GF_Weights
+        :members:
     """
     weights = RegNet_Y_1_6GF_Weights.verify(weights)
 
@@ -979,11 +1006,20 @@ def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress
 def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_3.2GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_Y_3_2GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_Y_3_2GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_Y_3_2GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_Y_3_2GF_Weights
+        :members:
     """
     weights = RegNet_Y_3_2GF_Weights.verify(weights)
 
@@ -997,11 +1033,20 @@ def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress
 def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_8GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_Y_8GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_Y_8GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_Y_8GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_Y_8GF_Weights
+        :members:
     """
     weights = RegNet_Y_8GF_Weights.verify(weights)
 
@@ -1015,11 +1060,20 @@ def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bo
 def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_16GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_Y_16GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_Y_16GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_Y_16GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_Y_16GF_Weights
+        :members:
     """
     weights = RegNet_Y_16GF_Weights.verify(weights)
 
@@ -1033,11 +1087,20 @@ def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: 
 def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_32GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_Y_32GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_Y_32GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_Y_32GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_Y_32GF_Weights
+        :members:
     """
     weights = RegNet_Y_32GF_Weights.verify(weights)
 
@@ -1051,12 +1114,20 @@ def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: 
 def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetY_128GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
-    NOTE: Pretrained weights are not available for this model.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_Y_128GF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_Y_128GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_Y_128GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_Y_128GF_Weights
+        :members:
     """
     weights = RegNet_Y_128GF_Weights.verify(weights)
 
@@ -1070,11 +1141,20 @@ def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress
 def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetX_400MF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_X_400MF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_X_400MF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_X_400MF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_X_400MF_Weights
+        :members:
     """
     weights = RegNet_X_400MF_Weights.verify(weights)
 
@@ -1086,11 +1166,20 @@ def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress
 def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetX_800MF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (RegNet_X_800MF_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`torchvision.models.regnet.RegNet_X_800MF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_X_800MF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_X_800MF_Weights
+        :members:
     """
     weights = RegNet_X_800MF_Weights.verify(weights)
 
@@ -1102,7 +1191,20 @@ def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress
 def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetX_1.6GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
+
+    Args:
+        weights (:class:`torchvision.models.regnet.RegNet_X_1_6GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_X_1_6GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_X_1_6GF_Weights
+        :members:
 
     Args:
         weights (RegNet_X_1_6GF_Weights, optional): The pretrained weights for the model
@@ -1118,7 +1220,20 @@ def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress
 def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetX_3.2GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
+
+    Args:
+        weights (:class:`torchvision.models.regnet.RegNet_X_3_2GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_X_3_2GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_X_3_2GF_Weights
+        :members:
 
     Args:
         weights (RegNet_X_3_2GF_Weights, optional): The pretrained weights for the model
@@ -1134,7 +1249,20 @@ def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress
 def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetX_8GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
+
+    Args:
+        weights (:class:`torchvision.models.regnet.RegNet_X_8GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_X_8GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_X_8GF_Weights
+        :members:
 
     Args:
         weights (RegNet_X_8GF_Weights, optional): The pretrained weights for the model
@@ -1150,7 +1278,20 @@ def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bo
 def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetX_16GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
+
+    Args:
+        weights (:class:`torchvision.models.regnet.RegNet_X_16GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_X_16GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_X_16GF_Weights
+        :members:
 
     Args:
         weights (RegNet_X_16GF_Weights, optional): The pretrained weights for the model
@@ -1166,7 +1307,20 @@ def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: 
 def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: bool = True, **kwargs: Any) -> RegNet:
     """
     Constructs a RegNetX_32GF architecture from
-    `"Designing Network Design Spaces" <https://arxiv.org/abs/2003.13678>`_.
+    `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
+
+    Args:
+        weights (:class:`torchvision.models.regnet.RegNet_X_32GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.regnet.RegNet_X_32GF_Weights` below for more details and possible values.
+            By default, no pretrained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
+            ``torchvision.models.regnet.BlockParams`` class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
+            for more detail about the classes.
+
+    .. autoclass:: torchvision.models.regnet.RegNet_X_32GF_Weights
+        :members:
 
     Args:
         weights (RegNet_X_32GF_Weights, optional): The pretrained weights for the model
