@@ -493,8 +493,8 @@ def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_B_16_Weights`, optional):
-            The pretrained weights to use. See :class:`~torchvision.models.vision_transformer.ViT_B_16_Weights`
+        weights (:class:`~torchvision.models.vision_transformer.ViT_B_16_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_B_16_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -526,8 +526,8 @@ def vit_b_32(*, weights: Optional[ViT_B_32_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_B_32_Weights`, optional):
-            The pretrained weights to use. See :class:`~torchvision.models.vision_transformer.ViT_B_32_Weights`
+        weights (:class:`~torchvision.models.vision_transformer.ViT_B_32_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_B_32_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -559,8 +559,8 @@ def vit_l_16(*, weights: Optional[ViT_L_16_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_L_16_Weights`, optional):
-            The pretrained weights to use. See :class:`~torchvision.models.vision_transformer.ViT_L_16_Weights`
+        weights (:class:`~torchvision.models.vision_transformer.ViT_L_16_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_L_16_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -592,8 +592,8 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_L_32_Weights`, optional):
-            The pretrained weights to use. See :class:`~torchvision.models.vision_transformer.ViT_L_32_Weights`
+        weights (:class:`~torchvision.models.vision_transformer.ViT_L_32_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_L_32_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
@@ -624,8 +624,8 @@ def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = Tru
     `An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale <https://arxiv.org/abs/2010.11929>`_.
 
     Args:
-        weights (:class:`~torchvision.models.vision_transformer.ViT_H_14_Weights`, optional):
-            The pretrained weights to use. See :class:`~torchvision.models.vision_transformer.ViT_H_14_Weights`
+        weights (:class:`~torchvision.models.vision_transformer.ViT_H_14_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.vision_transformer.ViT_H_14_Weights`
             below for more details and possible values. By default, no pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to the ``torchvision.models.vision_transformer.VisionTransformer``
