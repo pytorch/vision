@@ -351,9 +351,8 @@ class MaskRCNNPredictor(nn.Sequential):
 
 
 _COMMON_META = {
-    "task": "image_object_detection",
-    "architecture": "MaskRCNN",
     "categories": _COCO_CATEGORIES,
+    "min_size": (1, 1),
 }
 
 

@@ -79,12 +79,13 @@ def test_naming_conventions(model_fn):
 )
 @run_if_test_with_extended
 def test_schema_meta_validation(model_fn):
-    classification_fields = ["size", "categories", "acc@1", "acc@5", "min_size"]
+    # TODO: add list of permitted fields
+    classification_fields = ["categories", "acc@1", "acc@5"]
     defaults = {
-        "all": ["task", "architecture", "recipe", "num_params"],
+        "all": ["recipe", "num_params", "min_size"],
         "models": classification_fields,
         "detection": ["categories", "map"],
-        "quantization": classification_fields + ["backend", "quantization", "unquantized"],
+        "quantization": classification_fields + ["backend", "unquantized"],
         "segmentation": ["categories", "mIoU", "acc"],
         "video": classification_fields,
         "optical_flow": [],
