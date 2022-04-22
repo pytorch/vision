@@ -345,7 +345,7 @@ def crop_segmentation_mask():
             width=width,
         )
 
-        
+
 @register_kernel_info_from_sample_inputs_fn
 def vertical_flip_segmentation_mask():
     for mask in make_segmentation_masks():
@@ -933,4 +933,3 @@ def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
     expected_mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
     expected_mask[:, -1, :] = 1
     torch.testing.assert_close(out_mask, expected_mask)
-
