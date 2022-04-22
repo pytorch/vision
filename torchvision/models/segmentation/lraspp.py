@@ -104,7 +104,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
             "metrics": {
                 "miou": 57.9,
-                "acc": 91.2,
+                "pixel_acc": 91.2,
             }
         },
     )

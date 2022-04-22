@@ -144,7 +144,7 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50",
             "metrics": {
                 "miou": 66.4,
-                "acc": 92.4,
+                "pixel_acc": 92.4,
             },
         },
     )
@@ -161,7 +161,7 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101",
             "metrics": {
                 "miou": 67.4,
-                "acc": 92.4,
+                "pixel_acc": 92.4,
             }
         },
     )
@@ -178,7 +178,7 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large",
             "metrics": {
                 "miou": 60.3,
-                "acc": 91.2,
+                "pixel_acc": 91.2,
             }
         },
     )
