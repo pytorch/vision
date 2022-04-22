@@ -11,7 +11,7 @@ paper.
 Model builders
 --------------
 
-The following model builders can be used to instanciate a SqueezeNet model, with or
+The following model builders can be used to instantiate a SqueezeNet model, with or
 without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.squeezenet.SqueezeNet`` base class. Please refer to the `source
 code

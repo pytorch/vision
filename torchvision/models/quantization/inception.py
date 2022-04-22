@@ -183,8 +183,10 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
             "backend": "fbgemm",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": Inception_V3_Weights.IMAGENET1K_V1,
-            "acc@1": 77.176,
-            "acc@5": 93.354,
+            "metrics": {
+                "acc@1": 77.176,
+                "acc@5": 93.354,
+            },
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1

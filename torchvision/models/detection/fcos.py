@@ -655,7 +655,9 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
-            "map": 39.2,
+            "metrics": {
+                "box_map": 39.2,
+            },
         },
     )
     DEFAULT = COCO_V1

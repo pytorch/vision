@@ -225,8 +225,10 @@ class MNASNet0_5_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 2218512,
-            "acc@1": 67.734,
-            "acc@5": 87.490,
+            "metrics": {
+                "acc@1": 67.734,
+                "acc@5": 87.490,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -244,8 +246,10 @@ class MNASNet1_0_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 4383312,
-            "acc@1": 73.456,
-            "acc@5": 91.510,
+            "metrics": {
+                "acc@1": 73.456,
+                "acc@5": 91.510,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
