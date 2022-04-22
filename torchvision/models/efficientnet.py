@@ -651,8 +651,8 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
 def efficientnet_b0(
     *, weights: Optional[EfficientNet_B0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """EfficientNet B0 model architecture from the `"EfficientNet: Rethinking Model Scaling for Convolutional
-    Neural Networks" <https://arxiv.org/abs/1905.11946>`_ paper.
+    """EfficientNet B0 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_B0_Weights`, optional): The
@@ -679,8 +679,8 @@ def efficientnet_b0(
 def efficientnet_b1(
     *, weights: Optional[EfficientNet_B1_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """EfficientNet B1 model architecture from the `"EfficientNet: Rethinking Model Scaling for Convolutional
-    Neural Networks" <https://arxiv.org/abs/1905.11946>`_ paper.
+    """EfficientNet B1 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_B1_Weights`, optional): The
@@ -707,8 +707,8 @@ def efficientnet_b1(
 def efficientnet_b2(
     *, weights: Optional[EfficientNet_B2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """EfficientNet B2 model architecture from the `"EfficientNet: Rethinking Model Scaling for Convolutional
-    Neural Networks" <https://arxiv.org/abs/1905.11946>`_ paper.
+    """EfficientNet B2 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_B2_Weights`, optional): The
@@ -735,8 +735,8 @@ def efficientnet_b2(
 def efficientnet_b3(
     *, weights: Optional[EfficientNet_B3_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """EfficientNet B3 model architecture from the `"EfficientNet: Rethinking Model Scaling for Convolutional
-    Neural Networks" <https://arxiv.org/abs/1905.11946>`_ paper.
+    """EfficientNet B3 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_B3_Weights`, optional): The
@@ -763,8 +763,8 @@ def efficientnet_b3(
 def efficientnet_b4(
     *, weights: Optional[EfficientNet_B4_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """EfficientNet B4 model architecture from the `"EfficientNet: Rethinking Model Scaling for Convolutional
-    Neural Networks" <https://arxiv.org/abs/1905.11946>`_ paper.
+    """EfficientNet B4 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_B4_Weights`, optional): The
@@ -791,8 +791,8 @@ def efficientnet_b4(
 def efficientnet_b5(
     *, weights: Optional[EfficientNet_B5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """EfficientNet B5 model architecture from the `"EfficientNet: Rethinking Model Scaling for Convolutional
-    Neural Networks" <https://arxiv.org/abs/1905.11946>`_ paper.
+    """EfficientNet B5 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_B5_Weights`, optional): The
@@ -827,8 +827,8 @@ def efficientnet_b5(
 def efficientnet_b6(
     *, weights: Optional[EfficientNet_B6_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """EfficientNet B6 model architecture from the `"EfficientNet: Rethinking Model Scaling for Convolutional
-    Neural Networks" <https://arxiv.org/abs/1905.11946>`_ paper.
+    """EfficientNet B6 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_B6_Weights`, optional): The
@@ -863,8 +863,8 @@ def efficientnet_b6(
 def efficientnet_b7(
     *, weights: Optional[EfficientNet_B7_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """EfficientNet B7 model architecture from the `"EfficientNet: Rethinking Model Scaling for Convolutional
-    Neural Networks" <https://arxiv.org/abs/1905.11946>`_ paper.
+    """EfficientNet B7 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_B7_Weights`, optional): The

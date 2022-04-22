@@ -3,7 +3,7 @@ EfficientNet
 
 .. currentmodule:: torchvision.models
 
-The EfficientNet model is based on the `EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks <https://arxiv.org/pdf/1905.11946.pdf>`__
+The EfficientNet model is based on the `EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks <https://arxiv.org/pdf/1905.11946>`__
 paper.
 
 
