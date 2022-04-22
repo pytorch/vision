@@ -324,6 +324,8 @@ def draw_segmentation_masks(
     if isinstance(colors[0], tuple) and len(colors[0]) != 3:
         raise ValueError("It seems that you passed a tuple of colors instead of a list of colors")
 
+    out_dtype = torch.uint8
+
     colors_ = []
     for color in colors:
         if isinstance(color, str):
@@ -334,8 +336,6 @@ def draw_segmentation_masks(
     # TODO: There might be a way to vectorize this
     for mask, color in zip(masks, colors_):
         img_to_draw[:, mask] = color[:, None]
-
-    out_dtype = torch.uint8
 
     out = image * (1 - alpha) + img_to_draw * alpha
     return out.to(out_dtype)
