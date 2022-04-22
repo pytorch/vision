@@ -200,7 +200,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+d089815 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+266109b ) &#x25BC</a>
     </div>
     
 
@@ -325,7 +325,7 @@
 <span></span><span class="kn">import</span> <span class="nn">math</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">OrderedDict</span>
 <span class="kn">from</span> <span class="nn">functools</span> <span class="kn">import</span> <span class="n">partial</span>
-<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Sequence</span><span class="p">,</span> <span class="n">Dict</span>
+<span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">NamedTuple</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Dict</span>
 
 <span class="kn">import</span> <span class="nn">torch</span>
 <span class="kn">import</span> <span class="nn">torch.nn</span> <span class="k">as</span> <span class="nn">nn</span>
@@ -612,18 +612,8 @@
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">VisionTransformer</span><span class="p">:</span>
     <span class="k">if</span> <span class="n">weights</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
         <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;num_classes&quot;</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">]))</span>
-        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">],</span> <span class="nb">int</span><span class="p">):</span>
-            <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;image_size&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">])</span>
-        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">],</span> <span class="n">Sequence</span><span class="p">):</span>
-            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">2</span> <span class="ow">or</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]:</span>
-                <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                    <span class="sa">f</span><span class="s1">&#39;size: </span><span class="si">{</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> is not valid! Currently we only support a 2-dimensional square and width = height&#39;</span>
-                <span class="p">)</span>
-            <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;image_size&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
-        <span class="k">else</span><span class="p">:</span>
-            <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-                <span class="sa">f</span><span class="s1">&#39;weights.meta[&quot;size&quot;]: </span><span class="si">{</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;size&quot;</span><span class="p">]</span><span class="si">}</span><span class="s1"> is not valid, the type should be either an int or a Sequence[int]&#39;</span>
-            <span class="p">)</span>
+        <span class="k">assert</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;min_size&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;min_size&quot;</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;image_size&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;min_size&quot;</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
     <span class="n">image_size</span> <span class="o">=</span> <span class="n">kwargs</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="s2">&quot;image_size&quot;</span><span class="p">,</span> <span class="mi">224</span><span class="p">)</span>
 
     <span class="n">model</span> <span class="o">=</span> <span class="n">VisionTransformer</span><span class="p">(</span>
@@ -643,12 +633,10 @@
 
 
 <span class="n">_COMMON_META</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
-    <span class="s2">&quot;task&quot;</span><span class="p">:</span> <span class="s2">&quot;image_classification&quot;</span><span class="p">,</span>
-    <span class="s2">&quot;architecture&quot;</span><span class="p">:</span> <span class="s2">&quot;ViT&quot;</span><span class="p">,</span>
     <span class="s2">&quot;categories&quot;</span><span class="p">:</span> <span class="n">_IMAGENET_CATEGORIES</span><span class="p">,</span>
 <span class="p">}</span>
 
-<span class="n">_COMMON_SWAG_META</span><span class="p">:</span> <span class="n">Dict</span><span class="p">[</span><span class="nb">str</span><span class="p">,</span> <span class="n">Any</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+<span class="n">_COMMON_SWAG_META</span> <span class="o">=</span> <span class="p">{</span>
     <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
     <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/facebookresearch/SWAG&quot;</span><span class="p">,</span>
     <span class="s2">&quot;license&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/facebookresearch/SWAG/blob/main/LICENSE&quot;</span><span class="p">,</span>
@@ -662,7 +650,6 @@
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">86567656</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16&quot;</span><span class="p">,</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.072</span><span class="p">,</span>
@@ -680,7 +667,6 @@
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">86859496</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">384</span><span class="p">,</span> <span class="mi">384</span><span class="p">),</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">85.304</span><span class="p">,</span>
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">97.650</span><span class="p">,</span>
@@ -698,7 +684,6 @@
             <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5793&quot;</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">86567656</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.886</span><span class="p">,</span>
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.180</span><span class="p">,</span>
@@ -714,7 +699,6 @@
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">88224232</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32&quot;</span><span class="p">,</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">75.912</span><span class="p">,</span>
@@ -731,7 +715,6 @@
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">304326632</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16&quot;</span><span class="p">,</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">79.662</span><span class="p">,</span>
@@ -749,7 +732,6 @@
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">305174504</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">512</span><span class="p">,</span> <span class="mi">512</span><span class="p">),</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">88.064</span><span class="p">,</span>
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">98.512</span><span class="p">,</span>
@@ -767,7 +749,6 @@
             <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5793&quot;</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">304326632</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">85.146</span><span class="p">,</span>
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">97.422</span><span class="p">,</span>
@@ -783,7 +764,6 @@
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">306535400</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32&quot;</span><span class="p">,</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">76.972</span><span class="p">,</span>
@@ -805,7 +785,6 @@
         <span class="n">meta</span><span class="o">=</span><span class="p">{</span>
             <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">633470440</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">518</span><span class="p">,</span> <span class="mi">518</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">518</span><span class="p">,</span> <span class="mi">518</span><span class="p">),</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">88.552</span><span class="p">,</span>
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">98.694</span><span class="p">,</span>
@@ -823,7 +802,6 @@
             <span class="o">**</span><span class="n">_COMMON_SWAG_META</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5793&quot;</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">632045800</span><span class="p">,</span>
-            <span class="s2">&quot;size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;min_size&quot;</span><span class="p">:</span> <span class="p">(</span><span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
             <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">85.708</span><span class="p">,</span>
             <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">97.730</span><span class="p">,</span>
