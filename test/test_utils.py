@@ -4,6 +4,8 @@ import sys
 import tempfile
 from io import BytesIO
 
+import warnings
+
 import numpy as np
 import pytest
 import torch
@@ -120,7 +122,6 @@ def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
 
-
 def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
@@ -174,6 +175,14 @@ def test_draw_boxes_warning():
 
     with pytest.warns(UserWarning, match=re.escape("Argument 'font_size' will be ignored since 'font' is not set.")):
         utils.draw_bounding_boxes(img, boxes, font_size=11)
+
+
+def test_draw_no_boxes():
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    boxes = torch.full((0,4), 0, dtype=torch.float)
+    with pytest.warns(UserWarning, match=re.escape("boxes doesn't contain any box. No box was drawn")):
+        res = utils.draw_bounding_boxes(img, boxes)
+        assert res.eq(img)
 
 
 @pytest.mark.parametrize(
