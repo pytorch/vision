@@ -4,7 +4,7 @@ RegNet
 .. currentmodule:: torchvision.models
 
 The RegNet model is based on the `Designing Network Design Spaces
-<https://arxiv.org/pdf/2003.13678.pdf>`_ paper.
+<https://arxiv.org/abs/2003.13678>`_ paper.
 
 
 Model builders
