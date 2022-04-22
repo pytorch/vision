@@ -1,9 +1,10 @@
-from typing import Dict, List, Optional, Tuple, Union
+from typing import List, Tuple, Dict, Optional, Union
 
 import torch
 import torchvision
 from torch import nn, Tensor
-from torchvision.transforms import functional as F, InterpolationMode, transforms as T
+from torchvision.transforms import functional as F
+from torchvision.transforms import transforms as T, InterpolationMode
 
 
 def _flip_coco_person_keypoints(kps, width):

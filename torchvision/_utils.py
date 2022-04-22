@@ -1,5 +1,5 @@
 import enum
-from typing import Sequence, Type, TypeVar
+from typing import Sequence, TypeVar, Type
 
 T = TypeVar("T", bound=enum.Enum)
 

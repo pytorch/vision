@@ -2,7 +2,7 @@ import unittest.mock
 
 import pytest
 from torchvision.prototype import datasets
-from torchvision.prototype.utils._internal import FrozenBunch, FrozenMapping
+from torchvision.prototype.utils._internal import FrozenMapping, FrozenBunch
 
 
 def make_minimal_dataset_info(name="name", categories=None, **kwargs):

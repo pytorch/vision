@@ -1,6 +1,7 @@
 import os
 import os.path
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+from typing import Union
 
 from PIL import Image
 

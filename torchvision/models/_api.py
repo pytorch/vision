@@ -4,7 +4,7 @@ import sys
 from collections import OrderedDict
 from dataclasses import dataclass, fields
 from inspect import signature
-from typing import Any, Callable, cast, Dict
+from typing import Any, Callable, Dict, cast
 
 from torchvision._utils import StrEnum
 
