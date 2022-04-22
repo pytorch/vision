@@ -279,8 +279,10 @@ class DenseNet121_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 7978856,
-            "acc@1": 74.434,
-            "acc@5": 91.972,
+            "metrics": {
+                "acc@1": 74.434,
+                "acc@5": 91.972,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -293,8 +295,10 @@ class DenseNet161_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 28681000,
-            "acc@1": 77.138,
-            "acc@5": 93.560,
+            "metrics": {
+                "acc@1": 77.138,
+                "acc@5": 93.560,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -307,8 +311,10 @@ class DenseNet169_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 14149480,
-            "acc@1": 75.600,
-            "acc@5": 92.806,
+            "metrics": {
+                "acc@1": 75.600,
+                "acc@5": 92.806,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -321,8 +327,10 @@ class DenseNet201_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 20013928,
-            "acc@1": 76.896,
-            "acc@5": 93.370,
+            "metrics": {
+                "acc@1": 76.896,
+                "acc@5": 93.370,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1

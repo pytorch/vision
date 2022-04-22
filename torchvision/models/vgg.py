@@ -120,8 +120,10 @@ class VGG11_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 132863336,
-            "acc@1": 69.020,
-            "acc@5": 88.628,
+            "metrics": {
+                "acc@1": 69.020,
+                "acc@5": 88.628,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -134,8 +136,10 @@ class VGG11_BN_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 132868840,
-            "acc@1": 70.370,
-            "acc@5": 89.810,
+            "metrics": {
+                "acc@1": 70.370,
+                "acc@5": 89.810,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -148,8 +152,10 @@ class VGG13_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 133047848,
-            "acc@1": 69.928,
-            "acc@5": 89.246,
+            "metrics": {
+                "acc@1": 69.928,
+                "acc@5": 89.246,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -162,8 +168,10 @@ class VGG13_BN_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 133053736,
-            "acc@1": 71.586,
-            "acc@5": 90.374,
+            "metrics": {
+                "acc@1": 71.586,
+                "acc@5": 90.374,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -176,8 +184,10 @@ class VGG16_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 138357544,
-            "acc@1": 71.592,
-            "acc@5": 90.382,
+            "metrics": {
+                "acc@1": 71.592,
+                "acc@5": 90.382,
+            },
         },
     )
     # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
@@ -196,8 +206,10 @@ class VGG16_Weights(WeightsEnum):
             "num_params": 138357544,
             "categories": None,
             "recipe": "https://github.com/amdegroot/ssd.pytorch#training-ssd",
-            "acc@1": float("nan"),
-            "acc@5": float("nan"),
+            "metrics": {
+                "acc@1": float("nan"),
+                "acc@5": float("nan"),
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -210,8 +222,10 @@ class VGG16_BN_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 138365992,
-            "acc@1": 73.360,
-            "acc@5": 91.516,
+            "metrics": {
+                "acc@1": 73.360,
+                "acc@5": 91.516,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -224,8 +238,10 @@ class VGG19_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 143667240,
-            "acc@1": 72.376,
-            "acc@5": 90.876,
+            "metrics": {
+                "acc@1": 72.376,
+                "acc@5": 90.876,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -238,8 +254,10 @@ class VGG19_BN_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 143678248,
-            "acc@1": 74.218,
-            "acc@5": 91.842,
+            "metrics": {
+                "acc@1": 74.218,
+                "acc@5": 91.842,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1

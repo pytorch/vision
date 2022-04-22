@@ -128,8 +128,10 @@ class SqueezeNet1_0_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (21, 21),
             "num_params": 1248424,
-            "acc@1": 58.092,
-            "acc@5": 80.420,
+            "metrics": {
+                "acc@1": 58.092,
+                "acc@5": 80.420,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -143,8 +145,10 @@ class SqueezeNet1_1_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (17, 17),
             "num_params": 1235496,
-            "acc@1": 58.178,
-            "acc@5": 80.624,
+            "metrics": {
+                "acc@1": 58.178,
+                "acc@5": 80.624,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
