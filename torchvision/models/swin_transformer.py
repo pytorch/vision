@@ -408,11 +408,7 @@ def _swin_transformer(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "SwinTransformer",
-    "publication_year": 2021,
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BICUBIC,
 }
 
 
