@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import warnings
-from typing import Any, cast, Optional, Tuple, Union
+from typing import Any, Optional, Union, Tuple, cast
 
 import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms.functional import to_pil_image
-from torchvision.utils import draw_bounding_boxes, make_grid
+from torchvision.utils import draw_bounding_boxes
+from torchvision.utils import make_grid
 
 from ._bounding_box import BoundingBox
 from ._feature import _Feature

@@ -16,11 +16,11 @@ from typing import (
     Iterator,
     Mapping,
     NoReturn,
-    Optional,
     Sequence,
     Tuple,
     TypeVar,
     Union,
+    Optional,
 )
 
 import numpy as np

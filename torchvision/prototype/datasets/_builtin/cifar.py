@@ -3,10 +3,14 @@ import functools
 import io
 import pathlib
 import pickle
-from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Iterator, cast, BinaryIO
 
 import numpy as np
-from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Filter,
+    Mapper,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -15,11 +19,11 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    hint_sharding,
     hint_shuffling,
     path_comparator,
+    hint_sharding,
 )
-from torchvision.prototype.features import Image, Label
+from torchvision.prototype.features import Label, Image
 
 
 class CifarFileReader(IterDataPipe[Tuple[np.ndarray, int]]):

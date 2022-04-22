@@ -1,31 +1,25 @@
 import functools
 import pathlib
 import pickle
+from typing import BinaryIO
 from typing import (
-    Any,
-    BinaryIO,
-    Callable,
-    cast,
-    Dict,
-    IO,
-    Iterator,
     Sequence,
-    Sized,
+    Callable,
+    Union,
+    Any,
     Tuple,
     TypeVar,
-    Union,
+    Iterator,
+    Dict,
+    IO,
+    Sized,
 )
+from typing import cast
 
 import torch
 import torch.distributed as dist
 import torch.utils.data
-from torchdata.datapipes.iter import (
-    IoPathFileLister,
-    IoPathFileOpener,
-    IterDataPipe,
-    ShardingFilter,
-    Shuffler,
-)
+from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 from torchvision.prototype.utils._internal import fromfile
 

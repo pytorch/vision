@@ -1,19 +1,21 @@
 import math
 import warnings
 from collections import OrderedDict
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Tuple, Optional
 
 import torch
 from torch import nn, Tensor
 
-from ...ops import boxes as box_ops, misc as misc_nn_ops, sigmoid_focal_loss
+from ...ops import sigmoid_focal_loss
+from ...ops import boxes as box_ops
+from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
-from ...transforms._presets import InterpolationMode, ObjectDetection
+from ...transforms._presets import ObjectDetection, InterpolationMode
 from ...utils import _log_api_usage_once
-from .._api import Weights, WeightsEnum
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
-from .._utils import _ovewrite_value_param, handle_legacy_interface
-from ..resnet import resnet50, ResNet50_Weights
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..resnet import ResNet50_Weights, resnet50
 from . import _utils as det_utils
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator

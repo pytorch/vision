@@ -1,7 +1,11 @@
 from typing import Any, Dict, List, Tuple
 
 import torch
-from torchdata.datapipes.iter import CSVParser, IterDataPipe, Mapper
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    CSVParser,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,

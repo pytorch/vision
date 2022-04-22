@@ -1,4 +1,4 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, List, Dict, Tuple
 
 import torch
 import torch.nn.functional as F

@@ -4,7 +4,10 @@ import numbers
 import random
 import warnings
 
-from torchvision.transforms import RandomCrop, RandomResizedCrop
+from torchvision.transforms import (
+    RandomCrop,
+    RandomResizedCrop,
+)
 
 from . import _functional_video as F
 

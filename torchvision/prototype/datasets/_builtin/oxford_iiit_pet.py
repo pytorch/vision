@@ -1,15 +1,8 @@
 import enum
 import pathlib
-from typing import Any, BinaryIO, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO
 
-from torchdata.datapipes.iter import (
-    CSVDictParser,
-    Demultiplexer,
-    Filter,
-    IterDataPipe,
-    IterKeyZipper,
-    Mapper,
-)
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, CSVDictParser
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
@@ -18,14 +11,14 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    getitem,
+    INFINITE_BUFFER_SIZE,
     hint_sharding,
     hint_shuffling,
-    INFINITE_BUFFER_SIZE,
+    getitem,
     path_accessor,
     path_comparator,
 )
-from torchvision.prototype.features import EncodedImage, Label
+from torchvision.prototype.features import Label, EncodedImage
 
 
 class OxfordIITPetDemux(enum.IntEnum):

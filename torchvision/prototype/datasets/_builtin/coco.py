@@ -2,17 +2,17 @@ import functools
 import pathlib
 import re
 from collections import OrderedDict
-from typing import Any, BinaryIO, cast, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, cast, BinaryIO
 
 import torch
 from torchdata.datapipes.iter import (
-    Demultiplexer,
-    Filter,
-    Grouper,
     IterDataPipe,
+    Mapper,
+    Filter,
+    Demultiplexer,
+    Grouper,
     IterKeyZipper,
     JsonParser,
-    Mapper,
     UnBatcher,
 )
 from torchvision.prototype.datasets.utils import (
@@ -23,15 +23,15 @@ from torchvision.prototype.datasets.utils import (
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
+    MappingIterator,
+    INFINITE_BUFFER_SIZE,
     BUILTIN_DIR,
     getitem,
+    path_accessor,
     hint_sharding,
     hint_shuffling,
-    INFINITE_BUFFER_SIZE,
-    MappingIterator,
-    path_accessor,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
+from torchvision.prototype.features import BoundingBox, Label, _Feature, EncodedImage
 from torchvision.prototype.utils._internal import FrozenMapping
 
 

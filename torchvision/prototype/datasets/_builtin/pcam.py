@@ -1,6 +1,6 @@
 import io
 from collections import namedtuple
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, Iterator
 
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Zipper
 from torchvision.prototype import features
@@ -8,10 +8,13 @@ from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    GDriveResource,
     OnlineResource,
+    GDriveResource,
 )
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
+from torchvision.prototype.datasets.utils._internal import (
+    hint_sharding,
+    hint_shuffling,
+)
 from torchvision.prototype.features import Label
 
 
