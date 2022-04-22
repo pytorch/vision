@@ -208,7 +208,7 @@ def draw_bounding_boxes(
 
     if num_boxes == 0:
         warnings.warn("boxes doesn't contain any box. No box was drawn")
-        return image.to(torch.uint8)
+        return image
 
     if labels is None:
         labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
@@ -310,11 +310,9 @@ def draw_segmentation_masks(
     if colors is not None and num_masks > len(colors):
         raise ValueError(f"There are more masks ({num_masks}) than colors ({len(colors)})")
 
-    out_dtype = torch.uint8
-
     if num_masks == 0:
         warnings.warn("masks doesn't contain any mask. No mask was drawn")
-        return image.to(out_dtype)
+        return image
 
     if colors is None:
         colors = _generate_color_palette(num_masks)
@@ -336,6 +334,8 @@ def draw_segmentation_masks(
     # TODO: There might be a way to vectorize this
     for mask, color in zip(masks, colors_):
         img_to_draw[:, mask] = color[:, None]
+
+    out_dtype = torch.uint8
 
     out = image * (1 - alpha) + img_to_draw * alpha
     return out.to(out_dtype)
