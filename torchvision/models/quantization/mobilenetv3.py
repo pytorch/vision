@@ -2,6 +2,7 @@ from functools import partial
 from typing import Any, List, Optional, Union
 
 import torch
+import torch.ao.quantization.quantize_fx
 from torch import nn, Tensor
 from torch.ao.quantization import QuantStub, DeQuantStub
 
@@ -17,7 +18,7 @@ from ..mobilenetv3 import (
     _mobilenet_v3_conf,
     MobileNet_V3_Large_Weights,
 )
-from .utils import _fuse_modules, _replace_relu
+from .utils import _fuse_modules, _replace_relu, QuantizationWorkflowType
 
 
 __all__ = [
@@ -135,20 +136,32 @@ def _mobilenet_v3_model(
         if "backend" in weights.meta:
             _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
     backend = kwargs.pop("backend", "qnnpack")
+    quantization_workflow_type = kwargs.pop("quantization_workflow_type", QuantizationWorkflowType.EAGER_MODE)
 
-    model = QuantizableMobileNetV3(inverted_residual_setting, last_channel, block=QuantizableInvertedResidual, **kwargs)
-    _replace_relu(model)
+    if quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE:
+        model = MobileNetV3(inverted_residual_setting, last_channel, **kwargs)
+    else:
+        model = QuantizableMobileNetV3(inverted_residual_setting, last_channel, block=QuantizableInvertedResidual, **kwargs)
+        _replace_relu(model)
 
     if quantize:
-        model.fuse_model(is_qat=True)
-        model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
-        torch.ao.quantization.prepare_qat(model, inplace=True)
+        # TODO: This shouldn't be QAT?
+        if quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE:
+            qconfig_dict = torch.ao.quantization.get_default_qat_qconfig_dict(backend)
+            model = torch.ao.quantization.quantize_fx.prepare_qat_fx(model, qconfig_dict)
+        else:
+            model.fuse_model(is_qat=True)
+            model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
+            torch.ao.quantization.prepare_qat(model, inplace=True)
 
     if weights is not None:
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     if quantize:
-        torch.ao.quantization.convert(model, inplace=True)
+        if quantization_workflow_type == QuantizationWorkflowType.FX_GRAPH_MODE:
+            model = torch.ao.quantization.quantize_fx.convert_fx(model)
+        else:
+            torch.ao.quantization.convert(model, inplace=True)
         model.eval()
 
     return model
