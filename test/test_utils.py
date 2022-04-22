@@ -274,6 +274,12 @@ def test_draw_segmentation_masks_errors():
         bad_colors = ("red", "blue")  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
 
+def test_draw_no_segmention_mask():
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    boxes = torch.full((0,4), 0, dtype=torch.float)
+    with pytest.warns(UserWarning, match=re.escape("masks doesn't contain any mask. No mask was drawn")):
+        res = utils.draw_segmentation_masks(img, boxes)
+        assert res.eq(img)
 
 def test_draw_keypoints_vanilla():
     # Keypoints is declared on top as global variable
