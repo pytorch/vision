@@ -334,7 +334,7 @@ def crop_bounding_box():
 
 @register_kernel_info_from_sample_inputs_fn
 def vertical_flip_segmentation_mask():
-    for mask in make_segmentation_masks(extra_dims=((), (4,))):
+    for mask in make_segmentation_masks():
         yield SampleInput(mask)
 
 
@@ -870,22 +870,11 @@ def test_correctness_crop_bounding_box(device, top, left, height, width, expecte
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
-    mask = torch.tensor(
-        [
-            [[1, 1, 1, 1, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]],
-            [[1, 1, 1, 1, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]],
-            [[1, 1, 1, 1, 1], [0, 0, 0, 0, 0], [0, 0, 0, 0, 0]],
-        ],
-        device=device,
-    )
+    mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
+    mask[:, 0, :] = 1
 
-    expected_mask = torch.tensor(
-        [
-            [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [1, 1, 1, 1, 1]],
-            [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [1, 1, 1, 1, 1]],
-            [[0, 0, 0, 0, 0], [0, 0, 0, 0, 0], [1, 1, 1, 1, 1]],
-        ],
-        device=device,
-    )
     out_mask = F.vertical_flip_segmentation_mask(mask)
+
+    expected_mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
+    expected_mask[:, -1, :] = 1
     torch.testing.assert_close(out_mask, expected_mask)
