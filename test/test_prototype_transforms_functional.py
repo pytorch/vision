@@ -369,6 +369,31 @@ def resized_crop_segmentation_mask():
     ):
         yield SampleInput(mask, top=top, left=left, height=height, width=width, size=size)
 
+@register_kernel_info_from_sample_inputs_fn
+def pad_segmentation_mask():
+    for mask, padding, fill, padding_mode in itertools.product(
+        make_segmentation_masks(),
+        [[1], [1, 1], [1, 1, 2, 2]],  # padding
+        [0, 1],  # fill
+        ["constant", "symmetric", "edge"],  # padding mode,
+    ):
+        if padding_mode == "symmetric" and mask.ndim not in [3, 4]:
+            continue
+        if padding_mode == "edge" and fill != 0:
+            continue
+        if (
+            padding_mode == "edge"
+            and len(padding) == 2
+            and mask.ndim not in [2, 3]
+            or len(padding) == 4
+            and mask.ndim not in [4, 3]
+            or len(padding) == 1
+        ):
+            continue
+        if padding_mode == "edge" and mask.ndim not in [2, 3, 4, 5]:
+            continue
+        yield SampleInput(mask, padding=padding, fill=fill, padding_mode=padding_mode)
+
 
 @pytest.mark.parametrize(
     "kernel",
@@ -1031,3 +1056,13 @@ def test_correctness_resized_crop_segmentation_mask(device, top, left, height, w
     expected_mask = _compute_expected(in_mask, top, left, height, width, size)
     output_mask = F.resized_crop_segmentation_mask(in_mask, top, left, height, width, size)
     torch.testing.assert_close(output_mask, expected_mask)
+
+def test_correctness_pad_segmentation_mask_on_fixed_input(device):
+    mask = torch.ones((1, 3, 3), dtype=torch.long, device=device)
+    mask[:, 1, 1] = 0
+
+    out_mask = F.pad_segmentation_mask(mask, padding=[1, 1, 1, 1], fill=1)
+
+    expected_mask = torch.ones((1, 3 + 1 + 1, 3 + 1 + 1), dtype=torch.long, device=device)
+    expected_mask[:, 2, 2] = 0
+    torch.testing.assert_close(out_mask, expected_mask)
