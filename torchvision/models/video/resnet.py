@@ -322,8 +322,10 @@ class R3D_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 33371472,
-            "acc@1": 52.75,
-            "acc@5": 75.45,
+            "metrics": {
+                "acc@1": 52.75,
+                "acc@5": 75.45,
+            },
         },
     )
     DEFAULT = KINETICS400_V1
@@ -336,8 +338,10 @@ class MC3_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 11695440,
-            "acc@1": 53.90,
-            "acc@5": 76.29,
+            "metrics": {
+                "acc@1": 53.90,
+                "acc@5": 76.29,
+            },
         },
     )
     DEFAULT = KINETICS400_V1
@@ -350,8 +354,10 @@ class R2Plus1D_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 31505325,
-            "acc@1": 57.50,
-            "acc@5": 78.81,
+            "metrics": {
+                "acc@1": 57.50,
+                "acc@5": 78.81,
+            },
         },
     )
     DEFAULT = KINETICS400_V1
