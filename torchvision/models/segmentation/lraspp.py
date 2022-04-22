@@ -98,10 +98,9 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/lraspp_mobilenet_v3_large-d234d4ea.pth",
         transforms=partial(SemanticSegmentation, resize_size=520),
         meta={
-            "task": "image_semantic_segmentation",
-            "architecture": "LRASPP",
             "num_params": 3221538,
             "categories": _VOC_CATEGORIES,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
             "mIoU": 57.9,
             "acc": 91.2,
