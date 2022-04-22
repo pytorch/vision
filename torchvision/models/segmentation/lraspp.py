@@ -105,7 +105,7 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
             "metrics": {
                 "miou": 57.9,
                 "pixel_acc": 91.2,
-            }
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1

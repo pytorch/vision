@@ -162,7 +162,7 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
             "metrics": {
                 "miou": 67.4,
                 "pixel_acc": 92.4,
-            }
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -179,7 +179,7 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
             "metrics": {
                 "miou": 60.3,
                 "pixel_acc": 91.2,
-            }
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
