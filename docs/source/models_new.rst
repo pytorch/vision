@@ -36,6 +36,7 @@ weights:
 .. toctree::
    :maxdepth: 1
 
+   models/convnext
    models/regnet
    models/resnet
    models/squeezenet
