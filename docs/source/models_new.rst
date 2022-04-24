@@ -38,6 +38,7 @@ weights:
 
    models/regnet
    models/resnet
+   models/resnext
    models/squeezenet
    models/vgg
    models/vision_transformer
