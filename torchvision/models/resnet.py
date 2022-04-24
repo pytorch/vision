@@ -653,7 +653,7 @@ def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = T
 
 @handle_legacy_interface(weights=("pretrained", ResNet152_Weights.IMAGENET1K_V1))
 def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    """ResNet-152 from `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`__.
+    """ResNet-152 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     Args:
         weights (:class:`~torchvision.models.ResNet152_Weights`, optional): The
@@ -739,7 +739,7 @@ def wide_resnet50_2(
     *, weights: Optional[Wide_ResNet50_2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
     r"""Wide ResNet-50-2 model from
-    `"Wide Residual Networks" <https://arxiv.org/abs/1605.07146>`_.
+    `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146,pdf>`_.
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
