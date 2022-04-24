@@ -371,15 +371,12 @@ def resized_crop_segmentation_mask():
 
 @register_kernel_info_from_sample_inputs_fn
 def pad_segmentation_mask():
-    for mask, padding, fill, padding_mode in itertools.product(
+    for mask, padding, padding_mode in itertools.product(
         make_segmentation_masks(),
         [[1], [1, 1], [1, 1, 2, 2]],  # padding
-        [0, 1],  # fill
         ["constant", "symmetric", "edge"],  # padding mode,
     ):
         if padding_mode == "symmetric" and mask.ndim not in [3, 4]:
-            continue
-        if padding_mode == "edge" and fill != 0:
             continue
         if (
             padding_mode == "edge"
@@ -392,7 +389,7 @@ def pad_segmentation_mask():
             continue
         if padding_mode == "edge" and mask.ndim not in [2, 3, 4, 5]:
             continue
-        yield SampleInput(mask, padding=padding, fill=fill, padding_mode=padding_mode)
+        yield SampleInput(mask, padding=padding, padding_mode=padding_mode)
 
 
 @pytest.mark.parametrize(
@@ -1059,10 +1056,35 @@ def test_correctness_resized_crop_segmentation_mask(device, top, left, height, w
 
 def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     mask = torch.ones((1, 3, 3), dtype=torch.long, device=device)
-    mask[:, 1, 1] = 0
 
-    out_mask = F.pad_segmentation_mask(mask, padding=[1, 1, 1, 1], fill=1)
+    out_mask = F.pad_segmentation_mask(mask, padding=[1, 1, 1, 1])
 
-    expected_mask = torch.ones((1, 3 + 1 + 1, 3 + 1 + 1), dtype=torch.long, device=device)
-    expected_mask[:, 2, 2] = 0
+    expected_mask = torch.zeros((1, 5, 5), dtype=torch.long, device=device)
+    expected_mask[:, 1:-1, 1:-1] = 1
     torch.testing.assert_close(out_mask, expected_mask)
+
+
+@pytest.mark.parametrize("padding,padding_mode", [([1, 2, 3, 4], "constant")])
+def test_correctness_pad_segmentation_mask(padding, padding_mode):
+    def compute_expected_mask():
+        h, w = mask.shape[-2], mask.shape[-1]
+
+        pad_left = padding[0]
+        pad_up = padding[1]
+        pad_right = padding[2]
+        pad_down = padding[3]
+
+        new_h = h + pad_up + pad_down
+        new_w = w + pad_left + pad_right
+
+        new_shape = (*mask.shape[:-2], new_h, new_w) if len(mask.shape) > 2 else (new_h, new_w)
+        expected_mask = torch.zeros(new_shape, dtype=torch.long)
+        expected_mask[..., pad_up:-pad_down, pad_left:-pad_right] = mask
+
+        return expected_mask
+
+    for mask in make_segmentation_masks():
+        out_mask = F.pad_segmentation_mask(mask, padding, padding_mode)
+
+        expected_mask = compute_expected_mask()
+        torch.testing.assert_close(out_mask, expected_mask)

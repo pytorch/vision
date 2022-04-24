@@ -397,9 +397,9 @@ pad_image_pil = _FP.pad
 
 
 def pad_segmentation_mask(
-    segmentation_mask: torch.Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant"
+    segmentation_mask: torch.Tensor, padding: List[int], padding_mode: str = "constant"
 ) -> torch.Tensor:
-    return pad_image_tensor(img=segmentation_mask, padding=padding, fill=fill, padding_mode=padding_mode)
+    return pad_image_tensor(img=segmentation_mask, padding=padding, fill=0, padding_mode=padding_mode)
 
 
 def pad_bounding_box(
