@@ -653,7 +653,7 @@ def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = T
 
 @handle_legacy_interface(weights=("pretrained", ResNet152_Weights.IMAGENET1K_V1))
 def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
-    """ResNet-152 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
+    """ResNet-152 from `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`__.
 
     Args:
         weights (:class:`~torchvision.models.ResNet152_Weights`, optional): The
@@ -681,7 +681,7 @@ def resnext50_32x4d(
     *, weights: Optional[ResNeXt50_32X4D_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
     """ResNeXt-50 32x4d model from
-    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/pdf/1611.05431.pdf>`_.
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_.
 
     Args:
         weights (:class:`~torchvision.models.ResNeXt50_32X4D_Weights`, optional): The
