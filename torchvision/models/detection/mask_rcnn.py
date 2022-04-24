@@ -364,8 +364,10 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 44401393,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn",
-            "map": 37.9,
-            "map_mask": 34.6,
+            "metrics": {
+                "box_map": 37.9,
+                "mask_map": 34.6,
+            },
         },
     )
     DEFAULT = COCO_V1
@@ -379,8 +381,10 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 46359409,
             "recipe": "https://github.com/pytorch/vision/pull/5773",
-            "map": 47.4,
-            "map_mask": 41.8,
+            "metrics": {
+                "box_map": 47.4,
+                "mask_map": 41.8,
+            },
         },
     )
     DEFAULT = COCO_V1
