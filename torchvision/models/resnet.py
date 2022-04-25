@@ -21,6 +21,7 @@ __all__ = [
     "ResNet152_Weights",
     "ResNeXt50_32X4D_Weights",
     "ResNeXt101_32X8D_Weights",
+    "ResNeXt101_64X4D_Weights",
     "Wide_ResNet50_2_Weights",
     "Wide_ResNet101_2_Weights",
     "resnet18",
@@ -30,6 +31,7 @@ __all__ = [
     "resnet152",
     "resnext50_32x4d",
     "resnext101_32x8d",
+    "resnext101_64x4d",
     "wide_resnet50_2",
     "wide_resnet101_2",
 ]

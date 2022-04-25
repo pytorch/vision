@@ -313,6 +313,7 @@ slow_models = [
     "convnext_base",
     "convnext_large",
     "resnext101_32x8d",
+    "resnext101_64x4d",
     "wide_resnet101_2",
     "efficientnet_b6",
     "efficientnet_b7",
