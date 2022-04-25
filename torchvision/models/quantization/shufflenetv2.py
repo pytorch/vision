@@ -6,7 +6,7 @@ import torch.nn as nn
 from torch import Tensor
 from torchvision.models import shufflenetv2
 
-from ...transforms._presets import ImageClassification, InterpolationMode
+from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -102,15 +102,9 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "ShuffleNetV2",
-    "publication_year": 2018,
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "backend": "fbgemm",
-    "quantization": "Post Training Quantization",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
 }
 
@@ -123,8 +117,10 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 1366792,
             "unquantized": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1,
-            "acc@1": 57.972,
-            "acc@5": 79.780,
+            "metrics": {
+                "acc@1": 57.972,
+                "acc@5": 79.780,
+            },
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -138,8 +134,10 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2278604,
             "unquantized": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1,
-            "acc@1": 68.360,
-            "acc@5": 87.582,
+            "metrics": {
+                "acc@1": 68.360,
+                "acc@5": 87.582,
+            },
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1

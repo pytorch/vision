@@ -332,6 +332,36 @@ def crop_bounding_box():
         )
 
 
+@register_kernel_info_from_sample_inputs_fn
+def crop_segmentation_mask():
+    for mask, top, left, height, width in itertools.product(
+        make_segmentation_masks(), [-8, 0, 9], [-8, 0, 9], [12, 20], [12, 20]
+    ):
+        yield SampleInput(
+            mask,
+            top=top,
+            left=left,
+            height=height,
+            width=width,
+        )
+
+
+@register_kernel_info_from_sample_inputs_fn
+def vertical_flip_segmentation_mask():
+    for mask in make_segmentation_masks():
+        yield SampleInput(mask)
+
+
+@register_kernel_info_from_sample_inputs_fn
+def resized_crop_bounding_box():
+    for bounding_box, top, left, height, width, size in itertools.product(
+        make_bounding_boxes(), [-8, 9], [-8, 9], [32, 22], [34, 20], [(32, 32), (16, 18)]
+    ):
+        yield SampleInput(
+            bounding_box, format=bounding_box.format, top=top, left=left, height=height, width=width, size=size
+        )
+
+
 @pytest.mark.parametrize(
     "kernel",
     [
@@ -823,13 +853,17 @@ def test_correctness_rotate_segmentation_mask_on_fixed_input(device):
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
+    "format",
+    [features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH],
+)
+@pytest.mark.parametrize(
     "top, left, height, width, expected_bboxes",
     [
         [8, 12, 30, 40, [(-2.0, 7.0, 13.0, 27.0), (38.0, -3.0, 58.0, 14.0), (33.0, 38.0, 44.0, 54.0)]],
         [-8, 12, 70, 40, [(-2.0, 23.0, 13.0, 43.0), (38.0, 13.0, 58.0, 30.0), (33.0, 54.0, 44.0, 70.0)]],
     ],
 )
-def test_correctness_crop_bounding_box(device, top, left, height, width, expected_bboxes):
+def test_correctness_crop_bounding_box(device, format, top, left, height, width, expected_bboxes):
 
     # Expected bboxes computed using Albumentations:
     # import numpy as np
@@ -851,12 +885,116 @@ def test_correctness_crop_bounding_box(device, top, left, height, width, expecte
         [45.0, 46.0, 56.0, 62.0],
     ]
     in_boxes = features.BoundingBox(in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=size, device=device)
+    if format != features.BoundingBoxFormat.XYXY:
+        in_boxes = convert_bounding_box_format(in_boxes, features.BoundingBoxFormat.XYXY, format)
 
     output_boxes = F.crop_bounding_box(
         in_boxes,
-        in_boxes.format,
+        format,
         top,
         left,
     )
 
+    if format != features.BoundingBoxFormat.XYXY:
+        output_boxes = convert_bounding_box_format(output_boxes, format, features.BoundingBoxFormat.XYXY)
+
     torch.testing.assert_close(output_boxes.tolist(), expected_bboxes)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "top, left, height, width",
+    [
+        [4, 6, 30, 40],
+        [-8, 6, 70, 40],
+        [-8, -6, 70, 8],
+    ],
+)
+def test_correctness_crop_segmentation_mask(device, top, left, height, width):
+    def _compute_expected_mask(mask, top_, left_, height_, width_):
+        h, w = mask.shape[-2], mask.shape[-1]
+        if top_ >= 0 and left_ >= 0 and top_ + height_ < h and left_ + width_ < w:
+            expected = mask[..., top_ : top_ + height_, left_ : left_ + width_]
+        else:
+            # Create output mask
+            expected_shape = mask.shape[:-2] + (height_, width_)
+            expected = torch.zeros(expected_shape, device=mask.device, dtype=mask.dtype)
+
+            out_y1 = abs(top_) if top_ < 0 else 0
+            out_y2 = h - top_ if top_ + height_ >= h else height_
+            out_x1 = abs(left_) if left_ < 0 else 0
+            out_x2 = w - left_ if left_ + width_ >= w else width_
+
+            in_y1 = 0 if top_ < 0 else top_
+            in_y2 = h if top_ + height_ >= h else top_ + height_
+            in_x1 = 0 if left_ < 0 else left_
+            in_x2 = w if left_ + width_ >= w else left_ + width_
+            # Paste input mask into output
+            expected[..., out_y1:out_y2, out_x1:out_x2] = mask[..., in_y1:in_y2, in_x1:in_x2]
+
+        return expected
+
+    for mask in make_segmentation_masks():
+        if mask.device != torch.device(device):
+            mask = mask.to(device)
+        output_mask = F.crop_segmentation_mask(mask, top, left, height, width)
+        expected_mask = _compute_expected_mask(mask, top, left, height, width)
+        torch.testing.assert_close(output_mask, expected_mask)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
+    mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
+    mask[:, 0, :] = 1
+
+    out_mask = F.vertical_flip_segmentation_mask(mask)
+
+    expected_mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
+    expected_mask[:, -1, :] = 1
+    torch.testing.assert_close(out_mask, expected_mask)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "format",
+    [features.BoundingBoxFormat.XYXY, features.BoundingBoxFormat.XYWH, features.BoundingBoxFormat.CXCYWH],
+)
+@pytest.mark.parametrize(
+    "top, left, height, width, size",
+    [
+        [0, 0, 30, 30, (60, 60)],
+        [-5, 5, 35, 45, (32, 34)],
+    ],
+)
+def test_correctness_resized_crop_bounding_box(device, format, top, left, height, width, size):
+    def _compute_expected(bbox, top_, left_, height_, width_, size_):
+        # bbox should be xyxy
+        bbox[0] = (bbox[0] - left_) * size_[1] / width_
+        bbox[1] = (bbox[1] - top_) * size_[0] / height_
+        bbox[2] = (bbox[2] - left_) * size_[1] / width_
+        bbox[3] = (bbox[3] - top_) * size_[0] / height_
+        return bbox
+
+    image_size = (100, 100)
+    # xyxy format
+    in_boxes = [
+        [10.0, 10.0, 20.0, 20.0],
+        [5.0, 10.0, 15.0, 20.0],
+    ]
+    expected_bboxes = []
+    for in_box in in_boxes:
+        expected_bboxes.append(_compute_expected(list(in_box), top, left, height, width, size))
+    expected_bboxes = torch.tensor(expected_bboxes, device=device)
+
+    in_boxes = features.BoundingBox(
+        in_boxes, format=features.BoundingBoxFormat.XYXY, image_size=image_size, device=device
+    )
+    if format != features.BoundingBoxFormat.XYXY:
+        in_boxes = convert_bounding_box_format(in_boxes, features.BoundingBoxFormat.XYXY, format)
+
+    output_boxes = F.resized_crop_bounding_box(in_boxes, format, top, left, height, width, size)
+
+    if format != features.BoundingBoxFormat.XYXY:
+        output_boxes = convert_bounding_box_format(output_boxes, format, features.BoundingBoxFormat.XYXY)
+
+    torch.testing.assert_close(output_boxes, expected_bboxes)

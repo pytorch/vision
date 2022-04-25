@@ -4,7 +4,7 @@ from typing import Tuple, Optional, Callable, List, Sequence, Type, Any, Union
 import torch.nn as nn
 from torch import Tensor
 
-from ...transforms._presets import VideoClassification, InterpolationMode
+from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _KINETICS400_CATEGORIES
@@ -309,12 +309,8 @@ def _video_resnet(
 
 
 _COMMON_META = {
-    "task": "video_classification",
-    "publication_year": 2017,
-    "size": (112, 112),
     "min_size": (1, 1),
     "categories": _KINETICS400_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
 }
 
@@ -325,10 +321,11 @@ class R3D_18_Weights(WeightsEnum):
         transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
-            "architecture": "R3D",
             "num_params": 33371472,
-            "acc@1": 52.75,
-            "acc@5": 75.45,
+            "metrics": {
+                "acc@1": 52.75,
+                "acc@5": 75.45,
+            },
         },
     )
     DEFAULT = KINETICS400_V1
@@ -340,10 +337,11 @@ class MC3_18_Weights(WeightsEnum):
         transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
-            "architecture": "MC3",
             "num_params": 11695440,
-            "acc@1": 53.90,
-            "acc@5": 76.29,
+            "metrics": {
+                "acc@1": 53.90,
+                "acc@5": 76.29,
+            },
         },
     )
     DEFAULT = KINETICS400_V1
@@ -355,10 +353,11 @@ class R2Plus1D_18_Weights(WeightsEnum):
         transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
-            "architecture": "R(2+1)D",
             "num_params": 31505325,
-            "acc@1": 57.50,
-            "acc@5": 78.81,
+            "metrics": {
+                "acc@1": 57.50,
+                "acc@5": 78.81,
+            },
         },
     )
     DEFAULT = KINETICS400_V1

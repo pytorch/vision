@@ -3,7 +3,7 @@ from typing import Any, Optional
 
 from torch import nn
 
-from ...transforms._presets import SemanticSegmentation, InterpolationMode
+from ...transforms._presets import SemanticSegmentation
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
@@ -48,11 +48,8 @@ class FCNHead(nn.Sequential):
 
 
 _COMMON_META = {
-    "task": "image_semantic_segmentation",
-    "architecture": "FCN",
-    "publication_year": 2014,
     "categories": _VOC_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
+    "min_size": (1, 1),
 }
 
 
@@ -64,8 +61,10 @@ class FCN_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
-            "mIoU": 60.5,
-            "acc": 91.4,
+            "metrics": {
+                "miou": 60.5,
+                "pixel_acc": 91.4,
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -79,8 +78,10 @@ class FCN_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
-            "mIoU": 63.7,
-            "acc": 91.9,
+            "metrics": {
+                "miou": 63.7,
+                "pixel_acc": 91.9,
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
