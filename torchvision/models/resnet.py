@@ -491,6 +491,10 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V2
 
 
+class ResNeXt101_64X4D_Weights(WeightsEnum):
+    pass
+
+
 class Wide_ResNet50_2_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/wide_resnet50_2-95faca4d.pth",
@@ -731,6 +735,34 @@ def resnext101_32x8d(
 
     _ovewrite_named_param(kwargs, "groups", 32)
     _ovewrite_named_param(kwargs, "width_per_group", 8)
+    return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
+
+
+def resnext101_64x4d(
+    *, weights: Optional[ResNeXt101_64X4D_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ResNet:
+    """ResNeXt-101 64x4d model from
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.ResNeXt101_64X4D_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNeXt101_64X4D_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.ResNeXt101_64X4D_Weights
+        :members:
+    """
+    weights = ResNeXt101_64X4D_Weights.verify(weights)
+
+    _ovewrite_named_param(kwargs, "groups", 64)
+    _ovewrite_named_param(kwargs, "width_per_group", 4)
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
