@@ -369,6 +369,7 @@ def resized_crop_segmentation_mask():
     ):
         yield SampleInput(mask, top=top, left=left, height=height, width=width, size=size)
 
+
 @register_kernel_info_from_sample_inputs_fn
 def pad_segmentation_mask():
     for mask, padding, padding_mode in itertools.product(
@@ -376,19 +377,12 @@ def pad_segmentation_mask():
         [[1], [1, 1], [1, 1, 2, 2]],  # padding
         ["constant", "symmetric", "edge", "reflect"],  # padding mode,
     ):
-        if padding_mode == "symmetric" and mask.ndim not in [3, 4]:
+        if padding_mode == "symmetric" and mask.ndim not in [2, 3, 4]:
             continue
-        if (
-            padding_mode == "edge"
-            and len(padding) == 2
-            and mask.ndim not in [2, 3]
-            or len(padding) == 4
-            and mask.ndim not in [4, 3]
-            or len(padding) == 1
-        ):
+
+        if (padding_mode == "edge" or padding_mode == "reflect") and mask.ndim not in [2, 3, 4]:
             continue
-        if padding_mode == "edge" and mask.ndim not in [2, 3, 4, 5]:
-            continue
+
         yield SampleInput(mask, padding=padding, padding_mode=padding_mode)
 
 
@@ -1054,6 +1048,7 @@ def test_correctness_resized_crop_segmentation_mask(device, top, left, height, w
     output_mask = F.resized_crop_segmentation_mask(in_mask, top, left, height, width, size)
     torch.testing.assert_close(output_mask, expected_mask)
 
+
 def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     mask = torch.ones((1, 3, 3), dtype=torch.long, device=device)
 
@@ -1064,24 +1059,22 @@ def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     torch.testing.assert_close(out_mask, expected_mask)
 
 
-@pytest.mark.parametrize("padding", [[1, 2, 3, 4], [1], 1, 1.0, [1, 2]])
+@pytest.mark.parametrize("padding", [[1, 2, 3, 4], [1], 1, [1, 2]])
 def test_correctness_pad_segmentation_mask(padding):
-    def _parse_padding():
-        if isinstance(padding, int):
-            return [padding] * 4
-        if isinstance(padding, float):
-            return [int(padding)] * 4
-        if isinstance(padding, list):
-            if len(padding) == 1:
-                return padding * 4
-            if len(padding) == 2:
-                return padding * 2  # [left, up, right, down]
+    def _compute_expected_mask():
+        def parse_padding():
+            if isinstance(padding, int):
+                return [padding] * 4
+            if isinstance(padding, list):
+                if len(padding) == 1:
+                    return padding * 4
+                if len(padding) == 2:
+                    return padding * 2  # [left, up, right, down]
 
-        return padding
+            return padding
 
-    def _compute_expected_mask(padding):
         h, w = mask.shape[-2], mask.shape[-1]
-        pad_left, pad_up, pad_right, pad_down = padding
+        pad_left, pad_up, pad_right, pad_down = parse_padding()
 
         new_h = h + pad_up + pad_down
         new_w = w + pad_left + pad_right
@@ -1092,10 +1085,8 @@ def test_correctness_pad_segmentation_mask(padding):
 
         return expected_mask
 
-    padding = _parse_padding()
-
     for mask in make_segmentation_masks():
         out_mask = F.pad_segmentation_mask(mask, padding, "constant")
 
-        expected_mask = _compute_expected_mask(padding)
+        expected_mask = _compute_expected_mask()
         torch.testing.assert_close(out_mask, expected_mask)
