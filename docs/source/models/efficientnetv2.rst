@@ -3,7 +3,7 @@ EfficientNetV2
 
 .. currentmodule:: torchvision.models
 
-The EfficientNetV2 model is based on the `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/pdf/2104.00298>`__
+The EfficientNetV2 model is based on the `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`__
 paper.
 
 

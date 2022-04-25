@@ -845,7 +845,7 @@ def efficientnet_v2_s(
 ) -> EfficientNet:
     """
     Constructs an EfficientNetV2-S architecture from
-    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+    `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_V2_S_Weights`, optional): The
@@ -882,7 +882,7 @@ def efficientnet_v2_m(
 ) -> EfficientNet:
     """
     Constructs an EfficientNetV2-M architecture from
-    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+    `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
         weights (:class:`~torchvision.models.EfficientNet_V2_M_Weights`, optional): The
