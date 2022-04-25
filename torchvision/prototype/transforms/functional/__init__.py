@@ -49,6 +49,7 @@ from ._geometry import (
     center_crop_image_pil,
     resized_crop_image_tensor,
     resized_crop_image_pil,
+    resized_crop_bounding_box,
     affine_bounding_box,
     affine_image_tensor,
     affine_image_pil,
