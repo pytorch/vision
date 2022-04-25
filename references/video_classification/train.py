@@ -68,14 +68,20 @@ def evaluate(model, criterion, data_loader, device):
             num_processed_samples += batch_size
     # gather the stats from all processes
     num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    if not utils.is_dist_avail_and_initialized():
+        num_data_from_sampler = len(data_loader.sampler)
+    else:
+        # Get the len of UniformClipSampler
+        num_data_from_sampler = len(data_loader.dataset.sampler)
+
     if (
         hasattr(data_loader.dataset, "__len__")
-        and len(data_loader.dataset) != num_processed_samples
+        and num_data_from_sampler != num_processed_samples
         and torch.distributed.get_rank() == 0
     ):
         # See FIXME above
         warnings.warn(
-            f"It looks like the dataset has {len(data_loader.dataset)} samples, but {num_processed_samples} "
+            f"It looks like the sampler has {num_data_from_sampler} samples, but {num_processed_samples} "
             "samples were used for the validation, which might bias the results. "
             "Try adjusting the batch size and / or the world size. "
             "Setting the world size to 1 is always a safe bet."
