@@ -456,8 +456,10 @@ class EfficientNet_B0_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V1,
             "num_params": 5288548,
-            "acc@1": 77.692,
-            "acc@5": 93.532,
+            "metrics": {
+                "acc@1": 77.692,
+                "acc@5": 93.532,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -472,8 +474,10 @@ class EfficientNet_B1_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V1,
             "num_params": 7794184,
-            "acc@1": 78.642,
-            "acc@5": 94.186,
+            "metrics": {
+                "acc@1": 78.642,
+                "acc@5": 94.186,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -485,8 +489,10 @@ class EfficientNet_B1_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 7794184,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning",
-            "acc@1": 79.838,
-            "acc@5": 94.934,
+            "metrics": {
+                "acc@1": 79.838,
+                "acc@5": 94.934,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -501,8 +507,10 @@ class EfficientNet_B2_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V1,
             "num_params": 9109994,
-            "acc@1": 80.608,
-            "acc@5": 95.310,
+            "metrics": {
+                "acc@1": 80.608,
+                "acc@5": 95.310,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -517,8 +525,10 @@ class EfficientNet_B3_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V1,
             "num_params": 12233232,
-            "acc@1": 82.008,
-            "acc@5": 96.054,
+            "metrics": {
+                "acc@1": 82.008,
+                "acc@5": 96.054,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -533,8 +543,10 @@ class EfficientNet_B4_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V1,
             "num_params": 19341616,
-            "acc@1": 83.384,
-            "acc@5": 96.594,
+            "metrics": {
+                "acc@1": 83.384,
+                "acc@5": 96.594,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -549,8 +561,10 @@ class EfficientNet_B5_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V1,
             "num_params": 30389784,
-            "acc@1": 83.444,
-            "acc@5": 96.628,
+            "metrics": {
+                "acc@1": 83.444,
+                "acc@5": 96.628,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -565,8 +579,10 @@ class EfficientNet_B6_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V1,
             "num_params": 43040704,
-            "acc@1": 84.008,
-            "acc@5": 96.916,
+            "metrics": {
+                "acc@1": 84.008,
+                "acc@5": 96.916,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -581,8 +597,10 @@ class EfficientNet_B7_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V1,
             "num_params": 66347960,
-            "acc@1": 84.122,
-            "acc@5": 96.908,
+            "metrics": {
+                "acc@1": 84.122,
+                "acc@5": 96.908,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -600,8 +618,10 @@ class EfficientNet_V2_S_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V2,
             "num_params": 21458488,
-            "acc@1": 84.228,
-            "acc@5": 96.878,
+            "metrics": {
+                "acc@1": 84.228,
+                "acc@5": 96.878,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -619,8 +639,10 @@ class EfficientNet_V2_M_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V2,
             "num_params": 54139356,
-            "acc@1": 85.112,
-            "acc@5": 97.156,
+            "metrics": {
+                "acc@1": 85.112,
+                "acc@5": 97.156,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -640,8 +662,10 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
         meta={
             **_COMMON_META_V2,
             "num_params": 118515272,
-            "acc@1": 85.808,
-            "acc@5": 97.788,
+            "metrics": {
+                "acc@1": 85.808,
+                "acc@5": 97.788,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
