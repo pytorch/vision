@@ -7,7 +7,7 @@ from torch.nn import functional as F
 
 from ..ops.misc import Conv2dNormActivation
 from ..ops.stochastic_depth import StochasticDepth
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -206,11 +206,9 @@ def _convnext(
 _COMMON_META = {
     "task": "image_classification",
     "architecture": "ConvNeXt",
-    "publication_year": 2022,
     "size": (224, 224),
     "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#convnext",
 }
 

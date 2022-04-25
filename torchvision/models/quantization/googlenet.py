@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
 
-from ...transforms._presets import ImageClassification, InterpolationMode
+from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -113,12 +113,10 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
         meta={
             "task": "image_classification",
             "architecture": "GoogLeNet",
-            "publication_year": 2014,
             "num_params": 6624904,
             "size": (224, 224),
             "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
             "quantization": "Post Training Quantization",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
