@@ -412,7 +412,10 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
         need_cast = True
         img = img.to(torch.float32)
 
-    img = torch_pad(img, p, mode=padding_mode, value=float(fill))
+    if padding_mode in ("reflect", "replicate"):
+        img = torch_pad(img, p, mode=padding_mode)
+    else:
+        img = torch_pad(img, p, mode=padding_mode, value=float(fill))
 
     if need_squeeze:
         img = img.squeeze(dim=0)
