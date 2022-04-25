@@ -69,18 +69,16 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
-            "task": "image_classification",
-            "architecture": "MobileNetV2",
             "num_params": 3504872,
-            "size": (224, 224),
             "min_size": (1, 1),
             "categories": _IMAGENET_CATEGORIES,
             "backend": "qnnpack",
-            "quantization": "Quantization Aware Training",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv2",
             "unquantized": MobileNet_V2_Weights.IMAGENET1K_V1,
-            "acc@1": 71.658,
-            "acc@5": 90.150,
+            "metrics": {
+                "acc@1": 71.658,
+                "acc@5": 90.150,
+            },
         },
     )
     DEFAULT = IMAGENET1K_QNNPACK_V1

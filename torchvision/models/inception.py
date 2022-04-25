@@ -412,15 +412,14 @@ class Inception_V3_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
         transforms=partial(ImageClassification, crop_size=299, resize_size=342),
         meta={
-            "task": "image_classification",
-            "architecture": "InceptionV3",
             "num_params": 27161264,
-            "size": (299, 299),
             "min_size": (75, 75),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#inception-v3",
-            "acc@1": 77.294,
-            "acc@5": 93.450,
+            "metrics": {
+                "acc@1": 77.294,
+                "acc@5": 93.450,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1

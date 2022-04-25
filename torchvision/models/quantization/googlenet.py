@@ -111,18 +111,16 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
-            "task": "image_classification",
-            "architecture": "GoogLeNet",
             "num_params": 6624904,
-            "size": (224, 224),
             "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
             "backend": "fbgemm",
-            "quantization": "Post Training Quantization",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": GoogLeNet_Weights.IMAGENET1K_V1,
-            "acc@1": 69.826,
-            "acc@5": 89.404,
+            "metrics": {
+                "acc@1": 69.826,
+                "acc@5": 89.404,
+            },
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1

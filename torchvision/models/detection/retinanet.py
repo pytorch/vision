@@ -674,9 +674,8 @@ class RetinaNet(nn.Module):
 
 
 _COMMON_META = {
-    "task": "image_object_detection",
-    "architecture": "RetinaNet",
     "categories": _COCO_CATEGORIES,
+    "min_size": (1, 1),
 }
 
 
@@ -688,7 +687,9 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 34014999,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
-            "map": 36.4,
+            "metrics": {
+                "box_map": 36.4,
+            },
         },
     )
     DEFAULT = COCO_V1
@@ -702,7 +703,9 @@ class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 38198935,
             "recipe": "https://github.com/pytorch/vision/pull/5756",
-            "map": 41.5,
+            "metrics": {
+                "box_map": 41.5,
+            },
         },
     )
     DEFAULT = COCO_V1

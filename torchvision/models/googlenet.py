@@ -280,15 +280,14 @@ class GoogLeNet_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/googlenet-1378be20.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
-            "task": "image_classification",
-            "architecture": "GoogLeNet",
             "num_params": 6624904,
-            "size": (224, 224),
             "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#googlenet",
-            "acc@1": 69.778,
-            "acc@5": 89.530,
+            "metrics": {
+                "acc@1": 69.778,
+                "acc@5": 89.530,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1

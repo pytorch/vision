@@ -347,6 +347,12 @@ def crop_segmentation_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
+def vertical_flip_segmentation_mask():
+    for mask in make_segmentation_masks():
+        yield SampleInput(mask)
+
+
+@register_kernel_info_from_sample_inputs_fn
 def resized_crop_bounding_box():
     for bounding_box, top, left, height, width, size in itertools.product(
         make_bounding_boxes(), [-8, 9], [-8, 9], [32, 22], [34, 20], [(32, 32), (16, 18)]
@@ -934,6 +940,18 @@ def test_correctness_crop_segmentation_mask(device, top, left, height, width):
         output_mask = F.crop_segmentation_mask(mask, top, left, height, width)
         expected_mask = _compute_expected_mask(mask, top, left, height, width)
         torch.testing.assert_close(output_mask, expected_mask)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_vertical_flip_segmentation_mask_on_fixed_input(device):
+    mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
+    mask[:, 0, :] = 1
+
+    out_mask = F.vertical_flip_segmentation_mask(mask)
+
+    expected_mask = torch.zeros((3, 3, 3), dtype=torch.long, device=device)
+    expected_mask[:, -1, :] = 1
+    torch.testing.assert_close(out_mask, expected_mask)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
