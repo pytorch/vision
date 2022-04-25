@@ -51,7 +51,8 @@ at::Tensor qnms_kernel_impl(
     // integral promotion rules will likely prevent it (see
     // https://stackoverflow.com/questions/32959564/subtraction-of-two-unsigned-gives-signed
     // for more details).
-    areas[i] = (x2[i].val_ - x1[i].val_ + static_cast<float>(bias)) * (y2[i].val_ - y1[i].val_ + static_cast<float>(bias));
+    areas[i] = (x2[i].val_ - x1[i].val_ + static_cast<float>(bias)) *
+        (y2[i].val_ - y1[i].val_ + static_cast<float>(bias));
   }
 
   int64_t num_to_keep = 0;
@@ -79,8 +80,14 @@ at::Tensor qnms_kernel_impl(
       float xx2 = std::min(ix2val, (float)x2[j].val_);
       float yy2 = std::min(iy2val, (float)y2[j].val_);
 
-      auto w = std::max(0.f, xx2 - xx1 + static_cast<float>(bias)); // * scale (gets canceled below)
-      auto h = std::max(0.f, yy2 - yy1 + static_cast<float>(bias)); // * scale (gets canceled below)
+      auto w = std::max(
+          0.f,
+          xx2 - xx1 +
+              static_cast<float>(bias)); // * scale (gets canceled below)
+      auto h = std::max(
+          0.f,
+          yy2 - yy1 +
+              static_cast<float>(bias)); // * scale (gets canceled below)
       auto inter = w * h;
       auto ovr = inter / (iarea + areas[j] - inter);
       if (ovr > iou_threshold)
