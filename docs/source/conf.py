@@ -352,12 +352,17 @@ def generate_weights_table(module, table_name, metrics_names):
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
-    column_names = ["weight"] + list(metrics_names) + ["params", "recipe"]
-    column_names = [f"**{name}**" for name in column_names]
+    def clean_name(name):
+        if name == "box_map":
+            name = "Box MAP"
+        return f"**{name}**"  # Add bold
+
+    column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
+    column_names = [clean_name(name) for name in column_names]
     content = [
         (
             f":class:`{w} <{type(w).__name__}>`",
-            *tuple(w.meta["metrics"][metric.lower()] for metric in metrics_names),
+            *(w.meta["metrics"][metric.lower()] for metric in metrics_names),
             f"{w.meta['num_params']/1e6:.1f}M",
             f"`link <{w.meta['recipe']}>`__",
         )
@@ -369,7 +374,7 @@ def generate_weights_table(module, table_name, metrics_names):
     generated_dir.mkdir(exist_ok=True)
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
         table_file.write(".. table::\n")
-        table_file.write(f"    :widths: 100 {'15 ' * len(metrics_names)} 20 10\n\n")
+        table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
 
