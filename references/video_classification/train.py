@@ -69,11 +69,11 @@ def evaluate(model, criterion, data_loader, device):
             num_processed_samples += batch_size
     # gather the stats from all processes
     num_processed_samples = utils.reduce_across_processes(num_processed_samples)
-    if not utils.is_dist_avail_and_initialized():
-        num_data_from_sampler = len(data_loader.sampler)
+    if isinstance(data_loader.sampler, DistributedSampler):
+        # Get the len of UniformClipSampler inside DistributedSampler
+        num_data_from_sampler = len(data_loader.sampler.dataset)
     else:
-        # Get the len of UniformClipSampler
-        num_data_from_sampler = len(data_loader.dataset.sampler)
+        num_data_from_sampler = len(data_loader.sampler)
 
     if (
         hasattr(data_loader.dataset, "__len__")
