@@ -347,22 +347,18 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines.append("")
 
 
-def generate_weights_table(module, table_name, metrics_names):
-
+def generate_weights_table(module, table_name, metrics):
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
-    def clean_name(name):
-        if name == "box_map":
-            name = "Box MAP"
-        return f"**{name}**"  # Add bold
-
+    metrics_keys, metrics_names = zip(*metrics)
     column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
-    column_names = [clean_name(name) for name in column_names]
+    column_names = [f"**{name}**" for name in column_names]  # Add bold
+
     content = [
         (
             f":class:`{w} <{type(w).__name__}>`",
-            *(w.meta["metrics"][metric.lower()] for metric in metrics_names),
+            *(w.meta["metrics"][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
             f"`link <{w.meta['recipe']}>`__",
         )
@@ -378,8 +374,8 @@ def generate_weights_table(module, table_name, metrics_names):
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
 
-generate_weights_table(module=M, table_name="classification", metrics_names=["Acc@1", "Acc@5"])
-generate_weights_table(module=M.detection, table_name="detection", metrics_names=["box_map"])
+generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
+generate_weights_table(module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")])
 
 
 def setup(app):
