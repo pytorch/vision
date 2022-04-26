@@ -555,6 +555,18 @@ def resized_crop_bounding_box(
     return resize_bounding_box(bounding_box, size, (height, width))
 
 
+def resized_crop_segmentation_mask(
+    mask: torch.Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+) -> torch.Tensor:
+    mask = crop_segmentation_mask(mask, top, left, height, width)
+    return resize_segmentation_mask(mask, size)
+
+
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
         size = [int(size), int(size)]

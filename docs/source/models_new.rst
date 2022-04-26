@@ -37,6 +37,7 @@ weights:
    :maxdepth: 1
 
    models/convnext
+   models/densenet
    models/efficientnet
    models/efficientnetv2
    models/regnet
