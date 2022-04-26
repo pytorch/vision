@@ -40,6 +40,7 @@ weights:
    models/densenet
    models/efficientnet
    models/efficientnetv2
+   models/googlenet
    models/regnet
    models/resnet
    models/resnext
