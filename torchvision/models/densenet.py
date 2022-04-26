@@ -339,7 +339,7 @@ class DenseNet201_Weights(WeightsEnum):
 @handle_legacy_interface(weights=("pretrained", DenseNet121_Weights.IMAGENET1K_V1))
 def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/abs/1608.06993>`_.
+    `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
     The required minimum input size of the model is 29x29.
 
     Args:
@@ -365,7 +365,7 @@ def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool
 @handle_legacy_interface(weights=("pretrained", DenseNet161_Weights.IMAGENET1K_V1))
 def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/abs/1608.06993>`_.
+    `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
     The required minimum input size of the model is 29x29.
 
     Args:
@@ -391,7 +391,7 @@ def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool
 @handle_legacy_interface(weights=("pretrained", DenseNet169_Weights.IMAGENET1K_V1))
 def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/abs/1608.06993>`_.
+    `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
     The required minimum input size of the model is 29x29.
 
     Args:
@@ -417,7 +417,7 @@ def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool
 @handle_legacy_interface(weights=("pretrained", DenseNet201_Weights.IMAGENET1K_V1))
 def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/abs/1608.06993>`_.
+    `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
     The required minimum input size of the model is 29x29.
 
     Args:
