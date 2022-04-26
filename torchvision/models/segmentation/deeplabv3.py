@@ -5,7 +5,7 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from ...transforms._presets import SemanticSegmentation, InterpolationMode
+from ...transforms._presets import SemanticSegmentation
 from .._api import WeightsEnum, Weights
 from .._meta import _VOC_CATEGORIES
 from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
@@ -129,11 +129,8 @@ def _deeplabv3_resnet(
 
 
 _COMMON_META = {
-    "task": "image_semantic_segmentation",
-    "architecture": "DeepLabV3",
-    "publication_year": 2017,
     "categories": _VOC_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
+    "min_size": (1, 1),
 }
 
 
@@ -145,8 +142,10 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 42004074,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50",
-            "mIoU": 66.4,
-            "acc": 92.4,
+            "metrics": {
+                "miou": 66.4,
+                "pixel_acc": 92.4,
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -160,8 +159,10 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 60996202,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101",
-            "mIoU": 67.4,
-            "acc": 92.4,
+            "metrics": {
+                "miou": 67.4,
+                "pixel_acc": 92.4,
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -175,8 +176,10 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 11029328,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large",
-            "mIoU": 60.3,
-            "acc": 91.2,
+            "metrics": {
+                "miou": 60.3,
+                "pixel_acc": 91.2,
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1

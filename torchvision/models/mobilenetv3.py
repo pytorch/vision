@@ -6,7 +6,7 @@ import torch
 from torch import nn, Tensor
 
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation as SElayer
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -304,13 +304,8 @@ def _mobilenet_v3(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "MobileNetV3",
-    "publication_year": 2019,
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
@@ -322,8 +317,10 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
-            "acc@1": 74.042,
-            "acc@5": 91.340,
+            "metrics": {
+                "acc@1": 74.042,
+                "acc@5": 91.340,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -333,8 +330,10 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
-            "acc@1": 75.274,
-            "acc@5": 92.566,
+            "metrics": {
+                "acc@1": 75.274,
+                "acc@5": 92.566,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -348,8 +347,10 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2542856,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
-            "acc@1": 67.668,
-            "acc@5": 87.402,
+            "metrics": {
+                "acc@1": 67.668,
+                "acc@5": 87.402,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1

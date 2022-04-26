@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -184,13 +184,8 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "ShuffleNetV2",
-    "publication_year": 2018,
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0",
 }
 
@@ -202,8 +197,10 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 1366792,
-            "acc@1": 69.362,
-            "acc@5": 88.316,
+            "metrics": {
+                "acc@1": 69.362,
+                "acc@5": 88.316,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -216,8 +213,10 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 2278604,
-            "acc@1": 60.552,
-            "acc@5": 81.746,
+            "metrics": {
+                "acc@1": 60.552,
+                "acc@5": 81.746,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
