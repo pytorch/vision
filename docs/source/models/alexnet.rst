@@ -1,5 +1,5 @@
-EfficientNet
-============
+AlexNet
+=======
 
 .. currentmodule:: torchvision.models
 
