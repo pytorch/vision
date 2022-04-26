@@ -311,9 +311,6 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     return iou - (areai - union) / areai
 
 
-# Implementation inspired from the generalized_box_iou one.
-# TODO: Some refactoring and homogenization could be done with
-# the loss function in diou_loss.
 def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tensor:
     """
     Return distance intersection-over-union (Jaccard index) between two sets of boxes.
@@ -332,6 +329,9 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(distance_box_iou)
+
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
 
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union

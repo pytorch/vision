@@ -1318,7 +1318,6 @@ def test_distance_iou_loss(dtype, device):
         tol = 1e-5 if dtype != torch.half else 1e-3
         torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
 
-
     assert_distance_iou_loss(box1, box1, 0.0)
 
     assert_distance_iou_loss(box1, box2, 0.8750)
