@@ -680,12 +680,23 @@ def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = T
 def resnext50_32x4d(
     *, weights: Optional[ResNeXt50_32X4D_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""ResNeXt-50 32x4d model from
-    `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_.
+    """ResNeXt-50 32x4d model from
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_.
 
     Args:
-        weights (ResNeXt50_32X4D_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNeXt50_32X4D_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNext50_32X4D_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.ResNeXt50_32X4D_Weights
+        :members:
     """
     weights = ResNeXt50_32X4D_Weights.verify(weights)
 
@@ -698,12 +709,23 @@ def resnext50_32x4d(
 def resnext101_32x8d(
     *, weights: Optional[ResNeXt101_32X8D_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""ResNeXt-101 32x8d model from
-    `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_.
+    """ResNeXt-101 32x8d model from
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_.
 
     Args:
-        weights (ResNeXt101_32X8D_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNeXt101_32X8D_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNeXt101_32X8D_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.ResNeXt101_32X8D_Weights
+        :members:
     """
     weights = ResNeXt101_32X8D_Weights.verify(weights)
 
