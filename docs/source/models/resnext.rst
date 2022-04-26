@@ -1,16 +1,16 @@
-ResNet
-======
+ResNeXt
+=======
 
 .. currentmodule:: torchvision.models
 
-The ResNet model is based on the `Deep Residual Learning for Image Recognition
-<https://arxiv.org/abs/1512.03385>`_ paper.
+The ResNext model is based on the `Aggregated Residual Transformations for Deep Neural Networks <https://arxiv.org/abs/1611.05431v2>`__
+paper.
 
 
 Model builders
 --------------
 
-The following model builders can be used to instantiate a ResNet model, with or
+The following model builders can be used to instantiate an ResNext model, with or
 without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.resnet.ResNet`` base class. Please refer to the `source
 code
@@ -21,8 +21,5 @@ more details about this class.
     :toctree: generated/
     :template: function.rst
 
-    resnet18
-    resnet34
-    resnet50
-    resnet101
-    resnet152
+    resnext50_32x4d
+    resnext101_32x8d

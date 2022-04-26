@@ -326,7 +326,15 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                 lines += [f"This weight is also available as ``{obj.__name__}.DEFAULT``.", ""]
 
             table = []
-            for k, v in field.meta.items():
+
+            # the `meta` dict contains another embedded `metrics` dict. To
+            # simplify the table generation below, we create the
+            # `meta_with_metrics` dict, where the metrics dict has been "flattened"
+            meta = field.meta
+            metrics = meta.pop("metrics", {})
+            meta_with_metrics = dict(meta, **metrics)
+
+            for k, v in meta_with_metrics.items():
                 if k == "categories":
                     continue
                 elif k == "recipe":
@@ -347,8 +355,8 @@ def generate_classification_table():
     content = [
         (
             f":class:`{w} <{type(w).__name__}>`",
-            w.meta["acc@1"],
-            w.meta["acc@5"],
+            w.meta["metrics"]["acc@1"],
+            w.meta["metrics"]["acc@5"],
             f"{w.meta['num_params']/1e6:.1f}M",
             f"`link <{w.meta['recipe']}>`__",
         )

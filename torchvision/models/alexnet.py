@@ -57,15 +57,14 @@ class AlexNet_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/alexnet-owt-7be5be79.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
-            "task": "image_classification",
-            "architecture": "AlexNet",
             "num_params": 61100840,
-            "size": (224, 224),
             "min_size": (63, 63),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
-            "acc@1": 56.522,
-            "acc@5": 79.066,
+            "metrics": {
+                "acc@1": 56.522,
+                "acc@5": 79.066,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
