@@ -377,10 +377,10 @@ def pad_segmentation_mask():
         [[1], [1, 1], [1, 1, 2, 2]],  # padding
         ["constant", "symmetric", "edge", "reflect"],  # padding mode,
     ):
-        if padding_mode == "symmetric" and mask.ndim not in [2, 3, 4]:
+        if padding_mode == "symmetric" and mask.ndim not in [3, 4]:
             continue
 
-        if (padding_mode == "edge" or padding_mode == "reflect") and mask.ndim not in [2, 3, 4]:
+        if (padding_mode == "edge" or padding_mode == "reflect") and mask.ndim not in [3, 4]:
             continue
 
         yield SampleInput(mask, padding=padding, padding_mode=padding_mode)
@@ -1049,6 +1049,7 @@ def test_correctness_resized_crop_segmentation_mask(device, top, left, height, w
     torch.testing.assert_close(output_mask, expected_mask)
 
 
+@pytest.mark.parametrize("device", cpu_and_gpu())
 def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     mask = torch.ones((1, 3, 3), dtype=torch.long, device=device)
 
