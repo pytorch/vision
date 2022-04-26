@@ -422,11 +422,14 @@ class Swin_T_Weights(WeightsEnum):
     )
     DEFAULT = IMAGENET1K_V1
 
+
 class Swin_S_Weights(WeightsEnum):
     pass
 
+
 class Swin_B_Weights(WeightsEnum):
     pass
+
 
 class Swin_L_Weights(WeightsEnum):
     pass
