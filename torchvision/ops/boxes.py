@@ -327,21 +327,23 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(complete_box_iou)
 
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
+
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
 
-    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
-    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+    lti = torch.min(boxes1[:, None, :2], boxes2[:, None, :2])
+    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, None, 2:])
 
     whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
-    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2)
+    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
 
     # centers of boxes
-    x_p = boxes1[:, None, :2].sum() / 2
-    y_p = boxes1[:, None, 2:].sum() / 2
-    x_g = boxes2[:, :2].sum() / 2
-    y_g = boxes2[:, 2:].sum() / 2
-
+    x_p = (boxes1[:, 0] + boxes1[:, 2]) / 2
+    y_p = (boxes1[:, 1] + boxes1[:, 3]) / 2
+    x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
+    y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
     # The distance between boxes' centers squared.
     centers_distance_squared = (_upcast(x_p - x_g) ** 2) + (_upcast(y_p - y_g) ** 2)
 
@@ -351,10 +353,10 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     w_gt = boxes2[:, 2] - boxes2[:, 0]
     h_gt = boxes2[:, 3] - boxes2[:, 1]
 
-    v = (4 / (torch.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2) + eps
+    v = (4 / (torch.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2)
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
-    return iou - (centers_distance_squared / diagonal_distance_squared) + alpha * v
+    return iou - (centers_distance_squared / diagonal_distance_squared) - alpha * v
 
 
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
