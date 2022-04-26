@@ -118,12 +118,8 @@ def test_random(func, method, device, channels, fn_kwargs, match_kwargs):
 
 
 @pytest.mark.parametrize("seed", range(10))
-# Temporary disable CUDA device
-# https://github.com/pytorch/vision/issues/5873
-# @pytest.mark.parametrize("device", cpu_and_gpu())
-# @pytest.mark.parametrize("channels", [1, 3])
-@pytest.mark.parametrize("device", ["cpu"])
-@pytest.mark.parametrize("channels", [3, 1])
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("channels", [1, 3])
 class TestColorJitter:
     @pytest.fixture(autouse=True)
     def set_random_seed(self, seed):
