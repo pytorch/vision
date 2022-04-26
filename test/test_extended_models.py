@@ -79,19 +79,32 @@ def test_naming_conventions(model_fn):
 )
 @run_if_test_with_extended
 def test_schema_meta_validation(model_fn):
-    classification_fields = ["size", "categories", "acc@1", "acc@5", "min_size"]
+    # list of all possible supported high-level fields for weights meta-data
+    permitted_fields = {
+        "backend",
+        "categories",
+        "keypoint_names",
+        "license",
+        "metrics",
+        "min_size",
+        "num_params",
+        "recipe",
+        "unquantized",
+    }
+    # mandatory fields for each computer vision task
+    classification_fields = {"categories", ("metrics", "acc@1"), ("metrics", "acc@5")}
     defaults = {
-        "all": ["task", "architecture", "publication_year", "interpolation", "recipe", "num_params"],
+        "all": {"metrics", "min_size", "num_params", "recipe"},
         "models": classification_fields,
-        "detection": ["categories", "map"],
-        "quantization": classification_fields + ["backend", "quantization", "unquantized"],
-        "segmentation": ["categories", "mIoU", "acc"],
+        "detection": {"categories", ("metrics", "box_map")},
+        "quantization": classification_fields | {"backend", "unquantized"},
+        "segmentation": {"categories", ("metrics", "miou"), ("metrics", "pixel_acc")},
         "video": classification_fields,
-        "optical_flow": [],
+        "optical_flow": set(),
     }
     model_name = model_fn.__name__
     module_name = model_fn.__module__.split(".")[-2]
-    fields = set(defaults["all"] + defaults[module_name])
+    fields = defaults["all"] | defaults[module_name]
 
     weights_enum = _get_model_weights(model_fn)
     if len(weights_enum) == 0:
@@ -101,9 +114,10 @@ def test_schema_meta_validation(model_fn):
     incorrect_params = []
     bad_names = []
     for w in weights_enum:
-        missing_fields = fields - set(w.meta.keys())
-        if missing_fields:
-            problematic_weights[w] = missing_fields
+        missing_fields = fields - (set(w.meta.keys()) | set(("metrics", x) for x in w.meta.get("metrics", {}).keys()))
+        unsupported_fields = set(w.meta.keys()) - permitted_fields
+        if missing_fields or unsupported_fields:
+            problematic_weights[w] = {"missing": missing_fields, "unsupported": unsupported_fields}
         if w == weights_enum.DEFAULT:
             if module_name == "quantization":
                 # parameters() count doesn't work well with quantization, so we check against the non-quantized

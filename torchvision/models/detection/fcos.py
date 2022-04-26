@@ -11,7 +11,7 @@ from ...ops import sigmoid_focal_loss, generalized_box_iou_loss
 from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
-from ...transforms._presets import ObjectDetection, InterpolationMode
+from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
@@ -471,7 +471,7 @@ class FCOS(nn.Module):
             pairwise_match &= (pairwise_dist > lower_bound[:, None]) & (pairwise_dist < upper_bound[:, None])
 
             # match the GT box with minimum area, if there are multiple GT matches
-            gt_areas = (gt_boxes[:, 1] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])  # N
+            gt_areas = (gt_boxes[:, 2] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])  # N
             pairwise_match = pairwise_match.to(torch.float32) * (1e8 - gt_areas[None, :])
             min_values, matched_idx = pairwise_match.max(dim=1)  # R, per-anchor match
             matched_idx[min_values < 1e-5] = -1  # unmatched anchors are assigned -1
@@ -651,14 +651,13 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/fcos_resnet50_fpn_coco-99b0c9b7.pth",
         transforms=ObjectDetection,
         meta={
-            "task": "image_object_detection",
-            "architecture": "FCOS",
-            "publication_year": 2019,
             "num_params": 32269600,
             "categories": _COCO_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
-            "map": 39.2,
+            "metrics": {
+                "box_map": 39.2,
+            },
         },
     )
     DEFAULT = COCO_V1
