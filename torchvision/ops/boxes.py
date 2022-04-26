@@ -336,8 +336,8 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
 
-    lti = torch.min(boxes1[:, None, :2], boxes2[:, None, :2])
-    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, None, 2:])
+    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
 
     whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
     diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
@@ -345,8 +345,8 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     # centers of boxes
     x_p = boxes1[:, None, :2].sum() / 2
     y_p = boxes1[:, None, 2:].sum() / 2
-    x_g = boxes2[:, None, :2].sum() / 2
-    y_g = boxes2[:, None, 2:].sum() / 2
+    x_g = boxes2[:, :2].sum() / 2
+    y_g = boxes2[:, 2:].sum() / 2
     # The distance between boxes' centers squared.
     centers_distance_squared = (_upcast(x_p - x_g) ** 2) + (_upcast(y_p - y_g) ** 2)
 

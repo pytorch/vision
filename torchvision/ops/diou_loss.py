@@ -1,6 +1,6 @@
 import torch
-
-from .boxes import distance_box_iou
+from ..utils import _log_api_usage_once
+from .boxes import _upcast
 
 
 def distance_box_iou_loss(
@@ -20,8 +20,8 @@ def distance_box_iou_loss(
     same dimensions.
 
     Args:
-        boxes1 (Tensor[N, 4] or Tensor[4]): first set of boxes
-        boxes2 (Tensor[N, 4] or Tensor[4]): second set of boxes
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[N, 4]): second set of boxes
         reduction (string, optional): Specifies the reduction to apply to the output:
             ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: No reduction will be
             applied to the output. ``'mean'``: The output will be averaged.
@@ -35,17 +35,50 @@ def distance_box_iou_loss(
         Zhaohui Zheng et. al: Distance Intersection over Union Loss:
         https://arxiv.org/abs/1911.08287
     """
-    if boxes1.dim() == 1 and boxes2.dim() == 1:
-        batch_boxes1 = boxes1.unsqueeze(0)
-        batch_boxes2 = boxes2.unsqueeze(0)
-        diou = distance_box_iou(batch_boxes1, batch_boxes2, eps)[0, 0]
-    else:
-        diou = distance_box_iou(boxes1, boxes2, eps)[0]
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(distance_box_iou_loss)
+
+    # TODO: Removing the _upcast call makes the torch.half tests in test_ops pass
+    # but we might get overflow problems... How to fix without casting at the end?
+    # boxes1 = _upcast(boxes1)
+    # boxes2 = _upcast(boxes2)
+    x1, y1, x2, y2 = boxes1.unbind(dim=-1)
+    x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
+
+    # Intersection keypoints
+    xkis1 = torch.max(x1, x1g)
+    ykis1 = torch.max(y1, y1g)
+    xkis2 = torch.min(x2, x2g)
+    ykis2 = torch.min(y2, y2g)
+
+    intsct = torch.zeros_like(x1)
+    mask = (ykis2 > ykis1) & (xkis2 > xkis1)
+    intsct[mask] = (xkis2[mask] - xkis1[mask]) * (ykis2[mask] - ykis1[mask])
+    union = (x2 - x1) * (y2 - y1) + (x2g - x1g) * (y2g - y1g) - intsct + eps
+    iou = intsct / union
+
+    # smallest enclosing box
+    xc1 = torch.min(x1, x1g)
+    yc1 = torch.min(y1, y1g)
+    xc2 = torch.max(x2, x2g)
+    yc2 = torch.max(y2, y2g)
+    # The diagonal distance of the smallest enclosing box squared
+    diagonal_distance_squared = ((xc2 - xc1) ** 2) + ((yc2 - yc1) ** 2) + eps
+
+    # centers of boxes
+    x_p = (x2 + x1) / 2
+    y_p = (y2 + y1) / 2
+    x_g = (x1g + x2g) / 2
+    y_g = (y1g + y2g) / 2
+    # The distance between boxes' centers squared.
+    centers_distance_squared = ((x_p - x_g) ** 2) + ((y_p - y_g) ** 2)
+
+    # The distance IoU is the IoU penalized by a normalized
+    # distance between boxes' centers squared.
+    diou = iou - (centers_distance_squared / diagonal_distance_squared)
     loss = 1 - diou
     if reduction == "mean":
         loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
     elif reduction == "sum":
         loss = loss.sum()
-    # Cast the loss to the same dtype as the input boxes
-    loss = loss.to(boxes1.dtype)
     return loss
