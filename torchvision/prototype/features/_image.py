@@ -3,6 +3,8 @@ from __future__ import annotations
 import warnings
 from typing import Any, Optional, Union, Tuple, cast
 
+import numpy as np
+import PIL.Image
 import torch
 from torchvision._utils import StrEnum
 from torchvision.transforms.functional import to_pil_image
@@ -46,6 +48,13 @@ class Image(_Feature):
         device: Optional[Union[torch.device, str, int]] = None,
         requires_grad: bool = False,
     ) -> Image:
+        if isinstance(data, PIL.Image.Image):
+            color_space = color_space or ColorSpace.from_pil_mode(data.mode)
+            data = np.array(data)
+            if data.ndim == 2:
+                data = np.expand_dims(data, 2)
+            data = data.transpose((2, 0, 1))
+
         data = torch.as_tensor(data, dtype=dtype, device=device)  # type: ignore[arg-type]
         if data.ndim < 2:
             raise ValueError
