@@ -6,9 +6,9 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 
 from ..ops.stochastic_depth import StochasticDepth
-from ..transforms._presets import InterpolationMode
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
 from .convnext import Permute
@@ -415,16 +415,20 @@ _COMMON_META = {
 
 
 class Swin_T_Weights(WeightsEnum):
-    pass
-
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_t-81486767.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC),
+        meta={
+            **_COMMON_META,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 class Swin_S_Weights(WeightsEnum):
     pass
 
-
 class Swin_B_Weights(WeightsEnum):
     pass
-
 
 class Swin_L_Weights(WeightsEnum):
     pass
