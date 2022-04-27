@@ -738,8 +738,8 @@ def resnext101_32x8d(
 def wide_resnet50_2(
     *, weights: Optional[Wide_ResNet50_2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""Wide ResNet-50-2 model from
-    `"Wide Residual Networks" <https://arxiv.org/abs/1605.07146>`_.
+    """Wide ResNet-50-2 model from
+    `Wide Residual Networks <https://arxiv.org/abs/1605.07146>`_.
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
@@ -771,8 +771,8 @@ def wide_resnet50_2(
 def wide_resnet101_2(
     *, weights: Optional[Wide_ResNet101_2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""Wide ResNet-101-2 model from
-    `"Wide Residual Networks" <https://arxiv.org/abs/1605.07146>`_.
+    """Wide ResNet-101-2 model from
+    `Wide Residual Networks <https://arxiv.org/abs/1605.07146>`_.
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
