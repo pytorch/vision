@@ -228,7 +228,7 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            # TODO: Change recipe
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 3503624,
             "metrics": {
                 "acc@1": 72.784,
@@ -245,11 +245,11 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            # TODO: Change recipe
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 7393996,
             "metrics": {
-                "acc@1": 76.230,
-                "acc@5": 93.006,
+                "acc@1": 76.200,
+                "acc@5": 92.888,
             },
         },
     )
