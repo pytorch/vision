@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.detection
+
+
+retinanet_resnet50_fpn
+======================
+
+.. autofunction:: retinanet_resnet50_fpn
