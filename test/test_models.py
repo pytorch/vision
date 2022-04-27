@@ -19,8 +19,13 @@ from torchvision import models
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 
+# skip big models to reduce memory usage on CI test
+skipped_models = {
+    "vit_h_14",
+}
 
-def get_models_from_module(module, skipped_models):
+
+def get_models_from_module(module):
     # TODO add a registration mechanism to torchvision.models
     return [
         v
@@ -327,11 +332,6 @@ slow_models = [
 for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
-# skip big models to reduce memory usage on CI test
-skipped_models = {
-    "vit_h_14",
-}
-
 
 # The following contains configuration and expected values to be used tests that are model specific
 _model_tests_values = {
@@ -587,7 +587,7 @@ def test_vitc_models(model_fn, dev):
     test_classification_model(model_fn, dev)
 
 
-@pytest.mark.parametrize("model_fn", get_models_from_module(models, skipped_models))
+@pytest.mark.parametrize("model_fn", get_models_from_module(models))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_classification_model(model_fn, dev):
     set_rng_seed(0)
@@ -621,7 +621,7 @@ def test_classification_model(model_fn, dev):
     _check_input_backprop(model, x)
 
 
-@pytest.mark.parametrize("model_fn", get_models_from_module(models.segmentation, skipped_models))
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.segmentation))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_segmentation_model(model_fn, dev):
     set_rng_seed(0)
@@ -683,7 +683,7 @@ def test_segmentation_model(model_fn, dev):
     _check_input_backprop(model, x)
 
 
-@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection, skipped_models))
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_detection_model(model_fn, dev):
     set_rng_seed(0)
@@ -781,7 +781,7 @@ def test_detection_model(model_fn, dev):
     _check_input_backprop(model, model_input)
 
 
-@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection, skipped_models))
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 def test_detection_model_validation(model_fn):
     set_rng_seed(0)
     model = model_fn(num_classes=50, weights=None, weights_backbone=None)
@@ -810,7 +810,7 @@ def test_detection_model_validation(model_fn):
         model(x, targets=targets)
 
 
-@pytest.mark.parametrize("model_fn", get_models_from_module(models.video, skipped_models))
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.video))
 @pytest.mark.parametrize("dev", cpu_and_gpu())
 def test_video_model(model_fn, dev):
     # the default input shape is
@@ -842,7 +842,7 @@ def test_video_model(model_fn, dev):
     ),
     reason="This Pytorch Build has not been built with fbgemm and qnnpack",
 )
-@pytest.mark.parametrize("model_fn", get_models_from_module(models.quantization, skipped_models))
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.quantization))
 def test_quantized_classification_model(model_fn):
     set_rng_seed(0)
     defaults = {
@@ -891,7 +891,7 @@ def test_quantized_classification_model(model_fn):
         torch.ao.quantization.convert(model, inplace=True)
 
 
-@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection, skipped_models))
+@pytest.mark.parametrize("model_fn", get_models_from_module(models.detection))
 def test_detection_model_trainable_backbone_layers(model_fn, disable_weight_loading):
     model_name = model_fn.__name__
     max_trainable = _model_tests_values[model_name]["max_trainable"]
