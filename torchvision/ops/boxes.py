@@ -336,7 +336,7 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     lti = torch.min(boxes1[:, None, :2], boxes2[:, None, :2])
     rbi = torch.max(boxes1[:, None, 2:], boxes2[:, None, 2:])
 
-    whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
+    whi = (rbi - lti).clamp(min=0)  # [N,M,2]
     diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
 
     # centers of boxes
