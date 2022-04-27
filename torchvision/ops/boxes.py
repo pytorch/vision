@@ -345,7 +345,7 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
     y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
     # The distance between boxes' centers squared.
-    centers_distance_squared = (_upcast(x_p - x_g) ** 2) + (_upcast(y_p - y_g) ** 2)
+    centers_distance_squared = (x_p - x_g) ** 2 + (y_p - y_g) ** 2
 
     w_pred = boxes1[:, 2] - boxes1[:, 0]
     h_pred = boxes1[:, 3] - boxes1[:, 1]
