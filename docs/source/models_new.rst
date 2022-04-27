@@ -99,3 +99,17 @@ Table of all available detection weights
 Box MAPs are reported on COCO
 
 .. include:: generated/detection_table.rst
+
+
+Optical Flow
+============
+
+.. currentmodule:: torchvision.models.optical_flow
+
+The following Optical Flow models are available, with or without pre-trained
+weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/raft

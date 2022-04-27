@@ -745,13 +745,19 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        weights(Raft_Large_weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
-            to override any default.
+        weights(:class:`~torchvision.models.optical_flow.Raft_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.optical_flow.Raft_Large_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
+            for more details about this class.
 
-    Returns:
-        RAFT: The model.
+    .. autoclass:: torchvision.models.optical_flow.Raft_Large_Weights
+        :members:
     """
 
     weights = Raft_Large_Weights.verify(weights)
@@ -789,19 +795,24 @@ def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, *
 @handle_legacy_interface(weights=("pretrained", Raft_Small_Weights.C_T_V2))
 def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT "small" model from
-    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
+    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`__.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        weights(Raft_Small_weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
-            to override any default.
+        weights(:class:`~torchvision.models.optical_flow.Raft_Small_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.optical_flow.Raft_Small_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
+            for more details about this class.
 
-    Returns:
-        RAFT: The model.
-
+    .. autoclass:: torchvision.models.optical_flow.Raft_Small_Weights
+        :members:
     """
     weights = Raft_Small_Weights.verify(weights)
 
