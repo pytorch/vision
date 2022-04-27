@@ -440,10 +440,23 @@ class Swin_L_Weights(WeightsEnum):
 def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
     """
     Constructs a swin_tiny architecture from
-    `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
+    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
+
     Args:
-        weights (Swin_T_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.Swin_T_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_T_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_trasformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_T_Weights
+        :members:
     """
     weights = Swin_T_Weights.verify(weights)
 
@@ -464,9 +477,22 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, *
     """
     Constructs a swin_small architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
+
     Args:
-        weights (Swin_S_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.Swin_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_trasformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_S_Weights
+        :members:
     """
     weights = Swin_S_Weights.verify(weights)
 
@@ -487,9 +513,22 @@ def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, *
     """
     Constructs a swin_base architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
+
     Args:
-        weights (Swin_B_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.Swin_B_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_B_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_trasformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_B_Weights
+        :members:
     """
     weights = Swin_B_Weights.verify(weights)
 
@@ -510,9 +549,22 @@ def swin_l(*, weights: Optional[Swin_L_Weights] = None, progress: bool = True, *
     """
     Constructs a swin_large architecture from
     `"Swin Transformer: Hierarchical Vision Transformer using Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_.
+
     Args:
-        weights (Swin_L_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.Swin_L_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_L_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_trasformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_L_Weights
+        :members:
     """
     weights = Swin_L_Weights.verify(weights)
 

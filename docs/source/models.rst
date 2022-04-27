@@ -101,6 +101,7 @@ You can construct a model with random weights by calling its constructor:
     swin_t = models.swin_t()
     swin_s = models.swin_s()
     swin_b = models.swin_b()
+    swin_l = models.swin_l()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 
@@ -466,6 +467,7 @@ SwinTransformer
     swin_t
     swin_s
     swin_b
+    swin_l
 
 Quantized Models
 ----------------
