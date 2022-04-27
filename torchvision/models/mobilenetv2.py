@@ -248,6 +248,7 @@ def mobilenet_v2(
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv2.py>`_
             for more details about this class.
+
     .. autoclass:: torchvision.models.MobileNet_V2_Weights
         :members:
     """
