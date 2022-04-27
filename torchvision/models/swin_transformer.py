@@ -416,7 +416,7 @@ class Swin_T_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/swin_t-81486767.pth",
         transforms=partial(
-            ImageClassification, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC
+            ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META,
