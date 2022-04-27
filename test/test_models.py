@@ -605,7 +605,6 @@ def test_classification_model(model_fn, dev):
     }
     model_name = model_fn.__name__
     if dev == torch.device("cuda") and SKIP_BIG_MODEL:
-        # We skip model if model_name is inside skipped_big_models
         do_skip_big_model(model_name)
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
