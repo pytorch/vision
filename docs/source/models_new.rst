@@ -41,6 +41,7 @@ weights:
    models/densenet
    models/efficientnet
    models/efficientnetv2
+   models/faster_rcnn
    models/googlenet
    models/mobilenetv2
    models/regnet
