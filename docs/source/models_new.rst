@@ -36,14 +36,17 @@ weights:
 .. toctree::
    :maxdepth: 1
 
+   models/alexnet
    models/convnext
    models/densenet
    models/efficientnet
    models/efficientnetv2
+   models/googlenet
    models/regnet
    models/resnet
    models/resnext
    models/squeezenet
+   models/swin_transformer
    models/vgg
    models/vision_transformer
 
@@ -55,8 +58,45 @@ Accuracies are reported on ImageNet
 
 .. include:: generated/classification_table.rst
 
+Semantic Segmentation
+=====================
+
+.. currentmodule:: torchvision.models.segmentation
+
+The following semantic segmentation models are available, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/deeplabv3
+
+
+Table of all available semantic segmentation weights
+----------------------------------------------------
+
+All models are evaluated on COCO val2017:
+
+.. include:: generated/segmentation_table.rst
+
+
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
 
-TODO: Something similar to classification models: list of models + table of weights
+.. currentmodule:: torchvision.models.detection
+
+The following detection models are available, with or without pre-trained
+weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/retinanet
+
+Table of all available detection weights
+----------------------------------------
+
+Box MAPs are reported on COCO
+
+.. include:: generated/detection_table.rst

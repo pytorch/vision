@@ -223,12 +223,24 @@ def deeplabv3_resnet50(
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-50 backbone.
 
+    Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
+
     Args:
-        weights (DeepLabV3_ResNet50_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.segmentation.DeepLabV3_ResNet50_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.DeepLabV3_ResNet50_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
         num_classes (int, optional): number of output classes of the model (including the background)
         aux_loss (bool, optional): If True, it uses an auxiliary loss
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The pretrained weights for the
+            backbone
+        **kwargs: unused
+
+    .. autoclass:: torchvision.models.segmentation.DeepLabV3_ResNet50_Weights
+        :members:
     """
     weights = DeepLabV3_ResNet50_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
@@ -264,12 +276,24 @@ def deeplabv3_resnet101(
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a ResNet-101 backbone.
 
+    Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
+
     Args:
-        weights (DeepLabV3_ResNet101_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): The number of classes
-        aux_loss (bool, optional): If True, include an auxiliary classifier
-        weights_backbone (ResNet101_Weights, optional): The pretrained weights for the backbone
+        weights (:class:`~torchvision.models.segmentation.DeepLabV3_ResNet101_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.DeepLabV3_ResNet101_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background)
+        aux_loss (bool, optional): If True, it uses an auxiliary loss
+        weights_backbone (:class:`~torchvision.models.ResNet101_Weights`, optional): The pretrained weights for the
+            backbone
+        **kwargs: unused
+
+    .. autoclass:: torchvision.models.segmentation.DeepLabV3_ResNet101_Weights
+        :members:
     """
     weights = DeepLabV3_ResNet101_Weights.verify(weights)
     weights_backbone = ResNet101_Weights.verify(weights_backbone)
@@ -305,12 +329,24 @@ def deeplabv3_mobilenet_v3_large(
 ) -> DeepLabV3:
     """Constructs a DeepLabV3 model with a MobileNetV3-Large backbone.
 
+    Reference: `Rethinking Atrous Convolution for Semantic Image Segmentation <https://arxiv.org/abs/1706.05587>`__.
+
     Args:
-        weights (DeepLabV3_MobileNet_V3_Large_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.segmentation.DeepLabV3_MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.DeepLabV3_MobileNet_V3_Large_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
         num_classes (int, optional): number of output classes of the model (including the background)
         aux_loss (bool, optional): If True, it uses an auxiliary loss
-        weights_backbone (MobileNet_V3_Large_Weights, optional): The pretrained weights for the backbone
+        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The pretrained weights
+            for the backbone
+        **kwargs: unused
+
+    .. autoclass:: torchvision.models.segmentation.DeepLabV3_MobileNet_V3_Large_Weights
+        :members:
     """
     weights = DeepLabV3_MobileNet_V3_Large_Weights.verify(weights)
     weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
