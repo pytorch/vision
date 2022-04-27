@@ -439,7 +439,7 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, *
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.swin_trasformer.SwinTransformer``
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.SwinTransformer``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
             for more details about this class.
