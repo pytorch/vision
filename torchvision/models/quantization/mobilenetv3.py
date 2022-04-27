@@ -140,6 +140,11 @@ def _mobilenet_v3_model(
     _replace_relu(model)
 
     if quantize:
+        # Instead of quantizing the model and then loading the quantized weights we take a different approach.
+        # We prepare the QAT model, load the QAT weights from training and then convert it.
+        # This is done to avoid extremely low accuracies observed on the specific model. This is rather a workaround
+        # for an unresolved bug on the eager quantization API detailed at:
+        # https://github.com/pytorch/vision/pull/3323/commits/274c6a1393384054876d701ffa1b54eb6750f1d8#r568727005
         model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
