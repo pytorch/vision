@@ -225,14 +225,14 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
 class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x1_5-3c479a10.pth",
-        transforms=partial(ImageClassification, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 3503624,
             "metrics": {
-                "acc@1": 72.784,
-                "acc@5": 91.058,
+                "acc@1": 72.996,
+                "acc@5": 91.086,
             },
         },
     )
@@ -242,14 +242,14 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
 class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/shufflenetv2_x2_0-8be3c8ee.pth",
-        transforms=partial(ImageClassification, crop_size=224),
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 7393996,
             "metrics": {
-                "acc@1": 76.200,
-                "acc@5": 92.888,
+                "acc@1": 76.230,
+                "acc@5": 93.006,
             },
         },
     )
