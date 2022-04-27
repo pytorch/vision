@@ -233,7 +233,7 @@ def main(args):
     if args.bias_weight_decay is not None:
         custom_keys_weight_decay.append(("bias", args.bias_weight_decay))
     if args.transformer_embedding_decay is not None:
-        for key in ["class_token", "position_embedding", "relative_position_bias"]:
+        for key in ["class_token", "position_embedding", "relative_position_bias_table"]:
             custom_keys_weight_decay.append((key, args.transformer_embedding_decay))
     parameters = utils.set_weight_decay(
         model,
@@ -267,7 +267,7 @@ def main(args):
         main_lr_scheduler = torch.optim.lr_scheduler.StepLR(optimizer, step_size=args.lr_step_size, gamma=args.lr_gamma)
     elif args.lr_scheduler == "cosineannealinglr":
         main_lr_scheduler = torch.optim.lr_scheduler.CosineAnnealingLR(
-            optimizer, T_max=args.epochs - args.lr_warmup_epochs
+            optimizer, T_max=args.epochs - args.lr_warmup_epochs, eta_min=args.lr_min
         )
     elif args.lr_scheduler == "exponentiallr":
         main_lr_scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer, gamma=args.lr_gamma)
@@ -424,6 +424,7 @@ def get_args_parser(add_help=True):
     parser.add_argument("--lr-warmup-decay", default=0.01, type=float, help="the decay for lr")
     parser.add_argument("--lr-step-size", default=30, type=int, help="decrease lr every step-size epochs")
     parser.add_argument("--lr-gamma", default=0.1, type=float, help="decrease lr by a factor of lr-gamma")
+    parser.add_argument("--lr-min", default=0.0, type=float, help="minimum lr of lr schedule (default: 0.0)")
     parser.add_argument("--print-freq", default=10, type=int, help="print frequency")
     parser.add_argument("--output-dir", default=".", type=str, help="path to save outputs")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
