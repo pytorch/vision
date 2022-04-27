@@ -604,7 +604,7 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
-    if dev == torch.device("cuda") and SKIP_BIG_MODEL:
+    if dev == "cuda" and SKIP_BIG_MODEL:
         do_skip_big_model(model_name)
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
@@ -620,7 +620,7 @@ def test_classification_model(model_fn, dev):
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
@@ -673,7 +673,7 @@ def test_segmentation_model(model_fn, dev):
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
@@ -771,7 +771,7 @@ def test_detection_model(model_fn, dev):
     full_validation = check_out(out)
     _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
@@ -837,7 +837,7 @@ def test_video_model(model_fn, dev):
     _check_fx_compatible(model, x, eager_out=out)
     assert out.shape[-1] == 50
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
             assert out.shape[-1] == 50
