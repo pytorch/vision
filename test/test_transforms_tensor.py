@@ -59,12 +59,11 @@ def _test_functional_op(f, device, channels=3, fn_kwargs=None, test_exact_match=
         _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
 
 
-def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_match=True, **match_kwargs):
-    # TODO: change the name: it's not a method, it's a class.
+def _test_class_op(transform_cls, device, channels=3, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     meth_kwargs = meth_kwargs or {}
 
     # test for class interface
-    f = method(**meth_kwargs)
+    f = transform_cls(**meth_kwargs)
     scripted_fn = torch.jit.script(f)
 
     tensor, pil_img = _create_data(26, 34, channels, device=device)
@@ -86,7 +85,7 @@ def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_matc
     _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
     with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, f"t_{method.__name__}.pt"))
+        scripted_fn.save(os.path.join(tmp_dir, f"t_{transform_cls.__name__}.pt"))
 
 
 def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
