@@ -420,6 +420,13 @@ class Swin_T_Weights(WeightsEnum):
         ),
         meta={
             **_COMMON_META,
+            "num_params": 28288354,
+            "min_size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swin_t",
+            "metrics": {
+                "acc@1": 81.358,
+                "acc@5": 95.526,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
