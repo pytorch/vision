@@ -342,6 +342,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                     v = f"`link <{v}>`__"
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
+            lines += [".. rst-class:: table-myclass"]
             lines += [".. table::", ""]
             lines += textwrap.indent(table, " " * 4).split("\n")
             lines.append("")
