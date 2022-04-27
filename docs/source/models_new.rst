@@ -94,6 +94,7 @@ weights:
    :maxdepth: 1
 
    models/retinanet
+   models/mask_rcnn
 
 Table of all available detection weights
 ----------------------------------------
