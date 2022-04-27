@@ -324,6 +324,7 @@ slow_models = [
     "regnet_y_128gf",
     "regnet_x_16gf",
     "regnet_x_32gf",
+    "swin_t",
 ]
 for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
