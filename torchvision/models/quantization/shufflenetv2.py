@@ -10,7 +10,7 @@ from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights
+from ..shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights, ShuffleNet_V2_X1_5_Weights, ShuffleNet_V2_X2_0_Weights
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -18,8 +18,12 @@ __all__ = [
     "QuantizableShuffleNetV2",
     "ShuffleNet_V2_X0_5_QuantizedWeights",
     "ShuffleNet_V2_X1_0_QuantizedWeights",
+    "ShuffleNet_V2_X1_5_QuantizedWeights",
+    "ShuffleNet_V2_X2_0_QuantizedWeights",
     "shufflenet_v2_x0_5",
     "shufflenet_v2_x1_0",
+    "shufflenet_v2_x1_5",
+    "shufflenet_v2_x2_0",
 ]
 
 
@@ -143,6 +147,42 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
 
+class ShuffleNet_V2_X1_5_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_5_fbgemm-d7401f05.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
+            "num_params": 3503624,
+            "unquantized": ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1,
+            "metrics": {
+                "acc@1": 72.052,
+                "acc@5": 90.700,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V1
+
+
+class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/shufflenetv2_x2_0_fbgemm-5cac526c.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
+            "num_params": 7393996,
+            "unquantized": ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1,
+            "metrics": {
+                "acc@1": 75.354,
+                "acc@5": 92.488,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V1
+
+
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -204,4 +244,52 @@ def shufflenet_v2_x1_0(
     weights = (ShuffleNet_V2_X1_0_QuantizedWeights if quantize else ShuffleNet_V2_X1_0_Weights).verify(weights)
     return _shufflenetv2(
         [4, 8, 4], [24, 116, 232, 464, 1024], weights=weights, progress=progress, quantize=quantize, **kwargs
+    )
+
+
+def shufflenet_v2_x1_5(
+    *,
+    weights: Optional[Union[ShuffleNet_V2_X1_5_QuantizedWeights, ShuffleNet_V2_X1_5_Weights]] = None,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any,
+) -> QuantizableShuffleNetV2:
+    """
+    Constructs a ShuffleNetV2 with 1.5x output channels, as described in
+    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
+    <https://arxiv.org/abs/1807.11164>`_.
+
+    Args:
+        weights (ShuffleNet_V2_X1_5_QuantizedWeights or ShuffleNet_V2_X1_5_Weights, optional): The pretrained
+            weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
+    """
+    weights = (ShuffleNet_V2_X1_5_QuantizedWeights if quantize else ShuffleNet_V2_X1_5_Weights).verify(weights)
+    return _shufflenetv2(
+        [4, 8, 4], [24, 176, 352, 704, 1024], weights=weights, progress=progress, quantize=quantize, **kwargs
+    )
+
+
+def shufflenet_v2_x2_0(
+    *,
+    weights: Optional[Union[ShuffleNet_V2_X2_0_QuantizedWeights, ShuffleNet_V2_X2_0_Weights]] = None,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any,
+) -> QuantizableShuffleNetV2:
+    """
+    Constructs a ShuffleNetV2 with 2.0x output channels, as described in
+    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
+    <https://arxiv.org/abs/1807.11164>`_.
+
+    Args:
+        weights (ShuffleNet_V2_X2_0_QuantizedWeights or ShuffleNet_V2_X2_0_Weights, optional): The pretrained
+            weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
+    """
+    weights = (ShuffleNet_V2_X2_0_QuantizedWeights if quantize else ShuffleNet_V2_X2_0_Weights).verify(weights)
+    return _shufflenetv2(
+        [4, 8, 4], [24, 244, 488, 976, 2048], weights=weights, progress=progress, quantize=quantize, **kwargs
     )
