@@ -18,12 +18,7 @@ from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_see
 from torchvision import models
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
-
-# skip big models to reduce memory usage on CI test
-skipped_models = {
-    "vit_h_14",
-    "regnet_y_128gf",
-}
+SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 
 def get_models_from_module(module):
@@ -31,7 +26,7 @@ def get_models_from_module(module):
     return [
         v
         for k, v in module.__dict__.items()
-        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight" and k not in skipped_models
+        if callable(v) and k[0].lower() == k[0] and k[0] != "_" and k != "get_weight"
     ]
 
 
@@ -334,6 +329,18 @@ for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
 
+# skip big models to reduce memory usage on CI test
+skipped_big_models = {
+    "vit_h_14",
+    "regnet_y_128gf",
+}
+
+
+def do_skip_big_model(model_name):
+    if model_name in skipped_big_models:
+        pytest.skip(f"Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
+
+
 # The following contains configuration and expected values to be used tests that are model specific
 _model_tests_values = {
     "retinanet_resnet50_fpn": {
@@ -597,6 +604,9 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
+    if dev == torch.device("cuda") and SKIP_BIG_MODEL:
+        # We skip model if model_name is inside skipped_big_models
+        do_skip_big_model(model_name)
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
