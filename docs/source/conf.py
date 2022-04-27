@@ -379,6 +379,7 @@ generate_weights_table(module=M.detection, table_name="detection", metrics=[("bo
 generate_weights_table(
     module=M.segmentation, table_name="segmentation", metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")]
 )
+generate_weights_table(module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
 
 
 def setup(app):
