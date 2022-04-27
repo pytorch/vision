@@ -54,7 +54,7 @@ def hflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
-    return img.transpose(Image.FLIP_LEFT_RIGHT)
+    return img.transpose(Image.Transpose.FLIP_LEFT_RIGHT)
 
 
 @torch.jit.unused
@@ -62,7 +62,7 @@ def vflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
-    return img.transpose(Image.FLIP_TOP_BOTTOM)
+    return img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
 
 
 @torch.jit.unused
@@ -323,7 +323,7 @@ def affine(
 
     output_size = img.size
     opts = _parse_fill(fill, img)
-    return img.transform(output_size, Image.AFFINE, matrix, interpolation, **opts)
+    return img.transform(output_size, Image.Transform.AFFINE, matrix, interpolation, **opts)
 
 
 @torch.jit.unused
@@ -356,7 +356,7 @@ def perspective(
 
     opts = _parse_fill(fill, img)
 
-    return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
+    return img.transform(img.size, Image.Transform.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
 
 
 @torch.jit.unused
