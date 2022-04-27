@@ -335,12 +335,6 @@ skipped_big_models = {
     "regnet_y_128gf",
 }
 
-
-def do_skip_big_model(model_name):
-    if model_name in skipped_big_models:
-        pytest.skip(f"Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
-
-
 # The following contains configuration and expected values to be used tests that are model specific
 _model_tests_values = {
     "retinanet_resnet50_fpn": {
@@ -604,8 +598,8 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
-    if dev == "cuda" and SKIP_BIG_MODEL:
-        do_skip_big_model(model_name)
+    if dev == "cuda" and SKIP_BIG_MODEL and model_name in skipped_big_models:
+        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
