@@ -10,7 +10,12 @@ from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights, ShuffleNet_V2_X1_5_Weights, ShuffleNet_V2_X2_0_Weights
+from ..shufflenetv2 import (
+    ShuffleNet_V2_X0_5_Weights,
+    ShuffleNet_V2_X1_0_Weights,
+    ShuffleNet_V2_X1_5_Weights,
+    ShuffleNet_V2_X2_0_Weights,
+)
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
