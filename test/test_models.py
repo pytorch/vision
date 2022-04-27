@@ -22,6 +22,7 @@ ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
 # skip big models to reduce memory usage on CI test
 skipped_models = {
     "vit_h_14",
+    "regnet_y_128gf",
 }
 
 
