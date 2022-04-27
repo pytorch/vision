@@ -42,10 +42,12 @@ weights:
    models/efficientnet
    models/efficientnetv2
    models/googlenet
+   models/mobilenetv2
    models/regnet
    models/resnet
    models/resnext
    models/squeezenet
+   models/swin_transformer
    models/vgg
    models/vision_transformer
 
