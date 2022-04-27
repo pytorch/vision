@@ -223,11 +223,37 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
 
 
 class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/shufflenetv2_x1_5-3c479a10.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            # TODO: Change recipe
+            "num_params": 3503624,
+            "metrics": {
+                "acc@1": 72.784,
+                "acc@5": 91.058,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/shufflenetv2_x2_0-8be3c8ee.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            # TODO: Change recipe
+            "num_params": 7393996,
+            "metrics": {
+                "acc@1": 76.230,
+                "acc@5": 93.006,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1))
