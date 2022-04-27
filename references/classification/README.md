@@ -236,6 +236,18 @@ torchrun --nproc_per_node=8 train.py\
 Note that `--val-resize-size` was optimized in a post-training step, see their `Weights` entry for the exact value.
 
 
+### ShuffleNet V2
+```
+torchrun --nproc_per_node=8 train.py \
+--batch-size=128 \
+--lr=0.5 --lr-scheduler=cosineannealinglr --lr-warmup-epochs=5 --lr-warmup-method=linear \
+--auto-augment=ta_wide --epochs=600 --random-erase=0.1 --weight-decay=0.00002 \
+--norm-weight-decay=0.0 --label-smoothing=0.1 --mixup-alpha=0.2 --cutmix-alpha=1.0 \
+--train-crop-size=176 --model-ema --val-resize-size=232 --ra-sampler --ra-reps=4
+```
+Here `$MODEL` is either `shufflenet_v2_x1_5` or `shufflenet_v2_x2_0`.
+
+
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).
 
