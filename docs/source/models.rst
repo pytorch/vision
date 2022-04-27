@@ -176,8 +176,10 @@ Densenet-201                      76.896          93.370
 Densenet-161                      77.138          93.560
 Inception v3                      77.294          93.450
 GoogleNet                         69.778          89.530
-ShuffleNet V2 x1.0                69.362          88.316
 ShuffleNet V2 x0.5                60.552          81.746
+ShuffleNet V2 x1.0                69.362          88.316
+ShuffleNet V2 x1.5                72.784          91.058
+ShuffleNet V2 x2.0                76.200          92.888
 MobileNet V2                      71.878          90.286
 MobileNet V3 Large                74.042          91.340
 MobileNet V3 Small                67.668          87.402
