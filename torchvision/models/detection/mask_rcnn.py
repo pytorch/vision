@@ -405,7 +405,7 @@ def maskrcnn_resnet50_fpn(
 ) -> MaskRCNN:
     """Mask R-CNN model with a ResNet-50-FPN backbone from the `Mask R-CNN
     <https://arxiv.org/abs/1703.06870>`_ paper.
-    
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
@@ -506,7 +506,7 @@ def maskrcnn_resnet50_fpn_v2(
 ) -> MaskRCNN:
     """Improved Mask R-CNN model with a ResNet-50-FPN backbone from the `Benchmarking Detection Transfer
     Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`_ paper.
-    
+
     :func:`~torchvision.models.detection.maskrcnn_resnet50_fpn` for more details.
 
     Args:
