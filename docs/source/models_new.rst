@@ -93,8 +93,9 @@ weights:
 .. toctree::
    :maxdepth: 1
 
-   models/retinanet
    models/fcos
+   models/mask_rcnn
+   models/retinanet
 
 Table of all available detection weights
 ----------------------------------------
