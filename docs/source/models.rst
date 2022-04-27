@@ -42,6 +42,7 @@ architectures for image classification:
 -  `RegNet`_
 -  `VisionTransformer`_
 -  `ConvNeXt`_
+-  `SwinTransformer`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -97,6 +98,7 @@ You can construct a model with random weights by calling its constructor:
     convnext_small = models.convnext_small()
     convnext_base = models.convnext_base()
     convnext_large = models.convnext_large()
+    swin_t = models.swin_t()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 
@@ -219,6 +221,7 @@ convnext_tiny                     82.520          96.146
 convnext_small                    83.616          96.650
 convnext_base                     84.062          96.870
 convnext_large                    84.414          96.976
+swin_t                            81.358          95.526
 ================================  =============   =============
 
 
@@ -238,6 +241,7 @@ convnext_large                    84.414          96.976
 .. _RegNet: https://arxiv.org/abs/2003.13678
 .. _VisionTransformer: https://arxiv.org/abs/2010.11929
 .. _ConvNeXt: https://arxiv.org/abs/2201.03545
+.. _SwinTransformer: https://arxiv.org/abs/2103.14030
 
 .. currentmodule:: torchvision.models
 
@@ -449,6 +453,15 @@ ConvNeXt
     convnext_small
     convnext_base
     convnext_large
+
+SwinTransformer
+--------
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    swin_t
 
 Quantized Models
 ----------------
