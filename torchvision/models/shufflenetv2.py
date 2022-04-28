@@ -198,8 +198,8 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 1366792,
             "metrics": {
-                "acc@1": 69.362,
-                "acc@5": 88.316,
+                "acc@1": 60.552,
+                "acc@5": 81.746,
             },
         },
     )
@@ -214,8 +214,8 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2278604,
             "metrics": {
-                "acc@1": 60.552,
-                "acc@5": 81.746,
+                "acc@1": 69.362,
+                "acc@5": 88.316,
             },
         },
     )
@@ -223,11 +223,37 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
 
 
 class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/shufflenetv2_x1_5-3c479a10.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
+            "num_params": 3503624,
+            "metrics": {
+                "acc@1": 72.996,
+                "acc@5": 91.086,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/shufflenetv2_x2_0-8be3c8ee.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
+            "num_params": 7393996,
+            "metrics": {
+                "acc@1": 76.230,
+                "acc@5": 93.006,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1))

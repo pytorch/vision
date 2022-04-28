@@ -1,5 +1,5 @@
 ConvNeXt
-======
+========
 
 .. currentmodule:: torchvision.models
 

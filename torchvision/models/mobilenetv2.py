@@ -233,13 +233,24 @@ class MobileNet_V2_Weights(WeightsEnum):
 def mobilenet_v2(
     *, weights: Optional[MobileNet_V2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> MobileNetV2:
-    """
-    Constructs a MobileNetV2 architecture from
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
+    """MobileNetV2 architecture from the `MobileNetV2: Inverted Residuals and Linear
+    Bottlenecks <https://arxiv.org/abs/1801.04381>`_ paper.
 
     Args:
-        weights (MobileNet_V2_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MobileNet_V2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MobileNet_V2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.mobilenetv2.MobileNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MobileNet_V2_Weights
+        :members:
     """
     weights = MobileNet_V2_Weights.verify(weights)
 

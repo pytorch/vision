@@ -83,6 +83,3 @@ class _Feature(torch.Tensor):
             return cls.new_like(args[0], output, dtype=output.dtype, device=output.device)
         else:
             return output
-
-    def __repr__(self) -> str:
-        return cast(str, torch.Tensor.__repr__(self)).replace("tensor", type(self).__name__)

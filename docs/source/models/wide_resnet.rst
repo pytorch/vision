@@ -1,16 +1,16 @@
-ResNeXt
-=======
+Wide ResNet
+===========
 
 .. currentmodule:: torchvision.models
 
-The ResNext model is based on the `Aggregated Residual Transformations for Deep Neural Networks <https://arxiv.org/abs/1611.05431v2>`__
+The Wide ResNet model is based on the `Wide Residual Networks <https://arxiv.org/abs/1605.07146>`__
 paper.
 
 
 Model builders
 --------------
 
-The following model builders can be used to instantiate a ResNext model, with or
+The following model builders can be used to instantiate a Wide ResNet model, with or
 without pre-trained weights. All the model builders internally rely on the
 ``torchvision.models.resnet.ResNet`` base class. Please refer to the `source
 code
@@ -21,5 +21,5 @@ more details about this class.
     :toctree: generated/
     :template: function.rst
 
-    resnext50_32x4d
-    resnext101_32x8d
+    wide_resnet50_2
+    wide_resnet101_2
