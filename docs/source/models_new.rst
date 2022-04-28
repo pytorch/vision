@@ -43,6 +43,7 @@ weights:
    models/efficientnetv2
    models/googlenet
    models/mobilenetv2
+   models/mobilenetv3
    models/regnet
    models/resnet
    models/resnext
@@ -50,6 +51,7 @@ weights:
    models/swin_transformer
    models/vgg
    models/vision_transformer
+   models/wide_resnet
 
 
 Table of all available classification weights
