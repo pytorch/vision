@@ -1620,7 +1620,6 @@ workflows:
     jobs:
       - unittest_torchhub
       - unittest_onnx
-      - unittest_prototype
       - unittest_extended
       - unittest_linux_cpu:
           cu_version: cpu
