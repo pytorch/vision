@@ -1670,14 +1670,8 @@ class TestCIOULoss:
         box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
         box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
 
-        box1s = torch.stack(
-            [box2, box2],
-            dim=0,
-        )
-        box2s = torch.stack(
-            [box3, box4],
-            dim=0,
-        )
+        box1s = torch.stack([box2, box2], dim=0)
+        box2s = torch.stack([box3, box4], dim=0)
 
         def assert_ciou_loss(box1, box2, expected_output, reduction="none"):
 
