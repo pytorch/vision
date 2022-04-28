@@ -237,8 +237,9 @@ def ssdlite320_mobilenet_v3_large(
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
         num_classes (int, optional): number of output classes of the model
-            (including the background)
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+            (including the background).
+        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights, optional): The pretrained
+            weights for the backbone.
         trainable_backbone_layers (int, optional): number of trainable (not frozen) layers
             starting from final block. Valid values are between 0 and 6, with 6 meaning all
             backbone layers are trainable. If ``None`` is passed (the default) this value is
