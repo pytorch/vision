@@ -3,13 +3,11 @@ name: tests
 on:
   pull_request:
 
-permissions:
-  checks: write
-  id-token: write
-  contents: read
-
 jobs:
   prototype:
+    permissions:
+      checks: write
+
     strategy:
       fail-fast: false
       matrix:
