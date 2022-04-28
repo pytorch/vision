@@ -232,6 +232,7 @@ autocast_flaky_numerics = (
     "lraspp_mobilenet_v3_large",
     "maskrcnn_resnet50_fpn",
     "maskrcnn_resnet50_fpn_v2",
+    "keypointrcnn_resnet50_fpn",
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
