@@ -365,8 +365,20 @@ def mobilenet_v3_large(
     `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
 
     Args:
-        weights (MobileNet_V3_Large_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MobileNet_V3_Large_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.MobileNetV3``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv3.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MobileNet_V3_Large_Weights
+        :members:
     """
     weights = MobileNet_V3_Large_Weights.verify(weights)
 
@@ -383,8 +395,20 @@ def mobilenet_v3_small(
     `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
 
     Args:
-        weights (MobileNet_V3_Small_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MobileNet_V3_Small_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MobileNet_V3_Small_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.MobileNetV3``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv3.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MobileNet_V3_Small_Weights
+        :members:
     """
     weights = MobileNet_V3_Small_Weights.verify(weights)
 
