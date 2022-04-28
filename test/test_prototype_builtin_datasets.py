@@ -41,7 +41,7 @@ def test_coverage():
         )
 
 
-@pytest.mark.filterwarnings("ignore::ResourceWarning")
+# @pytest.mark.filterwarnings("ignore::ResourceWarning")
 @pytest.mark.filterwarnings("error")
 class TestCommon:
     @pytest.mark.parametrize("name", datasets.list_datasets())
