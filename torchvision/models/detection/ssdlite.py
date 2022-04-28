@@ -215,11 +215,9 @@ def ssdlite320_mobilenet_v3_large(
     norm_layer: Optional[Callable[..., nn.Module]] = None,
     **kwargs: Any,
 ) -> SSD:
-    """Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at
-    `"Searching for MobileNetV3"
-    <https://arxiv.org/abs/1905.02244>`_ and
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
-    <https://arxiv.org/abs/1801.04381>`_.
+    """SSDlite model architecture with input size 320x320 and a MobileNetV3 Large backbone, as
+    described at `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_ and
+    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
 
     See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
@@ -231,15 +229,30 @@ def ssdlite320_mobilenet_v3_large(
         >>> predictions = model(x)
 
     Args:
-        weights (FasterRCNN_ResNet50_FPN_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int, optional): number of output classes of the model (including the background)
+        weights (:class:`~torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model
+            (including the background)
         weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
-        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
-            passed (the default) this value is set to 6.
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers
+            starting from final block. Valid values are between 0 and 6, with 6 meaning all
+            backbone layers are trainable. If ``None`` is passed (the default) this value is
+            set to 6.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
+        **kwargs: parameters passed to the ``torchvision.models.detection.ssd.SSD``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights
+        :members:
     """
+
     weights = SSDLite320_MobileNet_V3_Large_Weights.verify(weights)
     weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
 
