@@ -565,21 +565,34 @@ def fasterrcnn_resnet50_fpn_v2(
     **kwargs: Any,
 ) -> FasterRCNN:
     """
-    Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone.
+    Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone from `Benchmarking Detection
+    Transfer Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`__ paper.
 
-    Reference: `"Benchmarking Detection Transfer Learning with Vision Transformers"
-    <https://arxiv.org/abs/2111.11429>`_.
-
-    :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more details.
+    It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
+    :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
+    details.
 
     Args:
-        weights (FasterRCNN_ResNet50_FPN_V2_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
         num_classes (int, optional): number of output classes of the model (including the background)
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
-        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
-            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
-            passed (the default) this value is set to 3.
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The
+            pretrained weights for the backbone.
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from
+            final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are
+            trainable. If ``None`` is passed (the default) this value is set to 3.
+        **kwargs: parameters passed to the ``torchvision.models.detection.faster_rcnn.FasterRCNN``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/faster_rcnn.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.FasterRCNN_ResNet50_FPN_V2_Weights
+        :members:
     """
     weights = FasterRCNN_ResNet50_FPN_V2_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
@@ -670,9 +683,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     **kwargs: Any,
 ) -> FasterRCNN:
     """
-    Faster R-CNN model with a MobileNetV3-Large backbone from the `Faster R-CNN: Towards Real-Time Object
-    Detection with Region Proposal Networks <https://arxiv.org/abs/1703.06870>`__
-    paper.
+    Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tunned for mobile use cases.
 
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more

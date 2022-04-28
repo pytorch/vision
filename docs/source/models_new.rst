@@ -41,7 +41,6 @@ weights:
    models/densenet
    models/efficientnet
    models/efficientnetv2
-   models/faster_rcnn
    models/googlenet
    models/mobilenetv2
    models/regnet
@@ -94,6 +93,7 @@ weights:
 .. toctree::
    :maxdepth: 1
 
+   models/faster_rcnn
    models/fcos
    models/mask_rcnn
    models/retinanet
