@@ -39,4 +39,5 @@ jobs:
         run: pip install --progress-bar=off pytest pytest-mock
 
       - name: Run prototype tests
+        shell: bash
         run: pytest -v --durations 20 test/test_prototype_*.py
