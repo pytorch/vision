@@ -125,7 +125,7 @@ class TestCommon:
 
         pickle.dumps(dataset)
 
-    # This has to be a proper method, since lambda's or local functions
+    # This has to be a proper function, since lambda's or local functions
     # cannot be pickled, but this is a requirement for the DataLoader with
     # multiprocessing, i.e. num_workers > 0
     def _collate_fn(self, batch):
