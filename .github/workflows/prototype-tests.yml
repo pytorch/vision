@@ -19,7 +19,7 @@ jobs:
       - name: Set up python
         uses: actions/setup-python@v3
         with:
-          python-version: 3.8
+          python-version: 3.7
 
       - name: Upgrade system packages
         run: python -m pip install --upgrade pip setuptools wheel
@@ -41,4 +41,4 @@ jobs:
 
       - name: Run prototype tests
         shell: bash
-        run: pytest --junitxml=test-results/junit.xml --durations 20 test/test_prototype_*.py
+        run: pytest --durations=20 test/test_prototype_*.py
