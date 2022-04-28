@@ -72,26 +72,25 @@ class AlexNet_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", AlexNet_Weights.IMAGENET1K_V1))
 def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
-    r"""AlexNet model architecture from the
-       `ImageNet Classification with Deep Convolutional Neural Networks
+    """
+    AlexNet model architecture from the `ImageNet Classification with Deep Convolutional Neural Networks
     <https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html>`_ paper.
-       The required minimum input size of the model is 63x63.
 
-       Args:
-           weights (:class:`~torchvision.models.AlexNet_Weights`, optional): The
-               pretrained weights to use. See
-               :class:`~torchvision.models.AlexNet_Weights` below for
-               more details, and possible values. By default, no pre-trained
-               weights are used.
-           progress (bool, optional): If True, displays a progress bar of the
-               download to stderr. Default is True.
-           **kwargs: parameters passed to the ``torchvision.models.squeezenet.AlexNet``
-               base class. Please refer to the `source code
-               <https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py>`_
-               for more details about this class.
+    Args:
+       weights (:class:`~torchvision.models.AlexNet_Weights`, optional): The
+           pretrained weights to use. See
+           :class:`~torchvision.models.AlexNet_Weights` below for
+           more details, and possible values. By default, no pre-trained
+           weights are used.
+       progress (bool, optional): If True, displays a progress bar of the
+           download to stderr. Default is True.
+       **kwargs: parameters passed to the ``torchvision.models.squeezenet.AlexNet``
+           base class. Please refer to the `source code
+           <https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py>`_
+           for more details about this class.
 
-       .. autoclass:: torchvision.models.AlexNet_Weights
-           :members:
+    .. autoclass:: torchvision.models.AlexNet_Weights
+       :members:
     """
 
     weights = AlexNet_Weights.verify(weights)
