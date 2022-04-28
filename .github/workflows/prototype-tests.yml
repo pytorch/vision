@@ -6,6 +6,7 @@ on:
 jobs:
   prototype:
     strategy:
+      fail-fast: false
       matrix:
         os:
           - ubuntu-latest
@@ -40,4 +41,4 @@ jobs:
 
       - name: Run prototype tests
         shell: bash
-        run: pytest -v --durations 20 test/test_prototype_*.py
+        run: pytest --durations 20 test/test_prototype_*.py
