@@ -5,8 +5,7 @@ on:
 
 jobs:
   prototype:
-    permissions:
-      checks: write
+    permissions: write-all
 
     strategy:
       fail-fast: false
