@@ -247,7 +247,7 @@ torchrun --nproc_per_node=8 train.py \
 ```
 Here `$MODEL` is either `shufflenet_v2_x1_5` or `shufflenet_v2_x2_0`.
 
-For the model `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0` was contributed [from community](https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0).
+The models `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0` were contributed from community. See [PR-849](https://github.com/pytorch/vision/pull/849#issuecomment-483391686) for details.
 
 
 ## Mixed precision training
@@ -288,7 +288,7 @@ python train_quantization.py --device='cpu' --post-training-quantize --backend='
 
 # For shufflenet_v2_x2_0
 python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
-    --model=shufflenet_v2_x1_5 --weights="ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1" \
+    --model=shufflenet_v2_x2_0 --weights="ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1" \
     --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
 ```
 
