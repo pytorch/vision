@@ -51,6 +51,7 @@ jobs:
         run: pytest --junitxml=test-results/junit.xml --durations 20 test_foo.py
 
       - name: Debug
+        if: always()
         shell: bash
         run: cat ./test-results/junit.xml
 
