@@ -377,12 +377,6 @@ def pad_segmentation_mask():
         [[1], [1, 1], [1, 1, 2, 2]],  # padding
         ["constant", "symmetric", "edge", "reflect"],  # padding mode,
     ):
-        if padding_mode == "symmetric" and mask.ndim not in [3, 4]:
-            continue
-
-        if (padding_mode == "edge" or padding_mode == "reflect") and mask.ndim not in [3, 4]:
-            continue
-
         yield SampleInput(mask, padding=padding, padding_mode=padding_mode)
 
 
