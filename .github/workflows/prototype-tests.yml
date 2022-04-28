@@ -50,6 +50,10 @@ jobs:
         shell: bash
         run: pytest --junitxml=test-results/junit.xml --durations 20 test_foo.py
 
+      - name: Debug
+        shell: bash
+        run: cat ./test-results/junit.xml
+
       - name: Report test results
         uses: dorny/test-reporter@v1.5.0
         if: always()
