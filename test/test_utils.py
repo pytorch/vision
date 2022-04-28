@@ -4,8 +4,6 @@ import sys
 import tempfile
 from io import BytesIO
 
-import warnings
-
 import numpy as np
 import pytest
 import torch
