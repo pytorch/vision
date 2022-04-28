@@ -126,6 +126,10 @@ def fcn_resnet50(
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background).
+        aux_loss (bool, optional): If True, it uses an auxiliary loss.
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights, optional): The pretrained
+            weights for the backbone.
         **kwargs: parameters passed to the ``torchvision.models.segmentation.fcn.FCN``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/fcn.py>`_
@@ -178,6 +182,10 @@ def fcn_resnet101(
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background).
+        aux_loss (bool, optional): If True, it uses an auxiliary loss.
+        weights_backbone (:class:`~torchvision.models.ResNet101_Weights, optional): The pretrained
+            weights for the backbone.
         **kwargs: parameters passed to the ``torchvision.models.segmentation.fcn.FCN``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/fcn.py>`_
