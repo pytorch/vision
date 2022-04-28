@@ -51,6 +51,7 @@ weights:
    models/swin_transformer
    models/vgg
    models/vision_transformer
+   models/wide_resnet
 
 
 Table of all available classification weights
