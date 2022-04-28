@@ -247,6 +247,8 @@ torchrun --nproc_per_node=8 train.py \
 ```
 Here `$MODEL` is either `shufflenet_v2_x1_5` or `shufflenet_v2_x2_0`.
 
+For the model `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0` was contributed [from community](https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0).
+
 
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).
@@ -274,6 +276,21 @@ For all post training quantized models, the settings are:
 python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
 ```
 Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d`, `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0`.
+
+### Quantized ShuffleNet V2
+
+Here are commands that we use to quantized the `shufflenet_v2_x1_5` and `shufflenet_v2_x2_0` models.
+```
+# For shufflenet_v2_x1_5
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+    --model=shufflenet_v2_x1_5 --weights="ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1" \
+    --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
+
+# For shufflenet_v2_x2_0
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+    --model=shufflenet_v2_x1_5 --weights="ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1" \
+    --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
+```
 
 ### QAT MobileNetV2
 
