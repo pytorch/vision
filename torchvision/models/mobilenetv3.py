@@ -392,7 +392,7 @@ def mobilenet_v3_small(
 ) -> MobileNetV3:
     """
     Constructs a small MobileNetV3 architecture from
-    `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
+    `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__.
 
     Args:
         weights (:class:`~torchvision.models.MobileNet_V3_Small_Weights`, optional): The
