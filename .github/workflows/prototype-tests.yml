@@ -27,27 +27,31 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v3
 
-      - name: Install PyTorch nightly builds
-        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
-
-      - name: Install torchvision
-        run: pip install --progress-bar=off --no-build-isolation --editable .
-
-      - name: Install other prototype dependencies
-        run: pip install --progress-bar=off scipy pycocotools h5py iopath
+#      - name: Install PyTorch nightly builds
+#        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
+#
+#      - name: Install torchvision
+#        run: pip install --progress-bar=off --no-build-isolation --editable .
+#
+#      - name: Install other prototype dependencies
+#        run: pip install --progress-bar=off scipy pycocotools h5py iopath
 
       - name: Install test requirements
         run: pip install --progress-bar=off pytest pytest-mock
 
+#      - name: Run prototype tests
+#        shell: bash
+#        run: pytest --junitxml=test-results/junit.xml --durations 20 test/test_prototype_*.py
+
       - name: Run prototype tests
         shell: bash
-        run: pytest --junitxml=test-results/junit.xml --durations 20 test/test_prototype_*.py
+        run: pytest --junitxml=test-results/junit.xml --durations 20 test_foo.py
 
       - name: Report test results
         uses: dorny/test-reporter@v1.5.0
         if: always()
         with:
-          name: TODO change this name
-          path: test-results/junit.xml
+          name: prototype tests
+          path: ./test-results/junit.xml
           reporter: java-junit
           fail-on-error: false
