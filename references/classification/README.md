@@ -247,7 +247,7 @@ torchrun --nproc_per_node=8 train.py \
 ```
 Here `$MODEL` is either `shufflenet_v2_x1_5` or `shufflenet_v2_x2_0`.
 
-The models `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0` were contributed from community. See [PR-849](https://github.com/pytorch/vision/pull/849#issuecomment-483391686) for details.
+The models `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0` were contributed by community. See [PR-849](https://github.com/pytorch/vision/pull/849#issuecomment-483391686) for details.
 
 
 ## Mixed precision training
