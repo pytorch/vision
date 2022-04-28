@@ -41,4 +41,13 @@ jobs:
 
       - name: Run prototype tests
         shell: bash
-        run: pytest --durations 20 test/test_prototype_*.py
+        run: pytest --junitxml=test-results/junit.xml --durations 20 test/test_prototype_*.py
+
+      - name: Report test results
+        uses: dorny/test-reporter@v1.5.0
+        if: always()
+        with:
+          name: TODO change this name
+          path: test-results/junit.xml
+          reporter: java-junit
+          fail-on-error: false
