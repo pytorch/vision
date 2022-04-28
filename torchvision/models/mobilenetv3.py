@@ -362,7 +362,7 @@ def mobilenet_v3_large(
 ) -> MobileNetV3:
     """
     Constructs a large MobileNetV3 architecture from
-    `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
+    `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__.
 
     Args:
         weights (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The
