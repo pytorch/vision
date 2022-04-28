@@ -12,15 +12,15 @@ from .vision import VisionDataset
 class FGVCAircraft(VisionDataset):
     """`FGVC Aircraft <https://www.robots.ox.ac.uk/~vgg/data/fgvc-aircraft/>`_ Dataset.
 
-    The dataset contains 10,200 images of aircraft, with 100 images for each of 102
+    The dataset contains 10,000 images of aircraft, with 100 images for each of 100
     different aircraft model variants, most of which are airplanes.
     Aircraft models are organized in a three-levels hierarchy. The three levels, from
     finer to coarser, are:
 
     - ``variant``, e.g. Boeing 737-700. A variant collapses all the models that are visually
-        indistinguishable into one class. The dataset comprises 102 different variants.
+        indistinguishable into one class. The dataset comprises 100 different variants.
     - ``family``, e.g. Boeing 737. The dataset comprises 70 different families.
-    - ``manufacturer``, e.g. Boeing. The dataset comprises 41 different manufacturers.
+    - ``manufacturer``, e.g. Boeing. The dataset comprises 30 different manufacturers.
 
     Args:
         root (string): Root directory of the FGVC Aircraft dataset.

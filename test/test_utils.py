@@ -1,4 +1,5 @@
 import os
+import re
 import sys
 import tempfile
 from io import BytesIO
@@ -166,6 +167,13 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_correct, boxes, labels_wrong)
     with pytest.raises(ValueError, match="Number of colors"):
         utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
+
+
+def test_draw_boxes_warning():
+    img = torch.full((3, 100, 100), 255, dtype=torch.uint8)
+
+    with pytest.warns(UserWarning, match=re.escape("Argument 'font_size' will be ignored since 'font' is not set.")):
+        utils.draw_bounding_boxes(img, boxes, font_size=11)
 
 
 @pytest.mark.parametrize(

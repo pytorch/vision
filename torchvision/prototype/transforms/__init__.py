@@ -4,7 +4,7 @@ from ._transform import Transform  # usort: skip
 
 from ._augment import RandomErasing, RandomMixup, RandomCutmix
 from ._auto_augment import RandAugment, TrivialAugmentWide, AutoAugment, AugMix
-from ._color import ColorJitter, RandomPhotometricDistort
+from ._color import ColorJitter, RandomPhotometricDistort, RandomEqualize
 from ._container import Compose, RandomApply, RandomChoice, RandomOrder
 from ._geometry import (
     Resize,

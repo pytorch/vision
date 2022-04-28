@@ -471,7 +471,7 @@ class FCOS(nn.Module):
             pairwise_match &= (pairwise_dist > lower_bound[:, None]) & (pairwise_dist < upper_bound[:, None])
 
             # match the GT box with minimum area, if there are multiple GT matches
-            gt_areas = (gt_boxes[:, 1] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])  # N
+            gt_areas = (gt_boxes[:, 2] - gt_boxes[:, 0]) * (gt_boxes[:, 3] - gt_boxes[:, 1])  # N
             pairwise_match = pairwise_match.to(torch.float32) * (1e8 - gt_areas[None, :])
             min_values, matched_idx = pairwise_match.max(dim=1)  # R, per-anchor match
             matched_idx[min_values < 1e-5] = -1  # unmatched anchors are assigned -1

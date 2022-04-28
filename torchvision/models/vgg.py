@@ -252,13 +252,23 @@ class VGG19_BN_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", VGG11_Weights.IMAGENET1K_V1))
 def vgg11(*, weights: Optional[VGG11_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    r"""VGG 11-layer model (configuration "A") from
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
-    The required minimum input size of the model is 32x32.
+    """VGG-11 from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
 
     Args:
-        weights (VGG11_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.VGG11_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.VGG11_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.vgg.VGG``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.VGG11_Weights
+        :members:
     """
     weights = VGG11_Weights.verify(weights)
 
@@ -267,13 +277,23 @@ def vgg11(*, weights: Optional[VGG11_Weights] = None, progress: bool = True, **k
 
 @handle_legacy_interface(weights=("pretrained", VGG11_BN_Weights.IMAGENET1K_V1))
 def vgg11_bn(*, weights: Optional[VGG11_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    r"""VGG 11-layer model (configuration "A") with batch normalization
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
-    The required minimum input size of the model is 32x32.
+    """VGG-11-BN from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
 
     Args:
-        weights (VGG11_BN_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.VGG11_BN_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.VGG11_BN_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.vgg.VGG``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.VGG11_BN_Weights
+        :members:
     """
     weights = VGG11_BN_Weights.verify(weights)
 
@@ -282,13 +302,23 @@ def vgg11_bn(*, weights: Optional[VGG11_BN_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", VGG13_Weights.IMAGENET1K_V1))
 def vgg13(*, weights: Optional[VGG13_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    r"""VGG 13-layer model (configuration "B")
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
-    The required minimum input size of the model is 32x32.
+    """VGG-13 from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
 
     Args:
-        weights (VGG13_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.VGG13_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.VGG13_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.vgg.VGG``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.VGG13_Weights
+        :members:
     """
     weights = VGG13_Weights.verify(weights)
 
@@ -297,13 +327,23 @@ def vgg13(*, weights: Optional[VGG13_Weights] = None, progress: bool = True, **k
 
 @handle_legacy_interface(weights=("pretrained", VGG13_BN_Weights.IMAGENET1K_V1))
 def vgg13_bn(*, weights: Optional[VGG13_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    r"""VGG 13-layer model (configuration "B") with batch normalization
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
-    The required minimum input size of the model is 32x32.
+    """VGG-13-BN from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
 
     Args:
-        weights (VGG13_BN_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.VGG13_BN_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.VGG13_BN_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.vgg.VGG``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.VGG13_BN_Weights
+        :members:
     """
     weights = VGG13_BN_Weights.verify(weights)
 
@@ -312,13 +352,23 @@ def vgg13_bn(*, weights: Optional[VGG13_BN_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", VGG16_Weights.IMAGENET1K_V1))
 def vgg16(*, weights: Optional[VGG16_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    r"""VGG 16-layer model (configuration "D")
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
-    The required minimum input size of the model is 32x32.
+    """VGG-16 from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
 
     Args:
-        weights (VGG16_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.VGG16_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.VGG16_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.vgg.VGG``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.VGG16_Weights
+        :members:
     """
     weights = VGG16_Weights.verify(weights)
 
@@ -327,13 +377,23 @@ def vgg16(*, weights: Optional[VGG16_Weights] = None, progress: bool = True, **k
 
 @handle_legacy_interface(weights=("pretrained", VGG16_BN_Weights.IMAGENET1K_V1))
 def vgg16_bn(*, weights: Optional[VGG16_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    r"""VGG 16-layer model (configuration "D") with batch normalization
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
-    The required minimum input size of the model is 32x32.
+    """VGG-16-BN from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
 
     Args:
-        weights (VGG16_BN_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.VGG16_BN_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.VGG16_BN_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.vgg.VGG``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.VGG16_BN_Weights
+        :members:
     """
     weights = VGG16_BN_Weights.verify(weights)
 
@@ -342,13 +402,23 @@ def vgg16_bn(*, weights: Optional[VGG16_BN_Weights] = None, progress: bool = Tru
 
 @handle_legacy_interface(weights=("pretrained", VGG19_Weights.IMAGENET1K_V1))
 def vgg19(*, weights: Optional[VGG19_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    r"""VGG 19-layer model (configuration "E")
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
-    The required minimum input size of the model is 32x32.
+    """VGG-19 from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
 
     Args:
-        weights (VGG19_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.VGG19_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.VGG19_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.vgg.VGG``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.VGG19_Weights
+        :members:
     """
     weights = VGG19_Weights.verify(weights)
 
@@ -357,13 +427,23 @@ def vgg19(*, weights: Optional[VGG19_Weights] = None, progress: bool = True, **k
 
 @handle_legacy_interface(weights=("pretrained", VGG19_BN_Weights.IMAGENET1K_V1))
 def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = True, **kwargs: Any) -> VGG:
-    r"""VGG 19-layer model (configuration 'E') with batch normalization
-    `"Very Deep Convolutional Networks For Large-Scale Image Recognition" <https://arxiv.org/pdf/1409.1556.pdf>`_.
-    The required minimum input size of the model is 32x32.
+    """VGG-19_BN from `Very Deep Convolutional Networks for Large-Scale Image Recognition <https://arxiv.org/abs/1409.1556>`__.
 
     Args:
-        weights (VGG19_BN_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.VGG19_BN_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.VGG19_BN_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.vgg.VGG``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/vgg.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.VGG19_BN_Weights
+        :members:
     """
     weights = VGG19_BN_Weights.verify(weights)
 
