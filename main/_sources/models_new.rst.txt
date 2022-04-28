@@ -42,6 +42,8 @@ weights:
    models/efficientnet
    models/efficientnetv2
    models/googlenet
+   models/mobilenetv2
+   models/mobilenetv3
    models/regnet
    models/resnet
    models/resnext
@@ -49,6 +51,7 @@ weights:
    models/swin_transformer
    models/vgg
    models/vision_transformer
+   models/wide_resnet
 
 
 Table of all available classification weights
@@ -92,6 +95,8 @@ weights:
 .. toctree::
    :maxdepth: 1
 
+   models/fcos
+   models/mask_rcnn
    models/retinanet
 
 Table of all available detection weights
@@ -100,3 +105,24 @@ Table of all available detection weights
 Box MAPs are reported on COCO
 
 .. include:: generated/detection_table.rst
+
+
+Video Classification
+====================
+
+.. currentmodule:: torchvision.models.video
+
+The following video classification models are available, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/video_resnet
+
+Table of all available video classification weights
+---------------------------------------------------
+
+Accuracies are reported on Kinetics-400
+
+.. include:: generated/video_table.rst

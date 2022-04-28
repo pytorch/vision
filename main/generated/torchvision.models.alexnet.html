@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+5f135aa ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+4a794c4 ) &#x25BC</a>
     </div>
     
 
@@ -334,23 +334,22 @@
 <dl class="py function">
 <dt id="torchvision.models.alexnet">
 <code class="sig-prename descclassname"><span class="pre">torchvision.models.</span></code><code class="sig-name descname"><span class="pre">alexnet</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">torchvision.models.alexnet.AlexNet_Weights</span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.alexnet.AlexNet</span><a class="reference internal" href="../_modules/torchvision/models/alexnet.html#alexnet"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.alexnet" title="Permalink to this definition">¶</a></dt>
-<dd><dl>
-<dt>AlexNet model architecture from the</dt><dd><p><a href="#id1"><span class="problematic" id="id2">`</span></a>ImageNet Classification with Deep Convolutional Neural Networks</p>
-</dd>
-<dt>&lt;<a class="reference external" href="https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html">https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html</a>&gt;`_ paper.</dt><dd><p>The required minimum input size of the model is 63x63.</p>
-<dl class="simple">
-<dt>Args:</dt><dd><dl class="simple">
-<dt>weights (<a class="reference internal" href="../models/generated/torchvision.models.alexnet.html#torchvision.models.AlexNet_Weights" title="torchvision.models.AlexNet_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlexNet_Weights</span></code></a>, optional): The</dt><dd><p>pretrained weights to use. See
+<dd><p>AlexNet model architecture from the <a class="reference external" href="https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html">ImageNet Classification with Deep Convolutional Neural Networks</a> paper.</p>
+<p>The required minimum input size of the model is 63x63.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters</dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>weights</strong> (<a class="reference internal" href="../models/generated/torchvision.models.alexnet.html#torchvision.models.AlexNet_Weights" title="torchvision.models.AlexNet_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlexNet_Weights</span></code></a>, optional) – The
+pretrained weights to use. See
 <a class="reference internal" href="../models/generated/torchvision.models.alexnet.html#torchvision.models.AlexNet_Weights" title="torchvision.models.AlexNet_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">AlexNet_Weights</span></code></a> below for
 more details, and possible values. By default, no pre-trained
-weights are used.</p>
-</dd>
-<dt>progress (bool, optional): If True, displays a progress bar of the</dt><dd><p>download to stderr. Default is True.</p>
-</dd>
-<dt><a href="#id3"><span class="problematic" id="id4">**</span></a>kwargs: parameters passed to the <code class="docutils literal notranslate"><span class="pre">torchvision.models.squeezenet.AlexNet</span></code></dt><dd><p>base class. Please refer to the <a class="reference external" href="https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py">source code</a>
-for more details about this class.</p>
-</dd>
-</dl>
+weights are used.</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, displays a progress bar of the
+download to stderr. Default is True.</p></li>
+<li><p><strong>**kwargs</strong> – parameters passed to the <code class="docutils literal notranslate"><span class="pre">torchvision.models.squeezenet.AlexNet</span></code>
+base class. Please refer to the <a class="reference external" href="https://github.com/pytorch/vision/blob/main/torchvision/models/alexnet.py">source code</a>
+for more details about this class.</p></li>
+</ul>
 </dd>
 </dl>
 <dl class="py class">
@@ -360,7 +359,7 @@ for more details about this class.</p>
 <code class="docutils literal notranslate"><span class="pre">AlexNet_Weights.DEFAULT</span></code> is equivalent to <code class="docutils literal notranslate"><span class="pre">AlexNet_Weights.IMAGENET1K_V1</span></code>.</p>
 <p><strong>AlexNet_Weights.IMAGENET1K_V1</strong>:</p>
 <p>This weight is also available as <code class="docutils literal notranslate"><span class="pre">AlexNet_Weights.DEFAULT</span></code>.</p>
-<table class="docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
+<table class="table-weights docutils colwidths-auto # Necessary for the table generated by autosummary to look decent align-default">
 <tbody>
 <tr class="row-odd"><td><p>num_params</p></td>
 <td><p>61100840</p></td>
@@ -381,8 +380,6 @@ for more details about this class.</p>
 </table>
 </dd></dl>
 
-</dd>
-</dl>
 </dd></dl>
 
 </div>

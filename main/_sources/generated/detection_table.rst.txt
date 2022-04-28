@@ -1,3 +1,4 @@
+.. rst-class:: table-weights
 .. table::
     :widths: 100 20  20 10
 

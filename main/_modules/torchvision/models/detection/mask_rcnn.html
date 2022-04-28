@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+5f135aa ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+4a794c4 ) &#x25BC</a>
     </div>
     
 
@@ -684,7 +684,7 @@
 <span class="p">}</span>
 
 
-<span class="k">class</span> <span class="nc">MaskRCNN_ResNet50_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="MaskRCNN_ResNet50_FPN_Weights"><a class="viewcode-back" href="../../../../generated/torchvision.models.detection.maskrcnn_resnet50_fpn.html#torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights">[docs]</a><span class="k">class</span> <span class="nc">MaskRCNN_ResNet50_FPN_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/maskrcnn_resnet50_fpn_coco-bf2d0c1e.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
@@ -698,7 +698,7 @@
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
 
 
 <span class="k">class</span> <span class="nc">MaskRCNN_ResNet50_FPN_V2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
@@ -731,10 +731,8 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MaskRCNN</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Constructs a Mask R-CNN model with a ResNet-50-FPN backbone.</span>
-
-<span class="sd">    Reference: `&quot;Mask R-CNN&quot; &lt;https://arxiv.org/abs/1703.06870&gt;`_.</span>
+    <span class="sd">&quot;&quot;&quot;Mask R-CNN model with a ResNet-50-FPN backbone from the `Mask R-CNN</span>
+<span class="sd">    &lt;https://arxiv.org/abs/1703.06870&gt;`_ paper.</span>
 
 <span class="sd">    The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each</span>
 <span class="sd">    image, and should be in ``0-1`` range. Different images can have different sizes.</span>
@@ -779,13 +777,26 @@
 <span class="sd">        &gt;&gt;&gt; torch.onnx.export(model, x, &quot;mask_rcnn.onnx&quot;, opset_version = 11)</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        weights (MaskRCNN_ResNet50_FPN_Weights, optional): The pretrained weights for the model</span>
-<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        weights (:class:`~torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights` below for</span>
+<span class="sd">            more details, and possible values. By default, no pre-trained</span>
+<span class="sd">            weights are used.</span>
+<span class="sd">        progress (bool, optional): If True, displays a progress bar of the</span>
+<span class="sd">            download to stderr. Default is True.</span>
 <span class="sd">        num_classes (int, optional): number of output classes of the model (including the background)</span>
-<span class="sd">        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone</span>
-<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.</span>
-<span class="sd">            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is</span>
-<span class="sd">            passed (the default) this value is set to 3.</span>
+<span class="sd">        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The</span>
+<span class="sd">            pretrained weights for the backbone.</span>
+<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from</span>
+<span class="sd">            final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are</span>
+<span class="sd">            trainable. If ``None`` is passed (the default) this value is set to 3.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.detection.mask_rcnn.MaskRCNN``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/detection/mask_rcnn.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.detection.MaskRCNN_ResNet50_FPN_Weights</span>
+<span class="sd">        :members:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">MaskRCNN_ResNet50_FPN_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
@@ -821,22 +832,32 @@
     <span class="n">trainable_backbone_layers</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">MaskRCNN</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Constructs an improved MaskRCNN model with a ResNet-50-FPN backbone.</span>
-
-<span class="sd">    Reference: `&quot;Benchmarking Detection Transfer Learning with Vision Transformers&quot;</span>
-<span class="sd">    &lt;https://arxiv.org/abs/2111.11429&gt;`_.</span>
+    <span class="sd">&quot;&quot;&quot;Improved Mask R-CNN model with a ResNet-50-FPN backbone from the `Benchmarking Detection Transfer</span>
+<span class="sd">    Learning with Vision Transformers &lt;https://arxiv.org/abs/2111.11429&gt;`_ paper.</span>
 
 <span class="sd">    :func:`~torchvision.models.detection.maskrcnn_resnet50_fpn` for more details.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        weights (MaskRCNN_ResNet50_FPN_V2_Weights, optional): The pretrained weights for the model</span>
-<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
+<span class="sd">        weights (:class:`~torchvision.models.detection.MaskRCNN_ResNet50_FPN_V2_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.detection.MaskRCNN_ResNet50_FPN_V2_Weights` below for</span>
+<span class="sd">            more details, and possible values. By default, no pre-trained</span>
+<span class="sd">            weights are used.</span>
+<span class="sd">        progress (bool, optional): If True, displays a progress bar of the</span>
+<span class="sd">            download to stderr. Default is True.</span>
 <span class="sd">        num_classes (int, optional): number of output classes of the model (including the background)</span>
-<span class="sd">        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone</span>
-<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.</span>
-<span class="sd">            Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is</span>
-<span class="sd">            passed (the default) this value is set to 3.</span>
+<span class="sd">        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The</span>
+<span class="sd">            pretrained weights for the backbone.</span>
+<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from</span>
+<span class="sd">            final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are</span>
+<span class="sd">            trainable. If ``None`` is passed (the default) this value is set to 3.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.detection.mask_rcnn.MaskRCNN``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/detection/mask_rcnn.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.detection.MaskRCNN_ResNet50_FPN_V2_Weights</span>
+<span class="sd">        :members:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">MaskRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
