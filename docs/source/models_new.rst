@@ -73,6 +73,7 @@ pre-trained weights:
    :maxdepth: 1
 
    models/deeplabv3
+   models/lraspp
 
 
 Table of all available semantic segmentation weights
