@@ -47,6 +47,7 @@ weights:
    models/regnet
    models/resnet
    models/resnext
+   models/shufflenetv2
    models/squeezenet
    models/swin_transformer
    models/vgg
