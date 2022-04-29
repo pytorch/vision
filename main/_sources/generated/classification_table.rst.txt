@@ -83,6 +83,8 @@
     :class:`ResNet50_Weights.IMAGENET1K_V2 <ResNet50_Weights>`                               80.858       95.434  25.6M         `link <https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621>`__
     :class:`ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1 <ShuffleNet_V2_X0_5_Weights>`           60.552       81.746  1.4M          `link <https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0>`__
     :class:`ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1 <ShuffleNet_V2_X1_0_Weights>`           69.362       88.316  2.3M          `link <https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0>`__
+    :class:`ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1 <ShuffleNet_V2_X1_5_Weights>`           72.996       91.086  3.5M          `link <https://github.com/pytorch/vision/pull/5906>`__
+    :class:`ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1 <ShuffleNet_V2_X2_0_Weights>`           76.23        93.006  7.4M          `link <https://github.com/pytorch/vision/pull/5906>`__
     :class:`SqueezeNet1_0_Weights.IMAGENET1K_V1 <SqueezeNet1_0_Weights>`                     58.092       80.42   1.2M          `link <https://github.com/pytorch/vision/pull/49#issuecomment-277560717>`__
     :class:`SqueezeNet1_1_Weights.IMAGENET1K_V1 <SqueezeNet1_1_Weights>`                     58.178       80.624  1.2M          `link <https://github.com/pytorch/vision/pull/49#issuecomment-277560717>`__
     :class:`Swin_T_Weights.IMAGENET1K_V1 <Swin_T_Weights>`                                   81.358       95.526  28.3M         `link <https://github.com/pytorch/vision/tree/main/references/classification#swin_t>`__
