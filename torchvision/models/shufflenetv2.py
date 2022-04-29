@@ -262,8 +262,8 @@ def shufflenet_v2_x0_5(
 ) -> ShuffleNetV2:
     """
     Constructs a ShuffleNetV2 architecture with 0.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
         weights (:class:`~torchvision.models.ShuffleNet_V2_X0_5_Weights`, optional): The
@@ -292,8 +292,8 @@ def shufflenet_v2_x1_0(
 ) -> ShuffleNetV2:
     """
     Constructs a ShuffleNetV2 architecture with 1.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
         weights (:class:`~torchvision.models.ShuffleNet_V2_X1_0_Weights`, optional): The
@@ -322,8 +322,8 @@ def shufflenet_v2_x1_5(
 ) -> ShuffleNetV2:
     """
     Constructs a ShuffleNetV2 architecture with 1.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
         weights (:class:`~torchvision.models.ShuffleNet_V2_X1_5_Weights`, optional): The
@@ -352,8 +352,8 @@ def shufflenet_v2_x2_0(
 ) -> ShuffleNetV2:
     """
     Constructs a ShuffleNetV2 architecture with 2.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
         weights (:class:`~torchvision.models.ShuffleNet_V2_X2_0_Weights`, optional): The

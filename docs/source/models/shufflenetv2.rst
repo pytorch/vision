@@ -1,5 +1,5 @@
 ShuffleNet V2
-============
+=============
 
 .. currentmodule:: torchvision.models
 
