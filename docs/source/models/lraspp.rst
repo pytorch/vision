@@ -3,7 +3,7 @@ LRASPP
 
 .. currentmodule:: torchvision.models.segmentation
 
-The FCN model is based on the `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_ paper.
+The LRASPP model is based on the `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_ paper.
 
 Model builders
 --------------
