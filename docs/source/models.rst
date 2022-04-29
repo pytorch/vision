@@ -457,7 +457,7 @@ ConvNeXt
     convnext_large
 
 SwinTransformer
---------
+---------------
 
 .. autosummary::
     :toctree: generated/
