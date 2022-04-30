@@ -708,7 +708,7 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
         weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The
             pretrained weights for the backbone.
         trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from
-            final block. Valid values are between 0 and 5, with 5 meaning all backbone layers are
+            final block. Valid values are between 0 and 6, with 6 meaning all backbone layers are
             trainable. If ``None`` is passed (the default) this value is set to 3.
         **kwargs: parameters passed to the ``torchvision.models.detection.faster_rcnn.FasterRCNN``
             base class. Please refer to the `source code
