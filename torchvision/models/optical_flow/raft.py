@@ -1,4 +1,4 @@
-from typing import List
+from typing import List, Optional
 
 import torch
 import torch.nn as nn
@@ -8,8 +8,10 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.ops import Conv2dNormActivation
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from ...transforms._presets import OpticalFlow
 from ...utils import _log_api_usage_once
+from .._api import Weights, WeightsEnum
+from .._utils import handle_legacy_interface
 from ._utils import grid_sample, make_coords_grid, upsample_flow
 
 
@@ -17,13 +19,9 @@ __all__ = (
     "RAFT",
     "raft_large",
     "raft_small",
+    "Raft_Large_Weights",
+    "Raft_Small_Weights",
 )
-
-
-_MODELS_URLS = {
-    "raft_large": "https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
-    "raft_small": "https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
-}
 
 
 class ResidualBlock(nn.Module):
@@ -121,7 +119,8 @@ class FeatureEncoder(nn.Module):
     def __init__(self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), norm_layer=nn.BatchNorm2d):
         super().__init__()
 
-        assert len(layers) == 5
+        if len(layers) != 5:
+            raise ValueError(f"The expected number of layers is 5, instead got {len(layers)}")
 
         # See note in ResidualBlock for the reason behind bias=True
         self.convnormrelu = Conv2dNormActivation(
@@ -169,8 +168,10 @@ class MotionEncoder(nn.Module):
     def __init__(self, *, in_channels_corr, corr_layers=(256, 192), flow_layers=(128, 64), out_channels=128):
         super().__init__()
 
-        assert len(flow_layers) == 2
-        assert len(corr_layers) in (1, 2)
+        if len(flow_layers) != 2:
+            raise ValueError(f"The expected number of flow_layers is 2, instead got {len(flow_layers)}")
+        if len(corr_layers) not in (1, 2):
+            raise ValueError(f"The number of corr_layers should be 1 or 2, instead got {len(corr_layers)}")
 
         self.convcorr1 = Conv2dNormActivation(in_channels_corr, corr_layers[0], norm_layer=None, kernel_size=1)
         if len(corr_layers) == 2:
@@ -234,8 +235,12 @@ class RecurrentBlock(nn.Module):
     def __init__(self, *, input_size, hidden_size, kernel_size=((1, 5), (5, 1)), padding=((0, 2), (2, 0))):
         super().__init__()
 
-        assert len(kernel_size) == len(padding)
-        assert len(kernel_size) in (1, 2)
+        if len(kernel_size) != len(padding):
+            raise ValueError(
+                f"kernel_size should have the same length as padding, instead got len(kernel_size) = {len(kernel_size)} and len(padding) = {len(padding)}"
+            )
+        if len(kernel_size) not in (1, 2):
+            raise ValueError(f"kernel_size should either 1 or 2, instead got {len(kernel_size)}")
 
         self.convgru1 = ConvGRU(
             input_size=input_size, hidden_size=hidden_size, kernel_size=kernel_size[0], padding=padding[0]
@@ -351,7 +356,10 @@ class CorrBlock(nn.Module):
         to build the correlation pyramid.
         """
 
-        torch._assert(fmap1.shape == fmap2.shape, "Input feature maps should have the same shapes")
+        if fmap1.shape != fmap2.shape:
+            raise ValueError(
+                f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)"
+            )
         corr_volume = self._compute_corr_volume(fmap1, fmap2)
 
         batch_size, h, w, num_channels, _, _ = corr_volume.shape  # _, _ = h, w
@@ -384,10 +392,10 @@ class CorrBlock(nn.Module):
         corr_features = torch.cat(indexed_pyramid, dim=-1).permute(0, 3, 1, 2).contiguous()
 
         expected_output_shape = (batch_size, self.out_channels, h, w)
-        torch._assert(
-            corr_features.shape == expected_output_shape,
-            f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}",
-        )
+        if corr_features.shape != expected_output_shape:
+            raise ValueError(
+                f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}"
+            )
 
         return corr_features
 
@@ -454,28 +462,31 @@ class RAFT(nn.Module):
     def forward(self, image1, image2, num_flow_updates: int = 12):
 
         batch_size, _, h, w = image1.shape
-        torch._assert((h, w) == image2.shape[-2:], "input images should have the same shape")
-        torch._assert((h % 8 == 0) and (w % 8 == 0), "input image H and W should be divisible by 8")
+        if (h, w) != image2.shape[-2:]:
+            raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")
+        if not (h % 8 == 0) and (w % 8 == 0):
+            raise ValueError(f"input image H and W should be divisible by 8, insted got {h} (h) and {w} (w)")
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
-        torch._assert(fmap1.shape[-2:] == (h // 8, w // 8), "The feature encoder should downsample H and W by 8")
+        if fmap1.shape[-2:] != (h // 8, w // 8):
+            raise ValueError("The feature encoder should downsample H and W by 8")
 
         self.corr_block.build_pyramid(fmap1, fmap2)
 
         context_out = self.context_encoder(image1)
-        torch._assert(context_out.shape[-2:] == (h // 8, w // 8), "The context encoder should downsample H and W by 8")
+        if context_out.shape[-2:] != (h // 8, w // 8):
+            raise ValueError("The context encoder should downsample H and W by 8")
 
         # As in the original paper, the actual output of the context encoder is split in 2 parts:
         # - one part is used to initialize the hidden state of the recurent units of the update block
         # - the rest is the "actual" context.
         hidden_state_size = self.update_block.hidden_state_size
         out_channels_context = context_out.shape[1] - hidden_state_size
-        torch._assert(
-            out_channels_context > 0,
-            f"The context encoder outputs {context_out.shape[1]} channels, but it should have at strictly more than"
-            f"hidden_state={hidden_state_size} channels",
-        )
+        if out_channels_context <= 0:
+            raise ValueError(
+                f"The context encoder outputs {context_out.shape[1]} channels, but it should have at strictly more than hidden_state={hidden_state_size} channels"
+            )
         hidden_state, context = torch.split(context_out, [hidden_state_size, out_channels_context], dim=1)
         hidden_state = torch.tanh(hidden_state)
         context = F.relu(context)
@@ -500,10 +511,152 @@ class RAFT(nn.Module):
         return flow_predictions
 
 
+_COMMON_META = {
+    "min_size": (128, 128),
+}
+
+
+class Raft_Large_Weights(WeightsEnum):
+    C_T_V1 = Weights(
+        # Chairs + Things, ported from original paper repo (raft-things.pth)
+        url="https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth",
+        transforms=OpticalFlow,
+        meta={
+            **_COMMON_META,
+            "num_params": 5257536,
+            "recipe": "https://github.com/princeton-vl/RAFT",
+            "metrics": {
+                "sintel_train_cleanpass_epe": 1.4411,
+                "sintel_train_finalpass_epe": 2.7894,
+                "kitti_train_per_image_epe": 5.0172,
+                "kitti_train_fl_all": 17.4506,
+            },
+        },
+    )
+
+    C_T_V2 = Weights(
+        # Chairs + Things
+        url="https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
+        transforms=OpticalFlow,
+        meta={
+            **_COMMON_META,
+            "num_params": 5257536,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
+            "metrics": {
+                "sintel_train_cleanpass_epe": 1.3822,
+                "sintel_train_finalpass_epe": 2.7161,
+                "kitti_train_per_image_epe": 4.5118,
+                "kitti_train_fl_all": 16.0679,
+            },
+        },
+    )
+
+    C_T_SKHT_V1 = Weights(
+        # Chairs + Things + Sintel fine-tuning, ported from original paper repo (raft-sintel.pth)
+        url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth",
+        transforms=OpticalFlow,
+        meta={
+            **_COMMON_META,
+            "num_params": 5257536,
+            "recipe": "https://github.com/princeton-vl/RAFT",
+            "metrics": {
+                "sintel_test_cleanpass_epe": 1.94,
+                "sintel_test_finalpass_epe": 3.18,
+            },
+        },
+    )
+
+    C_T_SKHT_V2 = Weights(
+        # Chairs + Things + Sintel fine-tuning, i.e.:
+        # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean)
+        # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel
+        url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
+        transforms=OpticalFlow,
+        meta={
+            **_COMMON_META,
+            "num_params": 5257536,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
+            "metrics": {
+                "sintel_test_cleanpass_epe": 1.819,
+                "sintel_test_finalpass_epe": 3.067,
+            },
+        },
+    )
+
+    C_T_SKHT_K_V1 = Weights(
+        # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning, ported from the original repo (sintel-kitti.pth)
+        url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V1-4a6a5039.pth",
+        transforms=OpticalFlow,
+        meta={
+            **_COMMON_META,
+            "num_params": 5257536,
+            "recipe": "https://github.com/princeton-vl/RAFT",
+            "metrics": {
+                "kitti_test_fl_all": 5.10,
+            },
+        },
+    )
+
+    C_T_SKHT_K_V2 = Weights(
+        # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning i.e.:
+        # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean) + Kitti
+        # Same as CT_SKHT with extra fine-tuning on Kitti
+        # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel and then on Kitti
+        url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V2-b5c70766.pth",
+        transforms=OpticalFlow,
+        meta={
+            **_COMMON_META,
+            "num_params": 5257536,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
+            "metrics": {
+                "kitti_test_fl_all": 5.19,
+            },
+        },
+    )
+
+    DEFAULT = C_T_SKHT_V2
+
+
+class Raft_Small_Weights(WeightsEnum):
+    C_T_V1 = Weights(
+        # Chairs + Things, ported from original paper repo (raft-small.pth)
+        url="https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth",
+        transforms=OpticalFlow,
+        meta={
+            **_COMMON_META,
+            "num_params": 990162,
+            "recipe": "https://github.com/princeton-vl/RAFT",
+            "metrics": {
+                "sintel_train_cleanpass_epe": 2.1231,
+                "sintel_train_finalpass_epe": 3.2790,
+                "kitti_train_per_image_epe": 7.6557,
+                "kitti_train_fl_all": 25.2801,
+            },
+        },
+    )
+    C_T_V2 = Weights(
+        # Chairs + Things
+        url="https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
+        transforms=OpticalFlow,
+        meta={
+            **_COMMON_META,
+            "num_params": 990162,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
+            "metrics": {
+                "sintel_train_cleanpass_epe": 1.9901,
+                "sintel_train_finalpass_epe": 3.2831,
+                "kitti_train_per_image_epe": 7.5978,
+                "kitti_train_fl_all": 25.2369,
+            },
+        },
+    )
+
+    DEFAULT = C_T_V2
+
+
 def _raft(
     *,
-    arch=None,
-    pretrained=False,
+    weights=None,
     progress=False,
     # Feature encoder
     feature_encoder_layers,
@@ -577,38 +730,34 @@ def _raft(
         mask_predictor=mask_predictor,
         **kwargs,  # not really needed, all params should be consumed by now
     )
-    if pretrained:
-        state_dict = load_state_dict_from_url(_MODELS_URLS[arch], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
 
 
-def raft_large(*, pretrained=False, progress=True, **kwargs):
+@handle_legacy_interface(weights=("pretrained", Raft_Large_Weights.C_T_SKHT_V2))
+def raft_large(*, weights: Optional[Raft_Large_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        pretrained (bool): Whether to use weights that have been pre-trained on
-            :class:`~torchvsion.datasets.FlyingChairs` + :class:`~torchvsion.datasets.FlyingThings3D`
-            with two fine-tuning steps:
-
-            - one on :class:`~torchvsion.datasets.Sintel` + :class:`~torchvsion.datasets.FlyingThings3D`
-            - one on :class:`~torchvsion.datasets.KittiFlow`.
-
-            This corresponds to the ``C+T+S/K`` strategy in the paper.
-
-        progress (bool): If True, displays a progress bar of the download to stderr.
+        weights(Raft_Large_weights, optional): The pretrained weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
+            to override any default.
 
     Returns:
-        nn.Module: The model.
+        RAFT: The model.
     """
 
+    weights = Raft_Large_Weights.verify(weights)
+
     return _raft(
-        arch="raft_large",
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         # Feature encoder
         feature_encoder_layers=(64, 64, 96, 128, 256),
@@ -637,25 +786,27 @@ def raft_large(*, pretrained=False, progress=True, **kwargs):
     )
 
 
-def raft_small(*, pretrained=False, progress=True, **kwargs):
+@handle_legacy_interface(weights=("pretrained", Raft_Small_Weights.C_T_V2))
+def raft_small(*, weights: Optional[Raft_Small_Weights] = None, progress=True, **kwargs) -> RAFT:
     """RAFT "small" model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        pretrained (bool): Whether to use weights that have been pre-trained on
-            :class:`~torchvsion.datasets.FlyingChairs` + :class:`~torchvsion.datasets.FlyingThings3D`.
+        weights(Raft_Small_weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
+        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class
+            to override any default.
 
     Returns:
-        nn.Module: The model.
+        RAFT: The model.
 
     """
+    weights = Raft_Small_Weights.verify(weights)
 
     return _raft(
-        arch="raft_small",
-        pretrained=pretrained,
+        weights=weights,
         progress=progress,
         # Feature encoder
         feature_encoder_layers=(32, 32, 64, 96, 128),

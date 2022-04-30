@@ -1,6 +1,6 @@
 import pathlib
 import re
-from typing import Any, Dict, List, Tuple, BinaryIO
+from typing import Any, Dict, List, Tuple, BinaryIO, Union
 
 import numpy as np
 from torchdata.datapipes.iter import (
@@ -9,33 +9,55 @@ from torchdata.datapipes.iter import (
     Filter,
     IterKeyZipper,
 )
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
-    DatasetInfo,
-    HttpResource,
-    OnlineResource,
+from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
+from torchvision.prototype.datasets.utils._internal import (
+    INFINITE_BUFFER_SIZE,
+    read_mat,
+    hint_sharding,
+    hint_shuffling,
+    read_categories_file,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat, hint_sharding, hint_shuffling
 from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
+from .._api import register_dataset, register_info
 
+
+@register_info("caltech101")
+def _caltech101_info() -> Dict[str, Any]:
+    return dict(categories=read_categories_file("caltech101"))
+
+
+@register_dataset("caltech101")
 class Caltech101(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "caltech101",
+    """
+    - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech101
+    - **dependencies**:
+        - <scipy `https://scipy.org/`>_
+    """
+
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        skip_integrity_check: bool = False,
+    ) -> None:
+        self._categories = _caltech101_info()["categories"]
+
+        super().__init__(
+            root,
             dependencies=("scipy",),
-            homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech101",
+            skip_integrity_check=skip_integrity_check,
         )
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
-        images = HttpResource(
-            "http://www.vision.caltech.edu/Image_Datasets/Caltech101/101_ObjectCategories.tar.gz",
+    def _resources(self) -> List[OnlineResource]:
+        images = GDriveResource(
+            "137RyRjvTBkBiIfeYBNZBtViDHQ6_Ewsp",
+            file_name="101_ObjectCategories.tar.gz",
             sha256="af6ece2f339791ca20f855943d8b55dd60892c0a25105fcd631ee3d6430f9926",
-            decompress=True,
+            preprocess="decompress",
         )
-        anns = HttpResource(
-            "http://www.vision.caltech.edu/Image_Datasets/Caltech101/Annotations.tar",
+        anns = GDriveResource(
+            "175kQy3UsZ0wUEHZjqkUDdNVssr7bgh_m",
+            file_name="Annotations.tar",
             sha256="1717f4e10aa837b05956e3f4c94456527b143eec0d95e935028b30aff40663d8",
         )
         return [images, anns]
@@ -88,7 +110,7 @@ class Caltech101(Dataset):
         ann = read_mat(ann_buffer)
 
         return dict(
-            label=Label.from_category(category, categories=self.categories),
+            label=Label.from_category(category, categories=self._categories),
             image_path=image_path,
             image=image,
             ann_path=ann_path,
@@ -98,17 +120,12 @@ class Caltech101(Dataset):
             contour=_Feature(ann["obj_contour"].T),
         )
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         images_dp, anns_dp = resource_dps
 
         images_dp = Filter(images_dp, self._is_not_background_image)
-        images_dp = hint_sharding(images_dp)
         images_dp = hint_shuffling(images_dp)
+        images_dp = hint_sharding(images_dp)
 
         anns_dp = Filter(anns_dp, self._is_ann)
 
@@ -122,26 +139,43 @@ class Caltech101(Dataset):
         )
         return Mapper(dp, self._prepare_sample)
 
-    def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        resources = self.resources(self.default_config)
+    def __len__(self) -> int:
+        return 8677
 
-        dp = resources[0].load(root)
+    def _generate_categories(self) -> List[str]:
+        resources = self._resources()
+
+        dp = resources[0].load(self._root)
         dp = Filter(dp, self._is_not_background_image)
 
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
 
 
-class Caltech256(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "caltech256",
-            homepage="http://www.vision.caltech.edu/Image_Datasets/Caltech256",
-        )
+@register_info("caltech256")
+def _caltech256_info() -> Dict[str, Any]:
+    return dict(categories=read_categories_file("caltech256"))
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
+
+@register_dataset("caltech256")
+class Caltech256(Dataset):
+    """
+    - **homepage**: http://www.vision.caltech.edu/Image_Datasets/Caltech256
+    """
+
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        skip_integrity_check: bool = False,
+    ) -> None:
+        self._categories = _caltech256_info()["categories"]
+
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
+
+    def _resources(self) -> List[OnlineResource]:
         return [
-            HttpResource(
-                "http://www.vision.caltech.edu/Image_Datasets/Caltech256/256_ObjectCategories.tar",
+            GDriveResource(
+                "1r6o0pSROcV1_VwT4oSjA2FBUSCWGuxLK",
+                file_name="256_ObjectCategories.tar",
                 sha256="08ff01b03c65566014ae88eb0490dbe4419fc7ac4de726ee1163e39fd809543e",
             )
         ]
@@ -156,25 +190,23 @@ class Caltech256(Dataset):
         return dict(
             path=path,
             image=EncodedImage.from_file(buffer),
-            label=Label(int(pathlib.Path(path).parent.name.split(".", 1)[0]) - 1, categories=self.categories),
+            label=Label(int(pathlib.Path(path).parent.name.split(".", 1)[0]) - 1, categories=self._categories),
         )
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         dp = resource_dps[0]
         dp = Filter(dp, self._is_not_rogue_file)
-        dp = hint_sharding(dp)
         dp = hint_shuffling(dp)
+        dp = hint_sharding(dp)
         return Mapper(dp, self._prepare_sample)
 
-    def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        resources = self.resources(self.default_config)
+    def __len__(self) -> int:
+        return 30607
 
-        dp = resources[0].load(root)
+    def _generate_categories(self) -> List[str]:
+        resources = self._resources()
+
+        dp = resources[0].load(self._root)
         dir_names = {pathlib.Path(path).parent.name for path, _ in dp}
 
         return [name.split(".")[1] for name in sorted(dir_names)]

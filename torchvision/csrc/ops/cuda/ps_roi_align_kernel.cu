@@ -285,10 +285,10 @@ __global__ void ps_roi_align_backward_kernel_impl(
         T g4 = grad_output_this_bin * w4 / count;
 
         if (x_low >= 0 && x_high >= 0 && y_low >= 0 && y_high >= 0) {
-          atomicAdd(grad_input_offset + y_low * width + x_low, g1);
-          atomicAdd(grad_input_offset + y_low * width + x_high, g2);
-          atomicAdd(grad_input_offset + y_high * width + x_low, g3);
-          atomicAdd(grad_input_offset + y_high * width + x_high, g4);
+          gpuAtomicAdd(grad_input_offset + y_low * width + x_low, g1);
+          gpuAtomicAdd(grad_input_offset + y_low * width + x_high, g2);
+          gpuAtomicAdd(grad_input_offset + y_high * width + x_low, g3);
+          gpuAtomicAdd(grad_input_offset + y_high * width + x_high, g4);
         } // if
       } // ix
     } // iy

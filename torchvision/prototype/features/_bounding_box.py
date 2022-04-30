@@ -64,7 +64,7 @@ class BoundingBox(_Feature):
         from torchvision.prototype.transforms.functional import convert_bounding_box_format
 
         if isinstance(format, str):
-            format = BoundingBoxFormat[format]
+            format = BoundingBoxFormat.from_str(format.upper())
 
         return BoundingBox.new_like(
             self, convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format

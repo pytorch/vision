@@ -10,10 +10,11 @@ dependencies:
   - jpeg
   - ca-certificates
   - hdf5
+  - setuptools == 58.0.4
   - pip:
     - future
     - pillow >=5.3.0, !=8.3.*
     - scipy
-    - av
+    - av != 9.1.1
     - dataclasses
     - h5py

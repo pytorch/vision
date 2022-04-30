@@ -1,21 +1,34 @@
+from functools import partial
 from typing import Any, Type, Union, List, Optional
 
 import torch
 import torch.nn as nn
 from torch import Tensor
-from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
+from torchvision.models.resnet import (
+    Bottleneck,
+    BasicBlock,
+    ResNet,
+    ResNet18_Weights,
+    ResNet50_Weights,
+    ResNeXt101_32X8D_Weights,
+)
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from ...transforms._presets import ImageClassification
+from .._api import WeightsEnum, Weights
+from .._meta import _IMAGENET_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_named_param
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
-__all__ = ["QuantizableResNet", "resnet18", "resnet50", "resnext101_32x8d"]
 
-
-quant_model_urls = {
-    "resnet18_fbgemm": "https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth",
-    "resnet50_fbgemm": "https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth",
-    "resnext101_32x8d_fbgemm": "https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth",
-}
+__all__ = [
+    "QuantizableResNet",
+    "ResNet18_QuantizedWeights",
+    "ResNet50_QuantizedWeights",
+    "ResNeXt101_32X8D_QuantizedWeights",
+    "resnet18",
+    "resnet50",
+    "resnext101_32x8d",
+]
 
 
 class QuantizableBasicBlock(BasicBlock):
@@ -109,38 +122,126 @@ class QuantizableResNet(ResNet):
 
 
 def _resnet(
-    arch: str,
     block: Type[Union[QuantizableBasicBlock, QuantizableBottleneck]],
     layers: List[int],
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     progress: bool,
     quantize: bool,
     **kwargs: Any,
 ) -> QuantizableResNet:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if "backend" in weights.meta:
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
+    backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableResNet(block, layers, **kwargs)
     _replace_relu(model)
     if quantize:
-        # TODO use pretrained as a string to specify the backend
-        backend = "fbgemm"
         quantize_model(model, backend)
-    else:
-        assert pretrained in [True, False]
 
-    if pretrained:
-        if quantize:
-            model_url = quant_model_urls[arch + "_" + backend]
-        else:
-            model_url = model_urls[arch]
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-
-        model.load_state_dict(state_dict)
     return model
 
 
+_COMMON_META = {
+    "min_size": (1, 1),
+    "categories": _IMAGENET_CATEGORIES,
+    "backend": "fbgemm",
+    "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
+}
+
+
+class ResNet18_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/resnet18_fbgemm_16fa66dd.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 11689512,
+            "unquantized": ResNet18_Weights.IMAGENET1K_V1,
+            "metrics": {
+                "acc@1": 69.494,
+                "acc@5": 88.882,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V1
+
+
+class ResNet50_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/resnet50_fbgemm_bf931d71.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 25557032,
+            "unquantized": ResNet50_Weights.IMAGENET1K_V1,
+            "metrics": {
+                "acc@1": 75.920,
+                "acc@5": 92.814,
+            },
+        },
+    )
+    IMAGENET1K_FBGEMM_V2 = Weights(
+        url="https://download.pytorch.org/models/quantized/resnet50_fbgemm-23753f79.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 25557032,
+            "unquantized": ResNet50_Weights.IMAGENET1K_V2,
+            "metrics": {
+                "acc@1": 80.282,
+                "acc@5": 94.976,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V2
+
+
+class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm_09835ccf.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 88791336,
+            "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V1,
+            "metrics": {
+                "acc@1": 78.986,
+                "acc@5": 94.480,
+            },
+        },
+    )
+    IMAGENET1K_FBGEMM_V2 = Weights(
+        url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 88791336,
+            "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V2,
+            "metrics": {
+                "acc@1": 82.574,
+                "acc@5": 96.132,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V2
+
+
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ResNet18_Weights.IMAGENET1K_V1,
+    )
+)
 def resnet18(
-    pretrained: bool = False,
+    *,
+    weights: Optional[Union[ResNet18_QuantizedWeights, ResNet18_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
@@ -149,33 +250,56 @@ def resnet18(
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ResNet18_QuantizedWeights or ResNet18_Weights, optional): The pretrained
+            weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
     """
-    return _resnet("resnet18", QuantizableBasicBlock, [2, 2, 2, 2], pretrained, progress, quantize, **kwargs)
+    weights = (ResNet18_QuantizedWeights if quantize else ResNet18_Weights).verify(weights)
+
+    return _resnet(QuantizableBasicBlock, [2, 2, 2, 2], weights, progress, quantize, **kwargs)
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ResNet50_Weights.IMAGENET1K_V1,
+    )
+)
 def resnet50(
-    pretrained: bool = False,
+    *,
+    weights: Optional[Union[ResNet50_QuantizedWeights, ResNet50_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-
     r"""ResNet-50 model from
     `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ResNet50_QuantizedWeights or ResNet50_Weights, optional): The pretrained
+            weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
     """
-    return _resnet("resnet50", QuantizableBottleneck, [3, 4, 6, 3], pretrained, progress, quantize, **kwargs)
+    weights = (ResNet50_QuantizedWeights if quantize else ResNet50_Weights).verify(weights)
+
+    return _resnet(QuantizableBottleneck, [3, 4, 6, 3], weights, progress, quantize, **kwargs)
 
 
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else ResNeXt101_32X8D_Weights.IMAGENET1K_V1,
+    )
+)
 def resnext101_32x8d(
-    pretrained: bool = False,
+    *,
+    weights: Optional[Union[ResNeXt101_32X8D_QuantizedWeights, ResNeXt101_32X8D_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
@@ -184,10 +308,13 @@ def resnext101_32x8d(
     `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (ResNeXt101_32X8D_QuantizedWeights or ResNeXt101_32X8D_Weights, optional): The pretrained
+            weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
     """
-    kwargs["groups"] = 32
-    kwargs["width_per_group"] = 8
-    return _resnet("resnext101_32x8d", QuantizableBottleneck, [3, 4, 23, 3], pretrained, progress, quantize, **kwargs)
+    weights = (ResNeXt101_32X8D_QuantizedWeights if quantize else ResNeXt101_32X8D_Weights).verify(weights)
+
+    _ovewrite_named_param(kwargs, "groups", 32)
+    _ovewrite_named_param(kwargs, "width_per_group", 8)
+    return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)

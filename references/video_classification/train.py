@@ -12,11 +12,6 @@ from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
-try:
-    from torchvision import prototype
-except ImportError:
-    prototype = None
-
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
     model.train()
@@ -96,17 +91,11 @@ def collate_fn(batch):
 
 
 def main(args):
-    if args.prototype and prototype is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-    if not args.prototype and args.weights:
-        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
     utils.init_distributed_mode(args)
     print(args)
-    print("torch version: ", torch.__version__)
-    print("torchvision version: ", torchvision.__version__)
 
     device = torch.device(args.device)
 
@@ -120,7 +109,7 @@ def main(args):
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
-    transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
+    transform_train = presets.VideoClassificationPresetTrain(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_train from {cache_path}")
@@ -150,14 +139,11 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    if not args.prototype:
-        transform_test = presets.VideoClassificationPresetEval(resize_size=(128, 171), crop_size=(112, 112))
+    if args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        transform_test = weights.transforms()
     else:
-        if args.weights:
-            weights = prototype.models.get_weight(args.weights)
-            transform_test = weights.transforms()
-        else:
-            transform_test = prototype.transforms.Kinect400Eval(crop_size=(112, 112), resize_size=(128, 171))
+        transform_test = presets.VideoClassificationPresetEval(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
@@ -208,10 +194,7 @@ def main(args):
     )
 
     print("Creating model")
-    if not args.prototype:
-        model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
-    else:
-        model = prototype.models.video.__dict__[args.model](weights=args.weights)
+    model = torchvision.models.video.__dict__[args.model](weights=args.weights)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -352,24 +335,11 @@ def parse_args():
         help="Only test the model",
         action="store_true",
     )
-    parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
-    )
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
-    # Prototype models only
-    parser.add_argument(
-        "--prototype",
-        dest="prototype",
-        help="Use prototype model builders instead those from main area",
-        action="store_true",
-    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     # Mixed precision training parameters

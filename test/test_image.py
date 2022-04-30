@@ -158,7 +158,7 @@ def test_decode_png(img_path, pil_mode, mode):
 
     img_pil = normalize_dimensions(img_pil)
 
-    if "16" in img_path:
+    if img_path.endswith("16.png"):
         # 16 bits image decoding is supported, but only as a private API
         # FIXME: see https://github.com/pytorch/vision/issues/4731 for potential solutions to making it public
         with pytest.raises(RuntimeError, match="At most 8-bit PNG images are supported"):
@@ -421,7 +421,7 @@ def _collect_if(cond):
     return _inner
 
 
-@_collect_if(cond=IS_WINDOWS)
+@_collect_if(cond=False)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
@@ -452,7 +452,7 @@ def test_encode_jpeg_reference(img_path):
         assert_equal(jpeg_bytes, pil_bytes)
 
 
-@_collect_if(cond=IS_WINDOWS)
+@_collect_if(cond=False)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],

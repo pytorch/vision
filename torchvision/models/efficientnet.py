@@ -3,20 +3,33 @@ import math
 import warnings
 from dataclasses import dataclass
 from functools import partial
-from typing import Any, Callable, Optional, List, Sequence, Tuple, Union
+from typing import Any, Callable, Dict, Optional, List, Sequence, Tuple, Union
 
 import torch
 from torch import nn, Tensor
 from torchvision.ops import StochasticDepth
 
-from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation
+from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._utils import _make_divisible
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param, _make_divisible
 
 
 __all__ = [
     "EfficientNet",
+    "EfficientNet_B0_Weights",
+    "EfficientNet_B1_Weights",
+    "EfficientNet_B2_Weights",
+    "EfficientNet_B3_Weights",
+    "EfficientNet_B4_Weights",
+    "EfficientNet_B5_Weights",
+    "EfficientNet_B6_Weights",
+    "EfficientNet_B7_Weights",
+    "EfficientNet_V2_S_Weights",
+    "EfficientNet_V2_M_Weights",
+    "EfficientNet_V2_L_Weights",
     "efficientnet_b0",
     "efficientnet_b1",
     "efficientnet_b2",
@@ -29,25 +42,6 @@ __all__ = [
     "efficientnet_v2_m",
     "efficientnet_v2_l",
 ]
-
-
-model_urls = {
-    # Weights ported from https://github.com/rwightman/pytorch-image-models/
-    "efficientnet_b0": "https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
-    "efficientnet_b1": "https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
-    "efficientnet_b2": "https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
-    "efficientnet_b3": "https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
-    "efficientnet_b4": "https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
-    # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
-    "efficientnet_b5": "https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
-    "efficientnet_b6": "https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
-    "efficientnet_b7": "https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
-    # Weights trained with TorchVision
-    "efficientnet_v2_s": "https://download.pytorch.org/models/efficientnet_v2_s-dd5fe13b.pth",
-    "efficientnet_v2_m": "https://download.pytorch.org/models/efficientnet_v2_m-dc08266a.pth",
-    # Weights ported from TF
-    "efficientnet_v2_l": "https://download.pytorch.org/models/efficientnet_v2_l-59c71312.pth",
-}
 
 
 @dataclass
@@ -362,20 +356,21 @@ class EfficientNet(nn.Module):
 
 
 def _efficientnet(
-    arch: str,
     inverted_residual_setting: Sequence[Union[MBConvConfig, FusedMBConvConfig]],
     dropout: float,
     last_channel: Optional[int],
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
 ) -> EfficientNet:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
     model = EfficientNet(inverted_residual_setting, dropout, last_channel=last_channel, **kwargs)
-    if pretrained:
-        if model_urls.get(arch, None) is None:
-            raise ValueError(f"No checkpoint is available for model type {arch}")
-        state_dict = load_state_dict_from_url(model_urls[arch], progress=progress)
-        model.load_state_dict(state_dict)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
 
 
@@ -434,208 +429,601 @@ def _efficientnet_conf(
     return inverted_residual_setting, last_channel
 
 
-def efficientnet_b0(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
-    """
-    Constructs a EfficientNet B0 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+_COMMON_META: Dict[str, Any] = {
+    "categories": _IMAGENET_CATEGORIES,
+    "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#efficientnet",
+}
+
+
+_COMMON_META_V1 = {
+    **_COMMON_META,
+    "min_size": (1, 1),
+}
+
+
+_COMMON_META_V2 = {
+    **_COMMON_META,
+    "min_size": (33, 33),
+}
+
+
+class EfficientNet_B0_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b0_rwightman-3dd342df.pth",
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=256, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 5288548,
+            "metrics": {
+                "acc@1": 77.692,
+                "acc@5": 93.532,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_B1_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b1_rwightman-533bc792.pth",
+        transforms=partial(
+            ImageClassification, crop_size=240, resize_size=256, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 7794184,
+            "metrics": {
+                "acc@1": 78.642,
+                "acc@5": 94.186,
+            },
+        },
+    )
+    IMAGENET1K_V2 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b1-c27df63c.pth",
+        transforms=partial(
+            ImageClassification, crop_size=240, resize_size=255, interpolation=InterpolationMode.BILINEAR
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 7794184,
+            "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning",
+            "metrics": {
+                "acc@1": 79.838,
+                "acc@5": 94.934,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V2
+
+
+class EfficientNet_B2_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b2_rwightman-bcdf34b7.pth",
+        transforms=partial(
+            ImageClassification, crop_size=288, resize_size=288, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 9109994,
+            "metrics": {
+                "acc@1": 80.608,
+                "acc@5": 95.310,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_B3_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b3_rwightman-cf984f9c.pth",
+        transforms=partial(
+            ImageClassification, crop_size=300, resize_size=320, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 12233232,
+            "metrics": {
+                "acc@1": 82.008,
+                "acc@5": 96.054,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_B4_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b4_rwightman-7eb33cd5.pth",
+        transforms=partial(
+            ImageClassification, crop_size=380, resize_size=384, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 19341616,
+            "metrics": {
+                "acc@1": 83.384,
+                "acc@5": 96.594,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_B5_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b5_lukemelas-b6417697.pth",
+        transforms=partial(
+            ImageClassification, crop_size=456, resize_size=456, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 30389784,
+            "metrics": {
+                "acc@1": 83.444,
+                "acc@5": 96.628,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_B6_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b6_lukemelas-c76e70fd.pth",
+        transforms=partial(
+            ImageClassification, crop_size=528, resize_size=528, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 43040704,
+            "metrics": {
+                "acc@1": 84.008,
+                "acc@5": 96.916,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_B7_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_b7_lukemelas-dcc49843.pth",
+        transforms=partial(
+            ImageClassification, crop_size=600, resize_size=600, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META_V1,
+            "num_params": 66347960,
+            "metrics": {
+                "acc@1": 84.122,
+                "acc@5": 96.908,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_V2_S_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_v2_s-dd5fe13b.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=384,
+            resize_size=384,
+            interpolation=InterpolationMode.BILINEAR,
+        ),
+        meta={
+            **_COMMON_META_V2,
+            "num_params": 21458488,
+            "metrics": {
+                "acc@1": 84.228,
+                "acc@5": 96.878,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_V2_M_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_v2_m-dc08266a.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=480,
+            resize_size=480,
+            interpolation=InterpolationMode.BILINEAR,
+        ),
+        meta={
+            **_COMMON_META_V2,
+            "num_params": 54139356,
+            "metrics": {
+                "acc@1": 85.112,
+                "acc@5": 97.156,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class EfficientNet_V2_L_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/efficientnet_v2_l-59c71312.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=480,
+            resize_size=480,
+            interpolation=InterpolationMode.BICUBIC,
+            mean=(0.5, 0.5, 0.5),
+            std=(0.5, 0.5, 0.5),
+        ),
+        meta={
+            **_COMMON_META_V2,
+            "num_params": 118515272,
+            "metrics": {
+                "acc@1": 85.808,
+                "acc@5": 97.788,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B0_Weights.IMAGENET1K_V1))
+def efficientnet_b0(
+    *, weights: Optional[EfficientNet_B0_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
+    """EfficientNet B0 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B0_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B0_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B0_Weights
+        :members:
     """
-    arch = "efficientnet_b0"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.0, depth_mult=1.0)
-    return _efficientnet(arch, inverted_residual_setting, 0.2, last_channel, pretrained, progress, **kwargs)
+    weights = EfficientNet_B0_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b0", width_mult=1.0, depth_mult=1.0)
+    return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
 
 
-def efficientnet_b1(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
-    """
-    Constructs a EfficientNet B1 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B1_Weights.IMAGENET1K_V1))
+def efficientnet_b1(
+    *, weights: Optional[EfficientNet_B1_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
+    """EfficientNet B1 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B1_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B1_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B1_Weights
+        :members:
     """
-    arch = "efficientnet_b1"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.0, depth_mult=1.1)
-    return _efficientnet(arch, inverted_residual_setting, 0.2, last_channel, pretrained, progress, **kwargs)
+    weights = EfficientNet_B1_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b1", width_mult=1.0, depth_mult=1.1)
+    return _efficientnet(inverted_residual_setting, 0.2, last_channel, weights, progress, **kwargs)
 
 
-def efficientnet_b2(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
-    """
-    Constructs a EfficientNet B2 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B2_Weights.IMAGENET1K_V1))
+def efficientnet_b2(
+    *, weights: Optional[EfficientNet_B2_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
+    """EfficientNet B2 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B2_Weights
+        :members:
     """
-    arch = "efficientnet_b2"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.1, depth_mult=1.2)
-    return _efficientnet(arch, inverted_residual_setting, 0.3, last_channel, pretrained, progress, **kwargs)
+    weights = EfficientNet_B2_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b2", width_mult=1.1, depth_mult=1.2)
+    return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
 
 
-def efficientnet_b3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
-    """
-    Constructs a EfficientNet B3 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B3_Weights.IMAGENET1K_V1))
+def efficientnet_b3(
+    *, weights: Optional[EfficientNet_B3_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
+    """EfficientNet B3 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B3_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B3_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B3_Weights
+        :members:
     """
-    arch = "efficientnet_b3"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.2, depth_mult=1.4)
-    return _efficientnet(arch, inverted_residual_setting, 0.3, last_channel, pretrained, progress, **kwargs)
+    weights = EfficientNet_B3_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b3", width_mult=1.2, depth_mult=1.4)
+    return _efficientnet(inverted_residual_setting, 0.3, last_channel, weights, progress, **kwargs)
 
 
-def efficientnet_b4(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
-    """
-    Constructs a EfficientNet B4 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B4_Weights.IMAGENET1K_V1))
+def efficientnet_b4(
+    *, weights: Optional[EfficientNet_B4_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
+    """EfficientNet B4 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B4_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B4_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B4_Weights
+        :members:
     """
-    arch = "efficientnet_b4"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.4, depth_mult=1.8)
-    return _efficientnet(arch, inverted_residual_setting, 0.4, last_channel, pretrained, progress, **kwargs)
+    weights = EfficientNet_B4_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b4", width_mult=1.4, depth_mult=1.8)
+    return _efficientnet(inverted_residual_setting, 0.4, last_channel, weights, progress, **kwargs)
 
 
-def efficientnet_b5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
-    """
-    Constructs a EfficientNet B5 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B5_Weights.IMAGENET1K_V1))
+def efficientnet_b5(
+    *, weights: Optional[EfficientNet_B5_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
+    """EfficientNet B5 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B5_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B5_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B5_Weights
+        :members:
     """
-    arch = "efficientnet_b5"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.6, depth_mult=2.2)
+    weights = EfficientNet_B5_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b5", width_mult=1.6, depth_mult=2.2)
     return _efficientnet(
-        arch,
         inverted_residual_setting,
         0.4,
         last_channel,
-        pretrained,
+        weights,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
         **kwargs,
     )
 
 
-def efficientnet_b6(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
-    """
-    Constructs a EfficientNet B6 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B6_Weights.IMAGENET1K_V1))
+def efficientnet_b6(
+    *, weights: Optional[EfficientNet_B6_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
+    """EfficientNet B6 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B6_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B6_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B6_Weights
+        :members:
     """
-    arch = "efficientnet_b6"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=1.8, depth_mult=2.6)
+    weights = EfficientNet_B6_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b6", width_mult=1.8, depth_mult=2.6)
     return _efficientnet(
-        arch,
         inverted_residual_setting,
         0.5,
         last_channel,
-        pretrained,
+        weights,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
         **kwargs,
     )
 
 
-def efficientnet_b7(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
-    """
-    Constructs a EfficientNet B7 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+@handle_legacy_interface(weights=("pretrained", EfficientNet_B7_Weights.IMAGENET1K_V1))
+def efficientnet_b7(
+    *, weights: Optional[EfficientNet_B7_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
+    """EfficientNet B7 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B7_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B7_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B7_Weights
+        :members:
     """
-    arch = "efficientnet_b7"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch, width_mult=2.0, depth_mult=3.1)
+    weights = EfficientNet_B7_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_b7", width_mult=2.0, depth_mult=3.1)
     return _efficientnet(
-        arch,
         inverted_residual_setting,
         0.5,
         last_channel,
-        pretrained,
+        weights,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=0.001, momentum=0.01),
         **kwargs,
     )
 
 
-def efficientnet_v2_s(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+@handle_legacy_interface(weights=("pretrained", EfficientNet_V2_S_Weights.IMAGENET1K_V1))
+def efficientnet_v2_s(
+    *, weights: Optional[EfficientNet_V2_S_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
     """
     Constructs an EfficientNetV2-S architecture from
-    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+    `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_V2_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_V2_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_V2_S_Weights
+        :members:
     """
-    arch = "efficientnet_v2_s"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch)
+    weights = EfficientNet_V2_S_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_s")
     return _efficientnet(
-        arch,
         inverted_residual_setting,
         0.2,
         last_channel,
-        pretrained,
+        weights,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
         **kwargs,
     )
 
 
-def efficientnet_v2_m(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+@handle_legacy_interface(weights=("pretrained", EfficientNet_V2_M_Weights.IMAGENET1K_V1))
+def efficientnet_v2_m(
+    *, weights: Optional[EfficientNet_V2_M_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
     """
     Constructs an EfficientNetV2-M architecture from
-    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+    `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_V2_M_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_V2_M_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_V2_M_Weights
+        :members:
     """
-    arch = "efficientnet_v2_m"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch)
+    weights = EfficientNet_V2_M_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_m")
     return _efficientnet(
-        arch,
         inverted_residual_setting,
         0.3,
         last_channel,
-        pretrained,
+        weights,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
         **kwargs,
     )
 
 
-def efficientnet_v2_l(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> EfficientNet:
+@handle_legacy_interface(weights=("pretrained", EfficientNet_V2_L_Weights.IMAGENET1K_V1))
+def efficientnet_v2_l(
+    *, weights: Optional[EfficientNet_V2_L_Weights] = None, progress: bool = True, **kwargs: Any
+) -> EfficientNet:
     """
     Constructs an EfficientNetV2-L architecture from
-    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+    `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_V2_L_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_V2_L_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_V2_L_Weights
+        :members:
     """
-    arch = "efficientnet_v2_l"
-    inverted_residual_setting, last_channel = _efficientnet_conf(arch)
+    weights = EfficientNet_V2_L_Weights.verify(weights)
+
+    inverted_residual_setting, last_channel = _efficientnet_conf("efficientnet_v2_l")
     return _efficientnet(
-        arch,
         inverted_residual_setting,
         0.4,
         last_channel,
-        pretrained,
+        weights,
         progress,
         norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
         **kwargs,

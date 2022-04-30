@@ -159,7 +159,7 @@ pip install -r requirements.txt
 
 ```bash
 cd docs
-make html
+make html-noplot
 ```
 
 Then open `docs/build/html/index.html` in your favorite browser.
@@ -173,13 +173,13 @@ clean``.
 
 #### Building the example gallery - or not
 
-When you run ``make html`` for the first time, all the examples in the gallery
-will be built. Subsequent builds should be faster, and will only build the
-examples that have been modified.
+In most cases, running `make html-noplot` is enough to build the docs for your
+specific use-case. The `noplot` part tells sphinx **not** to build the examples
+in the [gallery](https://pytorch.org/vision/stable/auto_examples/index.html),
+which saves a lot of building time.
 
-You can run ``make html-noplot`` to not build the examples at all. This is
-useful after a ``make clean`` to do some quick checks that are not related to
-the examples.
+If you need to build all the examples in the gallery, then you can use `make
+html`.
 
 You can also choose to only build a subset of the examples by using the
 ``EXAMPLES_PATTERN`` env variable, which accepts a regular expression. For

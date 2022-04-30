@@ -1,20 +1,24 @@
-from typing import Any, Optional
+from functools import partial
+from typing import Any, Optional, Union
 
 from torch import Tensor
 from torch import nn
 from torch.ao.quantization import QuantStub, DeQuantStub
-from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, model_urls
+from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, MobileNet_V2_Weights
 
-from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import Conv2dNormActivation
+from ...transforms._presets import ImageClassification
+from .._api import WeightsEnum, Weights
+from .._meta import _IMAGENET_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_named_param
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
-__all__ = ["QuantizableMobileNetV2", "mobilenet_v2"]
-
-quant_model_urls = {
-    "mobilenet_v2_qnnpack": "https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth"
-}
+__all__ = [
+    "QuantizableMobileNetV2",
+    "MobileNet_V2_QuantizedWeights",
+    "mobilenet_v2",
+]
 
 
 class QuantizableInvertedResidual(InvertedResidual):
@@ -60,8 +64,37 @@ class QuantizableMobileNetV2(MobileNetV2):
                 m.fuse_model(is_qat)
 
 
+class MobileNet_V2_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_QNNPACK_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            "num_params": 3504872,
+            "min_size": (1, 1),
+            "categories": _IMAGENET_CATEGORIES,
+            "backend": "qnnpack",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv2",
+            "unquantized": MobileNet_V2_Weights.IMAGENET1K_V1,
+            "metrics": {
+                "acc@1": 71.658,
+                "acc@5": 90.150,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_QNNPACK_V1
+
+
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1
+        if kwargs.get("quantize", False)
+        else MobileNet_V2_Weights.IMAGENET1K_V1,
+    )
+)
 def mobilenet_v2(
-    pretrained: bool = False,
+    *,
+    weights: Optional[Union[MobileNet_V2_QuantizedWeights, MobileNet_V2_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
@@ -76,27 +109,25 @@ def mobilenet_v2(
     GPU inference is not yet supported
 
     Args:
-     pretrained (bool): If True, returns a model pre-trained on ImageNet.
-     progress (bool): If True, displays a progress bar of the download to stderr
-     quantize(bool): If True, returns a quantized model, else returns a float model
+        weights (GoogLeNet_QuantizedWeights or GoogLeNet_Weights, optional): The pretrained
+            weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+        quantize(bool): If True, returns a quantized model, else returns a float model
     """
+    weights = (MobileNet_V2_QuantizedWeights if quantize else MobileNet_V2_Weights).verify(weights)
+
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if "backend" in weights.meta:
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
+    backend = kwargs.pop("backend", "qnnpack")
+
     model = QuantizableMobileNetV2(block=QuantizableInvertedResidual, **kwargs)
     _replace_relu(model)
-
     if quantize:
-        # TODO use pretrained as a string to specify the backend
-        backend = "qnnpack"
         quantize_model(model, backend)
-    else:
-        assert pretrained in [True, False]
 
-    if pretrained:
-        if quantize:
-            model_url = quant_model_urls["mobilenet_v2_" + backend]
-        else:
-            model_url = model_urls["mobilenet_v2"]
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-
-        model.load_state_dict(state_dict)
     return model

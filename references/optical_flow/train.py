@@ -9,11 +9,6 @@ import utils
 from presets import OpticalFlowPresetTrain, OpticalFlowPresetEval
 from torchvision.datasets import KittiFlow, FlyingChairs, FlyingThings3D, Sintel, HD1K
 
-try:
-    from torchvision import prototype
-except ImportError:
-    prototype = None
-
 
 def get_train_dataset(stage, dataset_root):
     if stage == "chairs":
@@ -60,22 +55,27 @@ def get_train_dataset(stage, dataset_root):
 
 
 @torch.no_grad()
-def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, batch_size=None, header=None):
+def _evaluate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, batch_size=None, header=None):
     """Helper function to compute various metrics (epe, etc.) for a model on a given dataset.
 
     We process as many samples as possible with ddp, and process the rest on a single worker.
     """
     batch_size = batch_size or args.batch_size
+    device = torch.device(args.device)
 
     model.eval()
 
-    sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
+    if args.distributed:
+        sampler = torch.utils.data.distributed.DistributedSampler(val_dataset, shuffle=False, drop_last=True)
+    else:
+        sampler = torch.utils.data.SequentialSampler(val_dataset)
+
     val_loader = torch.utils.data.DataLoader(
         val_dataset,
         sampler=sampler,
         batch_size=batch_size,
         pin_memory=True,
-        num_workers=args.num_workers,
+        num_workers=args.workers,
     )
 
     num_flow_updates = num_flow_updates or args.num_flow_updates
@@ -88,7 +88,7 @@ def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
         image1, image2, flow_gt = blob[:3]
         valid_flow_mask = None if len(blob) == 3 else blob[-1]
 
-        image1, image2 = image1.cuda(), image2.cuda()
+        image1, image2 = image1.to(device), image2.to(device)
 
         padder = utils.InputPadder(image1.shape, mode=padder_mode)
         image1, image2 = padder.pad(image1, image2)
@@ -115,29 +115,36 @@ def _validate(model, args, val_dataset, *, padder_mode, num_flow_updates=None, b
         inner_loop(blob)
         num_processed_samples += blob[0].shape[0]  # batch size
 
-    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
-    print(
-        f"Batch-processed {num_processed_samples} / {len(val_dataset)} samples. "
-        "Going to process the remaining samples individually, if any."
-    )
+    if args.distributed:
+        num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+        print(
+            f"Batch-processed {num_processed_samples} / {len(val_dataset)} samples. "
+            "Going to process the remaining samples individually, if any."
+        )
+        if args.rank == 0:  # we only need to process the rest on a single worker
+            for i in range(num_processed_samples, len(val_dataset)):
+                inner_loop(val_dataset[i])
 
-    if args.rank == 0:  # we only need to process the rest on a single worker
-        for i in range(num_processed_samples, len(val_dataset)):
-            inner_loop(val_dataset[i])
+        logger.synchronize_between_processes()
 
-    logger.synchronize_between_processes()
     print(header, logger)
 
 
-def validate(model, args):
+def evaluate(model, args):
     val_datasets = args.val_dataset or []
 
-    if args.prototype:
-        if args.weights:
-            weights = prototype.models.get_weight(args.weights)
-            preprocessing = weights.transforms()
-        else:
-            preprocessing = prototype.transforms.RaftEval()
+    if args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        trans = weights.transforms()
+
+        def preprocessing(img1, img2, flow, valid_flow_mask):
+            img1, img2 = trans(img1, img2)
+            if flow is not None and not isinstance(flow, torch.Tensor):
+                flow = torch.from_numpy(flow)
+            if valid_flow_mask is not None and not isinstance(valid_flow_mask, torch.Tensor):
+                valid_flow_mask = torch.from_numpy(valid_flow_mask)
+            return img1, img2, flow, valid_flow_mask
+
     else:
         preprocessing = OpticalFlowPresetEval()
 
@@ -145,13 +152,13 @@ def validate(model, args):
         if name == "kitti":
             # Kitti has different image sizes so we need to individually pad them, we can't batch.
             # see comment in InputPadder
-            if args.batch_size != 1 and args.rank == 0:
+            if args.batch_size != 1 and (not args.distributed or args.rank == 0):
                 warnings.warn(
                     f"Batch-size={args.batch_size} was passed. For technical reasons, evaluating on Kitti can only be done with a batch-size of 1."
                 )
 
             val_dataset = KittiFlow(root=args.dataset_root, split="train", transforms=preprocessing)
-            _validate(
+            _evaluate(
                 model, args, val_dataset, num_flow_updates=24, padder_mode="kitti", header="Kitti val", batch_size=1
             )
         elif name == "sintel":
@@ -159,7 +166,7 @@ def validate(model, args):
                 val_dataset = Sintel(
                     root=args.dataset_root, split="train", pass_name=pass_name, transforms=preprocessing
                 )
-                _validate(
+                _evaluate(
                     model,
                     args,
                     val_dataset,
@@ -172,11 +179,12 @@ def validate(model, args):
 
 
 def train_one_epoch(model, optimizer, scheduler, train_loader, logger, args):
+    device = torch.device(args.device)
     for data_blob in logger.log_every(train_loader):
 
         optimizer.zero_grad()
 
-        image1, image2, flow_gt, valid_flow_mask = (x.cuda() for x in data_blob)
+        image1, image2, flow_gt, valid_flow_mask = (x.to(device) for x in data_blob)
         flow_predictions = model(image1, image2, num_flow_updates=args.num_flow_updates)
 
         loss = utils.sequence_loss(flow_predictions, flow_gt, valid_flow_mask, args.gamma)
@@ -194,49 +202,37 @@ def train_one_epoch(model, optimizer, scheduler, train_loader, logger, args):
 
 
 def main(args):
-    if args.prototype and prototype is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-    if not args.prototype and args.weights:
-        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     utils.setup_ddp(args)
+    args.test_only = args.train_dataset is None
 
-    if args.prototype:
-        model = prototype.models.optical_flow.__dict__[args.model](weights=args.weights)
+    if args.distributed and args.device == "cpu":
+        raise ValueError("The device must be cuda if we want to run in distributed mode using torchrun")
+    device = torch.device(args.device)
+
+    model = torchvision.models.optical_flow.__dict__[args.model](weights=args.weights)
+
+    if args.distributed:
+        model = model.to(args.local_rank)
+        model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
+        model_without_ddp = model.module
     else:
-        model = torchvision.models.optical_flow.__dict__[args.model](pretrained=args.pretrained)
-
-    model = model.to(args.local_rank)
-    model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.local_rank])
+        model.to(device)
+        model_without_ddp = model
 
     if args.resume is not None:
-        d = torch.load(args.resume, map_location="cpu")
-        model.load_state_dict(d, strict=True)
+        checkpoint = torch.load(args.resume, map_location="cpu")
+        model_without_ddp.load_state_dict(checkpoint["model"])
 
-    if args.train_dataset is None:
+    if args.test_only:
         # Set deterministic CUDNN algorithms, since they can affect epe a fair bit.
         torch.backends.cudnn.benchmark = False
         torch.backends.cudnn.deterministic = True
-        validate(model, args)
+        evaluate(model, args)
         return
 
     print(f"Parameter Count: {sum(p.numel() for p in model.parameters() if p.requires_grad)}")
 
-    torch.backends.cudnn.benchmark = True
-
-    model.train()
-    if args.freeze_batch_norm:
-        utils.freeze_batch_norm(model.module)
-
     train_dataset = get_train_dataset(args.train_dataset, args.dataset_root)
-
-    sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True, drop_last=True)
-    train_loader = torch.utils.data.DataLoader(
-        train_dataset,
-        sampler=sampler,
-        batch_size=args.batch_size,
-        pin_memory=True,
-        num_workers=args.num_workers,
-    )
 
     optimizer = torch.optim.AdamW(model.parameters(), lr=args.lr, weight_decay=args.weight_decay, eps=args.adamw_eps)
 
@@ -250,13 +246,41 @@ def main(args):
         anneal_strategy="linear",
     )
 
+    if args.resume is not None:
+        optimizer.load_state_dict(checkpoint["optimizer"])
+        scheduler.load_state_dict(checkpoint["scheduler"])
+        args.start_epoch = checkpoint["epoch"] + 1
+    else:
+        args.start_epoch = 0
+
+    torch.backends.cudnn.benchmark = True
+
+    model.train()
+    if args.freeze_batch_norm:
+        utils.freeze_batch_norm(model.module)
+
+    if args.distributed:
+        sampler = torch.utils.data.distributed.DistributedSampler(train_dataset, shuffle=True, drop_last=True)
+    else:
+        sampler = torch.utils.data.RandomSampler(train_dataset)
+
+    train_loader = torch.utils.data.DataLoader(
+        train_dataset,
+        sampler=sampler,
+        batch_size=args.batch_size,
+        pin_memory=True,
+        num_workers=args.workers,
+    )
+
     logger = utils.MetricLogger()
 
     done = False
-    for current_epoch in range(args.epochs):
-        print(f"EPOCH {current_epoch}")
+    for epoch in range(args.start_epoch, args.epochs):
+        print(f"EPOCH {epoch}")
+        if args.distributed:
+            # needed on distributed mode, otherwise the data loading order would be the same for all epochs
+            sampler.set_epoch(epoch)
 
-        sampler.set_epoch(current_epoch)  # needed, otherwise the data loading order would be the same for all epochs
         train_one_epoch(
             model=model,
             optimizer=optimizer,
@@ -267,15 +291,21 @@ def main(args):
         )
 
         # Note: we don't sync the SmoothedValues across processes, so the printed metrics are just those of rank 0
-        print(f"Epoch {current_epoch} done. ", logger)
+        print(f"Epoch {epoch} done. ", logger)
 
-        if args.rank == 0:
-            # TODO: Also save the optimizer and scheduler
-            torch.save(model.state_dict(), Path(args.output_dir) / f"{args.name}_{current_epoch}.pth")
-            torch.save(model.state_dict(), Path(args.output_dir) / f"{args.name}.pth")
+        if not args.distributed or args.rank == 0:
+            checkpoint = {
+                "model": model_without_ddp.state_dict(),
+                "optimizer": optimizer.state_dict(),
+                "scheduler": scheduler.state_dict(),
+                "epoch": epoch,
+                "args": args,
+            }
+            torch.save(checkpoint, Path(args.output_dir) / f"{args.name}_{epoch}.pth")
+            torch.save(checkpoint, Path(args.output_dir) / f"{args.name}.pth")
 
-        if current_epoch % args.val_freq == 0 or done:
-            validate(model, args)
+        if epoch % args.val_freq == 0 or done:
+            evaluate(model, args)
             model.train()
             if args.freeze_batch_norm:
                 utils.freeze_batch_norm(model.module)
@@ -289,16 +319,14 @@ def get_args_parser(add_help=True):
         type=str,
         help="The name of the experiment - determines the name of the files where weights are saved.",
     )
-    parser.add_argument(
-        "--output-dir", default="checkpoints", type=str, help="Output dir where checkpoints will be stored."
-    )
+    parser.add_argument("--output-dir", default=".", type=str, help="Output dir where checkpoints will be stored.")
     parser.add_argument(
         "--resume",
         type=str,
         help="A path to previously saved weights. Used to re-start training from, or evaluate a pre-saved model.",
     )
 
-    parser.add_argument("--num-workers", type=int, default=12, help="Number of workers for the data loading part.")
+    parser.add_argument("--workers", type=int, default=12, help="Number of workers for the data loading part.")
 
     parser.add_argument(
         "--train-dataset",
@@ -321,8 +349,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--model", type=str, default="raft_large", help="The name of the model to use - either raft_large or raft_small"
     )
-    # TODO: resume, pretrained, and weights should be in an exclusive arg group
-    parser.add_argument("--pretrained", action="store_true", help="Whether to use pretrained weights")
+    # TODO: resume and weights should be in an exclusive arg group
 
     parser.add_argument(
         "--num_flow_updates",
@@ -341,14 +368,8 @@ def get_args_parser(add_help=True):
         required=True,
     )
 
-    # Prototype models only
-    parser.add_argument(
-        "--prototype",
-        dest="prototype",
-        help="Use prototype model builders instead those from main area",
-        action="store_true",
-    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load.")
+    parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu, Default: cuda)")
 
     return parser
 

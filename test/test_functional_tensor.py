@@ -67,7 +67,7 @@ class TestRotate:
     IMG_W = 26
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    @pytest.mark.parametrize("height, width", [(26, IMG_W), (32, IMG_W)])
+    @pytest.mark.parametrize("height, width", [(7, 33), (26, IMG_W), (32, IMG_W)])
     @pytest.mark.parametrize(
         "center",
         [
@@ -77,7 +77,7 @@ class TestRotate:
         ],
     )
     @pytest.mark.parametrize("dt", ALL_DTYPES)
-    @pytest.mark.parametrize("angle", range(-180, 180, 17))
+    @pytest.mark.parametrize("angle", range(-180, 180, 34))
     @pytest.mark.parametrize("expand", [True, False])
     @pytest.mark.parametrize(
         "fill",
@@ -1030,25 +1030,9 @@ def test_resized_crop(device, mode):
         (F_t.adjust_contrast, (1.0,)),
         (F_t.adjust_hue, (-0.5,)),
         (F_t.adjust_saturation, (2.0,)),
-        (
-            F_t.pad,
-            (
-                [
-                    2,
-                ],
-                2,
-                "constant",
-            ),
-        ),
+        (F_t.pad, ([2], 2, "constant")),
         (F_t.resize, ([10, 11],)),
-        (
-            F_t.perspective,
-            (
-                [
-                    0.2,
-                ]
-            ),
-        ),
+        (F_t.perspective, ([0.2])),
         (F_t.gaussian_blur, ((2, 2), (0.7, 0.5))),
         (F_t.invert, ()),
         (F_t.posterize, (0,)),

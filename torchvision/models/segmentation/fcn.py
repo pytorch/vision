@@ -1,19 +1,17 @@
-from typing import Optional
+from functools import partial
+from typing import Any, Optional
 
 from torch import nn
 
-from .. import resnet
-from .._utils import IntermediateLayerGetter
-from ._utils import _SimpleSegmentationModel, _load_weights
+from ...transforms._presets import SemanticSegmentation
+from .._api import WeightsEnum, Weights
+from .._meta import _VOC_CATEGORIES
+from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
+from ..resnet import ResNet, ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
+from ._utils import _SimpleSegmentationModel
 
 
-__all__ = ["FCN", "fcn_resnet50", "fcn_resnet101"]
-
-
-model_urls = {
-    "fcn_resnet50_coco": "https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
-    "fcn_resnet101_coco": "https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
-}
+__all__ = ["FCN", "FCN_ResNet50_Weights", "FCN_ResNet101_Weights", "fcn_resnet50", "fcn_resnet101"]
 
 
 class FCN(_SimpleSegmentationModel):
@@ -49,8 +47,48 @@ class FCNHead(nn.Sequential):
         super().__init__(*layers)
 
 
+_COMMON_META = {
+    "categories": _VOC_CATEGORIES,
+    "min_size": (1, 1),
+}
+
+
+class FCN_ResNet50_Weights(WeightsEnum):
+    COCO_WITH_VOC_LABELS_V1 = Weights(
+        url="https://download.pytorch.org/models/fcn_resnet50_coco-1167a1af.pth",
+        transforms=partial(SemanticSegmentation, resize_size=520),
+        meta={
+            **_COMMON_META,
+            "num_params": 35322218,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
+            "metrics": {
+                "miou": 60.5,
+                "pixel_acc": 91.4,
+            },
+        },
+    )
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
+
+
+class FCN_ResNet101_Weights(WeightsEnum):
+    COCO_WITH_VOC_LABELS_V1 = Weights(
+        url="https://download.pytorch.org/models/fcn_resnet101_coco-7ecb50ca.pth",
+        transforms=partial(SemanticSegmentation, resize_size=520),
+        meta={
+            **_COMMON_META,
+            "num_params": 54314346,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
+            "metrics": {
+                "miou": 63.7,
+                "pixel_acc": 91.9,
+            },
+        },
+    )
+    DEFAULT = COCO_WITH_VOC_LABELS_V1
+
+
 def _fcn_resnet(
-    backbone: resnet.ResNet,
+    backbone: ResNet,
     num_classes: int,
     aux: Optional[bool],
 ) -> FCN:
@@ -64,61 +102,83 @@ def _fcn_resnet(
     return FCN(backbone, classifier, aux_classifier)
 
 
+@handle_legacy_interface(
+    weights=("pretrained", FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", ResNet50_Weights.IMAGENET1K_V1),
+)
 def fcn_resnet50(
-    pretrained: bool = False,
+    *,
+    weights: Optional[FCN_ResNet50_Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    pretrained_backbone: bool = True,
+    weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
+    **kwargs: Any,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
+        weights (FCN_ResNet50_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
+        num_classes (int, optional): number of output classes of the model (including the background)
         aux_loss (bool, optional): If True, it uses an auxiliary loss
-        pretrained_backbone (bool): If True, the backbone will be pre-trained.
+        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
     """
-    if pretrained:
-        aux_loss = True
-        pretrained_backbone = False
+    weights = FCN_ResNet50_Weights.verify(weights)
+    weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
-    backbone = resnet.resnet50(pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True])
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param(aux_loss, True)
+    elif num_classes is None:
+        num_classes = 21
+
+    backbone = resnet50(weights=weights_backbone, replace_stride_with_dilation=[False, True, True])
     model = _fcn_resnet(backbone, num_classes, aux_loss)
 
-    if pretrained:
-        arch = "fcn_resnet50_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model
 
 
+@handle_legacy_interface(
+    weights=("pretrained", FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1),
+    weights_backbone=("pretrained_backbone", ResNet101_Weights.IMAGENET1K_V1),
+)
 def fcn_resnet101(
-    pretrained: bool = False,
+    *,
+    weights: Optional[FCN_ResNet101_Weights] = None,
     progress: bool = True,
-    num_classes: int = 21,
+    num_classes: Optional[int] = None,
     aux_loss: Optional[bool] = None,
-    pretrained_backbone: bool = True,
+    weights_backbone: Optional[ResNet101_Weights] = ResNet101_Weights.IMAGENET1K_V1,
+    **kwargs: Any,
 ) -> FCN:
     """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on COCO train2017 which
-            contains the same classes as Pascal VOC
+        weights (FCN_ResNet101_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int): number of output classes of the model (including the background)
+        num_classes (int, optional): number of output classes of the model (including the background)
         aux_loss (bool, optional): If True, it uses an auxiliary loss
-        pretrained_backbone (bool): If True, the backbone will be pre-trained.
+        weights_backbone (ResNet101_Weights, optional): The pretrained weights for the backbone
     """
-    if pretrained:
-        aux_loss = True
-        pretrained_backbone = False
+    weights = FCN_ResNet101_Weights.verify(weights)
+    weights_backbone = ResNet101_Weights.verify(weights_backbone)
 
-    backbone = resnet.resnet101(pretrained=pretrained_backbone, replace_stride_with_dilation=[False, True, True])
+    if weights is not None:
+        weights_backbone = None
+        num_classes = _ovewrite_value_param(num_classes, len(weights.meta["categories"]))
+        aux_loss = _ovewrite_value_param(aux_loss, True)
+    elif num_classes is None:
+        num_classes = 21
+
+    backbone = resnet101(weights=weights_backbone, replace_stride_with_dilation=[False, True, True])
     model = _fcn_resnet(backbone, num_classes, aux_loss)
 
-    if pretrained:
-        arch = "fcn_resnet101_coco"
-        _load_weights(arch, model, model_urls.get(arch, None), progress)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
     return model

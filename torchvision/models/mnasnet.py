@@ -1,21 +1,30 @@
 import warnings
-from typing import Any, Dict, List
+from functools import partial
+from typing import Any, Dict, List, Optional
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 
-from .._internally_replaced_utils import load_state_dict_from_url
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
-__all__ = ["MNASNet", "mnasnet0_5", "mnasnet0_75", "mnasnet1_0", "mnasnet1_3"]
 
-_MODEL_URLS = {
-    "mnasnet0_5": "https://download.pytorch.org/models/mnasnet0.5_top1_67.823-3ffadce67e.pth",
-    "mnasnet0_75": None,
-    "mnasnet1_0": "https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
-    "mnasnet1_3": None,
-}
+__all__ = [
+    "MNASNet",
+    "MNASNet0_5_Weights",
+    "MNASNet0_75_Weights",
+    "MNASNet1_0_Weights",
+    "MNASNet1_3_Weights",
+    "mnasnet0_5",
+    "mnasnet0_75",
+    "mnasnet1_0",
+    "mnasnet1_3",
+]
+
 
 # Paper suggests 0.9997 momentum, for TensorFlow. Equivalent PyTorch momentum is
 # 1.0 - tensorflow.
@@ -27,8 +36,10 @@ class _InvertedResidual(nn.Module):
         self, in_ch: int, out_ch: int, kernel_size: int, stride: int, expansion_factor: int, bn_momentum: float = 0.1
     ) -> None:
         super().__init__()
-        assert stride in [1, 2]
-        assert kernel_size in [3, 5]
+        if stride not in [1, 2]:
+            raise ValueError(f"stride should be 1 or 2 instead of {stride}")
+        if kernel_size not in [3, 5]:
+            raise ValueError(f"kernel_size should be 3 or 5 instead of {kernel_size}")
         mid_ch = in_ch * expansion_factor
         self.apply_residual = in_ch == out_ch and stride == 1
         self.layers = nn.Sequential(
@@ -56,7 +67,8 @@ def _stack(
     in_ch: int, out_ch: int, kernel_size: int, stride: int, exp_factor: int, repeats: int, bn_momentum: float
 ) -> nn.Sequential:
     """Creates a stack of inverted residuals."""
-    assert repeats >= 1
+    if repeats < 1:
+        raise ValueError(f"repeats should be >= 1, instead got {repeats}")
     # First one has no skip, because feature map size changes.
     first = _InvertedResidual(in_ch, out_ch, kernel_size, stride, exp_factor, bn_momentum=bn_momentum)
     remaining = []
@@ -69,7 +81,8 @@ def _round_to_multiple_of(val: float, divisor: int, round_up_bias: float = 0.9) 
     """Asymmetric rounding to make `val` divisible by `divisor`. With default
     bias, will round up, unless the number is no more than 10% greater than the
     smaller divisible value, i.e. (83, 8) -> 80, but (84, 8) -> 88."""
-    assert 0.0 < round_up_bias < 1.0
+    if not 0.0 < round_up_bias < 1.0:
+        raise ValueError(f"round_up_bias should be greater than 0.0 and smaller than 1.0 instead of {round_up_bias}")
     new_val = max(divisor, int(val + divisor / 2) // divisor * divisor)
     return new_val if new_val >= round_up_bias * val else new_val + divisor
 
@@ -99,7 +112,8 @@ class MNASNet(torch.nn.Module):
     def __init__(self, alpha: float, num_classes: int = 1000, dropout: float = 0.2) -> None:
         super().__init__()
         _log_api_usage_once(self)
-        assert alpha > 0.0
+        if alpha <= 0.0:
+            raise ValueError(f"alpha should be greater than 0.0 instead of {alpha}")
         self.alpha = alpha
         self.num_classes = num_classes
         depths = _get_depths(alpha)
@@ -158,7 +172,8 @@ class MNASNet(torch.nn.Module):
         error_msgs: List[str],
     ) -> None:
         version = local_metadata.get("version", None)
-        assert version in [1, 2]
+        if version not in [1, 2]:
+            raise ValueError(f"version shluld be set to 1 or 2 instead of {version}")
 
         if version == 1 and not self.alpha == 1.0:
             # In the initial version of the model (v1), stem was fixed-size.
@@ -196,68 +211,122 @@ class MNASNet(torch.nn.Module):
         )
 
 
-def _load_pretrained(model_name: str, model: nn.Module, progress: bool) -> None:
-    if model_name not in _MODEL_URLS or _MODEL_URLS[model_name] is None:
-        raise ValueError(f"No checkpoint is available for model type {model_name}")
-    checkpoint_url = _MODEL_URLS[model_name]
-    model.load_state_dict(load_state_dict_from_url(checkpoint_url, progress=progress))
+_COMMON_META = {
+    "min_size": (1, 1),
+    "categories": _IMAGENET_CATEGORIES,
+    "recipe": "https://github.com/1e100/mnasnet_trainer",
+}
 
 
-def mnasnet0_5(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MNASNet:
+class MNASNet0_5_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/mnasnet0.5_top1_67.823-3ffadce67e.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 2218512,
+            "metrics": {
+                "acc@1": 67.734,
+                "acc@5": 87.490,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class MNASNet0_75_Weights(WeightsEnum):
+    # If a default model is added here the corresponding changes need to be done in mnasnet0_75
+    pass
+
+
+class MNASNet1_0_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/mnasnet1.0_top1_73.512-f206786ef8.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            **_COMMON_META,
+            "num_params": 4383312,
+            "metrics": {
+                "acc@1": 73.456,
+                "acc@5": 91.510,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class MNASNet1_3_Weights(WeightsEnum):
+    # If a default model is added here the corresponding changes need to be done in mnasnet1_3
+    pass
+
+
+def _mnasnet(alpha: float, weights: Optional[WeightsEnum], progress: bool, **kwargs: Any) -> MNASNet:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
+    model = MNASNet(alpha, **kwargs)
+
+    if weights:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+
+    return model
+
+
+@handle_legacy_interface(weights=("pretrained", MNASNet0_5_Weights.IMAGENET1K_V1))
+def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     r"""MNASNet with depth multiplier of 0.5 from
     `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
     <https://arxiv.org/pdf/1807.11626.pdf>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (MNASNet0_5_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = MNASNet(0.5, **kwargs)
-    if pretrained:
-        _load_pretrained("mnasnet0_5", model, progress)
-    return model
+    weights = MNASNet0_5_Weights.verify(weights)
+
+    return _mnasnet(0.5, weights, progress, **kwargs)
 
 
-def mnasnet0_75(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MNASNet:
+@handle_legacy_interface(weights=("pretrained", None))
+def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     r"""MNASNet with depth multiplier of 0.75 from
     `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
     <https://arxiv.org/pdf/1807.11626.pdf>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (MNASNet0_75_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = MNASNet(0.75, **kwargs)
-    if pretrained:
-        _load_pretrained("mnasnet0_75", model, progress)
-    return model
+    weights = MNASNet0_75_Weights.verify(weights)
+
+    return _mnasnet(0.75, weights, progress, **kwargs)
 
 
-def mnasnet1_0(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MNASNet:
+@handle_legacy_interface(weights=("pretrained", MNASNet1_0_Weights.IMAGENET1K_V1))
+def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     r"""MNASNet with depth multiplier of 1.0 from
     `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
     <https://arxiv.org/pdf/1807.11626.pdf>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (MNASNet1_0_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = MNASNet(1.0, **kwargs)
-    if pretrained:
-        _load_pretrained("mnasnet1_0", model, progress)
-    return model
+    weights = MNASNet1_0_Weights.verify(weights)
+
+    return _mnasnet(1.0, weights, progress, **kwargs)
 
 
-def mnasnet1_3(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> MNASNet:
+@handle_legacy_interface(weights=("pretrained", None))
+def mnasnet1_3(*, weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     r"""MNASNet with depth multiplier of 1.3 from
     `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
     <https://arxiv.org/pdf/1807.11626.pdf>`_.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (MNASNet1_3_Weights, optional): The pretrained weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
     """
-    model = MNASNet(1.3, **kwargs)
-    if pretrained:
-        _load_pretrained("mnasnet1_3", model, progress)
-    return model
+    weights = MNASNet1_3_Weights.verify(weights)
+
+    return _mnasnet(1.3, weights, progress, **kwargs)

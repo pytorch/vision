@@ -1,4 +1,4 @@
-from typing import List, Tuple, Dict, Optional
+from typing import List, Tuple, Dict, Optional, Union
 
 import torch
 import torchvision
@@ -42,15 +42,6 @@ class RandomHorizontalFlip(T.RandomHorizontalFlip):
                     keypoints = target["keypoints"]
                     keypoints = _flip_coco_person_keypoints(keypoints, width)
                     target["keypoints"] = keypoints
-        return image, target
-
-
-class ToTensor(nn.Module):
-    def forward(
-        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
-    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
-        image = F.pil_to_tensor(image)
-        image = F.convert_image_dtype(image)
         return image, target
 
 
@@ -319,9 +310,121 @@ class ScaleJitter(nn.Module):
 
         _, orig_height, orig_width = F.get_dimensions(image)
 
-        r = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
-        new_width = int(self.target_size[1] * r)
-        new_height = int(self.target_size[0] * r)
+        scale = self.scale_range[0] + torch.rand(1) * (self.scale_range[1] - self.scale_range[0])
+        r = min(self.target_size[1] / orig_height, self.target_size[0] / orig_width) * scale
+        new_width = int(orig_width * r)
+        new_height = int(orig_height * r)
+
+        image = F.resize(image, [new_height, new_width], interpolation=self.interpolation)
+
+        if target is not None:
+            target["boxes"][:, 0::2] *= new_width / orig_width
+            target["boxes"][:, 1::2] *= new_height / orig_height
+            if "masks" in target:
+                target["masks"] = F.resize(
+                    target["masks"], [new_height, new_width], interpolation=InterpolationMode.NEAREST
+                )
+
+        return image, target
+
+
+class FixedSizeCrop(nn.Module):
+    def __init__(self, size, fill=0, padding_mode="constant"):
+        super().__init__()
+        size = tuple(T._setup_size(size, error_msg="Please provide only two dimensions (h, w) for size."))
+        self.crop_height = size[0]
+        self.crop_width = size[1]
+        self.fill = fill  # TODO: Fill is currently respected only on PIL. Apply tensor patch.
+        self.padding_mode = padding_mode
+
+    def _pad(self, img, target, padding):
+        # Taken from the functional_tensor.py pad
+        if isinstance(padding, int):
+            pad_left = pad_right = pad_top = pad_bottom = padding
+        elif len(padding) == 1:
+            pad_left = pad_right = pad_top = pad_bottom = padding[0]
+        elif len(padding) == 2:
+            pad_left = pad_right = padding[0]
+            pad_top = pad_bottom = padding[1]
+        else:
+            pad_left = padding[0]
+            pad_top = padding[1]
+            pad_right = padding[2]
+            pad_bottom = padding[3]
+
+        padding = [pad_left, pad_top, pad_right, pad_bottom]
+        img = F.pad(img, padding, self.fill, self.padding_mode)
+        if target is not None:
+            target["boxes"][:, 0::2] += pad_left
+            target["boxes"][:, 1::2] += pad_top
+            if "masks" in target:
+                target["masks"] = F.pad(target["masks"], padding, 0, "constant")
+
+        return img, target
+
+    def _crop(self, img, target, top, left, height, width):
+        img = F.crop(img, top, left, height, width)
+        if target is not None:
+            boxes = target["boxes"]
+            boxes[:, 0::2] -= left
+            boxes[:, 1::2] -= top
+            boxes[:, 0::2].clamp_(min=0, max=width)
+            boxes[:, 1::2].clamp_(min=0, max=height)
+
+            is_valid = (boxes[:, 0] < boxes[:, 2]) & (boxes[:, 1] < boxes[:, 3])
+
+            target["boxes"] = boxes[is_valid]
+            target["labels"] = target["labels"][is_valid]
+            if "masks" in target:
+                target["masks"] = F.crop(target["masks"][is_valid], top, left, height, width)
+
+        return img, target
+
+    def forward(self, img, target=None):
+        _, height, width = F.get_dimensions(img)
+        new_height = min(height, self.crop_height)
+        new_width = min(width, self.crop_width)
+
+        if new_height != height or new_width != width:
+            offset_height = max(height - self.crop_height, 0)
+            offset_width = max(width - self.crop_width, 0)
+
+            r = torch.rand(1)
+            top = int(offset_height * r)
+            left = int(offset_width * r)
+
+            img, target = self._crop(img, target, top, left, new_height, new_width)
+
+        pad_bottom = max(self.crop_height - new_height, 0)
+        pad_right = max(self.crop_width - new_width, 0)
+        if pad_bottom != 0 or pad_right != 0:
+            img, target = self._pad(img, target, [0, 0, pad_right, pad_bottom])
+
+        return img, target
+
+
+class RandomShortestSize(nn.Module):
+    def __init__(
+        self,
+        min_size: Union[List[int], Tuple[int], int],
+        max_size: int,
+        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    ):
+        super().__init__()
+        self.min_size = [min_size] if isinstance(min_size, int) else list(min_size)
+        self.max_size = max_size
+        self.interpolation = interpolation
+
+    def forward(
+        self, image: Tensor, target: Optional[Dict[str, Tensor]] = None
+    ) -> Tuple[Tensor, Optional[Dict[str, Tensor]]]:
+        _, orig_height, orig_width = F.get_dimensions(image)
+
+        min_size = self.min_size[torch.randint(len(self.min_size), (1,)).item()]
+        r = min(min_size / min(orig_height, orig_width), self.max_size / max(orig_height, orig_width))
+
+        new_width = int(orig_width * r)
+        new_height = int(orig_height * r)
 
         image = F.resize(image, [new_height, new_width], interpolation=self.interpolation)
 

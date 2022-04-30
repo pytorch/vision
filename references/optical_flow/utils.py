@@ -71,7 +71,10 @@ class MetricLogger:
         for k, v in kwargs.items():
             if isinstance(v, torch.Tensor):
                 v = v.item()
-            assert isinstance(v, (float, int))
+            if not isinstance(v, (float, int)):
+                raise TypeError(
+                    f"This method expects the value of the input arguments to be of type float or int, instead  got {type(v)}"
+                )
             self.meters[k].update(v)
 
     def __getattr__(self, attr):
@@ -256,7 +259,12 @@ def setup_ddp(args):
         # if we're here, the script was called by run_with_submitit.py
         args.local_rank = args.gpu
     else:
-        raise ValueError(r"Sorry, I can't set up the distributed training ¯\_(ツ)_/¯.")
+        print("Not using distributed mode!")
+        args.distributed = False
+        args.world_size = 1
+        return
+
+    args.distributed = True
 
     _redefine_print(is_main=(args.rank == 0))
 
