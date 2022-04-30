@@ -413,11 +413,12 @@ class TestONNXExporter:
         import os
 
         from PIL import Image
+        import torchvision.transforms._pil_constants as _pil_constants
         from torchvision.transforms import functional as F
 
         data_dir = os.path.join(os.path.dirname(__file__), "assets")
         path = os.path.join(data_dir, *rel_path.split("/"))
-        image = Image.open(path).convert("RGB").resize(size, Image.BILINEAR)
+        image = Image.open(path).convert("RGB").resize(size, _pil_constants.BILINEAR)
 
         return F.convert_image_dtype(F.pil_to_tensor(image))
 
