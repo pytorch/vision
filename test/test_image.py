@@ -421,7 +421,7 @@ def _collect_if(cond):
     return _inner
 
 
-@_collect_if(cond=IS_WINDOWS)
+@_collect_if(cond=False)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
@@ -452,7 +452,7 @@ def test_encode_jpeg_reference(img_path):
         assert_equal(jpeg_bytes, pil_bytes)
 
 
-@_collect_if(cond=IS_WINDOWS)
+@_collect_if(cond=False)
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
