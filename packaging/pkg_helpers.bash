@@ -124,7 +124,7 @@ setup_build_version() {
 setup_macos() {
 
   if [[ "$(uname)" == Darwin ]]; then
-    if [[ -z "${CROSS_COMPILE_ARM64}" ]]; then
+    if [[ -n "$CROSS_COMPILE_ARM64" ]]; then
       export CMAKE_OSX_ARCHITECTURES=arm64 MACOSX_DEPLOYMENT_TARGET=11.0 CC=clang CXX=clang++
     else
       export MACOSX_DEPLOYMENT_TARGET=10.9 CC=clang CXX=clang++
