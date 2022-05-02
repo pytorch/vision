@@ -490,9 +490,23 @@ def perspective_bounding_box(
     device = bounding_box.device
 
     # perspective_coeffs are computed as endpoint -> start point
-    # We have to invert perspective_coeffs for bboxes
+    # We have to invert perspective_coeffs for bboxes:
+    # (x, y) - end point and (x_out, y_out) - start point
+    #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    # and we would like to get:
+    # x = (inv_coeffs[0] * x_out + inv_coeffs[1] * y_out + inv_coeffs[2])
+    #       / (inv_coeffs[6] * x_out + inv_coeffs[7] * y_out + 1)
+    # y = (inv_coeffs[3] * x_out + inv_coeffs[4] * y_out + inv_coeffs[5])
+    #       / (inv_coeffs[6] * x_out + inv_coeffs[7] * y_out + 1)
+    # and compute inv_coeffs in terms of coeffs
+
     denom = perspective_coeffs[0] * perspective_coeffs[4] - perspective_coeffs[1] * perspective_coeffs[3]
-    # TODO: assert that is not zero
+    if denom == 0:
+        raise RuntimeError(
+            f"Provided perspective_coeffs {perspective_coeffs} can not be inverted to transform bounding boxes. "
+            f"Denominator is zero, denom={denom}"
+        )
 
     inv_coeffs = [
         (perspective_coeffs[4] - perspective_coeffs[5] * perspective_coeffs[7]) / denom,
