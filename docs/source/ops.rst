@@ -19,6 +19,8 @@ Operators
     box_convert
     box_iou
     clip_boxes_to_image
+    complete_box_iou
+    complete_box_iou_loss
     deform_conv2d
     drop_block2d
     drop_block3d

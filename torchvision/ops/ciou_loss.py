@@ -1,19 +1,20 @@
 import torch
 
 from ..utils import _log_api_usage_once
-from .boxes import _upcast
+from .giou_loss import _upcast
 
 
-def distance_box_iou_loss(
+def complete_box_iou_loss(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,
     reduction: str = "none",
     eps: float = 1e-7,
 ) -> torch.Tensor:
+
     """
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
-    distance between boxes' centers isn't zero. Indeed, for two exactly overlapping
-    boxes, the distance IoU is the same as the IoU loss.
+    boxes do not overlap overlap area, This loss function considers important geometrical
+    factors such as  overlap area, normalized central point distance and aspect ratio.
     This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.
 
     Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
@@ -21,23 +22,25 @@ def distance_box_iou_loss(
     same dimensions.
 
     Args:
-        boxes1 (Tensor[N, 4]): first set of boxes
-        boxes2 (Tensor[N, 4]): second set of boxes
-        reduction (string, optional): Specifies the reduction to apply to the output:
+        boxes1 : (Tensor[N, 4] or Tensor[4]) first set of boxes
+        boxes2 : (Tensor[N, 4] or Tensor[4]) second set of boxes
+        reduction : (string, optional) Specifies the reduction to apply to the output:
             ``'none'`` | ``'mean'`` | ``'sum'``. ``'none'``: No reduction will be
             applied to the output. ``'mean'``: The output will be averaged.
             ``'sum'``: The output will be summed. Default: ``'none'``
-        eps (float, optional): small number to prevent division by zero. Default: 1e-7
-
-    Returns:
-        Tensor[]: Loss tensor with the reduction option applied.
+        eps : (float): small number to prevent division by zero. Default: 1e-7
 
     Reference:
-        Zhaohui Zheng et. al: Distance Intersection over Union Loss:
-        https://arxiv.org/abs/1911.08287
+
+    Complete Intersection over Union Loss (Zhaohui Zheng et. al)
+    https://arxiv.org/abs/1911.08287
+
     """
+
+    # Original Implementation : https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
+
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(distance_box_iou_loss)
+        _log_api_usage_once(complete_box_iou_loss)
 
     boxes1 = _upcast(boxes1)
     boxes2 = _upcast(boxes2)
@@ -62,22 +65,28 @@ def distance_box_iou_loss(
     yc1 = torch.min(y1, y1g)
     xc2 = torch.max(x2, x2g)
     yc2 = torch.max(y2, y2g)
-    # The diagonal distance of the smallest enclosing box squared
-    diagonal_distance_squared = ((xc2 - xc1) ** 2) + ((yc2 - yc1) ** 2) + eps
+    diag_len = ((xc2 - xc1) ** 2) + ((yc2 - yc1) ** 2) + eps
 
     # centers of boxes
     x_p = (x2 + x1) / 2
     y_p = (y2 + y1) / 2
     x_g = (x1g + x2g) / 2
     y_g = (y1g + y2g) / 2
-    # The distance between boxes' centers squared.
-    centers_distance_squared = ((x_p - x_g) ** 2) + ((y_p - y_g) ** 2)
+    distance = ((x_p - x_g) ** 2) + ((y_p - y_g) ** 2)
 
-    # The distance IoU is the IoU penalized by a normalized
-    # distance between boxes' centers squared.
-    loss = 1 - iou + (centers_distance_squared / diagonal_distance_squared)
+    # width and height of boxes
+    w_pred = x2 - x1
+    h_pred = y2 - y1
+    w_gt = x2g - x1g
+    h_gt = y2g - y1g
+    v = (4 / (torch.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2)
+    with torch.no_grad():
+        alpha = v / (1 - iou + v + eps)
+
+    loss = 1 - iou + (distance / diag_len) + alpha * v
     if reduction == "mean":
         loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
     elif reduction == "sum":
         loss = loss.sum()
+
     return loss

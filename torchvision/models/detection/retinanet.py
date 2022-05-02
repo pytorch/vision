@@ -727,7 +727,7 @@ def retinanet_resnet50_fpn(
     """
     Constructs a RetinaNet model with a ResNet-50-FPN backbone.
 
-    Reference: `"Focal Loss for Dense Object Detection" <https://arxiv.org/abs/1708.02002>`_.
+    Reference: `Focal Loss for Dense Object Detection <https://arxiv.org/abs/1708.02002>`_.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
@@ -763,13 +763,25 @@ def retinanet_resnet50_fpn(
         >>> predictions = model(x)
 
     Args:
-        weights (RetinaNet_ResNet50_FPN_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.detection.RetinaNet_ResNet50_FPN_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.RetinaNet_ResNet50_FPN_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
         num_classes (int, optional): number of output classes of the model (including the background)
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The pretrained weights for
+            the backbone.
         trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
+        **kwargs: parameters passed to the ``torchvision.models.detection.RetinaNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/retinanet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.RetinaNet_ResNet50_FPN_Weights
+        :members:
     """
     weights = RetinaNet_ResNet50_FPN_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
@@ -811,19 +823,31 @@ def retinanet_resnet50_fpn_v2(
     """
     Constructs an improved RetinaNet model with a ResNet-50-FPN backbone.
 
-    Reference: `"Bridging the Gap Between Anchor-based and Anchor-free Detection via Adaptive Training Sample Selection"
+    Reference: `Bridging the Gap Between Anchor-based and Anchor-free Detection via Adaptive Training Sample Selection
     <https://arxiv.org/abs/1912.02424>`_.
 
     :func:`~torchvision.models.detection.retinanet_resnet50_fpn` for more details.
 
     Args:
-        weights (RetinaNet_ResNet50_FPN_V2_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.detection.RetinaNet_ResNet50_FPN_V2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.RetinaNet_ResNet50_FPN_V2_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
         num_classes (int, optional): number of output classes of the model (including the background)
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The pretrained weights for
+            the backbone.
         trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
+        **kwargs: parameters passed to the ``torchvision.models.detection.RetinaNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/retinanet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.RetinaNet_ResNet50_FPN_V2_Weights
+        :members:
     """
     weights = RetinaNet_ResNet50_FPN_V2_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
