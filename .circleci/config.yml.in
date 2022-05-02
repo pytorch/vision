@@ -461,7 +461,7 @@ jobs:
   binary_macos_arm64_wheel:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "12.3.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -604,7 +604,7 @@ jobs:
   binary_macos_arm64_conda:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "12.3.0"
     steps:
       - checkout_merge
       - designate_upload_channel
@@ -996,7 +996,7 @@ jobs:
   unittest_macos_arm64_cpu:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "12.3.0"
     resource_class: large
     steps:
       - checkout
@@ -1087,7 +1087,7 @@ jobs:
   cmake_macos_arm64_cpu:
     <<: *binary_common
     macos:
-      xcode: "12.0"
+      xcode: "12.3.0"
     steps:
       - checkout_merge
       - designate_upload_channel
