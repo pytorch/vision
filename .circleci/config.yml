@@ -1034,6 +1034,7 @@ jobs:
           name: Post process
           command: .circleci/unittest/linux/scripts/post_process.sh
       - store_test_results:
+          path: test-results
 
   cmake_linux_cpu:
     <<: *binary_common
