@@ -183,6 +183,10 @@ def get_extensions():
     define_macros = []
 
     extra_compile_args = {"cxx": []}
+    cross_compile_arm64 = os.getenv("CROSS_COMPILE_ARM64", "0") == "1"
+    if cross_compile_arm64:
+        extra_compile_args = {"cxx": ["-arch", "arm64"]}
+
     if (torch.cuda.is_available() and ((CUDA_HOME is not None) or is_rocm_pytorch)) or os.getenv(
         "FORCE_CUDA", "0"
     ) == "1":

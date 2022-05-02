@@ -29,12 +29,13 @@ RC_PATTERN = r"/v[0-9]+(\.[0-9]+)*-rc[0-9]+/"
 def build_workflows(prefix="", filter_branch=None, upload=False, indentation=6, windows_latest_only=False):
     w = []
     for btype in ["wheel", "conda"]:
-        for os_type in ["linux", "macos", "win"]:
+        for os_type in ["linux", "macos", "macos_arm64", "win"]:
             python_versions = PYTHON_VERSIONS
             cu_versions_dict = {
                 "linux": ["cpu", "cu102", "cu113", "cu116", "rocm4.5.2", "rocm5.0"],
                 "win": ["cpu", "cu113", "cu116"],
                 "macos": ["cpu"],
+                "macos_arm64": ["cpu"],
             }
             cu_versions = cu_versions_dict[os_type]
             for python_version in python_versions:
@@ -195,7 +196,7 @@ def generate_upload_workflow(base_workflow_name, os_type, btype, cu_version, *, 
     }
 
     if btype == "wheel":
-        d["subfolder"] = "" if os_type == "macos" else cu_version + "/"
+        d["subfolder"] = "" if (os_type == "macos" or os_type == "macos_arm64") else cu_version + "/"
 
     if filter_branch is not None:
         d["filters"] = {
@@ -234,9 +235,9 @@ def indent(indentation, data_list):
 
 def unittest_workflows(indentation=6):
     jobs = []
-    for os_type in ["linux", "windows", "macos"]:
+    for os_type in ["linux", "windows", "macos", "macos_arm64"]:
         for device_type in ["cpu", "gpu"]:
-            if os_type == "macos" and device_type == "gpu":
+            if (os_type == "macos" or os_type == "macos_arm64") and device_type == "gpu":
                 continue
             for i, python_version in enumerate(PYTHON_VERSIONS):
                 job = {
@@ -259,9 +260,9 @@ def unittest_workflows(indentation=6):
 def cmake_workflows(indentation=6):
     jobs = []
     python_version = "3.8"
-    for os_type in ["linux", "windows", "macos"]:
+    for os_type in ["linux", "windows", "macos", "macos_arm64"]:
         # Skip OSX CUDA
-        device_types = ["cpu", "gpu"] if os_type != "macos" else ["cpu"]
+        device_types = ["cpu", "gpu"] if (os_type != "macos" or os_type != "macos_arm64") else ["cpu"]
         for device in device_types:
             job = {"name": f"cmake_{os_type}_{device}", "python_version": python_version}
 

@@ -458,6 +458,30 @@ jobs:
       - store_test_results:
           path: build_results/
 
+  binary_macos_arm64_wheel:
+    <<: *binary_common
+    macos:
+      xcode: "12.0"
+    steps:
+      - checkout_merge
+      - designate_upload_channel
+      - run:
+          # Cannot easily deduplicate this as source'ing activate
+          # will set environment variables which we need to propagate
+          # to build_wheel.sh
+          command: |
+            export CROSS_COMPILE_ARM64=1
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            packaging/build_wheel.sh
+      - store_artifacts:
+          path: dist
+      - persist_to_workspace:
+          root: dist
+          paths:
+            - "*"
+
   binary_macos_wheel:
     <<: *binary_common
     macos:
@@ -563,6 +587,30 @@ jobs:
       - designate_upload_channel
       - run:
           command: |
+            curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
+            sh conda.sh -b
+            source $HOME/miniconda3/bin/activate
+            conda install -yq conda-build
+            packaging/build_conda.sh
+      - store_artifacts:
+          path: /Users/distiller/miniconda3/conda-bld/osx-64
+      - persist_to_workspace:
+          root: /Users/distiller/miniconda3/conda-bld/osx-64
+          paths:
+            - "*"
+      - store_test_results:
+          path: build_results/
+
+binary_macos_arm64_conda:
+    <<: *binary_common
+    macos:
+      xcode: "12.0"
+    steps:
+      - checkout_merge
+      - designate_upload_channel
+      - run:
+          command: |
+            export CROSS_COMPILE_ARM64=1
             curl -o conda.sh https://repo.anaconda.com/miniconda/Miniconda3-latest-MacOSX-x86_64.sh
             sh conda.sh -b
             source $HOME/miniconda3/bin/activate
