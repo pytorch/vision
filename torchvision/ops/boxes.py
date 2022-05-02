@@ -372,11 +372,11 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
         eps (float, optional): small number to prevent division by zero. Default: 1e-7
 
     Returns:
-        Tensor[N, M]: the NxM matrix containing the pairwise complete IoU values
+        Tensor[N, M]: the NxM matrix containing the pairwise distance IoU values
         for every element in boxes1 and boxes2
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
-        _log_api_usage_once(complete_box_iou)
+        _log_api_usage_once(distance_box_iou)
 
     boxes1 = _upcast(boxes1)
     boxes2 = _upcast(boxes2)

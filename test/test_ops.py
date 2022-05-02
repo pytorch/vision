@@ -1281,6 +1281,9 @@ class TestDistanceBoxIoU(BoxTestBase):
     @pytest.mark.parametrize(
         "test_input, dtypes, tolerance, expected",
         [
+            pytest.param(
+                _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
+            ),
             pytest.param(_generate_float_input(), [torch.float16], 0.002, _generate_float_expected()),
             pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.001, _generate_float_expected()),
         ],
