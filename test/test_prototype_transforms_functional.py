@@ -373,6 +373,16 @@ def resized_crop_segmentation_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
+def pad_segmentation_mask():
+    for mask, padding, padding_mode in itertools.product(
+        make_segmentation_masks(),
+        [[1], [1, 1], [1, 1, 2, 2]],  # padding
+        ["constant", "symmetric", "edge", "reflect"],  # padding mode,
+    ):
+        yield SampleInput(mask, padding=padding, padding_mode=padding_mode)
+
+
+@register_kernel_info_from_sample_inputs_fn
 def perspective_bounding_box():
     for bounding_box, perspective_coeffs in itertools.product(
         make_bounding_boxes(),
@@ -1064,6 +1074,50 @@ def test_correctness_resized_crop_segmentation_mask(device, top, left, height, w
     expected_mask = _compute_expected_mask(in_mask, top, left, height, width, size)
     output_mask = F.resized_crop_segmentation_mask(in_mask, top, left, height, width, size)
     torch.testing.assert_close(output_mask, expected_mask)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+def test_correctness_pad_segmentation_mask_on_fixed_input(device):
+    mask = torch.ones((1, 3, 3), dtype=torch.long, device=device)
+
+    out_mask = F.pad_segmentation_mask(mask, padding=[1, 1, 1, 1])
+
+    expected_mask = torch.zeros((1, 5, 5), dtype=torch.long, device=device)
+    expected_mask[:, 1:-1, 1:-1] = 1
+    torch.testing.assert_close(out_mask, expected_mask)
+
+
+@pytest.mark.parametrize("padding", [[1, 2, 3, 4], [1], 1, [1, 2]])
+def test_correctness_pad_segmentation_mask(padding):
+    def _compute_expected_mask():
+        def parse_padding():
+            if isinstance(padding, int):
+                return [padding] * 4
+            if isinstance(padding, list):
+                if len(padding) == 1:
+                    return padding * 4
+                if len(padding) == 2:
+                    return padding * 2  # [left, up, right, down]
+
+            return padding
+
+        h, w = mask.shape[-2], mask.shape[-1]
+        pad_left, pad_up, pad_right, pad_down = parse_padding()
+
+        new_h = h + pad_up + pad_down
+        new_w = w + pad_left + pad_right
+
+        new_shape = (*mask.shape[:-2], new_h, new_w) if len(mask.shape) > 2 else (new_h, new_w)
+        expected_mask = torch.zeros(new_shape, dtype=torch.long)
+        expected_mask[..., pad_up:-pad_down, pad_left:-pad_right] = mask
+
+        return expected_mask
+
+    for mask in make_segmentation_masks():
+        out_mask = F.pad_segmentation_mask(mask, padding, "constant")
+
+        expected_mask = _compute_expected_mask()
+        torch.testing.assert_close(out_mask, expected_mask)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())

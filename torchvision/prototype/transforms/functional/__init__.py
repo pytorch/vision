@@ -62,6 +62,7 @@ from ._geometry import (
     pad_bounding_box,
     pad_image_tensor,
     pad_image_pil,
+    pad_segmentation_mask,
     crop_bounding_box,
     crop_image_tensor,
     crop_image_pil,

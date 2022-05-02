@@ -396,6 +396,20 @@ pad_image_tensor = _FT.pad
 pad_image_pil = _FP.pad
 
 
+def pad_segmentation_mask(
+    segmentation_mask: torch.Tensor, padding: List[int], padding_mode: str = "constant"
+) -> torch.Tensor:
+    num_masks, height, width = segmentation_mask.shape[-3:]
+    extra_dims = segmentation_mask.shape[:-3]
+
+    padded_mask = pad_image_tensor(
+        img=segmentation_mask.view(-1, num_masks, height, width), padding=padding, fill=0, padding_mode=padding_mode
+    )
+
+    new_height, new_width = padded_mask.shape[-2:]
+    return padded_mask.view(extra_dims + (num_masks, new_height, new_width))
+
+
 def pad_bounding_box(
     bounding_box: torch.Tensor, padding: List[int], format: features.BoundingBoxFormat
 ) -> torch.Tensor:

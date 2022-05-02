@@ -125,6 +125,12 @@ class TestCommon:
 
         pickle.dumps(dataset)
 
+    # This has to be a proper function, since lambda's or local functions
+    # cannot be pickled, but this is a requirement for the DataLoader with
+    # multiprocessing, i.e. num_workers > 0
+    def _collate_fn(self, batch):
+        return batch
+
     @pytest.mark.parametrize("num_workers", [0, 1])
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_data_loader(self, test_home, dataset_mock, config, num_workers):
@@ -135,7 +141,7 @@ class TestCommon:
             dataset,
             batch_size=2,
             num_workers=num_workers,
-            collate_fn=lambda batch: batch,
+            collate_fn=self._collate_fn,
         )
 
         next(iter(dl))
