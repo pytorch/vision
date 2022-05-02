@@ -1207,7 +1207,7 @@ def test_correctness_perspective_bounding_box(device, startpoints, endpoints):
             expected_bboxes = torch.stack(expected_bboxes)
         else:
             expected_bboxes = expected_bboxes[0]
-        torch.testing.assert_close(output_bboxes, expected_bboxes)
+        torch.testing.assert_close(output_bboxes, expected_bboxes, rtol=1e-5, atol=1e-5)
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
