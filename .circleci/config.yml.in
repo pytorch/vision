@@ -601,7 +601,7 @@ jobs:
       - store_test_results:
           path: build_results/
 
-binary_macos_arm64_conda:
+  binary_macos_arm64_conda:
     <<: *binary_common
     macos:
       xcode: "12.0"
