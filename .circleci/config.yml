@@ -1910,17 +1910,9 @@ workflows:
           cu_version: cpu
           name: cmake_macos_cpu
           python_version: '3.8'
-      - cmake_macos_gpu:
-          cu_version: cu113
-          name: cmake_macos_gpu
-          python_version: '3.8'
       - cmake_macos_arm64_cpu:
           cu_version: cpu
           name: cmake_macos_arm64_cpu
-          python_version: '3.8'
-      - cmake_macos_arm64_gpu:
-          cu_version: cu113
-          name: cmake_macos_arm64_gpu
           python_version: '3.8'
 
   nightly:

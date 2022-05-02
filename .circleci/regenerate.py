@@ -262,7 +262,7 @@ def cmake_workflows(indentation=6):
     python_version = "3.8"
     for os_type in ["linux", "windows", "macos", "macos_arm64"]:
         # Skip OSX CUDA
-        device_types = ["cpu", "gpu"] if (os_type != "macos" or os_type != "macos_arm64") else ["cpu"]
+        device_types = ["cpu", "gpu"] if (os_type != "macos" and os_type != "macos_arm64") else ["cpu"]
         for device in device_types:
             job = {"name": f"cmake_{os_type}_{device}", "python_version": python_version}
 
