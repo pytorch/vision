@@ -8,11 +8,11 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms as transforms
+import torchvision.transforms._pil_constants as _pil_constants
 import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
 from PIL import Image
 from torch._utils_internal import get_file_path_2
-import torchvision.transforms._pil_constants as _pil_constants
 
 try:
     import accimage

@@ -412,8 +412,8 @@ class TestONNXExporter:
     def get_image(self, rel_path: str, size: Tuple[int, int]) -> torch.Tensor:
         import os
 
-        from PIL import Image
         import torchvision.transforms._pil_constants as _pil_constants
+        from PIL import Image
         from torchvision.transforms import functional as F
 
         data_dir = os.path.join(os.path.dirname(__file__), "assets")
