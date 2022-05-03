@@ -176,8 +176,10 @@ Densenet-201                      76.896          93.370
 Densenet-161                      77.138          93.560
 Inception v3                      77.294          93.450
 GoogleNet                         69.778          89.530
-ShuffleNet V2 x1.0                69.362          88.316
 ShuffleNet V2 x0.5                60.552          81.746
+ShuffleNet V2 x1.0                69.362          88.316
+ShuffleNet V2 x1.5                72.996          91.086
+ShuffleNet V2 x2.0                76.230          93.006
 MobileNet V2                      71.878          90.286
 MobileNet V3 Large                74.042          91.340
 MobileNet V3 Small                67.668          87.402
@@ -499,8 +501,10 @@ Model                             Acc@1          Acc@5
 ================================  =============  =============
 MobileNet V2                      71.658         90.150
 MobileNet V3 Large                73.004         90.858
-ShuffleNet V2 x1.0                68.360         87.582
 ShuffleNet V2 x0.5                57.972         79.780
+ShuffleNet V2 x1.0                68.360         87.582
+ShuffleNet V2 x1.5                72.052         90.700
+ShuffleNet V2 x2.0                75.354         92.488
 ResNet 18                         69.494         88.882
 ResNet 50                         75.920         92.814
 ResNext 101 32x8d                 78.986         94.480

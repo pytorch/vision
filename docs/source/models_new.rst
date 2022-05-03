@@ -99,6 +99,7 @@ weights:
    models/fcos
    models/mask_rcnn
    models/retinanet
+   models/ssdlite
 
 Table of all available detection weights
 ----------------------------------------
