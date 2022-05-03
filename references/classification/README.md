@@ -236,6 +236,20 @@ torchrun --nproc_per_node=8 train.py\
 Note that `--val-resize-size` was optimized in a post-training step, see their `Weights` entry for the exact value.
 
 
+### ShuffleNet V2
+```
+torchrun --nproc_per_node=8 train.py \
+--batch-size=128 \
+--lr=0.5 --lr-scheduler=cosineannealinglr --lr-warmup-epochs=5 --lr-warmup-method=linear \
+--auto-augment=ta_wide --epochs=600 --random-erase=0.1 --weight-decay=0.00002 \
+--norm-weight-decay=0.0 --label-smoothing=0.1 --mixup-alpha=0.2 --cutmix-alpha=1.0 \
+--train-crop-size=176 --model-ema --val-resize-size=232 --ra-sampler --ra-reps=4
+```
+Here `$MODEL` is either `shufflenet_v2_x1_5` or `shufflenet_v2_x2_0`.
+
+The models `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0` were contributed by the community. See [PR-849](https://github.com/pytorch/vision/pull/849#issuecomment-483391686) for details.
+
+
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).
 
@@ -262,6 +276,21 @@ For all post training quantized models, the settings are:
 python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
 ```
 Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d`, `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0`.
+
+### Quantized ShuffleNet V2
+
+Here are commands that we use to quantized the `shufflenet_v2_x1_5` and `shufflenet_v2_x2_0` models.
+```
+# For shufflenet_v2_x1_5
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+    --model=shufflenet_v2_x1_5 --weights="ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1" \
+    --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
+
+# For shufflenet_v2_x2_0
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+    --model=shufflenet_v2_x2_0 --weights="ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1" \
+    --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
+```
 
 ### QAT MobileNetV2
 
