@@ -494,7 +494,21 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
 
 
 class ResNeXt101_64X4D_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/resnext101_64x4d-c407fb41.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 83455272,
+            "recipe": "https://github.com/pytorch/vision/pull/5935",
+            "metrics": {
+                # Mock
+                "acc@1": 83.246,
+                "acc@5": 96.454,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class Wide_ResNet50_2_Weights(WeightsEnum):
