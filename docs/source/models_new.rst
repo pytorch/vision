@@ -74,7 +74,8 @@ pre-trained weights:
    :maxdepth: 1
 
    models/deeplabv3
-
+   models/fcn
+   models/lraspp
 
 Table of all available semantic segmentation weights
 ----------------------------------------------------
@@ -99,6 +100,7 @@ weights:
    models/fcos
    models/mask_rcnn
    models/retinanet
+   models/ssdlite
 
 Table of all available detection weights
 ----------------------------------------
