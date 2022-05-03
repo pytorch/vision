@@ -4,9 +4,8 @@ MNASNet
 .. currentmodule:: torchvision.models
 
 
-The MNASNet model is based on the
- `MnasNet: Platform-Aware Neural Architecture Search for Mobile <https://arxiv.org/pdf/1807.11626.pdf>`__ 
- paper.
+The MNASNet model is based on the `MnasNet: Platform-Aware Neural Architecture
+Search for Mobile <https://arxiv.org/pdf/1807.11626.pdf>`__ paper.
 
 
 Model builders
