@@ -115,15 +115,30 @@ def fcn_resnet50(
     weights_backbone: Optional[ResNet50_Weights] = ResNet50_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> FCN:
-    """Constructs a Fully-Convolutional Network model with a ResNet-50 backbone.
+    """Fully-Convolutional Network model with a ResNet-50 backbone from the `Fully Convolutional
+    Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
 
     Args:
-        weights (FCN_ResNet50_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int, optional): number of output classes of the model (including the background)
-        aux_loss (bool, optional): If True, it uses an auxiliary loss
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        weights (:class:`~torchvision.models.segmentation.FCN_ResNet50_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.FCN_ResNet50_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background).
+        aux_loss (bool, optional): If True, it uses an auxiliary loss.
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The pretrained
+            weights for the backbone.
+        **kwargs: parameters passed to the ``torchvision.models.segmentation.fcn.FCN``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/fcn.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.segmentation.FCN_ResNet50_Weights
+        :members:
     """
+
     weights = FCN_ResNet50_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
 
@@ -156,15 +171,30 @@ def fcn_resnet101(
     weights_backbone: Optional[ResNet101_Weights] = ResNet101_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> FCN:
-    """Constructs a Fully-Convolutional Network model with a ResNet-101 backbone.
+    """Fully-Convolutional Network model with a ResNet-101 backbone from the `Fully Convolutional
+    Networks for Semantic Segmentation <https://arxiv.org/abs/1411.4038>`_ paper.
 
     Args:
-        weights (FCN_ResNet101_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int, optional): number of output classes of the model (including the background)
-        aux_loss (bool, optional): If True, it uses an auxiliary loss
-        weights_backbone (ResNet101_Weights, optional): The pretrained weights for the backbone
+        weights (:class:`~torchvision.models.segmentation.FCN_ResNet101_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.FCN_ResNet101_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background).
+        aux_loss (bool, optional): If True, it uses an auxiliary loss.
+        weights_backbone (:class:`~torchvision.models.ResNet101_Weights`, optional): The pretrained
+            weights for the backbone.
+        **kwargs: parameters passed to the ``torchvision.models.segmentation.fcn.FCN``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/fcn.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.segmentation.FCN_ResNet101_Weights
+        :members:
     """
+
     weights = FCN_ResNet101_Weights.verify(weights)
     weights_backbone = ResNet101_Weights.verify(weights_backbone)
 
