@@ -1,5 +1,5 @@
 EfficientNetV2
-============
+==============
 
 .. currentmodule:: torchvision.models
 

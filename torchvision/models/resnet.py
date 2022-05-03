@@ -786,8 +786,8 @@ def resnext101_64x4d(
 def wide_resnet50_2(
     *, weights: Optional[Wide_ResNet50_2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""Wide ResNet-50-2 model from
-    `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_.
+    """Wide ResNet-50-2 model from
+    `Wide Residual Networks <https://arxiv.org/abs/1605.07146>`_.
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
@@ -795,8 +795,19 @@ def wide_resnet50_2(
     channels, and in Wide ResNet-50-2 has 2048-1024-2048.
 
     Args:
-        weights (Wide_ResNet50_2_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.Wide_ResNet50_2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Wide_ResNet50_2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.Wide_ResNet50_2_Weights
+        :members:
     """
     weights = Wide_ResNet50_2_Weights.verify(weights)
 
@@ -808,8 +819,8 @@ def wide_resnet50_2(
 def wide_resnet101_2(
     *, weights: Optional[Wide_ResNet101_2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""Wide ResNet-101-2 model from
-    `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_.
+    """Wide ResNet-101-2 model from
+    `Wide Residual Networks <https://arxiv.org/abs/1605.07146>`_.
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
@@ -817,8 +828,19 @@ def wide_resnet101_2(
     channels, and in Wide ResNet-50-2 has 2048-1024-2048.
 
     Args:
-        weights (Wide_ResNet101_2_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.Wide_ResNet101_2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Wide_ResNet101_2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.Wide_ResNet101_2_Weights
+        :members:
     """
     weights = Wide_ResNet101_2_Weights.verify(weights)
 

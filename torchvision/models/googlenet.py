@@ -296,16 +296,23 @@ class GoogLeNet_Weights(WeightsEnum):
 @handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.IMAGENET1K_V1))
 def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     r"""GoogLeNet (Inception v1) model architecture from
-    `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+    `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`_.
     The required minimum input size of the model is 15x15.
 
     Args:
-        weights (GoogLeNet_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
-            Default: *False* when pretrained is True otherwise *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: True if ``weights=GoogLeNet_Weights.IMAGENET1K_V1``, else False.
+        weights (:class:`~torchvision.models.GoogLeNet_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.GoogLeNet_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.GoogLeNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/googlenet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.GoogLeNet_Weights
+        :members:
     """
     weights = GoogLeNet_Weights.verify(weights)
 

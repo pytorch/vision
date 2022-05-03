@@ -36,15 +36,26 @@ weights:
 .. toctree::
    :maxdepth: 1
 
+   models/alexnet
    models/convnext
+   models/densenet
    models/efficientnet
    models/efficientnetv2
+   models/googlenet
+   models/inception
+   models/mnasnet
+   models/mobilenetv2
+   models/mobilenetv3
    models/regnet
    models/resnet
    models/resnext
+   models/shufflenetv2
    models/squeezenet
+   models/ssd300
+   models/swin_transformer
    models/vgg
    models/vision_transformer
+   models/wide_resnet
 
 
 Table of all available classification weights
@@ -54,8 +65,71 @@ Accuracies are reported on ImageNet
 
 .. include:: generated/classification_table.rst
 
+Semantic Segmentation
+=====================
+
+.. currentmodule:: torchvision.models.segmentation
+
+The following semantic segmentation models are available, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/deeplabv3
+   models/fcn
+   models/lraspp
+
+Table of all available semantic segmentation weights
+----------------------------------------------------
+
+All models are evaluated on COCO val2017:
+
+.. include:: generated/segmentation_table.rst
+
+
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
 
-TODO: Something similar to classification models: list of models + table of weights
+.. currentmodule:: torchvision.models.detection
+
+The following detection models are available, with or without pre-trained
+weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/faster_rcnn
+   models/fcos
+   models/mask_rcnn
+   models/retinanet
+   models/ssdlite
+
+Table of all available detection weights
+----------------------------------------
+
+Box MAPs are reported on COCO
+
+.. include:: generated/detection_table.rst
+
+
+Video Classification
+====================
+
+.. currentmodule:: torchvision.models.video
+
+The following video classification models are available, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/video_resnet
+
+Table of all available video classification weights
+---------------------------------------------------
+
+Accuracies are reported on Kinetics-400
+
+.. include:: generated/video_table.rst
