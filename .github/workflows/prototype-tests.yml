@@ -45,6 +45,9 @@ jobs:
 #          path: ${{ steps.cache-params.outputs.path }}
 #          key: ${{ runner.os }}-v3-${{ steps.cache-params.outputs.date }}
 
+      - name: Upgrade build packages
+        run: python -m pip install --upgrade pip setuptools wheel
+
       - name: Checkout repository
         uses: actions/checkout@v3
 
