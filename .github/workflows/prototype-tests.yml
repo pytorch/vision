@@ -21,33 +21,28 @@ jobs:
         with:
           python-version: 3.7
 
-      - name: Debug
-        run: |
-          gdate --version
-
       - name: Generate cache params
         id: cache-params
-        shell: bash
-        env:
-          # TODO: explain
-          HOUR: 10
-          OS: ${{ matrix.os }}
+        shell: python
         run: |
-          CACHE_PATH=`python -c 'import sys; print(sys.path[-1])'`
-          echo $CACHE_PATH
-          echo "::set-output name=path::$CACHE_PATH"
+          import sys
+          from datetime import timedelta, datetime
           
-          if [[ $OS == Macos ]]; then DATE_BIN=gdate; else DATE_BIN=date; fi
-          if (( `$DATE_BIN -u '+%-H'` > $HOUR )); then DATE='today'; else DATE='yesterday'; fi
-          CACHE_DATE=`date -u -d $DATE '+%Y%m%d'`
-          echo $CACHE_DATE
-          echo "::set-output name=date::$CACHE_DATE"
+          cache_path = sys.path[-1]
+          print(cache_path)
+          print(f"::set-output name=date::{cache_path}")
+          
+          today = datetime.utcnow()
+          yesterday = today - timedelta(1)
+          cache_date = f"{today if today.hour > 10 else yesterday:%Y%m%d}"
+          print(cache_date)
+          print(f"::set-output name=date::{cache_date}")
 
       - name: Restore pip cache
         uses: actions/cache@v3
         with:
           path: ${{ steps.cache-params.outputs.path }}
-          key: ${{ runner.os }}-0-${{ steps.cache-params.outputs.date }}
+          key: ${{ runner.os }}-1-${{ steps.cache-params.outputs.date }}
 #
 #      - name: Checkout repository
 #        uses: actions/checkout@v3
