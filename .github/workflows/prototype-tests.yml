@@ -30,7 +30,7 @@ jobs:
           
           cache_path = sys.path[-1]
           print(cache_path)
-          print(f"::set-output name=date::{cache_path}")
+          print(f"::set-output name=path::{cache_path}")
           
           today = datetime.utcnow()
           yesterday = today - timedelta(1)
