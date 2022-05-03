@@ -26,6 +26,8 @@ endif()
 find_package(Torch REQUIRED)
 find_package(PNG REQUIRED)
 find_package(JPEG REQUIRED)
+add_definitions(-DJPEG_FOUND)
+add_definitions(-DPNG_FOUND)
 
 function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
     get_property(old_flags TARGET ${EXISTING_TARGET} PROPERTY INTERFACE_COMPILE_OPTIONS)
