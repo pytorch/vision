@@ -25,15 +25,16 @@ jobs:
         id: cache-params
         shell: python
         run: |
+          import datetime
+          import pathlib
           import sys
-          from datetime import timedelta, datetime
           
-          cache_path = sys.path[-1]
+          cache_path = pathlib.Path(sys.executable).parents[1]
           print(cache_path)
           print(f"::set-output name=path::{cache_path}")
           
-          today = datetime.utcnow()
-          yesterday = today - timedelta(1)
+          today = datetime.datetime.utcnow()
+          yesterday = today - datetime.timedelta(1)
           cache_date = f"{today if today.hour > 10 else yesterday:%Y%m%d}"
           print(cache_date)
           print(f"::set-output name=date::{cache_date}")
@@ -42,7 +43,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ steps.cache-params.outputs.path }}
-          key: ${{ runner.os }}-v2-${{ steps.cache-params.outputs.date }}
+          key: ${{ runner.os }}-v3-${{ steps.cache-params.outputs.date }}
 
       - name: Checkout repository
         uses: actions/checkout@v3
