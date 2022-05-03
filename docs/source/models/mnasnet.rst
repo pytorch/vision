@@ -27,4 +27,3 @@ more details about this class.
     mnasnet0_75
     mnasnet1_0
     mnasnet1_3
-
