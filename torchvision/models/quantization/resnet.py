@@ -25,9 +25,11 @@ __all__ = [
     "ResNet18_QuantizedWeights",
     "ResNet50_QuantizedWeights",
     "ResNeXt101_32X8D_QuantizedWeights",
+    "ResNeXt101_64X4D_QuantizedWeights",
     "resnet18",
     "resnet50",
     "resnext101_32x8d",
+    "resnext101_64x4d",
 ]
 
 
@@ -231,6 +233,25 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
     DEFAULT = IMAGENET1K_FBGEMM_V2
 
 
+class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        # CHANGE
+        url="https://download.pytorch.org/models/quantized/resnext101_32x8_fbgemm-ee16d00c.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 83455272,
+            "unquantized": ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
+            "metrics": {
+                # CHANGE
+                "acc@1": 82.574,
+                "acc@5": 96.132,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V2
+
+    
 @handle_legacy_interface(
     weights=(
         "pretrained",
@@ -317,4 +338,27 @@ def resnext101_32x8d(
 
     _ovewrite_named_param(kwargs, "groups", 32)
     _ovewrite_named_param(kwargs, "width_per_group", 8)
+    return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
+
+
+def resnext101_64x4d(
+    *,
+    weights: Optional[Union[ResNeXt101_64X4D_QuantizedWeights, ResNeXt101_64X4D_Weights]] = None,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any,
+) -> QuantizableResNet:
+    r"""ResNeXt-101 64x4d model from
+    `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
+
+    Args:
+        weights (ResNeXt101_64X4D_QuantizedWeights or ResNeXt101_64X4D_Weights, optional): The pretrained
+            weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, return a quantized version of the model
+    """
+    weights = (ResNeXt101_64X4D_QuantizedWeights if quantize else ResNeXt101_64X4D_Weights).verify(weights)
+
+    _ovewrite_named_param(kwargs, "groups", 64)
+    _ovewrite_named_param(kwargs, "width_per_group", 4)
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
