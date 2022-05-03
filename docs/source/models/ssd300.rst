@@ -1,5 +1,5 @@
 SSD300
-==========
+======
 
 .. currentmodule:: torchvision.models.detection
 
@@ -12,7 +12,7 @@ Model builders
 
 The following model builders can be used to instanciate a SSD300 model, with or
 without pre-trained weights. All the model builders internally rely on the
-``torchvision.models.squeezenet.SqueezeNet`` base class. Please refer to the `source
+``torchvision.models.detection.SSD`` base class. Please refer to the `source
 code
 <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_ for
 more details about this class.
@@ -21,4 +21,4 @@ more details about this class.
     :toctree: generated/
     :template: function.rst
 
-    SSD300_VGG16
+    ssd300_vgg16

@@ -614,13 +614,16 @@ def ssd300_vgg16(
         >>> predictions = model(x)
 
     Args:
-        weights (:class:`~torchvision.models.detection.SSD300_VGG16_Weights`, optional): 
-        The pretrained weights to use. See :class:`~torchvision.models.detection.SSD300_VGG16_Weights` 
-        below for more details, and possible values. By default, no pre-trained weights are used.
+        weights (:class:`~torchvision.models.detection.SSD300_VGG16_Weights`, optional): The pretrained
+                weights to use. See
+                :class:`~torchvision.models.detection.SSD300_VGG16_Weights` 
+                below for more details, and possible values. By default, no
+                pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr
-        Default is True.
+            Default is True.
         num_classes (int, optional): number of output classes of the model (including the background)
-        weights_backbone (:class:`~torchvision.models.VGG16_Weights`, optional): The pretrained weights for the backbone
+        weights_backbone (:class:`~torchvision.models.VGG16_Weights`, optional): The pretrained weights for the
+            backbone
         trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 4.
@@ -628,8 +631,9 @@ def ssd300_vgg16(
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_
             for more details about this class.
-        .. autoclass:: torchvision.models.detection.SSD300_VGG16_Weights
-            :members:
+
+    .. autoclass:: torchvision.models.detection.SSD300_VGG16_Weights
+        :members:
     """
     weights = SSD300_VGG16_Weights.verify(weights)
     weights_backbone = VGG16_Weights.verify(weights_backbone)
