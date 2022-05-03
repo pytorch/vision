@@ -2,25 +2,21 @@
 
 import argparse
 import csv
-import pathlib
 import sys
 
 from torchvision.prototype import datasets
-from torchvision.prototype.datasets._api import find
 from torchvision.prototype.datasets.utils._internal import BUILTIN_DIR
 
 
 def main(*names, force=False):
-    home = pathlib.Path(datasets.home())
-
     for name in names:
         path = BUILTIN_DIR / f"{name}.categories"
         if path.exists() and not force:
             continue
 
-        dataset = find(name)
+        dataset = datasets.load(name)
         try:
-            categories = dataset._generate_categories(home / name)
+            categories = dataset._generate_categories()
         except NotImplementedError:
             continue
 
@@ -49,7 +45,7 @@ def parse_args(argv=None):
     args = parser.parse_args(argv or sys.argv[1:])
 
     if not args.names:
-        args.names = datasets.list()
+        args.names = datasets.list_datasets()
 
     return args
 

@@ -21,7 +21,11 @@ supported Python versions.
 +--------------------------+--------------------------+---------------------------------+
 | ``torch``                | ``torchvision``          | ``python``                      |
 +==========================+==========================+=================================+
-| ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.7``, ``<=3.9``            |
+| ``main`` / ``nightly``   | ``main`` / ``nightly``   | ``>=3.7``, ``<=3.10``           |
++--------------------------+--------------------------+---------------------------------+
+| ``1.11.0``               | ``0.12.0``               | ``>=3.7``, ``<=3.10``           |
++--------------------------+--------------------------+---------------------------------+
+| ``1.10.2``               | ``0.11.3``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
 | ``1.10.1``               | ``0.11.2``               | ``>=3.6``, ``<=3.9``            |
 +--------------------------+--------------------------+---------------------------------+
@@ -157,6 +161,10 @@ so make sure that it is also available to cmake via the ``CMAKE_PREFIX_PATH``.
 
 For an example setup, take a look at ``examples/cpp/hello_world``.
 
+Python linking is disabled by default when compiling TorchVision with CMake, this allows you to run models without any Python 
+dependency. In some special cases where TorchVision's operators are used from Python code, you may need to link to Python. This 
+can be done by passing ``-DUSE_PYTHON=on`` to CMake.
+
 TorchVision Operators
 ---------------------
 In order to get the torchvision operators registered with torch (eg. for the JIT), all you need to do is to ensure that you
@@ -177,3 +185,10 @@ Disclaimer on Datasets
 This is a utility library that downloads and prepares public datasets. We do not host or distribute these datasets, vouch for their quality or fairness, or claim that you have license to use the dataset. It is your responsibility to determine whether you have permission to use the dataset under the dataset's license.
 
 If you're a dataset owner and wish to update any part of it (description, citation, etc.), or do not want your dataset to be included in this library, please get in touch through a GitHub issue. Thanks for your contribution to the ML community!
+
+Pre-trained Model License
+=========================
+
+The pre-trained models provided in this library may have their own licenses or terms and conditions derived from the dataset used for training. It is your responsibility to determine whether you have permission to use the models for your use case.
+
+More specifically, SWAG models are released under the CC-BY-NC 4.0 license. See `SWAG LICENSE <https://github.com/facebookresearch/SWAG/blob/main/LICENSE>`_ for additional details.

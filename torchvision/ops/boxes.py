@@ -298,10 +298,6 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(generalized_box_iou)
-    # degenerate boxes gives inf / nan results
-    # so do an early check
-    assert (boxes1[:, 2:] >= boxes1[:, :2]).all()
-    assert (boxes2[:, 2:] >= boxes2[:, :2]).all()
 
     inter, union = _box_inter_union(boxes1, boxes2)
     iou = inter / union
@@ -313,6 +309,54 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
     areai = whi[:, :, 0] * whi[:, :, 1]
 
     return iou - (areai - union) / areai
+
+
+def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tensor:
+    """
+    Return complete intersection-over-union (Jaccard index) between two sets of boxes.
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+    Args:
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
+        eps (float, optional): small number to prevent division by zero. Default: 1e-7
+    Returns:
+        Tensor[N, M]: the NxM matrix containing the pairwise complete IoU values
+        for every element in boxes1 and boxes2
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(complete_box_iou)
+
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
+
+    inter, union = _box_inter_union(boxes1, boxes2)
+    iou = inter / union
+
+    lti = torch.min(boxes1[:, None, :2], boxes2[:, None, :2])
+    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, None, 2:])
+
+    whi = (rbi - lti).clamp(min=0)  # [N,M,2]
+    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
+
+    # centers of boxes
+    x_p = (boxes1[:, 0] + boxes1[:, 2]) / 2
+    y_p = (boxes1[:, 1] + boxes1[:, 3]) / 2
+    x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
+    y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
+    # The distance between boxes' centers squared.
+    centers_distance_squared = (x_p - x_g) ** 2 + (y_p - y_g) ** 2
+
+    w_pred = boxes1[:, 2] - boxes1[:, 0]
+    h_pred = boxes1[:, 3] - boxes1[:, 1]
+
+    w_gt = boxes2[:, 2] - boxes2[:, 0]
+    h_gt = boxes2[:, 3] - boxes2[:, 1]
+
+    v = (4 / (torch.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2)
+    with torch.no_grad():
+        alpha = v / (1 - iou + v + eps)
+    return iou - (centers_distance_squared / diagonal_distance_squared) - alpha * v
 
 
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:

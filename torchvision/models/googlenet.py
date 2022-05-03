@@ -1,5 +1,6 @@
 import warnings
 from collections import namedtuple
+from functools import partial
 from typing import Optional, Tuple, List, Callable, Any
 
 import torch
@@ -7,15 +8,15 @@ import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 
-from .._internally_replaced_utils import load_state_dict_from_url
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
+from ._api import WeightsEnum, Weights
+from ._meta import _IMAGENET_CATEGORIES
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
-__all__ = ["GoogLeNet", "googlenet", "GoogLeNetOutputs", "_GoogLeNetOutputs"]
 
-model_urls = {
-    # GoogLeNet ported from TensorFlow
-    "googlenet": "https://download.pytorch.org/models/googlenet-1378be20.pth",
-}
+__all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNet_Weights", "googlenet"]
+
 
 GoogLeNetOutputs = namedtuple("GoogLeNetOutputs", ["logits", "aux_logits2", "aux_logits1"])
 GoogLeNetOutputs.__annotations__ = {"logits": Tensor, "aux_logits2": Optional[Tensor], "aux_logits1": Optional[Tensor]}
@@ -50,7 +51,8 @@ class GoogLeNet(nn.Module):
                 FutureWarning,
             )
             init_weights = True
-        assert len(blocks) == 3
+        if len(blocks) != 3:
+            raise ValueError(f"blocks length should be 3 instead of {len(blocks)}")
         conv_block = blocks[0]
         inception_block = blocks[1]
         inception_aux_block = blocks[2]
@@ -90,15 +92,12 @@ class GoogLeNet(nn.Module):
         self.fc = nn.Linear(1024, num_classes)
 
         if init_weights:
-            self._initialize_weights()
-
-    def _initialize_weights(self) -> None:
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
-                torch.nn.init.trunc_normal_(m.weight, mean=0.0, std=0.01, a=-2, b=2)
-            elif isinstance(m, nn.BatchNorm2d):
-                nn.init.constant_(m.weight, 1)
-                nn.init.constant_(m.bias, 0)
+            for m in self.modules():
+                if isinstance(m, nn.Conv2d) or isinstance(m, nn.Linear):
+                    torch.nn.init.trunc_normal_(m.weight, mean=0.0, std=0.01, a=-2, b=2)
+                elif isinstance(m, nn.BatchNorm2d):
+                    nn.init.constant_(m.weight, 1)
+                    nn.init.constant_(m.bias, 0)
 
     def _transform_input(self, x: Tensor) -> Tensor:
         if self.transform_input:
@@ -276,38 +275,66 @@ class BasicConv2d(nn.Module):
         return F.relu(x, inplace=True)
 
 
-def googlenet(pretrained: bool = False, progress: bool = True, **kwargs: Any) -> GoogLeNet:
+class GoogLeNet_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/googlenet-1378be20.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            "num_params": 6624904,
+            "min_size": (15, 15),
+            "categories": _IMAGENET_CATEGORIES,
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#googlenet",
+            "metrics": {
+                "acc@1": 69.778,
+                "acc@5": 89.530,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+@handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.IMAGENET1K_V1))
+def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     r"""GoogLeNet (Inception v1) model architecture from
-    `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+    `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`_.
     The required minimum input size of the model is 15x15.
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
-        progress (bool): If True, displays a progress bar of the download to stderr
-        aux_logits (bool): If True, adds two auxiliary branches that can improve training.
-            Default: *False* when pretrained is True otherwise *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
+        weights (:class:`~torchvision.models.GoogLeNet_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.GoogLeNet_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.squeezenet.GoogLeNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/googlenet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.GoogLeNet_Weights
+        :members:
     """
-    if pretrained:
+    weights = GoogLeNet_Weights.verify(weights)
+
+    original_aux_logits = kwargs.get("aux_logits", False)
+    if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" not in kwargs:
-            kwargs["aux_logits"] = False
-        if kwargs["aux_logits"]:
-            warnings.warn(
-                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
-            )
-        original_aux_logits = kwargs["aux_logits"]
-        kwargs["aux_logits"] = True
-        kwargs["init_weights"] = False
-        model = GoogLeNet(**kwargs)
-        state_dict = load_state_dict_from_url(model_urls["googlenet"], progress=progress)
-        model.load_state_dict(state_dict)
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "init_weights", False)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+
+    model = GoogLeNet(**kwargs)
+
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
         if not original_aux_logits:
             model.aux_logits = False
             model.aux1 = None  # type: ignore[assignment]
             model.aux2 = None  # type: ignore[assignment]
-        return model
+        else:
+            warnings.warn(
+                "auxiliary heads in the pretrained googlenet model are NOT pretrained, so make sure to train them"
+            )
 
-    return GoogLeNet(**kwargs)
+    return model

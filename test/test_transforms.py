@@ -1,6 +1,7 @@
 import math
 import os
 import random
+import re
 from functools import partial
 
 import numpy as np
@@ -153,7 +154,7 @@ class TestConvertImageDtype:
 @pytest.mark.skipif(accimage is None, reason="accimage not available")
 class TestAccImage:
     def test_accimage_to_tensor(self):
-        trans = transforms.ToTensor()
+        trans = transforms.PILToTensor()
 
         expected_output = trans(Image.open(GRACE_HOPPER).convert("RGB"))
         output = trans(accimage.Image(GRACE_HOPPER))
@@ -173,7 +174,8 @@ class TestAccImage:
         trans = transforms.Compose(
             [
                 transforms.Resize(256, interpolation=Image.LINEAR),
-                transforms.ToTensor(),
+                transforms.PILToTensor(),
+                transforms.ConvertImageDtype(dtype=torch.float),
             ]
         )
 
@@ -191,10 +193,7 @@ class TestAccImage:
 
     def test_accimage_crop(self):
         trans = transforms.Compose(
-            [
-                transforms.CenterCrop(256),
-                transforms.ToTensor(),
-            ]
+            [transforms.CenterCrop(256), transforms.PILToTensor(), transforms.ConvertImageDtype(dtype=torch.float)]
         )
 
         # Checking if Compose, CenterCrop and ToTensor can be printed as string
@@ -439,30 +438,41 @@ def test_resize_antialias_error():
         t(img)
 
 
+@pytest.mark.parametrize("height, width", ((32, 64), (64, 32)))
+def test_resize_size_equals_small_edge_size(height, width):
+    # Non-regression test for https://github.com/pytorch/vision/issues/5405
+    # max_size used to be ignored if size == small_edge_size
+    max_size = 40
+    img = Image.new("RGB", size=(width, height), color=127)
+
+    small_edge = min(height, width)
+    t = transforms.Resize(small_edge, max_size=max_size)
+    result = t(img)
+    assert max(result.size) == max_size
+
+
 class TestPad:
-    def test_pad(self):
+    @pytest.mark.parametrize("fill", [85, 85.0])
+    def test_pad(self, fill):
         height = random.randint(10, 32) * 2
         width = random.randint(10, 32) * 2
-        img = torch.ones(3, height, width)
+        img = torch.ones(3, height, width, dtype=torch.uint8)
         padding = random.randint(1, 20)
-        fill = random.randint(1, 50)
         result = transforms.Compose(
             [
                 transforms.ToPILImage(),
                 transforms.Pad(padding, fill=fill),
-                transforms.ToTensor(),
+                transforms.PILToTensor(),
             ]
         )(img)
         assert result.size(1) == height + 2 * padding
         assert result.size(2) == width + 2 * padding
         # check that all elements in the padded region correspond
         # to the pad value
-        fill_v = fill / 255
-        eps = 1e-5
         h_padded = result[:, :padding, :]
         w_padded = result[:, :, :padding]
-        torch.testing.assert_close(h_padded, torch.full_like(h_padded, fill_value=fill_v), rtol=0.0, atol=eps)
-        torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill_v), rtol=0.0, atol=eps)
+        torch.testing.assert_close(h_padded, torch.full_like(h_padded, fill_value=fill), rtol=0.0, atol=0.0)
+        torch.testing.assert_close(w_padded, torch.full_like(w_padded, fill_value=fill), rtol=0.0, atol=0.0)
         pytest.raises(ValueError, transforms.Pad(padding, fill=(1, 2)), transforms.ToPILImage()(img))
 
     def test_pad_with_tuple_of_pad_values(self):
@@ -474,7 +484,7 @@ class TestPad:
         output = transforms.Pad(padding)(img)
         assert output.size == (width + padding[0] * 2, height + padding[1] * 2)
 
-        padding = tuple(random.randint(1, 20) for _ in range(4))
+        padding = [random.randint(1, 20) for _ in range(4)]
         output = transforms.Pad(padding)(img)
         assert output.size[0] == width + padding[0] + padding[2]
         assert output.size[1] == height + padding[1] + padding[3]
@@ -495,7 +505,7 @@ class TestPad:
         # edge_pad, edge_pad, edge_pad, constant_pad, constant value added to leftmost edge, 0
         edge_middle_slice = np.asarray(edge_padded_img).transpose(2, 0, 1)[0][17][:6]
         assert_equal(edge_middle_slice, np.asarray([200, 200, 200, 200, 1, 0], dtype=np.uint8))
-        assert transforms.ToTensor()(edge_padded_img).size() == (3, 35, 35)
+        assert transforms.PILToTensor()(edge_padded_img).size() == (3, 35, 35)
 
         # Pad 3 to left/right, 2 to top/bottom
         reflect_padded_img = F.pad(img, (3, 2), padding_mode="reflect")
@@ -503,7 +513,7 @@ class TestPad:
         # reflect_pad, reflect_pad, reflect_pad, constant_pad, constant value added to leftmost edge, 0
         reflect_middle_slice = np.asarray(reflect_padded_img).transpose(2, 0, 1)[0][17][:6]
         assert_equal(reflect_middle_slice, np.asarray([0, 0, 1, 200, 1, 0], dtype=np.uint8))
-        assert transforms.ToTensor()(reflect_padded_img).size() == (3, 33, 35)
+        assert transforms.PILToTensor()(reflect_padded_img).size() == (3, 33, 35)
 
         # Pad 3 to left, 2 to top, 2 to right, 1 to bottom
         symmetric_padded_img = F.pad(img, (3, 2, 2, 1), padding_mode="symmetric")
@@ -511,7 +521,7 @@ class TestPad:
         # sym_pad, sym_pad, sym_pad, constant_pad, constant value added to leftmost edge, 0
         symmetric_middle_slice = np.asarray(symmetric_padded_img).transpose(2, 0, 1)[0][17][:6]
         assert_equal(symmetric_middle_slice, np.asarray([0, 1, 200, 200, 1, 0], dtype=np.uint8))
-        assert transforms.ToTensor()(symmetric_padded_img).size() == (3, 32, 34)
+        assert transforms.PILToTensor()(symmetric_padded_img).size() == (3, 32, 34)
 
         # Check negative padding explicitly for symmetric case, since it is not
         # implemented for tensor case to compare to
@@ -521,7 +531,7 @@ class TestPad:
         symmetric_neg_middle_right = np.asarray(symmetric_padded_img_neg).transpose(2, 0, 1)[0][17][-4:]
         assert_equal(symmetric_neg_middle_left, np.asarray([1, 0, 0], dtype=np.uint8))
         assert_equal(symmetric_neg_middle_right, np.asarray([200, 200, 0, 0], dtype=np.uint8))
-        assert transforms.ToTensor()(symmetric_padded_img_neg).size() == (3, 28, 31)
+        assert transforms.PILToTensor()(symmetric_padded_img_neg).size() == (3, 28, 31)
 
     def test_pad_raises_with_invalid_pad_sequence_len(self):
         with pytest.raises(ValueError):
@@ -1476,6 +1486,15 @@ def test_max_value(dtype):
     # self.assertGreater(F_t._max_value(dtype), torch.finfo(dtype).max)
 
 
+@pytest.mark.xfail(
+    reason="torch.iinfo() is not supported by torchscript. See https://github.com/pytorch/pytorch/issues/41492."
+)
+def test_max_value_iinfo():
+    @torch.jit.script
+    def max_value(image: torch.Tensor) -> int:
+        return 1 if image.is_floating_point() else torch.iinfo(image.dtype).max
+
+
 @pytest.mark.parametrize("should_vflip", [True, False])
 @pytest.mark.parametrize("single_dim", [True, False])
 def test_ten_crop(should_vflip, single_dim):
@@ -1587,17 +1606,36 @@ def test_trivialaugmentwide(fill, num_magnitude_bins, grayscale):
     transform.__repr__()
 
 
+@pytest.mark.parametrize("fill", [None, 85, (128, 128, 128)])
+@pytest.mark.parametrize("severity", [1, 10])
+@pytest.mark.parametrize("mixture_width", [1, 2])
+@pytest.mark.parametrize("chain_depth", [-1, 2])
+@pytest.mark.parametrize("all_ops", [True, False])
+@pytest.mark.parametrize("grayscale", [True, False])
+def test_augmix(fill, severity, mixture_width, chain_depth, all_ops, grayscale):
+    random.seed(42)
+    img = Image.open(GRACE_HOPPER)
+    if grayscale:
+        img, fill = _get_grayscale_test_image(img, fill)
+    transform = transforms.AugMix(
+        fill=fill, severity=severity, mixture_width=mixture_width, chain_depth=chain_depth, all_ops=all_ops
+    )
+    for _ in range(100):
+        img = transform(img)
+    transform.__repr__()
+
+
 def test_random_crop():
     height = random.randint(10, 32) * 2
     width = random.randint(10, 32) * 2
     oheight = random.randint(5, (height - 2) / 2) * 2
     owidth = random.randint(5, (width - 2) / 2) * 2
-    img = torch.ones(3, height, width)
+    img = torch.ones(3, height, width, dtype=torch.uint8)
     result = transforms.Compose(
         [
             transforms.ToPILImage(),
             transforms.RandomCrop((oheight, owidth)),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     assert result.size(1) == oheight
@@ -1608,14 +1646,14 @@ def test_random_crop():
         [
             transforms.ToPILImage(),
             transforms.RandomCrop((oheight, owidth), padding=padding),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     assert result.size(1) == oheight
     assert result.size(2) == owidth
 
     result = transforms.Compose(
-        [transforms.ToPILImage(), transforms.RandomCrop((height, width)), transforms.ToTensor()]
+        [transforms.ToPILImage(), transforms.RandomCrop((height, width)), transforms.PILToTensor()]
     )(img)
     assert result.size(1) == height
     assert result.size(2) == width
@@ -1625,7 +1663,7 @@ def test_random_crop():
         [
             transforms.ToPILImage(),
             transforms.RandomCrop((height + 1, width + 1), pad_if_needed=True),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     assert result.size(1) == height + 1
@@ -1643,7 +1681,7 @@ def test_center_crop():
     oheight = random.randint(5, (height - 2) / 2) * 2
     owidth = random.randint(5, (width - 2) / 2) * 2
 
-    img = torch.ones(3, height, width)
+    img = torch.ones(3, height, width, dtype=torch.uint8)
     oh1 = (height - oheight) // 2
     ow1 = (width - owidth) // 2
     imgnarrow = img[:, oh1 : oh1 + oheight, ow1 : ow1 + owidth]
@@ -1652,7 +1690,7 @@ def test_center_crop():
         [
             transforms.ToPILImage(),
             transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     assert result.sum() == 0
@@ -1662,7 +1700,7 @@ def test_center_crop():
         [
             transforms.ToPILImage(),
             transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     sum1 = result.sum()
@@ -1673,7 +1711,7 @@ def test_center_crop():
         [
             transforms.ToPILImage(),
             transforms.CenterCrop((oheight, owidth)),
-            transforms.ToTensor(),
+            transforms.PILToTensor(),
         ]
     )(img)
     sum2 = result.sum()
@@ -1696,12 +1734,12 @@ def test_center_crop_2(odd_image_size, delta, delta_width, delta_height):
     delta_height *= delta
     delta_width *= delta
 
-    img = torch.ones(3, *input_image_size)
+    img = torch.ones(3, *input_image_size, dtype=torch.uint8)
     crop_size = (input_image_size[0] + delta_height, input_image_size[1] + delta_width)
 
     # Test both transforms, one with PIL input and one with tensor
     output_pil = transforms.Compose(
-        [transforms.ToPILImage(), transforms.CenterCrop(crop_size), transforms.ToTensor()],
+        [transforms.ToPILImage(), transforms.CenterCrop(crop_size), transforms.PILToTensor()],
     )(img)
     assert output_pil.size()[1:3] == crop_size
 
@@ -1828,7 +1866,13 @@ def test_random_rotation():
     t.__repr__()
 
     # assert deprecation warning and non-BC
-    with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
+            "Please use 'interpolation' instead."
+        ),
+    ):
         t = transforms.RandomRotation((-10, 10), resample=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
@@ -1854,13 +1898,13 @@ def test_randomperspective():
         perp = transforms.RandomPerspective()
         startpoints, endpoints = perp.get_params(width, height, 0.5)
         tr_img = F.perspective(img, startpoints, endpoints)
-        tr_img2 = F.to_tensor(F.perspective(tr_img, endpoints, startpoints))
-        tr_img = F.to_tensor(tr_img)
+        tr_img2 = F.convert_image_dtype(F.pil_to_tensor(F.perspective(tr_img, endpoints, startpoints)))
+        tr_img = F.convert_image_dtype(F.pil_to_tensor(tr_img))
         assert img.size[0] == width
         assert img.size[1] == height
-        assert torch.nn.functional.mse_loss(tr_img, F.to_tensor(img)) + 0.3 > torch.nn.functional.mse_loss(
-            tr_img2, F.to_tensor(img)
-        )
+        assert torch.nn.functional.mse_loss(
+            tr_img, F.convert_image_dtype(F.pil_to_tensor(img))
+        ) + 0.3 > torch.nn.functional.mse_loss(tr_img2, F.convert_image_dtype(F.pil_to_tensor(img)))
 
 
 @pytest.mark.parametrize("seed", range(10))
@@ -1983,11 +2027,11 @@ class TestAffine:
         result_matrix[2, 2] = 1
         return np.linalg.inv(result_matrix)
 
-    def _test_transformation(self, angle, translate, scale, shear, pil_image, input_img):
+    def _test_transformation(self, angle, translate, scale, shear, pil_image, input_img, center=None):
 
         a_rad = math.radians(angle)
         s_rad = [math.radians(sh_) for sh_ in shear]
-        cnt = [20, 20]
+        cnt = [20, 20] if center is None else center
         cx, cy = cnt
         tx, ty = translate
         sx, sy = s_rad
@@ -2032,7 +2076,7 @@ class TestAffine:
                 if 0 <= _x < input_img.shape[1] and 0 <= _y < input_img.shape[0]:
                     true_result[y, x, :] = input_img[_y, _x, :]
 
-        result = F.affine(pil_image, angle=angle, translate=translate, scale=scale, shear=shear)
+        result = F.affine(pil_image, angle=angle, translate=translate, scale=scale, shear=shear, center=center)
         assert result.size == pil_image.size
         # Compute number of different pixels:
         np_result = np.array(result)
@@ -2048,6 +2092,18 @@ class TestAffine:
         angle = 45
         self._test_transformation(
             angle=angle, translate=(0, 0), scale=1.0, shear=(0.0, 0.0), pil_image=pil_image, input_img=input_img
+        )
+
+        # Test rotation
+        angle = 45
+        self._test_transformation(
+            angle=angle,
+            translate=(0, 0),
+            scale=1.0,
+            shear=(0.0, 0.0),
+            pil_image=pil_image,
+            input_img=input_img,
+            center=[0, 0],
         )
 
         # Test translation
@@ -2066,6 +2122,18 @@ class TestAffine:
         shear = [45.0, 25.0]
         self._test_transformation(
             angle=0.0, translate=(0.0, 0.0), scale=1.0, shear=shear, pil_image=pil_image, input_img=input_img
+        )
+
+        # Test shear with top-left as center
+        shear = [45.0, 25.0]
+        self._test_transformation(
+            angle=0.0,
+            translate=(0.0, 0.0),
+            scale=1.0,
+            shear=shear,
+            pil_image=pil_image,
+            input_img=input_img,
+            center=[0, 0],
         )
 
     @pytest.mark.parametrize("angle", range(-90, 90, 36))
@@ -2143,11 +2211,23 @@ def test_random_affine():
     assert "bilinear" in t.__repr__()
 
     # assert deprecation warning and non-BC
-    with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'interpolation' instead."
+        ),
+    ):
         t = transforms.RandomAffine(10, resample=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
-    with pytest.warns(UserWarning, match=r"Argument fillcolor is deprecated and will be removed"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'fill' instead."
+        ),
+    ):
         t = transforms.RandomAffine(10, fillcolor=10)
         assert t.fill == 10
 

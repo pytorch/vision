@@ -4,10 +4,8 @@ import os
 import random
 import shutil
 import tempfile
-from distutils.util import strtobool
 
 import numpy as np
-import pytest
 import torch
 from PIL import Image
 from torchvision import io
@@ -15,18 +13,9 @@ from torchvision import io
 import __main__  # noqa: 401
 
 
-def get_bool_env_var(name, *, exist_ok=False, default=False):
-    value = os.getenv(name)
-    if value is None:
-        return default
-    if exist_ok:
-        return True
-    return bool(strtobool(value))
-
-
-IN_CIRCLE_CI = get_bool_env_var("CIRCLECI")
-IN_RE_WORKER = get_bool_env_var("INSIDE_RE_WORKER", exist_ok=True)
-IN_FBCODE = get_bool_env_var("IN_FBCODE_TORCHVISION")
+IN_CIRCLE_CI = os.getenv("CIRCLECI", False) == "true"
+IN_RE_WORKER = os.environ.get("INSIDE_RE_WORKER") is not None
+IN_FBCODE = os.environ.get("IN_FBCODE_TORCHVISION") == "1"
 CUDA_NOT_AVAILABLE_MSG = "CUDA device not available"
 CIRCLECI_GPU_NO_CUDA_MSG = "We're in a CircleCI GPU machine, and this test doesn't need cuda."
 
@@ -148,7 +137,7 @@ def _create_data_batch(height=3, width=3, channels=3, num_samples=4, device="cpu
     return batch_tensor
 
 
-assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=1e-6)
+assert_equal = functools.partial(torch.testing.assert_close, rtol=0, atol=0)
 
 
 def get_list_of_videos(tmpdir, num_videos=5, sizes=None, fps=None):
@@ -198,7 +187,7 @@ def _assert_approx_equal_tensor_to_pil(
     tensor = tensor.to(torch.float)
     pil_tensor = pil_tensor.to(torch.float)
     err = getattr(torch, agg_method)(torch.abs(tensor - pil_tensor)).item()
-    assert err < tol
+    assert err < tol, f"{err} vs {tol}"
 
 
 def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
@@ -206,14 +195,10 @@ def _test_fn_on_batch(batch_tensors, fn, scripted_fn_atol=1e-8, **fn_kwargs):
     for i in range(len(batch_tensors)):
         img_tensor = batch_tensors[i, ...]
         transformed_img = fn(img_tensor, **fn_kwargs)
-        assert_equal(transformed_img, transformed_batch[i, ...])
+        torch.testing.assert_close(transformed_img, transformed_batch[i, ...], rtol=0, atol=1e-6)
 
     if scripted_fn_atol >= 0:
         scripted_fn = torch.jit.script(fn)
         # scriptable function test
         s_transformed_batch = scripted_fn(batch_tensors, **fn_kwargs)
         torch.testing.assert_close(transformed_batch, s_transformed_batch, rtol=1e-5, atol=scripted_fn_atol)
-
-
-def run_on_env_var(name, *, skip_reason=None, exist_ok=False, default=False):
-    return pytest.mark.skipif(not get_bool_env_var(name, exist_ok=exist_ok, default=default), reason=skip_reason)

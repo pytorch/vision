@@ -102,7 +102,12 @@ def main(args):
     optimizer = Adam(model.parameters(), lr=args.lr)
 
     transform = transforms.Compose(
-        [transforms.Lambda(lambda image: image.convert("RGB")), transforms.Resize((224, 224)), transforms.ToTensor()]
+        [
+            transforms.Lambda(lambda image: image.convert("RGB")),
+            transforms.Resize((224, 224)),
+            transforms.PILToTensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
     )
 
     # Using FMNIST to demonstrate embedding learning using triplet loss. This dataset can

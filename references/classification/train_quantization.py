@@ -12,15 +12,7 @@ from torch import nn
 from train import train_one_epoch, evaluate, load_data
 
 
-try:
-    from torchvision.prototype import models as PM
-except ImportError:
-    PM = None
-
-
 def main(args):
-    if args.weights and PM is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -54,14 +46,11 @@ def main(args):
 
     print("Creating model", args.model)
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    if not args.weights:
-        model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
-    else:
-        model = PM.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
+    model = torchvision.models.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
-        model.fuse_model()
+        model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(args.backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
 
@@ -95,7 +84,7 @@ def main(args):
             ds, batch_size=args.batch_size, shuffle=False, num_workers=args.workers, pin_memory=True
         )
         model.eval()
-        model.fuse_model()
+        model.fuse_model(is_qat=False)
         model.qconfig = torch.ao.quantization.get_default_qconfig(args.backend)
         torch.ao.quantization.prepare(model, inplace=True)
         # Calibrate first
@@ -262,8 +251,6 @@ def get_args_parser(add_help=True):
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
     parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
-
-    # Prototype models only
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser

@@ -33,12 +33,6 @@ from engine import train_one_epoch, evaluate
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
 
 
-try:
-    from torchvision.prototype import models as PM
-except ImportError:
-    PM = None
-
-
 def get_dataset(name, image_set, transform, data_path):
     paths = {"coco": (data_path, get_coco, 91), "coco_kp": (data_path, get_coco_kp, 2)}
     p, ds_fn, num_classes = paths[name]
@@ -49,12 +43,13 @@ def get_dataset(name, image_set, transform, data_path):
 
 def get_transform(train, args):
     if train:
-        return presets.DetectionPresetTrain(args.data_augmentation)
-    elif not args.weights:
-        return presets.DetectionPresetEval()
+        return presets.DetectionPresetTrain(data_augmentation=args.data_augmentation)
+    elif args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        trans = weights.transforms()
+        return lambda img, target: (trans(img), target)
     else:
-        weights = PM.get_weight(args.weights)
-        return weights.transforms()
+        return presets.DetectionPresetEval()
 
 
 def get_args_parser(add_help=True):
@@ -73,6 +68,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "-j", "--workers", default=4, type=int, metavar="N", help="number of data loading workers (default: 4)"
     )
+    parser.add_argument("--opt", default="sgd", type=str, help="optimizer")
     parser.add_argument(
         "--lr",
         default=0.02,
@@ -88,6 +84,12 @@ def get_args_parser(add_help=True):
         metavar="W",
         help="weight decay (default: 1e-4)",
         dest="weight_decay",
+    )
+    parser.add_argument(
+        "--norm-weight-decay",
+        default=None,
+        type=float,
+        help="weight decay for Normalization layers (default: None, same value as --wd)",
     )
     parser.add_argument(
         "--lr-scheduler", default="multisteplr", type=str, help="name of lr scheduler (default: multisteplr)"
@@ -129,19 +131,12 @@ def get_args_parser(add_help=True):
         help="Only test the model",
         action="store_true",
     )
-    parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
-    )
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
-
-    # Prototype models only
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
+    parser.add_argument("--weights-backbone", default=None, type=str, help="the backbone weights enum name to load")
 
     # Mixed precision training parameters
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
@@ -150,8 +145,6 @@ def get_args_parser(add_help=True):
 
 
 def main(args):
-    if args.weights and PM is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -190,15 +183,14 @@ def main(args):
 
     print("Creating model")
     kwargs = {"trainable_backbone_layers": args.trainable_backbone_layers}
+    if args.data_augmentation in ["multiscale", "lsj"]:
+        kwargs["_skip_resize"] = True
     if "rcnn" in args.model:
         if args.rpn_score_thresh is not None:
             kwargs["rpn_score_thresh"] = args.rpn_score_thresh
-    if not args.weights:
-        model = torchvision.models.detection.__dict__[args.model](
-            pretrained=args.pretrained, num_classes=num_classes, **kwargs
-        )
-    else:
-        model = PM.detection.__dict__[args.model](weights=args.weights, num_classes=num_classes, **kwargs)
+    model = torchvision.models.detection.__dict__[args.model](
+        weights=args.weights, weights_backbone=args.weights_backbone, num_classes=num_classes, **kwargs
+    )
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -208,8 +200,26 @@ def main(args):
         model = torch.nn.parallel.DistributedDataParallel(model, device_ids=[args.gpu])
         model_without_ddp = model.module
 
-    params = [p for p in model.parameters() if p.requires_grad]
-    optimizer = torch.optim.SGD(params, lr=args.lr, momentum=args.momentum, weight_decay=args.weight_decay)
+    if args.norm_weight_decay is None:
+        parameters = [p for p in model.parameters() if p.requires_grad]
+    else:
+        param_groups = torchvision.ops._utils.split_normalization_params(model)
+        wd_groups = [args.norm_weight_decay, args.weight_decay]
+        parameters = [{"params": p, "weight_decay": w} for p, w in zip(param_groups, wd_groups) if p]
+
+    opt_name = args.opt.lower()
+    if opt_name.startswith("sgd"):
+        optimizer = torch.optim.SGD(
+            parameters,
+            lr=args.lr,
+            momentum=args.momentum,
+            weight_decay=args.weight_decay,
+            nesterov="nesterov" in opt_name,
+        )
+    elif opt_name == "adamw":
+        optimizer = torch.optim.AdamW(parameters, lr=args.lr, weight_decay=args.weight_decay)
+    else:
+        raise RuntimeError(f"Invalid optimizer {args.opt}. Only SGD and AdamW are supported.")
 
     scaler = torch.cuda.amp.GradScaler() if args.amp else None
 

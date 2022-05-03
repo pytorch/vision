@@ -1,4 +1,4 @@
-/* This rule (and possibly this entire file) should be removed once
+/* This rule should be removed once
 https://github.com/pytorch/pytorch_sphinx_theme/issues/125 is fixed.
 
 We override the rule so that the links to the notebooks aren't hidden in the
@@ -9,4 +9,15 @@ torchvision it just hides the links. So we have to put them back here */
 article.pytorch-article .sphx-glr-download-link-note.admonition.note,
 article.pytorch-article .reference.download.internal, article.pytorch-article .sphx-glr-signature {
   display: block;
+}
+
+/* These 2 rules below are for the weight tables (generated in conf.py) to look
+ * better. In particular we make their row height shorter */
+.table-weights td, .table-weights th {
+  margin-bottom: 0.2rem;
+  padding: 0 !important;
+  line-height: 1 !important;
+}
+.table-weights p {
+    margin-bottom: 0.2rem !important;
 }

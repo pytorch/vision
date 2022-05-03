@@ -2,17 +2,16 @@ import abc
 import hashlib
 import itertools
 import pathlib
-import warnings
 from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
     IterableWrapper,
     FileLister,
-    FileLoader,
+    FileOpener,
     IterDataPipe,
-    ZipArchiveReader,
-    TarArchiveReader,
+    ZipArchiveLoader,
+    TarArchiveLoader,
     RarArchiveLoader,
 )
 from torchvision.datasets.utils import (
@@ -21,7 +20,10 @@ from torchvision.datasets.utils import (
     extract_archive,
     _decompress,
     download_file_from_google_drive,
+    _get_redirect_url,
+    _get_google_drive_file_id,
 )
+from typing_extensions import Literal
 
 
 class OnlineResource(abc.ABC):
@@ -30,25 +32,22 @@ class OnlineResource(abc.ABC):
         *,
         file_name: str,
         sha256: Optional[str] = None,
-        decompress: bool = False,
-        extract: bool = False,
-        preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]] = None,
-        loader: Optional[Callable[[pathlib.Path], IterDataPipe[Tuple[str, IO]]]] = None,
+        preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], pathlib.Path]]] = None,
     ) -> None:
         self.file_name = file_name
         self.sha256 = sha256
 
-        if preprocess and (decompress or extract):
-            warnings.warn("The parameters 'decompress' and 'extract' are ignored when 'preprocess' is passed.")
-        elif extract:
-            preprocess = self._extract
-        elif decompress:
-            preprocess = self._decompress
+        if isinstance(preprocess, str):
+            if preprocess == "decompress":
+                preprocess = self._decompress
+            elif preprocess == "extract":
+                preprocess = self._extract
+            else:
+                raise ValueError(
+                    f"Only `'decompress'` or `'extract'` are valid if `preprocess` is passed as string,"
+                    f"but got {preprocess} instead."
+                )
         self._preprocess = preprocess
-
-        if loader is None:
-            loader = self._default_loader
-        self._loader = loader
 
     @staticmethod
     def _extract(file: pathlib.Path) -> pathlib.Path:
@@ -60,11 +59,11 @@ class OnlineResource(abc.ABC):
     def _decompress(file: pathlib.Path) -> pathlib.Path:
         return pathlib.Path(_decompress(str(file), remove_finished=True))
 
-    def _default_loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
+    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
-            return FileLoader(FileLister(str(path), recursive=True))
+            return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
-        dp = FileLoader(IterableWrapper((str(path),)))
+        dp = FileOpener(IterableWrapper((str(path),)), mode="rb")
 
         archive_loader = self._guess_archive_loader(path)
         if archive_loader:
@@ -73,8 +72,8 @@ class OnlineResource(abc.ABC):
         return dp
 
     _ARCHIVE_LOADERS = {
-        ".tar": TarArchiveReader,
-        ".zip": ZipArchiveReader,
+        ".tar": TarArchiveLoader,
+        ".zip": ZipArchiveLoader,
         ".rar": RarArchiveLoader,
     }
 
@@ -93,20 +92,30 @@ class OnlineResource(abc.ABC):
         root = pathlib.Path(root)
         path = root / self.file_name
         # Instead of the raw file, there might also be files with fewer suffixes after decompression or directories
-        # with no suffixes at all. Thus, we look for all paths that share the same name without suffixes as the raw
-        # file.
-        path_candidates = {file for file in path.parent.glob(path.name.replace("".join(path.suffixes), "") + "*")}
-        # If we don't find anything, we try to download the raw file.
-        if not path_candidates:
-            path_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
+        # with no suffixes at all.
+        stem = path.name.replace("".join(path.suffixes), "")
+
+        # In a first step, we check for a folder with the same stem as the raw file. If it exists, we use it since
+        # extracted files give the best I/O performance. Note that OnlineResource._extract() makes sure that an archive
+        # is always extracted in a folder with the corresponding file name.
+        folder_candidate = path.parent / stem
+        if folder_candidate.exists() and folder_candidate.is_dir():
+            return self._loader(folder_candidate)
+
+        # If there is no folder, we look for all files that share the same stem as the raw file, but might have a
+        # different suffix.
+        file_candidates = {file for file in path.parent.glob(stem + ".*")}
+        # If we don't find anything, we download the raw file.
+        if not file_candidates:
+            file_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
         # If the only thing we find is the raw file, we use it and optionally perform some preprocessing steps.
-        if path_candidates == {path}:
-            if self._preprocess:
+        if file_candidates == {path}:
+            if self._preprocess is not None:
                 path = self._preprocess(path)
-        # Otherwise we use the path with the fewest suffixes. This gives us the extracted > decompressed > raw priority
-        # that we want.
+        # Otherwise, we use the path with the fewest suffixes. This gives us the decompressed > raw priority that we
+        # want for the best I/O performance.
         else:
-            path = min(path_candidates, key=lambda path: len(path.suffixes))
+            path = min(file_candidates, key=lambda path: len(path.suffixes))
         return self._loader(path)
 
     @abc.abstractmethod
@@ -141,9 +150,40 @@ class HttpResource(OnlineResource):
         super().__init__(file_name=file_name or pathlib.Path(urlparse(url).path).name, **kwargs)
         self.url = url
         self.mirrors = mirrors
+        self._resolved = False
+
+    def resolve(self) -> OnlineResource:
+        if self._resolved:
+            return self
+
+        redirect_url = _get_redirect_url(self.url)
+        if redirect_url == self.url:
+            self._resolved = True
+            return self
+
+        meta = {
+            attr.lstrip("_"): getattr(self, attr)
+            for attr in (
+                "file_name",
+                "sha256",
+                "_preprocess",
+            )
+        }
+
+        gdrive_id = _get_google_drive_file_id(redirect_url)
+        if gdrive_id:
+            return GDriveResource(gdrive_id, **meta)
+
+        http_resource = HttpResource(redirect_url, **meta)
+        http_resource._resolved = True
+        return http_resource
 
     def _download(self, root: pathlib.Path) -> None:
+        if not self._resolved:
+            return self.resolve()._download(root)
+
         for url in itertools.chain((self.url,), self.mirrors):
+
             try:
                 download_url(url, str(root), filename=self.file_name, md5=None)
             # TODO: make this more precise
@@ -176,3 +216,17 @@ class ManualDownloadResource(OnlineResource):
             f"Please follow the instructions below and place it in {root}\n\n"
             f"{self.instructions}"
         )
+
+
+class KaggleDownloadResource(ManualDownloadResource):
+    def __init__(self, challenge_url: str, *, file_name: str, **kwargs: Any) -> None:
+        instructions = "\n".join(
+            (
+                "1. Register and login at https://www.kaggle.com",
+                f"2. Navigate to {challenge_url}",
+                "3. Click 'Join Competition' and follow the instructions there",
+                "4. Navigate to the 'Data' tab",
+                f"5. Select {file_name} in the 'Data Explorer' and click the download button",
+            )
+        )
+        super().__init__(instructions, file_name=file_name, **kwargs)

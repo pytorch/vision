@@ -78,9 +78,11 @@ class PSRoIAlign(nn.Module):
         return ps_roi_align(input, rois, self.output_size, self.spatial_scale, self.sampling_ratio)
 
     def __repr__(self) -> str:
-        tmpstr = self.__class__.__name__ + "("
-        tmpstr += "output_size=" + str(self.output_size)
-        tmpstr += ", spatial_scale=" + str(self.spatial_scale)
-        tmpstr += ", sampling_ratio=" + str(self.sampling_ratio)
-        tmpstr += ")"
-        return tmpstr
+        s = (
+            f"{self.__class__.__name__}("
+            f"output_size={self.output_size}"
+            f", spatial_scale={self.spatial_scale}"
+            f", sampling_ratio={self.sampling_ratio}"
+            f")"
+        )
+        return s

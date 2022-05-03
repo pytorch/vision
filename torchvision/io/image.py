@@ -145,6 +145,10 @@ def decode_jpeg(
             with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
             supported for CUDA version >= 10.1
 
+            .. warning::
+                There is a memory leak in the nvjpeg library for CUDA versions < 11.6.
+                Make sure to rely on CUDA 11.6 or above before using ``device="cuda"``.
+
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """

@@ -1,155 +1,71 @@
-import enum
-import functools
-from typing import Callable, Union, Tuple, Dict, Any, Optional, cast
+from __future__ import annotations
+
+from typing import Any, Tuple, Union, Optional
 
 import torch
-from torchvision.prototype.utils._internal import StrEnum
+from torchvision._utils import StrEnum
 
-from ._feature import Feature, DEFAULT
+from ._feature import _Feature
 
 
 class BoundingBoxFormat(StrEnum):
-    # this is just for test purposes
-    _SENTINEL = -1
-    XYXY = enum.auto()
-    XYWH = enum.auto()
-    CXCYWH = enum.auto()
+    XYXY = StrEnum.auto()
+    XYWH = StrEnum.auto()
+    CXCYWH = StrEnum.auto()
 
 
-def to_parts(input: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    return input.unbind(dim=-1)  # type: ignore[return-value]
-
-
-def from_parts(a: torch.Tensor, b: torch.Tensor, c: torch.Tensor, d: torch.Tensor) -> torch.Tensor:
-    return torch.stack((a, b, c, d), dim=-1)
-
-
-def format_converter_wrapper(
-    part_converter: Callable[
-        [torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
-        Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor],
-    ]
-):
-    def wrapper(input: torch.Tensor) -> torch.Tensor:
-        return from_parts(*part_converter(*to_parts(input)))
-
-    return wrapper
-
-
-@format_converter_wrapper
-def xywh_to_xyxy(
-    x: torch.Tensor, y: torch.Tensor, w: torch.Tensor, h: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    x1 = x
-    y1 = y
-    x2 = x + w
-    y2 = y + h
-    return x1, y1, x2, y2
-
-
-@format_converter_wrapper
-def xyxy_to_xywh(
-    x1: torch.Tensor, y1: torch.Tensor, x2: torch.Tensor, y2: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    x = x1
-    y = y1
-    w = x2 - x1
-    h = y2 - y1
-    return x, y, w, h
-
-
-@format_converter_wrapper
-def cxcywh_to_xyxy(
-    cx: torch.Tensor, cy: torch.Tensor, w: torch.Tensor, h: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    x1 = cx - 0.5 * w
-    y1 = cy - 0.5 * h
-    x2 = cx + 0.5 * w
-    y2 = cy + 0.5 * h
-    return x1, y1, x2, y2
-
-
-@format_converter_wrapper
-def xyxy_to_cxcywh(
-    x1: torch.Tensor, y1: torch.Tensor, x2: torch.Tensor, y2: torch.Tensor
-) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-    cx = (x1 + x2) / 2
-    cy = (y1 + y2) / 2
-    w = x2 - x1
-    h = y2 - y1
-    return cx, cy, w, h
-
-
-class BoundingBox(Feature):
-    formats = BoundingBoxFormat
+class BoundingBox(_Feature):
     format: BoundingBoxFormat
     image_size: Tuple[int, int]
 
-    @classmethod
-    def _parse_meta_data(
+    def __new__(
         cls,
-        format: Union[str, BoundingBoxFormat] = DEFAULT,  # type: ignore[assignment]
-        image_size: Optional[Tuple[int, int]] = DEFAULT,  # type: ignore[assignment]
-    ) -> Dict[str, Tuple[Any, Any]]:
+        data: Any,
+        *,
+        format: Union[BoundingBoxFormat, str],
+        image_size: Tuple[int, int],
+        dtype: Optional[torch.dtype] = None,
+        device: Optional[Union[torch.device, str, int]] = None,
+        requires_grad: bool = False,
+    ) -> BoundingBox:
+        bounding_box = super().__new__(cls, data, dtype=dtype, device=device, requires_grad=requires_grad)
+
         if isinstance(format, str):
-            format = BoundingBoxFormat[format]
-        format_fallback = BoundingBoxFormat.XYXY
-        return dict(
-            format=(format, format_fallback),
-            image_size=(image_size, functools.partial(cls.guess_image_size, format=format_fallback)),
+            format = BoundingBoxFormat.from_str(format.upper())
+        bounding_box.format = format
+
+        bounding_box.image_size = image_size
+
+        return bounding_box
+
+    @classmethod
+    def new_like(
+        cls,
+        other: BoundingBox,
+        data: Any,
+        *,
+        format: Optional[Union[BoundingBoxFormat, str]] = None,
+        image_size: Optional[Tuple[int, int]] = None,
+        **kwargs: Any,
+    ) -> BoundingBox:
+        return super().new_like(
+            other,
+            data,
+            format=format if format is not None else other.format,
+            image_size=image_size if image_size is not None else other.image_size,
+            **kwargs,
         )
 
-    _TO_XYXY_MAP = {
-        BoundingBoxFormat.XYWH: xywh_to_xyxy,
-        BoundingBoxFormat.CXCYWH: cxcywh_to_xyxy,
-    }
-    _FROM_XYXY_MAP = {
-        BoundingBoxFormat.XYWH: xyxy_to_xywh,
-        BoundingBoxFormat.CXCYWH: xyxy_to_cxcywh,
-    }
+    def to_format(self, format: Union[str, BoundingBoxFormat]) -> BoundingBox:
+        # TODO: this is useful for developing and debugging but we should remove or at least revisit this before we
+        #  promote this out of the prototype state
 
-    @classmethod
-    def guess_image_size(cls, data: torch.Tensor, *, format: BoundingBoxFormat) -> Tuple[int, int]:
-        if format not in (BoundingBoxFormat.XYWH, BoundingBoxFormat.CXCYWH):
-            if format != BoundingBoxFormat.XYXY:
-                data = cls._TO_XYXY_MAP[format](data)
-            data = cls._FROM_XYXY_MAP[BoundingBoxFormat.XYWH](data)
-        *_, w, h = to_parts(data)
-        if data.dtype.is_floating_point:
-            w = w.ceil()
-            h = h.ceil()
-        return int(h.max()), int(w.max())
+        # import at runtime to avoid cyclic imports
+        from torchvision.prototype.transforms.functional import convert_bounding_box_format
 
-    @classmethod
-    def from_parts(
-        cls,
-        a,
-        b,
-        c,
-        d,
-        *,
-        like: Optional["BoundingBox"] = None,
-        format: Union[str, BoundingBoxFormat] = DEFAULT,  # type: ignore[assignment]
-        image_size: Optional[Tuple[int, int]] = DEFAULT,  # type: ignore[assignment]
-    ) -> "BoundingBox":
-        return cls(from_parts(a, b, c, d), like=like, image_size=image_size, format=format)
-
-    def to_parts(self) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor, torch.Tensor]:
-        return to_parts(self)
-
-    def convert(self, format: Union[str, BoundingBoxFormat]) -> "BoundingBox":
         if isinstance(format, str):
-            format = BoundingBoxFormat[format]
+            format = BoundingBoxFormat.from_str(format.upper())
 
-        if format == self.format:
-            return cast(BoundingBox, self.clone())
-
-        data = self
-
-        if self.format != BoundingBoxFormat.XYXY:
-            data = self._TO_XYXY_MAP[self.format](data)
-
-        if format != BoundingBoxFormat.XYXY:
-            data = self._FROM_XYXY_MAP[format](data)
-
-        return BoundingBox(data, like=self, format=format)
+        return BoundingBox.new_like(
+            self, convert_bounding_box_format(self, old_format=self.format, new_format=format), format=format
+        )

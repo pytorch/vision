@@ -26,13 +26,13 @@ class TestHub:
     #   Python cache as we run all hub tests in the same python process.
 
     def test_load_from_github(self):
-        hub_model = hub.load("pytorch/vision", "resnet18", pretrained=True, progress=False)
+        hub_model = hub.load("pytorch/vision", "resnet18", weights="DEFAULT", progress=False)
         assert sum_of_model_parameters(hub_model).item() == pytest.approx(SUM_OF_PRETRAINED_RESNET18_PARAMS)
 
     def test_set_dir(self):
         temp_dir = tempfile.gettempdir()
         hub.set_dir(temp_dir)
-        hub_model = hub.load("pytorch/vision", "resnet18", pretrained=True, progress=False)
+        hub_model = hub.load("pytorch/vision", "resnet18", weights="DEFAULT", progress=False)
         assert sum_of_model_parameters(hub_model).item() == pytest.approx(SUM_OF_PRETRAINED_RESNET18_PARAMS)
         assert os.path.exists(temp_dir + "/pytorch_vision_master")
         shutil.rmtree(temp_dir + "/pytorch_vision_master")

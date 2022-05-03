@@ -38,8 +38,11 @@ architectures for image classification:
 -  `ResNeXt`_
 -  `Wide ResNet`_
 -  `MNASNet`_
--  `EfficientNet`_
+-  `EfficientNet`_ v1 & v2
 -  `RegNet`_
+-  `VisionTransformer`_
+-  `ConvNeXt`_
+-  `SwinTransformer`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -68,6 +71,9 @@ You can construct a model with random weights by calling its constructor:
     efficientnet_b5 = models.efficientnet_b5()
     efficientnet_b6 = models.efficientnet_b6()
     efficientnet_b7 = models.efficientnet_b7()
+    efficientnet_v2_s = models.efficientnet_v2_s()
+    efficientnet_v2_m = models.efficientnet_v2_m()
+    efficientnet_v2_l = models.efficientnet_v2_l()
     regnet_y_400mf = models.regnet_y_400mf()
     regnet_y_800mf = models.regnet_y_800mf()
     regnet_y_1_6gf = models.regnet_y_1_6gf()
@@ -75,6 +81,7 @@ You can construct a model with random weights by calling its constructor:
     regnet_y_8gf = models.regnet_y_8gf()
     regnet_y_16gf = models.regnet_y_16gf()
     regnet_y_32gf = models.regnet_y_32gf()
+    regnet_y_128gf = models.regnet_y_128gf()
     regnet_x_400mf = models.regnet_x_400mf()
     regnet_x_800mf = models.regnet_x_800mf()
     regnet_x_1_6gf = models.regnet_x_1_6gf()
@@ -82,49 +89,18 @@ You can construct a model with random weights by calling its constructor:
     regnet_x_8gf = models.regnet_x_8gf()
     regnet_x_16gf = models.regnet_x_16gf()
     regnet_x_32gf = models.regnet_x_32gf()
+    vit_b_16 = models.vit_b_16()
+    vit_b_32 = models.vit_b_32()
+    vit_l_16 = models.vit_l_16()
+    vit_l_32 = models.vit_l_32()
+    vit_h_14 = models.vit_h_14()
+    convnext_tiny = models.convnext_tiny()
+    convnext_small = models.convnext_small()
+    convnext_base = models.convnext_base()
+    convnext_large = models.convnext_large()
+    swin_t = models.swin_t()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
-These can be constructed by passing ``pretrained=True``:
-
-.. code:: python
-
-    import torchvision.models as models
-    resnet18 = models.resnet18(pretrained=True)
-    alexnet = models.alexnet(pretrained=True)
-    squeezenet = models.squeezenet1_0(pretrained=True)
-    vgg16 = models.vgg16(pretrained=True)
-    densenet = models.densenet161(pretrained=True)
-    inception = models.inception_v3(pretrained=True)
-    googlenet = models.googlenet(pretrained=True)
-    shufflenet = models.shufflenet_v2_x1_0(pretrained=True)
-    mobilenet_v2 = models.mobilenet_v2(pretrained=True)
-    mobilenet_v3_large = models.mobilenet_v3_large(pretrained=True)
-    mobilenet_v3_small = models.mobilenet_v3_small(pretrained=True)
-    resnext50_32x4d = models.resnext50_32x4d(pretrained=True)
-    wide_resnet50_2 = models.wide_resnet50_2(pretrained=True)
-    mnasnet = models.mnasnet1_0(pretrained=True)
-    efficientnet_b0 = models.efficientnet_b0(pretrained=True)
-    efficientnet_b1 = models.efficientnet_b1(pretrained=True)
-    efficientnet_b2 = models.efficientnet_b2(pretrained=True)
-    efficientnet_b3 = models.efficientnet_b3(pretrained=True)
-    efficientnet_b4 = models.efficientnet_b4(pretrained=True)
-    efficientnet_b5 = models.efficientnet_b5(pretrained=True)
-    efficientnet_b6 = models.efficientnet_b6(pretrained=True)
-    efficientnet_b7 = models.efficientnet_b7(pretrained=True)
-    regnet_y_400mf = models.regnet_y_400mf(pretrained=True)
-    regnet_y_800mf = models.regnet_y_800mf(pretrained=True)
-    regnet_y_1_6gf = models.regnet_y_1_6gf(pretrained=True)
-    regnet_y_3_2gf = models.regnet_y_3_2gf(pretrained=True)
-    regnet_y_8gf = models.regnet_y_8gf(pretrained=True)
-    regnet_y_16gf = models.regnet_y_16gf(pretrained=True)
-    regnet_y_32gf = models.regnet_y_32gf(pretrained=True)
-    regnet_x_400mf = models.regnet_x_400mf(pretrained=True)
-    regnet_x_800mf = models.regnet_x_800mf(pretrained=True)
-    regnet_x_1_6gf = models.regnet_x_1_6gf(pretrained=True)
-    regnet_x_3_2gf = models.regnet_x_3_2gf(pretrained=True)
-    regnet_x_8gf = models.regnet_x_8gf(pretrained=True)
-    regnet_x_16gf = models.regnet_x_16gf(pretrainedTrue)
-    regnet_x_32gf = models.regnet_x_32gf(pretrained=True)
 
 Instancing a pre-trained model will download its weights to a cache directory.
 This directory can be set using the `TORCH_HOME` environment variable. See
@@ -154,7 +130,7 @@ to::
     import torch
     from torchvision import datasets, transforms as T
 
-    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.ToTensor()])
+    transform = T.Compose([T.Resize(256), T.CenterCrop(224), T.PILToTensor(), T.ConvertImageDtype(torch.float)])
     dataset = datasets.ImageNet(".", split="train", transform=transform)
 
     means = []
@@ -200,8 +176,10 @@ Densenet-201                      76.896          93.370
 Densenet-161                      77.138          93.560
 Inception v3                      77.294          93.450
 GoogleNet                         69.778          89.530
-ShuffleNet V2 x1.0                69.362          88.316
 ShuffleNet V2 x0.5                60.552          81.746
+ShuffleNet V2 x1.0                69.362          88.316
+ShuffleNet V2 x1.5                72.996          91.086
+ShuffleNet V2 x2.0                76.230          93.006
 MobileNet V2                      71.878          90.286
 MobileNet V3 Large                74.042          91.340
 MobileNet V3 Small                67.668          87.402
@@ -219,6 +197,9 @@ EfficientNet-B4                   83.384          96.594
 EfficientNet-B5                   83.444          96.628
 EfficientNet-B6                   84.008          96.916
 EfficientNet-B7                   84.122          96.908
+EfficientNetV2-s                  84.228          96.878
+EfficientNetV2-m                  85.112          97.156
+EfficientNetV2-l                  85.810          97.792
 regnet_x_400mf                    72.834          90.950
 regnet_x_800mf                    75.212          92.348
 regnet_x_1_6gf                    77.040          93.440
@@ -233,6 +214,16 @@ regnet_y_3_2gf                    78.948          94.576
 regnet_y_8gf                      80.032          95.048
 regnet_y_16gf                     80.424          95.240
 regnet_y_32gf                     80.878          95.340
+vit_b_16                          81.072          95.318
+vit_b_32                          75.912          92.466
+vit_l_16                          79.662          94.638
+vit_l_32                          76.972          93.070
+vit_h_14                          88.552          98.694 
+convnext_tiny                     82.520          96.146
+convnext_small                    83.616          96.650
+convnext_base                     84.062          96.870
+convnext_large                    84.414          96.976
+swin_t                            81.358          95.526
 ================================  =============   =============
 
 
@@ -250,6 +241,9 @@ regnet_y_32gf                     80.878          95.340
 .. _MNASNet: https://arxiv.org/abs/1807.11626
 .. _EfficientNet: https://arxiv.org/abs/1905.11946
 .. _RegNet: https://arxiv.org/abs/2003.13678
+.. _VisionTransformer: https://arxiv.org/abs/2010.11929
+.. _ConvNeXt: https://arxiv.org/abs/2201.03545
+.. _SwinTransformer: https://arxiv.org/abs/2103.14030
 
 .. currentmodule:: torchvision.models
 
@@ -410,6 +404,9 @@ EfficientNet
     efficientnet_b5
     efficientnet_b6
     efficientnet_b7
+    efficientnet_v2_s
+    efficientnet_v2_m
+    efficientnet_v2_l
 
 RegNet
 ------------
@@ -425,6 +422,7 @@ RegNet
     regnet_y_8gf
     regnet_y_16gf
     regnet_y_32gf
+    regnet_y_128gf
     regnet_x_400mf
     regnet_x_800mf
     regnet_x_1_6gf
@@ -432,6 +430,40 @@ RegNet
     regnet_x_8gf
     regnet_x_16gf
     regnet_x_32gf
+
+VisionTransformer
+-----------------
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    vit_b_16
+    vit_b_32
+    vit_l_16
+    vit_l_32
+    vit_h_14
+
+ConvNeXt
+--------
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    convnext_tiny
+    convnext_small
+    convnext_base
+    convnext_large
+
+SwinTransformer
+--------
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    swin_t
 
 Quantized Models
 ----------------
@@ -451,15 +483,13 @@ a model with random weights by calling its constructor:
     resnext101_32x8d = models.quantization.resnext101_32x8d()
     shufflenet_v2_x0_5 = models.quantization.shufflenet_v2_x0_5()
     shufflenet_v2_x1_0 = models.quantization.shufflenet_v2_x1_0()
-    shufflenet_v2_x1_5 = models.quantization.shufflenet_v2_x1_5()
-    shufflenet_v2_x2_0 = models.quantization.shufflenet_v2_x2_0()
 
 Obtaining a pre-trained quantized model can be done with a few lines of code:
 
 .. code:: python
 
     import torchvision.models as models
-    model = models.quantization.mobilenet_v2(pretrained=True, quantize=True)
+    model = models.quantization.mobilenet_v2(weights=MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1, quantize=True)
     model.eval()
     # run the model with quantized inputs and weights
     out = model(torch.rand(1, 3, 224, 224))
@@ -471,8 +501,10 @@ Model                             Acc@1          Acc@5
 ================================  =============  =============
 MobileNet V2                      71.658         90.150
 MobileNet V3 Large                73.004         90.858
-ShuffleNet V2 x1.0                68.360         87.582
 ShuffleNet V2 x0.5                57.972         79.780
+ShuffleNet V2 x1.0                68.360         87.582
+ShuffleNet V2 x1.5                72.052         90.700
+ShuffleNet V2 x2.0                75.354         92.488
 ResNet 18                         69.494         88.882
 ResNet 50                         75.920         92.814
 ResNext 101 32x8d                 78.986         94.480
@@ -564,6 +596,7 @@ The models subpackage contains definitions for the following model
 architectures for detection:
 
 - `Faster R-CNN <https://arxiv.org/abs/1506.01497>`_
+- `FCOS <https://arxiv.org/abs/1904.01355>`_
 - `Mask R-CNN <https://arxiv.org/abs/1703.06870>`_
 - `RetinaNet <https://arxiv.org/abs/1708.02002>`_
 - `SSD <https://arxiv.org/abs/1512.02325>`_
@@ -609,6 +642,7 @@ Network                                 box AP   mask AP   keypoint AP
 Faster R-CNN ResNet-50 FPN              37.0     -         -
 Faster R-CNN MobileNetV3-Large FPN      32.8     -         -
 Faster R-CNN MobileNetV3-Large 320 FPN  22.8     -         -
+FCOS ResNet-50 FPN                      39.2     -         -
 RetinaNet ResNet-50 FPN                 36.4     -         -
 SSD300 VGG16                            25.1     -         -
 SSDlite320 MobileNetV3-Large            21.3     -         -
@@ -669,6 +703,7 @@ Network                                 train time (s / it)  test time (s / it) 
 Faster R-CNN ResNet-50 FPN              0.2288               0.0590              5.2
 Faster R-CNN MobileNetV3-Large FPN      0.1020               0.0415              1.0
 Faster R-CNN MobileNetV3-Large 320 FPN  0.0978               0.0376              0.6
+FCOS ResNet-50 FPN                      0.1450               0.0539              3.3
 RetinaNet ResNet-50 FPN                 0.2514               0.0939              4.1
 SSD300 VGG16                            0.2093               0.0744              1.5
 SSDlite320 MobileNetV3-Large            0.1773               0.0906              1.5
@@ -687,6 +722,15 @@ Faster R-CNN
     torchvision.models.detection.fasterrcnn_resnet50_fpn
     torchvision.models.detection.fasterrcnn_mobilenet_v3_large_fpn
     torchvision.models.detection.fasterrcnn_mobilenet_v3_large_320_fpn
+
+FCOS
+----
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    torchvision.models.detection.fcos_resnet50_fpn
 
 
 RetinaNet

@@ -58,6 +58,7 @@ if os.getenv("PYTORCH_VERSION"):
     pytorch_dep += "==" + os.getenv("PYTORCH_VERSION")
 
 requirements = [
+    "typing_extensions",
     "numpy",
     "requests",
     pytorch_dep,
@@ -101,7 +102,7 @@ def find_library(name, vision_include):
             conda_installed = library_found
         else:
             # Check if using Anaconda to produce wheels
-            conda = distutils.spawn.find_executable("conda")
+            conda = shutil.which("conda")
             is_conda = conda is not None
             print(f"Running build on conda: {is_conda}")
             if is_conda:
@@ -201,7 +202,7 @@ def get_extensions():
 
     if sys.platform == "win32":
         define_macros += [("torchvision_EXPORTS", None)]
-
+        define_macros += [("USE_PYTHON", None)]
         extra_compile_args["cxx"].append("/MP")
 
     debug_mode = os.getenv("DEBUG", "0") == "1"
@@ -254,9 +255,12 @@ def get_extensions():
     image_library = []
     image_link_flags = []
 
+    if sys.platform == "win32":
+        image_macros += [("USE_PYTHON", None)]
+
     # Locating libPNG
-    libpng = distutils.spawn.find_executable("libpng-config")
-    pngfix = distutils.spawn.find_executable("pngfix")
+    libpng = shutil.which("libpng-config")
+    pngfix = shutil.which("pngfix")
     png_found = libpng is not None or pngfix is not None
     print(f"PNG found: {png_found}")
     if png_found:
@@ -336,7 +340,7 @@ def get_extensions():
             )
         )
 
-    ffmpeg_exe = distutils.spawn.find_executable("ffmpeg")
+    ffmpeg_exe = shutil.which("ffmpeg")
     has_ffmpeg = ffmpeg_exe is not None
     # FIXME: Building torchvision with ffmpeg on MacOS or with Python 3.9
     # FIXME: causes crash. See the following GitHub issues for more details.
@@ -362,7 +366,7 @@ def get_extensions():
         ffmpeg_include_dir = os.path.join(ffmpeg_root, "include")
         ffmpeg_library_dir = os.path.join(ffmpeg_root, "lib")
 
-        gcc = distutils.spawn.find_executable("gcc")
+        gcc = os.environ.get("CC", shutil.which("gcc"))
         platform_tag = subprocess.run([gcc, "-print-multiarch"], stdout=subprocess.PIPE)
         platform_tag = platform_tag.stdout.strip().decode("utf-8")
 
@@ -469,6 +473,7 @@ def get_extensions():
                     "z",
                     "pthread",
                     "dl",
+                    "nppicc",
                 ],
                 extra_compile_args=extra_compile_args,
             )
@@ -525,7 +530,7 @@ if __name__ == "__main__":
             "scipy": ["scipy"],
         },
         ext_modules=get_extensions(),
-        python_requires=">=3.6",
+        python_requires=">=3.7",
         cmdclass={
             "build_ext": BuildExtension.with_options(no_python_abi_suffix=True),
             "clean": clean,
