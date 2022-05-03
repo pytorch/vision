@@ -42,13 +42,16 @@ weights:
    models/efficientnet
    models/efficientnetv2
    models/googlenet
+   models/inception
+   models/mnasnet
    models/mobilenetv2
    models/mobilenetv3
    models/regnet
    models/resnet
    models/resnext
-   models/ssd300
+   models/shufflenetv2
    models/squeezenet
+   models/ssd300
    models/swin_transformer
    models/vgg
    models/vision_transformer
@@ -74,7 +77,8 @@ pre-trained weights:
    :maxdepth: 1
 
    models/deeplabv3
-
+   models/fcn
+   models/lraspp
 
 Table of all available semantic segmentation weights
 ----------------------------------------------------
@@ -96,9 +100,11 @@ weights:
 .. toctree::
    :maxdepth: 1
 
+   models/faster_rcnn
    models/fcos
    models/mask_rcnn
    models/retinanet
+   models/ssdlite
 
 Table of all available detection weights
 ----------------------------------------
