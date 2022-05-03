@@ -38,27 +38,27 @@ jobs:
           print(cache_date)
           print(f"::set-output name=date::{cache_date}")
 
-      - name: Restore pip cache
+      - name: Restore cache
         uses: actions/cache@v3
         with:
           path: ${{ steps.cache-params.outputs.path }}
-          key: ${{ runner.os }}-1-${{ steps.cache-params.outputs.date }}
-#
-#      - name: Checkout repository
-#        uses: actions/checkout@v3
-#
-#      - name: Install PyTorch nightly builds
-#        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
-#
-#      - name: Install torchvision
-#        run: pip install --progress-bar=off --no-build-isolation --editable .
-#
-#      - name: Install other prototype dependencies
-#        run: pip install --progress-bar=off scipy pycocotools h5py iopath
-#
-#      - name: Install test requirements
-#        run: pip install --progress-bar=off pytest pytest-mock
-#
+          key: ${{ runner.os }}-v2-${{ steps.cache-params.outputs.date }}
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install PyTorch nightly builds
+        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
+
+      - name: Install torchvision
+        run: pip install --progress-bar=off --no-build-isolation --editable .
+
+      - name: Install optional dependencies
+        run: pip install --progress-bar=off scipy pycocotools h5py iopath
+
+      - name: Install test requirements
+        run: pip install --progress-bar=off pytest pytest-mock
+
 #      - name: Run prototype tests
 #        shell: bash
 #        run: pytest --durations=20 test/test_prototype_*.py
