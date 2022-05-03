@@ -28,31 +28,20 @@ jobs:
           # TODO: explain
           HOUR: 10
         run: |
-          CACHE_PATH=`python -c 'import sys; print("\n".join(path.strip() for path in sys.path if path))'`
+          CACHE_PATH=`python -c 'import sys; print(sys.path[-1])'`
           echo $CACHE_PATH
           echo "::set-output name=path::$CACHE_PATH"
           
           if (( `date -u '+%-H'` > $HOUR )); then DATE='today'; else DATE='yesterday'; fi
-          echo $DATE
-          CACHE_DATE=`date -u -d$DATE '+%Y%m%d'`
+          CACHE_DATE=`date -u -d $DATE '+%Y%m%d'`
           echo $CACHE_DATE
           echo "::set-output name=date::$CACHE_DATE"
-
-#      - name: Get pip cache path
-#        id: get-cache-path
-#        shell: bash
-#        run: |
-#          pip install appdirs
-#          CACHE_PATH=`python -c "import appdirs; print(appdirs.user_cache_dir('pip', appauthor=False))"`
-#          echo "pip cache stored in ${CACHE_PATH}"
-#          echo "::set-output name=path::$CACHE_PATH"
 
       - name: Restore pip cache
         uses: actions/cache@v3
         with:
-          path: |
-            ${{ steps.cache-params.outputs.path }}
-          key: ${{ runner.os }}-${{ steps.cache-params.outputs.date }}
+          path: ${{ steps.cache-params.outputs.path }}
+          key: ${{ runner.os }}-0-${{ steps.cache-params.outputs.date }}
 #
 #      - name: Checkout repository
 #        uses: actions/checkout@v3
