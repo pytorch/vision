@@ -250,7 +250,7 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
 
-    
+
 @handle_legacy_interface(
     weights=(
         "pretrained",
