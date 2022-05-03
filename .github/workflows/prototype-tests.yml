@@ -21,39 +21,52 @@ jobs:
         with:
           python-version: 3.7
 
-      - name: Get pip cache path
-        id: get-cache-path
-        shell: bash
+      - name: Debug
         run: |
-          pip install appdirs
-          CACHE_PATH=`python -c "import appdirs; print(appdirs.user_cache_dir('pip', appauthor=False))"`
-          echo "pip cache stored in ${CACHE_PATH}"
-          echo "::set-output name=path::$CACHE_PATH"
+          python -c "import sys; print(sys.path)"
+          echo "----------------------------------------------------------"
+          python -c "import pip; print(pip.__path__)"
 
-      - name: Restore pip cache
-        uses: actions/cache@v2
-        with:
-          path: ${{ steps.get-cache-path.outputs.path }}
-          key: ${{ runner.os }}-pip
-
-      - name: Upgrade system packages
-        run: python -m pip install --upgrade pip setuptools wheel
-
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install PyTorch nightly builds
-        run: pip install --upgrade --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
-
-      - name: Install torchvision
-        run: pip install --progress-bar=off --no-build-isolation --editable .
-
-      - name: Install other prototype dependencies
-        run: pip install --upgrade --progress-bar=off scipy pycocotools h5py iopath
-
-      - name: Install test requirements
-        run: pip install --upgrade --progress-bar=off pytest pytest-mock
-
-      - name: Run prototype tests
+      - name: Create cache key
         shell: bash
-        run: pytest --durations=20 test/test_prototype_*.py
+        env:
+          HOUR: 10
+        run: |
+          if (( `date -u '+%-H'` > $HOUR )); then DATE='today'; else DATE='yesterday'; fi
+          KEY=`date -u --date=$DATE '+%Y%m%d'`
+          echo $KEY
+          echo "::set-output name=key::$KEY"
+
+#      - name: Get pip cache path
+#        id: get-cache-path
+#        shell: bash
+#        run: |
+#          pip install appdirs
+#          CACHE_PATH=`python -c "import appdirs; print(appdirs.user_cache_dir('pip', appauthor=False))"`
+#          echo "pip cache stored in ${CACHE_PATH}"
+#          echo "::set-output name=path::$CACHE_PATH"
+
+#      - name: Restore pip cache
+#        uses: actions/cache@v2
+#        with:
+#          path: ${{ steps.get-cache-path.outputs.path }}
+#          key: ${{ runner.os }}-pip
+#
+#      - name: Checkout repository
+#        uses: actions/checkout@v3
+#
+#      - name: Install PyTorch nightly builds
+#        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
+#
+#      - name: Install torchvision
+#        run: pip install --progress-bar=off --no-build-isolation --editable .
+#
+#      - name: Install other prototype dependencies
+#        run: pip install --progress-bar=off scipy pycocotools h5py iopath
+#
+#      - name: Install test requirements
+#        run: pip install --progress-bar=off pytest pytest-mock
+#
+#      - name: Run prototype tests
+#        shell: bash
+#        run: pytest --durations=20 test/test_prototype_*.py
