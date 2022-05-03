@@ -111,6 +111,21 @@ Box MAPs are reported on COCO
 
 .. include:: generated/detection_table.rst
 
+Keypoint detection
+------------------
+
+The following keypoint detection models are available, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/keypoint_rcnn
+
+Box and Keypoint MAPs are reported on COCO:
+
+.. include:: generated/detection_keypoint_table.rst
+
 
 Video Classification
 ====================
