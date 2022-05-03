@@ -616,7 +616,7 @@ def ssd300_vgg16(
     Args:
         weights (:class:`~torchvision.models.detection.SSD300_VGG16_Weights`, optional): The pretrained
                 weights to use. See
-                :class:`~torchvision.models.detection.SSD300_VGG16_Weights` 
+                :class:`~torchvision.models.detection.SSD300_VGG16_Weights`
                 below for more details, and possible values. By default, no
                 pre-trained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr
