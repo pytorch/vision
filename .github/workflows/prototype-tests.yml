@@ -21,21 +21,22 @@ jobs:
         with:
           python-version: 3.7
 
-      - name: Debug
-        run: |
-          python -c "import sys; print(sys.path)"
-          echo "----------------------------------------------------------"
-          python -c "import pip; print(pip.__path__)"
-
-      - name: Create cache key
+      - name: Generate cache params
+        id: cache-params
         shell: bash
         env:
+          # TODO: explain
           HOUR: 10
         run: |
+          CACHE_PATH=`python -c 'import sys; print("\n".join(path for path in sys.path if path))'`
+          echo $CACHE_PATH
+          echo "::set-output name=path::$CACHE_PATH"
+          
           if (( `date -u '+%-H'` > $HOUR )); then DATE='today'; else DATE='yesterday'; fi
-          KEY=`date -u --date=$DATE '+%Y%m%d'`
-          echo $KEY
-          echo "::set-output name=key::$KEY"
+          echo $DATE
+          CACHE_DATE=`date -u --date=$DATE '+%Y%m%d'`
+          echo $CACHE_DATE
+          echo "::set-output name=date::$CACHE_DATE"
 
 #      - name: Get pip cache path
 #        id: get-cache-path
@@ -46,11 +47,11 @@ jobs:
 #          echo "pip cache stored in ${CACHE_PATH}"
 #          echo "::set-output name=path::$CACHE_PATH"
 
-#      - name: Restore pip cache
-#        uses: actions/cache@v2
-#        with:
-#          path: ${{ steps.get-cache-path.outputs.path }}
-#          key: ${{ runner.os }}-pip
+      - name: Restore pip cache
+        uses: actions/cache@v2
+        with:
+          path: ${{ steps.cache-params.outputs.path }}
+          key: ${{ runner.os }}-${{ steps.cache-params.outputs.date }}
 #
 #      - name: Checkout repository
 #        uses: actions/checkout@v3
