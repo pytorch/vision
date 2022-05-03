@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+e427c80 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+7efcb12 ) &#x25BC</a>
     </div>
     
 
@@ -512,7 +512,7 @@
     <span class="k">return</span> <span class="n">SSDLiteFeatureExtractorMobileNet</span><span class="p">(</span><span class="n">backbone</span><span class="p">,</span> <span class="n">stage_indices</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">],</span> <span class="n">norm_layer</span><span class="p">)</span>
 
 
-<span class="k">class</span> <span class="nc">SSDLite320_MobileNet_V3_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="SSDLite320_MobileNet_V3_Large_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.html#torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights">[docs]</a><span class="k">class</span> <span class="nc">SSDLite320_MobileNet_V3_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">COCO_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">ObjectDetection</span><span class="p">,</span>
@@ -526,10 +526,10 @@
             <span class="p">},</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">COCO_V1</span></div>
 
 
-<div class="viewcode-block" id="ssdlite320_mobilenet_v3_large"><a class="viewcode-back" href="../../../../generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.html#torchvision.models.detection.ssdlite320_mobilenet_v3_large">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span>
+<div class="viewcode-block" id="ssdlite320_mobilenet_v3_large"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.detection.ssdlite320_mobilenet_v3_large.html#torchvision.models.detection.ssdlite320_mobilenet_v3_large">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span>
     <span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">SSDLite320_MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">COCO_V1</span><span class="p">),</span>
     <span class="n">weights_backbone</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained_backbone&quot;</span><span class="p">,</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">),</span>
 <span class="p">)</span>
@@ -543,11 +543,9 @@
     <span class="n">norm_layer</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">[</span><span class="o">...</span><span class="p">,</span> <span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">]]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
     <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">SSD</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at</span>
-<span class="sd">    `&quot;Searching for MobileNetV3&quot;</span>
-<span class="sd">    &lt;https://arxiv.org/abs/1905.02244&gt;`_ and</span>
-<span class="sd">    `&quot;MobileNetV2: Inverted Residuals and Linear Bottlenecks&quot;</span>
-<span class="sd">    &lt;https://arxiv.org/abs/1801.04381&gt;`_.</span>
+    <span class="sd">&quot;&quot;&quot;SSDlite model architecture with input size 320x320 and a MobileNetV3 Large backbone, as</span>
+<span class="sd">    described at `Searching for MobileNetV3 &lt;https://arxiv.org/abs/1905.02244&gt;`__ and</span>
+<span class="sd">    `MobileNetV2: Inverted Residuals and Linear Bottlenecks &lt;https://arxiv.org/abs/1801.04381&gt;`__.</span>
 
 <span class="sd">    See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.</span>
 
@@ -559,15 +557,31 @@
 <span class="sd">        &gt;&gt;&gt; predictions = model(x)</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        weights (FasterRCNN_ResNet50_FPN_Weights, optional): The pretrained weights for the model</span>
-<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
-<span class="sd">        num_classes (int, optional): number of output classes of the model (including the background)</span>
-<span class="sd">        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone</span>
-<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.</span>
-<span class="sd">            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is</span>
-<span class="sd">            passed (the default) this value is set to 6.</span>
+<span class="sd">        weights (:class:`~torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights` below for</span>
+<span class="sd">            more details, and possible values. By default, no pre-trained</span>
+<span class="sd">            weights are used.</span>
+<span class="sd">        progress (bool, optional): If True, displays a progress bar of the</span>
+<span class="sd">            download to stderr. Default is True.</span>
+<span class="sd">        num_classes (int, optional): number of output classes of the model</span>
+<span class="sd">            (including the background).</span>
+<span class="sd">        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The pretrained</span>
+<span class="sd">            weights for the backbone.</span>
+<span class="sd">        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers</span>
+<span class="sd">            starting from final block. Valid values are between 0 and 6, with 6 meaning all</span>
+<span class="sd">            backbone layers are trainable. If ``None`` is passed (the default) this value is</span>
+<span class="sd">            set to 6.</span>
 <span class="sd">        norm_layer (callable, optional): Module specifying the normalization layer to use.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.detection.ssd.SSD``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
+
+<span class="sd">    .. autoclass:: torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights</span>
+<span class="sd">        :members:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">weights</span> <span class="o">=</span> <span class="n">SSDLite320_MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
     <span class="n">weights_backbone</span> <span class="o">=</span> <span class="n">MobileNet_V3_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights_backbone</span><span class="p">)</span>
 
