@@ -51,6 +51,7 @@ weights:
    models/resnext
    models/shufflenetv2
    models/squeezenet
+   models/ssd300
    models/swin_transformer
    models/vgg
    models/vision_transformer
