@@ -23,7 +23,7 @@ jobs:
 
       - name: Debug
         run: |
-          date --version
+          gdate --version
 
       - name: Generate cache params
         id: cache-params
@@ -31,12 +31,14 @@ jobs:
         env:
           # TODO: explain
           HOUR: 10
+          OS: ${{ matrix.os }}
         run: |
           CACHE_PATH=`python -c 'import sys; print(sys.path[-1])'`
           echo $CACHE_PATH
           echo "::set-output name=path::$CACHE_PATH"
           
-          if (( `date -u '+%-H'` > $HOUR )); then DATE='today'; else DATE='yesterday'; fi
+          if [[ $OS == Macos ]]; then DATE_BIN=gdate; else DATE_BIN=date; fi
+          if (( `$DATE_BIN -u '+%-H'` > $HOUR )); then DATE='today'; else DATE='yesterday'; fi
           CACHE_DATE=`date -u -d $DATE '+%Y%m%d'`
           echo $CACHE_DATE
           echo "::set-output name=date::$CACHE_DATE"
