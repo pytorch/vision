@@ -306,7 +306,7 @@ def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool
     <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
 
     Args:
-        weights (:class:`~torchvision.models.MNASNet0_75_Weights`, optional): Currently 
+        weights (:class:`~torchvision.models.MNASNet0_75_Weights`, optional): Currently
             no pre-trained weights are available and by default no pre-trained
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
