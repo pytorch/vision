@@ -216,8 +216,8 @@ def ssdlite320_mobilenet_v3_large(
     **kwargs: Any,
 ) -> SSD:
     """SSDlite model architecture with input size 320x320 and a MobileNetV3 Large backbone, as
-    described at `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_ and
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks" <https://arxiv.org/abs/1801.04381>`_.
+    described at `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__ and
+    `MobileNetV2: Inverted Residuals and Linear Bottlenecks <https://arxiv.org/abs/1801.04381>`__.
 
     See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
@@ -238,7 +238,7 @@ def ssdlite320_mobilenet_v3_large(
             download to stderr. Default is True.
         num_classes (int, optional): number of output classes of the model
             (including the background).
-        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights, optional): The pretrained
+        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The pretrained
             weights for the backbone.
         trainable_backbone_layers (int, optional): number of trainable (not frozen) layers
             starting from final block. Valid values are between 0 and 6, with 6 meaning all
