@@ -21,6 +21,10 @@ jobs:
         with:
           python-version: 3.7
 
+      - name: Debug
+        run: |
+          date --version
+
       - name: Generate cache params
         id: cache-params
         shell: bash
