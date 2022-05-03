@@ -39,11 +39,11 @@ jobs:
           print(cache_date)
           print(f"::set-output name=date::{cache_date}")
 
-#      - name: Restore cache
-#        uses: actions/cache@v3
-#        with:
-#          path: ${{ steps.cache-params.outputs.path }}
-#          key: ${{ runner.os }}-v3-${{ steps.cache-params.outputs.date }}
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache-params.outputs.path }}
+          key: ${{ runner.os }}-v3-${{ steps.cache-params.outputs.date }}
 
       - name: Upgrade build packages
         run: python -m pip install --upgrade pip setuptools wheel
