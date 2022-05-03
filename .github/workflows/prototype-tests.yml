@@ -43,7 +43,7 @@ jobs:
         uses: actions/cache@v3
         with:
           path: ${{ steps.cache-params.outputs.path }}
-          key: ${{ runner.os }}-v3-${{ steps.cache-params.outputs.date }}
+          key: ${{ runner.os }}-${{ steps.cache-params.outputs.date }}
 
       - name: Upgrade build packages
         run: python -m pip install --upgrade pip setuptools wheel
