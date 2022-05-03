@@ -28,13 +28,13 @@ jobs:
           # TODO: explain
           HOUR: 10
         run: |
-          CACHE_PATH=`python -c 'import sys; print("\n".join(path for path in sys.path if path))'`
+          CACHE_PATH=`python -c 'import sys; print("\n".join(path.strip() for path in sys.path if path))'`
           echo $CACHE_PATH
           echo "::set-output name=path::$CACHE_PATH"
           
           if (( `date -u '+%-H'` > $HOUR )); then DATE='today'; else DATE='yesterday'; fi
           echo $DATE
-          CACHE_DATE=`date -u --date=$DATE '+%Y%m%d'`
+          CACHE_DATE=`date -u -d$DATE '+%Y%m%d'`
           echo $CACHE_DATE
           echo "::set-output name=date::$CACHE_DATE"
 
@@ -50,7 +50,8 @@ jobs:
       - name: Restore pip cache
         uses: actions/cache@v3
         with:
-          path: ${{ steps.cache-params.outputs.path }}
+          path: |
+            ${{ steps.cache-params.outputs.path }}
           key: ${{ runner.os }}-${{ steps.cache-params.outputs.date }}
 #
 #      - name: Checkout repository
