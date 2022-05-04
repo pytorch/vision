@@ -241,6 +241,7 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 83455272,
+            "recipe": "https://github.com/pytorch/vision/pull/5935",
             "unquantized": ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
             "metrics": {
                 "acc@1": 82.898,
