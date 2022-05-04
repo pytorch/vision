@@ -21,7 +21,31 @@ jobs:
         with:
           python-version: 3.7
 
-      - name: Upgrade system packages
+      - name: Generate cache params
+        id: cache-params
+        shell: python
+        run: |
+          import datetime
+          import pathlib
+          import sys
+          
+          cache_path = pathlib.Path(sys.executable).parents[1]
+          print(cache_path)
+          print(f"::set-output name=path::{cache_path}")
+          
+          today = datetime.datetime.utcnow()
+          yesterday = today - datetime.timedelta(1)
+          cache_date = f"{today if today.hour > 10 else yesterday:%Y%m%d}"
+          print(cache_date)
+          print(f"::set-output name=date::{cache_date}")
+
+      - name: Restore cache
+        uses: actions/cache@v3
+        with:
+          path: ${{ steps.cache-params.outputs.path }}
+          key: ${{ runner.os }}-${{ steps.cache-params.outputs.date }}
+
+      - name: Upgrade build packages
         run: python -m pip install --upgrade pip setuptools wheel
 
       - name: Checkout repository
@@ -33,12 +57,12 @@ jobs:
       - name: Install torchvision
         run: pip install --progress-bar=off --no-build-isolation --editable .
 
-      - name: Install other prototype dependencies
+      - name: Install optional dependencies
         run: pip install --progress-bar=off scipy pycocotools h5py iopath
 
       - name: Install test requirements
         run: pip install --progress-bar=off pytest pytest-mock
 
-      - name: Run prototype tests
-        shell: bash
-        run: pytest --durations=20 test/test_prototype_*.py
+#      - name: Run prototype tests
+#        shell: bash
+#        run: pytest --durations=20 test/test_prototype_*.py
