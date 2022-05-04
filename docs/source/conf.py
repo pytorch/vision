@@ -382,8 +382,15 @@ def generate_weights_table(module, table_name, metrics, include_pattern=None, ex
 
 
 generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
-generate_weights_table(module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_pattern="Keypoint")
-generate_weights_table(module=M.detection, table_name="detection_keypoint", metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")], include_pattern="Keypoint")
+generate_weights_table(
+    module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_pattern="Keypoint"
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="detection_keypoint",
+    metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")],
+    include_pattern="Keypoint",
+)
 generate_weights_table(
     module=M.segmentation, table_name="segmentation", metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")]
 )
