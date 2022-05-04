@@ -64,14 +64,19 @@ class DatasetMock:
 
     def prepare(self, home, config):
         root = home / self.name
-        root.mkdir(exist_ok=True)
 
+        with unittest.mock.patch.object(datasets.utils.Dataset, "_load"):
+            try:
+                dataset = datasets.load(self.name, root=root, **config)
+            except ModuleNotFoundError as error:
+                # Loading a dataset checks if all required third-party dependencies are available. If they are not, we
+                # don't want to fail the test suite.
+                pytest.skip(str(error))
+
+        root.mkdir(exist_ok=True)
         mock_info = self._parse_mock_info(self.mock_data_fn(root, config))
 
-        with unittest.mock.patch.object(datasets.utils.Dataset, "__init__"):
-            required_file_names = {
-                resource.file_name for resource in datasets.load(self.name, root=root, **config)._resources()
-            }
+        required_file_names = {resource.file_name for resource in dataset._resources()}
         available_file_names = {path.name for path in root.glob("*")}
         missing_file_names = required_file_names - available_file_names
         if missing_file_names:

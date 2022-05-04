@@ -43,6 +43,8 @@ def _info() -> Dict[str, Any]:
 class CUB200(Dataset):
     """
     - **homepage**: http://www.vision.caltech.edu/visipedia/CUB-200.html
+    - **dependencies**:
+        - <scipy `https://scipy.org/`>_
     """
 
     def __init__(
@@ -58,12 +60,7 @@ class CUB200(Dataset):
 
         self._categories = _info()["categories"]
 
-        super().__init__(
-            root,
-            # TODO: this will only be available after https://github.com/pytorch/vision/pull/5473
-            # dependencies=("scipy",),
-            skip_integrity_check=skip_integrity_check,
-        )
+        super().__init__(root, dependencies=("scipy",), skip_integrity_check=skip_integrity_check)
 
     def _resources(self) -> List[OnlineResource]:
         if self._year == "2011":
