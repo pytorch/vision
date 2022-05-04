@@ -409,32 +409,6 @@ def test_encode_jpeg_errors():
         encode_jpeg(torch.empty((100, 100), dtype=torch.uint8))
 
 
-@_collect_if(cond=False)
-@pytest.mark.parametrize(
-    "img_path",
-    [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
-)
-def test_write_jpeg_reference(img_path, tmpdir):
-    # FIXME: Remove this eventually, see test_encode_jpeg_reference
-    data = read_file(img_path)
-    img = decode_jpeg(data)
-
-    basedir = os.path.dirname(img_path)
-    filename, _ = os.path.splitext(os.path.basename(img_path))
-    torch_jpeg = os.path.join(tmpdir, f"{filename}_torch.jpg")
-    pil_jpeg = os.path.join(basedir, "jpeg_write", f"{filename}_pil.jpg")
-
-    write_jpeg(img, torch_jpeg, quality=75)
-
-    with open(torch_jpeg, "rb") as f:
-        torch_bytes = f.read()
-
-    with open(pil_jpeg, "rb") as f:
-        pil_bytes = f.read()
-
-    assert_equal(torch_bytes, pil_bytes)
-
-
 @pytest.mark.parametrize(
     "img_path",
     [pytest.param(jpeg_path, id=_get_safe_image_name(jpeg_path)) for jpeg_path in get_images(ENCODE_JPEG, ".jpg")],
