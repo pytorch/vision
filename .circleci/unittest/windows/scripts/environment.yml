@@ -1,13 +1,14 @@
 channels:
   - pytorch
   - defaults
+  - conda-forge
 dependencies:
   - pytest
   - pytest-cov
   - pytest-mock
   - pip
   - libpng
-  - jpeg
+  - libjpeg-turbo
   - ca-certificates
   - hdf5
   - setuptools == 58.0.4
