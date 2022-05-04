@@ -236,15 +236,15 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
 
 class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
     IMAGENET1K_FBGEMM_V1 = Weights(
-        url="https://download.pytorch.org/models/quantized/resnext101_64x4d_fbgemm-4af4b262.pth",
+        url="https://download.pytorch.org/models/quantized/resnext101_64x4d_fbgemm-605a1cb3.pth",
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
             "num_params": 83455272,
             "unquantized": ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
             "metrics": {
-                "acc@1": 82.832,
-                "acc@5": 96.344,
+                "acc@1": 82.8982,
+                "acc@5": 96.326,
             },
         },
     )
