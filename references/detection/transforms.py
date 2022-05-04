@@ -471,8 +471,7 @@ class SimpleCopyPaste(torch.nn.Module):
             paste_masks.append(paste_alpha_mask)
 
             # update original masks
-            for i, mask in enumerate(source_data["masks"]):
-                source_data["masks"][i] = mask ^ paste_alpha_mask & mask
+            source_data["masks"] = source_data["masks"] ^ paste_alpha_mask & source_data["masks"]
 
             # remove masks where no annotations are present (all values are 0)
             mask_filter = source_data["masks"].sum((2, 1)).not_equal(0)
