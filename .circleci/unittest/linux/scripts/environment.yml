@@ -8,7 +8,7 @@ dependencies:
   - pytest-mock
   - pip
   - libpng
-  - jpeg-turbo
+  - libjpeg-turbo
   - ca-certificates
   - h5py
   - pip:
