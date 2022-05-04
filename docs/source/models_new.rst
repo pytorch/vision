@@ -43,6 +43,7 @@ weights:
    models/efficientnetv2
    models/googlenet
    models/inception
+   models/mnasnet
    models/mobilenetv2
    models/mobilenetv3
    models/regnet
@@ -50,6 +51,7 @@ weights:
    models/resnext
    models/shufflenetv2
    models/squeezenet
+   models/ssd300
    models/swin_transformer
    models/vgg
    models/vision_transformer
