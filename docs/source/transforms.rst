@@ -198,6 +198,7 @@ The new transform can be used standalone or mixed-and-matched with existing tran
     AutoAugment
     RandAugment
     TrivialAugmentWide
+    AugMix
 
 .. _functional_transforms:
 
@@ -269,6 +270,7 @@ you can use a functional transform to build transform classes with custom behavi
     erase
     five_crop
     gaussian_blur
+    get_dimensions
     get_image_num_channels
     get_image_size
     hflip

@@ -59,7 +59,7 @@ class Flickr8k(VisionDataset):
         root (string): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """
@@ -115,7 +115,7 @@ class Flickr30k(VisionDataset):
         root (string): Root directory where images are downloaded to.
         ann_file (string): Path to annotation file.
         transform (callable, optional): A function/transform that takes in a PIL image
-            and returns a transformed version. E.g, ``transforms.ToTensor``
+            and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
     """

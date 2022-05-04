@@ -1,27 +1,26 @@
 import warnings
-from typing import Any, List, Optional
+from functools import partial
+from typing import Any, List, Optional, Union
 
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
 from torchvision.models import inception as inception_module
-from torchvision.models.inception import InceptionOutputs
+from torchvision.models.inception import InceptionOutputs, Inception_V3_Weights
 
-from ..._internally_replaced_utils import load_state_dict_from_url
+from ...transforms._presets import ImageClassification
+from .._api import WeightsEnum, Weights
+from .._meta import _IMAGENET_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_named_param
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
 __all__ = [
     "QuantizableInception3",
+    "Inception_V3_QuantizedWeights",
     "inception_v3",
 ]
-
-
-quant_model_urls = {
-    # fp32 weights ported from TensorFlow, quantized in PyTorch
-    "inception_v3_google_fbgemm": "https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth"
-}
 
 
 class QuantizableBasicConv2d(inception_module.BasicConv2d):
@@ -173,8 +172,37 @@ class QuantizableInception3(inception_module.Inception3):
                 m.fuse_model(is_qat)
 
 
+class Inception_V3_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
+        transforms=partial(ImageClassification, crop_size=299, resize_size=342),
+        meta={
+            "num_params": 27161264,
+            "min_size": (75, 75),
+            "categories": _IMAGENET_CATEGORIES,
+            "backend": "fbgemm",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
+            "unquantized": Inception_V3_Weights.IMAGENET1K_V1,
+            "metrics": {
+                "acc@1": 77.176,
+                "acc@5": 93.354,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V1
+
+
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1
+        if kwargs.get("quantize", False)
+        else Inception_V3_Weights.IMAGENET1K_V1,
+    )
+)
 def inception_v3(
-    pretrained: bool = False,
+    *,
+    weights: Optional[Union[Inception_V3_QuantizedWeights, Inception_V3_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
@@ -191,48 +219,35 @@ def inception_v3(
     GPU inference is not yet supported
 
     Args:
-        pretrained (bool): If True, returns a model pre-trained on ImageNet
+        weights (Inception_V3_QuantizedWeights or Inception_V3_Weights, optional): The pretrained
+            weights for the model
         progress (bool): If True, displays a progress bar of the download to stderr
         quantize (bool): If True, return a quantized version of the model
-        aux_logits (bool): If True, add an auxiliary branch that can improve training.
-            Default: *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: True if ``pretrained=True``, else False.
     """
-    if pretrained:
+    weights = (Inception_V3_QuantizedWeights if quantize else Inception_V3_Weights).verify(weights)
+
+    original_aux_logits = kwargs.get("aux_logits", False)
+    if weights is not None:
         if "transform_input" not in kwargs:
-            kwargs["transform_input"] = True
-        if "aux_logits" in kwargs:
-            original_aux_logits = kwargs["aux_logits"]
-            kwargs["aux_logits"] = True
-        else:
-            original_aux_logits = False
+            _ovewrite_named_param(kwargs, "transform_input", True)
+        _ovewrite_named_param(kwargs, "aux_logits", True)
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if "backend" in weights.meta:
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
+    backend = kwargs.pop("backend", "fbgemm")
 
     model = QuantizableInception3(**kwargs)
     _replace_relu(model)
-
     if quantize:
-        # TODO use pretrained as a string to specify the backend
-        backend = "fbgemm"
         quantize_model(model, backend)
-    else:
-        assert pretrained in [True, False]
 
-    if pretrained:
-        if quantize:
-            if not original_aux_logits:
-                model.aux_logits = False
-                model.AuxLogits = None
-            model_url = quant_model_urls["inception_v3_google_" + backend]
-        else:
-            model_url = inception_module.model_urls["inception_v3_google"]
+    if weights is not None:
+        if quantize and not original_aux_logits:
+            model.aux_logits = False
+            model.AuxLogits = None
+        model.load_state_dict(weights.get_state_dict(progress=progress))
+        if not quantize and not original_aux_logits:
+            model.aux_logits = False
+            model.AuxLogits = None
 
-        state_dict = load_state_dict_from_url(model_url, progress=progress)
-
-        model.load_state_dict(state_dict)
-
-        if not quantize:
-            if not original_aux_logits:
-                model.aux_logits = False
-                model.AuxLogits = None
     return model

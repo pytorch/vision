@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import warnings
 
 import presets
 import torch
@@ -11,11 +12,6 @@ import utils
 from torch import nn
 from torch.utils.data.dataloader import default_collate
 from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
-
-try:
-    from torchvision import prototype
-except ImportError:
-    prototype = None
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -55,6 +51,7 @@ def evaluate(model, criterion, data_loader, device):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
+    num_processed_samples = 0
     with torch.inference_mode():
         for video, target in metric_logger.log_every(data_loader, 100, header):
             video = video.to(device, non_blocking=True)
@@ -69,7 +66,28 @@ def evaluate(model, criterion, data_loader, device):
             metric_logger.update(loss=loss.item())
             metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
             metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+            num_processed_samples += batch_size
     # gather the stats from all processes
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    if isinstance(data_loader.sampler, DistributedSampler):
+        # Get the len of UniformClipSampler inside DistributedSampler
+        num_data_from_sampler = len(data_loader.sampler.dataset)
+    else:
+        num_data_from_sampler = len(data_loader.sampler)
+
+    if (
+        hasattr(data_loader.dataset, "__len__")
+        and num_data_from_sampler != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
+        # See FIXME above
+        warnings.warn(
+            f"It looks like the sampler has {num_data_from_sampler} samples, but {num_processed_samples} "
+            "samples were used for the validation, which might bias the results. "
+            "Try adjusting the batch size and / or the world size. "
+            "Setting the world size to 1 is always a safe bet."
+        )
+
     metric_logger.synchronize_between_processes()
 
     print(
@@ -96,21 +114,19 @@ def collate_fn(batch):
 
 
 def main(args):
-    if args.prototype and prototype is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-    if not args.prototype and args.weights:
-        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
     utils.init_distributed_mode(args)
     print(args)
-    print("torch version: ", torch.__version__)
-    print("torchvision version: ", torchvision.__version__)
 
     device = torch.device(args.device)
 
-    torch.backends.cudnn.benchmark = True
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
 
     # Data loading code
     print("Loading data")
@@ -120,7 +136,7 @@ def main(args):
     print("Loading training data")
     st = time.time()
     cache_path = _get_cache_path(traindir)
-    transform_train = presets.VideoClassificationPresetTrain((128, 171), (112, 112))
+    transform_train = presets.VideoClassificationPresetTrain(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_train from {cache_path}")
@@ -150,14 +166,11 @@ def main(args):
     print("Loading validation data")
     cache_path = _get_cache_path(valdir)
 
-    if not args.prototype:
-        transform_test = presets.VideoClassificationPresetEval(resize_size=(128, 171), crop_size=(112, 112))
+    if args.weights and args.test_only:
+        weights = torchvision.models.get_weight(args.weights)
+        transform_test = weights.transforms()
     else:
-        if args.weights:
-            weights = prototype.models.get_weight(args.weights)
-            transform_test = weights.transforms()
-        else:
-            transform_test = prototype.transforms.Kinect400Eval(crop_size=(112, 112), resize_size=(128, 171))
+        transform_test = presets.VideoClassificationPresetEval(crop_size=(112, 112), resize_size=(128, 171))
 
     if args.cache_dataset and os.path.exists(cache_path):
         print(f"Loading dataset_test from {cache_path}")
@@ -187,7 +200,7 @@ def main(args):
     test_sampler = UniformClipSampler(dataset_test.video_clips, args.clips_per_video)
     if args.distributed:
         train_sampler = DistributedSampler(train_sampler)
-        test_sampler = DistributedSampler(test_sampler)
+        test_sampler = DistributedSampler(test_sampler, shuffle=False)
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -208,10 +221,7 @@ def main(args):
     )
 
     print("Creating model")
-    if not args.prototype:
-        model = torchvision.models.video.__dict__[args.model](pretrained=args.pretrained)
-    else:
-        model = prototype.models.video.__dict__[args.model](weights=args.weights)
+    model = torchvision.models.video.__dict__[args.model](weights=args.weights)
     model.to(device)
     if args.distributed and args.sync_bn:
         model = torch.nn.SyncBatchNorm.convert_sync_batchnorm(model)
@@ -265,6 +275,9 @@ def main(args):
             scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
@@ -353,23 +366,13 @@ def parse_args():
         action="store_true",
     )
     parser.add_argument(
-        "--pretrained",
-        dest="pretrained",
-        help="Use pre-trained models from the modelzoo",
-        action="store_true",
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
 
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
 
-    # Prototype models only
-    parser.add_argument(
-        "--prototype",
-        dest="prototype",
-        help="Use prototype model builders instead those from main area",
-        action="store_true",
-    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     # Mixed precision training parameters

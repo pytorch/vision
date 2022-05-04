@@ -1,39 +1,50 @@
-import os
-from typing import Any, Dict, List
+import pathlib
+from typing import Any, Dict, List, Callable, Type, Optional, Union, TypeVar
 
-from torch.utils.data import IterDataPipe
 from torchvision.prototype.datasets import home
-from torchvision.prototype.datasets.utils import Dataset, DatasetInfo
+from torchvision.prototype.datasets.utils import Dataset
 from torchvision.prototype.utils._internal import add_suggestion
 
-from . import _builtin
 
-DATASETS: Dict[str, Dataset] = {}
+T = TypeVar("T")
+D = TypeVar("D", bound=Type[Dataset])
 
-
-def register(dataset: Dataset) -> None:
-    DATASETS[dataset.name] = dataset
+BUILTIN_INFOS: Dict[str, Dict[str, Any]] = {}
 
 
-for name, obj in _builtin.__dict__.items():
-    if not name.startswith("_") and isinstance(obj, type) and issubclass(obj, Dataset) and obj is not Dataset:
-        register(obj())
+def register_info(name: str) -> Callable[[Callable[[], Dict[str, Any]]], Callable[[], Dict[str, Any]]]:
+    def wrapper(fn: Callable[[], Dict[str, Any]]) -> Callable[[], Dict[str, Any]]:
+        BUILTIN_INFOS[name] = fn()
+        return fn
+
+    return wrapper
+
+
+BUILTIN_DATASETS = {}
+
+
+def register_dataset(name: str) -> Callable[[D], D]:
+    def wrapper(dataset_cls: D) -> D:
+        BUILTIN_DATASETS[name] = dataset_cls
+        return dataset_cls
+
+    return wrapper
 
 
 def list_datasets() -> List[str]:
-    return sorted(DATASETS.keys())
+    return sorted(BUILTIN_DATASETS.keys())
 
 
-def find(name: str) -> Dataset:
+def find(dct: Dict[str, T], name: str) -> T:
     name = name.lower()
     try:
-        return DATASETS[name]
+        return dct[name]
     except KeyError as error:
         raise ValueError(
             add_suggestion(
                 f"Unknown dataset '{name}'.",
                 word=name,
-                possibilities=DATASETS.keys(),
+                possibilities=dct.keys(),
                 alternative_hint=lambda _: (
                     "You can use torchvision.datasets.list_datasets() to get a list of all available datasets."
                 ),
@@ -41,19 +52,14 @@ def find(name: str) -> Dataset:
         ) from error
 
 
-def info(name: str) -> DatasetInfo:
-    return find(name).info
+def info(name: str) -> Dict[str, Any]:
+    return find(BUILTIN_INFOS, name)
 
 
-def load(
-    name: str,
-    *,
-    skip_integrity_check: bool = False,
-    **options: Any,
-) -> IterDataPipe[Dict[str, Any]]:
-    dataset = find(name)
+def load(name: str, *, root: Optional[Union[str, pathlib.Path]] = None, **config: Any) -> Dataset:
+    dataset_cls = find(BUILTIN_DATASETS, name)
 
-    config = dataset.info.make_config(**options)
-    root = os.path.join(home(), dataset.name)
+    if root is None:
+        root = pathlib.Path(home()) / name
 
-    return dataset.load(root, config=config, skip_integrity_check=skip_integrity_check)
+    return dataset_cls(root, **config)

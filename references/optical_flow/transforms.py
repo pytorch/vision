@@ -7,16 +7,21 @@ class ValidateModelInput(torch.nn.Module):
     # Pass-through transform that checks the shape and dtypes to make sure the model gets what it expects
     def forward(self, img1, img2, flow, valid_flow_mask):
 
-        assert all(isinstance(arg, torch.Tensor) for arg in (img1, img2, flow, valid_flow_mask) if arg is not None)
-        assert all(arg.dtype == torch.float32 for arg in (img1, img2, flow) if arg is not None)
+        if not all(isinstance(arg, torch.Tensor) for arg in (img1, img2, flow, valid_flow_mask) if arg is not None):
+            raise TypeError("This method expects all input arguments to be of type torch.Tensor.")
+        if not all(arg.dtype == torch.float32 for arg in (img1, img2, flow) if arg is not None):
+            raise TypeError("This method expects the tensors img1, img2 and flow of be of dtype torch.float32.")
 
-        assert img1.shape == img2.shape
+        if img1.shape != img2.shape:
+            raise ValueError("img1 and img2 should have the same shape.")
         h, w = img1.shape[-2:]
-        if flow is not None:
-            assert flow.shape == (2, h, w)
+        if flow is not None and flow.shape != (2, h, w):
+            raise ValueError(f"flow.shape should be (2, {h}, {w}) instead of {flow.shape}")
         if valid_flow_mask is not None:
-            assert valid_flow_mask.shape == (h, w)
-            assert valid_flow_mask.dtype == torch.bool
+            if valid_flow_mask.shape != (h, w):
+                raise ValueError(f"valid_flow_mask.shape should be ({h}, {w}) instead of {valid_flow_mask.shape}")
+            if valid_flow_mask.dtype != torch.bool:
+                raise TypeError("valid_flow_mask should be of dtype torch.bool instead of {valid_flow_mask.dtype}")
 
         return img1, img2, flow, valid_flow_mask
 
@@ -109,7 +114,8 @@ class RandomErasing(T.RandomErasing):
     def __init__(self, p=0.5, scale=(0.02, 0.33), ratio=(0.3, 3.3), value=0, inplace=False, max_erase=1):
         super().__init__(p=p, scale=scale, ratio=ratio, value=value, inplace=inplace)
         self.max_erase = max_erase
-        assert self.max_erase > 0
+        if self.max_erase <= 0:
+            raise ValueError("max_raise should be greater than 0")
 
     def forward(self, img1, img2, flow, valid_flow_mask):
         if torch.rand(1) > self.p:

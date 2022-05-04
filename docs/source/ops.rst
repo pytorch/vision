@@ -19,7 +19,11 @@ Operators
     box_convert
     box_iou
     clip_boxes_to_image
+    complete_box_iou
+    complete_box_iou_loss
     deform_conv2d
+    drop_block2d
+    drop_block3d
     generalized_box_iou
     generalized_box_iou_loss
     masks_to_boxes
@@ -45,5 +49,8 @@ Operators
     FeaturePyramidNetwork
     StochasticDepth
     FrozenBatchNorm2d
-    ConvNormActivation
+    Conv2dNormActivation
+    Conv3dNormActivation
     SqueezeExcitation
+    DropBlock2d
+    DropBlock3d

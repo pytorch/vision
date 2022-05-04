@@ -1,20 +1,30 @@
-from typing import Any, List, Optional
+from functools import partial
+from typing import Any, List, Optional, Union
 
 import torch
 from torch import nn, Tensor
 from torch.ao.quantization import QuantStub, DeQuantStub
 
-from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops.misc import ConvNormActivation, SqueezeExcitation
-from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, model_urls, _mobilenet_v3_conf
+from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
+from ...transforms._presets import ImageClassification
+from .._api import WeightsEnum, Weights
+from .._meta import _IMAGENET_CATEGORIES
+from .._utils import handle_legacy_interface, _ovewrite_named_param
+from ..mobilenetv3 import (
+    InvertedResidual,
+    InvertedResidualConfig,
+    MobileNetV3,
+    _mobilenet_v3_conf,
+    MobileNet_V3_Large_Weights,
+)
 from .utils import _fuse_modules, _replace_relu
 
 
-__all__ = ["QuantizableMobileNetV3", "mobilenet_v3_large"]
-
-quant_model_urls = {
-    "mobilenet_v3_large_qnnpack": "https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
-}
+__all__ = [
+    "QuantizableMobileNetV3",
+    "MobileNet_V3_Large_QuantizedWeights",
+    "mobilenet_v3_large",
+]
 
 
 class QuantizableSqueezeExcitation(SqueezeExcitation):
@@ -103,7 +113,7 @@ class QuantizableMobileNetV3(MobileNetV3):
 
     def fuse_model(self, is_qat: Optional[bool] = None) -> None:
         for m in self.modules():
-            if type(m) is ConvNormActivation:
+            if type(m) is Conv2dNormActivation:
                 modules_to_fuse = ["0", "1"]
                 if len(m) == 3 and type(m[2]) is nn.ReLU:
                     modules_to_fuse.append("2")
@@ -112,47 +122,73 @@ class QuantizableMobileNetV3(MobileNetV3):
                 m.fuse_model(is_qat)
 
 
-def _load_weights(arch: str, model: QuantizableMobileNetV3, model_url: Optional[str], progress: bool) -> None:
-    if model_url is None:
-        raise ValueError(f"No checkpoint is available for {arch}")
-    state_dict = load_state_dict_from_url(model_url, progress=progress)
-    model.load_state_dict(state_dict)
-
-
 def _mobilenet_v3_model(
-    arch: str,
     inverted_residual_setting: List[InvertedResidualConfig],
     last_channel: int,
-    pretrained: bool,
+    weights: Optional[WeightsEnum],
     progress: bool,
     quantize: bool,
     **kwargs: Any,
 ) -> QuantizableMobileNetV3:
+    if weights is not None:
+        _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
+        if "backend" in weights.meta:
+            _ovewrite_named_param(kwargs, "backend", weights.meta["backend"])
+    backend = kwargs.pop("backend", "qnnpack")
 
     model = QuantizableMobileNetV3(inverted_residual_setting, last_channel, block=QuantizableInvertedResidual, **kwargs)
     _replace_relu(model)
 
     if quantize:
-        backend = "qnnpack"
-
+        # Instead of quantizing the model and then loading the quantized weights we take a different approach.
+        # We prepare the QAT model, load the QAT weights from training and then convert it.
+        # This is done to avoid extremely low accuracies observed on the specific model. This is rather a workaround
+        # for an unresolved bug on the eager quantization API detailed at: https://github.com/pytorch/vision/issues/5890
         model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
 
-        if pretrained:
-            _load_weights(arch, model, quant_model_urls.get(arch + "_" + backend, None), progress)
+    if weights is not None:
+        model.load_state_dict(weights.get_state_dict(progress=progress))
 
+    if quantize:
         torch.ao.quantization.convert(model, inplace=True)
         model.eval()
-    else:
-        if pretrained:
-            _load_weights(arch, model, model_urls.get(arch, None), progress)
 
     return model
 
 
+class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_QNNPACK_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
+        transforms=partial(ImageClassification, crop_size=224),
+        meta={
+            "num_params": 5483032,
+            "min_size": (1, 1),
+            "categories": _IMAGENET_CATEGORIES,
+            "backend": "qnnpack",
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3",
+            "unquantized": MobileNet_V3_Large_Weights.IMAGENET1K_V1,
+            "metrics": {
+                "acc@1": 73.004,
+                "acc@5": 90.858,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_QNNPACK_V1
+
+
+@handle_legacy_interface(
+    weights=(
+        "pretrained",
+        lambda kwargs: MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1
+        if kwargs.get("quantize", False)
+        else MobileNet_V3_Large_Weights.IMAGENET1K_V1,
+    )
+)
 def mobilenet_v3_large(
-    pretrained: bool = False,
+    *,
+    weights: Optional[Union[MobileNet_V3_Large_QuantizedWeights, MobileNet_V3_Large_Weights]] = None,
     progress: bool = True,
     quantize: bool = False,
     **kwargs: Any,
@@ -166,10 +202,12 @@ def mobilenet_v3_large(
     GPU inference is not yet supported
 
     Args:
-     pretrained (bool): If True, returns a model pre-trained on ImageNet.
-     progress (bool): If True, displays a progress bar of the download to stderr
-     quantize (bool): If True, returns a quantized model, else returns a float model
+        weights (MobileNet_V3_Large_QuantizedWeights or MobileNet_V3_Large_Weights, optional): The pretrained
+            weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+        quantize (bool): If True, returns a quantized model, else returns a float model
     """
-    arch = "mobilenet_v3_large"
-    inverted_residual_setting, last_channel = _mobilenet_v3_conf(arch, **kwargs)
-    return _mobilenet_v3_model(arch, inverted_residual_setting, last_channel, pretrained, progress, quantize, **kwargs)
+    weights = (MobileNet_V3_Large_QuantizedWeights if quantize else MobileNet_V3_Large_Weights).verify(weights)
+
+    inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
+    return _mobilenet_v3_model(inverted_residual_setting, last_channel, weights, progress, quantize, **kwargs)

@@ -12,17 +12,7 @@ from torch import nn
 from train import train_one_epoch, evaluate, load_data
 
 
-try:
-    from torchvision import prototype
-except ImportError:
-    prototype = None
-
-
 def main(args):
-    if args.prototype and prototype is None:
-        raise ImportError("The prototype module couldn't be found. Please install the latest torchvision nightly.")
-    if not args.prototype and args.weights:
-        raise ValueError("The weights parameter works only in prototype mode. Please pass the --prototype argument.")
     if args.output_dir:
         utils.mkdir(args.output_dir)
 
@@ -56,10 +46,7 @@ def main(args):
 
     print("Creating model", args.model)
     # when training quantized models, we always start from a pre-trained fp32 reference model
-    if not args.prototype:
-        model = torchvision.models.quantization.__dict__[args.model](pretrained=True, quantize=args.test_only)
-    else:
-        model = prototype.models.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
+    model = torchvision.models.quantization.__dict__[args.model](weights=args.weights, quantize=args.test_only)
     model.to(device)
 
     if not (args.test_only or args.post_training_quantize):
@@ -264,14 +251,6 @@ def get_args_parser(add_help=True):
         "--train-crop-size", default=224, type=int, help="the random crop size used for training (default: 224)"
     )
     parser.add_argument("--clip-grad-norm", default=None, type=float, help="the maximum gradient norm (default None)")
-
-    # Prototype models only
-    parser.add_argument(
-        "--prototype",
-        dest="prototype",
-        help="Use prototype model builders instead those from main area",
-        action="store_true",
-    )
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load")
 
     return parser

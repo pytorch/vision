@@ -5,6 +5,7 @@ import pytest
 import torch
 from datasets_utils import make_fake_flo_file
 from torchvision.datasets._optical_flow import _read_flo as read_flo_ref
+from torchvision.prototype.datasets.utils import HttpResource, GDriveResource, Dataset
 from torchvision.prototype.datasets.utils._internal import read_flo, fromfile
 
 
@@ -45,3 +46,76 @@ def test_read_flo(tmpdir):
     expected = torch.from_numpy(read_flo_ref(path).astype("f4", copy=False))
 
     torch.testing.assert_close(actual, expected)
+
+
+class TestHttpResource:
+    def test_resolve_to_http(self, mocker):
+        file_name = "data.tar"
+        original_url = f"http://downloads.pytorch.org/{file_name}"
+
+        redirected_url = original_url.replace("http", "https")
+
+        sha256_sentinel = "sha256_sentinel"
+
+        def preprocess_sentinel(path):
+            return path
+
+        original_resource = HttpResource(
+            original_url,
+            sha256=sha256_sentinel,
+            preprocess=preprocess_sentinel,
+        )
+
+        mocker.patch("torchvision.prototype.datasets.utils._resource._get_redirect_url", return_value=redirected_url)
+        redirected_resource = original_resource.resolve()
+
+        assert isinstance(redirected_resource, HttpResource)
+        assert redirected_resource.url == redirected_url
+        assert redirected_resource.file_name == file_name
+        assert redirected_resource.sha256 == sha256_sentinel
+        assert redirected_resource._preprocess is preprocess_sentinel
+
+    def test_resolve_to_gdrive(self, mocker):
+        file_name = "data.tar"
+        original_url = f"http://downloads.pytorch.org/{file_name}"
+
+        id_sentinel = "id-sentinel"
+        redirected_url = f"https://drive.google.com/file/d/{id_sentinel}/view"
+
+        sha256_sentinel = "sha256_sentinel"
+
+        def preprocess_sentinel(path):
+            return path
+
+        original_resource = HttpResource(
+            original_url,
+            sha256=sha256_sentinel,
+            preprocess=preprocess_sentinel,
+        )
+
+        mocker.patch("torchvision.prototype.datasets.utils._resource._get_redirect_url", return_value=redirected_url)
+        redirected_resource = original_resource.resolve()
+
+        assert isinstance(redirected_resource, GDriveResource)
+        assert redirected_resource.id == id_sentinel
+        assert redirected_resource.file_name == file_name
+        assert redirected_resource.sha256 == sha256_sentinel
+        assert redirected_resource._preprocess is preprocess_sentinel
+
+
+def test_missing_dependency_error():
+    class DummyDataset(Dataset):
+        def __init__(self):
+            super().__init__(root="root", dependencies=("fake_dependency",))
+
+        def _resources(self):
+            pass
+
+        def _datapipe(self, resource_dps):
+            pass
+
+        def __len__(self):
+            pass
+
+    with pytest.raises(ModuleNotFoundError, match="depends on the third-party package 'fake_dependency'"):
+        DummyDataset()

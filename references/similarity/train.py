@@ -88,6 +88,13 @@ def save(model, epoch, save_dir, file_name):
 
 def main(args):
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
+
     p = args.labels_per_batch
     k = args.samples_per_label
     batch_size = p * k
@@ -102,7 +109,12 @@ def main(args):
     optimizer = Adam(model.parameters(), lr=args.lr)
 
     transform = transforms.Compose(
-        [transforms.Lambda(lambda image: image.convert("RGB")), transforms.Resize((224, 224)), transforms.ToTensor()]
+        [
+            transforms.Lambda(lambda image: image.convert("RGB")),
+            transforms.Resize((224, 224)),
+            transforms.PILToTensor(),
+            transforms.ConvertImageDtype(torch.float),
+        ]
     )
 
     # Using FMNIST to demonstrate embedding learning using triplet loss. This dataset can
@@ -120,6 +132,13 @@ def main(args):
         train_dataset, batch_size=batch_size, sampler=PKSampler(targets, p, k), num_workers=args.workers
     )
     test_loader = DataLoader(test_dataset, batch_size=args.eval_batch_size, shuffle=False, num_workers=args.workers)
+
+    if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
+        evaluate(model, test_loader, device)
+        return
 
     for epoch in range(1, args.epochs + 1):
         print("Training...")
@@ -150,6 +169,15 @@ def parse_args():
     parser.add_argument("--print-freq", default=20, type=int, help="print frequency")
     parser.add_argument("--save-dir", default=".", type=str, help="Model save directory")
     parser.add_argument("--resume", default="", type=str, help="path of checkpoint")
+    parser.add_argument(
+        "--test-only",
+        dest="test_only",
+        help="Only test the model",
+        action="store_true",
+    )
+    parser.add_argument(
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
+    )
 
     return parser.parse_args()
 

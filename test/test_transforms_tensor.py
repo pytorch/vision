@@ -1,4 +1,5 @@
 import os
+import sys
 
 import numpy as np
 import pytest
@@ -58,12 +59,11 @@ def _test_functional_op(f, device, channels=3, fn_kwargs=None, test_exact_match=
         _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
 
 
-def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_match=True, **match_kwargs):
-    # TODO: change the name: it's not a method, it's a class.
+def _test_class_op(transform_cls, device, channels=3, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     meth_kwargs = meth_kwargs or {}
 
     # test for class interface
-    f = method(**meth_kwargs)
+    f = transform_cls(**meth_kwargs)
     scripted_fn = torch.jit.script(f)
 
     tensor, pil_img = _create_data(26, 34, channels, device=device)
@@ -85,7 +85,7 @@ def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_matc
     _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
     with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, f"t_{method.__name__}.pt"))
+        scripted_fn.save(os.path.join(tmp_dir, f"t_{transform_cls.__name__}.pt"))
 
 
 def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
@@ -720,7 +720,38 @@ def test_trivialaugmentwide(device, fill):
         _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
 
 
-@pytest.mark.parametrize("augmentation", [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide])
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "fill",
+    [
+        None,
+        85,
+        (10, -10, 10),
+        0.7,
+        [0.0, 0.0, 0.0],
+        [
+            1,
+        ],
+        1,
+    ],
+)
+def test_augmix(device, fill):
+    tensor = torch.randint(0, 256, size=(3, 44, 56), dtype=torch.uint8, device=device)
+    batch_tensors = torch.randint(0, 256, size=(4, 3, 44, 56), dtype=torch.uint8, device=device)
+
+    class DeterministicAugMix(T.AugMix):
+        def _sample_dirichlet(self, params: torch.Tensor) -> torch.Tensor:
+            # patch the method to ensure that the order of rand calls doesn't affect the outcome
+            return params.softmax(dim=-1)
+
+    transform = DeterministicAugMix(fill=fill)
+    s_transform = torch.jit.script(transform)
+    for _ in range(25):
+        _test_transform_vs_scripted(transform, s_transform, tensor)
+        _test_transform_vs_scripted_on_batch(transform, s_transform, batch_tensors)
+
+
+@pytest.mark.parametrize("augmentation", [T.AutoAugment, T.RandAugment, T.TrivialAugmentWide, T.AugMix])
 def test_autoaugment_save(augmentation, tmpdir):
     transform = augmentation()
     s_transform = torch.jit.script(transform)
@@ -927,6 +958,17 @@ def test_random_apply(device):
 )
 @pytest.mark.parametrize("channels", [1, 3])
 def test_gaussian_blur(device, channels, meth_kwargs):
+    if all(
+        [
+            device == "cuda",
+            channels == 1,
+            meth_kwargs["kernel_size"] in [23, [23]],
+            torch.version.cuda == "11.3",
+            sys.platform in ("win32", "cygwin"),
+        ]
+    ):
+        pytest.skip("Fails on Windows, see https://github.com/pytorch/vision/issues/5464")
+
     tol = 1.0 + 1e-10
     torch.manual_seed(12)
     _test_class_op(

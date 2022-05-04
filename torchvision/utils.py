@@ -82,10 +82,8 @@ def make_grid(
 
     if normalize is True:
         tensor = tensor.clone()  # avoid modifying tensor in-place
-        if value_range is not None:
-            assert isinstance(
-                value_range, tuple
-            ), "value_range has to be a tuple (min, max) if specified. min and max are numbers"
+        if value_range is not None and not isinstance(value_range, tuple):
+            raise TypeError("value_range has to be a tuple (min, max) if specified. min and max are numbers")
 
         def norm_ip(img, low, high):
             img.clamp_(min=low, max=high)
@@ -103,7 +101,8 @@ def make_grid(
         else:
             norm_range(tensor, value_range)
 
-    assert isinstance(tensor, torch.Tensor)
+    if not isinstance(tensor, torch.Tensor):
+        raise TypeError("tensor should be of type torch.Tensor")
     if tensor.size(0) == 1:
         return tensor.squeeze(0)
 
@@ -165,7 +164,7 @@ def draw_bounding_boxes(
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
-    font_size: int = 10,
+    font_size: Optional[int] = None,
 ) -> torch.Tensor:
 
     """
@@ -224,6 +223,13 @@ def draw_bounding_boxes(
 
     colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
 
+    if font is None:
+        if font_size is not None:
+            warnings.warn("Argument 'font_size' will be ignored since 'font' is not set.")
+        txt_font = ImageFont.load_default()
+    else:
+        txt_font = ImageFont.truetype(font=font, size=font_size or 10)
+
     # Handle Grayscale images
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
@@ -236,8 +242,6 @@ def draw_bounding_boxes(
         draw = ImageDraw.Draw(img_to_draw, "RGBA")
     else:
         draw = ImageDraw.Draw(img_to_draw)
-
-    txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
     for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
         if fill:
@@ -449,8 +453,9 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
     """
 
     N, _, H, W = normalized_flow.shape
-    flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8)
-    colorwheel = _make_colorwheel()  # shape [55x3]
+    device = normalized_flow.device
+    flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8, device=device)
+    colorwheel = _make_colorwheel().to(device)  # shape [55x3]
     num_cols = colorwheel.shape[0]
     norm = torch.sum(normalized_flow ** 2, dim=1).sqrt()
     a = torch.atan2(-normalized_flow[:, 1, :, :], -normalized_flow[:, 0, :, :]) / torch.pi
