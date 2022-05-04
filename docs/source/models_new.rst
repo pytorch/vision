@@ -87,8 +87,8 @@ All models are evaluated on COCO val2017:
 
 
 
-Object Detection, Instance Segmentation and Person Keypoint Detection
-=====================================================================
+Object Detection
+================
 
 .. currentmodule:: torchvision.models.detection
 
@@ -111,8 +111,11 @@ Box MAPs are reported on COCO
 
 .. include:: generated/detection_table.rst
 
+
 Keypoint detection
-------------------
+==================
+
+.. currentmodule:: torchvision.models.detection
 
 The following keypoint detection models are available, with or without
 pre-trained weights:
@@ -121,6 +124,9 @@ pre-trained weights:
    :maxdepth: 1
 
    models/keypoint_rcnn
+
+Table of all available Keypoint detection weights
+-------------------------------------------------
 
 Box and Keypoint MAPs are reported on COCO:
 
