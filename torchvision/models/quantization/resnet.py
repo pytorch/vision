@@ -243,7 +243,7 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
             "num_params": 83455272,
             "unquantized": ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
             "metrics": {
-                "acc@1": 82.8982,
+                "acc@1": 82.898,
                 "acc@5": 96.326,
             },
         },
