@@ -393,7 +393,18 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
 
 
 class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
-    pass
+    COCO_V1 = Weights(
+        url="https://download.pytorch.org/models/fasterrcnn_resnet50_fpn_v2_coco-dd69338a.pth",
+        transforms=ObjectDetection,
+        meta={
+            **_COMMON_META,
+            "publication_year": 2021,
+            "num_params": 43712278,
+            "recipe": "https://github.com/pytorch/vision/pull/5763",
+            "map": 46.7,
+        },
+    )
+    DEFAULT = COCO_V1
 
 
 class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
