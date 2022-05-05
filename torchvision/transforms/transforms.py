@@ -297,7 +297,7 @@ class Resize(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
             ``InterpolationMode.BICUBIC`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image(.Resampling).NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
@@ -754,7 +754,7 @@ class RandomPerspective(torch.nn.Module):
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image(.Resampling).NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
     """
@@ -868,7 +868,7 @@ class RandomResizedCrop(torch.nn.Module):
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` and
             ``InterpolationMode.BICUBIC`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image(.Resampling).NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
 
     """
 
@@ -1267,7 +1267,7 @@ class RandomRotation(torch.nn.Module):
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image(.Resampling).NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -1388,7 +1388,7 @@ class RandomAffine(torch.nn.Module):
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image(.Resampling).NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
         fill (sequence or number): Pixel fill value for the area outside the transformed
             image. Default is ``0``. If given a number, the value is used for all bands respectively.
         fillcolor (sequence or number, optional):
