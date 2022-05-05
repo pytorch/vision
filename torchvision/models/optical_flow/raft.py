@@ -8,7 +8,7 @@ from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.ops import Conv2dNormActivation
 
-from ...transforms._presets import OpticalFlow, InterpolationMode
+from ...transforms._presets import OpticalFlow
 from ...utils import _log_api_usage_once
 from .._api import Weights, WeightsEnum
 from .._utils import handle_legacy_interface
@@ -514,8 +514,6 @@ class RAFT(nn.Module):
 _COMMON_META = {
     "task": "optical_flow",
     "architecture": "RAFT",
-    "publication_year": 2020,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 

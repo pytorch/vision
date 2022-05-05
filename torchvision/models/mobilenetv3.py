@@ -6,7 +6,7 @@ import torch
 from torch import nn, Tensor
 
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation as SElayer
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -306,11 +306,9 @@ def _mobilenet_v3(
 _COMMON_META = {
     "task": "image_classification",
     "architecture": "MobileNetV3",
-    "publication_year": 2019,
     "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 

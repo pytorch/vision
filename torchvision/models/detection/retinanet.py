@@ -11,7 +11,7 @@ from ...ops import sigmoid_focal_loss
 from ...ops import boxes as box_ops
 from ...ops import misc as misc_nn_ops
 from ...ops.feature_pyramid_network import LastLevelP6P7
-from ...transforms._presets import ObjectDetection, InterpolationMode
+from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
@@ -677,7 +677,6 @@ _COMMON_META = {
     "task": "image_object_detection",
     "architecture": "RetinaNet",
     "categories": _COCO_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
@@ -687,7 +686,6 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
         transforms=ObjectDetection,
         meta={
             **_COMMON_META,
-            "publication_year": 2017,
             "num_params": 34014999,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
             "map": 36.4,
@@ -702,7 +700,6 @@ class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
         transforms=ObjectDetection,
         meta={
             **_COMMON_META,
-            "publication_year": 2019,
             "num_params": 38198935,
             "recipe": "https://github.com/pytorch/vision/pull/5756",
             "map": 41.5,

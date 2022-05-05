@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from torch import Tensor
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -268,11 +268,9 @@ def _densenet(
 _COMMON_META = {
     "task": "image_classification",
     "architecture": "DenseNet",
-    "publication_year": 2016,
     "size": (224, 224),
     "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/pull/116",
 }
 

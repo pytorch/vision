@@ -7,7 +7,7 @@ import torch
 from torch import nn, Tensor
 
 from ...ops.misc import Conv2dNormActivation
-from ...transforms._presets import ObjectDetection, InterpolationMode
+from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
 from .. import mobilenet
 from .._api import WeightsEnum, Weights
@@ -191,11 +191,9 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
         meta={
             "task": "image_object_detection",
             "architecture": "SSDLite",
-            "publication_year": 2018,
             "num_params": 3440060,
             "size": (320, 320),
             "categories": _COCO_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
             "map": 21.3,
         },
