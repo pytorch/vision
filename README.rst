@@ -134,7 +134,7 @@ Torchvision currently supports the following video backends:
      python setup.py install
 
 Please note that most prebuilt `pyav`_ binaries include pre-built FFMPEG licensed under GPLv2 or later unless otherwise specified.
-`ffmpeg` isntalled through `conda-forge <https://anaconda.org/conda-forge/ffmpeg>`_ is a subject to GPLv3 License
+`ffmpeg` installed through `conda-forge <https://anaconda.org/conda-forge/ffmpeg>`_ is a subject to GPLv3 License
 
 Using the models on C++
 =======================
