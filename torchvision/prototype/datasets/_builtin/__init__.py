@@ -12,7 +12,7 @@ from .food101 import Food101
 from .gtsrb import GTSRB
 from .imagenet import ImageNet
 from .mnist import MNIST, FashionMNIST, KMNIST, EMNIST, QMNIST
-from .oxford_iiit_pet import OxfordIITPet
+from .oxford_iiit_pet import OxfordIIITPet
 from .pcam import PCAM
 from .sbd import SBD
 from .semeion import SEMEION
