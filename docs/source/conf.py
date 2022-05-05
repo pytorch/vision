@@ -349,17 +349,6 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
 
 def generate_weights_table(module, table_name, metrics, include_patterns=None, exclude_patterns=None):
-    """
-
-    module: corresponding torchvision module
-    table_name: Name of table generated.
-    metrics: Metrics from weights enum to be used.
-    include_patterns: List of patterns to include
-    exclude_patterns: List of patterns to exclude
-
-    Generates table file and saves it to generated folder.
-
-    """
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
