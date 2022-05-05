@@ -11,6 +11,7 @@ dependencies:
   - ca-certificates
   - hdf5
   - setuptools == 58.0.4
+  - zlib
   - pip:
     - future
     - scipy
