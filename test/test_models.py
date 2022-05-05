@@ -195,11 +195,14 @@ script_model_unwrapper = {
     "googlenet": lambda x: x.logits,
     "inception_v3": lambda x: x.logits,
     "fasterrcnn_resnet50_fpn": lambda x: x[1],
+    "fasterrcnn_resnet50_fpn_v2": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_fpn": lambda x: x[1],
     "fasterrcnn_mobilenet_v3_large_320_fpn": lambda x: x[1],
     "maskrcnn_resnet50_fpn": lambda x: x[1],
+    "maskrcnn_resnet50_fpn_v2": lambda x: x[1],
     "keypointrcnn_resnet50_fpn": lambda x: x[1],
     "retinanet_resnet50_fpn": lambda x: x[1],
+    "retinanet_resnet50_fpn_v2": lambda x: x[1],
     "ssd300_vgg16": lambda x: x[1],
     "ssdlite320_mobilenet_v3_large": lambda x: x[1],
     "fcos_resnet50_fpn": lambda x: x[1],
@@ -227,6 +230,7 @@ autocast_flaky_numerics = (
     "fcn_resnet101",
     "lraspp_mobilenet_v3_large",
     "maskrcnn_resnet50_fpn",
+    "maskrcnn_resnet50_fpn_v2",
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
@@ -246,6 +250,13 @@ _model_params = {
         "max_size": 224,
         "input_shape": (3, 224, 224),
     },
+    "retinanet_resnet50_fpn_v2": {
+        "num_classes": 20,
+        "score_thresh": 0.01,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
     "keypointrcnn_resnet50_fpn": {
         "num_classes": 2,
         "min_size": 224,
@@ -259,6 +270,12 @@ _model_params = {
         "max_size": 224,
         "input_shape": (3, 224, 224),
     },
+    "fasterrcnn_resnet50_fpn_v2": {
+        "num_classes": 20,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
     "fcos_resnet50_fpn": {
         "num_classes": 2,
         "score_thresh": 0.05,
@@ -267,6 +284,12 @@ _model_params = {
         "input_shape": (3, 224, 224),
     },
     "maskrcnn_resnet50_fpn": {
+        "num_classes": 10,
+        "min_size": 224,
+        "max_size": 224,
+        "input_shape": (3, 224, 224),
+    },
+    "maskrcnn_resnet50_fpn_v2": {
         "num_classes": 10,
         "min_size": 224,
         "max_size": 224,
@@ -311,6 +334,10 @@ _model_tests_values = {
         "max_trainable": 5,
         "n_trn_params_per_layer": [36, 46, 65, 78, 88, 89],
     },
+    "retinanet_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [44, 74, 131, 170, 200, 203],
+    },
     "keypointrcnn_resnet50_fpn": {
         "max_trainable": 5,
         "n_trn_params_per_layer": [48, 58, 77, 90, 100, 101],
@@ -319,9 +346,17 @@ _model_tests_values = {
         "max_trainable": 5,
         "n_trn_params_per_layer": [30, 40, 59, 72, 82, 83],
     },
+    "fasterrcnn_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [50, 80, 137, 176, 206, 209],
+    },
     "maskrcnn_resnet50_fpn": {
         "max_trainable": 5,
         "n_trn_params_per_layer": [42, 52, 71, 84, 94, 95],
+    },
+    "maskrcnn_resnet50_fpn_v2": {
+        "max_trainable": 5,
+        "n_trn_params_per_layer": [66, 96, 153, 192, 222, 225],
     },
     "fasterrcnn_mobilenet_v3_large_fpn": {
         "max_trainable": 6,
