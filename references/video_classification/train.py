@@ -145,9 +145,11 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset = torchvision.datasets.Kinetics400(
-            traindir,
+        dataset = torchvision.datasets.Kinetics(
+            args.data_path,
             frames_per_clip=args.clip_len,
+            num_classes="400",
+            split="val",
             step_between_clips=1,
             transform=transform_train,
             frame_rate=15,
@@ -179,9 +181,11 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset_test = torchvision.datasets.Kinetics400(
-            valdir,
+        dataset_test = torchvision.datasets.Kinetics(
+            args.data_path,
             frames_per_clip=args.clip_len,
+            num_classes="400",
+            split="val",
             step_between_clips=1,
             transform=transform_test,
             frame_rate=15,
