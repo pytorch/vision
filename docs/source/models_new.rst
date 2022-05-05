@@ -113,6 +113,26 @@ Box MAPs are reported on COCO
 
 .. include:: generated/detection_table.rst
 
+Instance Segmentation
+=====================
+
+.. currentmodule:: torchvision.models.detection
+
+The following instance segmentation models are available, with or without pre-trained
+weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/mask_rcnn
+
+Table of all available Instance segmentation weights
+----------------------------------------------------
+
+Box and Mask MAPs are reported on COCO
+
+.. include:: generated/instance_segmentation_table.rst
+
 
 Keypoint detection
 ==================

@@ -387,6 +387,12 @@ generate_weights_table(
 )
 generate_weights_table(
     module=M.detection,
+    table_name="instance_segmentation",
+    metrics=[("box_map", "Box MAP"), ("mask_map", "Mask MAP")],
+    include_pattern="Mask",
+)
+generate_weights_table(
+    module=M.detection,
     table_name="detection_keypoint",
     metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")],
     include_pattern="Keypoint",
