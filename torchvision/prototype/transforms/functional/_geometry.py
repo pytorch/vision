@@ -419,6 +419,27 @@ crop_image_tensor = _FT.crop
 crop_image_pil = _FP.crop
 
 
+def crop_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    top: int,
+    left: int,
+) -> torch.Tensor:
+    shape = bounding_box.shape
+
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    # Crop or implicit pad if left and/or top have negative values:
+    bounding_box[:, 0::2] -= left
+    bounding_box[:, 1::2] -= top
+
+    return convert_bounding_box_format(
+        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(shape)
+
+
 def perspective_image_tensor(
     img: torch.Tensor,
     perspective_coeffs: List[float],
