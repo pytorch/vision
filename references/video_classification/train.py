@@ -11,7 +11,7 @@ import torchvision.datasets.video_utils
 import utils
 from torch import nn
 from torch.utils.data.dataloader import default_collate
-from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
+from torchvision.datasets.samplers import DistributedSampler, RandomClipSampler, UniformClipSampler
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -148,7 +148,7 @@ def main(args):
         dataset = torchvision.datasets.Kinetics(
             args.data_path,
             frames_per_clip=args.clip_len,
-            num_classes="400",
+            num_classes=args.kinetics_version,
             split="val",
             step_between_clips=1,
             transform=transform_train,
@@ -184,7 +184,7 @@ def main(args):
         dataset_test = torchvision.datasets.Kinetics(
             args.data_path,
             frames_per_clip=args.clip_len,
-            num_classes="400",
+            num_classes=args.kinetics_version,
             split="val",
             step_between_clips=1,
             transform=transform_test,
@@ -318,6 +318,9 @@ def parse_args():
     parser.add_argument("--data-path", default="/datasets01_101/kinetics/070618/", type=str, help="dataset path")
     parser.add_argument("--train-dir", default="train_avi-480p", type=str, help="name of train dir")
     parser.add_argument("--val-dir", default="val_avi-480p", type=str, help="name of val dir")
+    parser.add_argument(
+        "--kinetics-version", default="400", type=str, choices=["400", "600"], help="Select kinetics version"
+    )
     parser.add_argument("--model", default="r2plus1d_18", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument("--clip-len", default=16, type=int, metavar="N", help="number of frames per clip")
