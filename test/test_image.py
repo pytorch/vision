@@ -94,10 +94,14 @@ def test_decode_jpeg(img_path, pil_mode, mode):
     data = read_file(img_path)
     img_ljpeg = decode_image(data, mode=mode)
 
-    # Permit a small variation on pixel values to account for differences
-    # between Pillow's libjpeg and ours.
-    abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
-    assert abs_mean_diff < 1
+    # In theory PIL and torchvision rely on the same libjpeg-turbo, so decoding
+    # should be exactly the same. There seem to be small differences with some
+    # GRAY mode images though. Might be worth investigating why.
+    if mode == ImageReadMode.GRAY:
+        abs_mean_diff = (img_ljpeg.type(torch.float32) - img_pil).abs().mean().item()
+        assert abs_mean_diff < 1
+    else:
+        assert_equal(img_ljpeg, img_pil)
 
 
 def test_decode_jpeg_errors():
