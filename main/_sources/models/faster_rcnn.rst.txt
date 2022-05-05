@@ -1,5 +1,5 @@
 Faster R-CNN
-==========
+============
 
 .. currentmodule:: torchvision.models.detection
 
