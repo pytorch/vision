@@ -20,10 +20,12 @@ __all__ = [
     "ViT_B_32_Weights",
     "ViT_L_16_Weights",
     "ViT_L_32_Weights",
+    "ViT_H_14_Weights",
     "vit_b_16",
     "vit_b_32",
     "vit_l_16",
     "vit_l_32",
+    "vit_h_14",
 ]
 
 
@@ -435,6 +437,27 @@ class ViT_L_32_Weights(WeightsEnum):
     DEFAULT = IMAGENET1K_V1
 
 
+class ViT_H_14_Weights(WeightsEnum):
+    IMAGENET1K_SWAG_V1 = Weights(
+        url="https://download.pytorch.org/models/vit_h_14_swag-80465313.pth",
+        transforms=partial(
+            ImageClassification,
+            crop_size=518,
+            resize_size=518,
+            interpolation=InterpolationMode.BICUBIC,
+        ),
+        meta={
+            **_COMMON_SWAG_META,
+            "num_params": 633470440,
+            "size": (518, 518),
+            "min_size": (518, 518),
+            "acc@1": 88.552,
+            "acc@5": 98.694,
+        },
+    )
+    DEFAULT = IMAGENET1K_SWAG_V1
+
+
 @handle_legacy_interface(weights=("pretrained", ViT_B_16_Weights.IMAGENET1K_V1))
 def vit_b_16(*, weights: Optional[ViT_B_16_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
     """
@@ -525,6 +548,29 @@ def vit_l_32(*, weights: Optional[ViT_L_32_Weights] = None, progress: bool = Tru
         num_heads=16,
         hidden_dim=1024,
         mlp_dim=4096,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def vit_h_14(*, weights: Optional[ViT_H_14_Weights] = None, progress: bool = True, **kwargs: Any) -> VisionTransformer:
+    """
+    Constructs a vit_h_14 architecture from
+    `"An Image is Worth 16x16 Words: Transformers for Image Recognition at Scale" <https://arxiv.org/abs/2010.11929>`_.
+
+    Args:
+        weights (ViT_H_14_Weights, optional): The pretrained weights for the model
+        progress (bool): If True, displays a progress bar of the download to stderr
+    """
+    weights = ViT_H_14_Weights.verify(weights)
+
+    return _vision_transformer(
+        patch_size=14,
+        num_layers=32,
+        num_heads=16,
+        hidden_dim=1280,
+        mlp_dim=5120,
         weights=weights,
         progress=progress,
         **kwargs,
