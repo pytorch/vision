@@ -309,8 +309,6 @@ def _video_resnet(
 
 
 _COMMON_META = {
-    "task": "video_classification",
-    "size": (112, 112),
     "min_size": (1, 1),
     "categories": _KINETICS400_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
@@ -323,7 +321,6 @@ class R3D_18_Weights(WeightsEnum):
         transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
-            "architecture": "R3D",
             "num_params": 33371472,
             "acc@1": 52.75,
             "acc@5": 75.45,
@@ -338,7 +335,6 @@ class MC3_18_Weights(WeightsEnum):
         transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
-            "architecture": "MC3",
             "num_params": 11695440,
             "acc@1": 53.90,
             "acc@5": 76.29,
@@ -353,7 +349,6 @@ class R2Plus1D_18_Weights(WeightsEnum):
         transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
         meta={
             **_COMMON_META,
-            "architecture": "R(2+1)D",
             "num_params": 31505325,
             "acc@1": 57.50,
             "acc@5": 78.81,

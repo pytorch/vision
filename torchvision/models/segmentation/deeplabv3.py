@@ -129,9 +129,8 @@ def _deeplabv3_resnet(
 
 
 _COMMON_META = {
-    "task": "image_semantic_segmentation",
-    "architecture": "DeepLabV3",
     "categories": _VOC_CATEGORIES,
+    "min_size": (1, 1),
 }
 
 

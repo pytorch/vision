@@ -651,10 +651,9 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/fcos_resnet50_fpn_coco-99b0c9b7.pth",
         transforms=ObjectDetection,
         meta={
-            "task": "image_object_detection",
-            "architecture": "FCOS",
             "num_params": 32269600,
             "categories": _COCO_CATEGORIES,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
             "map": 39.2,
         },

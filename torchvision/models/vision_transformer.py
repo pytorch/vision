@@ -1,7 +1,7 @@
 import math
 from collections import OrderedDict
 from functools import partial
-from typing import Any, Callable, List, NamedTuple, Optional, Sequence, Dict
+from typing import Any, Callable, List, NamedTuple, Optional, Dict
 
 import torch
 import torch.nn as nn
@@ -288,18 +288,8 @@ def _vision_transformer(
 ) -> VisionTransformer:
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
-        if isinstance(weights.meta["size"], int):
-            _ovewrite_named_param(kwargs, "image_size", weights.meta["size"])
-        elif isinstance(weights.meta["size"], Sequence):
-            if len(weights.meta["size"]) != 2 or weights.meta["size"][0] != weights.meta["size"][1]:
-                raise ValueError(
-                    f'size: {weights.meta["size"]} is not valid! Currently we only support a 2-dimensional square and width = height'
-                )
-            _ovewrite_named_param(kwargs, "image_size", weights.meta["size"][0])
-        else:
-            raise ValueError(
-                f'weights.meta["size"]: {weights.meta["size"]} is not valid, the type should be either an int or a Sequence[int]'
-            )
+        assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
+        _ovewrite_named_param(kwargs, "image_size", weights.meta["min_size"][0])
     image_size = kwargs.pop("image_size", 224)
 
     model = VisionTransformer(
@@ -319,12 +309,10 @@ def _vision_transformer(
 
 
 _COMMON_META: Dict[str, Any] = {
-    "task": "image_classification",
-    "architecture": "ViT",
     "categories": _IMAGENET_CATEGORIES,
 }
 
-_COMMON_SWAG_META: Dict[str, Any] = {
+_COMMON_SWAG_META = {
     **_COMMON_META,
     "recipe": "https://github.com/facebookresearch/SWAG",
     "license": "https://github.com/facebookresearch/SWAG/blob/main/LICENSE",
@@ -338,7 +326,6 @@ class ViT_B_16_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 86567656,
-            "size": (224, 224),
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
             "acc@1": 81.072,
@@ -356,7 +343,6 @@ class ViT_B_16_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 86859496,
-            "size": (384, 384),
             "min_size": (384, 384),
             "acc@1": 85.304,
             "acc@5": 97.650,
@@ -374,7 +360,6 @@ class ViT_B_16_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 86567656,
-            "size": (224, 224),
             "min_size": (224, 224),
             "acc@1": 81.886,
             "acc@5": 96.180,
@@ -390,7 +375,6 @@ class ViT_B_32_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 88224232,
-            "size": (224, 224),
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32",
             "acc@1": 75.912,
@@ -407,7 +391,6 @@ class ViT_L_16_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 304326632,
-            "size": (224, 224),
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16",
             "acc@1": 79.662,
@@ -425,7 +408,6 @@ class ViT_L_16_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 305174504,
-            "size": (512, 512),
             "min_size": (512, 512),
             "acc@1": 88.064,
             "acc@5": 98.512,
@@ -443,7 +425,6 @@ class ViT_L_16_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 304326632,
-            "size": (224, 224),
             "min_size": (224, 224),
             "acc@1": 85.146,
             "acc@5": 97.422,
@@ -459,7 +440,6 @@ class ViT_L_32_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 306535400,
-            "size": (224, 224),
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32",
             "acc@1": 76.972,
@@ -481,7 +461,6 @@ class ViT_H_14_Weights(WeightsEnum):
         meta={
             **_COMMON_SWAG_META,
             "num_params": 633470440,
-            "size": (518, 518),
             "min_size": (518, 518),
             "acc@1": 88.552,
             "acc@5": 98.694,
@@ -499,7 +478,6 @@ class ViT_H_14_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 632045800,
-            "size": (224, 224),
             "min_size": (224, 224),
             "acc@1": 85.708,
             "acc@5": 97.730,

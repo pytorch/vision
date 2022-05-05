@@ -512,8 +512,7 @@ class RAFT(nn.Module):
 
 
 _COMMON_META = {
-    "task": "optical_flow",
-    "architecture": "RAFT",
+    "min_size": (128, 128),
 }
 
 

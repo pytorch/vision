@@ -212,9 +212,6 @@ class MNASNet(torch.nn.Module):
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "MNASNet",
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/1e100/mnasnet_trainer",
