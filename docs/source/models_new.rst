@@ -97,6 +97,7 @@ weights:
 .. toctree::
    :maxdepth: 1
 
+   models/faster_rcnn
    models/fcos
    models/mask_rcnn
    models/retinanet
