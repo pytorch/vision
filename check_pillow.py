@@ -1,10 +1,25 @@
 import tempfile
+import unittest.mock
 from collections import namedtuple
 
 from pkg_resources import Requirement
-from setuptools.package_index import PackageIndex
+from setuptools.extern.packaging.tags import sys_tags
+from setuptools.package_index import PackageIndex, distros_for_url
 
 SortKey = namedtuple("SortKey", ("parsed_version", "precedence", "key", "location", "py_version", "platform"))
+
+for tag in sys_tags():
+    print(tag)
+
+print("#" * 80)
+
+with unittest.mock.patch("setuptools.wheel.Wheel.is_compatible", return_value=True):
+    for dist in distros_for_url(
+        "https://files.pythonhosted.org/packages/a8/df/1177786a2d1c0bf732ba6d5f05a2fa40f016e81e1c16d62f1101e35d271e/Pillow-9.1.0-cp310-cp310-win_amd64.whl#sha256=97bda660702a856c2c9e12ec26fc6d187631ddfd896ff685814ab21ef0597033"
+    ):
+        print(SortKey(*dist.hashcmp))
+
+print("#" * 80)
 
 index = PackageIndex()
 requirement = Requirement.parse("pillow >= 5.3.0, !=8.3.*")
@@ -12,14 +27,7 @@ tmpdir = tempfile.mkdtemp()
 
 index.fetch_distribution(requirement, tmpdir)
 
-print(f"entries in distmap: {len(index._distmap)}")
-print(f"pillow in distmap: {'pillow' in index._distmap}")
-print(f"Pillow in distmap: {'Pillow' in index._distmap}")
-
 dists = [dist for dist in index._distmap["pillow"] if dist.version.split(".")[0] == "9"]
-
-print(f"Total number of pillow dists: {len(index._distmap['pillow'])}")
-print(f"Number of pillow > 9 dists: {len(dists)}")
 
 sort_keys = [SortKey(*dist.hashcmp) for dist in dists]
 for sort_key in sort_keys:
