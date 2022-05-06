@@ -42,6 +42,7 @@ weights:
    models/efficientnet
    models/efficientnetv2
    models/googlenet
+   models/inception
    models/mobilenetv2
    models/mobilenetv3
    models/regnet
