@@ -675,13 +675,23 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
 def efficientnet_b0(
     *, weights: Optional[EfficientNet_B0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """
-    Constructs a EfficientNet B0 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+    """EfficientNet B0 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        weights (EfficientNet_B0_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B0_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B0_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B0_Weights
+        :members:
     """
     weights = EfficientNet_B0_Weights.verify(weights)
 
@@ -693,13 +703,23 @@ def efficientnet_b0(
 def efficientnet_b1(
     *, weights: Optional[EfficientNet_B1_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """
-    Constructs a EfficientNet B1 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+    """EfficientNet B1 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        weights (EfficientNet_B1_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B1_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B1_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B1_Weights
+        :members:
     """
     weights = EfficientNet_B1_Weights.verify(weights)
 
@@ -711,13 +731,23 @@ def efficientnet_b1(
 def efficientnet_b2(
     *, weights: Optional[EfficientNet_B2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """
-    Constructs a EfficientNet B2 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+    """EfficientNet B2 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        weights (EfficientNet_B2_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B2_Weights
+        :members:
     """
     weights = EfficientNet_B2_Weights.verify(weights)
 
@@ -729,13 +759,23 @@ def efficientnet_b2(
 def efficientnet_b3(
     *, weights: Optional[EfficientNet_B3_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """
-    Constructs a EfficientNet B3 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+    """EfficientNet B3 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        weights (EfficientNet_B3_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B3_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B3_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B3_Weights
+        :members:
     """
     weights = EfficientNet_B3_Weights.verify(weights)
 
@@ -747,13 +787,23 @@ def efficientnet_b3(
 def efficientnet_b4(
     *, weights: Optional[EfficientNet_B4_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """
-    Constructs a EfficientNet B4 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+    """EfficientNet B4 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        weights (EfficientNet_B4_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B4_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B4_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B4_Weights
+        :members:
     """
     weights = EfficientNet_B4_Weights.verify(weights)
 
@@ -765,13 +815,23 @@ def efficientnet_b4(
 def efficientnet_b5(
     *, weights: Optional[EfficientNet_B5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """
-    Constructs a EfficientNet B5 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+    """EfficientNet B5 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        weights (EfficientNet_B5_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B5_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B5_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B5_Weights
+        :members:
     """
     weights = EfficientNet_B5_Weights.verify(weights)
 
@@ -791,13 +851,23 @@ def efficientnet_b5(
 def efficientnet_b6(
     *, weights: Optional[EfficientNet_B6_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """
-    Constructs a EfficientNet B6 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+    """EfficientNet B6 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        weights (EfficientNet_B6_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B6_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B6_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B6_Weights
+        :members:
     """
     weights = EfficientNet_B6_Weights.verify(weights)
 
@@ -817,13 +887,23 @@ def efficientnet_b6(
 def efficientnet_b7(
     *, weights: Optional[EfficientNet_B7_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> EfficientNet:
-    """
-    Constructs a EfficientNet B7 architecture from
-    `"EfficientNet: Rethinking Model Scaling for Convolutional Neural Networks" <https://arxiv.org/abs/1905.11946>`_.
+    """EfficientNet B7 model architecture from the `EfficientNet: Rethinking Model Scaling for Convolutional
+    Neural Networks <https://arxiv.org/abs/1905.11946>`_ paper.
 
     Args:
-        weights (EfficientNet_B7_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_B7_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_B7_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_B7_Weights
+        :members:
     """
     weights = EfficientNet_B7_Weights.verify(weights)
 
