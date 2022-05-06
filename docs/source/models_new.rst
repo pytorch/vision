@@ -36,6 +36,7 @@ weights:
 .. toctree::
    :maxdepth: 1
 
+   models/alexnet
    models/convnext
    models/densenet
    models/efficientnet
