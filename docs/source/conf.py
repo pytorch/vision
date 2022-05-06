@@ -348,14 +348,14 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines.append("")
 
 
-def generate_weights_table(module, table_name, metrics, include_pattern=None, exclude_pattern=None):
+def generate_weights_table(module, table_name, metrics, include_patterns=None, exclude_patterns=None):
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
-    if include_pattern is not None:
-        weights = [w for w in weights if include_pattern in str(w)]
-    if exclude_pattern is not None:
-        weights = [w for w in weights if exclude_pattern not in str(w)]
+    if include_patterns is not None:
+        weights = [w for w in weights if any(p in str(w) for p in include_patterns)]
+    if exclude_patterns is not None:
+        weights = [w for w in weights if all(p not in str(w) for p in exclude_patterns)]
 
     metrics_keys, metrics_names = zip(*metrics)
     column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
@@ -383,13 +383,19 @@ def generate_weights_table(module, table_name, metrics, include_pattern=None, ex
 
 generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
 generate_weights_table(
-    module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_pattern="Keypoint"
+    module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_patterns=["Mask", "Keypoint"]
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="instance_segmentation",
+    metrics=[("box_map", "Box MAP"), ("mask_map", "Mask MAP")],
+    include_patterns=["Mask"],
 )
 generate_weights_table(
     module=M.detection,
     table_name="detection_keypoint",
     metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")],
-    include_pattern="Keypoint",
+    include_patterns=["Keypoint"],
 )
 generate_weights_table(
     module=M.segmentation, table_name="segmentation", metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")]
