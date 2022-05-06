@@ -63,6 +63,7 @@ from ._geometry import (
     crop_bounding_box,
     crop_image_tensor,
     crop_image_pil,
+    crop_segmentation_mask,
     perspective_image_tensor,
     perspective_image_pil,
     vertical_flip_image_tensor,
