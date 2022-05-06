@@ -840,6 +840,9 @@ jobs:
             - conda
             - env
       - run:
+          name: Check Pillow
+          command: python check_pillow.py
+      - run:
           name: Install torchvision
           command: .circleci/unittest/windows/scripts/install.sh
       - run:
