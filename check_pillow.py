@@ -1,15 +1,19 @@
+import sys
 import tempfile
 import unittest.mock
 from collections import namedtuple
 
 from pkg_resources import Requirement
-from setuptools.extern.packaging.tags import sys_tags
+from setuptools.extern.packaging.tags import _version_nodot, sys_tags
 from setuptools.package_index import PackageIndex, distros_for_url
+
 
 SortKey = namedtuple("SortKey", ("parsed_version", "precedence", "key", "location", "py_version", "platform"))
 
-for tag in sys_tags():
-    print(tag)
+print(f"sys.version_info: {sys.version_info}")
+print(f"sys.version_info[:2]: {sys.version_info[:2]}")
+print(f"_version_nodot(sys.version_info[:2]): {_version_nodot(sys.version_info[:2])}")
+print(f"list(sys_tags())[0]: {list(sys_tags())[0]}")
 
 print("#" * 80)
 
