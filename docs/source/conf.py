@@ -22,6 +22,7 @@
 
 import os
 import textwrap
+from copy import copy
 from pathlib import Path
 
 import pytorch_sphinx_theme
@@ -330,7 +331,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             # the `meta` dict contains another embedded `metrics` dict. To
             # simplify the table generation below, we create the
             # `meta_with_metrics` dict, where the metrics dict has been "flattened"
-            meta = field.meta
+            meta = copy(field.meta)
             metrics = meta.pop("metrics", {})
             meta_with_metrics = dict(meta, **metrics)
 
@@ -346,17 +347,18 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines.append("")
 
 
-def generate_classification_table():
-
-    weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("_Weights")]
+def generate_weights_table(module, table_name, metrics):
+    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
-    column_names = ("**Weight**", "**Acc@1**", "**Acc@5**", "**Params**", "**Recipe**")
+    metrics_keys, metrics_names = zip(*metrics)
+    column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
+    column_names = [f"**{name}**" for name in column_names]  # Add bold
+
     content = [
         (
             f":class:`{w} <{type(w).__name__}>`",
-            w.meta["metrics"]["acc@1"],
-            w.meta["metrics"]["acc@5"],
+            *(w.meta["metrics"][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
             f"`link <{w.meta['recipe']}>`__",
         )
@@ -366,13 +368,14 @@ def generate_classification_table():
 
     generated_dir = Path("generated")
     generated_dir.mkdir(exist_ok=True)
-    with open(generated_dir / "classification_table.rst", "w+") as table_file:
+    with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
         table_file.write(".. table::\n")
-        table_file.write("    :widths: 100 10 10 20 10\n\n")
+        table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
 
-generate_classification_table()
+generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
+generate_weights_table(module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")])
 
 
 def setup(app):

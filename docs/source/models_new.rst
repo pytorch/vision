@@ -59,4 +59,19 @@ Accuracies are reported on ImageNet
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
 
-TODO: Something similar to classification models: list of models + table of weights
+.. currentmodule:: torchvision.models.detection
+
+The following detection models are available, with or without pre-trained
+weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/retinanet
+
+Table of all available detection weights
+----------------------------------------
+
+Box MAPs are reported on COCO
+
+.. include:: generated/detection_table.rst
