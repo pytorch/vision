@@ -74,7 +74,7 @@ pre-trained weights:
 
    models/deeplabv3
    models/fcn
-
+   models/lraspp
 
 Table of all available semantic segmentation weights
 ----------------------------------------------------
