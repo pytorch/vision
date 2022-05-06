@@ -217,8 +217,10 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 28589128,
-            "acc@1": 82.520,
-            "acc@5": 96.146,
+            "metrics": {
+                "acc@1": 82.520,
+                "acc@5": 96.146,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -231,8 +233,10 @@ class ConvNeXt_Small_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 50223688,
-            "acc@1": 83.616,
-            "acc@5": 96.650,
+            "metrics": {
+                "acc@1": 83.616,
+                "acc@5": 96.650,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -245,8 +249,10 @@ class ConvNeXt_Base_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 88591464,
-            "acc@1": 84.062,
-            "acc@5": 96.870,
+            "metrics": {
+                "acc@1": 84.062,
+                "acc@5": 96.870,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -259,8 +265,10 @@ class ConvNeXt_Large_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 197767336,
-            "acc@1": 84.414,
-            "acc@5": 96.976,
+            "metrics": {
+                "acc@1": 84.414,
+                "acc@5": 96.976,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1

@@ -347,8 +347,8 @@ def generate_classification_table():
     content = [
         (
             f":class:`{w} <{type(w).__name__}>`",
-            w.meta["acc@1"],
-            w.meta["acc@5"],
+            w.meta["metrics"]["acc@1"],
+            w.meta["metrics"]["acc@5"],
             f"{w.meta['num_params']/1e6:.1f}M",
             f"`link <{w.meta['recipe']}>`__",
         )

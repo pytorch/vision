@@ -102,8 +102,10 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
             "categories": _VOC_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
-            "mIoU": 57.9,
-            "acc": 91.2,
+            "metrics": {
+                "miou": 57.9,
+                "pixel_acc": 91.2,
+            },
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1

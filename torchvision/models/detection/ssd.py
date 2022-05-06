@@ -34,7 +34,9 @@ class SSD300_VGG16_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
-            "map": 25.1,
+            "metrics": {
+                "box_map": 25.1,
+            },
         },
     )
     DEFAULT = COCO_V1

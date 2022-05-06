@@ -322,8 +322,10 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 59137258,
             "recipe": "https://github.com/pytorch/vision/issues/1606",
-            "map": 50.6,
-            "map_kp": 61.1,
+            "metrics": {
+                "box_map": 50.6,
+                "kp_map": 61.1,
+            },
         },
     )
     COCO_V1 = Weights(
@@ -333,8 +335,10 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 59137258,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn",
-            "map": 54.6,
-            "map_kp": 65.0,
+            "metrics": {
+                "box_map": 54.6,
+                "kp_map": 65.0,
+            },
         },
     )
     DEFAULT = COCO_V1
