@@ -925,11 +925,22 @@ def efficientnet_v2_s(
 ) -> EfficientNet:
     """
     Constructs an EfficientNetV2-S architecture from
-    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+    `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        weights (EfficientNet_V2_S_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_V2_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_V2_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_V2_S_Weights
+        :members:
     """
     weights = EfficientNet_V2_S_Weights.verify(weights)
 
@@ -951,11 +962,22 @@ def efficientnet_v2_m(
 ) -> EfficientNet:
     """
     Constructs an EfficientNetV2-M architecture from
-    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+    `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        weights (EfficientNet_V2_M_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_V2_M_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_V2_M_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_V2_M_Weights
+        :members:
     """
     weights = EfficientNet_V2_M_Weights.verify(weights)
 
@@ -977,11 +999,22 @@ def efficientnet_v2_l(
 ) -> EfficientNet:
     """
     Constructs an EfficientNetV2-L architecture from
-    `"EfficientNetV2: Smaller Models and Faster Training" <https://arxiv.org/abs/2104.00298>`_.
+    `EfficientNetV2: Smaller Models and Faster Training <https://arxiv.org/abs/2104.00298>`_.
 
     Args:
-        weights (EfficientNet_V2_L_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.EfficientNet_V2_L_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.EfficientNet_V2_L_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.efficientnet.EfficientNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/efficientnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.EfficientNet_V2_L_Weights
+        :members:
     """
     weights = EfficientNet_V2_L_Weights.verify(weights)
 

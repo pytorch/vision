@@ -37,6 +37,7 @@ weights:
    :maxdepth: 1
 
    models/efficientnet
+   models/efficientnetv2
    models/regnet
    models/resnet
    models/squeezenet
