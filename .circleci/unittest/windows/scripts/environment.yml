@@ -10,7 +10,7 @@ dependencies:
   - jpeg
   - ca-certificates
   - hdf5
-  - setuptools == 58.0.4
+  - setuptools < 61
   - zlib
   - pip:
     - future
