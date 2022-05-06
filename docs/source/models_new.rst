@@ -56,6 +56,28 @@ Accuracies are reported on ImageNet
 
 .. include:: generated/classification_table.rst
 
+Semantic Segmentation
+=====================
+
+.. currentmodule:: torchvision.models.segmentation
+
+The following semantic segmentation models are available, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/deeplabv3
+
+
+Table of all available semantic segmentation weights
+----------------------------------------------------
+
+All models are evaluated on COCO val2017:
+
+.. include:: generated/segmentation_table.rst
+
+
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================

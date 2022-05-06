@@ -376,6 +376,9 @@ def generate_weights_table(module, table_name, metrics):
 
 generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
 generate_weights_table(module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")])
+generate_weights_table(
+    module=M.segmentation, table_name="segmentation", metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")]
+)
 
 
 def setup(app):
