@@ -261,13 +261,25 @@ def shufflenet_v2_x0_5(
     *, weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     """
-    Constructs a ShuffleNetV2 with 0.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    Constructs a ShuffleNetV2 architecture with 0.5x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
-        weights (ShuffleNet_V2_X0_5_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ShuffleNet_V2_X0_5_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ShuffleNet_V2_X0_5_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.shufflenetv2.ShuffleNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X0_5_Weights
+        :members:
     """
     weights = ShuffleNet_V2_X0_5_Weights.verify(weights)
 
@@ -279,13 +291,25 @@ def shufflenet_v2_x1_0(
     *, weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     """
-    Constructs a ShuffleNetV2 with 1.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    Constructs a ShuffleNetV2 architecture with 1.0x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
-        weights (ShuffleNet_V2_X1_0_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ShuffleNet_V2_X1_0_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ShuffleNet_V2_X1_0_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.shufflenetv2.ShuffleNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X1_0_Weights
+        :members:
     """
     weights = ShuffleNet_V2_X1_0_Weights.verify(weights)
 
@@ -297,13 +321,25 @@ def shufflenet_v2_x1_5(
     *, weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     """
-    Constructs a ShuffleNetV2 with 1.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    Constructs a ShuffleNetV2 architecture with 1.5x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
-        weights (ShuffleNet_V2_X1_5_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ShuffleNet_V2_X1_5_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ShuffleNet_V2_X1_5_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.shufflenetv2.ShuffleNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X1_5_Weights
+        :members:
     """
     weights = ShuffleNet_V2_X1_5_Weights.verify(weights)
 
@@ -315,13 +351,25 @@ def shufflenet_v2_x2_0(
     *, weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     """
-    Constructs a ShuffleNetV2 with 2.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    Constructs a ShuffleNetV2 architecture with 2.0x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
-        weights (ShuffleNet_V2_X2_0_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ShuffleNet_V2_X2_0_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ShuffleNet_V2_X2_0_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.shufflenetv2.ShuffleNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X2_0_Weights
+        :members:
     """
     weights = ShuffleNet_V2_X2_0_Weights.verify(weights)
 
