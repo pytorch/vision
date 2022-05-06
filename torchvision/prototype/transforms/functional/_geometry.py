@@ -542,6 +542,19 @@ def resized_crop_image_pil(
     return resize_image_pil(img, size, interpolation=interpolation)
 
 
+def resized_crop_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+) -> torch.Tensor:
+    bounding_box = crop_bounding_box(bounding_box, format, top, left)
+    return resize_bounding_box(bounding_box, size, (height, width))
+
+
 def _parse_five_crop_size(size: List[int]) -> List[int]:
     if isinstance(size, numbers.Number):
         size = [int(size), int(size)]
