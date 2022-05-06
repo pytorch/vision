@@ -43,7 +43,7 @@ fi
 source "$this_dir/set_cuda_envs.sh"
 
 printf "* Checking Pillow\n"
-"$this_dir/vc_env_helper.bat"python check_pillow.py
+"$this_dir/vc_env_helper.bat" python check_pillow.py
 
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop
