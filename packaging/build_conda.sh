@@ -18,4 +18,4 @@ if [[ "$CU_VERSION" == cu115 || "$CU_VERSION" == cu116 ]]; then
     export CUDATOOLKIT_CHANNEL="conda-forge"
 fi
 
-conda build -c $CUDATOOLKIT_CHANNEL -c defaults $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
+conda build -c $CUDATOOLKIT_CHANNEL -c defaults $CONDA_CHANNEL_FLAGS -c conda-forge --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
