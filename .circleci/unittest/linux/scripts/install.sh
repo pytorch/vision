@@ -36,5 +36,8 @@ else
     conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}"
 fi
 
+printf "* Checking Pillow\n"
+python check_pillow.py
+
 printf "* Installing torchvision\n"
 python setup.py develop
