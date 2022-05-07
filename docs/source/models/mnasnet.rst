@@ -11,8 +11,9 @@ Search for Mobile <https://arxiv.org/pdf/1807.11626.pdf>`__ paper.
 Model builders
 --------------
 
-The following model builders can be used to instanciate an MNASNet model, with or
-without pre-trained weights. All the model builders internally rely on the
+The following model builders can be used to instanciate an MNASNet model. Currently
+only ``mnasnet0_5`` and ``mnasnet1_0`` can be instantiated with pre-trained weights. 
+All the model builders internally rely on the
 ``torchvision.models.mnasnet.MNASNet`` base class. Please refer to the `source
 code
 <https://github.com/pytorch/vision/blob/main/torchvision/models/mnasnet.py>`_ for
