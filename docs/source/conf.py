@@ -348,9 +348,14 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines.append("")
 
 
-def generate_weights_table(module, table_name, metrics):
+def generate_weights_table(module, table_name, metrics, include_pattern=None, exclude_pattern=None):
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
+
+    if include_pattern is not None:
+        weights = [w for w in weights if include_pattern in str(w)]
+    if exclude_pattern is not None:
+        weights = [w for w in weights if exclude_pattern not in str(w)]
 
     metrics_keys, metrics_names = zip(*metrics)
     column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
@@ -377,7 +382,15 @@ def generate_weights_table(module, table_name, metrics):
 
 
 generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
-generate_weights_table(module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")])
+generate_weights_table(
+    module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_pattern="Keypoint"
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="detection_keypoint",
+    metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")],
+    include_pattern="Keypoint",
+)
 generate_weights_table(
     module=M.segmentation, table_name="segmentation", metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")]
 )
