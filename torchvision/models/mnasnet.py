@@ -274,13 +274,25 @@ def _mnasnet(alpha: float, weights: Optional[WeightsEnum], progress: bool, **kwa
 
 @handle_legacy_interface(weights=("pretrained", MNASNet0_5_Weights.IMAGENET1K_V1))
 def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
-    r"""MNASNet with depth multiplier of 0.5 from
-    `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
-    <https://arxiv.org/pdf/1807.11626.pdf>`_.
+    """MNASNet with depth multiplier of 0.5 from
+    `MnasNet: Platform-Aware Neural Architecture Search for Mobile
+    <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
 
     Args:
-        weights (MNASNet0_5_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MNASNet0_5_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MNASNet0_5_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.mnasnet.MNASNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mnasnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MNASNet0_5_Weights
+        :members:
     """
     weights = MNASNet0_5_Weights.verify(weights)
 
@@ -289,13 +301,23 @@ def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool =
 
 @handle_legacy_interface(weights=("pretrained", None))
 def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
-    r"""MNASNet with depth multiplier of 0.75 from
-    `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
-    <https://arxiv.org/pdf/1807.11626.pdf>`_.
+    """MNASNet with depth multiplier of 0.75 from
+    `MnasNet: Platform-Aware Neural Architecture Search for Mobile
+    <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
 
     Args:
-        weights (MNASNet0_75_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MNASNet0_75_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MNASNet0_75_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.mnasnet.MNASNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mnasnet.py>`_
+            for more details about this class.
+
     """
     weights = MNASNet0_75_Weights.verify(weights)
 
@@ -304,13 +326,25 @@ def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool
 
 @handle_legacy_interface(weights=("pretrained", MNASNet1_0_Weights.IMAGENET1K_V1))
 def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
-    r"""MNASNet with depth multiplier of 1.0 from
-    `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
-    <https://arxiv.org/pdf/1807.11626.pdf>`_.
+    """MNASNet with depth multiplier of 1.0 from
+    `MnasNet: Platform-Aware Neural Architecture Search for Mobile
+    <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
 
     Args:
-        weights (MNASNet1_0_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MNASNet1_0_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MNASNet1_0_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.mnasnet.MNASNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mnasnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MNASNet1_0_Weights
+        :members:
     """
     weights = MNASNet1_0_Weights.verify(weights)
 
@@ -319,13 +353,23 @@ def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool =
 
 @handle_legacy_interface(weights=("pretrained", None))
 def mnasnet1_3(*, weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
-    r"""MNASNet with depth multiplier of 1.3 from
-    `"MnasNet: Platform-Aware Neural Architecture Search for Mobile"
-    <https://arxiv.org/pdf/1807.11626.pdf>`_.
+    """MNASNet with depth multiplier of 1.3 from
+    `MnasNet: Platform-Aware Neural Architecture Search for Mobile
+    <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
 
     Args:
-        weights (MNASNet1_3_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MNASNet1_3_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MNASNet1_3_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.mnasnet.MNASNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mnasnet.py>`_
+            for more details about this class.
+
     """
     weights = MNASNet1_3_Weights.verify(weights)
 
