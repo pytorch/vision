@@ -72,8 +72,15 @@ class AlexNet_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", AlexNet_Weights.IMAGENET1K_V1))
 def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
-    """AlexNet model architecture from the `ImageNet Classification with Deep Convolutional Neural Networks
-    <https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html>`__ paper.
+    """AlexNet model architecture from `One weird trick for parallelizing convolutional neural networks
+<https://arxiv.org/abs/1404.5997>`__.
+
+    .. note::
+        AlexNet was originally introduced in the `ImageNet Classification with
+        Deep Convolutional Neural Networks
+        <https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html>`__
+        paper. Our implementation is based instead on the "One weird trick"
+        paper above.
 
     The required minimum input size of the model is 63x63.
 
