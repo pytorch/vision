@@ -307,7 +307,7 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.squeezenet.GoogLeNet``
+        **kwargs: parameters passed to the ``torchvision.models.GoogLeNet``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/googlenet.py>`_
             for more details about this class.

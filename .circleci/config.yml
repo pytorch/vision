@@ -322,9 +322,6 @@ jobs:
     docker:
       - image: cimg/python:3.7
     steps:
-      - apt_install:
-          args: libturbojpeg-dev
-          descr: Install additional system libraries
       - checkout
       - install_torchvision:
           editable: true
