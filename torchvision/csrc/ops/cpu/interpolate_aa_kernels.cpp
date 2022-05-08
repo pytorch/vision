@@ -3,6 +3,7 @@
 #include <ATen/native/IndexingUtils.h>
 #include <ATen/native/TensorIterator.h>
 #include <ATen/native/UpSample.h>
+#include <ATen/Dispatch.h>
 #include <cmath>
 #include <vector>
 
