@@ -51,13 +51,13 @@ class TransformerEncoderLayer(nn.Module):
             q = k = x + pos_embed
         else:
             q = k = x
-        x = src + self.dropout1(self.self_attn(q, k, value=x, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0])
+        x = src + self.dropout1(
+            self.self_attn(q, k, value=x, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0]
+        )
         if not self.norm_first:
             x = self.norm1(x)
         if self.norm_first:
-            x = x + self.dropout2(
-                self.linear2(self.dropout(self.activation(self.linear1(self.norm2(x)))))
-            )
+            x = x + self.dropout2(self.linear2(self.dropout(self.activation(self.linear1(self.norm2(x))))))
         else:
             x = self.norm2(x + self.dropout2(self.linear2(self.dropout(self.activation(self.linear1(x))))))
         return x
@@ -126,7 +126,7 @@ class TransformerDecoder(nn.Module):
                 tgt_key_padding_mask=tgt_key_padding_mask,
                 memory_key_padding_mask=memory_key_padding_mask,
                 pos_embed=pos_embed,
-                query_pos=query_pos_embed
+                query_pos=query_pos_embed,
             )
             if self.return_intermediate:
                 intermediate.append(self.norm(output))
@@ -202,8 +202,9 @@ class TransformerDecoderLayer(nn.Module):
                 self.multihead_attn(
                     query=self.with_pos_embed(self.norm2(x), query_pos_embed),
                     key=self.with_pos_embed(memory, pos_embed),
-                    value=memory, attn_mask=memory_mask,
-                    key_padding_mask=memory_key_padding_mask
+                    value=memory,
+                    attn_mask=memory_mask,
+                    key_padding_mask=memory_key_padding_mask,
                 )[0]
             )
             x = x + self.dropout3(self.linear2(self.dropout(self.activation(self.linear1(self.norm3(x))))))
@@ -216,12 +217,12 @@ class TransformerDecoderLayer(nn.Module):
                         key=self.with_pos_embed(memory, pos_embed),
                         value=memory,
                         attn_mask=memory_mask,
-                        key_padding_mask=memory_key_padding_mask
+                        key_padding_mask=memory_key_padding_mask,
                     )[0]
                 )
             )
             x = self.norm3(x + self.dropout3(self.linear2(self.dropout(self.activation(self.linear1(x))))))
-            
+
 
 class Transformer(nn.Module):
     """Transformer"""
@@ -259,17 +260,17 @@ class Transformer(nn.Module):
             if p.dim() > 1:
                 nn.init.xavier_uniform_(p)
 
-    def forward(self, src: Tensor, mask: Tensor, query_embed: Tensor, pos_embed: Tensor):
+    def forward(self, src: Tensor, mask: Tensor, query_pos_embed: Tensor, pos_embed: Tensor):
         # flatten NxCxHxW to HWxNxC
         bs, c, h, w = src.shape
         src = src.flatten(2).permute(2, 0, 1)
         pos_embed = pos_embed.flatten(2).permute(2, 0, 1)
-        query_embed = query_embed.unsqueeze(1).repeat(1, bs, 1)
+        query_pos_embed = query_pos_embed.unsqueeze(1).repeat(1, bs, 1)
         mask = mask.flatten(1)
 
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
-        hs = self.decoder(tgt, memory, memory_key_padding_mask=mask, pos=pos_embed, query_pos=query_embed)
+        hs = self.decoder(tgt, memory, memory_key_padding_mask=mask, pos=pos_embed, query_pos=query_pos_embed)
         return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
 
 
