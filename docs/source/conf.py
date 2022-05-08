@@ -147,8 +147,15 @@ html_static_path = ["_static"]
 
 # TODO: remove this once https://github.com/pytorch/pytorch_sphinx_theme/issues/125 is fixed
 html_css_files = [
+    "https://cdn.datatables.net/1.10.23/css/jquery.dataTables.min.css",
     "css/custom_torchvision.css",
 ]
+
+html_js_files = [
+    "https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js",
+    "js/main.js",
+]
+
 
 # -- Options for HTMLHelp output ------------------------------------------
 

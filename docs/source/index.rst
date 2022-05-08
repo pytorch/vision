@@ -39,6 +39,7 @@ architectures, and common image transformations for computer vision.
    io
    feature_extraction
    models_new
+   dummy_table
 
 .. toctree::
    :maxdepth: 1
