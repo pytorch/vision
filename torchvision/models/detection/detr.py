@@ -174,7 +174,7 @@ class TransformerDecoderLayer(nn.Module):
         self.activation = activation_layer()
         self.norm_first = norm_first
 
-    def _with_pos_embed(x: Tensor, pos_embed: Tensor = None):
+    def _with_pos_embed(self, x: Tensor, pos_embed: Tensor = None):
         return x + pos_embed if pos_embed is not None else x
 
     def forward(
@@ -200,8 +200,8 @@ class TransformerDecoderLayer(nn.Module):
         if self.norm_first:
             x = x + self.dropout2(
                 self.multihead_attn(
-                    query=self.with_pos_embed(self.norm2(x), query_pos_embed),
-                    key=self.with_pos_embed(memory, pos_embed),
+                    query=self._with_pos_embed(self.norm2(x), query_pos_embed),
+                    key=self._with_pos_embed(memory, pos_embed),
                     value=memory,
                     attn_mask=memory_mask,
                     key_padding_mask=memory_key_padding_mask,
@@ -213,8 +213,8 @@ class TransformerDecoderLayer(nn.Module):
                 x
                 + self.dropout2(
                     self.multihead_attn(
-                        query=self.with_pos_embed(x, query_pos_embed),
-                        key=self.with_pos_embed(memory, pos_embed),
+                        query=self._with_pos_embed(x, query_pos_embed),
+                        key=self._with_pos_embed(memory, pos_embed),
                         value=memory,
                         attn_mask=memory_mask,
                         key_padding_mask=memory_key_padding_mask,
@@ -268,7 +268,7 @@ class Transformer(nn.Module):
         query_pos_embed = query_pos_embed.unsqueeze(1).repeat(1, bs, 1)
         mask = mask.flatten(1)
 
-        tgt = torch.zeros_like(query_embed)
+        tgt = torch.zeros_like(query_embed) # TODO: torch.fx
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
         hs = self.decoder(tgt, memory, memory_key_padding_mask=mask, pos=pos_embed, query_pos=query_pos_embed)
         return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
