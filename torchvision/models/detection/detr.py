@@ -1,5 +1,5 @@
 import copy
-from typing import Optional, List, Callable
+from typing import Optional, Callable
 
 import torch
 from torch import nn, Tensor
@@ -10,8 +10,8 @@ def _get_clones(module, N):
 
 
 class TransformerEncoderLayer(nn.Module):
-    """"Transormer Encoder Layer"""
-    
+    """Transormer Encoder Layer"""
+
     def __init__(
         self,
         d_model: int,
@@ -34,7 +34,7 @@ class TransformerEncoderLayer(nn.Module):
         self.dropout2 = nn.Dropout(dropout)
 
         self.activation = activation_layer()
-        
+
         self.norm_first = norm_first
 
     def forward(
@@ -42,20 +42,22 @@ class TransformerEncoderLayer(nn.Module):
         src: Tensor,
         src_mask: Optional[Tensor] = None,
         src_key_padding_mask: Optional[Tensor] = None,
-        pos_embedding: Optional[Tensor] = None
+        pos_embed: Optional[Tensor] = None,
     ):
         x = src
         if self.norm_first:
             x = self.norm1(x)
         if pos_embedding is not None:
-            q = k = x + pos_embedding
+            q = k = x + pos_embed
         else:
             q = k = x
         x = src + self.dropout1(self.self_attn(q, k, value=x, attn_mask=src_mask, key_padding_mask=src_key_padding_mask)[0])
         if not self.norm_first:
             x = self.norm1(x)
         if self.norm_first:
-            x = x + self.dropout2(self.linear2(self.dropout(self.activation(self.linear1(self.norm2(x))))))
+            x = x + self.dropout2(
+                self.linear2(self.dropout(self.activation(self.linear1(self.norm2(x)))))
+            )
         else:
             x = self.norm2(x + self.dropout2(self.linear2(self.dropout(self.activation(self.linear1(x))))))
         return x
@@ -63,8 +65,8 @@ class TransformerEncoderLayer(nn.Module):
 
 class TransformerEncoder(nn.Module):
     """Transformer Encoder"""
-    
-    def __init__(self, encoder_layer: nn.Module, num_layers: int , norm: Optional[nn.Module] = None):
+
+    def __init__(self, encoder_layer: nn.Module, num_layers: int, norm: Optional[nn.Module] = None):
         super().__init__()
         self.layers = _get_clones(encoder_layer, num_layers)
         self.num_layers = num_layers
@@ -75,12 +77,11 @@ class TransformerEncoder(nn.Module):
         src,
         mask: Optional[Tensor] = None,
         src_key_padding_mask: Optional[Tensor] = None,
-        pos_embed: Optional[Tensor] = None
+        pos_embed: Optional[Tensor] = None,
     ):
         output = src
         for layer in self.layers:
-            output = layer(output, src_mask=mask, src_key_padding_mask=src_key_padding_mask,
-                           pos_embedding=pos_embed)
+            output = layer(output, src_mask=mask, src_key_padding_mask=src_key_padding_mask, pos_embed=pos_embed)
         if self.norm is not None:
             output = self.norm(output)
         return output
@@ -88,13 +89,13 @@ class TransformerEncoder(nn.Module):
 
 class TransformerDecoder(nn.Module):
     """Transformer Decoder"""
-    
+
     def __init__(
         self,
         decoder_layer: nn.Module,
         num_layers: int,
         return_intermediate: bool = False,
-        norm: Optional[nn.Module] = None
+        norm: Optional[nn.Module] = None,
     ):
         super().__init__()
         self.layers = _get_clones(decoder_layer, num_layers)
@@ -111,17 +112,22 @@ class TransformerDecoder(nn.Module):
         tgt_key_padding_mask: Optional[Tensor] = None,
         memory_key_padding_mask: Optional[Tensor] = None,
         pos_embed: Optional[Tensor] = None,
-        query_pos_embed: Optional[Tensor] = None
+        query_pos_embed: Optional[Tensor] = None,
     ):
         output = tgt
 
         intermediate = []
         for layer in self.layers:
-            output = layer(output, memory, tgt_mask=tgt_mask,
-                           memory_mask=memory_mask,
-                           tgt_key_padding_mask=tgt_key_padding_mask,
-                           memory_key_padding_mask=memory_key_padding_mask,
-                           pos=pos_embed, query_pos=query_pos_embed)
+            output = layer(
+                output,
+                memory,
+                tgt_mask=tgt_mask,
+                memory_mask=memory_mask,
+                tgt_key_padding_mask=tgt_key_padding_mask,
+                memory_key_padding_mask=memory_key_padding_mask,
+                pos_embed=pos_embed,
+                query_pos=query_pos_embed
+            )
             if self.return_intermediate:
                 intermediate.append(self.norm(output))
 
@@ -167,7 +173,7 @@ class TransformerDecoderLayer(nn.Module):
 
         self.activation = activation_layer()
         self.norm_first = norm_first
-    
+
     def _with_pos_embed(x: Tensor, pos_embed: Tensor = None):
         return x + pos_embed if pos_embed is not None else x
 
@@ -180,35 +186,46 @@ class TransformerDecoderLayer(nn.Module):
         tgt_key_padding_mask: Optional[Tensor] = None,
         memory_key_padding_mask: Optional[Tensor] = None,
         pos_embed: Optional[Tensor] = None,
-        query_pos_embed: Optional[Tensor] = None
+        query_pos_embed: Optional[Tensor] = None,
     ):
         x = tgt
         if self.norm_first:
             x = self.norm1(x)
         q = k = self._with_pos_embed(x, query_pos_embed)
-        x = tgt + self.dropout1(self.self_attn(q, k, value=x, attn_mask=tgt_mask,
-                            key_padding_mask=tgt_key_padding_mask)[0])
+        x = tgt + self.dropout1(
+            self.self_attn(q, k, value=x, attn_mask=tgt_mask, key_padding_mask=tgt_key_padding_mask)[0]
+        )
         if not self.norm_first:
             x = self.norm1(x)
         if self.norm_first:
-            x = x + self.dropout2(self.multihead_attn(
-                query=self.with_pos_embed(self.norm2(x), query_pos_embed),
-                key=self.with_pos_embed(memory, pos_embed),
-                value=memory, attn_mask=memory_mask,
-                key_padding_mask=memory_key_padding_mask)[0])
+            x = x + self.dropout2(
+                self.multihead_attn(
+                    query=self.with_pos_embed(self.norm2(x), query_pos_embed),
+                    key=self.with_pos_embed(memory, pos_embed),
+                    value=memory, attn_mask=memory_mask,
+                    key_padding_mask=memory_key_padding_mask
+                )[0]
+            )
             x = x + self.dropout3(self.linear2(self.dropout(self.activation(self.linear1(self.norm3(x))))))
         else:
-            x = self.norm2(x + self.dropout2(self.multihead_attn(
-                query=self.with_pos_embed(x, query_pos_embed),
-                key=self.with_pos_embed(memory, pos_embed),
-                value=memory, attn_mask=memory_mask,
-                key_padding_mask=memory_key_padding_mask)[0]))
+            x = self.norm2(
+                x
+                + self.dropout2(
+                    self.multihead_attn(
+                        query=self.with_pos_embed(x, query_pos_embed),
+                        key=self.with_pos_embed(memory, pos_embed),
+                        value=memory,
+                        attn_mask=memory_mask,
+                        key_padding_mask=memory_key_padding_mask
+                    )[0]
+                )
+            )
             x = self.norm3(x + self.dropout3(self.linear2(self.dropout(self.activation(self.linear1(x))))))
             
 
 class Transformer(nn.Module):
     """Transformer"""
-    
+
     def __init__(
         self,
         d_model: int = 512,
@@ -220,19 +237,21 @@ class Transformer(nn.Module):
         norm_first: bool = False,
         return_intermediate_dec: bool = False,
         activation_layer: Callable[..., nn.Module] = nn.ReLU,
-        norm_layer: Callable[..., torch.nn.Module] = nn.LayerNorm
+        norm_layer: Callable[..., torch.nn.Module] = nn.LayerNorm,
     ):
-        super().__init__()   
+        super().__init__()
         self.d_model = d_model
         self.nhead = nhead
 
-        encoder_layer = TransformerEncoderLayer(d_model, nhead, dim_feedforward,
-                                                dropout, norm_first, activation_layer, norm_layer)
+        encoder_layer = TransformerEncoderLayer(
+            d_model, nhead, dim_feedforward, dropout, norm_first, activation_layer, norm_layer
+        )
         encoder_norm = norm_layer(d_model) if norm_first else None
         self.encoder = TransformerEncoder(encoder_layer, num_encoder_layers, encoder_norm)
 
-        decoder_layer = TransformerDecoderLayer(d_model, nhead, dim_feedforward,
-                                                dropout, norm_first, activation_layer, norm_layer)
+        decoder_layer = TransformerDecoderLayer(
+            d_model, nhead, dim_feedforward, dropout, norm_first, activation_layer, norm_layer
+        )
         decoder_norm = norm_layer(d_model)
         self.decoder = TransformerDecoder(decoder_layer, num_decoder_layers, return_intermediate_dec, decoder_norm)
 
@@ -250,8 +269,7 @@ class Transformer(nn.Module):
 
         tgt = torch.zeros_like(query_embed)
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
-        hs = self.decoder(tgt, memory, memory_key_padding_mask=mask,
-                          pos=pos_embed, query_pos=query_embed)
+        hs = self.decoder(tgt, memory, memory_key_padding_mask=mask, pos=pos_embed, query_pos=query_embed)
         return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
 
 
