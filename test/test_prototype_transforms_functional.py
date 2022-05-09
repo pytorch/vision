@@ -382,7 +382,7 @@ def pad_segmentation_mask():
 
 @register_kernel_info_from_sample_inputs_fn
 def center_crop_bounding_box():
-    for bounding_box, output_size in itertools.product(make_bounding_boxes(), [(24, 12), (16, 18)]):
+    for bounding_box, output_size in itertools.product(make_bounding_boxes(), [(24, 12), [16, 18], [46, 48], [12]]):
         yield SampleInput(
             bounding_box, format=bounding_box.format, output_size=output_size, image_size=bounding_box.image_size
         )
@@ -1098,7 +1098,7 @@ def test_correctness_pad_segmentation_mask(padding):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "output_size",
-    [(18, 18), [18, 15], (16, 19), [12]],
+    [(18, 18), [18, 15], (16, 19), [12], [46, 48]],
 )
 def test_correctness_center_crop_bounding_box(device, output_size):
     def _compute_expected_bbox(bbox, output_size_):
