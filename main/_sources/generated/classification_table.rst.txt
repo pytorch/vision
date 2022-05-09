@@ -71,6 +71,7 @@
     :class:`RegNet_Y_8GF_Weights.IMAGENET1K_V2 <RegNet_Y_8GF_Weights>`                       82.828       96.33   39.4M         `link <https://github.com/pytorch/vision/issues/3995#new-recipe>`__
     :class:`ResNeXt101_32X8D_Weights.IMAGENET1K_V1 <ResNeXt101_32X8D_Weights>`               79.312       94.526  88.8M         `link <https://github.com/pytorch/vision/tree/main/references/classification#resnext>`__
     :class:`ResNeXt101_32X8D_Weights.IMAGENET1K_V2 <ResNeXt101_32X8D_Weights>`               82.834       96.228  88.8M         `link <https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres>`__
+    :class:`ResNeXt101_64X4D_Weights.IMAGENET1K_V1 <ResNeXt101_64X4D_Weights>`               83.246       96.454  83.5M         `link <https://github.com/pytorch/vision/pull/5935>`__
     :class:`ResNeXt50_32X4D_Weights.IMAGENET1K_V1 <ResNeXt50_32X4D_Weights>`                 77.618       93.698  25.0M         `link <https://github.com/pytorch/vision/tree/main/references/classification#resnext>`__
     :class:`ResNeXt50_32X4D_Weights.IMAGENET1K_V2 <ResNeXt50_32X4D_Weights>`                 81.198       95.34   25.0M         `link <https://github.com/pytorch/vision/issues/3995#new-recipe>`__
     :class:`ResNet101_Weights.IMAGENET1K_V1 <ResNet101_Weights>`                             77.374       93.546  44.5M         `link <https://github.com/pytorch/vision/tree/main/references/classification#resnet>`__
