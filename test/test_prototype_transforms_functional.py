@@ -1098,13 +1098,16 @@ def test_correctness_pad_segmentation_mask(padding):
 @pytest.mark.parametrize("device", cpu_and_gpu())
 @pytest.mark.parametrize(
     "output_size",
-    [(18, 18), (18, 15), (16, 19)],
+    [(18, 18), [18, 15], (16, 19), [12]],
 )
 def test_correctness_center_crop_bounding_box(device, output_size):
     def _compute_expected_bbox(bbox, output_size_):
         format_ = bbox.format
         image_size_ = bbox.image_size
         bbox = convert_bounding_box_format(bbox, format_, features.BoundingBoxFormat.XYWH)
+
+        if len(output_size_) == 1:
+            output_size_.append(output_size_[-1])
 
         cy = int(round((image_size_[0] - output_size_[0]) * 0.5))
         cx = int(round((image_size_[1] - output_size_[1]) * 0.5))
