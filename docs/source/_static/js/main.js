@@ -1,3 +1,5 @@
 $(document).ready( function () {
-    $('table.datatable').DataTable();
+    $('table.datatable').DataTable({
+        "lengthChange": false
+    });
 } );
