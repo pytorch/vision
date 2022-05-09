@@ -10,10 +10,10 @@ dependencies:
   - jpeg
   - ca-certificates
   - hdf5
+  - setuptools
   - pip:
     - future
     - scipy
     - av != 9.1.1
     - dataclasses
     - h5py
-    - setuptools < 61

@@ -42,13 +42,5 @@ fi
 
 source "$this_dir/set_cuda_envs.sh"
 
-printf "* Checking Pillow w/ packaging\n"
-"$this_dir/vc_env_helper.bat" pip install --upgrade packaging
-"$this_dir/vc_env_helper.bat" python check_pillow.py
-
-printf "* Checking Pillow w/o packaging\n"
-"$this_dir/vc_env_helper.bat" pip uninstall -y packaging
-"$this_dir/vc_env_helper.bat" python check_pillow.py
-
 printf "* Installing torchvision\n"
 "$this_dir/vc_env_helper.bat" python setup.py develop
