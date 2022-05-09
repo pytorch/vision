@@ -296,7 +296,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         Tensor[N, M]: the NxM matrix containing the pairwise generalized IoU values
         for every element in boxes1 and boxes2
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing() and called_itself:
         _log_api_usage_once(generalized_box_iou)
 
     inter, union = _box_inter_union(boxes1, boxes2)
@@ -327,25 +327,8 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(complete_box_iou)
 
-    boxes1 = _upcast(boxes1)
-    boxes2 = _upcast(boxes2)
-
-    inter, union = _box_inter_union(boxes1, boxes2)
-    iou = inter / union
-
-    lti = torch.min(boxes1[:, None, :2], boxes2[:, None, :2])
-    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, None, 2:])
-
-    whi = (rbi - lti).clamp(min=0)  # [N,M,2]
-    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
-
-    # centers of boxes
-    x_p = (boxes1[:, 0] + boxes1[:, 2]) / 2
-    y_p = (boxes1[:, 1] + boxes1[:, 3]) / 2
-    x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
-    y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
-    # The distance between boxes' centers squared.
-    centers_distance_squared = (x_p - x_g) ** 2 + (y_p - y_g) ** 2
+    diou = distance_box_iou(boxes1, boxes2, eps)
+    iou = box_iou(boxes1, boxes2)
 
     w_pred = boxes1[:, 2] - boxes1[:, 0]
     h_pred = boxes1[:, 3] - boxes1[:, 1]
@@ -356,7 +339,7 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     v = (4 / (torch.pi ** 2)) * torch.pow((torch.atan(w_gt / h_gt) - torch.atan(w_pred / h_pred)), 2)
     with torch.no_grad():
         alpha = v / (1 - iou + v + eps)
-    return iou - (centers_distance_squared / diagonal_distance_squared) - alpha * v
+    return diou - alpha * v
 
 
 def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tensor:
@@ -381,8 +364,7 @@ def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     boxes1 = _upcast(boxes1)
     boxes2 = _upcast(boxes2)
 
-    inter, union = _box_inter_union(boxes1, boxes2)
-    iou = inter / union
+    iou = box_iou(boxes1, boxes2)
 
     lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
     rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
