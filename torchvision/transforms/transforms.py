@@ -330,7 +330,7 @@ class Resize(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15."
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
                 "Please use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
@@ -769,7 +769,7 @@ class RandomPerspective(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15."
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
                 "Please use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
@@ -889,7 +889,7 @@ class RandomResizedCrop(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15."
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
                 "Please use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
@@ -1303,7 +1303,7 @@ class RandomRotation(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15."
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
                 "Please use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)
@@ -1433,7 +1433,7 @@ class RandomAffine(torch.nn.Module):
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
-                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15."
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
                 "Please use InterpolationMode enum."
             )
             interpolation = _interpolation_modes_from_int(interpolation)

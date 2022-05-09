@@ -415,7 +415,7 @@ def resize(
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
         warnings.warn(
-            "Argument interpolation of type int is deprecated since 0.13 and will be removed in 0.15."
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
             "Please use InterpolationMode enum."
         )
         interpolation = _interpolation_modes_from_int(interpolation)
@@ -673,7 +673,7 @@ def perspective(
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
         warnings.warn(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15."
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
             "Please use InterpolationMode enum."
         )
         interpolation = _interpolation_modes_from_int(interpolation)
@@ -1051,7 +1051,7 @@ def rotate(
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
         warnings.warn(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15."
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
             "Please use InterpolationMode enum."
         )
         interpolation = _interpolation_modes_from_int(interpolation)
@@ -1141,7 +1141,7 @@ def affine(
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
         warnings.warn(
-            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15."
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
             "Please use InterpolationMode enum."
         )
         interpolation = _interpolation_modes_from_int(interpolation)

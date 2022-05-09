@@ -1878,7 +1878,12 @@ def test_random_rotation():
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
     # assert changed type warning
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(UserWarning,
+                      match=re.escape(
+                          "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+                          "Please use InterpolationMode enum."
+                      ),
+                      ):
         t = transforms.RandomRotation((-10, 10), interpolation=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
@@ -2233,7 +2238,12 @@ def test_random_affine():
         assert t.fill == 10
 
     # assert changed type warning
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         t = transforms.RandomAffine(10, interpolation=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
