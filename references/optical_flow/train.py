@@ -209,6 +209,12 @@ def main(args):
         raise ValueError("The device must be cuda if we want to run in distributed mode using torchrun")
     device = torch.device(args.device)
 
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
+
     model = torchvision.models.optical_flow.__dict__[args.model](weights=args.weights)
 
     if args.distributed:
@@ -370,6 +376,9 @@ def get_args_parser(add_help=True):
 
     parser.add_argument("--weights", default=None, type=str, help="the weights enum name to load.")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu, Default: cuda)")
+    parser.add_argument(
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
+    )
 
     return parser
 
