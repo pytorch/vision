@@ -535,7 +535,7 @@ def center_crop_bounding_box(
     format: features.BoundingBoxFormat,
     output_size: List[int],
     image_size: Tuple[int, int],
-):
+) -> torch.Tensor:
     crop_height, crop_width = _center_crop_parse_output_size(output_size)
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *image_size)
     return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
