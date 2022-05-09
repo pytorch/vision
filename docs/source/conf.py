@@ -315,7 +315,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
       used within the autoclass directive.
     """
 
-    if obj.__name__.endswith("_Weights"):
+    if obj.__name__.endswith("Weights"):
         lines[:] = [
             "The model builder above accepts the following values as the ``weights`` parameter.",
             f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
@@ -349,7 +349,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
 
 def generate_weights_table(module, table_name, metrics, include_patterns=None, exclude_patterns=None):
-    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
+    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
     if include_patterns is not None:
@@ -382,6 +382,7 @@ def generate_weights_table(module, table_name, metrics, include_patterns=None, e
 
 
 generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
+generate_weights_table(module=M.quantization, table_name="classification_quant", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
 generate_weights_table(
     module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_patterns=["Mask", "Keypoint"]
 )
