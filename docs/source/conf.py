@@ -22,6 +22,7 @@
 
 import os
 import textwrap
+from copy import copy
 from pathlib import Path
 
 import pytorch_sphinx_theme
@@ -326,29 +327,44 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                 lines += [f"This weight is also available as ``{obj.__name__}.DEFAULT``.", ""]
 
             table = []
-            for k, v in field.meta.items():
+
+            # the `meta` dict contains another embedded `metrics` dict. To
+            # simplify the table generation below, we create the
+            # `meta_with_metrics` dict, where the metrics dict has been "flattened"
+            meta = copy(field.meta)
+            metrics = meta.pop("metrics", {})
+            meta_with_metrics = dict(meta, **metrics)
+
+            for k, v in meta_with_metrics.items():
                 if k == "categories":
                     continue
                 elif k == "recipe":
                     v = f"`link <{v}>`__"
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
+            lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
             lines += [".. table::", ""]
             lines += textwrap.indent(table, " " * 4).split("\n")
             lines.append("")
 
 
-def generate_classification_table():
-
-    weight_enums = [getattr(M, name) for name in dir(M) if name.endswith("_Weights")]
+def generate_weights_table(module, table_name, metrics, include_patterns=None, exclude_patterns=None):
+    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
-    column_names = ("**Weight**", "**Acc@1**", "**Acc@5**", "**Params**", "**Recipe**")
+    if include_patterns is not None:
+        weights = [w for w in weights if any(p in str(w) for p in include_patterns)]
+    if exclude_patterns is not None:
+        weights = [w for w in weights if all(p not in str(w) for p in exclude_patterns)]
+
+    metrics_keys, metrics_names = zip(*metrics)
+    column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
+    column_names = [f"**{name}**" for name in column_names]  # Add bold
+
     content = [
         (
             f":class:`{w} <{type(w).__name__}>`",
-            w.meta["acc@1"],
-            w.meta["acc@5"],
+            *(w.meta["metrics"][metric] for metric in metrics_keys),
             f"{w.meta['num_params']/1e6:.1f}M",
             f"`link <{w.meta['recipe']}>`__",
         )
@@ -358,13 +374,33 @@ def generate_classification_table():
 
     generated_dir = Path("generated")
     generated_dir.mkdir(exist_ok=True)
-    with open(generated_dir / "classification_table.rst", "w+") as table_file:
+    with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
+        table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
         table_file.write(".. table::\n")
-        table_file.write("    :widths: 100 10 10 20 10\n\n")
+        table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
 
-generate_classification_table()
+generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
+generate_weights_table(
+    module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_patterns=["Mask", "Keypoint"]
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="instance_segmentation",
+    metrics=[("box_map", "Box MAP"), ("mask_map", "Mask MAP")],
+    include_patterns=["Mask"],
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="detection_keypoint",
+    metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")],
+    include_patterns=["Keypoint"],
+)
+generate_weights_table(
+    module=M.segmentation, table_name="segmentation", metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")]
+)
+generate_weights_table(module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
 
 
 def setup(app):

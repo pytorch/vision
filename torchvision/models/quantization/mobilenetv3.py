@@ -6,7 +6,7 @@ from torch import nn, Tensor
 from torch.ao.quantization import QuantStub, DeQuantStub
 
 from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
-from ...transforms._presets import ImageClassification, InterpolationMode
+from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -140,6 +140,10 @@ def _mobilenet_v3_model(
     _replace_relu(model)
 
     if quantize:
+        # Instead of quantizing the model and then loading the quantized weights we take a different approach.
+        # We prepare the QAT model, load the QAT weights from training and then convert it.
+        # This is done to avoid extremely low accuracies observed on the specific model. This is rather a workaround
+        # for an unresolved bug on the eager quantization API detailed at: https://github.com/pytorch/vision/issues/5890
         model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
@@ -159,20 +163,16 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
-            "task": "image_classification",
-            "architecture": "MobileNetV3",
-            "publication_year": 2019,
             "num_params": 5483032,
-            "size": (224, 224),
             "min_size": (1, 1),
             "categories": _IMAGENET_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "backend": "qnnpack",
-            "quantization": "Quantization Aware Training",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3",
             "unquantized": MobileNet_V3_Large_Weights.IMAGENET1K_V1,
-            "acc@1": 73.004,
-            "acc@5": 90.858,
+            "metrics": {
+                "acc@1": 73.004,
+                "acc@5": 90.858,
+            },
         },
     )
     DEFAULT = IMAGENET1K_QNNPACK_V1

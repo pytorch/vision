@@ -56,7 +56,8 @@ class RPNHead(nn.Module):
             for type in ["weight", "bias"]:
                 old_key = f"{prefix}conv.{type}"
                 new_key = f"{prefix}conv.0.0.{type}"
-                state_dict[new_key] = state_dict.pop(old_key)
+                if old_key in state_dict:
+                    state_dict[new_key] = state_dict.pop(old_key)
 
         super()._load_from_state_dict(
             state_dict,

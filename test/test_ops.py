@@ -1258,6 +1258,134 @@ class TestGenBoxIou(BoxTestBase):
         self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
 
 
+class TestDistanceBoxIoU(BoxTestBase):
+    def _target_fn(self):
+        return (True, ops.distance_box_iou)
+
+    def _generate_int_input():
+        return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+
+    def _generate_int_expected():
+        return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+
+    def _generate_float_input():
+        return [
+            [285.3538, 185.5758, 1193.5110, 851.4551],
+            [285.1472, 188.7374, 1192.4984, 851.0669],
+            [279.2440, 197.9812, 1189.4746, 849.2019],
+        ]
+
+    def _generate_float_expected():
+        return [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "test_input, dtypes, tolerance, expected",
+        [
+            pytest.param(
+                _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
+            ),
+            pytest.param(_generate_float_input(), [torch.float16], 0.002, _generate_float_expected()),
+            pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.001, _generate_float_expected()),
+        ],
+    )
+    def test_distance_iou(self, test_input, dtypes, tolerance, expected):
+        self._run_test(test_input, dtypes, tolerance, expected)
+
+    def test_distance_iou_jit(self):
+        self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+def test_distance_iou_loss(dtype, device):
+    box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
+    box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
+    box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
+    box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
+
+    box1s = torch.stack(
+        [box2, box2],
+        dim=0,
+    )
+    box2s = torch.stack(
+        [box3, box4],
+        dim=0,
+    )
+
+    def assert_distance_iou_loss(box1, box2, expected_output, reduction="none"):
+        output = ops.distance_box_iou_loss(box1, box2, reduction=reduction)
+        # TODO: When passing the dtype, the torch.half fails as usual.
+        expected_output = torch.tensor(expected_output, device=device)
+        tol = 1e-5 if dtype != torch.half else 1e-3
+        torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
+
+    assert_distance_iou_loss(box1, box1, 0.0)
+
+    assert_distance_iou_loss(box1, box2, 0.8125)
+
+    assert_distance_iou_loss(box1, box3, 1.1923)
+
+    assert_distance_iou_loss(box1, box4, 1.2500)
+
+    assert_distance_iou_loss(box1s, box2s, 1.2250, reduction="mean")
+    assert_distance_iou_loss(box1s, box2s, 2.4500, reduction="sum")
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+def test_empty_distance_iou_inputs(dtype, device) -> None:
+    box1 = torch.randn([0, 4], dtype=dtype, device=device).requires_grad_()
+    box2 = torch.randn([0, 4], dtype=dtype, device=device).requires_grad_()
+
+    loss = ops.distance_box_iou_loss(box1, box2, reduction="mean")
+    loss.backward()
+
+    tol = 1e-3 if dtype is torch.half else 1e-5
+    torch.testing.assert_close(loss, torch.tensor(0.0, device=device), rtol=tol, atol=tol)
+    assert box1.grad is not None, "box1.grad should not be None after backward is called"
+    assert box2.grad is not None, "box2.grad should not be None after backward is called"
+
+    loss = ops.distance_box_iou_loss(box1, box2, reduction="none")
+    assert loss.numel() == 0, "diou_loss for two empty box should be empty"
+
+
+class TestCompleteBoxIou(BoxTestBase):
+    def _target_fn(self) -> Tuple[bool, Callable]:
+        return (True, ops.complete_box_iou)
+
+    def _generate_int_input() -> List[List[int]]:
+        return [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
+
+    def _generate_int_expected() -> List[List[float]]:
+        return [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+
+    def _generate_float_input() -> List[List[float]]:
+        return [
+            [285.3538, 185.5758, 1193.5110, 851.4551],
+            [285.1472, 188.7374, 1192.4984, 851.0669],
+            [279.2440, 197.9812, 1189.4746, 849.2019],
+        ]
+
+    def _generate_float_expected() -> List[List[float]]:
+        return [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
+
+    @pytest.mark.parametrize(
+        "test_input, dtypes, tolerance, expected",
+        [
+            pytest.param(
+                _generate_int_input(), [torch.int16, torch.int32, torch.int64], 1e-4, _generate_int_expected()
+            ),
+            pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.002, _generate_float_expected()),
+            pytest.param(_generate_float_input(), [torch.float32, torch.float64], 0.001, _generate_float_expected()),
+        ],
+    )
+    def test_complete_iou(self, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List) -> None:
+        self._run_test(test_input, dtypes, tolerance, expected)
+
+    def test_ciou_jit(self) -> None:
+        self._run_jit_test([[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+
+
 class TestMasksToBoxes:
     def test_masks_box(self):
         def masks_box_check(masks, expected, tolerance=1e-4):
@@ -1578,6 +1706,7 @@ class TestGeneralizedBoxIouLoss:
         box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
         box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
         box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
+
         box1s = torch.stack([box2, box2], dim=0)
         box2s = torch.stack([box3, box4], dim=0)
 
@@ -1621,6 +1750,55 @@ class TestGeneralizedBoxIouLoss:
 
         loss = ops.generalized_box_iou_loss(box1, box2, reduction="none")
         assert loss.numel() == 0, "giou_loss for two empty box should be empty"
+
+
+class TestCIOULoss:
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    def test_ciou_loss(self, dtype, device):
+        box1 = torch.tensor([-1, -1, 1, 1], dtype=dtype, device=device)
+        box2 = torch.tensor([0, 0, 1, 1], dtype=dtype, device=device)
+        box3 = torch.tensor([0, 1, 1, 2], dtype=dtype, device=device)
+        box4 = torch.tensor([1, 1, 2, 2], dtype=dtype, device=device)
+
+        box1s = torch.stack([box2, box2], dim=0)
+        box2s = torch.stack([box3, box4], dim=0)
+
+        def assert_ciou_loss(box1, box2, expected_output, reduction="none"):
+
+            output = ops.complete_box_iou_loss(box1, box2, reduction=reduction)
+            # TODO: When passing the dtype, the torch.half test doesn't pass...
+            expected_output = torch.tensor(expected_output, device=device)
+            tol = 1e-5 if dtype != torch.half else 1e-3
+            torch.testing.assert_close(output, expected_output, rtol=tol, atol=tol)
+
+        assert_ciou_loss(box1, box1, 0.0)
+
+        assert_ciou_loss(box1, box2, 0.8125)
+
+        assert_ciou_loss(box1, box3, 1.1923)
+
+        assert_ciou_loss(box1, box4, 1.2500)
+
+        assert_ciou_loss(box1s, box2s, 1.2250, reduction="mean")
+        assert_ciou_loss(box1s, box2s, 2.4500, reduction="sum")
+
+    @pytest.mark.parametrize("device", cpu_and_gpu())
+    @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
+    def test_empty_inputs(self, dtype, device) -> None:
+        box1 = torch.randn([0, 4], dtype=dtype).requires_grad_()
+        box2 = torch.randn([0, 4], dtype=dtype).requires_grad_()
+
+        loss = ops.complete_box_iou_loss(box1, box2, reduction="mean")
+        loss.backward()
+
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(loss, torch.tensor(0.0), rtol=tol, atol=tol)
+        assert box1.grad is not None, "box1.grad should not be None after backward is called"
+        assert box2.grad is not None, "box2.grad should not be None after backward is called"
+
+        loss = ops.complete_box_iou_loss(box1, box2, reduction="none")
+        assert loss.numel() == 0, "ciou_loss for two empty box should be empty"
 
 
 if __name__ == "__main__":

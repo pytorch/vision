@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -21,6 +21,7 @@ __all__ = [
     "ResNet152_Weights",
     "ResNeXt50_32X4D_Weights",
     "ResNeXt101_32X8D_Weights",
+    "ResNeXt101_64X4D_Weights",
     "Wide_ResNet50_2_Weights",
     "Wide_ResNet101_2_Weights",
     "resnet18",
@@ -30,6 +31,7 @@ __all__ = [
     "resnet152",
     "resnext50_32x4d",
     "resnext101_32x8d",
+    "resnext101_64x4d",
     "wide_resnet50_2",
     "wide_resnet101_2",
 ]
@@ -302,11 +304,8 @@ def _resnet(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
@@ -316,12 +315,12 @@ class ResNet18_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 11689512,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "acc@1": 69.758,
-            "acc@5": 89.078,
+            "metrics": {
+                "acc@1": 69.758,
+                "acc@5": 89.078,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -333,12 +332,12 @@ class ResNet34_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 21797672,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "acc@1": 73.314,
-            "acc@5": 91.420,
+            "metrics": {
+                "acc@1": 73.314,
+                "acc@5": 91.420,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -350,12 +349,12 @@ class ResNet50_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "acc@1": 76.130,
-            "acc@5": 92.862,
+            "metrics": {
+                "acc@1": 76.130,
+                "acc@5": 92.862,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -363,12 +362,12 @@ class ResNet50_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621",
-            "acc@1": 80.858,
-            "acc@5": 95.434,
+            "metrics": {
+                "acc@1": 80.858,
+                "acc@5": 95.434,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -380,12 +379,12 @@ class ResNet101_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "acc@1": 77.374,
-            "acc@5": 93.546,
+            "metrics": {
+                "acc@1": 77.374,
+                "acc@5": 93.546,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -393,12 +392,12 @@ class ResNet101_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "acc@1": 81.886,
-            "acc@5": 95.780,
+            "metrics": {
+                "acc@1": 81.886,
+                "acc@5": 95.780,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -410,12 +409,12 @@ class ResNet152_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "acc@1": 78.312,
-            "acc@5": 94.046,
+            "metrics": {
+                "acc@1": 78.312,
+                "acc@5": 94.046,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -423,12 +422,12 @@ class ResNet152_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "ResNet",
-            "publication_year": 2015,
             "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "acc@1": 82.284,
-            "acc@5": 96.002,
+            "metrics": {
+                "acc@1": 82.284,
+                "acc@5": 96.002,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -440,12 +439,12 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNeXt",
-            "publication_year": 2016,
             "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
-            "acc@1": 77.618,
-            "acc@5": 93.698,
+            "metrics": {
+                "acc@1": 77.618,
+                "acc@5": 93.698,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -453,12 +452,12 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "ResNeXt",
-            "publication_year": 2016,
             "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "acc@1": 81.198,
-            "acc@5": 95.340,
+            "metrics": {
+                "acc@1": 81.198,
+                "acc@5": 95.340,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -470,12 +469,12 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "ResNeXt",
-            "publication_year": 2016,
             "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
-            "acc@1": 79.312,
-            "acc@5": 94.526,
+            "metrics": {
+                "acc@1": 79.312,
+                "acc@5": 94.526,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -483,15 +482,33 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "ResNeXt",
-            "publication_year": 2016,
             "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "acc@1": 82.834,
-            "acc@5": 96.228,
+            "metrics": {
+                "acc@1": 82.834,
+                "acc@5": 96.228,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
+
+
+class ResNeXt101_64X4D_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/resnext101_64x4d-173b62eb.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "num_params": 83455272,
+            "recipe": "https://github.com/pytorch/vision/pull/5935",
+            "metrics": {
+                # Mock
+                "acc@1": 83.246,
+                "acc@5": 96.454,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class Wide_ResNet50_2_Weights(WeightsEnum):
@@ -500,12 +517,12 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "WideResNet",
-            "publication_year": 2016,
             "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
-            "acc@1": 78.468,
-            "acc@5": 94.086,
+            "metrics": {
+                "acc@1": 78.468,
+                "acc@5": 94.086,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -513,12 +530,12 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "WideResNet",
-            "publication_year": 2016,
             "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "acc@1": 81.602,
-            "acc@5": 95.758,
+            "metrics": {
+                "acc@1": 81.602,
+                "acc@5": 95.758,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -530,12 +547,12 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
-            "architecture": "WideResNet",
-            "publication_year": 2016,
             "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
-            "acc@1": 78.848,
-            "acc@5": 94.284,
+            "metrics": {
+                "acc@1": 78.848,
+                "acc@5": 94.284,
+            },
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -543,12 +560,12 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "architecture": "WideResNet",
-            "publication_year": 2016,
             "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "acc@1": 82.510,
-            "acc@5": 96.020,
+            "metrics": {
+                "acc@1": 82.510,
+                "acc@5": 96.020,
+            },
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -683,12 +700,23 @@ def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = T
 def resnext50_32x4d(
     *, weights: Optional[ResNeXt50_32X4D_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""ResNeXt-50 32x4d model from
-    `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_.
+    """ResNeXt-50 32x4d model from
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_.
 
     Args:
-        weights (ResNeXt50_32X4D_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNeXt50_32X4D_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNext50_32X4D_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.ResNeXt50_32X4D_Weights
+        :members:
     """
     weights = ResNeXt50_32X4D_Weights.verify(weights)
 
@@ -701,12 +729,23 @@ def resnext50_32x4d(
 def resnext101_32x8d(
     *, weights: Optional[ResNeXt101_32X8D_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""ResNeXt-101 32x8d model from
-    `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_.
+    """ResNeXt-101 32x8d model from
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_.
 
     Args:
-        weights (ResNeXt101_32X8D_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ResNeXt101_32X8D_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNeXt101_32X8D_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.ResNeXt101_32X8D_Weights
+        :members:
     """
     weights = ResNeXt101_32X8D_Weights.verify(weights)
 
@@ -715,12 +754,40 @@ def resnext101_32x8d(
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
+def resnext101_64x4d(
+    *, weights: Optional[ResNeXt101_64X4D_Weights] = None, progress: bool = True, **kwargs: Any
+) -> ResNet:
+    """ResNeXt-101 64x4d model from
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.ResNeXt101_64X4D_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ResNeXt101_64X4D_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.ResNeXt101_64X4D_Weights
+        :members:
+    """
+    weights = ResNeXt101_64X4D_Weights.verify(weights)
+
+    _ovewrite_named_param(kwargs, "groups", 64)
+    _ovewrite_named_param(kwargs, "width_per_group", 4)
+    return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
+
+
 @handle_legacy_interface(weights=("pretrained", Wide_ResNet50_2_Weights.IMAGENET1K_V1))
 def wide_resnet50_2(
     *, weights: Optional[Wide_ResNet50_2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""Wide ResNet-50-2 model from
-    `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_.
+    """Wide ResNet-50-2 model from
+    `Wide Residual Networks <https://arxiv.org/abs/1605.07146>`_.
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
@@ -728,8 +795,19 @@ def wide_resnet50_2(
     channels, and in Wide ResNet-50-2 has 2048-1024-2048.
 
     Args:
-        weights (Wide_ResNet50_2_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.Wide_ResNet50_2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Wide_ResNet50_2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.Wide_ResNet50_2_Weights
+        :members:
     """
     weights = Wide_ResNet50_2_Weights.verify(weights)
 
@@ -741,8 +819,8 @@ def wide_resnet50_2(
 def wide_resnet101_2(
     *, weights: Optional[Wide_ResNet101_2_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ResNet:
-    r"""Wide ResNet-101-2 model from
-    `"Wide Residual Networks" <https://arxiv.org/pdf/1605.07146.pdf>`_.
+    """Wide ResNet-101-2 model from
+    `Wide Residual Networks <https://arxiv.org/abs/1605.07146>`_.
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
@@ -750,8 +828,19 @@ def wide_resnet101_2(
     channels, and in Wide ResNet-50-2 has 2048-1024-2048.
 
     Args:
-        weights (Wide_ResNet101_2_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.Wide_ResNet101_2_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Wide_ResNet101_2_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.ResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.Wide_ResNet101_2_Weights
+        :members:
     """
     weights = Wide_ResNet101_2_Weights.verify(weights)
 
