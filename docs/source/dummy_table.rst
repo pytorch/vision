@@ -120,3 +120,24 @@ Same old classification table let's see.
     :class:`Wide_ResNet50_2_Weights.IMAGENET1K_V1 <Wide_ResNet50_2_Weights>`                 78.468       94.086  68.9M         `link <https://github.com/pytorch/vision/pull/912#issue-445437439>`__
     :class:`Wide_ResNet50_2_Weights.IMAGENET1K_V2 <Wide_ResNet50_2_Weights>`                 81.602       95.758  68.9M         `link <https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres>`__
     ==================================================================================  ===========  ===========  ============  =========================================================================================================
+
+Another Dummy Table
+^^^^^^^^^^^^^^^^^^^
+
+What will happen to segementation table?
+
+.. rst-class:: table-weights
+.. table::
+    :class: datatable
+    :widths: 100 20 20  20 10
+
+    ============================================================================================================  ==============  ===================  ============  ===========================================================================================================
+    **Weight**                                                                                                      **Mean IoU**    **pixelwise Acc**  **Params**    **Recipe**
+    ============================================================================================================  ==============  ===================  ============  ===========================================================================================================
+    :class:`DeepLabV3_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1 <DeepLabV3_MobileNet_V3_Large_Weights>`            60.3                 91.2  11.0M         `link <https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large>`__
+    :class:`DeepLabV3_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1 <DeepLabV3_ResNet101_Weights>`                              67.4                 92.4  61.0M         `link <https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101>`__
+    :class:`DeepLabV3_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1 <DeepLabV3_ResNet50_Weights>`                                66.4                 92.4  42.0M         `link <https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50>`__
+    :class:`FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1 <FCN_ResNet101_Weights>`                                          63.7                 91.9  54.3M         `link <https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101>`__
+    :class:`FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1 <FCN_ResNet50_Weights>`                                            60.5                 91.4  35.3M         `link <https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50>`__
+    :class:`LRASPP_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1 <LRASPP_MobileNet_V3_Large_Weights>`                  57.9                 91.2  3.2M          `link <https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large>`__
+    ============================================================================================================  ==============  ===================  ============  ===========================================================================================================
