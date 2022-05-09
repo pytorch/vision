@@ -61,6 +61,8 @@ You can construct a model with random weights by calling its constructor:
     mobilenet_v3_large = models.mobilenet_v3_large()
     mobilenet_v3_small = models.mobilenet_v3_small()
     resnext50_32x4d = models.resnext50_32x4d()
+    resnext101_32x8d = models.resnext101_32x8d()
+    resnext101_64x4d = models.resnext101_64x4d()
     wide_resnet50_2 = models.wide_resnet50_2()
     mnasnet = models.mnasnet1_0()
     efficientnet_b0 = models.efficientnet_b0()
