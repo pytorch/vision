@@ -1,18 +1,11 @@
 import torch
-from torch import Tensor
 
 from ..utils import _log_api_usage_once
-
-
-def _upcast(t: Tensor) -> Tensor:
-    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
-    if t.dtype not in (torch.float32, torch.float64):
-        return t.float()
-    return t
+from ._utils import _upcast
 
 
 def generalized_box_iou_loss(
-    boxes1: torch.Tensor,
+    boxes1: Tensor,
     boxes2: torch.Tensor,
     reduction: str = "none",
     eps: float = 1e-7,

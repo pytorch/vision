@@ -7,6 +7,7 @@ from torchvision.extension import _assert_has_ops
 
 from ..utils import _log_api_usage_once
 from ._box_convert import _box_cxcywh_to_xyxy, _box_xyxy_to_cxcywh, _box_xywh_to_xyxy, _box_xyxy_to_xywh
+from ._utils import _upcast
 
 
 def nms(boxes: Tensor, scores: Tensor, iou_threshold: float) -> Tensor:
@@ -213,14 +214,6 @@ def box_convert(boxes: Tensor, in_fmt: str, out_fmt: str) -> Tensor:
         elif in_fmt == "cxcywh":
             boxes = _box_cxcywh_to_xyxy(boxes)
     return boxes
-
-
-def _upcast(t: Tensor) -> Tensor:
-    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
-    if t.is_floating_point():
-        return t if t.dtype in (torch.float32, torch.float64) else t.float()
-    else:
-        return t if t.dtype in (torch.int32, torch.int64) else t.int()
 
 
 def box_area(boxes: Tensor) -> Tensor:

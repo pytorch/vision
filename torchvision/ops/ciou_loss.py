@@ -1,7 +1,7 @@
 import torch
 
 from ..utils import _log_api_usage_once
-from .giou_loss import _upcast
+from ._utils import _upcast
 
 
 def complete_box_iou_loss(
