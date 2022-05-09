@@ -1341,7 +1341,7 @@ def test_empty_distance_iou_inputs(dtype, device) -> None:
     loss.backward()
 
     tol = 1e-3 if dtype is torch.half else 1e-5
-    torch.testing.assert_close(loss, torch.tensor(0.0), rtol=tol, atol=tol)
+    torch.testing.assert_close(loss, torch.tensor(0.0, device=device), rtol=tol, atol=tol)
     assert box1.grad is not None, "box1.grad should not be None after backward is called"
     assert box2.grad is not None, "box2.grad should not be None after backward is called"
 
