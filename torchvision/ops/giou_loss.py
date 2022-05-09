@@ -5,7 +5,7 @@ from ._utils import _upcast
 
 
 def generalized_box_iou_loss(
-    boxes1: Tensor,
+    boxes1: torch.Tensor,
     boxes2: torch.Tensor,
     reduction: str = "none",
     eps: float = 1e-7,

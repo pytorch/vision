@@ -289,7 +289,7 @@ def generalized_box_iou(boxes1: Tensor, boxes2: Tensor) -> Tensor:
         Tensor[N, M]: the NxM matrix containing the pairwise generalized IoU values
         for every element in boxes1 and boxes2
     """
-    if not torch.jit.is_scripting() and not torch.jit.is_tracing() and called_itself:
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(generalized_box_iou)
 
     inter, union = _box_inter_union(boxes1, boxes2)
