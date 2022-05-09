@@ -132,6 +132,10 @@ def get_args_parser(add_help=True):
         action="store_true",
     )
 
+    parser.add_argument(
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
+    )
+
     # distributed training parameters
     parser.add_argument("--world-size", default=1, type=int, help="number of distributed processes")
     parser.add_argument("--dist-url", default="env://", type=str, help="url used to set up distributed training")
@@ -153,6 +157,12 @@ def main(args):
 
     device = torch.device(args.device)
 
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
+
     # Data loading code
     print("Loading data")
 
@@ -162,7 +172,7 @@ def main(args):
     print("Creating data loaders")
     if args.distributed:
         train_sampler = torch.utils.data.distributed.DistributedSampler(dataset)
-        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test)
+        test_sampler = torch.utils.data.distributed.DistributedSampler(dataset_test, shuffle=False)
     else:
         train_sampler = torch.utils.data.RandomSampler(dataset)
         test_sampler = torch.utils.data.SequentialSampler(dataset_test)
@@ -243,6 +253,9 @@ def main(args):
             scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
         evaluate(model, data_loader_test, device=device)
         return
 

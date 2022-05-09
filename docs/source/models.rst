@@ -61,6 +61,8 @@ You can construct a model with random weights by calling its constructor:
     mobilenet_v3_large = models.mobilenet_v3_large()
     mobilenet_v3_small = models.mobilenet_v3_small()
     resnext50_32x4d = models.resnext50_32x4d()
+    resnext101_32x8d = models.resnext101_32x8d()
+    resnext101_64x4d = models.resnext101_64x4d()
     wide_resnet50_2 = models.wide_resnet50_2()
     mnasnet = models.mnasnet1_0()
     efficientnet_b0 = models.efficientnet_b0()
@@ -185,6 +187,7 @@ MobileNet V3 Large                74.042          91.340
 MobileNet V3 Small                67.668          87.402
 ResNeXt-50-32x4d                  77.618          93.698
 ResNeXt-101-32x8d                 79.312          94.526
+ResNeXt-101-64x4d                 83.246          96.454
 Wide ResNet-50-2                  78.468          94.086
 Wide ResNet-101-2                 78.848          94.284
 MNASNet 1.0                       73.456          91.510
@@ -366,6 +369,7 @@ ResNext
 
     resnext50_32x4d
     resnext101_32x8d
+    resnext101_64x4d
 
 Wide ResNet
 -----------
@@ -457,7 +461,7 @@ ConvNeXt
     convnext_large
 
 SwinTransformer
---------
+---------------
 
 .. autosummary::
     :toctree: generated/
@@ -481,8 +485,11 @@ a model with random weights by calling its constructor:
     resnet18 = models.quantization.resnet18()
     resnet50 = models.quantization.resnet50()
     resnext101_32x8d = models.quantization.resnext101_32x8d()
+    resnext101_64x4d = models.quantization.resnext101_64x4d()
     shufflenet_v2_x0_5 = models.quantization.shufflenet_v2_x0_5()
     shufflenet_v2_x1_0 = models.quantization.shufflenet_v2_x1_0()
+    shufflenet_v2_x1_5 = models.quantization.shufflenet_v2_x1_5()
+    shufflenet_v2_x2_0 = models.quantization.shufflenet_v2_x2_0()
 
 Obtaining a pre-trained quantized model can be done with a few lines of code:
 
@@ -508,6 +515,7 @@ ShuffleNet V2 x2.0                75.354         92.488
 ResNet 18                         69.494         88.882
 ResNet 50                         75.920         92.814
 ResNext 101 32x8d                 78.986         94.480
+ResNext 101 64x4d                 82.898         96.326
 Inception V3                      77.176         93.354
 GoogleNet                         69.826         89.404
 ================================  =============  =============
