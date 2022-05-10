@@ -3,7 +3,7 @@ import transforms as T
 
 
 class DetectionPresetTrain:
-    def __init__(self, *, data_augmentation, hflip_prob=0.5, mean=(123.0, 117.0, 104.0)):
+    def __init__(self, *, data_augmentation, hflip_prob=0.5, mean=(123, 117, 104)):
         if data_augmentation == "hflip":
             self.transforms = T.Compose(
                 [
