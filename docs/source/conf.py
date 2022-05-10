@@ -315,7 +315,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
       used within the autoclass directive.
     """
 
-    if obj.__name__.endswith("Weights"):
+    if obj.__name__.endswith(("_Weights", "_QuantizedWeights")):
         lines[:] = [
             "The model builder above accepts the following values as the ``weights`` parameter.",
             f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
@@ -349,7 +349,8 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
 
 def generate_weights_table(module, table_name, metrics, include_patterns=None, exclude_patterns=None):
-    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("Weights")]
+    weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
+    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
     if include_patterns is not None:
