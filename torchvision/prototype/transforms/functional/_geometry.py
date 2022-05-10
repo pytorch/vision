@@ -619,6 +619,17 @@ def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.I
     return crop_image_pil(img, crop_top, crop_left, crop_height, crop_width)
 
 
+def center_crop_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    output_size: List[int],
+    image_size: Tuple[int, int],
+) -> torch.Tensor:
+    crop_height, crop_width = _center_crop_parse_output_size(output_size)
+    crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *image_size)
+    return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
+
+
 def resized_crop_image_tensor(
     img: torch.Tensor,
     top: int,

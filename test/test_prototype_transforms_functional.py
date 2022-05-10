@@ -95,7 +95,7 @@ def make_bounding_box(*, format, image_size=(32, 32), extra_dims=(), dtype=torch
         cx = torch.randint(1, width - 1, ())
         cy = torch.randint(1, height - 1, ())
         w = randint_with_tensor_bounds(1, torch.minimum(cx, width - cx) + 1)
-        h = randint_with_tensor_bounds(1, torch.minimum(cy, width - cy) + 1)
+        h = randint_with_tensor_bounds(1, torch.minimum(cy, height - cy) + 1)
         parts = (cx, cy, w, h)
     else:
         raise pytest.UsageError()
@@ -410,6 +410,14 @@ def perspective_segmentation_mask():
         yield SampleInput(
             mask,
             perspective_coeffs=perspective_coeffs,
+        )
+
+
+@register_kernel_info_from_sample_inputs_fn
+def center_crop_bounding_box():
+    for bounding_box, output_size in itertools.product(make_bounding_boxes(), [(24, 12), [16, 18], [46, 48], [12]]):
+        yield SampleInput(
+            bounding_box, format=bounding_box.format, output_size=output_size, image_size=bounding_box.image_size
         )
 
 
@@ -1273,3 +1281,59 @@ def test_correctness_perspective_segmentation_mask(device, startpoints, endpoint
         else:
             expected_masks = expected_masks[0]
         torch.testing.assert_close(output_mask, expected_masks)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize(
+    "output_size",
+    [(18, 18), [18, 15], (16, 19), [12], [46, 48]],
+)
+def test_correctness_center_crop_bounding_box(device, output_size):
+    def _compute_expected_bbox(bbox, output_size_):
+        format_ = bbox.format
+        image_size_ = bbox.image_size
+        bbox = convert_bounding_box_format(bbox, format_, features.BoundingBoxFormat.XYWH)
+
+        if len(output_size_) == 1:
+            output_size_.append(output_size_[-1])
+
+        cy = int(round((image_size_[0] - output_size_[0]) * 0.5))
+        cx = int(round((image_size_[1] - output_size_[1]) * 0.5))
+        out_bbox = [
+            bbox[0].item() - cx,
+            bbox[1].item() - cy,
+            bbox[2].item(),
+            bbox[3].item(),
+        ]
+        out_bbox = features.BoundingBox(
+            out_bbox,
+            format=features.BoundingBoxFormat.XYWH,
+            image_size=output_size_,
+            dtype=bbox.dtype,
+            device=bbox.device,
+        )
+        return convert_bounding_box_format(out_bbox, features.BoundingBoxFormat.XYWH, format_, copy=False)
+
+    for bboxes in make_bounding_boxes(
+        image_sizes=[(32, 32), (24, 33), (32, 25)],
+        extra_dims=((4,),),
+    ):
+        bboxes = bboxes.to(device)
+        bboxes_format = bboxes.format
+        bboxes_image_size = bboxes.image_size
+
+        output_boxes = F.center_crop_bounding_box(bboxes, bboxes_format, output_size, bboxes_image_size)
+
+        if bboxes.ndim < 2:
+            bboxes = [bboxes]
+
+        expected_bboxes = []
+        for bbox in bboxes:
+            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            expected_bboxes.append(_compute_expected_bbox(bbox, output_size))
+
+        if len(expected_bboxes) > 1:
+            expected_bboxes = torch.stack(expected_bboxes)
+        else:
+            expected_bboxes = expected_bboxes[0]
+        torch.testing.assert_close(output_boxes, expected_bboxes)
