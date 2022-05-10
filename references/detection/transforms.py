@@ -492,7 +492,7 @@ class SimpleCopyPaste(torch.nn.Module):
 
         # update the original images with paste images
         paste_masks = torch.stack(paste_masks).to(torch.uint8)
-        paste_masks = T.GaussianBlur((5, 5), sigma=2)(paste_masks)  # Adds Gaussian Filter
+        paste_masks = F.gaussian_blur(paste_masks, kernel_size=(5, 5), sigma=2.0)  # Adds Gaussian Filter
         batch.mul_(torch.unsqueeze(torch.logical_not(paste_masks), 1))
 
         paste_images = batch_rolled * torch.unsqueeze(paste_masks, 1)
