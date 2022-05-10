@@ -420,6 +420,8 @@ def center_crop_bounding_box():
         yield SampleInput(
             bounding_box, format=bounding_box.format, output_size=output_size, image_size=bounding_box.image_size
         )
+
+
 def center_crop_segmentation_mask():
     for mask, output_size in itertools.product(
         make_segmentation_masks(),
@@ -1344,6 +1346,8 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         else:
             expected_bboxes = expected_bboxes[0]
         torch.testing.assert_close(output_boxes, expected_bboxes)
+
+
 def test_correctness_center_crop_segmentation_mask_on_fixed_input(device):
     mask = torch.ones((1, 6, 6), dtype=torch.long, device=device)
     mask[:, 1:5, 2:4] = 0
@@ -1353,9 +1357,27 @@ def test_correctness_center_crop_segmentation_mask_on_fixed_input(device):
     torch.testing.assert_close(out_mask, expected_mask)
 
 
+@pytest.mark.parametrize("output_size", [[4, 3], [4]])
+def test_correctness_center_crop_segmentation_mask(output_size):
+    def _compute_expected_segmentation_mask():
+        _output_size = output_size if isinstance(output_size, tuple) else (output_size, output_size)
+
+        _, h, w = mask.shape
+        left = w - _output_size[0]
+        top = h - _output_size[1]
+
+        return mask[:, top : _output_size[1], left : _output_size[0]]
+
+    mask = torch.randint(0, 2, shape=(1, 6, 6))
+    actual = F.center_crop_segmentation_mask(mask, output_size)
+
+    expected = _compute_expected_segmentation_mask()
+    assert expected == actual
+
+
 @pytest.mark.parametrize("output_size", [[4, 3], [4], [7, 7]])
 @patch("torchvision.prototype.transforms.functional._geometry.center_crop_image_tensor")
-def test_correctness_center_crop_segmentation_mask(center_crop_mock, output_size):
+def test_correctness_center_crop_segmentation_mask_mock(center_crop_mock, output_size):
     mask, expected = Mock(spec=torch.Tensor), Mock(spec=torch.Tensor)
     center_crop_mock.return_value = expected
 
