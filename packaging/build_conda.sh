@@ -14,7 +14,7 @@ setup_junit_results_folder
 
 # nvidia channel included for cudatoolkit >= 11 however for 11.5 and 11.6 we use conda-forge
 export CUDATOOLKIT_CHANNEL="nvidia"
-if [[ "$CU_VERSION" == cu115 || "$CU_VERSION" == cu116 ]]; then
+if [[ "$CU_VERSION" == cu116 ]]; then
     export CUDATOOLKIT_CHANNEL="conda-forge"
 fi
 
