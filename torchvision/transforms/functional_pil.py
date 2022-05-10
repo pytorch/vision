@@ -10,6 +10,7 @@ try:
     import accimage
 except ImportError:
     accimage = None
+from . import _pil_constants
 
 
 @torch.jit.unused
@@ -54,7 +55,7 @@ def hflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
-    return img.transpose(Image.FLIP_LEFT_RIGHT)
+    return img.transpose(_pil_constants.FLIP_LEFT_RIGHT)
 
 
 @torch.jit.unused
@@ -62,7 +63,7 @@ def vflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
-    return img.transpose(Image.FLIP_TOP_BOTTOM)
+    return img.transpose(_pil_constants.FLIP_TOP_BOTTOM)
 
 
 @torch.jit.unused
@@ -240,7 +241,7 @@ def crop(
 def resize(
     img: Image.Image,
     size: Union[Sequence[int], int],
-    interpolation: int = Image.BILINEAR,
+    interpolation: int = _pil_constants.BILINEAR,
     max_size: Optional[int] = None,
 ) -> Image.Image:
 
@@ -314,7 +315,7 @@ def _parse_fill(
 def affine(
     img: Image.Image,
     matrix: List[float],
-    interpolation: int = Image.NEAREST,
+    interpolation: int = _pil_constants.NEAREST,
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
 ) -> Image.Image:
 
@@ -323,14 +324,14 @@ def affine(
 
     output_size = img.size
     opts = _parse_fill(fill, img)
-    return img.transform(output_size, Image.AFFINE, matrix, interpolation, **opts)
+    return img.transform(output_size, _pil_constants.AFFINE, matrix, interpolation, **opts)
 
 
 @torch.jit.unused
 def rotate(
     img: Image.Image,
     angle: float,
-    interpolation: int = Image.NEAREST,
+    interpolation: int = _pil_constants.NEAREST,
     expand: bool = False,
     center: Optional[Tuple[int, int]] = None,
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
@@ -347,7 +348,7 @@ def rotate(
 def perspective(
     img: Image.Image,
     perspective_coeffs: float,
-    interpolation: int = Image.BICUBIC,
+    interpolation: int = _pil_constants.BICUBIC,
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
 ) -> Image.Image:
 
@@ -356,7 +357,7 @@ def perspective(
 
     opts = _parse_fill(fill, img)
 
-    return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
+    return img.transform(img.size, _pil_constants.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
 
 
 @torch.jit.unused
