@@ -624,7 +624,7 @@ def resnet34(*, weights: Optional[ResNet34_Weights] = None, progress: bool = Tru
 @handle_legacy_interface(weights=("pretrained", ResNet50_Weights.IMAGENET1K_V1))
 def resnet50(*, weights: Optional[ResNet50_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     """ResNet-50 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
-    
+
     .. note::
        Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
        while original implementation places the stride at the first 1x1 convolution(self.conv1)
@@ -656,7 +656,7 @@ def resnet50(*, weights: Optional[ResNet50_Weights] = None, progress: bool = Tru
 @handle_legacy_interface(weights=("pretrained", ResNet101_Weights.IMAGENET1K_V1))
 def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     """ResNet-101 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
-    
+
     .. note::
        Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
        while original implementation places the stride at the first 1x1 convolution(self.conv1)
@@ -688,7 +688,7 @@ def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = T
 @handle_legacy_interface(weights=("pretrained", ResNet152_Weights.IMAGENET1K_V1))
 def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = True, **kwargs: Any) -> ResNet:
     """ResNet-152 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
-    
+
     .. note::
        Bottleneck in torchvision places the stride for downsampling at 3x3 convolution(self.conv2)
        while original implementation places the stride at the first 1x1 convolution(self.conv1)
