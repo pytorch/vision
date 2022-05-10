@@ -12,6 +12,5 @@ dependencies:
   - h5py
   - pip:
     - future
-    - pillow >=5.3.0, !=8.3.*
     - scipy
     - av
