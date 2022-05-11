@@ -344,6 +344,7 @@ class ResNet34_Weights(WeightsEnum):
 
 
 class ResNet50_Weights(WeightsEnum):
+    """<Some doc specific to ResNet50_Weights>"""
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet50-0676ba61.pth",
         transforms=partial(ImageClassification, crop_size=224),
@@ -355,6 +356,10 @@ class ResNet50_Weights(WeightsEnum):
                 "acc@1": 76.130,
                 "acc@5": 92.862,
             },
+            # Putting this here but the _docs key could also just be a field of the Weights dataclass
+            "_docs": """
+            <Some doc specific to ResNet50_Weights.IMAGENET1K_V2>
+            """
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -368,6 +373,9 @@ class ResNet50_Weights(WeightsEnum):
                 "acc@1": 80.858,
                 "acc@5": 95.434,
             },
+            "_docs": """
+            <Some doc specific to ResNet50_Weights.IMAGENET1K_V2>
+            """
         },
     )
     DEFAULT = IMAGENET1K_V2
