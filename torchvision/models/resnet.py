@@ -345,6 +345,7 @@ class ResNet34_Weights(WeightsEnum):
 
 class ResNet50_Weights(WeightsEnum):
     """Below you can find the available pre-trained weights for ResNet50:"""
+
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet50-0676ba61.pth",
         transforms=partial(ImageClassification, crop_size=224),
@@ -358,7 +359,7 @@ class ResNet50_Weights(WeightsEnum):
             },
             "_docs": """
             These are standard weights using the basic recipe of the paper.
-            """
+            """,
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -375,7 +376,7 @@ class ResNet50_Weights(WeightsEnum):
             "_docs": """
             These are improved weights, using TorchVision's `new recipe
             <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
-            """
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
