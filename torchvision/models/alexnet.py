@@ -111,3 +111,14 @@ def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True,
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# TODO: Remove for 0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "alexnet": AlexNet_Weights.IMAGENET1K_V1.url,
+    }
+)
