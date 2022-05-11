@@ -532,7 +532,7 @@ def _box_loss(
         eps = cnf["eps"] if cnf is not None and "eps" in cnf else 1e-7
         if type == "ciou":
             return complete_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
-        elif type == "diou":
+        if type == "diou":
             return distance_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
-        else:  # giou
-            return generalized_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
+        # otherwise giou
+        return generalized_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
