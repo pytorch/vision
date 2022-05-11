@@ -330,8 +330,16 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
         for field in obj:
             lines += [f"**{str(field)}**:", ""]
+
             if field == obj.DEFAULT:
-                lines += [f"This weight is also available as ``{obj.__name__}.DEFAULT``.", ""]
+                lines += [f"These weights are also available as ``{obj.__name__}.DEFAULT``."]
+            if field.name.endswith("V1"):
+                lines += [
+                    "These weights are the ones you get when using ``pretrained=True``, "
+                    "but note that ``pretrained`` is deprecated and will be removed in 0.15."
+                ]
+
+            lines.append("")
 
             table = []
 
