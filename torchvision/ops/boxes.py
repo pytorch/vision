@@ -359,6 +359,50 @@ def complete_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tenso
     return iou - (centers_distance_squared / diagonal_distance_squared) - alpha * v
 
 
+def distance_box_iou(boxes1: Tensor, boxes2: Tensor, eps: float = 1e-7) -> Tensor:
+    """
+    Return distance intersection-over-union (Jaccard index) between two sets of boxes.
+
+    Both sets of boxes are expected to be in ``(x1, y1, x2, y2)`` format with
+    ``0 <= x1 < x2`` and ``0 <= y1 < y2``.
+
+    Args:
+        boxes1 (Tensor[N, 4]): first set of boxes
+        boxes2 (Tensor[M, 4]): second set of boxes
+        eps (float, optional): small number to prevent division by zero. Default: 1e-7
+
+    Returns:
+        Tensor[N, M]: the NxM matrix containing the pairwise distance IoU values
+        for every element in boxes1 and boxes2
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(distance_box_iou)
+
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
+
+    inter, union = _box_inter_union(boxes1, boxes2)
+    iou = inter / union
+
+    lti = torch.min(boxes1[:, None, :2], boxes2[:, :2])
+    rbi = torch.max(boxes1[:, None, 2:], boxes2[:, 2:])
+
+    whi = _upcast(rbi - lti).clamp(min=0)  # [N,M,2]
+    diagonal_distance_squared = (whi[:, :, 0] ** 2) + (whi[:, :, 1] ** 2) + eps
+
+    # centers of boxes
+    x_p = (boxes1[:, 0] + boxes1[:, 2]) / 2
+    y_p = (boxes1[:, 1] + boxes1[:, 3]) / 2
+    x_g = (boxes2[:, 0] + boxes2[:, 2]) / 2
+    y_g = (boxes2[:, 1] + boxes2[:, 3]) / 2
+    # The distance between boxes' centers squared.
+    centers_distance_squared = (_upcast(x_p - x_g) ** 2) + (_upcast(y_p - y_g) ** 2)
+
+    # The distance IoU is the IoU penalized by a normalized
+    # distance between boxes' centers squared.
+    return iou - (centers_distance_squared / diagonal_distance_squared)
+
+
 def masks_to_boxes(masks: torch.Tensor) -> torch.Tensor:
     """
     Compute the bounding boxes around the provided masks.
