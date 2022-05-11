@@ -131,3 +131,14 @@ def mobilenet_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+from .._utils import _ModelURLs
+from ..mobilenetv2 import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        "mobilenet_v2_qnnpack": MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1.url,
+    }
+)
