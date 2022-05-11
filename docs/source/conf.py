@@ -315,12 +315,19 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
       used within the autoclass directive.
     """
 
-    if obj.__name__.endswith("_Weights"):
+    if obj.__name__.endswith(("_Weights", "_QuantizedWeights")):
         lines[:] = [
             "The model builder above accepts the following values as the ``weights`` parameter.",
             f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
         ]
+
+        if obj.__doc__ != "An enumeration.":
+            # We only show the custom enum doc if it was overriden. The default one from Python is "An enumeration"
+            lines.append("")
+            lines.append(obj.__doc__)
+
         lines.append("")
+
         for field in obj:
             lines += [f"**{str(field)}**:", ""]
             if field == obj.DEFAULT:
@@ -335,10 +342,14 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             metrics = meta.pop("metrics", {})
             meta_with_metrics = dict(meta, **metrics)
 
+            meta_with_metrics.pop("categories", None)  # We don't want to document these, they can be too long
+
+            custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
+            if custom_docs is not None:
+                lines += [custom_docs, ""]
+
             for k, v in meta_with_metrics.items():
-                if k == "categories":
-                    continue
-                elif k == "recipe":
+                if k == "recipe":
                     v = f"`link <{v}>`__"
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
@@ -349,7 +360,8 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
 
 def generate_weights_table(module, table_name, metrics, include_patterns=None, exclude_patterns=None):
-    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
+    weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
+    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
     if include_patterns is not None:
@@ -382,6 +394,9 @@ def generate_weights_table(module, table_name, metrics, include_patterns=None, e
 
 
 generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
+generate_weights_table(
+    module=M.quantization, table_name="classification_quant", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")]
+)
 generate_weights_table(
     module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_patterns=["Mask", "Keypoint"]
 )
