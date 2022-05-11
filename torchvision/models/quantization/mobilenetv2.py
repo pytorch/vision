@@ -137,6 +137,7 @@ from .._utils import _ModelURLs
 from ..mobilenetv2 import model_urls  # noqa: F401
 
 
+# TODO: Remove for 0.15
 quant_model_urls = _ModelURLs(
     {
         "mobilenet_v2_qnnpack": MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1.url,

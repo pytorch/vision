@@ -247,6 +247,7 @@ def _ovewrite_value_param(param: Optional[V], new_value: V) -> V:
     return new_value
 
 
+# TODO: Remove for 0.15
 class _ModelURLs(dict):
     def __getitem__(self, item):
         warnings.warn(
