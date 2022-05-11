@@ -153,7 +153,7 @@ html_css_files = [
 
 html_js_files = [
     "https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js",
-    "js/main.js",
+    "js/data_table.js",
 ]
 
 
@@ -351,6 +351,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
             lines += [".. table::", ""]
+
             lines += textwrap.indent(table, " " * 4).split("\n")
             lines.append("")
 
@@ -384,6 +385,7 @@ def generate_weights_table(module, table_name, metrics, include_patterns=None, e
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
         table_file.write(".. table::\n")
+        table_file.write("    :class: datatable\n")
         table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
