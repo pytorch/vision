@@ -265,10 +265,10 @@ def mobilenet_v2(
     return model
 
 
+# TODO: Remove for 0.15
 from ._utils import _ModelURLs
 
 
-# TODO: Remove for 0.15
 model_urls = _ModelURLs(
     {
         "mobilenet_v2": MobileNet_V2_Weights.IMAGENET1K_V1.url,
