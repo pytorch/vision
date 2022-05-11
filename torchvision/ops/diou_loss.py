@@ -1,7 +1,7 @@
 import torch
 
 from ..utils import _log_api_usage_once
-from .boxes import _upcast
+from ._utils import _upcast, _loss_inter_union
 
 
 def distance_box_iou_loss(
@@ -49,17 +49,8 @@ def distance_box_iou_loss(
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
-    # Intersection keypoints
-    xkis1 = torch.max(x1, x1g)
-    ykis1 = torch.max(y1, y1g)
-    xkis2 = torch.min(x2, x2g)
-    ykis2 = torch.min(y2, y2g)
-
-    intsct = torch.zeros_like(x1)
-    mask = (ykis2 > ykis1) & (xkis2 > xkis1)
-    intsct[mask] = (xkis2[mask] - xkis1[mask]) * (ykis2[mask] - ykis1[mask])
-    union = (x2 - x1) * (y2 - y1) + (x2g - x1g) * (y2g - y1g) - intsct + eps
-    iou = intsct / union
+    intsct, union = _loss_inter_union(boxes1, boxes2)
+    iou = intsct / (union + eps)
 
     # smallest enclosing box
     xc1 = torch.min(x1, x1g)
