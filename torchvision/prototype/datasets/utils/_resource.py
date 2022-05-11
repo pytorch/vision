@@ -91,31 +91,30 @@ class OnlineResource(abc.ABC):
     ) -> IterDataPipe[Tuple[str, IO]]:
         root = pathlib.Path(root)
         path = root / self.file_name
+
         # Instead of the raw file, there might also be files with fewer suffixes after decompression or directories
         # with no suffixes at all.
         stem = path.name.replace("".join(path.suffixes), "")
-
-        # In a first step, we check for a folder with the same stem as the raw file. If it exists, we use it since
-        # extracted files give the best I/O performance. Note that OnlineResource._extract() makes sure that an archive
-        # is always extracted in a folder with the corresponding file name.
+        # Although it looks like we could glob for f"{stem}*" to find the file candidates as well as the folder
+        # candidate simultaneously, that would also pick up other files that share the same prefix. For example, the
+        # test split of the stanford-cars dataset uses the files
+        # - cars_test.tgz
+        # - cars_test_annos_withlabels.mat
+        # Globbing for `"cars_test*"` picks up both.
+        candidates = {file for file in path.parent.glob(f"{stem}.*")}
         folder_candidate = path.parent / stem
-        if folder_candidate.exists() and folder_candidate.is_dir():
-            return self._loader(folder_candidate)
+        if folder_candidate.exists():
+            candidates.add(folder_candidate)
 
-        # If there is no folder, we look for all files that share the same stem as the raw file, but might have a
-        # different suffix.
-        file_candidates = {file for file in path.parent.glob(stem + ".*")}
-        # If we don't find anything, we download the raw file.
-        if not file_candidates:
-            file_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
-        # If the only thing we find is the raw file, we use it and optionally perform some preprocessing steps.
-        if file_candidates == {path}:
+        if not candidates:
+            self.download(root, skip_integrity_check=skip_integrity_check)
             if self._preprocess is not None:
                 path = self._preprocess(path)
-        # Otherwise, we use the path with the fewest suffixes. This gives us the decompressed > raw priority that we
-        # want for the best I/O performance.
         else:
-            path = min(file_candidates, key=lambda path: len(path.suffixes))
+            # We use the path with the fewest suffixes. This gives us the
+            # extracted > decompressed > raw
+            # priority that we want for the best I/O performance.
+            path = min(candidates, key=lambda path: len(path.suffixes))
         return self._loader(path)
 
     @abc.abstractmethod
