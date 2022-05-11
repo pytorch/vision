@@ -384,8 +384,8 @@ def generate_weights_table(module, table_name, metrics, include_patterns=None, e
     generated_dir.mkdir(exist_ok=True)
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
+        table_file.write(".. rst-class:: datatable\n")
         table_file.write(".. table::\n")
-        table_file.write("    :class: datatable\n")
         table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
 
