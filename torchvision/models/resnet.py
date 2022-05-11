@@ -358,7 +358,7 @@ class ResNet50_Weights(WeightsEnum):
             },
             # Putting this here but the _docs key could also just be a field of the Weights dataclass
             "_docs": """
-            <Some doc specific to ResNet50_Weights.IMAGENET1K_V2>
+            Standard weights using the basic recipe of the paper:
             """
         },
     )
@@ -374,7 +374,7 @@ class ResNet50_Weights(WeightsEnum):
                 "acc@5": 95.434,
             },
             "_docs": """
-            <Some doc specific to ResNet50_Weights.IMAGENET1K_V2>
+            Improved weights using TorchVision's `new recipe <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_:
             """
         },
     )
