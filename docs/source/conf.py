@@ -320,7 +320,14 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             "The model builder above accepts the following values as the ``weights`` parameter.",
             f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
         ]
+
+        if obj.__doc__ != "An enumeration.":
+            # We only show the custom enum doc if it was overriden. The default one from Python is "An enumeration"
+            lines.append("")
+            lines.append(obj.__doc__)
+
         lines.append("")
+
         for field in obj:
             lines += [f"**{str(field)}**:", ""]
             if field == obj.DEFAULT:
@@ -335,10 +342,14 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             metrics = meta.pop("metrics", {})
             meta_with_metrics = dict(meta, **metrics)
 
+            meta_with_metrics.pop("categories", None)  # We don't want to document these, they can be too long
+
+            custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
+            if custom_docs is not None:
+                lines += [custom_docs, ""]
+
             for k, v in meta_with_metrics.items():
-                if k == "categories":
-                    continue
-                elif k == "recipe":
+                if k == "recipe":
                     v = f"`link <{v}>`__"
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
