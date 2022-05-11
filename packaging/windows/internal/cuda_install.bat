@@ -25,7 +25,6 @@ set CUDNN_LIB_FOLDER="lib\x64"
 
 if %CUDA_VER% EQU 102 goto cuda102
 if %CUDA_VER% EQU 113 goto cuda113
-if %CUDA_VER% EQU 115 goto cuda115
 if %CUDA_VER% EQU 116 goto cuda116
 
 echo CUDA %CUDA_VERSION_STR% is not supported
@@ -66,32 +65,6 @@ if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
     set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
     set "ARGS=thrust_11.3 nvcc_11.3 cuobjdump_11.3 nvprune_11.3 nvprof_11.3 cupti_11.3 cublas_11.3 cublas_dev_11.3 cudart_11.3 cufft_11.3 cufft_dev_11.3 curand_11.3 curand_dev_11.3 cusolver_11.3 cusolver_dev_11.3 cusparse_11.3 cusparse_dev_11.3 npp_11.3 npp_dev_11.3 nvjpeg_11.3 nvjpeg_dev_11.3 nvrtc_11.3 nvrtc_dev_11.3 nvml_dev_11.3"
 
-)
-
-set CUDNN_INSTALL_ZIP=cudnn-windows-x86_64-8.3.2.44_cuda11.5-archive.zip
-set CUDNN_FOLDER=cudnn-windows-x86_64-8.3.2.44_cuda11.5-archive
-set CUDNN_LIB_FOLDER="lib"
-if not exist "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%" (
-    curl -k -L "http://s3.amazonaws.com/ossci-windows/%CUDNN_INSTALL_ZIP%" --output "%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
-    if errorlevel 1 exit /b 1
-    set "CUDNN_SETUP_FILE=%SRC_DIR%\temp_build\%CUDNN_INSTALL_ZIP%"
-
-    rem Make sure windows path contains zlib dll
-    curl -k -L "http://s3.amazonaws.com/ossci-windows/zlib123dllx64.zip" --output "%SRC_DIR%\temp_build\zlib123dllx64.zip"
-    7z x "%SRC_DIR%\temp_build\zlib123dllx64.zip" -o"%SRC_DIR%\temp_build\zlib"
-    xcopy /Y "%SRC_DIR%\temp_build\zlib\dll_x64\*.dll" "C:\Windows\System32"
-)
-
-goto cuda_common
-
-:cuda115
-
-set CUDA_INSTALL_EXE=cuda_11.5.0_496.13_win10.exe
-if not exist "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%" (
-    curl -k -L "https://ossci-windows.s3.amazonaws.com/%CUDA_INSTALL_EXE%" --output "%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
-    if errorlevel 1 exit /b 1
-    set "CUDA_SETUP_FILE=%SRC_DIR%\temp_build\%CUDA_INSTALL_EXE%"
-    set "ARGS=thrust_11.5 nvcc_11.5 cuobjdump_11.5 nvprune_11.5 nvprof_11.5 cupti_11.5 cublas_11.5 cublas_dev_11.5 cudart_11.5 cufft_11.5 cufft_dev_11.5 curand_11.5 curand_dev_11.5 cusolver_11.5 cusolver_dev_11.5 cusparse_11.5 cusparse_dev_11.5 npp_11.5 npp_dev_11.5 nvrtc_11.5 nvrtc_dev_11.5 nvml_dev_11.5"
 )
 
 set CUDNN_INSTALL_ZIP=cudnn-windows-x86_64-8.3.2.44_cuda11.5-archive.zip
