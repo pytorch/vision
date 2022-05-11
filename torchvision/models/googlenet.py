@@ -339,3 +339,15 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
             )
 
     return model
+
+
+# TODO: Remove for 0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        # GoogLeNet ported from TensorFlow
+        "googlenet": GoogLeNet_Weights.IMAGENET1K_V1.url,
+    }
+)
