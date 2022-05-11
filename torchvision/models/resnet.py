@@ -344,8 +344,6 @@ class ResNet34_Weights(WeightsEnum):
 
 
 class ResNet50_Weights(WeightsEnum):
-    """Below you can find the available pre-trained weights for ResNet50:"""
-
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/resnet50-0676ba61.pth",
         transforms=partial(ImageClassification, crop_size=224),
