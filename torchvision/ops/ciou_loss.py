@@ -1,8 +1,8 @@
 import torch
 
 from ..utils import _log_api_usage_once
-from ._utils import _loss_inter_union
-from .diou_loss import distance_box_iou_loss
+from ._utils import _upcast
+from .diou_loss import _diou_iou_loss
 
 
 def complete_box_iou_loss(
@@ -13,9 +13,6 @@ def complete_box_iou_loss(
 ) -> torch.Tensor:
 
     """
-    # Original Implementation from
-    https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
-
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
     boxes do not overlap overlap area, This loss function considers important geometrical
     factors such as  overlap area, normalized central point distance and aspect ratio.
@@ -43,12 +40,15 @@ def complete_box_iou_loss(
 
     """
 
+    # Original Implementation from https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
+
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(complete_box_iou_loss)
 
-    diou_loss = distance_box_iou_loss(boxes1, boxes2, reduction="none", eps=eps)
-    intsct, union = _loss_inter_union(boxes1, boxes2)
-    iou = intsct / (union + eps)
+    boxes1 = _upcast(boxes1)
+    boxes2 = _upcast(boxes2)
+
+    diou_loss, iou = _diou_iou_loss(boxes1, boxes2)
 
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)

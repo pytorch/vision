@@ -3,6 +3,8 @@ import torch
 from ..utils import _log_api_usage_once
 from ._utils import _upcast, _loss_inter_union
 
+# Original implementation from https://github.com/facebookresearch/fvcore/blob/bfff2ef/fvcore/nn/giou_loss.py
+
 
 def generalized_box_iou_loss(
     boxes1: torch.Tensor,
@@ -10,10 +12,8 @@ def generalized_box_iou_loss(
     reduction: str = "none",
     eps: float = 1e-7,
 ) -> torch.Tensor:
-    """
-    Original implementation from
-    https://github.com/facebookresearch/fvcore/blob/bfff2ef/fvcore/nn/giou_loss.py
 
+    """
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
     boxes do not overlap and scales with the size of their smallest enclosing box.
     This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.
