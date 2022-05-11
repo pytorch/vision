@@ -60,7 +60,7 @@ def make_grid(
         if isinstance(tensor, list):
             typ = "a list not containing only tensors"
         else:
-            typ = type(tensor)
+            typ = repr(type(tensor))
         raise TypeError(f"tensor or list of tensors expected, got {typ}")
 
     if "range" in kwargs.keys():
