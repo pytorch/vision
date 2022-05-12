@@ -11,7 +11,7 @@ import torchvision.datasets.video_utils
 import utils
 from torch import nn
 from torch.utils.data.dataloader import default_collate
-from torchvision.datasets.samplers import DistributedSampler, RandomClipSampler, UniformClipSampler
+from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):
@@ -130,8 +130,8 @@ def main(args):
 
     # Data loading code
     print("Loading data")
-    traindir = os.path.join(args.data_path, args.train_dir)
-    valdir = os.path.join(args.data_path, args.val_dir)
+    traindir = os.path.join(args.data_path, "train")
+    valdir = os.path.join(args.data_path, "val")
 
     print("Loading training data")
     st = time.time()
@@ -149,7 +149,7 @@ def main(args):
             args.data_path,
             frames_per_clip=args.clip_len,
             num_classes=args.kinetics_version,
-            split="val",
+            split="train",
             step_between_clips=1,
             transform=transform_train,
             frame_rate=15,
@@ -316,8 +316,6 @@ def parse_args():
     parser = argparse.ArgumentParser(description="PyTorch Video Classification Training")
 
     parser.add_argument("--data-path", default="/datasets01_101/kinetics/070618/", type=str, help="dataset path")
-    parser.add_argument("--train-dir", default="train_avi-480p", type=str, help="name of train dir")
-    parser.add_argument("--val-dir", default="val_avi-480p", type=str, help="name of val dir")
     parser.add_argument(
         "--kinetics-version", default="400", type=str, choices=["400", "600"], help="Select kinetics version"
     )
