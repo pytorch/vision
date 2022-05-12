@@ -831,8 +831,8 @@ def wide_resnet101_2(
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
-    convolutions is the same, e.g. last block in ResNet-50 has 2048-512-2048
-    channels, and in Wide ResNet-50-2 has 2048-1024-2048.
+    convolutions is the same, e.g. last block in ResNet-101 has 2048-512-2048
+    channels, and in Wide ResNet-101-2 has 2048-1024-2048.
 
     Args:
         weights (:class:`~torchvision.models.Wide_ResNet101_2_Weights`, optional): The
