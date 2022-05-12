@@ -147,8 +147,6 @@ def googlenet(
     weights. Quantized models only support inference and run on CPUs.
     GPU inference is not yet supported
 
-    The required minimum input size of the model is 15x15.
-
     Args:
         weights (:class:`~torchvision.models.quantization.GoogLeNet_QuantizedWeights` or :class:`~torchvision.models.GoogLeNet_Weights`, optional): The
             pretrained weights for the model. See
