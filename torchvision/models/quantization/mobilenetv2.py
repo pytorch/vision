@@ -101,7 +101,7 @@ def mobilenet_v2(
 ) -> QuantizableMobileNetV2:
     """
     Constructs a MobileNetV2 architecture from
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
+    `MobileNetV2: Inverted Residuals and Linear Bottlenecks
     <https://arxiv.org/abs/1801.04381>`_.
 
     Note that quantize = True returns a quantized model with 8 bit
