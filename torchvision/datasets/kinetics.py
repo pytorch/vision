@@ -308,6 +308,7 @@ class Kinetics400(Kinetics):
         warnings.warn(
             "The Kinetics400 class is deprecated since 0.12 and will be removed in 0.14."
             "Please use Kinetics(..., num_classes='400') instead."
+            "Note that Kinetics(..., num_classes='400') returns video in a more logicalTensor[T, C, H, W] format."
         )
         if any(value is not None for value in (num_classes, split, download, num_download_workers)):
             raise RuntimeError(
