@@ -51,7 +51,6 @@ weights:
    models/resnext
    models/shufflenetv2
    models/squeezenet
-   models/ssd300
    models/swin_transformer
    models/vgg
    models/vision_transformer
@@ -128,6 +127,7 @@ weights:
    models/faster_rcnn
    models/fcos
    models/retinanet
+   models/ssd
    models/ssdlite
 
 Table of all available Object detection weights
