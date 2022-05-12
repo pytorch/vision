@@ -74,8 +74,6 @@ class AlexNet_Weights(WeightsEnum):
 def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
     """AlexNet model architecture from `One weird trick for parallelizing convolutional neural networks <https://arxiv.org/abs/1404.5997>`__.
 
-    The required minimum input size of the model is 63x63.
-
     .. note::
         AlexNet was originally introduced in the `ImageNet Classification with
         Deep Convolutional Neural Networks

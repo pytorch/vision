@@ -162,8 +162,6 @@ def squeezenet1_0(
     accuracy with 50x fewer parameters and <0.5MB model size
     <https://arxiv.org/abs/1602.07360>`_ paper.
 
-    The required minimum input size of the model is 21x21.
-
     Args:
         weights (:class:`~torchvision.models.SqueezeNet1_0_Weights`, optional): The
             pretrained weights to use. See
@@ -193,7 +191,6 @@ def squeezenet1_1(
 
     SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
     than SqueezeNet 1.0, without sacrificing accuracy.
-    The required minimum input size of the model is 17x17.
 
     Args:
         weights (:class:`~torchvision.models.SqueezeNet1_1_Weights`, optional): The
