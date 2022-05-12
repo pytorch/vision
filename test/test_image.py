@@ -168,7 +168,7 @@ def test_decode_png(img_path, pil_mode, mode):
         img_lpng = _read_png_16(img_path, mode=mode)
         assert img_lpng.dtype == torch.int32
         # PIL converts 16 bits pngs in uint8
-        img_lpng = torch.round(img_lpng / (2 ** 16 - 1) * 255).to(torch.uint8)
+        img_lpng = torch.round(img_lpng / (2**16 - 1) * 255).to(torch.uint8)
     else:
         data = read_file(img_path)
         img_lpng = decode_image(data, mode=mode)

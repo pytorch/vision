@@ -265,7 +265,7 @@ class TestONNXExporter:
 
         resolution = box_roi_pool.output_size[0]
         representation_size = 1024
-        box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
+        box_head = TwoMLPHead(out_channels * resolution**2, representation_size)
 
         representation_size = 1024
         box_predictor = FastRCNNPredictor(representation_size, num_classes)
