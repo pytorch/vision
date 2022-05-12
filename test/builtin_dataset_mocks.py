@@ -66,13 +66,18 @@ class DatasetMock:
         # `datasets.home()` is patched to a temporary directory through the autouse fixture `test_home` in
         # test/test_prototype_builtin_datasets.py
         root = pathlib.Path(datasets.home()) / self.name
-        mock_data_folder = root / "__mock__"
-        mock_data_folder.mkdir(parents=True)
+        # We cannot place the mock data upfront in `root`. Loading a dataset calls `OnlineResource.load`. In turn,
+        # this will only download **and** preprocess if the file is not present. In other words, if we already place
+        # the file in `root` before the resource is loaded, we are effectively skipping the preprocessing.
+        # To avoid that we first place the mock data in a temporary directory and patch the download logic to move it to
+        # `root` only when it is requested.
+        tmp_mock_data_folder = root / "__mock__"
+        tmp_mock_data_folder.mkdir(parents=True)
 
-        mock_info = self._parse_mock_info(self.mock_data_fn(mock_data_folder, config))
+        mock_info = self._parse_mock_info(self.mock_data_fn(tmp_mock_data_folder, config))
 
-        def mock_data_download(resource, root, **kwargs):
-            src = mock_data_folder / resource.file_name
+        def patched_download(resource, root, **kwargs):
+            src = tmp_mock_data_folder / resource.file_name
             if not src.exists():
                 raise pytest.UsageError(
                     f"Dataset '{self.name}' requires the file {resource.file_name} for {config}"
@@ -85,21 +90,19 @@ class DatasetMock:
             return dst
 
         with unittest.mock.patch(
-            "torchvision.prototype.datasets.utils._resource.OnlineResource.download", new=mock_data_download
+            "torchvision.prototype.datasets.utils._resource.OnlineResource.download", new=patched_download
         ):
             dataset = datasets.load(self.name, **config)
 
-        extra_files = list(mock_data_folder.glob("**/*"))
-        if not extra_files:
-            mock_data_folder.rmdir()
-        else:
+        extra_files = list(tmp_mock_data_folder.glob("**/*"))
+        if extra_files:
             pass
             # raise pytest.UsageError(
             #     (
             #         f"Dataset '{self.name}' created the following files for {config} in the mock data function, "
             #         f"but they were not loaded:\n\n"
             #     )
-            #     + "\n".join(str(file.relative_to(mock_data_folder)) for file in extra_files)
+            #     + "\n".join(str(file.relative_to(tmp_mock_data_folder)) for file in extra_files)
             # )
 
         return dataset, mock_info
