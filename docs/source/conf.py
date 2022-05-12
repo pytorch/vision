@@ -351,6 +351,8 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             for k, v in meta_with_metrics.items():
                 if k in {"recipe", "license"}:
                     v = f"`link <{v}>`__"
+                elif k == "min_size":
+                    v = f"height={v[0]}, width={v[1]}"
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
