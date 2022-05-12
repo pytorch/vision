@@ -384,7 +384,7 @@ model_urls = _ModelURLs(
     {
         "shufflenetv2_x0.5": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1.url,
         "shufflenetv2_x1.0": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1.url,
-        "shufflenetv2_x1.5": ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1.url,
-        "shufflenetv2_x2.0": ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1.url,
+        "shufflenetv2_x1.5": None,
+        "shufflenetv2_x2.0": None,
     }
 )
