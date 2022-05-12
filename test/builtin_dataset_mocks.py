@@ -63,6 +63,8 @@ class DatasetMock:
         return mock_info
 
     def prepare(self, config):
+        # `datasets.home()` is patched to a temporary directory through the autouse fixture `test_home` in
+        # test/test_prototype_builtin_datasets.py
         root = pathlib.Path(datasets.home()) / self.name
         root.mkdir(exist_ok=True)
 
