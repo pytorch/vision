@@ -362,3 +362,17 @@ def resnext101_64x4d(
     _ovewrite_named_param(kwargs, "groups", 64)
     _ovewrite_named_param(kwargs, "width_per_group", 4)
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
+
+
+# TODO: Remove for 0.15
+from .._utils import _ModelURLs
+from ..mobilenetv3 import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        "resnet18_fbgemm": ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+        "resnet50_fbgemm": ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+        "resnext101_32x8d_fbgemm": ResNeXt101_32X8D_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+    }
+)
