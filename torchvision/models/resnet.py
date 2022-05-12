@@ -865,4 +865,3 @@ model_urls = _ModelURLs(
         "wide_resnet101_2": Wide_ResNet101_2_Weights.IMAGENET1K_V1.url,
     }
 )
-
