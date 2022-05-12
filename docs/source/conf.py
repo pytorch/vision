@@ -342,7 +342,9 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             metrics = meta.pop("metrics", {})
             meta_with_metrics = dict(meta, **metrics)
 
-            meta_with_metrics.pop("categories", None)  # We don't want to document these, they can be too long
+            # We don't want to document these, they can be too long
+            for k in ["categories", "keypoint_names"]:
+                meta_with_metrics.pop(k, None)
 
             custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
             if custom_docs is not None:
