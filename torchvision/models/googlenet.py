@@ -295,8 +295,9 @@ class GoogLeNet_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", GoogLeNet_Weights.IMAGENET1K_V1))
 def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
-    r"""GoogLeNet (Inception v1) model architecture from
+    """GoogLeNet (Inception v1) model architecture from
     `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`_.
+
     The required minimum input size of the model is 15x15.
 
     Args:
@@ -338,3 +339,15 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
             )
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        # GoogLeNet ported from TensorFlow
+        "googlenet": GoogLeNet_Weights.IMAGENET1K_V1.url,
+    }
+)

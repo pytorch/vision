@@ -366,7 +366,7 @@ def keypointrcnn_resnet50_fpn(
     """
     Constructs a Keypoint R-CNN model with a ResNet-50-FPN backbone.
 
-    Reference: `"Mask R-CNN" <https://arxiv.org/abs/1703.06870>`_.
+    Reference: `Mask R-CNN <https://arxiv.org/abs/1703.06870>`__.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
@@ -410,14 +410,22 @@ def keypointrcnn_resnet50_fpn(
         >>> torch.onnx.export(model, x, "keypoint_rcnn.onnx", opset_version = 11)
 
     Args:
-        weights (KeypointRCNN_ResNet50_FPN_Weights, optional): The pretrained weights for the model
+        weights (:class:`~torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr
         num_classes (int, optional): number of output classes of the model (including the background)
         num_keypoints (int, optional): number of keypoints
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
+        weights_backbone (:class:`~torchvision.models.ResNet50_Weights`, optional): The
+            pretrained weights for the backbone.
         trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 3.
+
+    .. autoclass:: torchvision.models.detection.KeypointRCNN_ResNet50_FPN_Weights
+        :members:
     """
     weights = KeypointRCNN_ResNet50_FPN_Weights.verify(weights)
     weights_backbone = ResNet50_Weights.verify(weights_backbone)
@@ -446,3 +454,16 @@ def keypointrcnn_resnet50_fpn(
             overwrite_eps(model, 0.0)
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        # legacy model for BC reasons, see https://github.com/pytorch/vision/issues/1606
+        "keypointrcnn_resnet50_fpn_coco_legacy": KeypointRCNN_ResNet50_FPN_Weights.COCO_LEGACY.url,
+        "keypointrcnn_resnet50_fpn_coco": KeypointRCNN_ResNet50_FPN_Weights.COCO_V1.url,
+    }
+)
