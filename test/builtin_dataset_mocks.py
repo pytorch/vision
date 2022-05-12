@@ -10,7 +10,6 @@ import lzma
 import pathlib
 import pickle
 import random
-import shutil
 import unittest.mock
 import warnings
 import xml.etree.ElementTree as ET
@@ -23,6 +22,7 @@ import torch
 from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
+from torchvision._utils import sequence_to_str
 from torchvision.prototype import datasets
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
@@ -62,47 +62,27 @@ class DatasetMock:
 
         return mock_info
 
-    def load(self, config):
+    def prepare(self, config):
         # `datasets.home()` is patched to a temporary directory through the autouse fixture `test_home` in
         # test/test_prototype_builtin_datasets.py
         root = pathlib.Path(datasets.home()) / self.name
-        mock_data_folder = root / "__mock__"
-        mock_data_folder.mkdir(parents=True)
+        root.mkdir(exist_ok=True)
 
-        mock_info = self._parse_mock_info(self.mock_data_fn(mock_data_folder, config))
+        mock_info = self._parse_mock_info(self.mock_data_fn(root, config))
 
-        def mock_data_download(resource, root, **kwargs):
-            src = mock_data_folder / resource.file_name
-            if not src.exists():
-                raise pytest.UsageError(
-                    f"Dataset '{self.name}' requires the file {resource.file_name} for {config}"
-                    f"but it was not created by the mock data function."
-                )
+        with unittest.mock.patch.object(datasets.utils.Dataset, "__init__"):
+            required_file_names = {
+                resource.file_name for resource in datasets.load(self.name, root=root, **config)._resources()
+            }
+        available_file_names = {path.name for path in root.glob("*")}
+        missing_file_names = required_file_names - available_file_names
+        if missing_file_names:
+            raise pytest.UsageError(
+                f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
+                f"for {config}, but they were not created by the mock data function."
+            )
 
-            dst = root / resource.file_name
-            shutil.move(str(src), str(root))
-
-            return dst
-
-        with unittest.mock.patch(
-            "torchvision.prototype.datasets.utils._resource.OnlineResource.download", new=mock_data_download
-        ):
-            dataset = datasets.load(self.name, **config)
-
-        extra_files = list(mock_data_folder.glob("**/*"))
-        if not extra_files:
-            mock_data_folder.rmdir()
-        else:
-            pass
-            # raise pytest.UsageError(
-            #     (
-            #         f"Dataset '{self.name}' created the following files for {config} in the mock data function, "
-            #         f"but they were not loaded:\n\n"
-            #     )
-            #     + "\n".join(str(file.relative_to(mock_data_folder)) for file in extra_files)
-            # )
-
-        return dataset, mock_info
+        return mock_info
 
 
 def config_id(name, config):

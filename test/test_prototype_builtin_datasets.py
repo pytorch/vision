@@ -56,14 +56,18 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_smoke(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
 
         if not isinstance(dataset, datasets.utils.Dataset):
             raise AssertionError(f"Loading the dataset should return an Dataset, but got {type(dataset)} instead.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_sample(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
 
         try:
             sample = next(iter(dataset))
@@ -80,13 +84,17 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_num_samples(self, dataset_mock, config):
-        dataset, mock_info = dataset_mock.load(config)
+        mock_info = dataset_mock.prepare(config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
 
         assert len(list(dataset)) == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_no_vanilla_tensors(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
 
         vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
         if vanilla_tensors:
@@ -97,20 +105,24 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_transformable(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
 
         next(iter(dataset.map(transforms.Identity())))
 
     @pytest.mark.parametrize("only_datapipe", [False, True])
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_traversable(self, dataset_mock, config, only_datapipe):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+        dataset = datasets.load(dataset_mock.name, **config)
 
         traverse(dataset, only_datapipe=only_datapipe)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_serializable(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+        dataset = datasets.load(dataset_mock.name, **config)
 
         pickle.dumps(dataset)
 
@@ -123,7 +135,8 @@ class TestCommon:
     @pytest.mark.parametrize("num_workers", [0, 1])
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_data_loader(self, dataset_mock, config, num_workers):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+        dataset = datasets.load(dataset_mock.name, **config)
 
         dl = DataLoader(
             dataset,
@@ -140,15 +153,17 @@ class TestCommon:
     @parametrize_dataset_mocks(DATASET_MOCKS)
     @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
     def test_has_annotations(self, dataset_mock, config, annotation_dp_type):
-        dataset, _ = dataset_mock.load(config)
+
+        dataset_mock.prepare(config)
+        dataset = datasets.load(dataset_mock.name, **config)
 
         if not any(isinstance(dp, annotation_dp_type) for dp in extract_datapipes(dataset)):
             raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_save_load(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
-
+        dataset_mock.prepare(config)
+        dataset = datasets.load(dataset_mock.name, **config)
         sample = next(iter(dataset))
 
         with io.BytesIO() as buffer:
@@ -158,7 +173,8 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_infinite_buffer_size(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+        dataset = datasets.load(dataset_mock.name, **config)
 
         for dp in extract_datapipes(dataset):
             if hasattr(dp, "buffer_size"):
@@ -168,7 +184,8 @@ class TestCommon:
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_has_length(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+        dataset = datasets.load(dataset_mock.name, **config)
 
         assert len(dataset) > 0
 
@@ -176,7 +193,9 @@ class TestCommon:
 @parametrize_dataset_mocks(DATASET_MOCKS["qmnist"])
 class TestQMNIST:
     def test_extra_label(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
 
         sample = next(iter(dataset))
         for key, type in (
@@ -199,7 +218,9 @@ class TestGTSRB:
         if config["split"] != "train":
             return
 
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
 
         for sample in dataset:
             label_from_path = int(Path(sample["path"]).parent.name)
@@ -209,7 +230,9 @@ class TestGTSRB:
 @parametrize_dataset_mocks(DATASET_MOCKS["usps"])
 class TestUSPS:
     def test_sample_content(self, dataset_mock, config):
-        dataset, _ = dataset_mock.load(config)
+        dataset_mock.prepare(config)
+
+        dataset = datasets.load(dataset_mock.name, **config)
 
         for sample in dataset:
             assert "image" in sample
