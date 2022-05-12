@@ -1,7 +1,6 @@
 import functools
 import itertools
 import math
-from unittest.mock import patch, Mock
 
 import numpy as np
 import pytest
@@ -1348,40 +1347,14 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         torch.testing.assert_close(output_boxes, expected_bboxes)
 
 
-def test_correctness_center_crop_segmentation_mask_on_fixed_input(device):
-    mask = torch.ones((1, 6, 6), dtype=torch.long, device=device)
-    mask[:, 1:5, 2:4] = 0
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("output_size", [[4, 3], [4], [7, 7]])
+def test_correctness_center_crop_segmentation_mask(device, output_size):
+    def _compute_expected_segmentation_mask(mask, output_size):
+        return F.center_crop_image_tensor(mask, output_size)
 
-    out_mask = F.center_crop_segmentation_mask(mask, [2])
-    expected_mask = torch.zeros((1, 4, 2), dtype=torch.long, device=device)
-    torch.testing.assert_close(out_mask, expected_mask)
-
-
-@pytest.mark.parametrize("output_size", [[4, 3], [4]])
-def test_correctness_center_crop_segmentation_mask(output_size):
-    def _compute_expected_segmentation_mask():
-        _output_size = output_size if isinstance(output_size, tuple) else (output_size, output_size)
-
-        _, h, w = mask.shape
-        left = w - _output_size[0]
-        top = h - _output_size[1]
-
-        return mask[:, top : _output_size[1], left : _output_size[0]]
-
-    mask = torch.randint(0, 2, shape=(1, 6, 6))
+    mask = torch.randint(0, 2, size=(1, 6, 6), dtype=torch.long, device=device)
     actual = F.center_crop_segmentation_mask(mask, output_size)
 
-    expected = _compute_expected_segmentation_mask()
-    assert expected == actual
-
-
-@pytest.mark.parametrize("output_size", [[4, 3], [4], [7, 7]])
-@patch("torchvision.prototype.transforms.functional._geometry.center_crop_image_tensor")
-def test_correctness_center_crop_segmentation_mask_mock(center_crop_mock, output_size):
-    mask, expected = Mock(spec=torch.Tensor), Mock(spec=torch.Tensor)
-    center_crop_mock.return_value = expected
-
-    out_mask = F.center_crop_segmentation_mask(mask, output_size)
-
-    center_crop_mock.assert_called_once_with(img=mask, output_size=output_size)
-    assert expected is out_mask
+    expected = _compute_expected_segmentation_mask(mask, output_size)
+    torch.testing.assert_close(expected, actual)
