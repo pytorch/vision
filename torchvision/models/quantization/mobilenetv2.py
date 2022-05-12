@@ -109,10 +109,22 @@ def mobilenet_v2(
     GPU inference is not yet supported
 
     Args:
-        weights (GoogLeNet_QuantizedWeights or GoogLeNet_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize(bool): If True, returns a quantized model, else returns a float model
+        weights (:class:`~torchvision.models.quantization.MobileNet_V2_QuantizedWeights` or :class:`~torchvision.models.MobileNet_V2_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.MobileNet_V2_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        quantize (bool, optional): If True, returns a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableMobileNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/mobilenetv2.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.quantization.MobileNet_V2_QuantizedWeights
+        :members:
+    .. autoclass:: torchvision.models.MobileNet_V2_Weights
+        :members:
+        :noindex:
     """
     weights = (MobileNet_V2_QuantizedWeights if quantize else MobileNet_V2_Weights).verify(weights)
 
