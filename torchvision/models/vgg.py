@@ -463,7 +463,7 @@ def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = Tru
     return _vgg("E", True, weights, progress, **kwargs)
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from ._utils import _ModelURLs
 
 

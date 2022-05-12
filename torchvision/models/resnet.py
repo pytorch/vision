@@ -848,7 +848,7 @@ def wide_resnet101_2(
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from ._utils import _ModelURLs
 
 

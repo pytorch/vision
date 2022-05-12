@@ -748,7 +748,7 @@ def interpolate_embeddings(
     return model_state
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from ._utils import _ModelURLs
 
 

@@ -1332,7 +1332,7 @@ def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: 
     return _regnet(params, weights, progress, **kwargs)
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from ._utils import _ModelURLs
 
 

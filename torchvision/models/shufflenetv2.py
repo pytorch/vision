@@ -376,7 +376,7 @@ def shufflenet_v2_x2_0(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from ._utils import _ModelURLs
 
 

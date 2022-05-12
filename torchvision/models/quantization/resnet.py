@@ -364,7 +364,7 @@ def resnext101_64x4d(
     return _resnet(QuantizableBottleneck, [3, 4, 23, 3], weights, progress, quantize, **kwargs)
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from .._utils import _ModelURLs
 from ..resnet import model_urls  # noqa: F401
 

@@ -213,7 +213,7 @@ def mobilenet_v3_large(
     return _mobilenet_v3_model(inverted_residual_setting, last_channel, weights, progress, quantize, **kwargs)
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from .._utils import _ModelURLs
 from ..mobilenetv3 import model_urls  # noqa: F401
 

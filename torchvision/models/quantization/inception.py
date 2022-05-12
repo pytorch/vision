@@ -253,7 +253,7 @@ def inception_v3(
     return model
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from .._utils import _ModelURLs
 from ..inception import model_urls  # noqa: F401
 

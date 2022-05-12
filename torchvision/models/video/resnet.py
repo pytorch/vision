@@ -465,7 +465,7 @@ def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool
     )
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from .._utils import _ModelURLs
 
 

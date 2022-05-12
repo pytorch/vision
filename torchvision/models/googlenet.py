@@ -341,7 +341,7 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
     return model
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from ._utils import _ModelURLs
 
 

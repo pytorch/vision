@@ -1030,7 +1030,7 @@ def efficientnet_v2_l(
     )
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from ._utils import _ModelURLs
 
 

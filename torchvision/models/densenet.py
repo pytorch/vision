@@ -432,7 +432,7 @@ def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from ._utils import _ModelURLs
 
 

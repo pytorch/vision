@@ -300,7 +300,7 @@ def shufflenet_v2_x2_0(
     )
 
 
-# TODO: Remove for 0.15
+# The dictionary below is internal implementation detail and will be removed in v0.15
 from .._utils import _ModelURLs
 from ..shufflenetv2 import model_urls  # noqa: F401
 
