@@ -316,6 +316,11 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
     """
 
     if obj.__name__.endswith(("_Weights", "_QuantizedWeights")):
+
+        if len(obj) == 0:
+            lines[:] = ["There are no available pre-trained weights."]
+            return
+
         lines[:] = [
             "The model builder above accepts the following values as the ``weights`` parameter.",
             f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
