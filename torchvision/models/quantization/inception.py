@@ -255,7 +255,7 @@ def inception_v3(
 
 # TODO: Remove for 0.15
 from .._utils import _ModelURLs
-from ..googlenet import model_urls  # noqa: F401
+from ..inception import model_urls  # noqa: F401
 
 
 quant_model_urls = _ModelURLs(

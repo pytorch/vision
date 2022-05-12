@@ -366,7 +366,7 @@ def resnext101_64x4d(
 
 # TODO: Remove for 0.15
 from .._utils import _ModelURLs
-from ..mobilenetv3 import model_urls  # noqa: F401
+from ..resnet import model_urls  # noqa: F401
 
 
 quant_model_urls = _ModelURLs(
