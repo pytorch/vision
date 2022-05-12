@@ -349,7 +349,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                 lines += [custom_docs, ""]
 
             for k, v in meta_with_metrics.items():
-                if k == "recipe":
+                if k in {"recipe", "license"}:
                     v = f"`link <{v}>`__"
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
