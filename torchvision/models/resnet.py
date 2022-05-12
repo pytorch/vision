@@ -355,6 +355,9 @@ class ResNet50_Weights(WeightsEnum):
                 "acc@1": 76.130,
                 "acc@5": 92.862,
             },
+            "_docs": """
+            These are standard weights using the basic recipe of the paper.
+            """,
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -368,6 +371,10 @@ class ResNet50_Weights(WeightsEnum):
                 "acc@1": 80.858,
                 "acc@5": 95.434,
             },
+            "_docs": """
+            These are improved weights, using TorchVision's `new recipe
+            <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
