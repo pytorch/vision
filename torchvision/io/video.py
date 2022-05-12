@@ -154,7 +154,7 @@ def _read_from_stream(
 
     if pts_unit == "sec":
         # TODO: we should change all of this from ground up to simply take
-        # sec and convert to MS in C++ 
+        # sec and convert to MS in C++
         start_offset = int(math.floor(start_offset * (1 / stream.time_base)))
         if end_offset != float("inf"):
             end_offset = int(math.ceil(end_offset * (1 / stream.time_base)))
@@ -173,9 +173,9 @@ def _read_from_stream(
             # can't use regex directly because of some weird characters sometimes...
             pos = extradata.find(b"DivX")
             d = extradata[pos:]
-            o = re.search(br"DivX(\d+)Build(\d+)(\w)", d)
+            o = re.search(rb"DivX(\d+)Build(\d+)(\w)", d)
             if o is None:
-                o = re.search(br"DivX(\d+)b(\d+)(\w)", d)
+                o = re.search(rb"DivX(\d+)b(\d+)(\w)", d)
             if o is not None:
                 should_buffer = o.group(3) == b"p"
     seek_offset = start_offset
