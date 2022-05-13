@@ -67,7 +67,7 @@ Here is an example of how to use the pre-trained image classification models:
 
     img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
 
-    # Step 1: Initialize model
+    # Step 1: Initialize model with the best available weights
     weights = ResNet50_Weights.DEFAULT
     model = resnet50(weights=weights)
     model.eval()
@@ -118,7 +118,7 @@ Here is an example of how to use the pre-trained quantized image classification 
 
     img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
 
-    # Step 1: Initialize model
+    # Step 1: Initialize model with the best available weights
     weights = ResNet50_QuantizedWeights.DEFAULT
     model = resnet50(weights=weights, quantize=True)
     model.eval()
@@ -187,6 +187,42 @@ weights:
    models/retinanet
    models/ssd
    models/ssdlite
+
+|
+
+Here is an example of how to use the pre-trained object detection models:
+
+.. code:: python
+
+
+    from torchvision.io.image import read_image
+    from torchvision.utils import draw_bounding_boxes
+    from torchvision.transforms.functional import to_pil_image
+    from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
+
+
+    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
+
+    # Step 1: Initialize model with the best available weights
+    weights = FasterRCNN_ResNet50_FPN_V2_Weights.DEFAULT
+    model = fasterrcnn_resnet50_fpn_v2(weights=weights, box_score_thresh=0.9)
+    model.eval()
+
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
+
+    # Step 3: Apply inference preprocessing transforms
+    batch = [preprocess(img)]
+    prediction = model(batch)[0]
+
+    # Step 4: Use the model and visualize the prediction
+    labels = [weights.meta["categories"][i] for i in prediction["labels"]]
+    box = draw_bounding_boxes(img, boxes=prediction["boxes"],
+                              labels=labels,
+                              colors="red",
+                              width=4, font_size=30)
+    im = to_pil_image(box.detach())
+    im.show()
 
 Table of all available Object detection weights
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
