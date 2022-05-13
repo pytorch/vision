@@ -1028,3 +1028,23 @@ def efficientnet_v2_l(
         norm_layer=partial(nn.BatchNorm2d, eps=1e-03),
         **kwargs,
     )
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        # Weights ported from https://github.com/rwightman/pytorch-image-models/
+        "efficientnet_b0": EfficientNet_B0_Weights.IMAGENET1K_V1.url,
+        "efficientnet_b1": EfficientNet_B1_Weights.IMAGENET1K_V1.url,
+        "efficientnet_b2": EfficientNet_B2_Weights.IMAGENET1K_V1.url,
+        "efficientnet_b3": EfficientNet_B3_Weights.IMAGENET1K_V1.url,
+        "efficientnet_b4": EfficientNet_B4_Weights.IMAGENET1K_V1.url,
+        # Weights ported from https://github.com/lukemelas/EfficientNet-PyTorch/
+        "efficientnet_b5": EfficientNet_B5_Weights.IMAGENET1K_V1.url,
+        "efficientnet_b6": EfficientNet_B6_Weights.IMAGENET1K_V1.url,
+        "efficientnet_b7": EfficientNet_B7_Weights.IMAGENET1K_V1.url,
+    }
+)

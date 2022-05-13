@@ -332,7 +332,6 @@ class DenseNet201_Weights(WeightsEnum):
 def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet121_Weights`, optional): The
@@ -358,7 +357,6 @@ def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool
 def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet161_Weights`, optional): The
@@ -384,7 +382,6 @@ def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool
 def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet169_Weights`, optional): The
@@ -410,7 +407,6 @@ def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool
 def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet201_Weights`, optional): The
@@ -430,3 +426,17 @@ def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool
     weights = DenseNet201_Weights.verify(weights)
 
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "densenet121": DenseNet121_Weights.IMAGENET1K_V1.url,
+        "densenet169": DenseNet169_Weights.IMAGENET1K_V1.url,
+        "densenet201": DenseNet201_Weights.IMAGENET1K_V1.url,
+        "densenet161": DenseNet161_Weights.IMAGENET1K_V1.url,
+    }
+)
