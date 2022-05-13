@@ -267,14 +267,29 @@ def resnet18(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-    r"""ResNet-18 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+    """ResNet-18 model from
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
-        weights (ResNet18_QuantizedWeights or ResNet18_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ResNet18_QuantizedWeights` or :class:`~torchvision.models.ResNet18_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ResNet18_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ResNet18_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ResNet18_Weights
+        :members:
+        :noindex:
     """
     weights = (ResNet18_QuantizedWeights if quantize else ResNet18_Weights).verify(weights)
 
@@ -296,14 +311,29 @@ def resnet50(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-    r"""ResNet-50 model from
-    `"Deep Residual Learning for Image Recognition" <https://arxiv.org/pdf/1512.03385.pdf>`_
+    """ResNet-50 model from
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`_
 
     Args:
-        weights (ResNet50_QuantizedWeights or ResNet50_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ResNet50_QuantizedWeights` or :class:`~torchvision.models.ResNet50_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ResNet50_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ResNet50_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ResNet50_Weights
+        :members:
+        :noindex:
     """
     weights = (ResNet50_QuantizedWeights if quantize else ResNet50_Weights).verify(weights)
 
@@ -325,14 +355,29 @@ def resnext101_32x8d(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-    r"""ResNeXt-101 32x8d model from
-    `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
+    """ResNeXt-101 32x8d model from
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/pdf/1611.05431.pdf>`_
 
     Args:
-        weights (ResNeXt101_32X8D_QuantizedWeights or ResNeXt101_32X8D_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights` or :class:`~torchvision.models.ResNet101_32X8D_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ResNet101_32X8D_Weights
+        :members:
+        :noindex:
     """
     weights = (ResNeXt101_32X8D_QuantizedWeights if quantize else ResNeXt101_32X8D_Weights).verify(weights)
 
@@ -348,14 +393,29 @@ def resnext101_64x4d(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableResNet:
-    r"""ResNeXt-101 64x4d model from
-    `"Aggregated Residual Transformation for Deep Neural Networks" <https://arxiv.org/pdf/1611.05431.pdf>`_
+    """ResNeXt-101 64x4d model from
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/pdf/1611.05431.pdf>`_
 
     Args:
-        weights (ResNeXt101_64X4D_QuantizedWeights or ResNeXt101_64X4D_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights` or :class:`~torchvision.models.ResNet101_64X4D_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableResNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ResNet101_64X4D_Weights
+        :members:
+        :noindex:
     """
     weights = (ResNeXt101_64X4D_QuantizedWeights if quantize else ResNeXt101_64X4D_Weights).verify(weights)
 
