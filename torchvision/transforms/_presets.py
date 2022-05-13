@@ -29,7 +29,7 @@ class ObjectDetection(nn.Module):
         return self.__class__.__name__ + "()"
 
     def describe(self) -> str:
-        return "Rescales the values of the image to [0.0, 1.0]."
+        return "The images are rescaled to ``[0.0, 1.0]``."
 
 
 class ImageClassification(nn.Module):
@@ -70,9 +70,9 @@ class ImageClassification(nn.Module):
 
     def describe(self) -> str:
         return (
-            f"Resizes the image to resize_size={self.resize_size} using interpolation={self.interpolation}, "
-            f"followed by a central crop of crop_size={self.crop_size}. Then the values are rescaled to "
-            f"[0.0, 1.0] and normalized using mean={self.mean} and std={self.std}."
+            f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
+            f"followed by a central crop of ``crop_size={self.crop_size}``. Then the values are rescaled to "
+            f"``[0.0, 1.0]`` and normalized using ``mean={self.mean}`` and ``std={self.std}``."
         )
 
 
@@ -126,9 +126,9 @@ class VideoClassification(nn.Module):
 
     def describe(self) -> str:
         return (
-            f"Resizes the video frames to resize_size={self.resize_size} using interpolation={self.interpolation}, "
-            f"followed by a central crop of crop_size={self.crop_size}. Then the values are rescaled to "
-            f"[0.0, 1.0] and normalized using mean={self.mean} and std={self.std}."
+            f"The video frames are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
+            f"followed by a central crop of ``crop_size={self.crop_size}``. Then the values are rescaled to "
+            f"``[0.0, 1.0]`` and normalized using ``mean={self.mean}`` and ``std={self.std}``."
         )
 
 
@@ -167,8 +167,8 @@ class SemanticSegmentation(nn.Module):
 
     def describe(self) -> str:
         return (
-            f"Resizes the image to resize_size={self.resize_size} using interpolation={self.interpolation}. "
-            f"Then the values are rescaled to [0.0, 1.0] and normalized using mean={self.mean} and std={self.std}."
+            f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``. "
+            f"Then the values are rescaled to ``[0.0, 1.0]`` and normalized using ``mean={self.mean}`` and ``std={self.std}``."
         )
 
 
@@ -195,4 +195,4 @@ class OpticalFlow(nn.Module):
         return self.__class__.__name__ + "()"
 
     def describe(self) -> str:
-        return "Rescales the values of the images to [-1.0, 1.0]."
+        return "The images are rescaled to ``[-1.0, 1.0]``."
