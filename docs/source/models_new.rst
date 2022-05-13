@@ -159,6 +159,37 @@ pre-trained weights:
    models/fcn
    models/lraspp
 
+|
+
+Here is an example of how to use the pre-trained semantic segmentation models:
+
+.. code:: python
+
+    from torchvision.io.image import read_image
+    from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
+    from torchvision.transforms.functional import to_pil_image
+
+    img = read_image("gallery/assets/dog1.jpg")
+
+    # Step 1: Initialize model with the best available weights
+    weights = FCN_ResNet50_Weights.DEFAULT
+    model = fcn_resnet50(weights=weights)
+    model.eval()
+
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
+
+    # Step 3: Apply inference preprocessing transforms
+    batch = preprocess(img).unsqueeze(0)
+    prediction = model(batch)['out']
+    normalized_masks = prediction.softmax(dim=1)
+
+    # Step 4: Use the model and visualize the prediction
+    class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
+    mask = normalized_masks[0, class_to_idx["dog"]]
+    to_pil_image(mask).show()
+
+
 Table of all available semantic segmentation weights
 ----------------------------------------------------
 
@@ -196,10 +227,9 @@ Here is an example of how to use the pre-trained object detection models:
 
 
     from torchvision.io.image import read_image
+    from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
     from torchvision.utils import draw_bounding_boxes
     from torchvision.transforms.functional import to_pil_image
-    from torchvision.models.detection import fasterrcnn_resnet50_fpn_v2, FasterRCNN_ResNet50_FPN_V2_Weights
-
 
     img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
 
