@@ -13,7 +13,7 @@ Models and pre-trained weights - New
 The ``torchvision.models`` subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
-keypoint detection, video classification, and optical flow.
+keypoint detection, video classification and optical flow.
 
 .. note ::
     Backward compatibility is guaranteed for loading a serialized 
@@ -56,6 +56,35 @@ weights:
    models/vision_transformer
    models/wide_resnet
 
+|
+
+Here is an example of how to use the pre-trained image classification models:
+
+.. code:: python
+
+    from torchvision.io import read_image
+    from torchvision.models import resnet50, ResNet50_Weights
+
+    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
+
+    # Step 1: Initialize model
+    weights = ResNet50_Weights.DEFAULT
+    model = resnet50(weights=weights)
+    model.eval()
+
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
+
+    # Step 3: Apply inference preprocessing transforms
+    batch = preprocess(img).unsqueeze(0)
+    prediction = model(batch).squeeze(0).softmax(0)
+
+    # Step 4: Use the model and print the predicted category
+    class_id = prediction.argmax().item()
+    score = prediction[class_id].item()
+    category_name = weights.meta["categories"][class_id]
+    print(f"{category_name}: {100 * score}%")
+
 
 Table of all available classification weights
 ---------------------------------------------
@@ -77,6 +106,35 @@ pre-trained weights:
 
    models/googlenet_quant
    models/mobilenetv2_quant
+
+|
+
+Here is an example of how to use the pre-trained quantized image classification models:
+
+.. code:: python
+
+    from torchvision.io import read_image
+    from torchvision.models.quantization import resnet50, ResNet50_QuantizedWeights
+
+    img = read_image("test/assets/encode_jpeg/grace_hopper_517x606.jpg")
+
+    # Step 1: Initialize model
+    weights = ResNet50_QuantizedWeights.DEFAULT
+    model = resnet50(weights=weights, quantize=True)
+    model.eval()
+
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
+
+    # Step 3: Apply inference preprocessing transforms
+    batch = preprocess(img).unsqueeze(0)
+    prediction = model(batch).squeeze(0).softmax(0)
+
+    # Step 4: Use the model and print the predicted category
+    class_id = prediction.argmax().item()
+    score = prediction[class_id].item()
+    category_name = weights.meta["categories"][class_id]
+    print(f"{category_name}: {100 * score}%")
 
 
 Table of all available quantized classification weights
