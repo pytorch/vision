@@ -77,9 +77,9 @@ Here is an example of how to use the pre-trained image classification models:
 
     # Step 3: Apply inference preprocessing transforms
     batch = preprocess(img).unsqueeze(0)
-    prediction = model(batch).squeeze(0).softmax(0)
 
     # Step 4: Use the model and print the predicted category
+    prediction = model(batch).squeeze(0).softmax(0)
     class_id = prediction.argmax().item()
     score = prediction[class_id].item()
     category_name = weights.meta["categories"][class_id]
@@ -128,9 +128,9 @@ Here is an example of how to use the pre-trained quantized image classification 
 
     # Step 3: Apply inference preprocessing transforms
     batch = preprocess(img).unsqueeze(0)
-    prediction = model(batch).squeeze(0).softmax(0)
 
     # Step 4: Use the model and print the predicted category
+    prediction = model(batch).squeeze(0).softmax(0)
     class_id = prediction.argmax().item()
     score = prediction[class_id].item()
     category_name = weights.meta["categories"][class_id]
@@ -181,10 +181,10 @@ Here is an example of how to use the pre-trained semantic segmentation models:
 
     # Step 3: Apply inference preprocessing transforms
     batch = preprocess(img).unsqueeze(0)
-    prediction = model(batch)['out']
-    normalized_masks = prediction.softmax(dim=1)
 
     # Step 4: Use the model and visualize the prediction
+    prediction = model(batch)['out']
+    normalized_masks = prediction.softmax(dim=1)
     class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
     mask = normalized_masks[0, class_to_idx["dog"]]
     to_pil_image(mask).show()
@@ -243,9 +243,9 @@ Here is an example of how to use the pre-trained object detection models:
 
     # Step 3: Apply inference preprocessing transforms
     batch = [preprocess(img)]
-    prediction = model(batch)[0]
 
     # Step 4: Use the model and visualize the prediction
+    prediction = model(batch)[0]
     labels = [weights.meta["categories"][i] for i in prediction["labels"]]
     box = draw_bounding_boxes(img, boxes=prediction["boxes"],
                               labels=labels,
@@ -314,6 +314,38 @@ pre-trained weights:
    :maxdepth: 1
 
    models/video_resnet
+
+|
+
+Here is an example of how to use the pre-trained video classification models:
+
+.. code:: python
+
+
+    from torchvision.io.video import read_video
+    from torchvision.models.video import r3d_18, R3D_18_Weights
+
+    vid, _, _ = read_video("test/assets/videos/v_SoccerJuggling_g23_c01.avi")
+    vid = vid[:32]  # optionally shorten duration
+
+    # Step 1: Initialize model with the best available weights
+    weights = R3D_18_Weights.DEFAULT
+    model = r3d_18(weights=weights)
+    model.eval()
+
+    # Step 2: Initialize the inference transforms
+    preprocess = weights.transforms()
+
+    # Step 3: Apply inference preprocessing transforms
+    batch = preprocess(vid).unsqueeze(0)
+
+    # Step 4: Use the model and print the predicted category
+    prediction = model(batch).squeeze(0).softmax(0)
+    label = prediction.argmax().item()
+    score = prediction[label].item()
+    category_name = weights.meta["categories"][label]
+    print(f"{category_name}: {100 * score}%")
+
 
 Table of all available video classification weights
 ---------------------------------------------------
