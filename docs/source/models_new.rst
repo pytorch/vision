@@ -46,7 +46,7 @@ existing model builder methods:
     resnet50(weights="IMAGENET1K_V2")
 
     # No weights - random initialization
-    resnet50(weights=None)  # or resnet50()
+    resnet50(weights=None)
 
 
 Migrating to the new API is very straightforward. The following method calls between the 2 APIs are all equivalent:
@@ -57,11 +57,13 @@ Migrating to the new API is very straightforward. The following method calls bet
 
     # Using pretrained weights:
     resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+    resnet50(weights="IMAGENET1K_V1")
     resnet50(pretrained=True)  # deprecated
     resnet50(True)  # deprecated
 
     # Using no weights:
     resnet50(weights=None)
+    resnet50()
     resnet50(pretrained=False)  # deprecated
     resnet50(False)  # deprecated
 
