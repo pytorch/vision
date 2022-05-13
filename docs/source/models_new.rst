@@ -127,7 +127,6 @@ Here is an example of how to use the pre-trained image classification models:
     score = prediction[class_id].item()
     category_name = weights.meta["categories"][class_id]
     print(f"{category_name}: {100 * score:.1f}%")
-    # prints: bow tie: 14.4%
 
 Table of all available classification weights
 ---------------------------------------------
