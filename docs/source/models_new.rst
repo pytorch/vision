@@ -24,7 +24,7 @@ keypoint detection, video classification, and optical flow.
     `documentation 
     <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_   
 
-As of 0.13, TorchVision offers a new `Multi-weight support API
+As of v0.13, TorchVision offers a new `Multi-weight support API
 <https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/>`_ for loading different weights to the
 existing model builder methods:
 
