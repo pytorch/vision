@@ -219,7 +219,7 @@ def inception_v3(
     GPU inference is not yet supported
 
     Args:
-        weights (:class:`~torchvision.models.quantization.Inception_V3_QuantizedWeights` or :class:`~torchvision.models.quantization.Inception_V3_Weights`, optional): The pretrained
+        weights (:class:`~torchvision.models.quantization.Inception_V3_QuantizedWeights` or :class:`~torchvision.models.Inception_V3_Weights`, optional): The pretrained
             weights for the model. See
             :class:`~torchvision.models.quantization.Inception_V3_QuantizedWeights` below for
             more details, and possible values. By default, no pre-trained
@@ -230,7 +230,7 @@ def inception_v3(
             Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableInception3``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.inception.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/inception.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.Inception_V3_QuantizedWeights

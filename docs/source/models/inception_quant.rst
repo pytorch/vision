@@ -1,5 +1,5 @@
-Quantized Inception
-===================
+Quantized InceptionV3
+=====================
 
 .. currentmodule:: torchvision.models.quantization
 
