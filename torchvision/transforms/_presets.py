@@ -28,6 +28,9 @@ class ObjectDetection(nn.Module):
     def __repr__(self) -> str:
         return self.__class__.__name__ + "()"
 
+    def describe(self) -> str:
+        return "Rescales the values of the image to [0.0, 1.0]."
+
 
 class ImageClassification(nn.Module):
     def __init__(
@@ -64,6 +67,13 @@ class ImageClassification(nn.Module):
         format_string += f"\n    interpolation={self.interpolation}"
         format_string += "\n)"
         return format_string
+
+    def describe(self) -> str:
+        return (
+            f"Resizes the image to resize_size={self.resize_size} using interpolation={self.interpolation}, "
+            f"followed by a central crop of crop_size={self.crop_size}. Then the values are rescaled to "
+            f"[0.0, 1.0] and normalized using mean={self.mean} and std={self.std}."
+        )
 
 
 class VideoClassification(nn.Module):
@@ -114,6 +124,13 @@ class VideoClassification(nn.Module):
         format_string += "\n)"
         return format_string
 
+    def describe(self) -> str:
+        return (
+            f"Resizes the video frames to resize_size={self.resize_size} using interpolation={self.interpolation}, "
+            f"followed by a central crop of crop_size={self.crop_size}. Then the values are rescaled to "
+            f"[0.0, 1.0] and normalized using mean={self.mean} and std={self.std}."
+        )
+
 
 class SemanticSegmentation(nn.Module):
     def __init__(
@@ -148,6 +165,12 @@ class SemanticSegmentation(nn.Module):
         format_string += "\n)"
         return format_string
 
+    def describe(self) -> str:
+        return (
+            f"Resizes the image to resize_size={self.resize_size} using interpolation={self.interpolation}. "
+            f"Then the values are rescaled to [0.0, 1.0] and normalized using mean={self.mean} and std={self.std}."
+        )
+
 
 class OpticalFlow(nn.Module):
     def forward(self, img1: Tensor, img2: Tensor) -> Tuple[Tensor, Tensor]:
@@ -170,3 +193,6 @@ class OpticalFlow(nn.Module):
 
     def __repr__(self) -> str:
         return self.__class__.__name__ + "()"
+
+    def describe(self) -> str:
+        return "Rescales the values of the images to [-1.0, 1.0]."
