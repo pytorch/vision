@@ -1,5 +1,5 @@
 Quantized ResNet
-======================
+================
 
 .. currentmodule:: torchvision.models.quantization
 
