@@ -1,7 +1,7 @@
 import torch
 
 from ..utils import _log_api_usage_once
-from ._utils import _upcast
+from ._utils import _upcast_non_float
 from .diou_loss import _diou_iou_loss
 
 
@@ -45,8 +45,8 @@ def complete_box_iou_loss(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(complete_box_iou_loss)
 
-    boxes1 = _upcast(boxes1)
-    boxes2 = _upcast(boxes2)
+    boxes1 = _upcast_non_float(boxes1)
+    boxes2 = _upcast_non_float(boxes2)
 
     diou_loss, iou = _diou_iou_loss(boxes1, boxes2)
 

@@ -77,6 +77,13 @@ def _upcast(t: Tensor) -> Tensor:
         return t if t.dtype in (torch.int32, torch.int64) else t.int()
 
 
+def _upcast_non_float(t: Tensor) -> Tensor:
+    # Protects from numerical overflows in multiplications by upcasting to the equivalent higher type
+    if t.dtype not in (torch.float32, torch.float64):
+        return t.float()
+    return t
+
+
 def _loss_inter_union(
     boxes1: torch.Tensor,
     boxes2: torch.Tensor,

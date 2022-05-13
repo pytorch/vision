@@ -1,7 +1,7 @@
 import torch
 
 from ..utils import _log_api_usage_once
-from ._utils import _upcast, _loss_inter_union
+from ._utils import _upcast_non_float, _loss_inter_union
 
 # Original implementation from https://github.com/facebookresearch/fvcore/blob/bfff2ef/fvcore/nn/giou_loss.py
 
@@ -42,8 +42,8 @@ def generalized_box_iou_loss(
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(generalized_box_iou_loss)
 
-    boxes1 = _upcast(boxes1)
-    boxes2 = _upcast(boxes2)
+    boxes1 = _upcast_non_float(boxes1)
+    boxes2 = _upcast_non_float(boxes2)
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
