@@ -355,6 +355,9 @@ class ResNet50_Weights(WeightsEnum):
                 "acc@1": 76.130,
                 "acc@5": 92.862,
             },
+            "_docs": """
+            These are standard weights using the basic recipe of the paper.
+            """,
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -368,6 +371,10 @@ class ResNet50_Weights(WeightsEnum):
                 "acc@1": 80.858,
                 "acc@5": 95.434,
             },
+            "_docs": """
+            These are improved weights, using TorchVision's `new recipe
+            <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -824,8 +831,8 @@ def wide_resnet101_2(
 
     The model is the same as ResNet except for the bottleneck number of channels
     which is twice larger in every block. The number of channels in outer 1x1
-    convolutions is the same, e.g. last block in ResNet-50 has 2048-512-2048
-    channels, and in Wide ResNet-50-2 has 2048-1024-2048.
+    convolutions is the same, e.g. last block in ResNet-101 has 2048-512-2048
+    channels, and in Wide ResNet-101-2 has 2048-1024-2048.
 
     Args:
         weights (:class:`~torchvision.models.Wide_ResNet101_2_Weights`, optional): The
@@ -846,3 +853,22 @@ def wide_resnet101_2(
 
     _ovewrite_named_param(kwargs, "width_per_group", 64 * 2)
     return _resnet(Bottleneck, [3, 4, 23, 3], weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "resnet18": ResNet18_Weights.IMAGENET1K_V1.url,
+        "resnet34": ResNet34_Weights.IMAGENET1K_V1.url,
+        "resnet50": ResNet50_Weights.IMAGENET1K_V1.url,
+        "resnet101": ResNet101_Weights.IMAGENET1K_V1.url,
+        "resnet152": ResNet152_Weights.IMAGENET1K_V1.url,
+        "resnext50_32x4d": ResNeXt50_32X4D_Weights.IMAGENET1K_V1.url,
+        "resnext101_32x8d": ResNeXt101_32X8D_Weights.IMAGENET1K_V1.url,
+        "wide_resnet50_2": Wide_ResNet50_2_Weights.IMAGENET1K_V1.url,
+        "wide_resnet101_2": Wide_ResNet101_2_Weights.IMAGENET1K_V1.url,
+    }
+)

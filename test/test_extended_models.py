@@ -90,6 +90,7 @@ def test_schema_meta_validation(model_fn):
         "num_params",
         "recipe",
         "unquantized",
+        "_docs",
     }
     # mandatory fields for each computer vision task
     classification_fields = {"categories", ("metrics", "acc@1"), ("metrics", "acc@5")}
