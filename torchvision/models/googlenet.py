@@ -298,8 +298,6 @@ def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = T
     """GoogLeNet (Inception v1) model architecture from
     `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`_.
 
-    The required minimum input size of the model is 15x15.
-
     Args:
         weights (:class:`~torchvision.models.GoogLeNet_Weights`, optional): The
             pretrained weights for the model. See

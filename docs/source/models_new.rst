@@ -51,7 +51,6 @@ weights:
    models/resnext
    models/shufflenetv2
    models/squeezenet
-   models/ssd300
    models/swin_transformer
    models/vgg
    models/vision_transformer
@@ -78,6 +77,7 @@ pre-trained weights:
 
    models/googlenet_quant
    models/inception_quant
+   models/mobilenetv2_quant
 
 
 Table of all available quantized classification weights
@@ -128,6 +128,7 @@ weights:
    models/faster_rcnn
    models/fcos
    models/retinanet
+   models/ssd
    models/ssdlite
 
 Table of all available Object detection weights

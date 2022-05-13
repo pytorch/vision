@@ -430,7 +430,6 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
     """
     Inception v3 model architecture from
     `Rethinking the Inception Architecture for Computer Vision <http://arxiv.org/abs/1512.00567>`_.
-    The required minimum input size of the model is 75x75.
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
