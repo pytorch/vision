@@ -24,7 +24,7 @@ keypoint detection, video classification, and optical flow.
     `documentation 
     <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_   
 
-TorchVision offers a new `Multi-weight support API
+As of 0.13, TorchVision offers a new `Multi-weight support API
 <https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/>`_ for loading different weights to the
 existing model builder methods:
 
@@ -39,13 +39,14 @@ existing model builder methods:
     resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
 
     # Best available weights (currently alias for IMAGENET1K_V2)
+    # Note that these weights may change across versions
     resnet50(weights=ResNet50_Weights.DEFAULT)
 
     # Strings are also supported
     resnet50(weights="IMAGENET1K_V2")
 
     # No weights - random initialization
-    resnet50(weights=None)
+    resnet50(weights=None)  # or resnet50()
 
 
 Migrating to the new API is very straightforward. The following method calls between the 2 APIs are all equivalent:
@@ -56,13 +57,13 @@ Migrating to the new API is very straightforward. The following method calls bet
 
     # Using pretrained weights:
     resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
-    resnet50(pretrained=True)
-    resnet50(True)
+    resnet50(pretrained=True)  # deprecated
+    resnet50(True)  # deprecated
 
     # Using no weights:
     resnet50(weights=None)
-    resnet50(pretrained=False)
-    resnet50(False)
+    resnet50(pretrained=False)  # deprecated
+    resnet50(False)  # deprecated
 
 Note that the ``pretrained`` parameter is now deprecated, using it will emit warnings and will be removed on v0.15.
 
@@ -125,8 +126,8 @@ Here is an example of how to use the pre-trained image classification models:
     class_id = prediction.argmax().item()
     score = prediction[class_id].item()
     category_name = weights.meta["categories"][class_id]
-    print(f"{category_name}: {100 * score}%")
-
+    print(f"{category_name}: {100 * score:.1f}%")
+    # prints: bow tie: 14.4%
 
 Table of all available classification weights
 ---------------------------------------------
