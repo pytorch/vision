@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms as transforms
+import torchvision.transforms._pil_constants as _pil_constants
 import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
 from PIL import Image
@@ -173,7 +174,7 @@ class TestAccImage:
     def test_accimage_resize(self):
         trans = transforms.Compose(
             [
-                transforms.Resize(256, interpolation=Image.LINEAR),
+                transforms.Resize(256, interpolation=_pil_constants.LINEAR),
                 transforms.PILToTensor(),
                 transforms.ConvertImageDtype(dtype=torch.float),
             ]
