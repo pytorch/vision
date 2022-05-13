@@ -268,7 +268,7 @@ def resnet18(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNet-18 model from
-    `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`_
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385.pdf>`_
 
     Args:
         weights (:class:`~torchvision.models.quantization.ResNet18_QuantizedWeights` or :class:`~torchvision.models.ResNet18_Weights`, optional): The
@@ -312,7 +312,7 @@ def resnet50(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNet-50 model from
-    `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`_
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385.pdf>`_
 
     Args:
         weights (:class:`~torchvision.models.quantization.ResNet50_QuantizedWeights` or :class:`~torchvision.models.ResNet50_Weights`, optional): The
@@ -356,7 +356,7 @@ def resnext101_32x8d(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNeXt-101 32x8d model from
-    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/pdf/1611.05431.pdf>`_
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431.pdf>`_
 
     Args:
         weights (:class:`~torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights` or :class:`~torchvision.models.ResNet101_32X8D_Weights`, optional): The
@@ -394,7 +394,7 @@ def resnext101_64x4d(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNeXt-101 64x4d model from
-    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/pdf/1611.05431.pdf>`_
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431.pdf>`_
 
     Args:
         weights (:class:`~torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights` or :class:`~torchvision.models.ResNet101_64X4D_Weights`, optional): The

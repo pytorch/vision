@@ -21,4 +21,5 @@ for more details about this class.
     :toctree: generated/
     :template: function.rst
 
-    resnet
+    resnet18
+    resnet50
