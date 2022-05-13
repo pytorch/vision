@@ -316,6 +316,11 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
     """
 
     if obj.__name__.endswith(("_Weights", "_QuantizedWeights")):
+
+        if len(obj) == 0:
+            lines[:] = ["There are no available pre-trained weights."]
+            return
+
         lines[:] = [
             "The model builder above accepts the following values as the ``weights`` parameter.",
             f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
@@ -342,20 +347,29 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             metrics = meta.pop("metrics", {})
             meta_with_metrics = dict(meta, **metrics)
 
-            meta_with_metrics.pop("categories", None)  # We don't want to document these, they can be too long
+            # We don't want to document these, they can be too long
+            for k in ["categories", "keypoint_names"]:
+                meta_with_metrics.pop(k, None)
 
             custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
             if custom_docs is not None:
                 lines += [custom_docs, ""]
 
             for k, v in meta_with_metrics.items():
-                if k == "recipe":
+                if k in {"recipe", "license"}:
                     v = f"`link <{v}>`__"
+                elif k == "min_size":
+                    v = f"height={v[0]}, width={v[1]}"
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
             lines += [".. table::", ""]
             lines += textwrap.indent(table, " " * 4).split("\n")
+            lines.append("")
+            lines.append(
+                f"The inference transforms are available at ``{str(field)}.transforms`` and "
+                f"perform the following operations: {field.transforms().describe()}"
+            )
             lines.append("")
 
 

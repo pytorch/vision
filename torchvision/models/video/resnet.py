@@ -463,3 +463,16 @@ def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool
         progress,
         **kwargs,
     )
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "r3d_18": R3D_18_Weights.KINETICS400_V1.url,
+        "mc3_18": MC3_18_Weights.KINETICS400_V1.url,
+        "r2plus1d_18": R2Plus1D_18_Weights.KINETICS400_V1.url,
+    }
+)
