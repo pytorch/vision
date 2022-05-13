@@ -24,6 +24,48 @@ keypoint detection, video classification and optical flow.
     `documentation 
     <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_   
 
+TorchVision offers a new `Multi-weight support API
+<https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/>`_ for loading different weights to the
+existing model builder methods:
+
+.. code:: python
+
+    from torchvision.models import resnet50, ResNet50_Weights
+
+    # Old weights with accuracy 76.130%
+    resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+
+    # New weights with accuracy 80.858%
+    resnet50(weights=ResNet50_Weights.IMAGENET1K_V2)
+
+    # Best available weights (currently alias for IMAGENET1K_V2)
+    resnet50(weights=ResNet50_Weights.DEFAULT)
+
+    # Strings are also supported
+    resnet50(weights="IMAGENET1K_V2")
+
+    # No weights - random initialization
+    resnet50(weights=None)
+
+
+Migrating to the new API is very straightforward. The following method calls between the 2 APIs are all equivalent:
+
+.. code:: python
+
+    from torchvision.models import resnet50, ResNet50_Weights
+
+    # Using pretrained weights:
+    resnet50(weights=ResNet50_Weights.IMAGENET1K_V1)
+    resnet50(pretrained=True)
+    resnet50(True)
+
+    # Using no weights:
+    resnet50(weights=None)
+    resnet50(pretrained=False)
+    resnet50(False)
+
+Note that the ``pretrained`` parameter is now deprecated, using it will emit warnings and will be removed on v0.15.
+
 
 Classification
 ==============
@@ -183,7 +225,7 @@ Here is an example of how to use the pre-trained semantic segmentation models:
     batch = preprocess(img).unsqueeze(0)
 
     # Step 4: Use the model and visualize the prediction
-    prediction = model(batch)['out']
+    prediction = model(batch)["out"]
     normalized_masks = prediction.softmax(dim=1)
     class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
     mask = normalized_masks[0, class_to_idx["dog"]]
