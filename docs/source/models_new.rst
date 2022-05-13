@@ -51,7 +51,6 @@ weights:
    models/resnext
    models/shufflenetv2
    models/squeezenet
-   models/ssd300
    models/swin_transformer
    models/vgg
    models/vision_transformer
@@ -64,6 +63,28 @@ Table of all available classification weights
 Accuracies are reported on ImageNet
 
 .. include:: generated/classification_table.rst
+
+Quantized models
+----------------
+
+.. currentmodule:: torchvision.models.quantization
+
+The following quantized classification models are available, with or without
+pre-trained weights:
+
+.. toctree::
+   :maxdepth: 1
+
+   models/googlenet_quant
+   models/mobilenetv2_quant
+
+
+Table of all available quantized classification weights
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+Accuracies are reported on ImageNet
+
+.. include:: generated/classification_quant_table.rst
 
 Semantic Segmentation
 =====================
@@ -106,6 +127,7 @@ weights:
    models/faster_rcnn
    models/fcos
    models/retinanet
+   models/ssd
    models/ssdlite
 
 Table of all available Object detection weights

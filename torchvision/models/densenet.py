@@ -34,22 +34,14 @@ class _DenseLayer(nn.Module):
         self, num_input_features: int, growth_rate: int, bn_size: int, drop_rate: float, memory_efficient: bool = False
     ) -> None:
         super().__init__()
-        self.norm1: nn.BatchNorm2d
-        self.add_module("norm1", nn.BatchNorm2d(num_input_features))
-        self.relu1: nn.ReLU
-        self.add_module("relu1", nn.ReLU(inplace=True))
-        self.conv1: nn.Conv2d
-        self.add_module(
-            "conv1", nn.Conv2d(num_input_features, bn_size * growth_rate, kernel_size=1, stride=1, bias=False)
-        )
-        self.norm2: nn.BatchNorm2d
-        self.add_module("norm2", nn.BatchNorm2d(bn_size * growth_rate))
-        self.relu2: nn.ReLU
-        self.add_module("relu2", nn.ReLU(inplace=True))
-        self.conv2: nn.Conv2d
-        self.add_module(
-            "conv2", nn.Conv2d(bn_size * growth_rate, growth_rate, kernel_size=3, stride=1, padding=1, bias=False)
-        )
+        self.norm1 = nn.BatchNorm2d(num_input_features)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.conv1 = nn.Conv2d(num_input_features, bn_size * growth_rate, kernel_size=1, stride=1, bias=False)
+
+        self.norm2 = nn.BatchNorm2d(bn_size * growth_rate)
+        self.relu2 = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(bn_size * growth_rate, growth_rate, kernel_size=3, stride=1, padding=1, bias=False)
+
         self.drop_rate = float(drop_rate)
         self.memory_efficient = memory_efficient
 
@@ -136,10 +128,10 @@ class _DenseBlock(nn.ModuleDict):
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features: int, num_output_features: int) -> None:
         super().__init__()
-        self.add_module("norm", nn.BatchNorm2d(num_input_features))
-        self.add_module("relu", nn.ReLU(inplace=True))
-        self.add_module("conv", nn.Conv2d(num_input_features, num_output_features, kernel_size=1, stride=1, bias=False))
-        self.add_module("pool", nn.AvgPool2d(kernel_size=2, stride=2))
+        self.norm = nn.BatchNorm2d(num_input_features)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv = nn.Conv2d(num_input_features, num_output_features, kernel_size=1, stride=1, bias=False)
+        self.pool = nn.AvgPool2d(kernel_size=2, stride=2)
 
 
 class DenseNet(nn.Module):
@@ -340,7 +332,6 @@ class DenseNet201_Weights(WeightsEnum):
 def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet121_Weights`, optional): The
@@ -366,7 +357,6 @@ def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool
 def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet161_Weights`, optional): The
@@ -392,7 +382,6 @@ def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool
 def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet169_Weights`, optional): The
@@ -418,7 +407,6 @@ def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool
 def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet201_Weights`, optional): The
@@ -438,3 +426,17 @@ def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool
     weights = DenseNet201_Weights.verify(weights)
 
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "densenet121": DenseNet121_Weights.IMAGENET1K_V1.url,
+        "densenet169": DenseNet169_Weights.IMAGENET1K_V1.url,
+        "densenet201": DenseNet201_Weights.IMAGENET1K_V1.url,
+        "densenet161": DenseNet161_Weights.IMAGENET1K_V1.url,
+    }
+)
