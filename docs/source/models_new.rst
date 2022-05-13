@@ -13,7 +13,7 @@ Models and pre-trained weights - New
 The ``torchvision.models`` subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
-keypoint detection, video classification and optical flow.
+keypoint detection, video classification, and optical flow.
 
 .. note ::
     Backward compatibility is guaranteed for loading a serialized 
