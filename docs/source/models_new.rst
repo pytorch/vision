@@ -77,6 +77,7 @@ pre-trained weights:
 
    models/googlenet_quant
    models/mobilenetv2_quant
+   models/resnet_quant
 
 
 Table of all available quantized classification weights
