@@ -367,7 +367,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines += textwrap.indent(table, " " * 4).split("\n")
             lines.append("")
             lines.append(
-                f"The preprocessing transforms are available at ``{str(field)}.transforms`` and "
+                f"The inference transforms are available at ``{str(field)}.transforms`` and "
                 f"perform the following operations: {field.transforms().describe()}"
             )
             lines.append("")
