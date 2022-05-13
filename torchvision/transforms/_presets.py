@@ -25,6 +25,9 @@ class ObjectDetection(nn.Module):
             img = F.pil_to_tensor(img)
         return F.convert_image_dtype(img, torch.float)
 
+    def __repr__(self) -> str:
+        return self.__class__.__name__ + "()"
+
 
 class ImageClassification(nn.Module):
     def __init__(
@@ -37,20 +40,30 @@ class ImageClassification(nn.Module):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self._crop_size = [crop_size]
-        self._size = [resize_size]
-        self._mean = list(mean)
-        self._std = list(std)
-        self._interpolation = interpolation
+        self.crop_size = [crop_size]
+        self.resize_size = [resize_size]
+        self.mean = list(mean)
+        self.std = list(std)
+        self.interpolation = interpolation
 
     def forward(self, img: Tensor) -> Tensor:
-        img = F.resize(img, self._size, interpolation=self._interpolation)
-        img = F.center_crop(img, self._crop_size)
+        img = F.resize(img, self.resize_size, interpolation=self.interpolation)
+        img = F.center_crop(img, self.crop_size)
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
         img = F.convert_image_dtype(img, torch.float)
-        img = F.normalize(img, mean=self._mean, std=self._std)
+        img = F.normalize(img, mean=self.mean, std=self.std)
         return img
+
+    def __repr__(self) -> str:
+        format_string = self.__class__.__name__ + "("
+        format_string += f"\n    crop_size={self.crop_size}"
+        format_string += f"\n    resize_size={self.resize_size}"
+        format_string += f"\n    mean={self.mean}"
+        format_string += f"\n    std={self.std}"
+        format_string += f"\n    interpolation={self.interpolation}"
+        format_string += "\n)"
+        return format_string
 
 
 class VideoClassification(nn.Module):
@@ -64,11 +77,11 @@ class VideoClassification(nn.Module):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self._crop_size = list(crop_size)
-        self._size = list(resize_size)
-        self._mean = list(mean)
-        self._std = list(std)
-        self._interpolation = interpolation
+        self.crop_size = list(crop_size)
+        self.resize_size = list(resize_size)
+        self.mean = list(mean)
+        self.std = list(std)
+        self.interpolation = interpolation
 
     def forward(self, vid: Tensor) -> Tensor:
         need_squeeze = False
@@ -79,17 +92,27 @@ class VideoClassification(nn.Module):
         vid = vid.permute(0, 1, 4, 2, 3)  # (N, T, H, W, C) => (N, T, C, H, W)
         N, T, C, H, W = vid.shape
         vid = vid.view(-1, C, H, W)
-        vid = F.resize(vid, self._size, interpolation=self._interpolation)
-        vid = F.center_crop(vid, self._crop_size)
+        vid = F.resize(vid, self.resize_size, interpolation=self.interpolation)
+        vid = F.center_crop(vid, self.crop_size)
         vid = F.convert_image_dtype(vid, torch.float)
-        vid = F.normalize(vid, mean=self._mean, std=self._std)
-        H, W = self._crop_size
+        vid = F.normalize(vid, mean=self.mean, std=self.std)
+        H, W = self.crop_size
         vid = vid.view(N, T, C, H, W)
         vid = vid.permute(0, 2, 1, 3, 4)  # (N, T, C, H, W) => (N, C, T, H, W)
 
         if need_squeeze:
             vid = vid.squeeze(dim=0)
         return vid
+
+    def __repr__(self) -> str:
+        format_string = self.__class__.__name__ + "("
+        format_string += f"\n    crop_size={self.crop_size}"
+        format_string += f"\n    resize_size={self.resize_size}"
+        format_string += f"\n    mean={self.mean}"
+        format_string += f"\n    std={self.std}"
+        format_string += f"\n    interpolation={self.interpolation}"
+        format_string += "\n)"
+        return format_string
 
 
 class SemanticSegmentation(nn.Module):
@@ -102,19 +125,28 @@ class SemanticSegmentation(nn.Module):
         interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     ) -> None:
         super().__init__()
-        self._size = [resize_size] if resize_size is not None else None
-        self._mean = list(mean)
-        self._std = list(std)
-        self._interpolation = interpolation
+        self.resize_size = [resize_size] if resize_size is not None else None
+        self.mean = list(mean)
+        self.std = list(std)
+        self.interpolation = interpolation
 
     def forward(self, img: Tensor) -> Tensor:
-        if isinstance(self._size, list):
-            img = F.resize(img, self._size, interpolation=self._interpolation)
+        if isinstance(self.resize_size, list):
+            img = F.resize(img, self.resize_size, interpolation=self.interpolation)
         if not isinstance(img, Tensor):
             img = F.pil_to_tensor(img)
         img = F.convert_image_dtype(img, torch.float)
-        img = F.normalize(img, mean=self._mean, std=self._std)
+        img = F.normalize(img, mean=self.mean, std=self.std)
         return img
+
+    def __repr__(self) -> str:
+        format_string = self.__class__.__name__ + "("
+        format_string += f"\n    resize_size={self.resize_size}"
+        format_string += f"\n    mean={self.mean}"
+        format_string += f"\n    std={self.std}"
+        format_string += f"\n    interpolation={self.interpolation}"
+        format_string += "\n)"
+        return format_string
 
 
 class OpticalFlow(nn.Module):
@@ -135,3 +167,6 @@ class OpticalFlow(nn.Module):
         img2 = img2.contiguous()
 
         return img1, img2
+
+    def __repr__(self) -> str:
+        return self.__class__.__name__ + "()"
