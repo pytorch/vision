@@ -57,6 +57,77 @@ def deform_conv2d(
         >>> print(out.shape)
         >>> # returns
         >>>  torch.Size([4, 5, 8, 8])
+
+    More complex examples::
+
+        # batch_size, num_channels, out_height, out_width
+        h = w = 3
+        num_channels = 4
+        x = torch.arange(h * w, dtype=torch.float32).reshape(1, 1, h, w).repeat(1, num_channels, 1, 1)
+
+        # to show the effect of offset more intuitively, only the case of kh=kw=1 is considered here
+        kh, kw = 1, 1
+        # divide the convolution kernel into offset_groups groups with different offsets.
+        offset_groups = 4
+        # create our predefined offset
+        offset = torch.zeros(1, 2 * offset_groups * kh * kw, 1, 1, dtype=torch.float32)
+        for offset_group_idx, (rel_offset_h, rel_offset_w) in enumerate([(0, -1), (0, 1), (-1, 0)]):
+            offset[0, offset_group_idx * 2 + 0, 0, 0] = rel_offset_h
+            offset[0, offset_group_idx * 2 + 1, 0, 0] = rel_offset_w
+            # the last group is initialized to (0, 0), that is, equivalent to standard convolution
+        # it is assumed here that each convolution kernel uses the same offset for each local neighborhood in space
+        # so we repeat the offset to the whole space: batch_size, 2 * offset_groups * kh * kw, out_height, out_width
+        offset = offset.repeat(1, 1, h, w)
+
+        # case 0: based on an identity convolution with the kernel group = 1 and the offset_groups = 4
+        weight = torch.eye(num_channels, dtype=torch.float32).reshape(num_channels, num_channels, 1, 1)
+        deconv_shift = deform_conv2d(x, offset=offset, weight=weight)
+        print(deconv_shift)
+
+        # case 1: based on an identity convolution with the kernel group = 2 and the offset_groups = 4
+        groups = 2
+        num_channels_per_group = num_channels // groups
+        grouped_weight = (
+            torch.eye(num_channels_per_group, dtype=torch.float32)
+            .reshape(num_channels_per_group, num_channels_per_group, 1, 1)
+            .repeat(groups, 1, 1, 1)
+        )
+        grouped_deconv_shift = deform_conv2d(x, offset=offset, weight=grouped_weight)
+        print(grouped_deconv_shift)
+
+        # output
+        ```
+        tensor([[[[0., 0., 1.],
+                [0., 3., 4.],
+                [0., 6., 7.]],
+
+                [[1., 2., 0.],
+                [4., 5., 0.],
+                [7., 8., 0.]],
+
+                [[0., 0., 0.],
+                [0., 1., 2.],
+                [3., 4., 5.]],
+
+                [[0., 1., 2.],
+                [3., 4., 5.],
+                [6., 7., 8.]]]])
+        tensor([[[[0., 0., 1.],
+                [0., 3., 4.],
+                [0., 6., 7.]],
+
+                [[1., 2., 0.],
+                [4., 5., 0.],
+                [7., 8., 0.]],
+
+                [[0., 0., 0.],
+                [0., 1., 2.],
+                [3., 4., 5.]],
+
+                [[0., 1., 2.],
+                [3., 4., 5.],
+                [6., 7., 8.]]]])
+        ```
     """
 
     _assert_has_ops()
