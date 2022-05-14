@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+8f9052b ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+a3d3102 ) &#x25BC</a>
     </div>
     
 
@@ -348,6 +348,42 @@ On the contrary, loading entire saved models or serialized
 may not preserve the historic behaviour. Refer to the following
 <a class="reference external" href="https://pytorch.org/docs/stable/notes/serialization.html#id6">documentation</a></p>
 </div>
+<p>As of v0.13, TorchVision offers a new <a class="reference external" href="https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/">Multi-weight support API</a> for loading different weights to the
+existing model builder methods:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+
+<span class="c1"># Old weights with accuracy 76.130%</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">)</span>
+
+<span class="c1"># New weights with accuracy 80.858%</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V2</span><span class="p">)</span>
+
+<span class="c1"># Best available weights (currently alias for IMAGENET1K_V2)</span>
+<span class="c1"># Note that these weights may change across versions</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span><span class="p">)</span>
+
+<span class="c1"># Strings are also supported</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="s2">&quot;IMAGENET1K_V2&quot;</span><span class="p">)</span>
+
+<span class="c1"># No weights - random initialization</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># or resnet50()</span>
+</pre></div>
+</div>
+<p>Migrating to the new API is very straightforward. The following method calls between the 2 APIs are all equivalent:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+
+<span class="c1"># Using pretrained weights:</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">)</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># deprecated</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># deprecated</span>
+
+<span class="c1"># Using no weights:</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># deprecated</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># deprecated</span>
+</pre></div>
+</div>
+<p>Note that the <code class="docutils literal notranslate"><span class="pre">pretrained</span></code> parameter is now deprecated, using it will emit warnings and will be removed on v0.15.</p>
 <div class="section" id="classification">
 <h2>Classification<a class="headerlink" href="#classification" title="Permalink to this headline">¶</a></h2>
 <p>The following classification models are available, with or without pre-trained
@@ -374,6 +410,34 @@ weights:</p>
 <li class="toctree-l1"><a class="reference internal" href="models/vision_transformer.html">VisionTransformer</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models/wide_resnet.html">Wide ResNet</a></li>
 </ul>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Here is an example of how to use the pre-trained image classification models:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">read_image</span>
+<span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
+
+<span class="n">img</span> <span class="o">=</span> <span class="n">read_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
+
+<span class="c1"># Step 1: Initialize model with the best available weights</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<span class="c1"># Step 2: Initialize the inference transforms</span>
+<span class="n">preprocess</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">transforms</span><span class="p">()</span>
+
+<span class="c1"># Step 3: Apply inference preprocessing transforms</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Step 4: Use the model and print the predicted category</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">class_id</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">class_id</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">][</span><span class="n">class_id</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span> <span class="o">*</span> <span class="n">score</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</pre></div>
 </div>
 <div class="section" id="table-of-all-available-classification-weights">
 <h3>Table of all available classification weights<a class="headerlink" href="#table-of-all-available-classification-weights" title="Permalink to this headline">¶</a></h3>
@@ -1047,8 +1111,38 @@ pre-trained weights:</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="models/googlenet_quant.html">Quantized GoogLeNet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/inception_quant.html">Quantized InceptionV3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models/mobilenetv2_quant.html">Quantized MobileNet V2</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/resnet_quant.html">Quantized ResNet</a></li>
 </ul>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Here is an example of how to use the pre-trained quantized image classification models:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io</span> <span class="kn">import</span> <span class="n">read_image</span>
+<span class="kn">from</span> <span class="nn">torchvision.models.quantization</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_QuantizedWeights</span>
+
+<span class="n">img</span> <span class="o">=</span> <span class="n">read_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
+
+<span class="c1"># Step 1: Initialize model with the best available weights</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">ResNet50_QuantizedWeights</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">quantize</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<span class="c1"># Step 2: Initialize the inference transforms</span>
+<span class="n">preprocess</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">transforms</span><span class="p">()</span>
+
+<span class="c1"># Step 3: Apply inference preprocessing transforms</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Step 4: Use the model and print the predicted category</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">class_id</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">class_id</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">][</span><span class="n">class_id</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span> <span class="o">*</span> <span class="n">score</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</pre></div>
 </div>
 <div class="section" id="table-of-all-available-quantized-classification-weights">
 <h4>Table of all available quantized classification weights<a class="headerlink" href="#table-of-all-available-quantized-classification-weights" title="Permalink to this headline">¶</a></h4>
@@ -1076,7 +1170,7 @@ pre-trained weights:</p>
 <td><p>6.6M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.inception_v3.html#torchvision.models.quantization.Inception_V3_QuantizedWeights" title="torchvision.models.quantization.Inception_V3_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>77.176</p></td>
 <td><p>93.354</p></td>
 <td><p>27.2M</p></td>
@@ -1112,19 +1206,19 @@ pre-trained weights:</p>
 <td><p>83.5M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5935">link</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnet18.html#torchvision.models.quantization.ResNet18_QuantizedWeights" title="torchvision.models.quantization.ResNet18_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet18_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>69.494</p></td>
 <td><p>88.882</p></td>
 <td><p>11.7M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnet50.html#torchvision.models.quantization.ResNet50_QuantizedWeights" title="torchvision.models.quantization.ResNet50_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>75.92</p></td>
 <td><p>92.814</p></td>
 <td><p>25.6M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.resnet50.html#torchvision.models.quantization.ResNet50_QuantizedWeights" title="torchvision.models.quantization.ResNet50_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNet50_QuantizedWeights.IMAGENET1K_FBGEMM_V2</span></code></a></p></td>
 <td><p>80.282</p></td>
 <td><p>94.976</p></td>
 <td><p>25.6M</p></td>
@@ -1169,6 +1263,35 @@ pre-trained weights:</p>
 <li class="toctree-l1"><a class="reference internal" href="models/fcn.html">FCN</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models/lraspp.html">LRASPP</a></li>
 </ul>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Here is an example of how to use the pre-trained semantic segmentation models:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io.image</span> <span class="kn">import</span> <span class="n">read_image</span>
+<span class="kn">from</span> <span class="nn">torchvision.models.segmentation</span> <span class="kn">import</span> <span class="n">fcn_resnet50</span><span class="p">,</span> <span class="n">FCN_ResNet50_Weights</span>
+<span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="n">to_pil_image</span>
+
+<span class="n">img</span> <span class="o">=</span> <span class="n">read_image</span><span class="p">(</span><span class="s2">&quot;gallery/assets/dog1.jpg&quot;</span><span class="p">)</span>
+
+<span class="c1"># Step 1: Initialize model with the best available weights</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">FCN_ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">fcn_resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<span class="c1"># Step 2: Initialize the inference transforms</span>
+<span class="n">preprocess</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">transforms</span><span class="p">()</span>
+
+<span class="c1"># Step 3: Apply inference preprocessing transforms</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">img</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Step 4: Use the model and visualize the prediction</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)[</span><span class="s2">&quot;out&quot;</span><span class="p">]</span>
+<span class="n">normalized_masks</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+<span class="n">class_to_idx</span> <span class="o">=</span> <span class="p">{</span><span class="bp">cls</span><span class="p">:</span> <span class="n">idx</span> <span class="k">for</span> <span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="bp">cls</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">])}</span>
+<span class="n">mask</span> <span class="o">=</span> <span class="n">normalized_masks</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">class_to_idx</span><span class="p">[</span><span class="s2">&quot;dog&quot;</span><span class="p">]]</span>
+<span class="n">to_pil_image</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
 </div>
 <div class="section" id="table-of-all-available-semantic-segmentation-weights">
 <h3>Table of all available semantic segmentation weights<a class="headerlink" href="#table-of-all-available-semantic-segmentation-weights" title="Permalink to this headline">¶</a></h3>
@@ -1244,6 +1367,39 @@ weights:</p>
 <li class="toctree-l1"><a class="reference internal" href="models/ssd.html">SSD</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models/ssdlite.html">SSDlite</a></li>
 </ul>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Here is an example of how to use the pre-trained object detection models:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io.image</span> <span class="kn">import</span> <span class="n">read_image</span>
+<span class="kn">from</span> <span class="nn">torchvision.models.detection</span> <span class="kn">import</span> <span class="n">fasterrcnn_resnet50_fpn_v2</span><span class="p">,</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span>
+<span class="kn">from</span> <span class="nn">torchvision.utils</span> <span class="kn">import</span> <span class="n">draw_bounding_boxes</span>
+<span class="kn">from</span> <span class="nn">torchvision.transforms.functional</span> <span class="kn">import</span> <span class="n">to_pil_image</span>
+
+<span class="n">img</span> <span class="o">=</span> <span class="n">read_image</span><span class="p">(</span><span class="s2">&quot;test/assets/encode_jpeg/grace_hopper_517x606.jpg&quot;</span><span class="p">)</span>
+
+<span class="c1"># Step 1: Initialize model with the best available weights</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">FasterRCNN_ResNet50_FPN_V2_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">fasterrcnn_resnet50_fpn_v2</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">,</span> <span class="n">box_score_thresh</span><span class="o">=</span><span class="mf">0.9</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<span class="c1"># Step 2: Initialize the inference transforms</span>
+<span class="n">preprocess</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">transforms</span><span class="p">()</span>
+
+<span class="c1"># Step 3: Apply inference preprocessing transforms</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="p">[</span><span class="n">preprocess</span><span class="p">(</span><span class="n">img</span><span class="p">)]</span>
+
+<span class="c1"># Step 4: Use the model and visualize the prediction</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+<span class="n">labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">][</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;labels&quot;</span><span class="p">]]</span>
+<span class="n">box</span> <span class="o">=</span> <span class="n">draw_bounding_boxes</span><span class="p">(</span><span class="n">img</span><span class="p">,</span> <span class="n">boxes</span><span class="o">=</span><span class="n">prediction</span><span class="p">[</span><span class="s2">&quot;boxes&quot;</span><span class="p">],</span>
+                          <span class="n">labels</span><span class="o">=</span><span class="n">labels</span><span class="p">,</span>
+                          <span class="n">colors</span><span class="o">=</span><span class="s2">&quot;red&quot;</span><span class="p">,</span>
+                          <span class="n">width</span><span class="o">=</span><span class="mi">4</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">30</span><span class="p">)</span>
+<span class="n">im</span> <span class="o">=</span> <span class="n">to_pil_image</span><span class="p">(</span><span class="n">box</span><span class="o">.</span><span class="n">detach</span><span class="p">())</span>
+<span class="n">im</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+</pre></div>
 </div>
 <div class="section" id="table-of-all-available-object-detection-weights">
 <h4>Table of all available Object detection weights<a class="headerlink" href="#table-of-all-available-object-detection-weights" title="Permalink to this headline">¶</a></h4>
@@ -1411,6 +1567,35 @@ pre-trained weights:</p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="models/video_resnet.html">Video ResNet</a></li>
 </ul>
+</div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>Here is an example of how to use the pre-trained video classification models:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.io.video</span> <span class="kn">import</span> <span class="n">read_video</span>
+<span class="kn">from</span> <span class="nn">torchvision.models.video</span> <span class="kn">import</span> <span class="n">r3d_18</span><span class="p">,</span> <span class="n">R3D_18_Weights</span>
+
+<span class="n">vid</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">read_video</span><span class="p">(</span><span class="s2">&quot;test/assets/videos/v_SoccerJuggling_g23_c01.avi&quot;</span><span class="p">)</span>
+<span class="n">vid</span> <span class="o">=</span> <span class="n">vid</span><span class="p">[:</span><span class="mi">32</span><span class="p">]</span>  <span class="c1"># optionally shorten duration</span>
+
+<span class="c1"># Step 1: Initialize model with the best available weights</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">R3D_18_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">r3d_18</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+
+<span class="c1"># Step 2: Initialize the inference transforms</span>
+<span class="n">preprocess</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">transforms</span><span class="p">()</span>
+
+<span class="c1"># Step 3: Apply inference preprocessing transforms</span>
+<span class="n">batch</span> <span class="o">=</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">vid</span><span class="p">)</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+
+<span class="c1"># Step 4: Use the model and print the predicted category</span>
+<span class="n">prediction</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">batch</span><span class="p">)</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">softmax</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+<span class="n">label</span> <span class="o">=</span> <span class="n">prediction</span><span class="o">.</span><span class="n">argmax</span><span class="p">()</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">score</span> <span class="o">=</span> <span class="n">prediction</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">.</span><span class="n">item</span><span class="p">()</span>
+<span class="n">category_name</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">meta</span><span class="p">[</span><span class="s2">&quot;categories&quot;</span><span class="p">][</span><span class="n">label</span><span class="p">]</span>
+<span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span> <span class="o">*</span> <span class="n">score</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
+</pre></div>
 </div>
 <div class="section" id="table-of-all-available-video-classification-weights">
 <h3>Table of all available video classification weights<a class="headerlink" href="#table-of-all-available-video-classification-weights" title="Permalink to this headline">¶</a></h3>
