@@ -2,19 +2,19 @@ import math
 import numbers
 import warnings
 from enum import Enum
+from typing import List, Tuple, Any, Optional
 
 import numpy as np
-from PIL import Image
-
 import torch
+from PIL import Image
 from torch import Tensor
-from typing import List, Tuple, Any, Optional
 
 try:
     import accimage
 except ImportError:
     accimage = None
 
+from ..utils import _log_api_usage_once
 from . import functional_pil as F_pil
 from . import functional_tensor as F_t
 
@@ -23,6 +23,7 @@ class InterpolationMode(Enum):
     """Interpolation modes
     Available interpolation methods are ``nearest``, ``bilinear``, ``bicubic``, ``box``, ``hamming``, and ``lanczos``.
     """
+
     NEAREST = "nearest"
     BILINEAR = "bilinear"
     BICUBIC = "bicubic"
@@ -58,22 +59,55 @@ pil_modes_mapping = {
 _is_pil_image = F_pil._is_pil_image
 
 
-def _get_image_size(img: Tensor) -> List[int]:
-    """Returns image size as [w, h]
+def get_dimensions(img: Tensor) -> List[int]:
+    """Returns the dimensions of an image as [channels, height, width].
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        List[int]: The image dimensions.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(get_dimensions)
     if isinstance(img, torch.Tensor):
-        return F_t._get_image_size(img)
+        return F_t.get_dimensions(img)
 
-    return F_pil._get_image_size(img)
+    return F_pil.get_dimensions(img)
 
 
-def _get_image_num_channels(img: Tensor) -> int:
-    """Returns number of image channels
+def get_image_size(img: Tensor) -> List[int]:
+    """Returns the size of an image as [width, height].
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        List[int]: The image size.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(get_image_size)
     if isinstance(img, torch.Tensor):
-        return F_t._get_image_num_channels(img)
+        return F_t.get_image_size(img)
 
-    return F_pil._get_image_num_channels(img)
+    return F_pil.get_image_size(img)
+
+
+def get_image_num_channels(img: Tensor) -> int:
+    """Returns the number of channels of an image.
+
+    Args:
+        img (PIL Image or Tensor): The image to be checked.
+
+    Returns:
+        int: The number of channels.
+    """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(get_image_num_channels)
+    if isinstance(img, torch.Tensor):
+        return F_t.get_image_num_channels(img)
+
+    return F_pil.get_image_num_channels(img)
 
 
 @torch.jit.unused
@@ -86,7 +120,7 @@ def _is_numpy_image(img: Any) -> bool:
     return img.ndim in {2, 3}
 
 
-def to_tensor(pic):
+def to_tensor(pic) -> Tensor:
     """Convert a ``PIL Image`` or ``numpy.ndarray`` to tensor.
     This function does not support torchscript.
 
@@ -98,11 +132,13 @@ def to_tensor(pic):
     Returns:
         Tensor: Converted image.
     """
-    if not(F_pil._is_pil_image(pic) or _is_numpy(pic)):
-        raise TypeError('pic should be PIL Image or ndarray. Got {}'.format(type(pic)))
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(to_tensor)
+    if not (F_pil._is_pil_image(pic) or _is_numpy(pic)):
+        raise TypeError(f"pic should be PIL Image or ndarray. Got {type(pic)}")
 
     if _is_numpy(pic) and not _is_numpy_image(pic):
-        raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
+        raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndim} dimensions.")
 
     default_float_dtype = torch.get_default_dtype()
 
@@ -124,17 +160,11 @@ def to_tensor(pic):
         return torch.from_numpy(nppic).to(dtype=default_float_dtype)
 
     # handle PIL Image
-    if pic.mode == 'I':
-        img = torch.from_numpy(np.array(pic, np.int32, copy=False))
-    elif pic.mode == 'I;16':
-        img = torch.from_numpy(np.array(pic, np.int16, copy=False))
-    elif pic.mode == 'F':
-        img = torch.from_numpy(np.array(pic, np.float32, copy=False))
-    elif pic.mode == '1':
-        img = 255 * torch.from_numpy(np.array(pic, np.uint8, copy=False))
-    else:
-        img = torch.ByteTensor(torch.ByteStorage.from_buffer(pic.tobytes()))
+    mode_to_nptype = {"I": np.int32, "I;16": np.int16, "F": np.float32}
+    img = torch.from_numpy(np.array(pic, mode_to_nptype.get(pic.mode, np.uint8), copy=True))
 
+    if pic.mode == "1":
+        img = 255 * img
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1)).contiguous()
@@ -150,14 +180,20 @@ def pil_to_tensor(pic):
 
     See :class:`~torchvision.transforms.PILToTensor` for more details.
 
+    .. note::
+
+        A deep copy of the underlying array is performed.
+
     Args:
         pic (PIL Image): Image to be converted to tensor.
 
     Returns:
         Tensor: Converted image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(pil_to_tensor)
     if not F_pil._is_pil_image(pic):
-        raise TypeError('pic should be PIL Image. Got {}'.format(type(pic)))
+        raise TypeError(f"pic should be PIL Image. Got {type(pic)}")
 
     if accimage is not None and isinstance(pic, accimage.Image):
         # accimage format is always uint8 internally, so always return uint8 here
@@ -166,7 +202,7 @@ def pil_to_tensor(pic):
         return torch.as_tensor(nppic)
 
     # handle PIL Image
-    img = torch.as_tensor(np.asarray(pic))
+    img = torch.as_tensor(np.array(pic, copy=True))
     img = img.view(pic.size[1], pic.size[0], len(pic.getbands()))
     # put it from HWC to CHW format
     img = img.permute((2, 0, 1))
@@ -195,8 +231,10 @@ def convert_image_dtype(image: torch.Tensor, dtype: torch.dtype = torch.float) -
             overflow errors since the floating point ``dtype`` cannot store consecutive integers over the whole range
             of the integer ``dtype``.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(convert_image_dtype)
     if not isinstance(image, torch.Tensor):
-        raise TypeError('Input img should be Tensor Image')
+        raise TypeError("Input img should be Tensor Image")
 
     return F_t.convert_image_dtype(image, dtype)
 
@@ -215,12 +253,14 @@ def to_pil_image(pic, mode=None):
     Returns:
         PIL Image: Image converted to PIL Image.
     """
-    if not(isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
-        raise TypeError('pic should be Tensor or ndarray. Got {}.'.format(type(pic)))
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(to_pil_image)
+    if not (isinstance(pic, torch.Tensor) or isinstance(pic, np.ndarray)):
+        raise TypeError(f"pic should be Tensor or ndarray. Got {type(pic)}.")
 
     elif isinstance(pic, torch.Tensor):
         if pic.ndimension() not in {2, 3}:
-            raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndimension()))
+            raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndimension()} dimensions.")
 
         elif pic.ndimension() == 2:
             # if 2D image, add channel dimension (CHW)
@@ -228,11 +268,11 @@ def to_pil_image(pic, mode=None):
 
         # check number of channels
         if pic.shape[-3] > 4:
-            raise ValueError('pic should not have > 4 channels. Got {} channels.'.format(pic.shape[-3]))
+            raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-3]} channels.")
 
     elif isinstance(pic, np.ndarray):
         if pic.ndim not in {2, 3}:
-            raise ValueError('pic should be 2/3 dimensional. Got {} dimensions.'.format(pic.ndim))
+            raise ValueError(f"pic should be 2/3 dimensional. Got {pic.ndim} dimensions.")
 
         elif pic.ndim == 2:
             # if 2D image, add channel dimension (HWC)
@@ -240,58 +280,56 @@ def to_pil_image(pic, mode=None):
 
         # check number of channels
         if pic.shape[-1] > 4:
-            raise ValueError('pic should not have > 4 channels. Got {} channels.'.format(pic.shape[-1]))
+            raise ValueError(f"pic should not have > 4 channels. Got {pic.shape[-1]} channels.")
 
     npimg = pic
     if isinstance(pic, torch.Tensor):
-        if pic.is_floating_point() and mode != 'F':
+        if pic.is_floating_point() and mode != "F":
             pic = pic.mul(255).byte()
         npimg = np.transpose(pic.cpu().numpy(), (1, 2, 0))
 
     if not isinstance(npimg, np.ndarray):
-        raise TypeError('Input pic must be a torch.Tensor or NumPy ndarray, ' +
-                        'not {}'.format(type(npimg)))
+        raise TypeError("Input pic must be a torch.Tensor or NumPy ndarray, not {type(npimg)}")
 
     if npimg.shape[2] == 1:
         expected_mode = None
         npimg = npimg[:, :, 0]
         if npimg.dtype == np.uint8:
-            expected_mode = 'L'
+            expected_mode = "L"
         elif npimg.dtype == np.int16:
-            expected_mode = 'I;16'
+            expected_mode = "I;16"
         elif npimg.dtype == np.int32:
-            expected_mode = 'I'
+            expected_mode = "I"
         elif npimg.dtype == np.float32:
-            expected_mode = 'F'
+            expected_mode = "F"
         if mode is not None and mode != expected_mode:
-            raise ValueError("Incorrect mode ({}) supplied for input type {}. Should be {}"
-                             .format(mode, np.dtype, expected_mode))
+            raise ValueError(f"Incorrect mode ({mode}) supplied for input type {np.dtype}. Should be {expected_mode}")
         mode = expected_mode
 
     elif npimg.shape[2] == 2:
-        permitted_2_channel_modes = ['LA']
+        permitted_2_channel_modes = ["LA"]
         if mode is not None and mode not in permitted_2_channel_modes:
-            raise ValueError("Only modes {} are supported for 2D inputs".format(permitted_2_channel_modes))
+            raise ValueError(f"Only modes {permitted_2_channel_modes} are supported for 2D inputs")
 
         if mode is None and npimg.dtype == np.uint8:
-            mode = 'LA'
+            mode = "LA"
 
     elif npimg.shape[2] == 4:
-        permitted_4_channel_modes = ['RGBA', 'CMYK', 'RGBX']
+        permitted_4_channel_modes = ["RGBA", "CMYK", "RGBX"]
         if mode is not None and mode not in permitted_4_channel_modes:
-            raise ValueError("Only modes {} are supported for 4D inputs".format(permitted_4_channel_modes))
+            raise ValueError(f"Only modes {permitted_4_channel_modes} are supported for 4D inputs")
 
         if mode is None and npimg.dtype == np.uint8:
-            mode = 'RGBA'
+            mode = "RGBA"
     else:
-        permitted_3_channel_modes = ['RGB', 'YCbCr', 'HSV']
+        permitted_3_channel_modes = ["RGB", "YCbCr", "HSV"]
         if mode is not None and mode not in permitted_3_channel_modes:
-            raise ValueError("Only modes {} are supported for 3D inputs".format(permitted_3_channel_modes))
+            raise ValueError(f"Only modes {permitted_3_channel_modes} are supported for 3D inputs")
         if mode is None and npimg.dtype == np.uint8:
-            mode = 'RGB'
+            mode = "RGB"
 
     if mode is None:
-        raise TypeError('Input type {} is not supported'.format(npimg.dtype))
+        raise TypeError(f"Input type {npimg.dtype} is not supported")
 
     return Image.fromarray(npimg, mode=mode)
 
@@ -314,34 +352,21 @@ def normalize(tensor: Tensor, mean: List[float], std: List[float], inplace: bool
     Returns:
         Tensor: Normalized Tensor image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(normalize)
     if not isinstance(tensor, torch.Tensor):
-        raise TypeError('Input tensor should be a torch tensor. Got {}.'.format(type(tensor)))
+        raise TypeError(f"img should be Tensor Image. Got {type(tensor)}")
 
-    if not tensor.is_floating_point():
-        raise TypeError('Input tensor should be a float tensor. Got {}.'.format(tensor.dtype))
-
-    if tensor.ndim < 3:
-        raise ValueError('Expected tensor to be a tensor image of size (..., C, H, W). Got tensor.size() = '
-                         '{}.'.format(tensor.size()))
-
-    if not inplace:
-        tensor = tensor.clone()
-
-    dtype = tensor.dtype
-    mean = torch.as_tensor(mean, dtype=dtype, device=tensor.device)
-    std = torch.as_tensor(std, dtype=dtype, device=tensor.device)
-    if (std == 0).any():
-        raise ValueError('std evaluated to zero after conversion to {}, leading to division by zero.'.format(dtype))
-    if mean.ndim == 1:
-        mean = mean.view(-1, 1, 1)
-    if std.ndim == 1:
-        std = std.view(-1, 1, 1)
-    tensor.sub_(mean).div_(std)
-    return tensor
+    return F_t.normalize(tensor, mean=mean, std=std, inplace=inplace)
 
 
-def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-           max_size: Optional[int] = None, antialias: Optional[bool] = None) -> Tensor:
+def resize(
+    img: Tensor,
+    size: List[int],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    max_size: Optional[int] = None,
+    antialias: Optional[bool] = None,
+) -> Tensor:
     r"""Resize the input image to the given size.
     If the image is torch Tensor, it is expected
     to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
@@ -350,7 +375,8 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
         The output image might be different depending on its type: when downsampling, the interpolation of PIL images
         and tensors is slightly different, because PIL applies antialiasing. This may lead to significant differences
         in the performance of a network. Therefore, it is preferable to train and serve a model with the same input
-        types.
+        types. See also below the ``antialias`` parameter, which can help making the output of PIL images and tensors
+        closer.
 
     Args:
         img (PIL Image or Tensor): Image to be resized.
@@ -366,7 +392,7 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
         max_size (int, optional): The maximum allowed for the longer edge of
             the resized image: if the longer edge of the image is greater
             than ``max_size`` after being resized according to ``size``, then
@@ -376,15 +402,15 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
             if ``size`` is an int (or a sequence of length 1 in torchscript
             mode).
         antialias (bool, optional): antialias flag. If ``img`` is PIL Image, the flag is ignored and anti-alias
-            is always used. If ``img`` is Tensor, the flag is False by default and can be set True for
-            ``InterpolationMode.BILINEAR`` only mode.
-
-            .. warning::
-                There is no autodiff support for ``antialias=True`` option with input ``img`` as Tensor.
+            is always used. If ``img`` is Tensor, the flag is False by default and can be set to True for
+            ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` modes.
+            This can help making the output for PIL images and tensors closer.
 
     Returns:
         PIL Image or Tensor: Resized image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(resize)
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
         warnings.warn(
@@ -398,19 +424,11 @@ def resize(img: Tensor, size: List[int], interpolation: InterpolationMode = Inte
 
     if not isinstance(img, torch.Tensor):
         if antialias is not None and not antialias:
-            warnings.warn(
-                "Anti-alias option is always applied for PIL Image input. Argument antialias is ignored."
-            )
+            warnings.warn("Anti-alias option is always applied for PIL Image input. Argument antialias is ignored.")
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.resize(img, size=size, interpolation=pil_interpolation, max_size=max_size)
 
     return F_t.resize(img, size=size, interpolation=interpolation.value, max_size=max_size, antialias=antialias)
-
-
-def scale(*args, **kwargs):
-    warnings.warn("The use of the transforms.Scale transform is deprecated, " +
-                  "please use transforms.Resize instead.")
-    return resize(*args, **kwargs)
 
 
 def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "constant") -> Tensor:
@@ -430,11 +448,11 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
             .. note::
                 In torchscript mode padding as single int is not supported, use a sequence of
                 length 1: ``[padding, ]``.
-        fill (number or str or tuple): Pixel fill value for constant fill. Default is 0.
+        fill (number or tuple): Pixel fill value for constant fill. Default is 0.
             If a tuple of length 3, it is used to fill R, G, B channels respectively.
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
-            Only int or str or tuple value is supported for PIL Image.
+            Only int or tuple value is supported for PIL Image.
         padding_mode (str): Type of padding. Should be: constant, edge, reflect or symmetric.
             Default is constant.
 
@@ -454,6 +472,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
     Returns:
         PIL Image or Tensor: Padded image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(pad)
     if not isinstance(img, torch.Tensor):
         return F_pil.pad(img, padding=padding, fill=fill, padding_mode=padding_mode)
 
@@ -463,7 +483,8 @@ def pad(img: Tensor, padding: List[int], fill: int = 0, padding_mode: str = "con
 def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
     """Crop the given image at specified location and output size.
     If the image is torch Tensor, it is expected
-    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions
+    to have [..., H, W] shape, where ... means an arbitrary number of leading dimensions.
+    If image size is smaller than output size along any edge, image is padded with 0 and then cropped.
 
     Args:
         img (PIL Image or Tensor): Image to be cropped. (0,0) denotes the top left corner of the image.
@@ -476,6 +497,8 @@ def crop(img: Tensor, top: int, left: int, height: int, width: int) -> Tensor:
         PIL Image or Tensor: Cropped image.
     """
 
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(crop)
     if not isinstance(img, torch.Tensor):
         return F_pil.crop(img, top, left, height, width)
 
@@ -496,12 +519,14 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
     Returns:
         PIL Image or Tensor: Cropped image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(center_crop)
     if isinstance(output_size, numbers.Number):
         output_size = (int(output_size), int(output_size))
     elif isinstance(output_size, (tuple, list)) and len(output_size) == 1:
         output_size = (output_size[0], output_size[0])
 
-    image_width, image_height = _get_image_size(img)
+    _, image_height, image_width = get_dimensions(img)
     crop_height, crop_width = output_size
 
     if crop_width > image_width or crop_height > image_height:
@@ -512,18 +537,23 @@ def center_crop(img: Tensor, output_size: List[int]) -> Tensor:
             (crop_height - image_height + 1) // 2 if crop_height > image_height else 0,
         ]
         img = pad(img, padding_ltrb, fill=0)  # PIL uses fill value 0
-        image_width, image_height = _get_image_size(img)
+        _, image_height, image_width = get_dimensions(img)
         if crop_width == image_width and crop_height == image_height:
             return img
 
-    crop_top = int(round((image_height - crop_height) / 2.))
-    crop_left = int(round((image_width - crop_width) / 2.))
+    crop_top = int(round((image_height - crop_height) / 2.0))
+    crop_left = int(round((image_width - crop_width) / 2.0))
     return crop(img, crop_top, crop_left, crop_height, crop_width)
 
 
 def resized_crop(
-        img: Tensor, top: int, left: int, height: int, width: int, size: List[int],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR
+    img: Tensor,
+    top: int,
+    left: int,
+    height: int,
+    width: int,
+    size: List[int],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
 ) -> Tensor:
     """Crop the given image and resize it to desired size.
     If the image is torch Tensor, it is expected
@@ -542,11 +572,13 @@ def resized_crop(
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``. If input is Tensor, only ``InterpolationMode.NEAREST``,
             ``InterpolationMode.BILINEAR`` and ``InterpolationMode.BICUBIC`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
 
     Returns:
         PIL Image or Tensor: Cropped image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(resized_crop)
     img = crop(img, top, left, height, width)
     img = resize(img, size, interpolation)
     return img
@@ -564,15 +596,15 @@ def hflip(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor:  Horizontally flipped image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(hflip)
     if not isinstance(img, torch.Tensor):
         return F_pil.hflip(img)
 
     return F_t.hflip(img)
 
 
-def _get_perspective_coeffs(
-        startpoints: List[List[int]], endpoints: List[List[int]]
-) -> List[float]:
+def _get_perspective_coeffs(startpoints: List[List[int]], endpoints: List[List[int]]) -> List[float]:
     """Helper function to get the coefficients (a, b, c, d, e, f, g, h) for the perspective transforms.
 
     In Perspective Transform each pixel (x, y) in the original image gets transformed as,
@@ -594,18 +626,18 @@ def _get_perspective_coeffs(
         a_matrix[2 * i + 1, :] = torch.tensor([0, 0, 0, p1[0], p1[1], 1, -p2[1] * p1[0], -p2[1] * p1[1]])
 
     b_matrix = torch.tensor(startpoints, dtype=torch.float).view(8)
-    res = torch.lstsq(b_matrix, a_matrix)[0]
+    res = torch.linalg.lstsq(a_matrix, b_matrix, driver="gels").solution
 
-    output: List[float] = res.squeeze(1).tolist()
+    output: List[float] = res.tolist()
     return output
 
 
 def perspective(
-        img: Tensor,
-        startpoints: List[List[int]],
-        endpoints: List[List[int]],
-        interpolation: InterpolationMode = InterpolationMode.BILINEAR,
-        fill: Optional[List[float]] = None
+    img: Tensor,
+    startpoints: List[List[int]],
+    endpoints: List[List[int]],
+    interpolation: InterpolationMode = InterpolationMode.BILINEAR,
+    fill: Optional[List[float]] = None,
 ) -> Tensor:
     """Perform perspective transform of the given image.
     If the image is torch Tensor, it is expected
@@ -620,7 +652,7 @@ def perspective(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
 
@@ -631,6 +663,8 @@ def perspective(
     Returns:
         PIL Image or Tensor: transformed Image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(perspective)
 
     coeffs = _get_perspective_coeffs(startpoints, endpoints)
 
@@ -664,6 +698,8 @@ def vflip(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor:  Vertically flipped image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(vflip)
     if not isinstance(img, torch.Tensor):
         return F_pil.vflip(img)
 
@@ -689,6 +725,8 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
        tuple: tuple (tl, tr, bl, br, center)
        Corresponding top left, top right, bottom left, bottom right and center crop.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(five_crop)
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
     elif isinstance(size, (tuple, list)) and len(size) == 1:
@@ -697,7 +735,7 @@ def five_crop(img: Tensor, size: List[int]) -> Tuple[Tensor, Tensor, Tensor, Ten
     if len(size) != 2:
         raise ValueError("Please provide only two dimensions (h, w) for size.")
 
-    image_width, image_height = _get_image_size(img)
+    _, image_height, image_width = get_dimensions(img)
     crop_height, crop_width = size
     if crop_width > image_width or crop_height > image_height:
         msg = "Requested crop size {} is bigger than input size {}"
@@ -736,6 +774,8 @@ def ten_crop(img: Tensor, size: List[int], vertical_flip: bool = False) -> List[
         Corresponding top left, top right, bottom left, bottom right and
         center crop and same for the flipped image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(ten_crop)
     if isinstance(size, numbers.Number):
         size = (int(size), int(size))
     elif isinstance(size, (tuple, list)) and len(size) == 1:
@@ -769,6 +809,8 @@ def adjust_brightness(img: Tensor, brightness_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Brightness adjusted image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(adjust_brightness)
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_brightness(img, brightness_factor)
 
@@ -780,7 +822,7 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         contrast_factor (float): How much to adjust the contrast. Can be any
             non negative number. 0 gives a solid gray image, 1 gives the
@@ -789,6 +831,8 @@ def adjust_contrast(img: Tensor, contrast_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Contrast adjusted image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(adjust_contrast)
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_contrast(img, contrast_factor)
 
@@ -800,7 +844,7 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
         saturation_factor (float):  How much to adjust the saturation. 0 will
             give a black and white image, 1 will give the original image while
@@ -809,6 +853,8 @@ def adjust_saturation(img: Tensor, saturation_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Saturation adjusted image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(adjust_saturation)
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_saturation(img, saturation_factor)
 
@@ -831,9 +877,12 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
 
     Args:
         img (PIL Image or Tensor): Image to be adjusted.
-            If img is torch Tensor, it is expected to be in [..., 3, H, W] format,
+            If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
-            If img is PIL Image mode "1", "L", "I", "F" and modes with transparency (alpha channel) are not supported.
+            If img is PIL Image mode "1", "I", "F" and modes with transparency (alpha channel) are not supported.
+            Note: the pixel values of the input image has to be non-negative for conversion to HSV space;
+            thus it does not work if you normalize your image to an interval with negative values,
+            or use an interpolation that generates negative values before using this function.
         hue_factor (float):  How much to shift the hue channel. Should be in
             [-0.5, 0.5]. 0.5 and -0.5 give complete reversal of hue channel in
             HSV space in positive and negative direction respectively.
@@ -843,6 +892,8 @@ def adjust_hue(img: Tensor, hue_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Hue adjusted image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(adjust_hue)
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_hue(img, hue_factor)
 
@@ -874,6 +925,8 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
     Returns:
         PIL Image or Tensor: Gamma correction adjusted image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(adjust_gamma)
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_gamma(img, gamma, gain)
 
@@ -881,29 +934,31 @@ def adjust_gamma(img: Tensor, gamma: float, gain: float = 1) -> Tensor:
 
 
 def _get_inverse_affine_matrix(
-        center: List[float], angle: float, translate: List[float], scale: float, shear: List[float]
+    center: List[float], angle: float, translate: List[float], scale: float, shear: List[float], inverted: bool = True
 ) -> List[float]:
     # Helper method to compute inverse matrix for affine transformation
 
-    # As it is explained in PIL.Image.rotate
-    # We need compute INVERSE of affine transformation matrix: M = T * C * RSS * C^-1
+    # Pillow requires inverse affine transformation matrix:
+    # Affine matrix is : M = T * C * RotateScaleShear * C^-1
+    #
     # where T is translation matrix: [1, 0, tx | 0, 1, ty | 0, 0, 1]
     #       C is translation matrix to keep center: [1, 0, cx | 0, 1, cy | 0, 0, 1]
-    #       RSS is rotation with scale and shear matrix
-    #       RSS(a, s, (sx, sy)) =
-    #       = R(a) * S(s) * SHy(sy) * SHx(sx)
-    #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(x)/cos(y) - sin(a)), 0 ]
-    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(x)/cos(y) + cos(a)), 0 ]
-    #         [ 0                    , 0                                      , 1 ]
+    #       RotateScaleShear is rotation with scale and shear matrix
     #
+    #       RotateScaleShear(a, s, (sx, sy)) =
+    #       = R(a) * S(s) * SHy(sy) * SHx(sx)
+    #       = [ s*cos(a - sy)/cos(sy), s*(-cos(a - sy)*tan(sx)/cos(sy) - sin(a)), 0 ]
+    #         [ s*sin(a + sy)/cos(sy), s*(-sin(a - sy)*tan(sx)/cos(sy) + cos(a)), 0 ]
+    #         [ 0                    , 0                                      , 1 ]
     # where R is a rotation matrix, S is a scaling matrix, and SHx and SHy are the shears:
     # SHx(s) = [1, -tan(s)] and SHy(s) = [1      , 0]
     #          [0, 1      ]              [-tan(s), 1]
     #
-    # Thus, the inverse is M^-1 = C * RSS^-1 * C^-1 * T^-1
+    # Thus, the inverse is M^-1 = C * RotateScaleShear^-1 * C^-1 * T^-1
 
     rot = math.radians(angle)
-    sx, sy = [math.radians(s) for s in shear]
+    sx = math.radians(shear[0])
+    sy = math.radians(shear[1])
 
     cx, cy = center
     tx, ty = translate
@@ -914,26 +969,38 @@ def _get_inverse_affine_matrix(
     c = math.sin(rot - sy) / math.cos(sy)
     d = -math.sin(rot - sy) * math.tan(sx) / math.cos(sy) + math.cos(rot)
 
-    # Inverted rotation matrix with scale and shear
-    # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
-    matrix = [d, -b, 0.0, -c, a, 0.0]
-    matrix = [x / scale for x in matrix]
-
-    # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
-    matrix[2] += matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
-    matrix[5] += matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
-
-    # Apply center translation: C * RSS^-1 * C^-1 * T^-1
-    matrix[2] += cx
-    matrix[5] += cy
+    if inverted:
+        # Inverted rotation matrix with scale and shear
+        # det([[a, b], [c, d]]) == 1, since det(rotation) = 1 and det(shear) = 1
+        matrix = [d, -b, 0.0, -c, a, 0.0]
+        matrix = [x / scale for x in matrix]
+        # Apply inverse of translation and of center translation: RSS^-1 * C^-1 * T^-1
+        matrix[2] += matrix[0] * (-cx - tx) + matrix[1] * (-cy - ty)
+        matrix[5] += matrix[3] * (-cx - tx) + matrix[4] * (-cy - ty)
+        # Apply center translation: C * RSS^-1 * C^-1 * T^-1
+        matrix[2] += cx
+        matrix[5] += cy
+    else:
+        matrix = [a, b, 0.0, c, d, 0.0]
+        matrix = [x * scale for x in matrix]
+        # Apply inverse of center translation: RSS * C^-1
+        matrix[2] += matrix[0] * (-cx) + matrix[1] * (-cy)
+        matrix[5] += matrix[3] * (-cx) + matrix[4] * (-cy)
+        # Apply translation and center : T * C * RSS * C^-1
+        matrix[2] += cx + tx
+        matrix[5] += cy + ty
 
     return matrix
 
 
 def rotate(
-        img: Tensor, angle: float, interpolation: InterpolationMode = InterpolationMode.NEAREST,
-        expand: bool = False, center: Optional[List[int]] = None,
-        fill: Optional[List[float]] = None, resample: Optional[int] = None
+    img: Tensor,
+    angle: float,
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    expand: bool = False,
+    center: Optional[List[int]] = None,
+    fill: Optional[List[float]] = None,
+    resample: Optional[int] = None,
 ) -> Tensor:
     """Rotate the image by angle.
     If the image is torch Tensor, it is expected
@@ -945,7 +1012,7 @@ def rotate(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
         expand (bool, optional): Optional expansion flag.
             If true, expands the output image to make it large enough to hold the entire rotated image.
             If false or omitted, make the output image the same size as the input image.
@@ -958,6 +1025,10 @@ def rotate(
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
+        resample (int, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
 
     Returns:
         PIL Image or Tensor: Rotated image.
@@ -965,9 +1036,12 @@ def rotate(
     .. _filters: https://pillow.readthedocs.io/en/latest/handbook/concepts.html#filters
 
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(rotate)
     if resample is not None:
         warnings.warn(
-            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
+            "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)
 
@@ -994,9 +1068,9 @@ def rotate(
 
     center_f = [0.0, 0.0]
     if center is not None:
-        img_size = _get_image_size(img)
+        _, height, width = get_dimensions(img)
         # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
-        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, img_size)]
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
 
     # due to current incoherence of rotation angle direction between affine and rotate implementations
     # we need to set -angle.
@@ -1005,9 +1079,16 @@ def rotate(
 
 
 def affine(
-        img: Tensor, angle: float, translate: List[int], scale: float, shear: List[float],
-        interpolation: InterpolationMode = InterpolationMode.NEAREST, fill: Optional[List[float]] = None,
-        resample: Optional[int] = None, fillcolor: Optional[List[float]] = None
+    img: Tensor,
+    angle: float,
+    translate: List[int],
+    scale: float,
+    shear: List[float],
+    interpolation: InterpolationMode = InterpolationMode.NEAREST,
+    fill: Optional[List[float]] = None,
+    resample: Optional[int] = None,
+    fillcolor: Optional[List[float]] = None,
+    center: Optional[List[int]] = None,
 ) -> Tensor:
     """Apply affine transformation on the image keeping image center invariant.
     If the image is torch Tensor, it is expected
@@ -1024,24 +1105,32 @@ def affine(
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.NEAREST``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
-            For backward compatibility integer values (e.g. ``PIL.Image.NEAREST``) are still acceptable.
+            For backward compatibility integer values (e.g. ``PIL.Image[.Resampling].NEAREST``) are still acceptable.
         fill (sequence or number, optional): Pixel fill value for the area outside the transformed
             image. If given a number, the value is used for all bands respectively.
 
             .. note::
                 In torchscript mode single int/float value is not supported, please use a sequence
                 of length 1: ``[value, ]``.
-        fillcolor (sequence, int, float): deprecated argument and will be removed since v0.10.0.
-            Please use the ``fill`` parameter instead.
-        resample (int, optional): deprecated argument and will be removed since v0.10.0.
-            Please use the ``interpolation`` parameter instead.
+        fillcolor (sequence or number, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``fill`` instead.
+        resample (int, optional):
+            .. warning::
+                This parameter was deprecated in ``0.12`` and will be removed in ``0.14``. Please use ``interpolation``
+                instead.
+        center (sequence, optional): Optional center of rotation. Origin is the upper left corner.
+            Default is the center of the image.
 
     Returns:
         PIL Image or Tensor: Transformed image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(affine)
     if resample is not None:
         warnings.warn(
-            "Argument resample is deprecated and will be removed since v0.10.0. Please, use interpolation instead"
+            "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'interpolation' instead."
         )
         interpolation = _interpolation_modes_from_int(resample)
 
@@ -1055,7 +1144,8 @@ def affine(
 
     if fillcolor is not None:
         warnings.warn(
-            "Argument fillcolor is deprecated and will be removed since v0.10.0. Please, use fill instead"
+            "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+            "Please use 'fill' instead."
         )
         fill = fillcolor
 
@@ -1093,20 +1183,30 @@ def affine(
         shear = [shear[0], shear[0]]
 
     if len(shear) != 2:
-        raise ValueError("Shear should be a sequence containing two values. Got {}".format(shear))
+        raise ValueError(f"Shear should be a sequence containing two values. Got {shear}")
 
-    img_size = _get_image_size(img)
+    if center is not None and not isinstance(center, (list, tuple)):
+        raise TypeError("Argument center should be a sequence")
+
+    _, height, width = get_dimensions(img)
     if not isinstance(img, torch.Tensor):
-        # center = (img_size[0] * 0.5 + 0.5, img_size[1] * 0.5 + 0.5)
+        # center = (width * 0.5 + 0.5, height * 0.5 + 0.5)
         # it is visually better to estimate the center without 0.5 offset
         # otherwise image rotated by 90 degrees is shifted vs output image of torch.rot90 or F_t.affine
-        center = [img_size[0] * 0.5, img_size[1] * 0.5]
+        if center is None:
+            center = [width * 0.5, height * 0.5]
         matrix = _get_inverse_affine_matrix(center, angle, translate, scale, shear)
         pil_interpolation = pil_modes_mapping[interpolation]
         return F_pil.affine(img, matrix=matrix, interpolation=pil_interpolation, fill=fill)
 
+    center_f = [0.0, 0.0]
+    if center is not None:
+        _, height, width = get_dimensions(img)
+        # Center values should be in pixel coordinates but translated such that (0, 0) corresponds to image center.
+        center_f = [1.0 * (c - s * 0.5) for c, s in zip(center, [width, height])]
+
     translate_f = [1.0 * t for t in translate]
-    matrix = _get_inverse_affine_matrix([0.0, 0.0], angle, translate_f, scale, shear)
+    matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
     return F_t.affine(img, matrix=matrix, interpolation=interpolation.value, fill=fill)
 
 
@@ -1125,6 +1225,8 @@ def to_grayscale(img, num_output_channels=1):
         - if num_output_channels = 1 : returned image is single channel
         - if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(to_grayscale)
     if isinstance(img, Image.Image):
         return F_pil.to_grayscale(img, num_output_channels)
 
@@ -1150,6 +1252,8 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
         - if num_output_channels = 1 : returned image is single channel
         - if num_output_channels = 3 : returned image is 3 channel with r = g = b
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(rgb_to_grayscale)
     if not isinstance(img, torch.Tensor):
         return F_pil.to_grayscale(img, num_output_channels)
 
@@ -1157,7 +1261,7 @@ def rgb_to_grayscale(img: Tensor, num_output_channels: int = 1) -> Tensor:
 
 
 def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool = False) -> Tensor:
-    """ Erase the input Tensor Image with given value.
+    """Erase the input Tensor Image with given value.
     This transform does not support PIL Image.
 
     Args:
@@ -1172,14 +1276,12 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
     Returns:
         Tensor Image: Erased image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(erase)
     if not isinstance(img, torch.Tensor):
-        raise TypeError('img should be Tensor Image. Got {}'.format(type(img)))
+        raise TypeError(f"img should be Tensor Image. Got {type(img)}")
 
-    if not inplace:
-        img = img.clone()
-
-    img[..., i:i + h, j:j + w] = v
-    return img
+    return F_t.erase(img, i, j, h, w, v, inplace=inplace)
 
 
 def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[float]] = None) -> Tensor:
@@ -1208,42 +1310,44 @@ def gaussian_blur(img: Tensor, kernel_size: List[int], sigma: Optional[List[floa
     Returns:
         PIL Image or Tensor: Gaussian Blurred version of the image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(gaussian_blur)
     if not isinstance(kernel_size, (int, list, tuple)):
-        raise TypeError('kernel_size should be int or a sequence of integers. Got {}'.format(type(kernel_size)))
+        raise TypeError(f"kernel_size should be int or a sequence of integers. Got {type(kernel_size)}")
     if isinstance(kernel_size, int):
         kernel_size = [kernel_size, kernel_size]
     if len(kernel_size) != 2:
-        raise ValueError('If kernel_size is a sequence its length should be 2. Got {}'.format(len(kernel_size)))
+        raise ValueError(f"If kernel_size is a sequence its length should be 2. Got {len(kernel_size)}")
     for ksize in kernel_size:
         if ksize % 2 == 0 or ksize < 0:
-            raise ValueError('kernel_size should have odd and positive integers. Got {}'.format(kernel_size))
+            raise ValueError(f"kernel_size should have odd and positive integers. Got {kernel_size}")
 
     if sigma is None:
         sigma = [ksize * 0.15 + 0.35 for ksize in kernel_size]
 
     if sigma is not None and not isinstance(sigma, (int, float, list, tuple)):
-        raise TypeError('sigma should be either float or sequence of floats. Got {}'.format(type(sigma)))
+        raise TypeError(f"sigma should be either float or sequence of floats. Got {type(sigma)}")
     if isinstance(sigma, (int, float)):
         sigma = [float(sigma), float(sigma)]
     if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
         sigma = [sigma[0], sigma[0]]
     if len(sigma) != 2:
-        raise ValueError('If sigma is a sequence, its length should be 2. Got {}'.format(len(sigma)))
+        raise ValueError(f"If sigma is a sequence, its length should be 2. Got {len(sigma)}")
     for s in sigma:
-        if s <= 0.:
-            raise ValueError('sigma should have positive values. Got {}'.format(sigma))
+        if s <= 0.0:
+            raise ValueError(f"sigma should have positive values. Got {sigma}")
 
     t_img = img
     if not isinstance(img, torch.Tensor):
         if not F_pil._is_pil_image(img):
-            raise TypeError('img should be PIL Image or Tensor. Got {}'.format(type(img)))
+            raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
 
-        t_img = to_tensor(img)
+        t_img = pil_to_tensor(img)
 
     output = F_t.gaussian_blur(t_img, kernel_size, sigma)
 
     if not isinstance(img, torch.Tensor):
-        output = to_pil_image(output)
+        output = to_pil_image(output, mode=img.mode)
     return output
 
 
@@ -1259,6 +1363,8 @@ def invert(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor: Color inverted image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(invert)
     if not isinstance(img, torch.Tensor):
         return F_pil.invert(img)
 
@@ -1278,8 +1384,10 @@ def posterize(img: Tensor, bits: int) -> Tensor:
     Returns:
         PIL Image or Tensor: Posterized image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(posterize)
     if not (0 <= bits <= 8):
-        raise ValueError('The number if bits should be between 0 and 8. Got {}'.format(bits))
+        raise ValueError(f"The number if bits should be between 0 and 8. Got {bits}")
 
     if not isinstance(img, torch.Tensor):
         return F_pil.posterize(img, bits)
@@ -1299,6 +1407,8 @@ def solarize(img: Tensor, threshold: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Solarized image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(solarize)
     if not isinstance(img, torch.Tensor):
         return F_pil.solarize(img, threshold)
 
@@ -1319,6 +1429,8 @@ def adjust_sharpness(img: Tensor, sharpness_factor: float) -> Tensor:
     Returns:
         PIL Image or Tensor: Sharpness adjusted image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(adjust_sharpness)
     if not isinstance(img, torch.Tensor):
         return F_pil.adjust_sharpness(img, sharpness_factor)
 
@@ -1339,6 +1451,8 @@ def autocontrast(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor: An image that was autocontrasted.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(autocontrast)
     if not isinstance(img, torch.Tensor):
         return F_pil.autocontrast(img)
 
@@ -1360,6 +1474,8 @@ def equalize(img: Tensor) -> Tensor:
     Returns:
         PIL Image or Tensor: An image that was equalized.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(equalize)
     if not isinstance(img, torch.Tensor):
         return F_pil.equalize(img)
 

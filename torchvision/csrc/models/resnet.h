@@ -2,6 +2,7 @@
 
 #include <torch/nn.h>
 #include "../macros.h"
+#include "modelsimpl.h"
 
 namespace vision {
 namespace models {
@@ -164,6 +165,8 @@ ResNetImpl<Block>::ResNetImpl(
       else if (auto* M = dynamic_cast<_resnetimpl::BasicBlock*>(module.get()))
         torch::nn::init::constant_(M->bn2->weight, 0);
     }
+
+  modelsimpl::deprecation_warning();
 }
 
 template <typename Block>

@@ -963,7 +963,7 @@ at::Tensor deform_conv2d_forward_kernel(
       (mask_c.size(0) == input_c.size(0)), "invalid batch size of mask");
   TORCH_CHECK(
       (!use_mask || (mask_c.size(2) == out_h && mask_c.size(3) == out_w)),
-      "offset output dims: (",
+      "mask output dims: (",
       mask_c.size(2),
       ", ",
       mask_c.size(3),

@@ -1,5 +1,6 @@
 #include "decoder.h"
 #include <c10/util/Logging.h>
+#include <libavutil/avutil.h>
 #include <future>
 #include <iostream>
 #include <mutex>
@@ -16,25 +17,6 @@ namespace {
 constexpr size_t kIoBufferSize = 96 * 1024;
 constexpr size_t kIoPaddingSize = AV_INPUT_BUFFER_PADDING_SIZE;
 constexpr size_t kLogBufferSize = 1024;
-
-int ffmpeg_lock(void** mutex, enum AVLockOp op) {
-  std::mutex** handle = (std::mutex**)mutex;
-  switch (op) {
-    case AV_LOCK_CREATE:
-      *handle = new std::mutex();
-      break;
-    case AV_LOCK_OBTAIN:
-      (*handle)->lock();
-      break;
-    case AV_LOCK_RELEASE:
-      (*handle)->unlock();
-      break;
-    case AV_LOCK_DESTROY:
-      delete *handle;
-      break;
-  }
-  return 0;
-}
 
 bool mapFfmpegType(AVMediaType media, MediaType* type) {
   switch (media) {
@@ -196,11 +178,11 @@ int64_t Decoder::seekCallback(int64_t offset, int whence) {
 void Decoder::initOnce() {
   static std::once_flag flagInit;
   std::call_once(flagInit, []() {
+#if LIBAVUTIL_VERSION_MAJOR < 56 // Before FFMPEG 4.0
     av_register_all();
     avcodec_register_all();
+#endif
     avformat_network_init();
-    // register ffmpeg lock manager
-    av_lockmgr_register(&ffmpeg_lock);
     av_log_set_callback(Decoder::logFunction);
     av_log_set_level(AV_LOG_ERROR);
     VLOG(1) << "Registered ffmpeg libs";
@@ -215,6 +197,12 @@ Decoder::~Decoder() {
   cleanUp();
 }
 
+// Initialise the format context that holds information about the container and
+// fill it with minimal information about the format (codecs are not opened
+// here). Function reads in information about the streams from the container
+// into inputCtx and then passes it to decoder::openStreams. Finally, if seek is
+// specified within the decoder parameters, it seeks into the correct frame
+// (note, the seek defined here is "precise" seek).
 bool Decoder::init(
     const DecoderParameters& params,
     DecoderInCallback&& in,
@@ -268,7 +256,7 @@ bool Decoder::init(
           break;
       }
 
-      fmt = av_find_input_format(fmtName);
+      fmt = (AVInputFormat*)av_find_input_format(fmtName);
     }
 
     const size_t avioCtxBufferSize = kIoBufferSize;
@@ -381,7 +369,7 @@ bool Decoder::init(
     cleanUp();
     return false;
   }
-
+  // SyncDecoder inherits Decoder which would override onInit.
   onInit();
 
   if (params.startOffset != 0) {
@@ -396,11 +384,17 @@ bool Decoder::init(
   return true;
 }
 
+// open appropriate CODEC for every type of stream and move it to the class
+// variable `streams_` and make sure it is in range for decoding
 bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
-  for (int i = 0; i < inputCtx_->nb_streams; i++) {
+  for (unsigned int i = 0; i < inputCtx_->nb_streams; i++) {
     // - find the corespondent format at params_.formats set
     MediaFormat format;
+#if LIBAVUTIL_VERSION_MAJOR < 56 // Before FFMPEG 4.0
     const auto media = inputCtx_->streams[i]->codec->codec_type;
+#else // FFMPEG 4.0+
+    const auto media = inputCtx_->streams[i]->codecpar->codec_type;
+#endif
     if (!mapFfmpegType(media, &format.type)) {
       VLOG(1) << "Stream media: " << media << " at index " << i
               << " gets ignored, unknown type";
@@ -432,7 +426,7 @@ bool Decoder::openStreams(std::vector<DecoderMetadata>* metadata) {
           it->format,
           params_.loggingUuid);
       CHECK(stream);
-      if (stream->openCodec(metadata) < 0) {
+      if (stream->openCodec(metadata, params_.numThreads) < 0) {
         LOG(ERROR) << "uuid=" << params_.loggingUuid
                    << " open codec failed, stream_idx=" << i;
         return false;
@@ -478,6 +472,10 @@ void Decoder::cleanUp() {
   seekableBuffer_.shutdown();
 }
 
+// function does actual work, derived class calls it in working thread
+// periodically. On success method returns 0, ENODATA on EOF, ETIMEDOUT if
+// no frames got decoded in the specified timeout time, AVERROR_BUFFER_TOO_SMALL
+// when unable to allocate packet and error on unrecoverable error
 int Decoder::getFrame(size_t workingTimeInMs) {
   if (inRange_.none()) {
     return ENODATA;
@@ -486,10 +484,15 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   // once decode() method gets called and grab some bytes
   // run this method again
   // init package
-  AVPacket avPacket;
-  av_init_packet(&avPacket);
-  avPacket.data = nullptr;
-  avPacket.size = 0;
+  // update 03/22: moving memory management to ffmpeg
+  AVPacket* avPacket;
+  avPacket = av_packet_alloc();
+  if (avPacket == nullptr) {
+    LOG(ERROR) << "decoder as not able to allocate the packet.";
+    return AVERROR_BUFFER_TOO_SMALL;
+  }
+  avPacket->data = nullptr;
+  avPacket->size = 0;
 
   auto end = std::chrono::steady_clock::now() +
       std::chrono::milliseconds(workingTimeInMs);
@@ -501,8 +504,12 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   int result = 0;
   size_t decodingErrors = 0;
   bool decodedFrame = false;
-  while (!interrupted_ && inRange_.any() && !decodedFrame && watcher()) {
-    result = av_read_frame(inputCtx_, &avPacket);
+  while (!interrupted_ && inRange_.any() && !decodedFrame) {
+    if (watcher() == false) {
+      result = ETIMEDOUT;
+      break;
+    }
+    result = av_read_frame(inputCtx_, avPacket);
     if (result == AVERROR(EAGAIN)) {
       VLOG(4) << "Decoder is busy...";
       std::this_thread::yield();
@@ -519,10 +526,11 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       break;
     }
 
-    // get stream
-    auto stream = findByIndex(avPacket.stream_index);
+    // get stream; if stream cannot be found reset the packet to
+    // default settings
+    auto stream = findByIndex(avPacket->stream_index);
     if (stream == nullptr || !inRange_.test(stream->getIndex())) {
-      av_packet_unref(&avPacket);
+      av_packet_unref(avPacket);
       continue;
     }
 
@@ -533,9 +541,9 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       bool gotFrame = false;
       bool hasMsg = false;
       // packet either got consumed completely or not at all
-      if ((result = processPacket(stream, &avPacket, &gotFrame, &hasMsg)) < 0) {
-        LOG(ERROR) << "uuid=" << params_.loggingUuid
-                   << " processPacket failed with code=" << result;
+      if ((result = processPacket(
+               stream, avPacket, &gotFrame, &hasMsg, params_.fastSeek)) < 0) {
+        LOG(ERROR) << "processPacket failed with code: " << result;
         break;
       }
 
@@ -566,11 +574,10 @@ int Decoder::getFrame(size_t workingTimeInMs) {
 
     result = 0;
 
-    av_packet_unref(&avPacket);
+    av_packet_unref(avPacket);
   }
 
-  av_packet_unref(&avPacket);
-
+  av_packet_free(&avPacket);
   VLOG(2) << "Interrupted loop"
           << ", interrupted_ " << interrupted_ << ", inRange_.any() "
           << inRange_.any() << ", decodedFrame " << decodedFrame << ", result "
@@ -578,8 +585,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
 
   // loop can be terminated, either by:
   // 1. explcitly iterrupted
-  // 2. terminated by workable timeout
-  // 3. unrecoverable error or ENODATA (end of stream)
+  // 3. unrecoverable error or ENODATA (end of stream) or ETIMEDOUT (timeout)
   // 4. decoded frames pts are out of the specified range
   // 5. success decoded frame
   if (interrupted_) {
@@ -594,11 +600,13 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   return 0;
 }
 
+// find stream by stream index
 Stream* Decoder::findByIndex(int streamIndex) const {
   auto it = streams_.find(streamIndex);
   return it != streams_.end() ? it->second.get() : nullptr;
 }
 
+// find stream by type; note finds only the first stream of a given type
 Stream* Decoder::findByType(const MediaFormat& format) const {
   for (auto& stream : streams_) {
     if (stream.second->getMediaFormat().type == format.type) {
@@ -608,11 +616,14 @@ Stream* Decoder::findByType(const MediaFormat& format) const {
   return nullptr;
 }
 
+// given the stream and packet, decode the frame buffers into the
+// DecoderOutputMessage data structure via stream::decodePacket function.
 int Decoder::processPacket(
     Stream* stream,
     AVPacket* packet,
     bool* gotFrame,
-    bool* hasMsg) {
+    bool* hasMsg,
+    bool fastSeek) {
   // decode package
   int result;
   DecoderOutputMessage msg;
@@ -625,7 +636,15 @@ int Decoder::processPacket(
     bool endInRange =
         params_.endOffset <= 0 || msg.header.pts <= params_.endOffset;
     inRange_.set(stream->getIndex(), endInRange);
-    if (endInRange && msg.header.pts >= params_.startOffset) {
+    // if fastseek is enabled, we're returning the first
+    // frame that we decode after (potential) seek.
+    // By default, we perform accurate seek to the closest
+    // following frame
+    bool startCondition = true;
+    if (!fastSeek) {
+      startCondition = msg.header.pts >= params_.startOffset;
+    }
+    if (endInRange && startCondition) {
       *hasMsg = true;
       push(std::move(msg));
     }

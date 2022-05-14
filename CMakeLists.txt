@@ -4,19 +4,30 @@ set(CMAKE_CXX_STANDARD 14)
 file(STRINGS version.txt TORCHVISION_VERSION)
 
 option(WITH_CUDA "Enable CUDA support" OFF)
+option(USE_PYTHON "Link to Python when building" OFF)
 
 if(WITH_CUDA)
   enable_language(CUDA)
   add_definitions(-D__CUDA_NO_HALF_OPERATORS__)
   add_definitions(-DWITH_CUDA)
   set(CMAKE_CUDA_FLAGS "${CMAKE_CUDA_FLAGS} --expt-relaxed-constexpr")
+  # CUDA-11.x can not be compiled using C++14 standard on Windows
+  string(REGEX MATCH "^[0-9]+" CUDA_MAJOR ${CMAKE_CUDA_COMPILER_VERSION})
+  if(${CUDA_MAJOR} GREATER 10 AND MSVC)
+    set(CMAKE_CXX_STANDARD 17)
+  endif()
 endif()
 
-find_package(Python3 COMPONENTS Development)
+if (USE_PYTHON)
+  add_definitions(-DUSE_PYTHON)
+  find_package(Python3 REQUIRED COMPONENTS Development)
+endif()
 
 find_package(Torch REQUIRED)
 find_package(PNG REQUIRED)
 find_package(JPEG REQUIRED)
+add_definitions(-DJPEG_FOUND)
+add_definitions(-DPNG_FOUND)
 
 function(CUDA_CONVERT_FLAGS EXISTING_TARGET)
     get_property(old_flags TARGET ${EXISTING_TARGET} PROPERTY INTERFACE_COMPILE_OPTIONS)
@@ -71,7 +82,12 @@ FOREACH(DIR ${ALLOW_LISTED})
 ENDFOREACH()
 
 add_library(${PROJECT_NAME} SHARED ${ALL_SOURCES})
-target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES} Python3::Python)
+target_link_libraries(${PROJECT_NAME} PRIVATE ${TORCH_LIBRARIES} ${PNG_LIBRARY} ${JPEG_LIBRARIES})
+
+if (USE_PYTHON)
+  target_link_libraries(${PROJECT_NAME} PRIVATE Python3::Python)
+endif()
+
 set_target_properties(${PROJECT_NAME} PROPERTIES
   EXPORT_NAME TorchVision
   INSTALL_RPATH ${TORCH_INSTALL_PREFIX}/lib)

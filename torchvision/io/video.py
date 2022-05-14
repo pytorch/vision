@@ -1,12 +1,15 @@
 import gc
 import math
+import os
 import re
 import warnings
+from fractions import Fraction
 from typing import Any, Dict, List, Optional, Tuple, Union
 
 import numpy as np
 import torch
 
+from ..utils import _log_api_usage_once
 from . import _video_opt
 
 
@@ -75,6 +78,8 @@ def write_video(
         audio_codec (str): the name of the audio codec, i.e. "mp3", "aac", etc.
         audio_options (Dict): dictionary containing options to be passed into the PyAV audio stream
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_video)
     _check_av_available()
     video_array = torch.as_tensor(video_array, dtype=torch.uint8).numpy()
 
@@ -92,16 +97,16 @@ def write_video(
 
         if audio_array is not None:
             audio_format_dtypes = {
-                'dbl': '<f8',
-                'dblp': '<f8',
-                'flt': '<f4',
-                'fltp': '<f4',
-                's16': '<i2',
-                's16p': '<i2',
-                's32': '<i4',
-                's32p': '<i4',
-                'u8': 'u1',
-                'u8p': 'u1',
+                "dbl": "<f8",
+                "dblp": "<f8",
+                "flt": "<f4",
+                "fltp": "<f4",
+                "s16": "<i2",
+                "s16p": "<i2",
+                "s32": "<i4",
+                "s32p": "<i4",
+                "u8": "u1",
+                "u8p": "u1",
             }
             a_stream = container.add_stream(audio_codec, rate=audio_fps)
             a_stream.options = audio_options or {}
@@ -113,9 +118,7 @@ def write_video(
             format_dtype = np.dtype(audio_format_dtypes[audio_sample_fmt])
             audio_array = torch.as_tensor(audio_array).numpy().astype(format_dtype)
 
-            frame = av.AudioFrame.from_ndarray(
-                audio_array, format=audio_sample_fmt, layout=audio_layout
-            )
+            frame = av.AudioFrame.from_ndarray(audio_array, format=audio_sample_fmt, layout=audio_layout)
 
             frame.sample_rate = audio_fps
 
@@ -205,9 +208,7 @@ def _read_from_stream(
         # TODO add a warning
         pass
     # ensure that the results are sorted wrt the pts
-    result = [
-        frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset
-    ]
+    result = [frames[i] for i in sorted(frames) if start_offset <= frames[i].pts <= end_offset]
     if len(frames) > 0 and start_offset > 0 and start_offset not in frames:
         # if there is no frame that exactly matches the pts of start_offset
         # add the last frame smaller than start_offset, to guarantee that
@@ -235,7 +236,10 @@ def _align_audio_frames(
 
 
 def read_video(
-    filename: str, start_pts: int = 0, end_pts: Optional[float] = None, pts_unit: str = "pts"
+    filename: str,
+    start_pts: Union[float, Fraction] = 0,
+    end_pts: Optional[Union[float, Fraction]] = None,
+    pts_unit: str = "pts",
 ) -> Tuple[torch.Tensor, torch.Tensor, Dict[str, Any]]:
     """
     Reads a video from a file, returning both the video frames as well as
@@ -255,8 +259,13 @@ def read_video(
         aframes (Tensor[K, L]): the audio frames, where `K` is the number of channels and `L` is the number of points
         info (Dict): metadata for the video and audio. Can contain the fields video_fps (float) and audio_fps (int)
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_video)
 
     from torchvision import get_video_backend
+
+    if not os.path.exists(filename):
+        raise RuntimeError(f"File not found: {filename}")
 
     if get_video_backend() != "pyav":
         return _video_opt._read_video(filename, start_pts, end_pts, pts_unit)
@@ -267,17 +276,17 @@ def read_video(
         end_pts = float("inf")
 
     if end_pts < start_pts:
-        raise ValueError(
-            "end_pts should be larger than start_pts, got "
-            "start_pts={} and end_pts={}".format(start_pts, end_pts)
-        )
+        raise ValueError(f"end_pts should be larger than start_pts, got start_pts={start_pts} and end_pts={end_pts}")
 
     info = {}
     video_frames = []
     audio_frames = []
+    audio_timebase = _video_opt.default_timebase
 
     try:
         with av.open(filename, metadata_errors="ignore") as container:
+            if container.streams.audio:
+                audio_timebase = container.streams.audio[0].time_base
             if container.streams.video:
                 video_frames = _read_from_stream(
                     container,
@@ -318,6 +327,10 @@ def read_video(
     if aframes_list:
         aframes = np.concatenate(aframes_list, 1)
         aframes = torch.as_tensor(aframes)
+        if pts_unit == "sec":
+            start_pts = int(math.floor(start_pts * (1 / audio_timebase)))
+            if end_pts != float("inf"):
+                end_pts = int(math.ceil(end_pts * (1 / audio_timebase)))
         aframes = _align_audio_frames(aframes, audio_frames, start_pts, end_pts)
     else:
         aframes = torch.empty((1, 0), dtype=torch.float32)
@@ -359,6 +372,8 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
         video_fps (float, optional): the frame rate for the video
 
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_video_timestamps)
     from torchvision import get_video_backend
 
     if get_video_backend() != "pyav":
@@ -379,9 +394,9 @@ def read_video_timestamps(filename: str, pts_unit: str = "pts") -> Tuple[List[in
                 except av.AVError:
                     warnings.warn(f"Failed decoding frames for file {filename}")
                 video_fps = float(video_stream.average_rate)
-    except av.AVError:
-        # TODO add a warning
-        pass
+    except av.AVError as e:
+        msg = f"Failed to open container for {filename}; Caught error: {e}"
+        warnings.warn(msg, RuntimeWarning)
 
     pts.sort()
 

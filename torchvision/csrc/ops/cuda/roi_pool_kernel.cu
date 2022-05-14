@@ -3,7 +3,7 @@
 #include <c10/cuda/CUDAGuard.h>
 #include <float.h>
 #include <torch/library.h>
-#include <THC/THCAtomics.cuh>
+#include <ATen/cuda/Atomic.cuh>
 
 #include "cuda_helpers.h"
 
@@ -113,7 +113,7 @@ __global__ void roi_pool_backward_kernel_impl(
     int argmax = argmax_data_offset[ph * pooled_width + pw];
 
     if (argmax != -1) {
-      atomicAdd(
+      gpuAtomicAdd(
           grad_input_offset + argmax,
           static_cast<T>(
               grad_output[output_offset + ph * h_stride + pw * w_stride]));

@@ -1,0 +1,14 @@
+[tool.usort]
+
+first_party_detection = false
+
+[tool.black]
+
+line-length = 120
+target-version = ["py37"]
+
+[tool.ufmt]
+
+excludes = [
+    "gallery",
+]

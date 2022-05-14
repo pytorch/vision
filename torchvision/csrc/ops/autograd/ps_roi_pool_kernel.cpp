@@ -21,7 +21,7 @@ class PSROIPoolFunction : public torch::autograd::Function<PSROIPoolFunction> {
     ctx->saved_data["pooled_height"] = pooled_height;
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["input_shape"] = input.sizes();
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto result =
         ps_roi_pool(input, rois, spatial_scale, pooled_height, pooled_width);
 
@@ -78,7 +78,7 @@ class PSROIPoolBackwardFunction
       int64_t channels,
       int64_t height,
       int64_t width) {
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto grad_in = detail::_ps_roi_pool_backward(
         grad,
         rois,

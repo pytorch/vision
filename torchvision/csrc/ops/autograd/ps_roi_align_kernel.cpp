@@ -24,7 +24,7 @@ class PSROIAlignFunction
     ctx->saved_data["pooled_width"] = pooled_width;
     ctx->saved_data["sampling_ratio"] = sampling_ratio;
     ctx->saved_data["input_shape"] = input.sizes();
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto result = ps_roi_align(
         input,
         rois,
@@ -89,7 +89,7 @@ class PSROIAlignBackwardFunction
       int64_t channels,
       int64_t height,
       int64_t width) {
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto grad_in = detail::_ps_roi_align_backward(
         grad,
         rois,

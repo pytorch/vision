@@ -27,7 +27,7 @@ class DeformConv2dFunction
       int64_t groups,
       int64_t offset_groups,
       bool use_mask) {
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto output = deform_conv2d(
         input,
         weight,
@@ -142,7 +142,7 @@ class DeformConv2dBackwardFunction
       int64_t groups,
       int64_t offset_groups,
       bool use_mask) {
-    at::AutoNonVariableTypeMode g;
+    at::AutoDispatchBelowADInplaceOrView g;
     auto result = detail::_deform_conv2d_backward(
         grad,
         input,

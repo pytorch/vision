@@ -1,0 +1,91 @@
+__background__,N/A
+person,person
+bicycle,vehicle
+car,vehicle
+motorcycle,vehicle
+airplane,vehicle
+bus,vehicle
+train,vehicle
+truck,vehicle
+boat,vehicle
+traffic light,outdoor
+fire hydrant,outdoor
+N/A,N/A
+stop sign,outdoor
+parking meter,outdoor
+bench,outdoor
+bird,animal
+cat,animal
+dog,animal
+horse,animal
+sheep,animal
+cow,animal
+elephant,animal
+bear,animal
+zebra,animal
+giraffe,animal
+N/A,N/A
+backpack,accessory
+umbrella,accessory
+N/A,N/A
+N/A,N/A
+handbag,accessory
+tie,accessory
+suitcase,accessory
+frisbee,sports
+skis,sports
+snowboard,sports
+sports ball,sports
+kite,sports
+baseball bat,sports
+baseball glove,sports
+skateboard,sports
+surfboard,sports
+tennis racket,sports
+bottle,kitchen
+N/A,N/A
+wine glass,kitchen
+cup,kitchen
+fork,kitchen
+knife,kitchen
+spoon,kitchen
+bowl,kitchen
+banana,food
+apple,food
+sandwich,food
+orange,food
+broccoli,food
+carrot,food
+hot dog,food
+pizza,food
+donut,food
+cake,food
+chair,furniture
+couch,furniture
+potted plant,furniture
+bed,furniture
+N/A,N/A
+dining table,furniture
+N/A,N/A
+N/A,N/A
+toilet,furniture
+N/A,N/A
+tv,electronic
+laptop,electronic
+mouse,electronic
+remote,electronic
+keyboard,electronic
+cell phone,electronic
+microwave,appliance
+oven,appliance
+toaster,appliance
+sink,appliance
+refrigerator,appliance
+N/A,N/A
+book,indoor
+clock,indoor
+vase,indoor
+scissors,indoor
+teddy bear,indoor
+hair drier,indoor
+toothbrush,indoor

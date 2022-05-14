@@ -1,51 +1,16 @@
+from enum import Enum
+from warnings import warn
+
 import torch
 
-import os
-import os.path as osp
-import importlib.machinery
+from ..extension import _load_library
+from ..utils import _log_api_usage_once
 
-from enum import Enum
-
-_HAS_IMAGE_OPT = False
 
 try:
-    lib_dir = osp.abspath(osp.join(osp.dirname(__file__), ".."))
-
-    loader_details = (
-        importlib.machinery.ExtensionFileLoader,
-        importlib.machinery.EXTENSION_SUFFIXES
-    )
-
-    extfinder = importlib.machinery.FileFinder(lib_dir, loader_details)  # type: ignore[arg-type]
-    ext_specs = extfinder.find_spec("image")
-
-    if os.name == 'nt':
-        # Load the image extension using LoadLibraryExW
-        import ctypes
-
-        kernel32 = ctypes.WinDLL('kernel32.dll', use_last_error=True)
-        with_load_library_flags = hasattr(kernel32, 'AddDllDirectory')
-        prev_error_mode = kernel32.SetErrorMode(0x0001)
-
-        kernel32.LoadLibraryW.restype = ctypes.c_void_p
-        if with_load_library_flags:
-            kernel32.LoadLibraryExW.restype = ctypes.c_void_p
-
-        if ext_specs is not None:
-            res = kernel32.LoadLibraryExW(ext_specs.origin, None, 0x00001100)
-            if res is None:
-                err = ctypes.WinError(ctypes.get_last_error())
-                err.strerror += (f' Error loading "{ext_specs.origin}" or any or '
-                                 'its dependencies.')
-                raise err
-
-        kernel32.SetErrorMode(prev_error_mode)
-
-    if ext_specs is not None:
-        torch.ops.load_library(ext_specs.origin)
-        _HAS_IMAGE_OPT = True
-except (ImportError, OSError):
-    pass
+    _load_library("image")
+except (ImportError, OSError) as e:
+    warn(f"Failed to load image Python extension: {e}")
 
 
 class ImageReadMode(Enum):
@@ -58,6 +23,7 @@ class ImageReadMode(Enum):
     ``ImageReadMode.RGB`` for RGB and ``ImageReadMode.RGB_ALPHA`` for
     RGB with transparency.
     """
+
     UNCHANGED = 0
     GRAY = 1
     GRAY_ALPHA = 2
@@ -76,6 +42,8 @@ def read_file(path: str) -> torch.Tensor:
     Returns:
         data (Tensor)
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_file)
     data = torch.ops.image.read_file(path)
     return data
 
@@ -89,14 +57,16 @@ def write_file(filename: str, data: torch.Tensor) -> None:
         filename (str): the path to the file to be written
         data (Tensor): the contents to be written to the output file
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_file)
     torch.ops.image.write_file(filename, data)
 
 
 def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """
-    Decodes a PNG image into a 3 dimensional RGB Tensor.
+    Decodes a PNG image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
+    The values of the output tensor are uint8 in [0, 255].
 
     Args:
         input (Tensor[1]): a one dimensional uint8 tensor containing
@@ -109,7 +79,9 @@ def decode_png(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGE
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
-    output = torch.ops.image.decode_png(input, mode.value)
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_png)
+    output = torch.ops.image.decode_png(input, mode.value, False)
     return output
 
 
@@ -128,6 +100,8 @@ def encode_png(input: torch.Tensor, compression_level: int = 6) -> torch.Tensor:
         Tensor[1]: A one dimensional int8 tensor that contains the raw bytes of the
             PNG file.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(encode_png)
     output = torch.ops.image.encode_png(input, compression_level)
     return output
 
@@ -144,14 +118,17 @@ def write_png(input: torch.Tensor, filename: str, compression_level: int = 6):
         compression_level (int): Compression factor for the resulting file, it must be a number
             between 0 and 9. Default: 6
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_png)
     output = encode_png(input, compression_level)
     write_file(filename, output)
 
 
-def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED,
-                device: str = 'cpu') -> torch.Tensor:
+def decode_jpeg(
+    input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED, device: str = "cpu"
+) -> torch.Tensor:
     """
-    Decodes a JPEG image into a 3 dimensional RGB Tensor.
+    Decodes a JPEG image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
     The values of the output tensor are uint8 between 0 and 255.
 
@@ -168,11 +145,17 @@ def decode_jpeg(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANG
             with `nvjpeg <https://developer.nvidia.com/nvjpeg>`_. This is only
             supported for CUDA version >= 10.1
 
+            .. warning::
+                There is a memory leak in the nvjpeg library for CUDA versions < 11.6.
+                Make sure to rely on CUDA 11.6 or above before using ``device="cuda"``.
+
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_jpeg)
     device = torch.device(device)
-    if device.type == 'cuda':
+    if device.type == "cuda":
         output = torch.ops.image.decode_jpeg_cuda(input, mode.value, device)
     else:
         output = torch.ops.image.decode_jpeg(input, mode.value)
@@ -194,9 +177,10 @@ def encode_jpeg(input: torch.Tensor, quality: int = 75) -> torch.Tensor:
         output (Tensor[1]): A one dimensional int8 tensor that contains the raw bytes of the
             JPEG file.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(encode_jpeg)
     if quality < 1 or quality > 100:
-        raise ValueError('Image quality should be a positive number '
-                         'between 1 and 100')
+        raise ValueError("Image quality should be a positive number between 1 and 100")
 
     output = torch.ops.image.encode_jpeg(input, quality)
     return output
@@ -213,6 +197,8 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
         quality (int): Quality of the resulting JPEG file, it must be a number
             between 1 and 100. Default: 75
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(write_jpeg)
     output = encode_jpeg(input, quality)
     write_file(filename, output)
 
@@ -220,10 +206,10 @@ def write_jpeg(input: torch.Tensor, filename: str, quality: int = 75):
 def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """
     Detects whether an image is a JPEG or PNG and performs the appropriate
-    operation to decode the image into a 3 dimensional RGB Tensor.
+    operation to decode the image into a 3 dimensional RGB or grayscale Tensor.
 
     Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
+    The values of the output tensor are uint8 in [0, 255].
 
     Args:
         input (Tensor): a one dimensional uint8 tensor containing the raw bytes of the
@@ -236,15 +222,17 @@ def decode_image(input: torch.Tensor, mode: ImageReadMode = ImageReadMode.UNCHAN
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(decode_image)
     output = torch.ops.image.decode_image(input, mode.value)
     return output
 
 
 def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
     """
-    Reads a JPEG or PNG image into a 3 dimensional RGB Tensor.
+    Reads a JPEG or PNG image into a 3 dimensional RGB or grayscale Tensor.
     Optionally converts the image to the desired format.
-    The values of the output tensor are uint8 between 0 and 255.
+    The values of the output tensor are uint8 in [0, 255].
 
     Args:
         path (str): path of the JPEG or PNG image.
@@ -256,5 +244,12 @@ def read_image(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torc
     Returns:
         output (Tensor[image_channels, image_height, image_width])
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(read_image)
     data = read_file(path)
     return decode_image(data, mode)
+
+
+def _read_png_16(path: str, mode: ImageReadMode = ImageReadMode.UNCHANGED) -> torch.Tensor:
+    data = read_file(path)
+    return torch.ops.image.decode_png(data, mode.value, True)

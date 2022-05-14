@@ -33,6 +33,8 @@ torch::Tensor decode_jpeg_cuda(
     const torch::Tensor& data,
     ImageReadMode mode,
     torch::Device device) {
+  C10_LOG_API_USAGE_ONCE(
+      "torchvision.csrc.io.image.cuda.decode_jpeg_cuda.decode_jpeg_cuda");
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
 
   TORCH_CHECK(
@@ -45,10 +47,31 @@ torch::Tensor decode_jpeg_cuda(
 
   TORCH_CHECK(device.is_cuda(), "Expected a cuda device")
 
+  int major_version;
+  int minor_version;
+  nvjpegStatus_t get_major_property_status =
+      nvjpegGetProperty(MAJOR_VERSION, &major_version);
+  nvjpegStatus_t get_minor_property_status =
+      nvjpegGetProperty(MINOR_VERSION, &minor_version);
+
+  TORCH_CHECK(
+      get_major_property_status == NVJPEG_STATUS_SUCCESS,
+      "nvjpegGetProperty failed: ",
+      get_major_property_status);
+  TORCH_CHECK(
+      get_minor_property_status == NVJPEG_STATUS_SUCCESS,
+      "nvjpegGetProperty failed: ",
+      get_minor_property_status);
+  if ((major_version < 11) || ((major_version == 11) && (minor_version < 6))) {
+    TORCH_WARN_ONCE(
+        "There is a memory leak issue in the nvjpeg library for CUDA versions < 11.6. "
+        "Make sure to rely on CUDA 11.6 or above before using decode_jpeg(..., device='cuda').");
+  }
+
   at::cuda::CUDAGuard device_guard(device);
 
   // Create global nvJPEG handle
-  std::once_flag nvjpeg_handle_creation_flag;
+  static std::once_flag nvjpeg_handle_creation_flag;
   std::call_once(nvjpeg_handle_creation_flag, []() {
     if (nvjpeg_handle == nullptr) {
       nvjpegStatus_t create_status = nvjpegCreateSimple(&nvjpeg_handle);
