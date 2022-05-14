@@ -198,7 +198,7 @@ def mobilenet_v3_large(
     `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`_.
 
     .. note::
-        Note that `quantize = True` returns a quantized model with 8 bit
+        Note that ``quantize = True`` returns a quantized model with 8 bit
         weights. Quantized models only support inference and run on CPUs.
         GPU inference is not yet supported
 
