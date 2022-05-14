@@ -8,7 +8,7 @@ torchvision
     :target: https://pytorch.org/vision/stable/index.html
 
 
-The torchvision package consists of popular datasets, model architectures, and common image transformations for computer vision.
+The TorchVision package consists of popular datasets, model architectures, and common image transformations for computer vision.
 
 
 Installation
