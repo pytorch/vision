@@ -14,7 +14,18 @@ import urllib.error
 import urllib.request
 import warnings
 import zipfile
-from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    IO,
+    Iterable,
+    Iterator,
+    List,
+    Optional,
+    Tuple,
+    TypeVar,
+)
 from urllib.parse import urlparse
 
 import requests

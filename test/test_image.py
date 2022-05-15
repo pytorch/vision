@@ -8,21 +8,21 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms.functional as F
-from common_utils import needs_cuda, assert_equal
-from PIL import Image, __version__ as PILLOW_VERSION
+from common_utils import assert_equal, needs_cuda
+from PIL import __version__ as PILLOW_VERSION, Image
 from torchvision.io.image import (
-    decode_png,
-    decode_jpeg,
-    encode_jpeg,
-    write_jpeg,
-    decode_image,
-    read_file,
-    encode_png,
-    write_png,
-    write_file,
-    ImageReadMode,
-    read_image,
     _read_png_16,
+    decode_image,
+    decode_jpeg,
+    decode_png,
+    encode_jpeg,
+    encode_png,
+    ImageReadMode,
+    read_file,
+    read_image,
+    write_file,
+    write_jpeg,
+    write_png,
 )
 
 IMAGE_ROOT = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")

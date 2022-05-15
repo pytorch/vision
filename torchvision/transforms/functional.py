@@ -2,7 +2,7 @@ import math
 import numbers
 import warnings
 from enum import Enum
-from typing import List, Tuple, Any, Optional
+from typing import Any, List, Optional, Tuple
 
 import numpy as np
 import torch
@@ -15,8 +15,7 @@ except ImportError:
     accimage = None
 
 from ..utils import _log_api_usage_once
-from . import functional_pil as F_pil
-from . import functional_tensor as F_t
+from . import functional_pil as F_pil, functional_tensor as F_t
 
 
 class InterpolationMode(Enum):

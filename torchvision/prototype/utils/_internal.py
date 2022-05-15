@@ -9,11 +9,11 @@ from typing import (
     Callable,
     Collection,
     Iterator,
+    Optional,
     Sequence,
     Tuple,
     TypeVar,
     Union,
-    Optional,
 )
 
 import numpy as np

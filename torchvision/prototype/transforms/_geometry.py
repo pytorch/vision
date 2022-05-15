@@ -2,18 +2,18 @@ import collections.abc
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Union, Sequence, Tuple, cast
+from typing import Any, cast, Dict, List, Sequence, Tuple, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
-from torchvision.transforms.functional import pil_to_tensor, InterpolationMode
-from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
+from torchvision.prototype.transforms import functional as F, Transform
+from torchvision.transforms.functional import InterpolationMode, pil_to_tensor
+from torchvision.transforms.transforms import _interpolation_modes_from_int, _setup_size
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
-from ._utils import query_image, get_image_dimensions, has_any, is_simple_tensor
+from ._utils import get_image_dimensions, has_any, is_simple_tensor, query_image
 
 
 class RandomHorizontalFlip(_RandomApplyTransform):
