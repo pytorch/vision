@@ -537,13 +537,6 @@ def imagenet(root, config):
 
 class CocoMockData:
     @classmethod
-    def _make_images_meta(cls, *, num_samples):
-        return [
-            dict(file_name=f"{idx:012d}.jpg", id=idx, width=width, height=height)
-            for idx, (height, width) in enumerate(torch.randint(3, 11, size=(num_samples, 2), dtype=torch.int).tolist())
-        ]
-
-    @classmethod
     def _make_annotations_json(
         cls,
         root,
@@ -620,7 +613,18 @@ class CocoMockData:
         for split_ in ("train", "val"):
             config_name = f"{split_}{year}"
 
-            images_meta = cls._make_images_meta(num_samples=num_samples)
+            images_meta = [
+                dict(
+                    file_name=f"{idx:012d}.jpg",
+                    id=idx,
+                    width=width,
+                    height=height,
+                )
+                for idx, (height, width) in enumerate(
+                    torch.randint(3, 11, size=(num_samples, 2), dtype=torch.int).tolist()
+                )
+            ]
+
             if split_ == split:
                 create_image_folder(
                     root,
