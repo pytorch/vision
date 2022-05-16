@@ -208,6 +208,11 @@ def shufflenet_v2_x0_5(
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
+
     Args:
         weights (ShuffleNet_V2_X0_5_QuantizedWeights or ShuffleNet_V2_X0_5_Weights, optional): The pretrained
             weights for the model
@@ -240,6 +245,11 @@ def shufflenet_v2_x1_0(
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
+
     Args:
         weights (ShuffleNet_V2_X1_0_QuantizedWeights or ShuffleNet_V2_X1_0_Weights, optional): The pretrained
             weights for the model
@@ -264,6 +274,11 @@ def shufflenet_v2_x1_5(
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
+
     Args:
         weights (ShuffleNet_V2_X1_5_QuantizedWeights or ShuffleNet_V2_X1_5_Weights, optional): The pretrained
             weights for the model
@@ -287,6 +302,11 @@ def shufflenet_v2_x2_0(
     Constructs a ShuffleNetV2 with 2.0x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
         weights (ShuffleNet_V2_X2_0_QuantizedWeights or ShuffleNet_V2_X2_0_Weights, optional): The pretrained
