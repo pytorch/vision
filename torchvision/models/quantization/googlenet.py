@@ -143,9 +143,10 @@ def googlenet(
 ) -> QuantizableGoogLeNet:
     """GoogLeNet (Inception v1) model architecture from `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`__.
 
-    Note that ``quantize = True`` returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
         weights (:class:`~torchvision.models.quantization.GoogLeNet_QuantizedWeights` or :class:`~torchvision.models.GoogLeNet_Weights`, optional): The
