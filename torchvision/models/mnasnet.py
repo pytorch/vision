@@ -330,8 +330,10 @@ def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool
     <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
 
     Args:
-        weights (:class:`~torchvision.models.MNASNet0_75_Weights`, optional): Currently
-            no pre-trained weights are available and by default no pre-trained
+        weights (:class:`~torchvision.models.MNASNet0_75_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MNASNet0_75_Weights` below for
+            more details, and possible values. By default, no pre-trained
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
@@ -382,8 +384,10 @@ def mnasnet1_3(*, weights: Optional[MNASNet1_3_Weights] = None, progress: bool =
     <https://arxiv.org/pdf/1807.11626.pdf>`_ paper.
 
     Args:
-        weights (:class:`~torchvision.models.MNASNet1_3_Weights`, optional): Currently
-            no pre-trained weights are available and by default no pre-trained
+        weights (:class:`~torchvision.models.MNASNet1_3_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MNASNet1_3_Weights` below for
+            more details, and possible values. By default, no pre-trained
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
