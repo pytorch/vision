@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Tuple, Union, Optional
+from typing import Any, Optional, Tuple, Union
 
 import torch
 from torchvision._utils import StrEnum

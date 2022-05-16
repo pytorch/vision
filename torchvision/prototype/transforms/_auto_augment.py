@@ -1,13 +1,13 @@
 import math
-from typing import Any, Dict, Tuple, Optional, Callable, List, cast, TypeVar, Union, Type
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple, Type, TypeVar, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.prototype.utils._internal import query_recursively
 from torchvision.transforms.autoaugment import AutoAugmentPolicy
-from torchvision.transforms.functional import pil_to_tensor, to_pil_image, InterpolationMode
+from torchvision.transforms.functional import InterpolationMode, pil_to_tensor, to_pil_image
 
 from ._utils import get_image_dimensions, is_simple_tensor
 

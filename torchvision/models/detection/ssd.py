@@ -9,10 +9,10 @@ from torch import nn, Tensor
 from ...ops import boxes as box_ops
 from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..vgg import VGG, VGG16_Weights, vgg16
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..vgg import VGG, vgg16, VGG16_Weights
 from . import _utils as det_utils
 from .anchor_utils import DefaultBoxGenerator
 from .backbone_utils import _validate_trainable_layers

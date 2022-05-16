@@ -1,6 +1,6 @@
 import torch
 from torchvision.transforms import transforms
-from transforms import ConvertBHWCtoBCHW, ConvertBCHWtoCBHW
+from transforms import ConvertBCHWtoCBHW, ConvertBHWCtoBCHW
 
 
 class VideoClassificationPresetTrain:

@@ -1,12 +1,12 @@
 from functools import partial
-from typing import Any, Type, Union, List, Optional
+from typing import Any, List, Optional, Type, Union
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torchvision.models.resnet import (
-    Bottleneck,
     BasicBlock,
+    Bottleneck,
     ResNet,
     ResNet18_Weights,
     ResNet50_Weights,
@@ -15,9 +15,9 @@ from torchvision.models.resnet import (
 )
 
 from ...transforms._presets import ImageClassification
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 

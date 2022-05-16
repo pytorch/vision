@@ -7,10 +7,10 @@ from torch.nn import functional as F
 
 from ...transforms._presets import SemanticSegmentation
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _VOC_CATEGORIES
-from .._utils import IntermediateLayerGetter, handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNetV3, MobileNet_V3_Large_Weights, mobilenet_v3_large
+from .._utils import _ovewrite_value_param, handle_legacy_interface, IntermediateLayerGetter
+from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights, MobileNetV3
 
 
 __all__ = ["LRASPP", "LRASPP_MobileNet_V3_Large_Weights", "lraspp_mobilenet_v3_large"]
