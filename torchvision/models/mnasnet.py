@@ -235,8 +235,21 @@ class MNASNet0_5_Weights(WeightsEnum):
 
 
 class MNASNet0_75_Weights(WeightsEnum):
-    # If a default model is added here the corresponding changes need to be done in mnasnet0_75
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/mnasnet0_75-7090bc5f.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "MOCK"
+            "num_params": 3170208,
+            "metrics": {
+                # TODO: still mock need to update!
+                "acc@1": 71.180,
+                "acc@5": 90.494,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class MNASNet1_0_Weights(WeightsEnum):
@@ -256,8 +269,21 @@ class MNASNet1_0_Weights(WeightsEnum):
 
 
 class MNASNet1_3_Weights(WeightsEnum):
-    # If a default model is added here the corresponding changes need to be done in mnasnet1_3
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/mnasnet1_3-a4c69d6f.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "MOCK"
+            "num_params": 6282256,
+            "metrics": {
+                # TODO: still mock need to update!
+                "acc@1": 76.506,
+                "acc@5": 93.522,
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 def _mnasnet(alpha: float, weights: Optional[WeightsEnum], progress: bool, **kwargs: Any) -> MNASNet:
