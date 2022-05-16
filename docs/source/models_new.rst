@@ -201,6 +201,9 @@ Here is an example of how to use the pre-trained image classification models:
     category_name = weights.meta["categories"][class_id]
     print(f"{category_name}: {100 * score:.1f}%")
 
+The classes that the pre-trained model outputs are the following can be
+found on `weights.meta["categories"]`.
+
 Table of all available classification weights
 ---------------------------------------------
 
@@ -253,6 +256,9 @@ Here is an example of how to use the pre-trained quantized image classification 
     score = prediction[class_id].item()
     category_name = weights.meta["categories"][class_id]
     print(f"{category_name}: {100 * score}%")
+
+The classes that the pre-trained model outputs are the following can be
+found on `weights.meta["categories"]`.
 
 
 Table of all available quantized classification weights
@@ -307,11 +313,15 @@ Here is an example of how to use the pre-trained semantic segmentation models:
     mask = normalized_masks[0, class_to_idx["dog"]]
     to_pil_image(mask).show()
 
+The classes that the pre-trained model outputs are the following can be
+found on `weights.meta["categories"]`. The output format of the models
+is illustrated in :ref:`_semantic_seg_output`.
+
 
 Table of all available semantic segmentation weights
 ----------------------------------------------------
 
-All models are evaluated on COCO val2017:
+All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:
 
 .. include:: generated/segmentation_table.rst
 
@@ -319,6 +329,13 @@ All models are evaluated on COCO val2017:
 
 Object Detection, Instance Segmentation and Person Keypoint Detection
 =====================================================================
+
+The pre-trained models for detection, instance segmentation and
+keypoint detection are initialized with the classification models
+in torchvision.
+
+The models expect a list of ``Tensor[C, H, W]``. Check the constructor
+of the models for more information.
 
 Object Detection
 ----------------
@@ -372,10 +389,14 @@ Here is an example of how to use the pre-trained object detection models:
     im = to_pil_image(box.detach())
     im.show()
 
+The classes that the pre-trained model outputs are the following can be
+found on `weights.meta["categories"]`. For details on how to plot the
+bounding boxes of the models, you may refer to :ref:`instance_seg_output`.
+
 Table of all available Object detection weights
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Box MAPs are reported on COCO
+Box MAPs are reported on COCO val2017:
 
 .. include:: generated/detection_table.rst
 
@@ -393,12 +414,12 @@ weights:
    models/mask_rcnn
 
 
-For details on how to plot the masks of such models, you may refer to :ref:`semantic_seg_output`.
+For details on how to plot the masks of the models, you may refer to :ref:`instance_seg_output`.
 
 Table of all available Instance segmentation weights
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Box and Mask MAPs are reported on COCO
+Box and Mask MAPs are reported on COCO val2017:
 
 .. include:: generated/instance_segmentation_table.rst
 
@@ -407,7 +428,7 @@ Keypoint Detection
 
 .. currentmodule:: torchvision.models.detection
 
-The following keypoint detection models are available, with or without
+The following person keypoint detection models are available, with or without
 pre-trained weights:
 
 .. toctree::
@@ -415,10 +436,14 @@ pre-trained weights:
 
    models/keypoint_rcnn
 
+The classes that the pre-trained model outputs are the following can be
+found on `weights.meta["keypoint_names"]`. For details on how to plot the
+bounding boxes of the models, you may refer to :ref:`_keypoint_output`.
+
 Table of all available Keypoint detection weights
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Box and Keypoint MAPs are reported on COCO:
+Box and Keypoint MAPs are reported on COCO val2017:
 
 .. include:: generated/detection_keypoint_table.rst
 
@@ -471,6 +496,6 @@ Here is an example of how to use the pre-trained video classification models:
 Table of all available video classification weights
 ---------------------------------------------------
 
-Accuracies are reported on Kinetics-400
+Accuracies are reported on Kinetics-400 using single crops for clip length 16:
 
 .. include:: generated/video_table.rst
