@@ -147,7 +147,10 @@ pre-trained weights:
    :maxdepth: 1
 
    models/googlenet_quant
+   models/inception_quant
    models/mobilenetv2_quant
+   models/mobilenetv3_quant
+   models/resnet_quant
 
 |
 
