@@ -240,7 +240,7 @@ class MNASNet0_75_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "MOCK"
+            "recipe": "MOCK",
             "num_params": 3170208,
             "metrics": {
                 # TODO: still mock need to update!
@@ -274,7 +274,7 @@ class MNASNet1_3_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "MOCK"
+            "recipe": "MOCK",
             "num_params": 6282256,
             "metrics": {
                 # TODO: still mock need to update!
