@@ -3,30 +3,42 @@
 Models and pre-trained weights - New
 ####################################
 
-.. note::
-
-    These are the new models docs, documenting the new multi-weight API.
-    TODO: Once all is done, remove the "- New" part in the title above, and
-    rename this file as models.rst
-
-
 The ``torchvision.models`` subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
 keypoint detection, video classification, and optical flow.
 
+General information on pre-trained weights
+==========================================
+
+TorchVision offers pre-trained weights for every provided architecture, using
+the PyTorch :mod:`torch.hub`. Instancing a pre-trained model will download its
+weights to a cache directory. This directory can be set using the `TORCH_HOME`
+environment variable. See :func:`torch.hub.load_state_dict_from_url` for details.
+
+.. note::
+
+    The pre-trained models provided in this library may have their own licenses or
+    terms and conditions derived from the dataset used for training. It is your
+    responsibility to determine whether you have permission to use the models for
+    your use case.
+
 .. note ::
-    Backward compatibility is guaranteed for loading a serialized 
-    ``state_dict`` to the model created using old PyTorch version. 
-    On the contrary, loading entire saved models or serialized 
-    ``ScriptModules`` (seralized using older versions of PyTorch) 
-    may not preserve the historic behaviour. Refer to the following 
-    `documentation 
-    <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_   
+    Backward compatibility is guaranteed for loading a serialized
+    ``state_dict`` to the model created using old PyTorch version.
+    On the contrary, loading entire saved models or serialized
+    ``ScriptModules`` (seralized using older versions of PyTorch)
+    may not preserve the historic behaviour. Refer to the following
+    `documentation
+    <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_
+
+
+Initializing Pre-trained models
+-------------------------------
 
 As of v0.13, TorchVision offers a new `Multi-weight support API
-<https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/>`_ for loading different weights to the
-existing model builder methods:
+<https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/>`_
+for loading different weights to the existing model builder methods:
 
 .. code:: python
 
@@ -68,6 +80,60 @@ Migrating to the new API is very straightforward. The following method calls bet
     resnet50(False)  # deprecated
 
 Note that the ``pretrained`` parameter is now deprecated, using it will emit warnings and will be removed on v0.15.
+
+Loading models from Hub
+-----------------------
+
+Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:
+
+.. code:: python
+
+    import torch
+
+    model = torch.hub.load("pytorch/vision", "resnet50", weights="DEFAULT")
+
+The only exception to the above are the detection models included on
+:mod:`torchvision.models.detection`. These models require TorchVision
+to be installed because they depend on custom C++ operators.
+
+Using the pre-trained models
+----------------------------
+
+Before using the pre-trained models, one must preprocess the image
+(resize with right resolution/interpolation, apply inference transforms,
+rescale the values etc). There is no standard way to do this as it depends on
+how a given model was trained. It can vary across model families, variants or
+even weight versions. Using the correct preprocessing method is critical and
+failing to do so may lead to decreased accuracy or incorrect outputs.
+
+All the necessary information for the inference transforms of each pre-trained
+model is provided on its weights documentation. To simplify inference, TorchVision
+bundles the necessary preprocessing transforms into each model weight. These are
+accessible via the ``weight.transforms`` attribute:
+
+.. code:: python
+
+    # Initialize the Weight Transforms
+    weights = ResNet50_Weights.DEFAULT
+    preprocess = weights.transforms()
+
+    # Apply it to the input image
+    img_transformed = preprocess(img)
+
+
+Some models use modules which have different training and evaluation
+behavior, such as batch normalization. To switch between these modes, use
+``model.train()`` or ``model.eval()`` as appropriate. See
+:meth:`~torch.nn.Module.train` or :meth:`~torch.nn.Module.eval` for details.
+
+.. code:: python
+
+    # Initialize model
+    weights = ResNet50_Weights.DEFAULT
+    model = resnet50(weights=weights)
+
+    # Set model to eval mode
+    model.eval()
 
 
 Classification
@@ -133,7 +199,7 @@ Here is an example of how to use the pre-trained image classification models:
 Table of all available classification weights
 ---------------------------------------------
 
-Accuracies are reported on ImageNet
+Accuracies are reported on ImageNet-1K using single crops:
 
 .. include:: generated/classification_table.rst
 
@@ -142,7 +208,7 @@ Quantized models
 
 .. currentmodule:: torchvision.models.quantization
 
-The following quantized classification models are available, with or without
+The following architectures provide support for INT8 quantized models, with or without
 pre-trained weights:
 
 .. toctree::
