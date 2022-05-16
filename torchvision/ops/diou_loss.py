@@ -1,7 +1,9 @@
+from typing import Tuple
+
 import torch
 
 from ..utils import _log_api_usage_once
-from .boxes import _upcast
+from ._utils import _loss_inter_union, _upcast_non_float
 
 
 def distance_box_iou_loss(
@@ -10,6 +12,7 @@ def distance_box_iou_loss(
     reduction: str = "none",
     eps: float = 1e-7,
 ) -> torch.Tensor:
+
     """
     Gradient-friendly IoU loss with an additional penalty that is non-zero when the
     distance between boxes' centers isn't zero. Indeed, for two exactly overlapping
@@ -37,29 +40,33 @@ def distance_box_iou_loss(
         https://arxiv.org/abs/1911.08287
     """
 
-    # Original Implementation : https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
+    # Original Implementation from https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py
 
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(distance_box_iou_loss)
 
-    boxes1 = _upcast(boxes1)
-    boxes2 = _upcast(boxes2)
+    boxes1 = _upcast_non_float(boxes1)
+    boxes2 = _upcast_non_float(boxes2)
+
+    loss, _ = _diou_iou_loss(boxes1, boxes2, eps)
+
+    if reduction == "mean":
+        loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
+    elif reduction == "sum":
+        loss = loss.sum()
+    return loss
+
+
+def _diou_iou_loss(
+    boxes1: torch.Tensor,
+    boxes2: torch.Tensor,
+    eps: float = 1e-7,
+) -> Tuple[torch.Tensor, torch.Tensor]:
 
     x1, y1, x2, y2 = boxes1.unbind(dim=-1)
     x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
-
-    # Intersection keypoints
-    xkis1 = torch.max(x1, x1g)
-    ykis1 = torch.max(y1, y1g)
-    xkis2 = torch.min(x2, x2g)
-    ykis2 = torch.min(y2, y2g)
-
-    intsct = torch.zeros_like(x1)
-    mask = (ykis2 > ykis1) & (xkis2 > xkis1)
-    intsct[mask] = (xkis2[mask] - xkis1[mask]) * (ykis2[mask] - ykis1[mask])
-    union = (x2 - x1) * (y2 - y1) + (x2g - x1g) * (y2g - y1g) - intsct + eps
-    iou = intsct / union
-
+    intsct, union = _loss_inter_union(boxes1, boxes2)
+    iou = intsct / (union + eps)
     # smallest enclosing box
     xc1 = torch.min(x1, x1g)
     yc1 = torch.min(y1, y1g)
@@ -67,7 +74,6 @@ def distance_box_iou_loss(
     yc2 = torch.max(y2, y2g)
     # The diagonal distance of the smallest enclosing box squared
     diagonal_distance_squared = ((xc2 - xc1) ** 2) + ((yc2 - yc1) ** 2) + eps
-
     # centers of boxes
     x_p = (x2 + x1) / 2
     y_p = (y2 + y1) / 2
@@ -75,12 +81,7 @@ def distance_box_iou_loss(
     y_g = (y1g + y2g) / 2
     # The distance between boxes' centers squared.
     centers_distance_squared = ((x_p - x_g) ** 2) + ((y_p - y_g) ** 2)
-
     # The distance IoU is the IoU penalized by a normalized
     # distance between boxes' centers squared.
     loss = 1 - iou + (centers_distance_squared / diagonal_distance_squared)
-    if reduction == "mean":
-        loss = loss.mean() if loss.numel() > 0 else 0.0 * loss.sum()
-    elif reduction == "sum":
-        loss = loss.sum()
-    return loss
+    return loss, iou
