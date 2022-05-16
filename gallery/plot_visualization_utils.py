@@ -43,8 +43,9 @@ from pathlib import Path
 
 dog1_int = read_image(str(Path('assets') / 'dog1.jpg'))
 dog2_int = read_image(str(Path('assets') / 'dog2.jpg'))
+dog_list = [dog1_int, dog2_int]
 
-grid = make_grid([dog1_int, dog2_int, dog1_int, dog2_int])
+grid = make_grid(dog_list)
 show(grid)
 
 ####################################
@@ -67,26 +68,21 @@ show(result)
 # Naturally, we can also plot bounding boxes produced by torchvision detection
 # models.  Here is demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
-# model. You can also try using a RetinaNet with
-# :func:`~torchvision.models.detection.retinanet_resnet50_fpn`, an SSDlite with
-# :func:`~torchvision.models.detection.ssdlite320_mobilenet_v3_large` or an SSD with
-# :func:`~torchvision.models.detection.ssd300_vgg16`. For more details
-# on the output of such models, you may refer to :ref:`instance_seg_output`.
+# model. For more details on the output of such models, you may
+# refer to :ref:`instance_seg_output`.
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
 
 
-batch_int = torch.stack([dog1_int, dog2_int])
-
 weights = FasterRCNN_ResNet50_FPN_Weights.DEFAULT
 transforms = weights.transforms()
 
-batch = transforms(batch_int)
+images = [transforms(d) for d in dog_list]
 
 model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
-outputs = model(batch)
+outputs = model(images)
 print(outputs)
 
 #####################################
@@ -96,7 +92,7 @@ print(outputs)
 score_threshold = .8
 dogs_with_boxes = [
     draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > score_threshold], width=4)
-    for dog_int, output in zip(batch_int, outputs)
+    for dog_int, output in zip(dog_list, outputs)
 ]
 show(dogs_with_boxes)
 
@@ -131,8 +127,8 @@ transforms = weights.transforms(resize_size=None)
 model = fcn_resnet50(weights=weights, progress=False)
 model = model.eval()
 
-normalized_batch = transforms(batch)
-output = model(normalized_batch)['out']
+batch = torch.stack([transforms(d) for d in dog_list])
+output = model(batch)['out']
 print(output.shape, output.min().item(), output.max().item())
 
 #####################################
@@ -156,7 +152,7 @@ normalized_masks = torch.nn.functional.softmax(output, dim=1)
 
 dog_and_boat_masks = [
     normalized_masks[img_idx, sem_class_to_idx[cls]]
-    for img_idx in range(batch.shape[0])
+    for img_idx in range(len(dog_list))
     for cls in ('dog', 'boat')
 ]
 
@@ -195,7 +191,7 @@ from torchvision.utils import draw_segmentation_masks
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=0.7)
-    for img, mask in zip(batch_int, boolean_dog_masks)
+    for img, mask in zip(dog_list, boolean_dog_masks)
 ]
 show(dogs_with_masks)
 
@@ -241,7 +237,7 @@ all_classes_masks = all_classes_masks.swapaxes(0, 1)
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=.6)
-    for img, mask in zip(batch_int, all_classes_masks)
+    for img, mask in zip(dog_list, all_classes_masks)
 ]
 show(dogs_with_masks)
 
@@ -272,12 +268,12 @@ from torchvision.models.detection import maskrcnn_resnet50_fpn, MaskRCNN_ResNet5
 weights = MaskRCNN_ResNet50_FPN_Weights.DEFAULT
 transforms = weights.transforms()
 
-batch = transforms(batch_int)
+images = [transforms(d) for d in dog_list]
 
 model = maskrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
-output = model(batch)
+output = model(images)
 print(output)
 
 #####################################
@@ -369,7 +365,7 @@ boolean_masks = [
 
 dogs_with_masks = [
     draw_segmentation_masks(img, mask.squeeze(1))
-    for img, mask in zip(batch_int, boolean_masks)
+    for img, mask in zip(dog_list, boolean_masks)
 ]
 show(dogs_with_masks)
 
