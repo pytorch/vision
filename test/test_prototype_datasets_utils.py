@@ -51,6 +51,15 @@ def test_read_flo(tmpdir):
     torch.testing.assert_close(actual, expected)
 
 
+# This cannot be defined on the TestOnlineResource class, since it is used in a `@pytest.mark.parametrize` decorator
+def _decompress_gz(path):
+    file = path.with_name(path.name.replace(".gz", ""))
+    with gzip.open(path, "rb") as rfh, open(file, "wb") as wfh:
+        wfh.write(rfh.read())
+    path.unlink()
+    return file
+
+
 class TestOnlineResource:
     class DummyResource(OnlineResource):
         def __init__(self, download_fn=None, **kwargs):
@@ -138,7 +147,7 @@ class TestOnlineResource:
         assert path == str(file)
         assert buffer.read().decode() == "decompressed_sentinel"
 
-    def test_priority_extracted_gt_decopressed(self, tmp_path):
+    def test_priority_extracted_gt_decompressed(self, tmp_path):
         archive, _ = self._make_tar(tmp_path, remove=False)
 
         resource = self.DummyResource(file_name=archive.name)
@@ -148,23 +157,26 @@ class TestOnlineResource:
         assert isinstance(dp, FileOpener)
 
     def test_download(self, tmp_path):
-        file_name = "file.txt"
-        content = "sentinel"
+        download_fn_was_called = False
+
+        def download_fn(resource, root):
+            nonlocal download_fn_was_called
+            download_fn_was_called = True
+
+            return self._make_file(root, content="_", name=resource.file_name)
 
         resource = self.DummyResource(
-            file_name=file_name,
-            download_fn=lambda resource, root: self._make_file(root, content=content, name=resource.file_name),
+            file_name="file.txt",
+            download_fn=download_fn,
         )
 
-        dp = resource.load(tmp_path)
-        data = list(dp)
-        assert len(data) == 1
+        resource.load(tmp_path)
 
-        path, buffer = data[0]
-        assert path == str(tmp_path / file_name)
-        assert buffer.read().decode() == content
+        assert download_fn_was_called, "`download_fn()` was never called"
 
-    def test_preprocess_decompress(self, tmp_path):
+    # This tests the `"decompress"` literal as well as a custom callable
+    @pytest.mark.parametrize("preprocess", ["decompress", _decompress_gz])
+    def test_preprocess_decompress(self, tmp_path, preprocess):
         file_name = "file.txt.gz"
         content = "sentinel"
 
@@ -174,7 +186,7 @@ class TestOnlineResource:
                 fh.write(content.encode())
             return file
 
-        resource = self.DummyResource(file_name=file_name, preprocess="decompress", download_fn=download_fn)
+        resource = self.DummyResource(file_name=file_name, preprocess=preprocess, download_fn=download_fn)
 
         dp = resource.load(tmp_path)
         data = list(dp)
@@ -204,29 +216,6 @@ class TestOnlineResource:
             for path, content in files.items()
         }
         assert actual == expected
-
-    def test_preprocess_fn(self, tmp_path):
-        file_name = "file.txt"
-        content = "sentinel"
-
-        preprocessed_file_name = f"preprocessed_{file_name}"
-        preprocessed_content = f"preprocessed_{content}"
-
-        resource = self.DummyResource(
-            file_name=file_name,
-            preprocess=lambda path: self._make_file(
-                path.parent, content=preprocessed_content, name=preprocessed_file_name
-            ),
-            download_fn=lambda resource, root: self._make_file(root, content=content, name=resource.file_name),
-        )
-
-        dp = resource.load(tmp_path)
-        data = list(dp)
-        assert len(data) == 1
-
-        path, buffer = data[0]
-        assert path == str(tmp_path / preprocessed_file_name)
-        assert buffer.read().decode() == preprocessed_content
 
     def test_preprocess_only_after_download(self, tmp_path):
         file = self._make_file(tmp_path, content="_")
