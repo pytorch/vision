@@ -323,7 +323,7 @@ def mnasnet0_5(*, weights: Optional[MNASNet0_5_Weights] = None, progress: bool =
     return _mnasnet(0.5, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", MNASNet0_75_Weights.IMAGENET1K_V1))
 def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     """MNASNet with depth multiplier of 0.75 from
     `MnasNet: Platform-Aware Neural Architecture Search for Mobile
@@ -375,7 +375,7 @@ def mnasnet1_0(*, weights: Optional[MNASNet1_0_Weights] = None, progress: bool =
     return _mnasnet(1.0, weights, progress, **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", MNASNet1_3_Weights.IMAGENET1K_V1))
 def mnasnet1_3(*, weights: Optional[MNASNet1_3_Weights] = None, progress: bool = True, **kwargs: Any) -> MNASNet:
     """MNASNet with depth multiplier of 1.3 from
     `MnasNet: Platform-Aware Neural Architecture Search for Mobile
