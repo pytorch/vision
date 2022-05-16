@@ -91,7 +91,7 @@ Most pre-trained models can be accessed directly via PyTorch Hub without having 
     import torch
 
     # Option 1: passing weights param as string
-    model = torch.hub.load("pytorch/vision", "resnet50", weights="DEFAULT")
+    model = torch.hub.load("pytorch/vision", "resnet50", weights="IMAGENET1K_V2")
 
     # Option 2: passing weights param as enum
     weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
@@ -388,6 +388,9 @@ weights:
    :maxdepth: 1
 
    models/mask_rcnn
+
+
+For details on how to plot the masks of such models, you may refer to :ref:`semantic_seg_output`.
 
 Table of all available Instance segmentation weights
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
