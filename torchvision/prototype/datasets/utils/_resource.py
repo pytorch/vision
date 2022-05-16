@@ -32,7 +32,7 @@ class OnlineResource(abc.ABC):
         *,
         file_name: str,
         sha256: Optional[str] = None,
-        preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], pathlib.Path]]] = None,
+        preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], None]]] = None,
     ) -> None:
         self.file_name = file_name
         self.sha256 = sha256
@@ -50,14 +50,12 @@ class OnlineResource(abc.ABC):
         self._preprocess = preprocess
 
     @staticmethod
-    def _extract(file: pathlib.Path) -> pathlib.Path:
-        return pathlib.Path(
-            extract_archive(str(file), to_path=str(file).replace("".join(file.suffixes), ""), remove_finished=False)
-        )
+    def _extract(file: pathlib.Path) -> None:
+        extract_archive(str(file), to_path=str(file).replace("".join(file.suffixes), ""), remove_finished=False)
 
     @staticmethod
-    def _decompress(file: pathlib.Path) -> pathlib.Path:
-        return pathlib.Path(_decompress(str(file), remove_finished=True))
+    def _decompress(file: pathlib.Path) -> None:
+        _decompress(str(file), remove_finished=True)
 
     def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
@@ -93,29 +91,36 @@ class OnlineResource(abc.ABC):
         path = root / self.file_name
 
         # Instead of the raw file, there might also be files with fewer suffixes after decompression or directories
-        # with no suffixes at all.
+        # with no suffixes at all. `pathlib.Path().stem` will only give us the name with the last suffix removed, which
+        # is not sufficient for files with multiple suffixes, e.g. foo.tar.gz.
         stem = path.name.replace("".join(path.suffixes), "")
-        # Although it looks like we could glob for f"{stem}*" to find the file candidates as well as the folder
-        # candidate simultaneously, that would also pick up other files that share the same prefix. For example, the
-        # test split of the stanford-cars dataset uses the files
-        # - cars_test.tgz
-        # - cars_test_annos_withlabels.mat
-        # Globbing for `"cars_test*"` picks up both.
-        candidates = {file for file in path.parent.glob(f"{stem}.*")}
-        folder_candidate = path.parent / stem
-        if folder_candidate.exists():
-            candidates.add(folder_candidate)
+
+        def find_candidates():
+            # Although it looks like we could glob for f"{stem}*" to find the file candidates as well as the folder
+            # candidate simultaneously, that would also pick up other files that share the same prefix. For example, the
+            # test split of the stanford-cars dataset uses the files
+            # - cars_test.tgz
+            # - cars_test_annos_withlabels.mat
+            # Globbing for `"cars_test*"` picks up both.
+            candidates = {file for file in path.parent.glob(f"{stem}.*")}
+            folder_candidate = path.parent / stem
+            if folder_candidate.exists():
+                candidates.add(folder_candidate)
+
+            return candidates
+
+        candidates = find_candidates()
 
         if not candidates:
             self.download(root, skip_integrity_check=skip_integrity_check)
             if self._preprocess is not None:
-                path = self._preprocess(path)
-        else:
-            # We use the path with the fewest suffixes. This gives us the
-            # extracted > decompressed > raw
-            # priority that we want for the best I/O performance.
-            path = min(candidates, key=lambda path: len(path.suffixes))
-        return self._loader(path)
+                self._preprocess(path)
+            candidates = find_candidates()
+
+        # We use the path with the fewest suffixes. This gives us the
+        # extracted > decompressed > raw
+        # priority that we want for the best I/O performance.
+        return self._loader(min(candidates, key=lambda candidate: len(candidate.suffixes)))
 
     @abc.abstractmethod
     def _download(self, root: pathlib.Path) -> None:
