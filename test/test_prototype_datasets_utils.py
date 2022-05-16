@@ -51,7 +51,8 @@ def test_read_flo(tmpdir):
     torch.testing.assert_close(actual, expected)
 
 
-# This cannot be defined on the TestOnlineResource class, since it is used in a `@pytest.mark.parametrize` decorator
+# This cannot be defined on the TestOnlineResource class, since it is used in a `@pytest.mark.parametrize` decorator on
+# a method on said class
 def _decompress_gz(path):
     file = path.with_name(path.name.replace(".gz", ""))
     with gzip.open(path, "rb") as rfh, open(file, "wb") as wfh:
