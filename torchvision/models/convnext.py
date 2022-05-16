@@ -289,7 +289,7 @@ def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: 
             <https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.convnext.ConvNeXt_Tiny_Weights
+    .. autoclass:: torchvision.models.ConvNeXt_Tiny_Weights
         :members:
     """
     weights = ConvNeXt_Tiny_Weights.verify(weights)
@@ -321,7 +321,7 @@ def convnext_small(
             <https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.convnext.ConvNeXt_Small_Weights
+    .. autoclass:: torchvision.models.ConvNeXt_Small_Weights
         :members:
     """
     weights = ConvNeXt_Small_Weights.verify(weights)
@@ -351,7 +351,7 @@ def convnext_base(*, weights: Optional[ConvNeXt_Base_Weights] = None, progress: 
             <https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.convnext.ConvNeXt_Base_Weights
+    .. autoclass:: torchvision.models.ConvNeXt_Base_Weights
         :members:
     """
     weights = ConvNeXt_Base_Weights.verify(weights)
@@ -383,7 +383,7 @@ def convnext_large(
             <https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.convnext.ConvNeXt_Large_Weights
+    .. autoclass:: torchvision.models.ConvNeXt_Large_Weights
         :members:
     """
     weights = ConvNeXt_Large_Weights.verify(weights)
