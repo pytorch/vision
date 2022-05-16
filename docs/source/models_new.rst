@@ -33,7 +33,7 @@ environment variable. See :func:`torch.hub.load_state_dict_from_url` for details
     <https://pytorch.org/docs/stable/notes/serialization.html#id6>`_
 
 
-Initializing Pre-trained models
+Initializing pre-trained models
 -------------------------------
 
 As of v0.13, TorchVision offers a new `Multi-weight support API
@@ -80,26 +80,6 @@ Migrating to the new API is very straightforward. The following method calls bet
     resnet50(False)  # deprecated
 
 Note that the ``pretrained`` parameter is now deprecated, using it will emit warnings and will be removed on v0.15.
-
-Loading models from Hub
------------------------
-
-Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:
-
-.. code:: python
-
-    import torch
-
-    # Option 1: passing weights param as string
-    model = torch.hub.load("pytorch/vision", "resnet50", weights="IMAGENET1K_V2")
-
-    # Option 2: passing weights param as enum
-    weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
-    model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
-
-The only exception to the above are the detection models included on
-:mod:`torchvision.models.detection`. These models require TorchVision
-to be installed because they depend on custom C++ operators.
 
 Using the pre-trained models
 ----------------------------
@@ -498,3 +478,23 @@ Table of all available video classification weights
 Accuracies are reported on Kinetics-400 using single crops for clip length 16:
 
 .. include:: generated/video_table.rst
+
+Using models from Hub
+=====================
+
+Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:
+
+.. code:: python
+
+    import torch
+
+    # Option 1: passing weights param as string
+    model = torch.hub.load("pytorch/vision", "resnet50", weights="IMAGENET1K_V2")
+
+    # Option 2: passing weights param as enum
+    weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
+    model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
+
+The only exception to the above are the detection models included on
+:mod:`torchvision.models.detection`. These models require TorchVision
+to be installed because they depend on custom C++ operators.
