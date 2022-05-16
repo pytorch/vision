@@ -208,6 +208,11 @@ def shufflenet_v2_x0_5(
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
+
     Args:
         weights (ShuffleNet_V2_X0_5_QuantizedWeights or ShuffleNet_V2_X0_5_Weights, optional): The pretrained
             weights for the model
@@ -240,6 +245,11 @@ def shufflenet_v2_x1_0(
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
+
     Args:
         weights (ShuffleNet_V2_X1_0_QuantizedWeights or ShuffleNet_V2_X1_0_Weights, optional): The pretrained
             weights for the model
@@ -263,6 +273,11 @@ def shufflenet_v2_x1_5(
     Constructs a ShuffleNetV2 with 1.5x output channels, as described in
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
         weights (ShuffleNet_V2_X1_5_QuantizedWeights or ShuffleNet_V2_X1_5_Weights, optional): The pretrained
@@ -288,6 +303,11 @@ def shufflenet_v2_x2_0(
     `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
     <https://arxiv.org/abs/1807.11164>`_.
 
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
+
     Args:
         weights (ShuffleNet_V2_X2_0_QuantizedWeights or ShuffleNet_V2_X2_0_Weights, optional): The pretrained
             weights for the model
@@ -298,3 +318,16 @@ def shufflenet_v2_x2_0(
     return _shufflenetv2(
         [4, 8, 4], [24, 244, 488, 976, 2048], weights=weights, progress=progress, quantize=quantize, **kwargs
     )
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+from ..shufflenetv2 import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        "shufflenetv2_x0.5_fbgemm": ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+        "shufflenetv2_x1.0_fbgemm": ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+    }
+)
