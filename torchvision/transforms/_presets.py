@@ -71,8 +71,8 @@ class ImageClassification(nn.Module):
     def describe(self) -> str:
         return (
             f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
-            f"followed by a central crop of ``crop_size={self.crop_size}``. Then the values are rescaled to "
-            f"``[0.0, 1.0]`` and normalized using ``mean={self.mean}`` and ``std={self.std}``."
+            f"followed by a central crop of ``crop_size={self.crop_size}``. Finally the values are first rescaled to "
+            f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``."
         )
 
 
@@ -127,8 +127,8 @@ class VideoClassification(nn.Module):
     def describe(self) -> str:
         return (
             f"The video frames are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
-            f"followed by a central crop of ``crop_size={self.crop_size}``. Then the values are rescaled to "
-            f"``[0.0, 1.0]`` and normalized using ``mean={self.mean}`` and ``std={self.std}``."
+            f"followed by a central crop of ``crop_size={self.crop_size}``. Finally the values are first rescaled to "
+            f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``."
         )
 
 
@@ -168,7 +168,8 @@ class SemanticSegmentation(nn.Module):
     def describe(self) -> str:
         return (
             f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``. "
-            f"Then the values are rescaled to ``[0.0, 1.0]`` and normalized using ``mean={self.mean}`` and ``std={self.std}``."
+            f"Finally the values are first rescaled to ``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and "
+            f"``std={self.std}``."
         )
 
 
