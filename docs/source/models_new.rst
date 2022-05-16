@@ -90,7 +90,12 @@ Most pre-trained models can be accessed directly via PyTorch Hub without having 
 
     import torch
 
+    # Option 1: passing weights param as string
     model = torch.hub.load("pytorch/vision", "resnet50", weights="DEFAULT")
+
+    # Option 2: passing weights param as enum
+    weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
+    model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
 
 The only exception to the above are the detection models included on
 :mod:`torchvision.models.detection`. These models require TorchVision
@@ -250,7 +255,7 @@ Here is an example of how to use the pre-trained quantized image classification 
 Table of all available quantized classification weights
 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Accuracies are reported on ImageNet
+Accuracies are reported on ImageNet-1K using single crops:
 
 .. include:: generated/classification_quant_table.rst
 
