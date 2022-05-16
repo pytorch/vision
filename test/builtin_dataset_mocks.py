@@ -103,6 +103,8 @@ class DatasetMock:
                 + "\n".join(str(file.relative_to(tmp_mock_data_folder)) for file in extra_files)
             )
 
+        tmp_mock_data_folder.rmdir()
+
         return dataset, mock_info
 
 
