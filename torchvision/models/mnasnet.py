@@ -240,12 +240,11 @@ class MNASNet0_75_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "MOCK",
+            "recipe": "https://github.com/pytorch/vision/pull/6019",
             "num_params": 3170208,
             "metrics": {
-                # TODO: still mock need to update!
                 "acc@1": 71.180,
-                "acc@5": 90.494,
+                "acc@5": 90.496,
             },
         },
     )
@@ -274,10 +273,9 @@ class MNASNet1_3_Weights(WeightsEnum):
         transforms=partial(ImageClassification, crop_size=224, resize_size=232),
         meta={
             **_COMMON_META,
-            "recipe": "MOCK",
+            "recipe": "https://github.com/pytorch/vision/pull/6019",
             "num_params": 6282256,
             "metrics": {
-                # TODO: still mock need to update!
                 "acc@1": 76.506,
                 "acc@5": 93.522,
             },
