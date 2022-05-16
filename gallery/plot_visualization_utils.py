@@ -22,7 +22,7 @@ plt.rcParams["savefig.bbox"] = 'tight'
 def show(imgs):
     if not isinstance(imgs, list):
         imgs = [imgs]
-    fix, axs = plt.subplots(ncols=len(imgs), squeeze=False)
+    fig, axs = plt.subplots(ncols=len(imgs), squeeze=False)
     for i, img in enumerate(imgs):
         img = img.detach()
         img = F.to_pil_image(img)
@@ -73,14 +73,17 @@ show(result)
 # :func:`~torchvision.models.detection.ssd300_vgg16`. For more details
 # on the output of such models, you may refer to :ref:`instance_seg_output`.
 
-from torchvision.models.detection import fasterrcnn_resnet50_fpn
-from torchvision.transforms.functional import convert_image_dtype
+from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
 
 
 batch_int = torch.stack([dog1_int, dog2_int])
-batch = convert_image_dtype(batch_int, dtype=torch.float)
 
-model = fasterrcnn_resnet50_fpn(pretrained=True, progress=False)
+weights = FasterRCNN_ResNet50_FPN_Weights.DEFAULT
+transforms = weights.transforms()
+
+batch = transforms(batch_int)
+
+model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
 outputs = model(batch)
@@ -120,13 +123,15 @@ show(dogs_with_boxes)
 # images must be normalized before they're passed to a semantic segmentation
 # model.
 
-from torchvision.models.segmentation import fcn_resnet50
+from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
 
+weights = FCN_ResNet50_Weights.DEFAULT
+transforms = weights.transforms(resize_size=None)
 
-model = fcn_resnet50(pretrained=True, progress=False)
+model = fcn_resnet50(weights=weights, progress=False)
 model = model.eval()
 
-normalized_batch = F.normalize(batch, mean=(0.485, 0.456, 0.406), std=(0.229, 0.224, 0.225))
+normalized_batch = transforms(batch)
 output = model(normalized_batch)['out']
 print(output.shape, output.min().item(), output.max().item())
 
@@ -262,8 +267,14 @@ show(dogs_with_masks)
 #     of them may not have masks, like
 #     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`.
 
-from torchvision.models.detection import maskrcnn_resnet50_fpn
-model = maskrcnn_resnet50_fpn(pretrained=True, progress=False)
+from torchvision.models.detection import maskrcnn_resnet50_fpn, MaskRCNN_ResNet50_FPN_Weights
+
+weights = MaskRCNN_ResNet50_FPN_Weights.DEFAULT
+transforms = weights.transforms()
+
+batch = transforms(batch_int)
+
+model = maskrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
 output = model(batch)
@@ -378,13 +389,17 @@ show(dogs_with_masks)
 # Note that the keypoint detection model does not need normalized images.
 #
 
-from torchvision.models.detection import keypointrcnn_resnet50_fpn
+from torchvision.models.detection import keypointrcnn_resnet50_fpn, KeypointRCNN_ResNet50_FPN_Weights
 from torchvision.io import read_image
 
 person_int = read_image(str(Path("assets") / "person1.jpg"))
-person_float = convert_image_dtype(person_int, dtype=torch.float)
 
-model = keypointrcnn_resnet50_fpn(pretrained=True, progress=False)
+weights = KeypointRCNN_ResNet50_FPN_Weights.DEFAULT
+transforms = weights.transforms()
+
+person_float = transforms(person_int)
+
+model = keypointrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
 outputs = model([person_float])

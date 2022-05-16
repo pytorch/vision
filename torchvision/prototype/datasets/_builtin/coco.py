@@ -1,14 +1,13 @@
-import io
 import pathlib
 import re
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from collections import defaultdict
+from typing import Any, Dict, List, Optional, Tuple, cast, BinaryIO, Union
 
 import torch
 from torchdata.datapipes.iter import (
     IterDataPipe,
     Mapper,
-    Shuffler,
     Filter,
     Demultiplexer,
     Grouper,
@@ -17,42 +16,64 @@ from torchdata.datapipes.iter import (
     UnBatcher,
 )
 from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
-    DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
+    Dataset,
 )
 from torchvision.prototype.datasets.utils._internal import (
     MappingIterator,
     INFINITE_BUFFER_SIZE,
-    BUILTIN_DIR,
     getitem,
+    read_categories_file,
     path_accessor,
+    hint_sharding,
+    hint_shuffling,
 )
-from torchvision.prototype.features import BoundingBox, Label, Feature
-from torchvision.prototype.utils._internal import FrozenMapping
+from torchvision.prototype.features import BoundingBox, Label, _Feature, EncodedImage
+
+from .._api import register_dataset, register_info
 
 
+NAME = "coco"
+
+
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    categories, super_categories = zip(*read_categories_file(NAME))
+    return dict(categories=categories, super_categories=super_categories)
+
+
+@register_dataset(NAME)
 class Coco(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        name = "coco"
-        categories, super_categories = zip(*DatasetInfo.read_categories_file(BUILTIN_DIR / f"{name}.categories"))
+    """
+    - **homepage**: https://cocodataset.org/
+    - **dependencies**:
+        - <pycocotools `https://github.com/cocodataset/cocoapi`>_
+    """
 
-        return DatasetInfo(
-            name,
-            type=DatasetType.IMAGE,
-            dependencies=("pycocotools",),
-            categories=categories,
-            homepage="https://cocodataset.org/",
-            valid_options=dict(
-                split=("train", "val"),
-                year=("2017", "2014"),
-                annotations=(*self._ANN_DECODERS.keys(), None),
-            ),
-            extra=dict(category_to_super_category=FrozenMapping(zip(categories, super_categories))),
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        split: str = "train",
+        year: str = "2017",
+        annotations: Optional[str] = "instances",
+        skip_integrity_check: bool = False,
+    ) -> None:
+        self._split = self._verify_str_arg(split, "split", {"train", "val"})
+        self._year = self._verify_str_arg(year, "year", {"2017", "2014"})
+        self._annotations = (
+            self._verify_str_arg(annotations, "annotations", self._ANN_DECODERS.keys())
+            if annotations is not None
+            else None
         )
+
+        info = _info()
+        categories, super_categories = info["categories"], info["super_categories"]
+        self._categories = categories
+        self._category_to_super_category = dict(zip(categories, super_categories))
+
+        super().__init__(root, dependencies=("pycocotools",), skip_integrity_check=skip_integrity_check)
 
     _IMAGE_URL_BASE = "http://images.cocodataset.org/zips"
 
@@ -70,14 +91,14 @@ class Coco(Dataset):
         "2017": "113a836d90195ee1f884e704da6304dfaaecff1f023f49b6ca93c4aaae470268",
     }
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
+    def _resources(self) -> List[OnlineResource]:
         images = HttpResource(
-            f"{self._IMAGE_URL_BASE}/{config.split}{config.year}.zip",
-            sha256=self._IMAGES_CHECKSUMS[(config.year, config.split)],
+            f"{self._IMAGE_URL_BASE}/{self._split}{self._year}.zip",
+            sha256=self._IMAGES_CHECKSUMS[(self._year, self._split)],
         )
         meta = HttpResource(
-            f"{self._META_URL_BASE}/annotations_trainval{config.year}.zip",
-            sha256=self._META_CHECKSUMS[config.year],
+            f"{self._META_URL_BASE}/annotations_trainval{self._year}.zip",
+            sha256=self._META_CHECKSUMS[self._year],
         )
         return [images, meta]
 
@@ -94,10 +115,9 @@ class Coco(Dataset):
     def _decode_instances_anns(self, anns: List[Dict[str, Any]], image_meta: Dict[str, Any]) -> Dict[str, Any]:
         image_size = (image_meta["height"], image_meta["width"])
         labels = [ann["category_id"] for ann in anns]
-        categories = [self.info.categories[label] for label in labels]
         return dict(
             # TODO: create a segmentation feature
-            segmentations=Feature(
+            segmentations=_Feature(
                 torch.stack(
                     [
                         self._segmentation_to_mask(ann["segmentation"], is_crowd=ann["iscrowd"], image_size=image_size)
@@ -105,16 +125,15 @@ class Coco(Dataset):
                     ]
                 )
             ),
-            areas=Feature([ann["area"] for ann in anns]),
-            crowds=Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
+            areas=_Feature([ann["area"] for ann in anns]),
+            crowds=_Feature([ann["iscrowd"] for ann in anns], dtype=torch.bool),
             bounding_boxes=BoundingBox(
                 [ann["bbox"] for ann in anns],
                 format="xywh",
                 image_size=image_size,
             ),
-            labels=Label(labels),
-            categories=categories,
-            super_categories=[self.info.extra.category_to_super_category[category] for category in categories],
+            labels=Label(labels, categories=self._categories),
+            super_categories=[self._category_to_super_category[self._categories[label]] for label in labels],
             ann_ids=[ann["id"] for ann in anns],
         )
 
@@ -135,9 +154,14 @@ class Coco(Dataset):
         fr"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
     )
 
-    def _filter_meta_files(self, data: Tuple[str, Any], *, split: str, year: str, annotations: str) -> bool:
+    def _filter_meta_files(self, data: Tuple[str, Any]) -> bool:
         match = self._META_FILE_PATTERN.match(pathlib.Path(data[0]).name)
-        return bool(match and match["split"] == split and match["year"] == year and match["annotations"] == annotations)
+        return bool(
+            match
+            and match["split"] == self._split
+            and match["year"] == self._year
+            and match["annotations"] == self._annotations
+        )
 
     def _classify_meta(self, data: Tuple[str, Any]) -> Optional[int]:
         key, _ = data
@@ -148,49 +172,39 @@ class Coco(Dataset):
         else:
             return None
 
-    def _collate_and_decode_image(
-        self, data: Tuple[str, io.IOBase], *, decoder: Optional[Callable[[io.IOBase], torch.Tensor]]
-    ) -> Dict[str, Any]:
+    def _prepare_image(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         path, buffer = data
-        return dict(path=path, image=decoder(buffer) if decoder else buffer)
+        return dict(
+            path=path,
+            image=EncodedImage.from_file(buffer),
+        )
 
-    def _collate_and_decode_sample(
+    def _prepare_sample(
         self,
-        data: Tuple[Tuple[List[Dict[str, Any]], Dict[str, Any]], Tuple[str, io.IOBase]],
-        *,
-        annotations: Optional[str],
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
+        data: Tuple[Tuple[List[Dict[str, Any]], Dict[str, Any]], Tuple[str, BinaryIO]],
     ) -> Dict[str, Any]:
         ann_data, image_data = data
         anns, image_meta = ann_data
 
-        sample = self._collate_and_decode_image(image_data, decoder=decoder)
-        if annotations:
-            sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
-
+        sample = self._prepare_image(image_data)
+        # this method is only called if we have annotations
+        annotations = cast(str, self._annotations)
+        sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
         return sample
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         images_dp, meta_dp = resource_dps
 
-        if config.annotations is None:
-            dp = Shuffler(images_dp)
-            return Mapper(dp, self._collate_and_decode_image, fn_kwargs=dict(decoder=decoder))
+        if self._annotations is None:
+            dp = hint_shuffling(images_dp)
+            dp = hint_sharding(dp)
+            dp = hint_shuffling(dp)
+            return Mapper(dp, self._prepare_image)
 
-        meta_dp = Filter(
-            meta_dp,
-            self._filter_meta_files,
-            fn_kwargs=dict(split=config.split, year=config.year, annotations=config.annotations),
-        )
+        meta_dp = Filter(meta_dp, self._filter_meta_files)
         meta_dp = JsonParser(meta_dp)
         meta_dp = Mapper(meta_dp, getitem(1))
-        meta_dp = MappingIterator(meta_dp)
+        meta_dp: IterDataPipe[Dict[str, Dict[str, Any]]] = MappingIterator(meta_dp)
         images_meta_dp, anns_meta_dp = Demultiplexer(
             meta_dp,
             2,
@@ -201,11 +215,12 @@ class Coco(Dataset):
 
         images_meta_dp = Mapper(images_meta_dp, getitem(1))
         images_meta_dp = UnBatcher(images_meta_dp)
-        images_meta_dp = Shuffler(images_meta_dp)
 
         anns_meta_dp = Mapper(anns_meta_dp, getitem(1))
         anns_meta_dp = UnBatcher(anns_meta_dp)
         anns_meta_dp = Grouper(anns_meta_dp, group_key_fn=getitem("image_id"), buffer_size=INFINITE_BUFFER_SIZE)
+        anns_meta_dp = hint_shuffling(anns_meta_dp)
+        anns_meta_dp = hint_sharding(anns_meta_dp)
 
         anns_dp = IterKeyZipper(
             anns_meta_dp,
@@ -214,7 +229,6 @@ class Coco(Dataset):
             ref_key_fn=getitem("id"),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-
         dp = IterKeyZipper(
             anns_dp,
             images_dp,
@@ -222,18 +236,24 @@ class Coco(Dataset):
             ref_key_fn=path_accessor("name"),
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(
-            dp, self._collate_and_decode_sample, fn_kwargs=dict(annotations=config.annotations, decoder=decoder)
-        )
+        return Mapper(dp, self._prepare_sample)
 
-    def _generate_categories(self, root: pathlib.Path) -> Tuple[Tuple[str, str]]:
-        config = self.default_config
-        resources = self.resources(config)
+    def __len__(self) -> int:
+        return {
+            ("train", "2017"): defaultdict(lambda: 118_287, instances=117_266),
+            ("train", "2014"): defaultdict(lambda: 82_783, instances=82_081),
+            ("val", "2017"): defaultdict(lambda: 5_000, instances=4_952),
+            ("val", "2014"): defaultdict(lambda: 40_504, instances=40_137),
+        }[(self._split, self._year)][
+            self._annotations  # type: ignore[index]
+        ]
 
-        dp = resources[1].load(pathlib.Path(root) / self.name)
-        dp = Filter(
-            dp, self._filter_meta_files, fn_kwargs=dict(split=config.split, year=config.year, annotations="instances")
-        )
+    def _generate_categories(self) -> Tuple[Tuple[str, str]]:
+        self._annotations = "instances"
+        resources = self._resources()
+
+        dp = resources[1].load(self._root)
+        dp = Filter(dp, self._filter_meta_files)
         dp = JsonParser(dp)
 
         _, meta = next(iter(dp))

@@ -31,13 +31,14 @@ architectures, and common image transformations for computer vision.
    :maxdepth: 2
    :caption: Package Reference
 
-   datasets
    transforms
    models
-   feature_extraction
+   datasets
+   utils
    ops
    io
-   utils
+   feature_extraction
+   models_new
 
 .. toctree::
    :maxdepth: 1

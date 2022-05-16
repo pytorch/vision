@@ -1,14 +1,16 @@
 import contextlib
 import gzip
 import os
+import pathlib
+import re
 import tarfile
 import zipfile
 
 import pytest
 import torchvision.datasets.utils as utils
 from torch._utils_internal import get_file_path_2
+from torchvision.datasets.folder import make_dataset
 from torchvision.datasets.utils import _COMPRESSED_FILE_OPENERS
-
 
 TEST_FILE = get_file_path_2(
     os.path.dirname(os.path.abspath(__file__)), "assets", "encode_jpeg", "grace_hopper_517x606.jpg"
@@ -212,6 +214,30 @@ class TestDatasetsUtils:
         assert "a" == utils.verify_str_arg("a", "arg", ("a",))
         pytest.raises(ValueError, utils.verify_str_arg, 0, ("a",), "arg")
         pytest.raises(ValueError, utils.verify_str_arg, "b", ("a",), "arg")
+
+
+@pytest.mark.parametrize(
+    ("kwargs", "expected_error_msg"),
+    [
+        (dict(is_valid_file=lambda path: pathlib.Path(path).suffix in {".png", ".jpeg"}), "classes c"),
+        (dict(extensions=".png"), re.escape("classes b, c. Supported extensions are: .png")),
+        (dict(extensions=(".png", ".jpeg")), re.escape("classes c. Supported extensions are: .png, .jpeg")),
+    ],
+)
+def test_make_dataset_no_valid_files(tmpdir, kwargs, expected_error_msg):
+    tmpdir = pathlib.Path(tmpdir)
+
+    (tmpdir / "a").mkdir()
+    (tmpdir / "a" / "a.png").touch()
+
+    (tmpdir / "b").mkdir()
+    (tmpdir / "b" / "b.jpeg").touch()
+
+    (tmpdir / "c").mkdir()
+    (tmpdir / "c" / "c.unknown").touch()
+
+    with pytest.raises(FileNotFoundError, match=expected_error_msg):
+        make_dataset(str(tmpdir), **kwargs)
 
 
 if __name__ == "__main__":

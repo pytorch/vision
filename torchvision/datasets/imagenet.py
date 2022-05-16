@@ -1,7 +1,6 @@
 import os
 import shutil
 import tempfile
-import warnings
 from contextlib import contextmanager
 from typing import Any, Dict, List, Iterator, Optional, Tuple
 
@@ -40,18 +39,7 @@ class ImageNet(ImageFolder):
         targets (list): The class_index value for each image in the dataset
     """
 
-    def __init__(self, root: str, split: str = "train", download: Optional[str] = None, **kwargs: Any) -> None:
-        if download is True:
-            msg = (
-                "The dataset is no longer publicly accessible. You need to "
-                "download the archives externally and place them in the root "
-                "directory."
-            )
-            raise RuntimeError(msg)
-        elif download is False:
-            msg = "The use of the download flag is deprecated, since the dataset is no longer publicly accessible."
-            warnings.warn(msg, RuntimeWarning)
-
+    def __init__(self, root: str, split: str = "train", **kwargs: Any) -> None:
         root = self.root = os.path.expanduser(root)
         self.split = verify_str_arg(split, "split", ("train", "val"))
 

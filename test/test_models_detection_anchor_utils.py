@@ -16,7 +16,7 @@ class Tester:
         image1 = torch.randn(3, 800, 800)
         image_list = ImageList(image1, [(800, 800)])
         feature_maps = [torch.randn(1, 50)]
-        pytest.raises(ValueError, anc, image_list, feature_maps)
+        pytest.raises(AssertionError, anc, image_list, feature_maps)
 
     def _init_test_anchor_generator(self):
         anchor_sizes = ((10,),)

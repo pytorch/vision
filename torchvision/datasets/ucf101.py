@@ -108,7 +108,7 @@ class UCF101(VisionDataset):
         with open(f) as fid:
             data = fid.readlines()
             data = [x.strip().split(" ")[0] for x in data]
-            data = [os.path.join(self.root, x) for x in data]
+            data = [os.path.join(self.root, *x.split("/")) for x in data]
             selected_files.update(data)
         indices = [i for i in range(len(video_list)) if video_list[i] in selected_files]
         return indices

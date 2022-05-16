@@ -4,11 +4,13 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple, Union
 import numpy as np
 import torch
 from PIL import Image, ImageOps, ImageEnhance
+from typing_extensions import Literal
 
 try:
     import accimage
 except ImportError:
     accimage = None
+from . import _pil_constants
 
 
 @torch.jit.unused
@@ -17,6 +19,18 @@ def _is_pil_image(img: Any) -> bool:
         return isinstance(img, (Image.Image, accimage.Image))
     else:
         return isinstance(img, Image.Image)
+
+
+@torch.jit.unused
+def get_dimensions(img: Any) -> List[int]:
+    if _is_pil_image(img):
+        if hasattr(img, "getbands"):
+            channels = len(img.getbands())
+        else:
+            channels = img.channels
+        width, height = img.size
+        return [channels, height, width]
+    raise TypeError(f"Unexpected type {type(img)}")
 
 
 @torch.jit.unused
@@ -29,7 +43,10 @@ def get_image_size(img: Any) -> List[int]:
 @torch.jit.unused
 def get_image_num_channels(img: Any) -> int:
     if _is_pil_image(img):
-        return 1 if img.mode == "L" else 3
+        if hasattr(img, "getbands"):
+            return len(img.getbands())
+        else:
+            return img.channels
     raise TypeError(f"Unexpected type {type(img)}")
 
 
@@ -38,7 +55,7 @@ def hflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
-    return img.transpose(Image.FLIP_LEFT_RIGHT)
+    return img.transpose(_pil_constants.FLIP_LEFT_RIGHT)
 
 
 @torch.jit.unused
@@ -46,7 +63,7 @@ def vflip(img: Image.Image) -> Image.Image:
     if not _is_pil_image(img):
         raise TypeError(f"img should be PIL Image. Got {type(img)}")
 
-    return img.transpose(Image.FLIP_TOP_BOTTOM)
+    return img.transpose(_pil_constants.FLIP_TOP_BOTTOM)
 
 
 @torch.jit.unused
@@ -118,7 +135,7 @@ def adjust_gamma(
 
     input_mode = img.mode
     img = img.convert("RGB")
-    gamma_map = [(255 + 1 - 1e-3) * gain * pow(ele / 255.0, gamma) for ele in range(256)] * 3
+    gamma_map = [int((255 + 1 - 1e-3) * gain * pow(ele / 255.0, gamma)) for ele in range(256)] * 3
     img = img.point(gamma_map)  # use PIL's point-function to accelerate this part
 
     img = img.convert(input_mode)
@@ -130,7 +147,7 @@ def pad(
     img: Image.Image,
     padding: Union[int, List[int], Tuple[int, ...]],
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
-    padding_mode: str = "constant",
+    padding_mode: Literal["constant", "edge", "reflect", "symmetric"] = "constant",
 ) -> Image.Image:
 
     if not _is_pil_image(img):
@@ -138,7 +155,7 @@ def pad(
 
     if not isinstance(padding, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate padding arg")
-    if not isinstance(fill, (numbers.Number, str, tuple)):
+    if not isinstance(fill, (numbers.Number, tuple, list)):
         raise TypeError("Got inappropriate fill arg")
     if not isinstance(padding_mode, str):
         raise TypeError("Got inappropriate padding_mode arg")
@@ -189,7 +206,7 @@ def pad(
         if img.mode == "P":
             palette = img.getpalette()
             img = np.asarray(img)
-            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), padding_mode)
+            img = np.pad(img, ((pad_top, pad_bottom), (pad_left, pad_right)), mode=padding_mode)
             img = Image.fromarray(img)
             img.putpalette(palette)
             return img
@@ -224,7 +241,7 @@ def crop(
 def resize(
     img: Image.Image,
     size: Union[Sequence[int], int],
-    interpolation: int = Image.BILINEAR,
+    interpolation: int = _pil_constants.BILINEAR,
     max_size: Optional[int] = None,
 ) -> Image.Image:
 
@@ -239,9 +256,6 @@ def resize(
         w, h = img.size
 
         short, long = (w, h) if w <= h else (h, w)
-        if short == size:
-            return img
-
         new_short, new_long = size, int(size * long / short)
 
         if max_size is not None:
@@ -254,7 +268,11 @@ def resize(
                 new_short, new_long = int(max_size * new_short / new_long), max_size
 
         new_w, new_h = (new_short, new_long) if w <= h else (new_long, new_short)
-        return img.resize((new_w, new_h), interpolation)
+
+        if (w, h) == (new_w, new_h):
+            return img
+        else:
+            return img.resize((new_w, new_h), interpolation)
     else:
         if max_size is not None:
             raise ValueError(
@@ -284,6 +302,12 @@ def _parse_fill(
 
         fill = tuple(fill)
 
+    if img.mode != "F":
+        if isinstance(fill, (list, tuple)):
+            fill = tuple(int(x) for x in fill)
+        else:
+            fill = int(fill)
+
     return {name: fill}
 
 
@@ -291,7 +315,7 @@ def _parse_fill(
 def affine(
     img: Image.Image,
     matrix: List[float],
-    interpolation: int = Image.NEAREST,
+    interpolation: int = _pil_constants.NEAREST,
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
 ) -> Image.Image:
 
@@ -300,14 +324,14 @@ def affine(
 
     output_size = img.size
     opts = _parse_fill(fill, img)
-    return img.transform(output_size, Image.AFFINE, matrix, interpolation, **opts)
+    return img.transform(output_size, _pil_constants.AFFINE, matrix, interpolation, **opts)
 
 
 @torch.jit.unused
 def rotate(
     img: Image.Image,
     angle: float,
-    interpolation: int = Image.NEAREST,
+    interpolation: int = _pil_constants.NEAREST,
     expand: bool = False,
     center: Optional[Tuple[int, int]] = None,
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
@@ -324,7 +348,7 @@ def rotate(
 def perspective(
     img: Image.Image,
     perspective_coeffs: float,
-    interpolation: int = Image.BICUBIC,
+    interpolation: int = _pil_constants.BICUBIC,
     fill: Optional[Union[float, List[float], Tuple[float, ...]]] = 0,
 ) -> Image.Image:
 
@@ -333,7 +357,7 @@ def perspective(
 
     opts = _parse_fill(fill, img)
 
-    return img.transform(img.size, Image.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
+    return img.transform(img.size, _pil_constants.PERSPECTIVE, perspective_coeffs, interpolation, **opts)
 
 
 @torch.jit.unused

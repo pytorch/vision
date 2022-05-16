@@ -6,7 +6,9 @@ ifneq ($(EXAMPLES_PATTERN),)
 endif
 
 # You can set these variables from the command line.
-SPHINXOPTS    = -W -j auto $(EXAMPLES_PATTERN_OPTS)
+# TODO: Once the models doc revamp is done, set back the -W option to raise
+# errors on warnings. See https://github.com/pytorch/vision/pull/5821#discussion_r850500693
+SPHINXOPTS    = -j auto $(EXAMPLES_PATTERN_OPTS)
 SPHINXBUILD   = sphinx-build
 SPHINXPROJ    = torchvision
 SOURCEDIR     = source
@@ -24,7 +26,7 @@ docset: html
 	convert $(SPHINXPROJ).docset/icon@2x.png -resize 16x16 $(SPHINXPROJ).docset/icon.png
 
 html-noplot:  # Avoids running the gallery examples, which may take time
-	$(SPHINXBUILD) -D plot_gallery=0 -b html $(ASPHINXOPTS) "${SOURCEDIR}" "$(BUILDDIR)"/html
+	$(SPHINXBUILD) -D plot_gallery=0 -b html "${SOURCEDIR}" "$(BUILDDIR)"/html
 	@echo
 	@echo "Build finished. The HTML pages are in $(BUILDDIR)/html."
 

@@ -45,8 +45,6 @@ class AnchorGenerator(nn.Module):
         if not isinstance(aspect_ratios[0], (list, tuple)):
             aspect_ratios = (aspect_ratios,) * len(sizes)
 
-        assert len(sizes) == len(aspect_ratios)
-
         self.sizes = sizes
         self.aspect_ratios = aspect_ratios
         self.cell_anchors = [
@@ -86,15 +84,14 @@ class AnchorGenerator(nn.Module):
     def grid_anchors(self, grid_sizes: List[List[int]], strides: List[List[Tensor]]) -> List[Tensor]:
         anchors = []
         cell_anchors = self.cell_anchors
-        assert cell_anchors is not None
-
-        if not (len(grid_sizes) == len(strides) == len(cell_anchors)):
-            raise ValueError(
-                "Anchors should be Tuple[Tuple[int]] because each feature "
-                "map could potentially have different sizes and aspect ratios. "
-                "There needs to be a match between the number of "
-                "feature maps passed and the number of sizes / aspect ratios specified."
-            )
+        torch._assert(cell_anchors is not None, "cell_anchors should not be None")
+        torch._assert(
+            len(grid_sizes) == len(strides) == len(cell_anchors),
+            "Anchors should be Tuple[Tuple[int]] because each feature "
+            "map could potentially have different sizes and aspect ratios. "
+            "There needs to be a match between the number of "
+            "feature maps passed and the number of sizes / aspect ratios specified.",
+        )
 
         for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
             grid_height, grid_width = size
@@ -121,8 +118,8 @@ class AnchorGenerator(nn.Module):
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
         strides = [
             [
-                torch.tensor(image_size[0] // g[0], dtype=torch.int64, device=device),
-                torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device),
+                torch.empty((), dtype=torch.int64, device=device).fill_(image_size[0] // g[0]),
+                torch.empty((), dtype=torch.int64, device=device).fill_(image_size[1] // g[1]),
             ]
             for g in grid_sizes
         ]
@@ -164,8 +161,8 @@ class DefaultBoxGenerator(nn.Module):
         clip: bool = True,
     ):
         super().__init__()
-        if steps is not None:
-            assert len(aspect_ratios) == len(steps)
+        if steps is not None and len(aspect_ratios) != len(steps):
+            raise ValueError("aspect_ratios and steps should have the same length")
         self.aspect_ratios = aspect_ratios
         self.steps = steps
         self.clip = clip
@@ -239,13 +236,15 @@ class DefaultBoxGenerator(nn.Module):
         return torch.cat(default_boxes, dim=0)
 
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + "("
-        s += "aspect_ratios={aspect_ratios}"
-        s += ", clip={clip}"
-        s += ", scales={scales}"
-        s += ", steps={steps}"
-        s += ")"
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"aspect_ratios={self.aspect_ratios}"
+            f", clip={self.clip}"
+            f", scales={self.scales}"
+            f", steps={self.steps}"
+            ")"
+        )
+        return s
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
         grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
@@ -255,16 +254,15 @@ class DefaultBoxGenerator(nn.Module):
         default_boxes = default_boxes.to(device)
 
         dboxes = []
+        x_y_size = torch.tensor([image_size[1], image_size[0]], device=default_boxes.device)
         for _ in image_list.image_sizes:
             dboxes_in_image = default_boxes
             dboxes_in_image = torch.cat(
                 [
-                    dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:],
-                    dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:],
+                    (dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:]) * x_y_size,
+                    (dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:]) * x_y_size,
                 ],
                 -1,
             )
-            dboxes_in_image[:, 0::2] *= image_size[1]
-            dboxes_in_image[:, 1::2] *= image_size[0]
             dboxes.append(dboxes_in_image)
         return dboxes

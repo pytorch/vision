@@ -61,6 +61,7 @@ class LazyImporter:
         "requests",
         "scipy.io",
         "scipy.sparse",
+        "h5py",
     )
 
     def __init__(self):
@@ -867,16 +868,20 @@ def _split_files_or_dirs(root, *files_or_dirs):
 def _make_archive(root, name, *files_or_dirs, opener, adder, remove=True):
     archive = pathlib.Path(root) / name
     if not files_or_dirs:
-        dir = archive.parent / archive.name.replace("".join(archive.suffixes), "")
-        if dir.exists() and dir.is_dir():
-            files_or_dirs = (dir,)
+        # We need to invoke `Path.with_suffix("")`, since call only applies to the last suffix if multiple suffixes are
+        # present. For example, `pathlib.Path("foo.tar.gz").with_suffix("")` results in `foo.tar`.
+        file_or_dir = archive
+        for _ in range(len(archive.suffixes)):
+            file_or_dir = file_or_dir.with_suffix("")
+        if file_or_dir.exists():
+            files_or_dirs = (file_or_dir,)
         else:
             raise ValueError("No file or dir provided.")
 
     files, dirs = _split_files_or_dirs(root, *files_or_dirs)
 
     with opener(archive) as fh:
-        for file in files:
+        for file in sorted(files):
             adder(fh, file, file.relative_to(root))
 
     if remove:
