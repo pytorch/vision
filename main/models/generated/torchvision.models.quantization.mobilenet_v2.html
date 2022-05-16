@@ -35,7 +35,7 @@
   <link rel="stylesheet" href="../../_static/css/custom_torchvision.css" type="text/css" />
     <link rel="index" title="Index" href="../../genindex.html" />
     <link rel="search" title="Search" href="../../search.html" />
-    <link rel="next" title="Quantized ResNet" href="../resnet_quant.html" />
+    <link rel="next" title="Quantized MobileNet V3" href="../mobilenetv3_quant.html" />
     <link rel="prev" title="Quantized MobileNet V2" href="../mobilenetv2_quant.html" />
   <!-- Google Analytics -->
   
@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+39d2e32 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+55dc828 ) &#x25BC</a>
     </div>
     
 
@@ -338,9 +338,12 @@
 <code class="sig-prename descclassname"><span class="pre">torchvision.models.quantization.</span></code><code class="sig-name descname"><span class="pre">mobilenet_v2</span></code><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Optional</span><span class="p"><span class="pre">[</span></span><span class="pre">Union</span><span class="p"><span class="pre">[</span></span><span class="pre">torchvision.models.quantization.mobilenetv2.MobileNet_V2_QuantizedWeights</span><span class="p"><span class="pre">,</span> </span><span class="pre">torchvision.models.mobilenetv2.MobileNet_V2_Weights</span><span class="p"><span class="pre">]</span></span><span class="p"><span class="pre">]</span></span></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">quantize</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span> <span class="o"><span class="pre">=</span></span> <span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span> <span class="n"><span class="pre">Any</span></span></em><span class="sig-paren">)</span> &#x2192; <span class="pre">torchvision.models.quantization.mobilenetv2.QuantizableMobileNetV2</span><a class="reference internal" href="../../_modules/torchvision/models/quantization/mobilenetv2.html#mobilenet_v2"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.quantization.mobilenet_v2" title="Permalink to this definition">¶</a></dt>
 <dd><p>Constructs a MobileNetV2 architecture from
 <a class="reference external" href="https://arxiv.org/abs/1801.04381">MobileNetV2: Inverted Residuals and Linear Bottlenecks</a>.</p>
-<p>Note that quantize = True returns a quantized model with 8 bit
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>Note that <code class="docutils literal notranslate"><span class="pre">quantize</span> <span class="pre">=</span> <span class="pre">True</span></code> returns a quantized model with 8 bit
 weights. Quantized models only support inference and run on CPUs.
-GPU inference is not yet supported</p>
+GPU inference is not yet supported.</p>
+</div>
 <dl class="field-list simple">
 <dt class="field-odd">Parameters</dt>
 <dd class="field-odd"><ul class="simple">
@@ -454,7 +457,7 @@ for more details about this class.</p></li>
   
     <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
       
-        <a href="../resnet_quant.html" class="btn btn-neutral float-right" title="Quantized ResNet" accesskey="n" rel="next">Next <img src="../../_static/images/chevron-right-orange.svg" class="next-page"></a>
+        <a href="../mobilenetv3_quant.html" class="btn btn-neutral float-right" title="Quantized MobileNet V3" accesskey="n" rel="next">Next <img src="../../_static/images/chevron-right-orange.svg" class="next-page"></a>
       
       
         <a href="../mobilenetv2_quant.html" class="btn btn-neutral" title="Quantized MobileNet V2" accesskey="p" rel="prev"><img src="../../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
