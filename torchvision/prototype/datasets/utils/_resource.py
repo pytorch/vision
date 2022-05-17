@@ -2,7 +2,7 @@ import abc
 import hashlib
 import itertools
 import pathlib
-from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
+from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn, Set
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
@@ -95,7 +95,7 @@ class OnlineResource(abc.ABC):
         # is not sufficient for files with multiple suffixes, e.g. foo.tar.gz.
         stem = path.name.replace("".join(path.suffixes), "")
 
-        def find_candidates():
+        def find_candidates() -> Set[pathlib.Path]:
             # Although it looks like we could glob for f"{stem}*" to find the file candidates as well as the folder
             # candidate simultaneously, that would also pick up other files that share the same prefix. For example, the
             # test split of the stanford-cars dataset uses the files
