@@ -8,6 +8,7 @@ import torch
 from datasets_utils import make_fake_flo_file, make_tar
 from torchdata.datapipes.iter import FileOpener, TarArchiveLoader
 from torchvision.datasets._optical_flow import _read_flo as read_flo_ref
+from torchvision.datasets.utils import _decompress
 from torchvision.prototype.datasets.utils import HttpResource, GDriveResource, Dataset, OnlineResource
 from torchvision.prototype.datasets.utils._internal import read_flo, fromfile
 
@@ -49,16 +50,6 @@ def test_read_flo(tmpdir):
     expected = torch.from_numpy(read_flo_ref(path).astype("f4", copy=False))
 
     torch.testing.assert_close(actual, expected)
-
-
-# This cannot be defined on the TestOnlineResource class, since it is used in a `@pytest.mark.parametrize` decorator on
-# a method on said class
-def _decompress_gz(path):
-    file = path.with_name(path.name.replace(".gz", ""))
-    with gzip.open(path, "rb") as rfh, open(file, "wb") as wfh:
-        wfh.write(rfh.read())
-    path.unlink()
-    return file
 
 
 class TestOnlineResource:
@@ -176,7 +167,13 @@ class TestOnlineResource:
         assert download_fn_was_called, "`download_fn()` was never called"
 
     # This tests the `"decompress"` literal as well as a custom callable
-    @pytest.mark.parametrize("preprocess", ["decompress", _decompress_gz])
+    @pytest.mark.parametrize(
+        "preprocess",
+        [
+            "decompress",
+            lambda path: _decompress(str(path), remove_finished=True),
+        ],
+    )
     def test_preprocess_decompress(self, tmp_path, preprocess):
         file_name = "file.txt.gz"
         content = "sentinel"
