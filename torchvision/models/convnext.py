@@ -207,6 +207,7 @@ _COMMON_META = {
     "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#convnext",
+    "_docs": """These weights improve upon the results of the original paper by using an enhanced training recipe.""",
 }
 
 
@@ -220,9 +221,6 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 82.520,
                 "acc@5": 96.146,
-                "_docs": """
-                    These weights improve upon the results of the original paper by using an enhanced training recipe.
-                """,
             },
         },
     )
@@ -239,9 +237,6 @@ class ConvNeXt_Small_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 83.616,
                 "acc@5": 96.650,
-                "_docs": """
-                    These weights improve upon the results of the original paper by using an enhanced training recipe.
-                """,
             },
         },
     )
@@ -258,9 +253,6 @@ class ConvNeXt_Base_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 84.062,
                 "acc@5": 96.870,
-                "_docs": """
-                    These weights improve upon the results of the original paper by using an enhanced training recipe.
-                """,
             },
         },
     )
@@ -277,9 +269,6 @@ class ConvNeXt_Large_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 84.414,
                 "acc@5": 96.976,
-                "_docs": """
-                    These weights improve upon the results of the original paper by using an enhanced training recipe.
-                """,
             },
         },
     )

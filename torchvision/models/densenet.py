@@ -261,6 +261,7 @@ _COMMON_META = {
     "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/116",
+    "_docs": """These weights are ported from LuaTorch.""",
 }
 
 
@@ -274,7 +275,6 @@ class DenseNet121_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 74.434,
                 "acc@5": 91.972,
-                "_docs": """These weights are ported from LuaTorch.""",
             },
         },
     )
@@ -291,7 +291,6 @@ class DenseNet161_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 77.138,
                 "acc@5": 93.560,
-                "_docs": """These weights are ported from LuaTorch.""",
             },
         },
     )
@@ -308,7 +307,6 @@ class DenseNet169_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 75.600,
                 "acc@5": 92.806,
-                "_docs": """These weights are ported from LuaTorch.""",
             },
         },
     )
@@ -325,7 +323,6 @@ class DenseNet201_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 76.896,
                 "acc@5": 93.370,
-                "_docs": """These weights are ported from LuaTorch.""",
             },
         },
     )

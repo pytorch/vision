@@ -461,8 +461,8 @@ class EfficientNet_B0_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 77.692,
                 "acc@5": 93.532,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -481,8 +481,8 @@ class EfficientNet_B1_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 78.642,
                 "acc@5": 94.186,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -497,10 +497,10 @@ class EfficientNet_B1_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 79.838,
                 "acc@5": 94.934,
-                "_docs": """
-                    These weights improve upon the results of the original paper by using an enhanced training recipe.
-                """,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using an enhanced training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -519,8 +519,8 @@ class EfficientNet_B2_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 80.608,
                 "acc@5": 95.310,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -539,8 +539,8 @@ class EfficientNet_B3_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 82.008,
                 "acc@5": 96.054,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -559,8 +559,8 @@ class EfficientNet_B4_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 83.384,
                 "acc@5": 96.594,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -579,8 +579,8 @@ class EfficientNet_B5_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 83.444,
                 "acc@5": 96.628,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -599,8 +599,8 @@ class EfficientNet_B6_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 84.008,
                 "acc@5": 96.916,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -619,8 +619,8 @@ class EfficientNet_B7_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 84.122,
                 "acc@5": 96.908,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -641,10 +641,10 @@ class EfficientNet_V2_S_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 84.228,
                 "acc@5": 96.878,
-                "_docs": """
-                    These weights improve upon the results of the original paper by using an enhanced training recipe.
-                """,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using an enhanced training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -665,10 +665,10 @@ class EfficientNet_V2_M_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 85.112,
                 "acc@5": 97.156,
-                "_docs": """
-                    These weights improve upon the results of the original paper by using an enhanced training recipe.
-                """,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using an enhanced training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -692,8 +692,8 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 85.808,
                 "acc@5": 97.788,
-                "_docs": """These weights are ported from the original paper.""",
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1

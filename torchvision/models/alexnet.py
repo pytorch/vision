@@ -64,10 +64,10 @@ class AlexNet_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 56.522,
                 "acc@5": 79.066,
-                "_docs": """
-                    These weights reproduce closely the results of the paper using a simplified training recipe.
-                """,
             },
+            "_docs": """
+                These weights reproduce closely the results of the paper using a simplified training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
