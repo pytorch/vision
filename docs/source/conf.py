@@ -347,10 +347,6 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             metrics = meta.pop("metrics", {})
             meta_with_metrics = dict(meta, **metrics)
 
-            # We don't want to document these, they can be too long
-            for k in ["categories", "keypoint_names"]:
-                meta_with_metrics.pop(k, None)
-
             custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
             if custom_docs is not None:
                 lines += [custom_docs, ""]
@@ -360,6 +356,10 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
                     v = f"`link <{v}>`__"
                 elif k == "min_size":
                     v = f"height={v[0]}, width={v[1]}"
+                elif k in {"categories", "keypoint_names"} and isinstance(v, list):
+                    max_visible = 3
+                    v_sample = ", ".join(v[:max_visible])
+                    v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
@@ -367,7 +367,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines += textwrap.indent(table, " " * 4).split("\n")
             lines.append("")
             lines.append(
-                f"The inference transforms are available at ``{str(field)}.transforms`` and "
+                f"The preprocessing/inference transforms are available at ``{str(field)}.transforms`` and "
                 f"perform the following operations: {field.transforms().describe()}"
             )
             lines.append("")
