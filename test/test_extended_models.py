@@ -98,7 +98,7 @@ def test_schema_meta_validation(model_fn):
         "all": {"metrics", "min_size", "num_params", "recipe"},
         "models": classification_fields | {"_docs"},
         "detection": {"categories", ("metrics", "box_map")},
-        "quantization": classification_fields | {"backend", "unquantized"},
+        "quantization": classification_fields | {"backend", "unquantized"} | {"_docs"},
         "segmentation": {"categories", ("metrics", "miou"), ("metrics", "pixel_acc")},
         "video": classification_fields,
         "optical_flow": set(),
