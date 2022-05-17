@@ -66,8 +66,11 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
         r"""Fuse conv/bn/relu modules in shufflenetv2 model
 
         Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
-        Model is modified in place.  Note that this operation does not change numerics
-        and the model after modification is in floating point
+        Model is modified in place.
+
+        .. note::
+            Note that this operation does not change numerics
+            and the model after modification is in floating point
         """
         for name, m in self._modules.items():
             if name in ["conv1", "conv5"] and m is not None:
@@ -205,14 +208,35 @@ def shufflenet_v2_x0_5(
 ) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 0.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (ShuffleNet_V2_X0_5_QuantizedWeights or ShuffleNet_V2_X0_5_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights` or :class:`~torchvision.models.ShuffleNet_V2_X0_5_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X0_5_Weights
+        :members:
+        :noindex:
     """
     weights = (ShuffleNet_V2_X0_5_QuantizedWeights if quantize else ShuffleNet_V2_X0_5_Weights).verify(weights)
     return _shufflenetv2(
@@ -237,14 +261,35 @@ def shufflenet_v2_x1_0(
 ) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 1.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (ShuffleNet_V2_X1_0_QuantizedWeights or ShuffleNet_V2_X1_0_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights` or :class:`~torchvision.models.ShuffleNet_V2_X1_0_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X1_0_Weights
+        :members:
+        :noindex:
     """
     weights = (ShuffleNet_V2_X1_0_QuantizedWeights if quantize else ShuffleNet_V2_X1_0_Weights).verify(weights)
     return _shufflenetv2(
@@ -261,14 +306,35 @@ def shufflenet_v2_x1_5(
 ) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 1.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (ShuffleNet_V2_X1_5_QuantizedWeights or ShuffleNet_V2_X1_5_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights` or :class:`~torchvision.models.ShuffleNet_V2_X1_5_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X1_5_Weights
+        :members:
+        :noindex:
     """
     weights = (ShuffleNet_V2_X1_5_QuantizedWeights if quantize else ShuffleNet_V2_X1_5_Weights).verify(weights)
     return _shufflenetv2(
@@ -285,14 +351,35 @@ def shufflenet_v2_x2_0(
 ) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 2.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (ShuffleNet_V2_X2_0_QuantizedWeights or ShuffleNet_V2_X2_0_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights` or :class:`~torchvision.models.ShuffleNet_V2_X2_0_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X2_0_Weights
+        :members:
+        :noindex:
     """
     weights = (ShuffleNet_V2_X2_0_QuantizedWeights if quantize else ShuffleNet_V2_X2_0_Weights).verify(weights)
     return _shufflenetv2(
