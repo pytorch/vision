@@ -336,8 +336,8 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
                 "acc@5": 92.566,
             },
             "_docs": """
-                These weights improve marginally upon the results of the original paper by using a modified version of 
-                TorchVision's `new training recipe 
+                These weights improve marginally upon the results of the original paper by using a modified version of
+                TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },

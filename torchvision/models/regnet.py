@@ -441,8 +441,8 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
                 "acc@5": 92.742,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -477,8 +477,8 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
                 "acc@5": 94.502,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -513,8 +513,8 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
                 "acc@5": 95.444,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -549,8 +549,8 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
                 "acc@5": 95.972,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -585,8 +585,8 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
                 "acc@5": 96.330,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -621,8 +621,8 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@5": 96.328,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -640,7 +640,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@5": 98.054,
             },
             "_docs": """
-                These weights are learnt via transfer learning by end-to-end fine-tuning the original 
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
             """,
         },
@@ -659,7 +659,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@5": 97.244,
             },
             "_docs": """
-                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk 
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
             """,
         },
@@ -694,8 +694,8 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@5": 96.498,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -713,7 +713,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@5": 98.362,
             },
             "_docs": """
-                These weights are learnt via transfer learning by end-to-end fine-tuning the original 
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
             """,
         },
@@ -732,7 +732,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@5": 97.480,
             },
             "_docs": """
-                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk 
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
             """,
         },
@@ -754,7 +754,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
                 "acc@5": 98.682,
             },
             "_docs": """
-                These weights are learnt via transfer learning by end-to-end fine-tuning the original 
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
                 `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
             """,
         },
@@ -773,7 +773,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
                 "acc@5": 97.844,
             },
             "_docs": """
-                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk 
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
                 weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
             """,
         },
@@ -808,8 +808,8 @@ class RegNet_X_400MF_Weights(WeightsEnum):
                 "acc@5": 92.322,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -844,8 +844,8 @@ class RegNet_X_800MF_Weights(WeightsEnum):
                 "acc@5": 93.826,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -880,8 +880,8 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
                 "acc@5": 94.922,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -916,8 +916,8 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
                 "acc@5": 95.430,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -952,8 +952,8 @@ class RegNet_X_8GF_Weights(WeightsEnum):
                 "acc@5": 95.678,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -988,8 +988,8 @@ class RegNet_X_16GF_Weights(WeightsEnum):
                 "acc@5": 96.196,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -1024,8 +1024,8 @@ class RegNet_X_32GF_Weights(WeightsEnum):
                 "acc@5": 96.288,
             },
             "_docs": """
-                These weights improve upon the results of the original paper by using a modified version of TorchVision's 
-                `new training recipe 
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },

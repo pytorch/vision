@@ -211,7 +211,7 @@ class VGG16_Weights(WeightsEnum):
             },
             "_docs": """
                 These weights can't be used for classification because they are missing values in the `classifier`
-                module. Only the `features` module has valid values and can be used for feature extraction. The weights 
+                module. Only the `features` module has valid values and can be used for feature extraction. The weights
                 were trained using the original input standardization method as described in the paper.
             """,
         },

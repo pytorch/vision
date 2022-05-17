@@ -248,7 +248,7 @@ class MNASNet0_75_Weights(WeightsEnum):
                 "acc@5": 90.496,
             },
             "_docs": """
-                These weights were trained from scratch by using TorchVision's `new training recipe 
+                These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -286,7 +286,7 @@ class MNASNet1_3_Weights(WeightsEnum):
                 "acc@5": 93.522,
             },
             "_docs": """
-                These weights were trained from scratch by using TorchVision's `new training recipe 
+                These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },

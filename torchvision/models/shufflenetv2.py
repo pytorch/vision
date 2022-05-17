@@ -239,7 +239,7 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
                 "acc@5": 91.086,
             },
             "_docs": """
-                These weights were trained from scratch by using TorchVision's `new training recipe 
+                These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
@@ -260,7 +260,7 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
                 "acc@5": 93.006,
             },
             "_docs": """
-                These weights were trained from scratch by using TorchVision's `new training recipe 
+                These weights were trained from scratch by using TorchVision's `new training recipe
                 <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
             """,
         },
