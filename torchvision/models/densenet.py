@@ -261,6 +261,7 @@ _COMMON_META = {
     "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/116",
+    "_docs": """These weights are ported from LuaTorch.""",
 }
 
 

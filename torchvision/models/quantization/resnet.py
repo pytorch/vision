@@ -268,7 +268,7 @@ def resnet18(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNet-18 model from
-    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385.pdf>`_
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
@@ -317,7 +317,7 @@ def resnet50(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNet-50 model from
-    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385.pdf>`_
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
@@ -366,7 +366,7 @@ def resnext101_32x8d(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNeXt-101 32x8d model from
-    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431.pdf>`_
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
@@ -409,7 +409,7 @@ def resnext101_64x4d(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNeXt-101 64x4d model from
-    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431.pdf>`_
+    `Aggregated Residual Transformation for Deep Neural Networks <https://arxiv.org/abs/1611.05431>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit

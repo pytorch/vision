@@ -117,6 +117,7 @@ def _squeezenet(
 _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/49#issuecomment-277560717",
+    "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
 }
 
 

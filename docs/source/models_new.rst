@@ -206,6 +206,8 @@ pre-trained weights:
    models/mobilenetv2_quant
    models/mobilenetv3_quant
    models/resnet_quant
+   models/resnext_quant
+   models/shufflenetv2_quant
 
 |
 

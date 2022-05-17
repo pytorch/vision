@@ -335,8 +335,6 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
         for field in obj:
             lines += [f"**{str(field)}**:", ""]
-            if field == obj.DEFAULT:
-                lines += [f"This weight is also available as ``{obj.__name__}.DEFAULT``.", ""]
 
             table = []
 
@@ -349,7 +347,12 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
             custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
             if custom_docs is not None:
-                lines += [custom_docs, ""]
+                lines += [custom_docs]
+
+            if field == obj.DEFAULT:
+                lines += [f"Also available as ``{obj.__name__}.DEFAULT``."]
+
+            lines += [""]
 
             for k, v in meta_with_metrics.items():
                 if k in {"recipe", "license"}:
@@ -367,8 +370,8 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines += textwrap.indent(table, " " * 4).split("\n")
             lines.append("")
             lines.append(
-                f"The preprocessing/inference transforms are available at ``{str(field)}.transforms`` and "
-                f"perform the following operations: {field.transforms().describe()}"
+                f"The inference transforms are available at ``{str(field)}.transforms`` and "
+                f"perform the following preprocessing operations: {field.transforms().describe()}"
             )
             lines.append("")
 

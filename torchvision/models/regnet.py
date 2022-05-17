@@ -426,6 +426,7 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
                 "acc@1": 74.046,
                 "acc@5": 91.716,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -439,6 +440,11 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
                 "acc@1": 75.804,
                 "acc@5": 92.742,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -456,6 +462,7 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
                 "acc@1": 76.420,
                 "acc@5": 93.136,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -469,6 +476,11 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
                 "acc@1": 78.828,
                 "acc@5": 94.502,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -486,6 +498,7 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
                 "acc@1": 77.950,
                 "acc@5": 93.966,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -499,6 +512,11 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
                 "acc@1": 80.876,
                 "acc@5": 95.444,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -516,6 +534,7 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
                 "acc@1": 78.948,
                 "acc@5": 94.576,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -529,6 +548,11 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
                 "acc@1": 81.982,
                 "acc@5": 95.972,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -546,6 +570,7 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
                 "acc@1": 80.032,
                 "acc@5": 95.048,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -559,6 +584,11 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
                 "acc@1": 82.828,
                 "acc@5": 96.330,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -576,6 +606,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@1": 80.424,
                 "acc@5": 95.240,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -589,6 +620,11 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@1": 82.886,
                 "acc@5": 96.328,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     IMAGENET1K_SWAG_E2E_V1 = Weights(
@@ -603,6 +639,10 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@1": 86.012,
                 "acc@5": 98.054,
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -618,6 +658,10 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@1": 83.976,
                 "acc@5": 97.244,
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -635,6 +679,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@1": 80.878,
                 "acc@5": 95.340,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -648,6 +693,11 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@1": 83.368,
                 "acc@5": 96.498,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     IMAGENET1K_SWAG_E2E_V1 = Weights(
@@ -662,6 +712,10 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@1": 86.838,
                 "acc@5": 98.362,
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -677,6 +731,10 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@1": 84.622,
                 "acc@5": 97.480,
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -695,6 +753,10 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
                 "acc@1": 88.228,
                 "acc@5": 98.682,
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -710,6 +772,10 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
                 "acc@1": 86.068,
                 "acc@5": 97.844,
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_SWAG_E2E_V1
@@ -727,6 +793,7 @@ class RegNet_X_400MF_Weights(WeightsEnum):
                 "acc@1": 72.834,
                 "acc@5": 90.950,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -740,6 +807,11 @@ class RegNet_X_400MF_Weights(WeightsEnum):
                 "acc@1": 74.864,
                 "acc@5": 92.322,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -757,6 +829,7 @@ class RegNet_X_800MF_Weights(WeightsEnum):
                 "acc@1": 75.212,
                 "acc@5": 92.348,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -770,6 +843,11 @@ class RegNet_X_800MF_Weights(WeightsEnum):
                 "acc@1": 77.522,
                 "acc@5": 93.826,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -787,6 +865,7 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
                 "acc@1": 77.040,
                 "acc@5": 93.440,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -800,6 +879,11 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
                 "acc@1": 79.668,
                 "acc@5": 94.922,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -817,6 +901,7 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
                 "acc@1": 78.364,
                 "acc@5": 93.992,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -830,6 +915,11 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
                 "acc@1": 81.196,
                 "acc@5": 95.430,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -847,6 +937,7 @@ class RegNet_X_8GF_Weights(WeightsEnum):
                 "acc@1": 79.344,
                 "acc@5": 94.686,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -860,6 +951,11 @@ class RegNet_X_8GF_Weights(WeightsEnum):
                 "acc@1": 81.682,
                 "acc@5": 95.678,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -877,6 +973,7 @@ class RegNet_X_16GF_Weights(WeightsEnum):
                 "acc@1": 80.058,
                 "acc@5": 94.944,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -890,6 +987,11 @@ class RegNet_X_16GF_Weights(WeightsEnum):
                 "acc@1": 82.716,
                 "acc@5": 96.196,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -907,6 +1009,7 @@ class RegNet_X_32GF_Weights(WeightsEnum):
                 "acc@1": 80.622,
                 "acc@5": 95.248,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -920,6 +1023,11 @@ class RegNet_X_32GF_Weights(WeightsEnum):
                 "acc@1": 83.014,
                 "acc@5": 96.288,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
