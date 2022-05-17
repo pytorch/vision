@@ -110,6 +110,7 @@ _COMMON_META = {
     "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
+    "_docs": """These weights were trained from scratch by using a simplified training recipe.""",
 }
 
 
@@ -190,10 +191,8 @@ class VGG16_Weights(WeightsEnum):
             },
         },
     )
-    # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses the
-    # same input standardization method as the paper. Only the `features` weights have proper values, those on the
-    # `classifier` module are filled with nans.
     IMAGENET1K_FEATURES = Weights(
+        # Weights ported from https://github.com/amdegroot/ssd.pytorch/
         url="https://download.pytorch.org/models/vgg16_features-amdegroot-88682ab5.pth",
         transforms=partial(
             ImageClassification,
@@ -210,6 +209,11 @@ class VGG16_Weights(WeightsEnum):
                 "acc@1": float("nan"),
                 "acc@5": float("nan"),
             },
+            "_docs": """
+                These weights can't be used for classification because they are missing values in the `classifier`
+                module. Only the `features` module has valid values and can be used for feature extraction. The weights
+                were trained using the original input standardization method as described in the paper.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -461,3 +465,21 @@ def vgg19_bn(*, weights: Optional[VGG19_BN_Weights] = None, progress: bool = Tru
     weights = VGG19_BN_Weights.verify(weights)
 
     return _vgg("E", True, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "vgg11": VGG11_Weights.IMAGENET1K_V1.url,
+        "vgg13": VGG13_Weights.IMAGENET1K_V1.url,
+        "vgg16": VGG16_Weights.IMAGENET1K_V1.url,
+        "vgg19": VGG19_Weights.IMAGENET1K_V1.url,
+        "vgg11_bn": VGG11_BN_Weights.IMAGENET1K_V1.url,
+        "vgg13_bn": VGG13_BN_Weights.IMAGENET1K_V1.url,
+        "vgg16_bn": VGG16_BN_Weights.IMAGENET1K_V1.url,
+        "vgg19_bn": VGG19_BN_Weights.IMAGENET1K_V1.url,
+    }
+)

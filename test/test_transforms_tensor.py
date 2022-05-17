@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import pytest
 import torch
+import torchvision.transforms._pil_constants as _pil_constants
 from common_utils import (
     get_tmp_dir,
     int_dtypes,
@@ -15,7 +16,6 @@ from common_utils import (
     cpu_and_gpu,
     assert_equal,
 )
-from PIL import Image
 from torchvision import transforms as T
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as F
@@ -771,13 +771,13 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
             matrix = (1, level, 0, 0, 1, 0)
         elif mode == "Y":
             matrix = (1, 0, 0, level, 1, 0)
-        return pil_img.transform((image_size, image_size), Image.AFFINE, matrix, resample=resample)
+        return pil_img.transform((image_size, image_size), _pil_constants.AFFINE, matrix, resample=resample)
 
     t_img, pil_img = _create_data(image_size, image_size)
 
     resample_pil = {
-        F.InterpolationMode.NEAREST: Image.NEAREST,
-        F.InterpolationMode.BILINEAR: Image.BILINEAR,
+        F.InterpolationMode.NEAREST: _pil_constants.NEAREST,
+        F.InterpolationMode.BILINEAR: _pil_constants.BILINEAR,
     }[interpolation]
 
     level = 0.3

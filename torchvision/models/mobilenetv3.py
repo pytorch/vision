@@ -321,6 +321,7 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
                 "acc@1": 74.042,
                 "acc@5": 91.340,
             },
+            "_docs": """These weights were trained from scratch by using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -334,6 +335,11 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
                 "acc@1": 75.274,
                 "acc@5": 92.566,
             },
+            "_docs": """
+                These weights improve marginally upon the results of the original paper by using a modified version of
+                TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -351,6 +357,9 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
                 "acc@1": 67.668,
                 "acc@5": 87.402,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a simple training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -414,3 +423,15 @@ def mobilenet_v3_small(
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "mobilenet_v3_large": MobileNet_V3_Large_Weights.IMAGENET1K_V1.url,
+        "mobilenet_v3_small": MobileNet_V3_Small_Weights.IMAGENET1K_V1.url,
+    }
+)

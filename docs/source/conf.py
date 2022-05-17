@@ -322,16 +322,26 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
       used within the autoclass directive.
     """
 
-    if obj.__name__.endswith("_Weights"):
+    if obj.__name__.endswith(("_Weights", "_QuantizedWeights")):
+
+        if len(obj) == 0:
+            lines[:] = ["There are no available pre-trained weights."]
+            return
+
         lines[:] = [
             "The model builder above accepts the following values as the ``weights`` parameter.",
             f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
         ]
+
+        if obj.__doc__ != "An enumeration.":
+            # We only show the custom enum doc if it was overriden. The default one from Python is "An enumeration"
+            lines.append("")
+            lines.append(obj.__doc__)
+
         lines.append("")
+
         for field in obj:
             lines += [f"**{str(field)}**:", ""]
-            if field == obj.DEFAULT:
-                lines += [f"This weight is also available as ``{obj.__name__}.DEFAULT``.", ""]
 
             table = []
 
@@ -342,11 +352,24 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             metrics = meta.pop("metrics", {})
             meta_with_metrics = dict(meta, **metrics)
 
+            custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
+            if custom_docs is not None:
+                lines += [custom_docs]
+
+            if field == obj.DEFAULT:
+                lines += [f"Also available as ``{obj.__name__}.DEFAULT``."]
+
+            lines += [""]
+
             for k, v in meta_with_metrics.items():
-                if k == "categories":
-                    continue
-                elif k == "recipe":
+                if k in {"recipe", "license"}:
                     v = f"`link <{v}>`__"
+                elif k == "min_size":
+                    v = f"height={v[0]}, width={v[1]}"
+                elif k in {"categories", "keypoint_names"} and isinstance(v, list):
+                    max_visible = 3
+                    v_sample = ", ".join(v[:max_visible])
+                    v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
                 table.append((str(k), str(v)))
             table = tabulate(table, tablefmt="rst")
             lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
@@ -354,10 +377,16 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
             lines += textwrap.indent(table, " " * 4).split("\n")
             lines.append("")
+            lines.append(
+                f"The inference transforms are available at ``{str(field)}.transforms`` and "
+                f"perform the following preprocessing operations: {field.transforms().describe()}"
+            )
+            lines.append("")
 
 
 def generate_weights_table(module, table_name, metrics, include_patterns=None, exclude_patterns=None):
-    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith("_Weights")]
+    weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
+    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
 
     if include_patterns is not None:
@@ -391,6 +420,9 @@ def generate_weights_table(module, table_name, metrics, include_patterns=None, e
 
 
 generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
+generate_weights_table(
+    module=M.quantization, table_name="classification_quant", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")]
+)
 generate_weights_table(
     module=M.detection, table_name="detection", metrics=[("box_map", "Box MAP")], exclude_patterns=["Mask", "Keypoint"]
 )

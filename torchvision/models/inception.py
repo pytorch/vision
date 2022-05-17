@@ -420,6 +420,7 @@ class Inception_V3_Weights(WeightsEnum):
                 "acc@1": 77.294,
                 "acc@5": 93.450,
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -430,7 +431,6 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
     """
     Inception v3 model architecture from
     `Rethinking the Inception Architecture for Computer Vision <http://arxiv.org/abs/1512.00567>`_.
-    The required minimum input size of the model is 75x75.
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
@@ -471,3 +471,15 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
             model.AuxLogits = None
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        # Inception v3 ported from TensorFlow
+        "inception_v3_google": Inception_V3_Weights.IMAGENET1K_V1.url,
+    }
+)

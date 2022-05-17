@@ -26,6 +26,8 @@ Operators
     drop_block3d
     generalized_box_iou
     generalized_box_iou_loss
+    distance_box_iou
+    distance_box_iou_loss
     masks_to_boxes
     nms
     ps_roi_align

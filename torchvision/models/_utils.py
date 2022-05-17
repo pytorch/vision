@@ -134,7 +134,8 @@ def kwonly_to_pos_or_kw(fn: Callable[..., D]) -> Callable[..., D]:
             keyword_only_kwargs = dict(zip(keyword_only_params, keyword_only_args))
             warnings.warn(
                 f"Using {sequence_to_str(tuple(keyword_only_kwargs.keys()), separate_last='and ')} as positional "
-                f"parameter(s) is deprecated. Please use keyword parameter(s) instead."
+                f"parameter(s) is deprecated since 0.13 and will be removed in 0.15. Please use keyword parameter(s) "
+                f"instead."
             )
             kwargs.update(keyword_only_kwargs)
 
@@ -205,11 +206,13 @@ def handle_legacy_interface(**weights: Tuple[str, Union[Optional[W], Callable[[D
 
                 if not pretrained_positional:
                     warnings.warn(
-                        f"The parameter '{pretrained_param}' is deprecated, please use '{weights_param}' instead."
+                        f"The parameter '{pretrained_param}' is deprecated since 0.13 and will be removed in 0.15, "
+                        f"please use '{weights_param}' instead."
                     )
 
                 msg = (
-                    f"Arguments other than a weight enum or `None` for '{weights_param}' are deprecated. "
+                    f"Arguments other than a weight enum or `None` for '{weights_param}' are deprecated since 0.13 and "
+                    f"will be removed in 0.15. "
                     f"The current behavior is equivalent to passing `{weights_param}={default_weights_arg}`."
                 )
                 if pretrained_arg:
@@ -242,3 +245,12 @@ def _ovewrite_value_param(param: Optional[V], new_value: V) -> V:
         if param != new_value:
             raise ValueError(f"The parameter '{param}' expected value {new_value} but got {param} instead.")
     return new_value
+
+
+class _ModelURLs(dict):
+    def __getitem__(self, item):
+        warnings.warn(
+            "Accessing the model URLs via the internal dictionary of the module is deprecated since 0.13 and will "
+            "be removed in 0.15. Please access them via the appropriate Weights Enum instead."
+        )
+        return super().__getitem__(item)
