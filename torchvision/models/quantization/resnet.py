@@ -268,7 +268,7 @@ def resnet18(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNet-18 model from
-    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385.pdf>`_
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
@@ -317,7 +317,7 @@ def resnet50(
     **kwargs: Any,
 ) -> QuantizableResNet:
     """ResNet-50 model from
-    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385.pdf>`_
+    `Deep Residual Learning for Image Recognition <https://arxiv.org/abs/1512.03385>`_
 
     .. note::
         Note that ``quantize = True`` returns a quantized model with 8 bit
