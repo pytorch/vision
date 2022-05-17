@@ -237,7 +237,7 @@ show(dogs_with_masks)
 # Instance segmentation models
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# Instance segmentation models have a slightly different output from the
+# Instance segmentation models have a significantly different output from the
 # semantic segmentation models. We will see here how to plot the masks for such
 # models. Let's start by analyzing the output of a Mask-RCNN model. Note that
 # these models don't require the images to be normalized, so we don't need to
@@ -293,8 +293,6 @@ print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
 # likely it is to belong to the predicted label of that instance. Those
 # predicted labels correspond to the 'labels' element in the same output dict.
 # Let's see which labels were predicted for the instances of the first image.
-
-inst_class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
 
 print("For the first dog, the following instances were detected:")
 print([weights.meta["categories"][label] for label in dog1_output['labels']])
