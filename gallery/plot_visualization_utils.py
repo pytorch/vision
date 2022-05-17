@@ -66,7 +66,7 @@ show(result)
 
 #####################################
 # Naturally, we can also plot bounding boxes produced by torchvision detection
-# models.  Here is demo with a Faster R-CNN model loaded from
+# models.  Here is a demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
 # model. For more details on the output of such models, you may
 # refer to :ref:`instance_seg_output`.
@@ -110,14 +110,8 @@ show(dogs_with_boxes)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We will see how to use it with torchvision's FCN Resnet-50, loaded with
-# :func:`~torchvision.models.segmentation.fcn_resnet50`.  You can also try using
-# DeepLabv3 (:func:`~torchvision.models.segmentation.deeplabv3_resnet50`) or
-# lraspp mobilenet models
-# (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
-#
-# Let's start by looking at the output of the model. Remember that in general,
-# images must be normalized before they're passed to a semantic segmentation
-# model.
+# :func:`~torchvision.models.segmentation.fcn_resnet50`. Let's start by looking
+# at the output of the model.
 
 from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
 
@@ -141,12 +135,7 @@ print(output.shape, output.min().item(), output.max().item())
 # Let's plot the masks that have been detected for the dog class and for the
 # boat class:
 
-sem_classes = [
-    '__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-    'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-    'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
-]
-sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(sem_classes)}
+sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
 
 normalized_masks = torch.nn.functional.softmax(output, dim=1)
 
@@ -248,7 +237,7 @@ show(dogs_with_masks)
 # Instance segmentation models
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
-# Instance segmentation models have a significantly different output from the
+# Instance segmentation models have a slightly different output from the
 # semantic segmentation models. We will see here how to plot the masks for such
 # models. Let's start by analyzing the output of a Mask-RCNN model. Note that
 # these models don't require the images to be normalized, so we don't need to
@@ -300,30 +289,15 @@ print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
       f"min = {dog1_masks.min()}, max = {dog1_masks.max()}")
 
 #####################################
-# Here the masks corresponds to probabilities indicating, for each pixel, how
+# Here the masks correspond to probabilities indicating, for each pixel, how
 # likely it is to belong to the predicted label of that instance. Those
 # predicted labels correspond to the 'labels' element in the same output dict.
 # Let's see which labels were predicted for the instances of the first image.
 
-inst_classes = [
-    '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-    'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
-    'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-    'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
-    'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-    'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-    'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-    'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-    'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
-    'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-    'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
-    'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
-]
-
-inst_class_to_idx = {cls: idx for (idx, cls) in enumerate(inst_classes)}
+inst_class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
 
 print("For the first dog, the following instances were detected:")
-print([inst_classes[label] for label in dog1_output['labels']])
+print([weights.meta["categories"][label] for label in dog1_output['labels']])
 
 #####################################
 # Interestingly, the model detects two persons in the image. Let's go ahead and
@@ -383,8 +357,6 @@ show(dogs_with_masks)
 # draw keypoints on images. We will see how to use it with
 # torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`.
 # We will first have a look at output of the model.
-#
-# Note that the keypoint detection model does not need normalized images.
 #
 
 from torchvision.models.detection import keypointrcnn_resnet50_fpn, KeypointRCNN_ResNet50_FPN_Weights
