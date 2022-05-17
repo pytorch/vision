@@ -5,23 +5,28 @@ Operators
 
 .. currentmodule:: torchvision.ops
 
-:mod:`torchvision.ops` implements operators that are specific for Computer Vision.
+:mod:`torchvision.ops` implements operators, losses and layers that are specific for Computer Vision.
 
 .. note::
   All operators have native support for TorchScript.
 
 
-Detection Operators
-~~~~~~~~~~~~~~~~~~~
+Detection and Segmentation Operators
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+The below operators perform pre-processing as well as post-processing required in object detection and segmentation models.
 
 .. autosummary::
     :toctree: generated/
     :template: function.rst
 
     batched_nms
+    masks_to_boxes
     nms
     roi_align
     roi_pool
+    ps_roi_align
+    ps_roi_pool
 
 .. autosummary::
     :toctree: generated/
@@ -31,10 +36,14 @@ Detection Operators
     MultiScaleRoIAlign
     RoIAlign
     RoIPool
+    PSRoIAlign
+    PSRoIPool
 
 
 Box Operators
 ~~~~~~~~~~~~~
+
+These utility functions perform various operations on bounding boxes.
 
 .. autosummary::
     :toctree: generated/
@@ -52,6 +61,8 @@ Box Operators
 Losses
 ~~~~~~
 
+The following loss functions are implemented which are useful for object detection.
+
 .. autosummary::
     :toctree: generated/
     :template: function.rst
@@ -64,6 +75,8 @@ Losses
 
 Layers
 ~~~~~~
+
+Torchvision provides commonly used building blocks as layers which can be composed together to create models.
 
 .. autosummary::
     :toctree: generated/
@@ -86,22 +99,3 @@ Layers
     drop_block2d
     drop_block3d
     stochastic_depth
-
-
-Segmentation Operators
-~~~~~~~~~~~~~~~~~~~~~~
-
-.. autosummary::
-    :toctree: generated/
-    :template: function.rst
-
-    masks_to_boxes
-    ps_roi_align
-    ps_roi_pool
-
-.. autosummary::
-    :toctree: generated/
-    :template: class.rst
-
-    PSRoIAlign
-    PSRoIPool
