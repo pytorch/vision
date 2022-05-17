@@ -419,6 +419,7 @@ class Inception_V3_Weights(WeightsEnum):
             "metrics": {
                 "acc@1": 77.294,
                 "acc@5": 93.450,
+                "_docs": """These weights are ported from the original paper.""",
             },
         },
     )
