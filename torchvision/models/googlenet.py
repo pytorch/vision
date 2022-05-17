@@ -288,6 +288,7 @@ class GoogLeNet_Weights(WeightsEnum):
                 "acc@1": 69.778,
                 "acc@5": 89.530,
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
