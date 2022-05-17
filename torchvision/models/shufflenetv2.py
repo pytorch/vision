@@ -186,12 +186,13 @@ def _shufflenetv2(
 _COMMON_META = {
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "recipe": "https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0",
+    "recipe": "https://github.com/ericsun99/Shufflenet-v2-Pytorch",
 }
 
 
 class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
+        # Weights ported from https://github.com/ericsun99/Shufflenet-v2-Pytorch
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
@@ -201,6 +202,7 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
                 "acc@1": 60.552,
                 "acc@5": 81.746,
             },
+            "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -208,6 +210,7 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
 
 class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
+        # Weights ported from https://github.com/ericsun99/Shufflenet-v2-Pytorch
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
@@ -217,6 +220,7 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
                 "acc@1": 69.362,
                 "acc@5": 88.316,
             },
+            "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -234,6 +238,10 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
                 "acc@1": 72.996,
                 "acc@5": 91.086,
             },
+            "_docs": """
+                These weights were trained from scratch by using TorchVision's `new training recipe 
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -251,6 +259,10 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
                 "acc@1": 76.230,
                 "acc@5": 93.006,
             },
+            "_docs": """
+                These weights were trained from scratch by using TorchVision's `new training recipe 
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1

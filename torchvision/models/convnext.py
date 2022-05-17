@@ -207,7 +207,11 @@ _COMMON_META = {
     "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#convnext",
-    "_docs": """These weights improve upon the results of the original paper by using an enhanced training recipe.""",
+    "_docs": """
+        These weights improve upon the results of the original paper by using a modified version of TorchVision's 
+        `new training recipe 
+        <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+    """,
 }
 
 
