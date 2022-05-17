@@ -383,6 +383,15 @@ def pad_segmentation_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
+def pad_bounding_box():
+    for bounding_box, padding in itertools.product(
+        make_bounding_boxes(),
+        [[1], [1, 1], [1, 1, 2, 2]],
+    ):
+        yield SampleInput(bounding_box, padding=padding, format=bounding_box.format)
+
+
+@register_kernel_info_from_sample_inputs_fn
 def perspective_bounding_box():
     for bounding_box, perspective_coeffs in itertools.product(
         make_bounding_boxes(),
