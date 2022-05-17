@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.quantization
+
+
+shufflenet_v2_x0_5
+==================
+
+.. autofunction:: shufflenet_v2_x0_5

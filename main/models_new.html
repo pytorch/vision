@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+55dc828 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+32a7c7b ) &#x25BC</a>
     </div>
     
 
@@ -329,27 +329,36 @@
               
   <div class="section" id="models-and-pre-trained-weights-new">
 <span id="models-new"></span><h1>Models and pre-trained weights - New<a class="headerlink" href="#models-and-pre-trained-weights-new" title="Permalink to this headline">¶</a></h1>
-<div class="admonition note">
-<p class="admonition-title">Note</p>
-<p>These are the new models docs, documenting the new multi-weight API.
-TODO: Once all is done, remove the “- New” part in the title above, and
-rename this file as models.rst</p>
-</div>
 <p>The <code class="docutils literal notranslate"><span class="pre">torchvision.models</span></code> subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
 keypoint detection, video classification, and optical flow.</p>
+<div class="section" id="general-information-on-pre-trained-weights">
+<h2>General information on pre-trained weights<a class="headerlink" href="#general-information-on-pre-trained-weights" title="Permalink to this headline">¶</a></h2>
+<p>TorchVision offers pre-trained weights for every provided architecture, using
+the PyTorch <a class="reference external" href="https://pytorch.org/docs/stable/hub.html#module-torch.hub" title="(in PyTorch v1.11.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.hub</span></code></a>. Instancing a pre-trained model will download its
+weights to a cache directory. This directory can be set using the <cite>TORCH_HOME</cite>
+environment variable. See <a class="reference external" href="https://pytorch.org/docs/stable/hub.html#torch.hub.load_state_dict_from_url" title="(in PyTorch v1.11.0)"><code class="xref py py-func docutils literal notranslate"><span class="pre">torch.hub.load_state_dict_from_url()</span></code></a> for details.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>The pre-trained models provided in this library may have their own licenses or
+terms and conditions derived from the dataset used for training. It is your
+responsibility to determine whether you have permission to use the models for
+your use case.</p>
+</div>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>Backward compatibility is guaranteed for loading a serialized
 <code class="docutils literal notranslate"><span class="pre">state_dict</span></code> to the model created using old PyTorch version.
 On the contrary, loading entire saved models or serialized
-<code class="docutils literal notranslate"><span class="pre">ScriptModules</span></code> (seralized using older versions of PyTorch)
+<code class="docutils literal notranslate"><span class="pre">ScriptModules</span></code> (serialized using older versions of PyTorch)
 may not preserve the historic behaviour. Refer to the following
 <a class="reference external" href="https://pytorch.org/docs/stable/notes/serialization.html#id6">documentation</a></p>
 </div>
-<p>As of v0.13, TorchVision offers a new <a class="reference external" href="https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/">Multi-weight support API</a> for loading different weights to the
-existing model builder methods:</p>
+<div class="section" id="initializing-pre-trained-models">
+<h3>Initializing pre-trained models<a class="headerlink" href="#initializing-pre-trained-models" title="Permalink to this headline">¶</a></h3>
+<p>As of v0.13, TorchVision offers a new <a class="reference external" href="https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/">Multi-weight support API</a>
+for loading different weights to the existing model builder methods:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
 
 <span class="c1"># Old weights with accuracy 76.130%</span>
@@ -366,7 +375,7 @@ existing model builder methods:</p>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="s2">&quot;IMAGENET1K_V2&quot;</span><span class="p">)</span>
 
 <span class="c1"># No weights - random initialization</span>
-<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>  <span class="c1"># or resnet50()</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
 </pre></div>
 </div>
 <p>Migrating to the new API is very straightforward. The following method calls between the 2 APIs are all equivalent:</p>
@@ -374,16 +383,53 @@ existing model builder methods:</p>
 
 <span class="c1"># Using pretrained weights:</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">)</span>
+<span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="s2">&quot;IMAGENET1K_V1&quot;</span><span class="p">)</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># deprecated</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="kc">True</span><span class="p">)</span>  <span class="c1"># deprecated</span>
 
 <span class="c1"># Using no weights:</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+<span class="n">resnet50</span><span class="p">()</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="n">pretrained</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># deprecated</span>
 <span class="n">resnet50</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>  <span class="c1"># deprecated</span>
 </pre></div>
 </div>
 <p>Note that the <code class="docutils literal notranslate"><span class="pre">pretrained</span></code> parameter is now deprecated, using it will emit warnings and will be removed on v0.15.</p>
+</div>
+<div class="section" id="using-the-pre-trained-models">
+<h3>Using the pre-trained models<a class="headerlink" href="#using-the-pre-trained-models" title="Permalink to this headline">¶</a></h3>
+<p>Before using the pre-trained models, one must preprocess the image
+(resize with right resolution/interpolation, apply inference transforms,
+rescale the values etc). There is no standard way to do this as it depends on
+how a given model was trained. It can vary across model families, variants or
+even weight versions. Using the correct preprocessing method is critical and
+failing to do so may lead to decreased accuracy or incorrect outputs.</p>
+<p>All the necessary information for the inference transforms of each pre-trained
+model is provided on its weights documentation. To simplify inference, TorchVision
+bundles the necessary preprocessing transforms into each model weight. These are
+accessible via the <code class="docutils literal notranslate"><span class="pre">weight.transforms</span></code> attribute:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize the Weight Transforms</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="n">preprocess</span> <span class="o">=</span> <span class="n">weights</span><span class="o">.</span><span class="n">transforms</span><span class="p">()</span>
+
+<span class="c1"># Apply it to the input image</span>
+<span class="n">img_transformed</span> <span class="o">=</span> <span class="n">preprocess</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>Some models use modules which have different training and evaluation
+behavior, such as batch normalization. To switch between these modes, use
+<code class="docutils literal notranslate"><span class="pre">model.train()</span></code> or <code class="docutils literal notranslate"><span class="pre">model.eval()</span></code> as appropriate. See
+<a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.train" title="(in PyTorch v1.11.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">train()</span></code></a> or <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.Module.html#torch.nn.Module.eval" title="(in PyTorch v1.11.0)"><code class="xref py py-meth docutils literal notranslate"><span class="pre">eval()</span></code></a> for details.</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="c1"># Initialize model</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">ResNet50_Weights</span><span class="o">.</span><span class="n">DEFAULT</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">resnet50</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+
+<span class="c1"># Set model to eval mode</span>
+<span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+</pre></div>
+</div>
+</div>
+</div>
 <div class="section" id="classification">
 <h2>Classification<a class="headerlink" href="#classification" title="Permalink to this headline">¶</a></h2>
 <p>The following classification models are available, with or without pre-trained
@@ -439,9 +485,10 @@ weights:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span> <span class="o">*</span> <span class="n">score</span><span class="si">:</span><span class="s2">.1f</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>
 <div class="section" id="table-of-all-available-classification-weights">
 <h3>Table of all available classification weights<a class="headerlink" href="#table-of-all-available-classification-weights" title="Permalink to this headline">¶</a></h3>
-<p>Accuracies are reported on ImageNet</p>
+<p>Accuracies are reported on ImageNet-1K using single crops:</p>
 <table class="colwidths-given table-weights docutils colwidths-auto align-default">
 <colgroup>
 <col style="width: 59%" />
@@ -465,25 +512,25 @@ weights:</p>
 <td><p>61.1M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg">link</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Base_Weights.IMAGENET1K_V1</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.convnext_base.html#torchvision.models.ConvNeXt_Base_Weights" title="torchvision.models.ConvNeXt_Base_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Base_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>84.062</p></td>
 <td><p>96.87</p></td>
 <td><p>88.6M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Large_Weights.IMAGENET1K_V1</span></code></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.convnext_large.html#torchvision.models.ConvNeXt_Large_Weights" title="torchvision.models.ConvNeXt_Large_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Large_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>84.414</p></td>
 <td><p>96.976</p></td>
 <td><p>197.8M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Small_Weights.IMAGENET1K_V1</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.convnext_small.html#torchvision.models.ConvNeXt_Small_Weights" title="torchvision.models.ConvNeXt_Small_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Small_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>83.616</p></td>
 <td><p>96.65</p></td>
 <td><p>50.2M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#convnext">link</a></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Tiny_Weights.IMAGENET1K_V1</span></code></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.convnext_tiny.html#torchvision.models.ConvNeXt_Tiny_Weights" title="torchvision.models.ConvNeXt_Tiny_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConvNeXt_Tiny_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>82.52</p></td>
 <td><p>96.146</p></td>
 <td><p>28.6M</p></td>
@@ -603,11 +650,23 @@ weights:</p>
 <td><p>2.2M</p></td>
 <td><p><a class="reference external" href="https://github.com/1e100/mnasnet_trainer">link</a></p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.mnasnet1_0.html#torchvision.models.MNASNet1_0_Weights" title="torchvision.models.MNASNet1_0_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet1_0_Weights.IMAGENET1K_V1</span></code></a></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.mnasnet0_75.html#torchvision.models.MNASNet0_75_Weights" title="torchvision.models.MNASNet0_75_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet0_75_Weights.IMAGENET1K_V1</span></code></a></p></td>
+<td><p>71.18</p></td>
+<td><p>90.496</p></td>
+<td><p>3.2M</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/6019">link</a></p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.mnasnet1_0.html#torchvision.models.MNASNet1_0_Weights" title="torchvision.models.MNASNet1_0_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet1_0_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>73.456</p></td>
 <td><p>91.51</p></td>
 <td><p>4.4M</p></td>
 <td><p><a class="reference external" href="https://github.com/1e100/mnasnet_trainer">link</a></p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.mnasnet1_3.html#torchvision.models.MNASNet1_3_Weights" title="torchvision.models.MNASNet1_3_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MNASNet1_3_Weights.IMAGENET1K_V1</span></code></a></p></td>
+<td><p>76.506</p></td>
+<td><p>93.522</p></td>
+<td><p>6.3M</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/6019">link</a></p></td>
 </tr>
 <tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.mobilenet_v2.html#torchvision.models.MobileNet_V2_Weights" title="torchvision.models.MobileNet_V2_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">MobileNet_V2_Weights.IMAGENET1K_V1</span></code></a></p></td>
 <td><p>71.878</p></td>
@@ -1106,7 +1165,7 @@ weights:</p>
 </div>
 <div class="section" id="quantized-models">
 <h3>Quantized models<a class="headerlink" href="#quantized-models" title="Permalink to this headline">¶</a></h3>
-<p>The following quantized classification models are available, with or without
+<p>The following architectures provide support for INT8 quantized models, with or without
 pre-trained weights:</p>
 <div class="toctree-wrapper compound">
 <ul>
@@ -1115,6 +1174,8 @@ pre-trained weights:</p>
 <li class="toctree-l1"><a class="reference internal" href="models/mobilenetv2_quant.html">Quantized MobileNet V2</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models/mobilenetv3_quant.html">Quantized MobileNet V3</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models/resnet_quant.html">Quantized ResNet</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/resnext_quant.html">Quantized ResNeXt</a></li>
+<li class="toctree-l1"><a class="reference internal" href="models/shufflenetv2_quant.html">Quantized ShuffleNet V2</a></li>
 </ul>
 </div>
 <div class="line-block">
@@ -1145,9 +1206,10 @@ pre-trained weights:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span> <span class="o">*</span> <span class="n">score</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>
 <div class="section" id="table-of-all-available-quantized-classification-weights">
 <h4>Table of all available quantized classification weights<a class="headerlink" href="#table-of-all-available-quantized-classification-weights" title="Permalink to this headline">¶</a></h4>
-<p>Accuracies are reported on ImageNet</p>
+<p>Accuracies are reported on ImageNet-1K using single crops:</p>
 <table class="colwidths-given table-weights docutils colwidths-auto align-default">
 <colgroup>
 <col style="width: 59%" />
@@ -1225,25 +1287,25 @@ pre-trained weights:</p>
 <td><p>25.6M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.shufflenet_v2_x0_5.html#torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights" title="torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>57.972</p></td>
 <td><p>79.78</p></td>
 <td><p>1.4M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.shufflenet_v2_x1_0.html#torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights" title="torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>68.36</p></td>
 <td><p>87.582</p></td>
 <td><p>2.3M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models">link</a></p></td>
 </tr>
-<tr class="row-even"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.shufflenet_v2_x1_5.html#torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights" title="torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X1_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>72.052</p></td>
 <td><p>90.7</p></td>
 <td><p>3.5M</p></td>
 <td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5906">link</a></p></td>
 </tr>
-<tr class="row-odd"><td><p><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X2_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="models/generated/torchvision.models.quantization.shufflenet_v2_x2_0.html#torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights" title="torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ShuffleNet_V2_X2_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1</span></code></a></p></td>
 <td><p>75.354</p></td>
 <td><p>92.488</p></td>
 <td><p>7.4M</p></td>
@@ -1294,9 +1356,11 @@ pre-trained weights:</p>
 <span class="n">to_pil_image</span><span class="p">(</span><span class="n">mask</span><span class="p">)</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.
+The output format of the models is illustrated in <a class="reference internal" href="auto_examples/plot_visualization_utils.html#semantic-seg-output"><span class="std std-ref">Semantic segmentation models</span></a>.</p>
 <div class="section" id="table-of-all-available-semantic-segmentation-weights">
 <h3>Table of all available semantic segmentation weights<a class="headerlink" href="#table-of-all-available-semantic-segmentation-weights" title="Permalink to this headline">¶</a></h3>
-<p>All models are evaluated on COCO val2017:</p>
+<p>All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:</p>
 <table class="colwidths-given table-weights docutils colwidths-auto align-default">
 <colgroup>
 <col style="width: 59%" />
@@ -1356,6 +1420,10 @@ pre-trained weights:</p>
 </div>
 <div class="section" id="object-detection-instance-segmentation-and-person-keypoint-detection">
 <h2>Object Detection, Instance Segmentation and Person Keypoint Detection<a class="headerlink" href="#object-detection-instance-segmentation-and-person-keypoint-detection" title="Permalink to this headline">¶</a></h2>
+<p>The pre-trained models for detection, instance segmentation and
+keypoint detection are initialized with the classification models
+in torchvision. The models expect a list of <code class="docutils literal notranslate"><span class="pre">Tensor[C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>.
+Check the constructor of the models for more information.</p>
 <div class="section" id="object-detection">
 <h3>Object Detection<a class="headerlink" href="#object-detection" title="Permalink to this headline">¶</a></h3>
 <p>The following object detection models are available, with or without pre-trained
@@ -1402,9 +1470,11 @@ weights:</p>
 <span class="n">im</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
 </pre></div>
 </div>
+<p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.
+For details on how to plot the bounding boxes of the models, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
 <div class="section" id="table-of-all-available-object-detection-weights">
 <h4>Table of all available Object detection weights<a class="headerlink" href="#table-of-all-available-object-detection-weights" title="Permalink to this headline">¶</a></h4>
-<p>Box MAPs are reported on COCO</p>
+<p>Box MAPs are reported on COCO val2017:</p>
 <table class="colwidths-given table-weights docutils colwidths-auto align-default">
 <colgroup>
 <col style="width: 67%" />
@@ -1478,9 +1548,13 @@ weights:</p>
 <li class="toctree-l1"><a class="reference internal" href="models/mask_rcnn.html">Mask R-CNN</a></li>
 </ul>
 </div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>For details on how to plot the masks of the models, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
 <div class="section" id="table-of-all-available-instance-segmentation-weights">
 <h4>Table of all available Instance segmentation weights<a class="headerlink" href="#table-of-all-available-instance-segmentation-weights" title="Permalink to this headline">¶</a></h4>
-<p>Box and Mask MAPs are reported on COCO</p>
+<p>Box and Mask MAPs are reported on COCO val2017:</p>
 <table class="colwidths-given table-weights docutils colwidths-auto align-default">
 <colgroup>
 <col style="width: 59%" />
@@ -1516,16 +1590,21 @@ weights:</p>
 </div>
 <div class="section" id="keypoint-detection">
 <h3>Keypoint Detection<a class="headerlink" href="#keypoint-detection" title="Permalink to this headline">¶</a></h3>
-<p>The following keypoint detection models are available, with or without
+<p>The following person keypoint detection models are available, with or without
 pre-trained weights:</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="models/keypoint_rcnn.html">Keypoint R-CNN</a></li>
 </ul>
 </div>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;keypoint_names&quot;]</span></code>.
+For details on how to plot the bounding boxes of the models, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#keypoint-output"><span class="std std-ref">Visualizing keypoints</span></a>.</p>
 <div class="section" id="table-of-all-available-keypoint-detection-weights">
 <h4>Table of all available Keypoint detection weights<a class="headerlink" href="#table-of-all-available-keypoint-detection-weights" title="Permalink to this headline">¶</a></h4>
-<p>Box and Keypoint MAPs are reported on COCO:</p>
+<p>Box and Keypoint MAPs are reported on COCO val2017:</p>
 <table class="colwidths-given table-weights docutils colwidths-auto align-default">
 <colgroup>
 <col style="width: 59%" />
@@ -1598,9 +1677,10 @@ pre-trained weights:</p>
 <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="n">category_name</span><span class="si">}</span><span class="s2">: </span><span class="si">{</span><span class="mi">100</span> <span class="o">*</span> <span class="n">score</span><span class="si">}</span><span class="s2">%&quot;</span><span class="p">)</span>
 </pre></div>
 </div>
+<p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>
 <div class="section" id="table-of-all-available-video-classification-weights">
 <h3>Table of all available video classification weights<a class="headerlink" href="#table-of-all-available-video-classification-weights" title="Permalink to this headline">¶</a></h3>
-<p>Accuracies are reported on Kinetics-400</p>
+<p>Accuracies are reported on Kinetics-400 using single crops for clip length 16:</p>
 <table class="colwidths-given table-weights docutils colwidths-auto align-default">
 <colgroup>
 <col style="width: 59%" />
@@ -1639,6 +1719,23 @@ pre-trained weights:</p>
 </tbody>
 </table>
 </div>
+</div>
+<div class="section" id="using-models-from-hub">
+<h2>Using models from Hub<a class="headerlink" href="#using-models-from-hub" title="Permalink to this headline">¶</a></h2>
+<p>Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:</p>
+<div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
+
+<span class="c1"># Option 1: passing weights param as string</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;resnet50&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;IMAGENET1K_V2&quot;</span><span class="p">)</span>
+
+<span class="c1"># Option 2: passing weights param as enum</span>
+<span class="n">weights</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;get_weight&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="s2">&quot;ResNet50_Weights.IMAGENET1K_V2&quot;</span><span class="p">)</span>
+<span class="n">model</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">hub</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="s2">&quot;pytorch/vision&quot;</span><span class="p">,</span> <span class="s2">&quot;resnet50&quot;</span><span class="p">,</span> <span class="n">weights</span><span class="o">=</span><span class="n">weights</span><span class="p">)</span>
+</pre></div>
+</div>
+<p>The only exception to the above are the detection models included on
+<code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.models.detection</span></code>. These models require TorchVision
+to be installed because they depend on custom C++ operators.</p>
 </div>
 </div>
 
@@ -1686,6 +1783,11 @@ pre-trained weights:</p>
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
               <ul>
 <li><a class="reference internal" href="#">Models and pre-trained weights - New</a><ul>
+<li><a class="reference internal" href="#general-information-on-pre-trained-weights">General information on pre-trained weights</a><ul>
+<li><a class="reference internal" href="#initializing-pre-trained-models">Initializing pre-trained models</a></li>
+<li><a class="reference internal" href="#using-the-pre-trained-models">Using the pre-trained models</a></li>
+</ul>
+</li>
 <li><a class="reference internal" href="#classification">Classification</a><ul>
 <li><a class="reference internal" href="#table-of-all-available-classification-weights">Table of all available classification weights</a></li>
 <li><a class="reference internal" href="#quantized-models">Quantized models</a><ul>
@@ -1717,6 +1819,7 @@ pre-trained weights:</p>
 <li><a class="reference internal" href="#table-of-all-available-video-classification-weights">Table of all available video classification weights</a></li>
 </ul>
 </li>
+<li><a class="reference internal" href="#using-models-from-hub">Using models from Hub</a></li>
 </ul>
 </li>
 </ul>

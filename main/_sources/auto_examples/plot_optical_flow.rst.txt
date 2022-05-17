@@ -152,11 +152,11 @@ single model input.
 
 .. GENERATED FROM PYTHON SOURCE LINES 84-89
 
-The RAFT model that we will use accepts RGB float images with pixel values in
-[-1, 1]. The frames we got from :func:`~torchvision.io.read_video` are int
-images with values in [0, 255], so we will have to pre-process them. We also
-reduce the image sizes for the example to run faster. Image dimension must be
-divisible by 8.
+The RAFT model accepts RGB images. We first get the frames from
+:func:`~torchvision.io.read_video` and resize them to ensure their
+dimensions are divisible by 8. Then we use the transforms bundled into the
+weights in order to preprocess the input and rescale its values to the
+required ``[-1, 1]`` interval.
 
 .. GENERATED FROM PYTHON SOURCE LINES 89-107
 
@@ -364,7 +364,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  9.192 seconds)
+   **Total running time of the script:** ( 0 minutes  12.328 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:
