@@ -63,11 +63,11 @@ def _diou_iou_loss(
     eps: float = 1e-7,
 ) -> Tuple[torch.Tensor, torch.Tensor]:
 
-    x1, y1, x2, y2 = boxes1.unbind(dim=-1)
-    x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
     intsct, union = _loss_inter_union(boxes1, boxes2)
     iou = intsct / (union + eps)
     # smallest enclosing box
+    x1, y1, x2, y2 = boxes1.unbind(dim=-1)
+    x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
     xc1 = torch.min(x1, x1g)
     yc1 = torch.min(y1, y1g)
     xc2 = torch.max(x2, x2g)

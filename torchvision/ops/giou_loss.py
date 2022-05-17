@@ -45,11 +45,11 @@ def generalized_box_iou_loss(
 
     boxes1 = _upcast_non_float(boxes1)
     boxes2 = _upcast_non_float(boxes2)
-    x1, y1, x2, y2 = boxes1.unbind(dim=-1)
-    x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
-
     intsctk, unionk = _loss_inter_union(boxes1, boxes2)
     iouk = intsctk / (unionk + eps)
+
+    x1, y1, x2, y2 = boxes1.unbind(dim=-1)
+    x1g, y1g, x2g, y2g = boxes2.unbind(dim=-1)
 
     # smallest enclosing box
     xc1 = torch.min(x1, x1g)
