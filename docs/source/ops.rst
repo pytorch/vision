@@ -61,7 +61,7 @@ These utility functions perform various operations on bounding boxes.
 Losses
 ~~~~~~
 
-The following loss functions are implemented which are useful for object detection.
+The following vision-specific loss functions are implemented:
 
 .. autosummary::
     :toctree: generated/
@@ -76,7 +76,7 @@ The following loss functions are implemented which are useful for object detecti
 Layers
 ~~~~~~
 
-Torchvision provides commonly used building blocks as layers which can be composed together to create models.
+TorchVision provides commonly used building blocks as layers:
 
 .. autosummary::
     :toctree: generated/
