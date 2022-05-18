@@ -117,9 +117,9 @@ def test_schema_meta_validation(model_fn):
     for w in weights_enum:
         actual_fields = set(w.meta.keys())
         actual_fields |= set(
-            ("_metrics", ds, metric_key)
-            for ds in w.meta.get("_metrics", {}).keys()
-            for metric_key in w.meta.get("_metrics", {}).get(ds, {}).keys()
+            ("_metrics", dataset, metric_key)
+            for dataset in w.meta.get("_metrics", {}).keys()
+            for metric_key in w.meta.get("_metrics", {}).get(dataset, {}).keys()
         )
         missing_fields = expected_fields - actual_fields
         unsupported_fields = set(w.meta.keys()) - permitted_fields
