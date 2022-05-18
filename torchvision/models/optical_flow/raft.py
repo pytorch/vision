@@ -525,11 +525,10 @@ class Raft_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
-            "metrics": {
-                "sintel_train_cleanpass_epe": 1.4411,
-                "sintel_train_finalpass_epe": 2.7894,
-                "kitti_train_per_image_epe": 5.0172,
-                "kitti_train_fl_all": 17.4506,
+            "_metrics": {
+                "sintel_train_cleanpass": {"epe": 1.4411},
+                "sintel_train_finalpass": {"epe": 2.7894},
+                "kitti_train": {"per_image_epe": 5.0172, "fl_all": 17.4506},
             },
         },
     )
@@ -542,11 +541,10 @@ class Raft_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
-            "metrics": {
-                "sintel_train_cleanpass_epe": 1.3822,
-                "sintel_train_finalpass_epe": 2.7161,
-                "kitti_train_per_image_epe": 4.5118,
-                "kitti_train_fl_all": 16.0679,
+            "_metrics": {
+                "sintel_train_cleanpass": {"epe": 1.3822},
+                "sintel_train_finalpass": {"epe": 2.7161},
+                "kitti_train": {"per_image_epe": 4.5118, "fl_all": 16.0679},
             },
         },
     )
@@ -560,8 +558,8 @@ class Raft_Large_Weights(WeightsEnum):
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "metrics": {
-                "sintel_test_cleanpass_epe": 1.94,
-                "sintel_test_finalpass_epe": 3.18,
+                "sintel_test_cleanpass": {"epe": 1.94},
+                "sintel_test_finalpass": {"epe": 3.18},
             },
         },
     )
@@ -577,8 +575,8 @@ class Raft_Large_Weights(WeightsEnum):
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "metrics": {
-                "sintel_test_cleanpass_epe": 1.819,
-                "sintel_test_finalpass_epe": 3.067,
+                "sintel_test_cleanpass": {"epe": 1.819},
+                "sintel_test_finalpass": {"epe": 3.067},
             },
         },
     )
@@ -592,7 +590,7 @@ class Raft_Large_Weights(WeightsEnum):
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "metrics": {
-                "kitti_test_fl_all": 5.10,
+                "kitti_test": {"fl_all": 5.10},
             },
         },
     )
@@ -609,7 +607,7 @@ class Raft_Large_Weights(WeightsEnum):
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
             "metrics": {
-                "kitti_test_fl_all": 5.19,
+                "kitti_test": {"fl_all": 5.19},
             },
         },
     )
@@ -627,10 +625,9 @@ class Raft_Small_Weights(WeightsEnum):
             "num_params": 990162,
             "recipe": "https://github.com/princeton-vl/RAFT",
             "metrics": {
-                "sintel_train_cleanpass_epe": 2.1231,
-                "sintel_train_finalpass_epe": 3.2790,
-                "kitti_train_per_image_epe": 7.6557,
-                "kitti_train_fl_all": 25.2801,
+                "sintel_train_cleanpass": {"epe": 2.1231},
+                "sintel_train_finalpass": {"epe": 3.2790},
+                "kitti_train": {"per_image_epe": 7.6557, "fl_all": 25.2801},
             },
         },
     )
@@ -642,11 +639,10 @@ class Raft_Small_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 990162,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
-            "metrics": {
-                "sintel_train_cleanpass_epe": 1.9901,
-                "sintel_train_finalpass_epe": 3.2831,
-                "kitti_train_per_image_epe": 7.5978,
-                "kitti_train_fl_all": 25.2369,
+            "_metrics": {
+                "sintel_train_cleanpass": {"epe": 1.9901},
+                "sintel_train_finalpass": {"epe": 3.2831},
+                "kitti_train": {"per_image_epe": 7.5978, "fl_all": 25.2369},
             },
         },
     )
