@@ -154,6 +154,10 @@ _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
     "backend": "fbgemm",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
+    "_docs": """
+        These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+        weights listed below.
+    """,
 }
 
 
@@ -374,7 +378,7 @@ def resnext101_32x8d(
         GPU inference is not yet supported.
 
     Args:
-        weights (:class:`~torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights` or :class:`~torchvision.models.ResNet101_32X8D_Weights`, optional): The
+        weights (:class:`~torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights` or :class:`~torchvision.models.ResNeXt101_32X8D_Weights`, optional): The
             pretrained weights for the model. See
             :class:`~torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights` below for
             more details, and possible values. By default, no pre-trained
@@ -387,10 +391,10 @@ def resnext101_32x8d(
             <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.quantization.ResNet101_32X8D_QuantizedWeights
+    .. autoclass:: torchvision.models.quantization.ResNeXt101_32X8D_QuantizedWeights
         :members:
 
-    .. autoclass:: torchvision.models.ResNet101_32X8D_Weights
+    .. autoclass:: torchvision.models.ResNeXt101_32X8D_Weights
         :members:
         :noindex:
     """
@@ -417,7 +421,7 @@ def resnext101_64x4d(
         GPU inference is not yet supported.
 
     Args:
-        weights (:class:`~torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights` or :class:`~torchvision.models.ResNet101_64X4D_Weights`, optional): The
+        weights (:class:`~torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights` or :class:`~torchvision.models.ResNeXt101_64X4D_Weights`, optional): The
             pretrained weights for the model. See
             :class:`~torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights` below for
             more details, and possible values. By default, no pre-trained
@@ -430,10 +434,10 @@ def resnext101_64x4d(
             <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.resnet.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.quantization.ResNet101_64X4D_QuantizedWeights
+    .. autoclass:: torchvision.models.quantization.ResNeXt101_64X4D_QuantizedWeights
         :members:
 
-    .. autoclass:: torchvision.models.ResNet101_64X4D_Weights
+    .. autoclass:: torchvision.models.ResNeXt101_64X4D_Weights
         :members:
         :noindex:
     """

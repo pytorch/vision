@@ -368,6 +368,7 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
                 "box_map": 37.9,
                 "mask_map": 34.6,
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -385,6 +386,7 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
                 "box_map": 47.4,
                 "mask_map": 41.8,
             },
+            "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
     DEFAULT = COCO_V1

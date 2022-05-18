@@ -187,6 +187,10 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
                 "acc@1": 77.176,
                 "acc@5": 93.354,
             },
+            "_docs": """
+                These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
