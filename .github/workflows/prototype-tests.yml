@@ -15,8 +15,14 @@ jobs:
 
     runs-on: ${{ matrix.os }}
 
-    # WITHOUT INSTALLING ADDITIONAL SYSTEM PACKAGES
+    # WITH INSTALLING ADDITIONAL SYSTEM PACKAGES
     steps:
+      - name: Install additional system packages on Linux
+        if: matrix.os == "ubuntu-latest"
+        run: |
+          sudo apt update -qy
+          sudo apt install libssl-dev
+
       - name: Set up python
         uses: actions/setup-python@v3
         with:
