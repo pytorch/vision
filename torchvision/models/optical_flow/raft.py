@@ -525,11 +525,10 @@ class Raft_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
-            "metrics": {
-                "sintel_train_cleanpass_epe": 1.4411,
-                "sintel_train_finalpass_epe": 2.7894,
-                "kitti_train_per_image_epe": 5.0172,
-                "kitti_train_fl_all": 17.4506,
+            "_metrics": {
+                "Sintel-Train-Cleanpass": {"epe": 1.4411},
+                "Sintel-Train-Finalpass": {"epe": 2.7894},
+                "Kitti-Train": {"per_image_epe": 5.0172, "fl_all": 17.4506},
             },
             "_docs": """These weights were ported from the original paper. They are trained on Chairs + Things.""",
         },
@@ -542,11 +541,10 @@ class Raft_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
-            "metrics": {
-                "sintel_train_cleanpass_epe": 1.3822,
-                "sintel_train_finalpass_epe": 2.7161,
-                "kitti_train_per_image_epe": 4.5118,
-                "kitti_train_fl_all": 16.0679,
+            "_metrics": {
+                "Sintel-Train-Cleanpass": {"epe": 1.3822},
+                "Sintel-Train-Finalpass": {"epe": 2.7161},
+                "Kitti-Train": {"per_image_epe": 4.5118, "fl_all": 16.0679},
             },
             "_docs": """These weights were trained from scratch on Chairs + Things.""",
         },
@@ -560,9 +558,9 @@ class Raft_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
-            "metrics": {
-                "sintel_test_cleanpass_epe": 1.94,
-                "sintel_test_finalpass_epe": 3.18,
+            "_metrics": {
+                "Sintel-Test-Cleanpass": {"epe": 1.94},
+                "Sintel-Test-Finalpass": {"epe": 3.18},
             },
             "_docs": """
                 These weights were ported from the original paper. They are trained on Chairs + Things and fine-tuned on
@@ -578,9 +576,9 @@ class Raft_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
-            "metrics": {
-                "sintel_test_cleanpass_epe": 1.819,
-                "sintel_test_finalpass_epe": 3.067,
+            "_metrics": {
+                "Sintel-Test-Cleanpass": {"epe": 1.819},
+                "Sintel-Test-Finalpass": {"epe": 3.067},
             },
             "_docs": """
                 These weights were trained from scratch on Chairs + Things and fine-tuned on Sintel (C+T+S+K+H).
@@ -596,8 +594,8 @@ class Raft_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/princeton-vl/RAFT",
-            "metrics": {
-                "kitti_test_fl_all": 5.10,
+            "_metrics": {
+                "Kitti-Test": {"fl_all": 5.10},
             },
             "_docs": """
                 These weights were ported from the original paper. They are trained on Chairs + Things, fine-tuned on
@@ -613,8 +611,8 @@ class Raft_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5257536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
-            "metrics": {
-                "kitti_test_fl_all": 5.19,
+            "_metrics": {
+                "Kitti-Test": {"fl_all": 5.19},
             },
             "_docs": """
                 These weights were trained from scratch on Chairs + Things, fine-tuned on Sintel and then on Kitti.
@@ -634,11 +632,10 @@ class Raft_Small_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 990162,
             "recipe": "https://github.com/princeton-vl/RAFT",
-            "metrics": {
-                "sintel_train_cleanpass_epe": 2.1231,
-                "sintel_train_finalpass_epe": 3.2790,
-                "kitti_train_per_image_epe": 7.6557,
-                "kitti_train_fl_all": 25.2801,
+            "_metrics": {
+                "Sintel-Train-Cleanpass": {"epe": 2.1231},
+                "Sintel-Train-Finalpass": {"epe": 3.2790},
+                "Kitti-Train": {"per_image_epe": 7.6557, "fl_all": 25.2801},
             },
             "_docs": """These weights were ported from the original paper. They are trained on Chairs + Things.""",
         },
@@ -650,11 +647,10 @@ class Raft_Small_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 990162,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/optical_flow",
-            "metrics": {
-                "sintel_train_cleanpass_epe": 1.9901,
-                "sintel_train_finalpass_epe": 3.2831,
-                "kitti_train_per_image_epe": 7.5978,
-                "kitti_train_fl_all": 25.2369,
+            "_metrics": {
+                "Sintel-Train-Cleanpass": {"epe": 1.9901},
+                "Sintel-Train-Finalpass": {"epe": 3.2831},
+                "Kitti-Train": {"per_image_epe": 7.5978, "fl_all": 25.2369},
             },
             "_docs": """These weights were trained from scratch on Chairs + Things.""",
         },
