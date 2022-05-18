@@ -60,74 +60,53 @@ def deform_conv2d(
 
     More complex examples::
 
-        # batch_size, num_channels, out_height, out_width
         h = w = 3
-        num_channels = 4
-        x = torch.arange(h * w, dtype=torch.float32).reshape(1, 1, h, w).repeat(1, num_channels, 1, 1)
+        # batch_size, num_channels, out_height, out_width
+        x = torch.arange(h * w * 3, dtype=torch.float32).reshape(1, 3, h, w)
 
         # to show the effect of offset more intuitively, only the case of kh=kw=1 is considered here
-        kh, kw = 1, 1
-        # divide the convolution kernel into offset_groups groups with different offsets.
-        offset_groups = 4
-        # create our predefined offset
-        offset = torch.zeros(1, 2 * offset_groups * kh * kw, 1, 1, dtype=torch.float32)
-        for offset_group_idx, (rel_offset_h, rel_offset_w) in enumerate([(0, -1), (0, 1), (-1, 0)]):
-            offset[0, offset_group_idx * 2 + 0, 0, 0] = rel_offset_h
-            offset[0, offset_group_idx * 2 + 1, 0, 0] = rel_offset_w
-            # the last group is initialized to (0, 0), that is, equivalent to standard convolution
-        # it is assumed here that each convolution kernel uses the same offset for each local neighborhood in space
+        # and we use the same offset for each local neighborhood in the single channel
+        offset = torch.FloatTensor(
+            [  # create our predefined offset with offset_groups = 3
+                0, -1,  # sample the left pixel of the centroid pixel
+                0, 1,  # sample the right pixel of the centroid pixel
+                -1, 0,  # sample the top pixel of the centroid pixel
+            ]  # here, we divide the input channels into offset_groups groups with different offsets.
+        ).reshape(1, 2 * 3 * 1 * 1, 1, 1)
         # so we repeat the offset to the whole space: batch_size, 2 * offset_groups * kh * kw, out_height, out_width
         offset = offset.repeat(1, 1, h, w)
 
-        # case 0: based on an identity convolution with the kernel group = 1 and the offset_groups = 4
-        weight = torch.eye(num_channels, dtype=torch.float32).reshape(num_channels, num_channels, 1, 1)
+        weight = torch.FloatTensor(
+            [
+                [1, 0, 0],  # only extract the first channel of the input tensor
+                [0, 1, 0],  # only extract the second channel of the input tensor
+                [1, 1, 0],  # add the first and the second channels of the input tensor
+                [0, 0, 1],  # only extract the third channel of the input tensor
+                [0, 1, 0],  # only extract the second channel of the input tensor
+            ]
+        ).reshape(5, 3, 1, 1)
         deconv_shift = deform_conv2d(x, offset=offset, weight=weight)
         print(deconv_shift)
 
-        # case 1: based on an identity convolution with the kernel group = 2 and the offset_groups = 4
-        groups = 2
-        num_channels_per_group = num_channels // groups
-        grouped_weight = (
-            torch.eye(num_channels_per_group, dtype=torch.float32)
-            .reshape(num_channels_per_group, num_channels_per_group, 1, 1)
-            .repeat(groups, 1, 1, 1)
-        )
-        grouped_deconv_shift = deform_conv2d(x, offset=offset, weight=grouped_weight)
-        print(grouped_deconv_shift)
+        tensor([[[[ 0.,  0.,  1.],  # offset=(0, -1) the first channel of the input tensor
+                [ 0.,  3.,  4.],  # output hw indices (1, 2) => (1, 2-1) => input indices (1, 1)
+                [ 0.,  6.,  7.]], # output hw indices (2, 1) => (2, 1-1) => input indices (2, 0)
 
-        # output
-        ```
-        tensor([[[[0., 0., 1.],
-                [0., 3., 4.],
-                [0., 6., 7.]],
+                [[10., 11.,  0.],  # offset=(0, 1) the second channel of the input tensor
+                [13., 14.,  0.],  # output hw indices (1, 1) => (1, 1+1) => input indices (1, 2)
+                [16., 17.,  0.]], # output hw indices (2, 0) => (2, 0+1) => input indices (2, 1)
 
-                [[1., 2., 0.],
-                [4., 5., 0.],
-                [7., 8., 0.]],
+                [[10., 11.,  1.],  # offset=[(0, -1), (0, 1)], accumulate the first and second channels after being sampled with an offset.
+                [13., 17.,  4.],
+                [16., 23.,  7.]],
 
-                [[0., 0., 0.],
-                [0., 1., 2.],
-                [3., 4., 5.]],
+                [[ 0.,  0.,  0.],  # offset=(-1, 0) the third channel of the input tensor
+                [18., 19., 20.],  # output hw indices (1, 1) => (1-1, 1) => input indices (0, 1)
+                [21., 22., 23.]], # output hw indices (2, 2) => (2-1, 2) => input indices (1, 2)
 
-                [[0., 1., 2.],
-                [3., 4., 5.],
-                [6., 7., 8.]]]])
-        tensor([[[[0., 0., 1.],
-                [0., 3., 4.],
-                [0., 6., 7.]],
-
-                [[1., 2., 0.],
-                [4., 5., 0.],
-                [7., 8., 0.]],
-
-                [[0., 0., 0.],
-                [0., 1., 2.],
-                [3., 4., 5.]],
-
-                [[0., 1., 2.],
-                [3., 4., 5.],
-                [6., 7., 8.]]]])
-        ```
+                [[10., 11.,  0.],  # offset=(0, 1) the second channel of the input tensor
+                [13., 14.,  0.],  # output hw indices (1, 1) => (1, 1+1) => input indices (1, 2)
+                [16., 17.,  0.]]]])  # output hw indices (2, 0) => (2, 0+1) => input indices (2, 1)
     """
 
     _assert_has_ops()
