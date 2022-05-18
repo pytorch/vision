@@ -79,6 +79,10 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
                 "acc@1": 71.658,
                 "acc@5": 90.150,
             },
+            "_docs": """
+                These weights were produced by doing Quantization Aware Training (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_QNNPACK_V1

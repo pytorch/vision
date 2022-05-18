@@ -121,6 +121,10 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
                 "acc@1": 69.826,
                 "acc@5": 89.404,
             },
+            "_docs": """
+                These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1

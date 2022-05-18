@@ -118,6 +118,10 @@ _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
     "backend": "fbgemm",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
+    "_docs": """
+        These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+        weights listed below.
+    """,
 }
 
 

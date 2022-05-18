@@ -95,8 +95,8 @@ def test_schema_meta_validation(model_fn):
     # mandatory fields for each computer vision task
     classification_fields = {"categories", ("metrics", "acc@1"), ("metrics", "acc@5")}
     defaults = {
-        "all": {"metrics", "min_size", "num_params", "recipe"},
-        "models": classification_fields | {"_docs"},
+        "all": {"metrics", "min_size", "num_params", "recipe", "_docs"},
+        "models": classification_fields,
         "detection": {"categories", ("metrics", "box_map")},
         "quantization": classification_fields | {"backend", "unquantized"},
         "segmentation": {"categories", ("metrics", "miou"), ("metrics", "pixel_acc")},
