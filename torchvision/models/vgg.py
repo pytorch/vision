@@ -121,9 +121,11 @@ class VGG11_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 132863336,
-            "metrics": {
-                "acc@1": 69.020,
-                "acc@5": 88.628,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.020,
+                    "acc@5": 88.628,
+                }
             },
         },
     )
@@ -137,9 +139,11 @@ class VGG11_BN_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 132868840,
-            "metrics": {
-                "acc@1": 70.370,
-                "acc@5": 89.810,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 70.370,
+                    "acc@5": 89.810,
+                }
             },
         },
     )
@@ -153,9 +157,11 @@ class VGG13_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 133047848,
-            "metrics": {
-                "acc@1": 69.928,
-                "acc@5": 89.246,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.928,
+                    "acc@5": 89.246,
+                }
             },
         },
     )
@@ -169,9 +175,11 @@ class VGG13_BN_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 133053736,
-            "metrics": {
-                "acc@1": 71.586,
-                "acc@5": 90.374,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.586,
+                    "acc@5": 90.374,
+                }
             },
         },
     )
@@ -185,9 +193,11 @@ class VGG16_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 138357544,
-            "metrics": {
-                "acc@1": 71.592,
-                "acc@5": 90.382,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.592,
+                    "acc@5": 90.382,
+                }
             },
         },
     )
@@ -205,9 +215,11 @@ class VGG16_Weights(WeightsEnum):
             "num_params": 138357544,
             "categories": None,
             "recipe": "https://github.com/amdegroot/ssd.pytorch#training-ssd",
-            "metrics": {
-                "acc@1": float("nan"),
-                "acc@5": float("nan"),
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": float("nan"),
+                    "acc@5": float("nan"),
+                }
             },
             "_docs": """
                 These weights can't be used for classification because they are missing values in the `classifier`
@@ -226,9 +238,11 @@ class VGG16_BN_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 138365992,
-            "metrics": {
-                "acc@1": 73.360,
-                "acc@5": 91.516,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 73.360,
+                    "acc@5": 91.516,
+                }
             },
         },
     )
@@ -242,9 +256,11 @@ class VGG19_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 143667240,
-            "metrics": {
-                "acc@1": 72.376,
-                "acc@5": 90.876,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.376,
+                    "acc@5": 90.876,
+                }
             },
         },
     )
@@ -258,9 +274,11 @@ class VGG19_BN_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 143678248,
-            "metrics": {
-                "acc@1": 74.218,
-                "acc@5": 91.842,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.218,
+                    "acc@5": 91.842,
+                }
             },
         },
     )
