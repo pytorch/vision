@@ -35,10 +35,11 @@ class SSD300_VGG16_Weights(WeightsEnum):
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 25.1,
                 }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1

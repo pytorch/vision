@@ -329,7 +329,7 @@ class ViT_B_16_Weights(WeightsEnum):
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 81.072,
                     "acc@5": 95.318,
                 }
@@ -353,7 +353,7 @@ class ViT_B_16_Weights(WeightsEnum):
             "num_params": 86859496,
             "min_size": (384, 384),
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 85.304,
                     "acc@5": 97.650,
                 }
@@ -378,7 +378,7 @@ class ViT_B_16_Weights(WeightsEnum):
             "num_params": 86567656,
             "min_size": (224, 224),
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 81.886,
                     "acc@5": 96.180,
                 }
@@ -402,7 +402,7 @@ class ViT_B_32_Weights(WeightsEnum):
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32",
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 75.912,
                     "acc@5": 92.466,
                 }
@@ -426,7 +426,7 @@ class ViT_L_16_Weights(WeightsEnum):
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16",
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 79.662,
                     "acc@5": 94.638,
                 }
@@ -451,7 +451,7 @@ class ViT_L_16_Weights(WeightsEnum):
             "num_params": 305174504,
             "min_size": (512, 512),
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 88.064,
                     "acc@5": 98.512,
                 }
@@ -476,7 +476,7 @@ class ViT_L_16_Weights(WeightsEnum):
             "num_params": 304326632,
             "min_size": (224, 224),
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 85.146,
                     "acc@5": 97.422,
                 }
@@ -500,7 +500,7 @@ class ViT_L_32_Weights(WeightsEnum):
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32",
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 76.972,
                     "acc@5": 93.07,
                 }
@@ -528,7 +528,7 @@ class ViT_H_14_Weights(WeightsEnum):
             "num_params": 633470440,
             "min_size": (518, 518),
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 88.552,
                     "acc@5": 98.694,
                 }
@@ -553,7 +553,7 @@ class ViT_H_14_Weights(WeightsEnum):
             "num_params": 632045800,
             "min_size": (224, 224),
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 85.708,
                     "acc@5": 97.730,
                 }

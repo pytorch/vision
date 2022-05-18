@@ -209,7 +209,7 @@ class MobileNet_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 71.878,
                     "acc@5": 90.286,
                 }
@@ -224,7 +224,7 @@ class MobileNet_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 72.154,
                     "acc@5": 90.822,
                 }

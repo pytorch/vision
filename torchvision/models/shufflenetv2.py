@@ -199,7 +199,7 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 1366792,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 60.552,
                     "acc@5": 81.746,
                 }
@@ -219,7 +219,7 @@ class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2278604,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 69.362,
                     "acc@5": 88.316,
                 }
@@ -239,7 +239,7 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 3503624,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 72.996,
                     "acc@5": 91.086,
                 }
@@ -262,7 +262,7 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 7393996,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 76.230,
                     "acc@5": 93.006,
                 }

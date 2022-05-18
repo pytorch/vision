@@ -688,10 +688,11 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
             "num_params": 34014999,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 36.4,
                 }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -706,10 +707,11 @@ class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
             "num_params": 38198935,
             "recipe": "https://github.com/pytorch/vision/pull/5756",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 41.5,
                 }
             },
+            "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
     DEFAULT = COCO_V1

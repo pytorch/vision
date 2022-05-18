@@ -659,10 +659,11 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 39.2,
                 }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1

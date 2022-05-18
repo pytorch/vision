@@ -384,10 +384,11 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "num_params": 41755286,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 37.0,
                 }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -402,10 +403,11 @@ class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
             "num_params": 43712278,
             "recipe": "https://github.com/pytorch/vision/pull/5763",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 46.7,
                 }
             },
+            "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
     DEFAULT = COCO_V1
@@ -420,10 +422,11 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
             "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 32.8,
                 }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -438,10 +441,11 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
             "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 22.8,
                 }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -462,7 +466,7 @@ def fasterrcnn_resnet50_fpn(
 ) -> FasterRCNN:
     """
     Faster R-CNN model with a ResNet-50-FPN backbone from the `Faster R-CNN: Towards Real-Time Object
-    Detection with Region Proposal Networks <https://arxiv.org/abs/1703.06870>`__
+    Detection with Region Proposal Networks <https://arxiv.org/abs/1506.01497>`__
     paper.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each

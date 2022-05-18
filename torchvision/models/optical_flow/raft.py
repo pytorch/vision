@@ -518,7 +518,7 @@ _COMMON_META = {
 
 class Raft_Large_Weights(WeightsEnum):
     C_T_V1 = Weights(
-        # Chairs + Things, ported from original paper repo (raft-things.pth)
+        # Weights ported from https://github.com/princeton-vl/RAFT
         url="https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth",
         transforms=OpticalFlow,
         meta={
@@ -530,11 +530,11 @@ class Raft_Large_Weights(WeightsEnum):
                 "sintel_train_finalpass": {"epe": 2.7894},
                 "kitti_train": {"per_image_epe": 5.0172, "fl_all": 17.4506},
             },
+            "_docs": """These weights were ported from the original paper. They are trained on Chairs + Things.""",
         },
     )
 
     C_T_V2 = Weights(
-        # Chairs + Things
         url="https://download.pytorch.org/models/raft_large_C_T_V2-1bb1363a.pth",
         transforms=OpticalFlow,
         meta={
@@ -546,11 +546,12 @@ class Raft_Large_Weights(WeightsEnum):
                 "sintel_train_finalpass": {"epe": 2.7161},
                 "kitti_train": {"per_image_epe": 4.5118, "fl_all": 16.0679},
             },
+            "_docs": """These weights were trained from scratch on Chairs + Things.""",
         },
     )
 
     C_T_SKHT_V1 = Weights(
-        # Chairs + Things + Sintel fine-tuning, ported from original paper repo (raft-sintel.pth)
+        # Weights ported from https://github.com/princeton-vl/RAFT
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V1-0b8c9e55.pth",
         transforms=OpticalFlow,
         meta={
@@ -561,13 +562,14 @@ class Raft_Large_Weights(WeightsEnum):
                 "sintel_test_cleanpass": {"epe": 1.94},
                 "sintel_test_finalpass": {"epe": 3.18},
             },
+            "_docs": """
+                These weights were ported from the original paper. They are trained on Chairs + Things and fine-tuned on
+                Sintel (C+T+S+K+H).
+            """,
         },
     )
 
     C_T_SKHT_V2 = Weights(
-        # Chairs + Things + Sintel fine-tuning, i.e.:
-        # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean)
-        # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_V2-ff5fadd5.pth",
         transforms=OpticalFlow,
         meta={
@@ -578,11 +580,14 @@ class Raft_Large_Weights(WeightsEnum):
                 "sintel_test_cleanpass": {"epe": 1.819},
                 "sintel_test_finalpass": {"epe": 3.067},
             },
+            "_docs": """
+                These weights were trained from scratch on Chairs + Things and fine-tuned on Sintel (C+T+S+K+H).
+            """,
         },
     )
 
     C_T_SKHT_K_V1 = Weights(
-        # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning, ported from the original repo (sintel-kitti.pth)
+        # Weights ported from https://github.com/princeton-vl/RAFT
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V1-4a6a5039.pth",
         transforms=OpticalFlow,
         meta={
@@ -592,14 +597,14 @@ class Raft_Large_Weights(WeightsEnum):
             "_metrics": {
                 "kitti_test": {"fl_all": 5.10},
             },
+            "_docs": """
+                These weights were ported from the original paper. They are trained on Chairs + Things, fine-tuned on
+                Sintel and then on Kitti.
+            """,
         },
     )
 
     C_T_SKHT_K_V2 = Weights(
-        # Chairs + Things + Sintel fine-tuning + Kitti fine-tuning i.e.:
-        # Chairs + Things + (Sintel + Kitti + HD1K + Things_clean) + Kitti
-        # Same as CT_SKHT with extra fine-tuning on Kitti
-        # Corresponds to the C+T+S+K+H on paper with fine-tuning on Sintel and then on Kitti
         url="https://download.pytorch.org/models/raft_large_C_T_SKHT_K_V2-b5c70766.pth",
         transforms=OpticalFlow,
         meta={
@@ -609,6 +614,9 @@ class Raft_Large_Weights(WeightsEnum):
             "_metrics": {
                 "kitti_test": {"fl_all": 5.19},
             },
+            "_docs": """
+                These weights were trained from scratch on Chairs + Things, fine-tuned on Sintel and then on Kitti.
+            """,
         },
     )
 
@@ -617,7 +625,7 @@ class Raft_Large_Weights(WeightsEnum):
 
 class Raft_Small_Weights(WeightsEnum):
     C_T_V1 = Weights(
-        # Chairs + Things, ported from original paper repo (raft-small.pth)
+        # Weights ported from https://github.com/princeton-vl/RAFT
         url="https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth",
         transforms=OpticalFlow,
         meta={
@@ -629,10 +637,10 @@ class Raft_Small_Weights(WeightsEnum):
                 "sintel_train_finalpass": {"epe": 3.2790},
                 "kitti_train": {"per_image_epe": 7.6557, "fl_all": 25.2801},
             },
+            "_docs": """These weights were ported from the original paper. They are trained on Chairs + Things.""",
         },
     )
     C_T_V2 = Weights(
-        # Chairs + Things
         url="https://download.pytorch.org/models/raft_small_C_T_V2-01064c6d.pth",
         transforms=OpticalFlow,
         meta={
@@ -644,6 +652,7 @@ class Raft_Small_Weights(WeightsEnum):
                 "sintel_train_finalpass": {"epe": 3.2831},
                 "kitti_train": {"per_image_epe": 7.5978, "fl_all": 25.2369},
             },
+            "_docs": """These weights were trained from scratch on Chairs + Things.""",
         },
     )
 

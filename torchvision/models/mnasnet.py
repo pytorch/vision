@@ -226,7 +226,7 @@ class MNASNet0_5_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2218512,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 67.734,
                     "acc@5": 87.490,
                 }
@@ -246,7 +246,7 @@ class MNASNet0_75_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/6019",
             "num_params": 3170208,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 71.180,
                     "acc@5": 90.496,
                 }
@@ -268,7 +268,7 @@ class MNASNet1_0_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 4383312,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 73.456,
                     "acc@5": 91.510,
                 }
@@ -288,7 +288,7 @@ class MNASNet1_3_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/6019",
             "num_params": 6282256,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 76.506,
                     "acc@5": 93.522,
                 }

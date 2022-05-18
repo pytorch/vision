@@ -273,7 +273,7 @@ class DenseNet121_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 7978856,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 74.434,
                     "acc@5": 91.972,
                 }
@@ -291,7 +291,7 @@ class DenseNet161_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 28681000,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 77.138,
                     "acc@5": 93.560,
                 }
@@ -309,7 +309,7 @@ class DenseNet169_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 14149480,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 75.600,
                     "acc@5": 92.806,
                 }
@@ -327,7 +327,7 @@ class DenseNet201_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 20013928,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 76.896,
                     "acc@5": 93.370,
                 }

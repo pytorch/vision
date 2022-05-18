@@ -103,11 +103,15 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#lraspp_mobilenet_v3_large",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "miou": 57.9,
                     "pixel_acc": 91.2,
                 }
             },
+            "_docs": """
+                These weights were trained on a subset of COCO, using only the 20 categories that are present in the
+                Pascal VOC dataset.
+            """,
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1

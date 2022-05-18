@@ -323,11 +323,15 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "num_params": 59137258,
             "recipe": "https://github.com/pytorch/vision/issues/1606",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 50.6,
                     "kp_map": 61.1,
                 }
             },
+            "_docs": """
+                These weights were produced by following a similar training recipe as on the paper but use a checkpoint
+                from an early epoch.
+            """,
         },
     )
     COCO_V1 = Weights(
@@ -338,11 +342,12 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             "num_params": 59137258,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn",
             "_metrics": {
-                "COCO": {
+                "COCO-val2017": {
                     "box_map": 54.6,
                     "kp_map": 65.0,
                 }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1

@@ -93,19 +93,19 @@ def test_schema_meta_validation(model_fn):
         "_docs",
     }
     # mandatory fields for each computer vision task
-    classification_fields = {"categories", ("_metrics", "acc@1"), ("_metrics", "acc@5")}
+    classification_fields = {"categories", ("_metrics", "ImageNet1K", "acc@1"), ("_metrics", "ImageNet1K", "acc@5")}
     defaults = {
-        "all": {"_metrics", "min_size", "num_params", "recipe"},
-        "models": classification_fields | {"_docs"},
-        "detection": {"categories", ("_metrics", "box_map")},
+        "all": {"_metrics", "min_size", "num_params", "recipe", "_docs"},
+        "models": classification_fields,
+        "detection": {"categories", ("_metrics", "COCO-val2017", "box_map")},
         "quantization": classification_fields | {"backend", "unquantized"},
-        "segmentation": {"categories", ("_metrics", "miou"), ("_metrics", "pixel_acc")},
+        "segmentation": {"categories", ("_metrics", "COCO-val2017", "miou"), ("_metrics", "COCO-val2017", "pixel_acc")},
         "video": classification_fields,
         "optical_flow": set(),
     }
     model_name = model_fn.__name__
     module_name = model_fn.__module__.split(".")[-2]
-    fields = defaults["all"] | defaults[module_name]
+    expected_fields = defaults["all"] | defaults[module_name]
 
     weights_enum = _get_model_weights(model_fn)
     if len(weights_enum) == 0:
@@ -115,7 +115,13 @@ def test_schema_meta_validation(model_fn):
     incorrect_params = []
     bad_names = []
     for w in weights_enum:
-        missing_fields = fields - (set(w.meta.keys()) | set(("_metrics", x) for x in w.meta.get("_metrics", {}).keys()))
+        actual_fields = set(w.meta.keys())
+        actual_fields |= set(
+            ("_metrics", ds, metric_key)
+            for ds in w.meta.get("_metrics", {}).keys()
+            for metric_key in w.meta.get("_metrics", {}).get(ds, {}).keys()
+        )
+        missing_fields = expected_fields - actual_fields
         unsupported_fields = set(w.meta.keys()) - permitted_fields
         if missing_fields or unsupported_fields:
             problematic_weights[w] = {"missing": missing_fields, "unsupported": unsupported_fields}

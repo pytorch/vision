@@ -459,7 +459,7 @@ class EfficientNet_B0_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 5288548,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 77.692,
                     "acc@5": 93.532,
                 }
@@ -481,7 +481,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 7794184,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 78.642,
                     "acc@5": 94.186,
                 }
@@ -499,7 +499,7 @@ class EfficientNet_B1_Weights(WeightsEnum):
             "num_params": 7794184,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-lr-wd-crop-tuning",
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 79.838,
                     "acc@5": 94.934,
                 }
@@ -525,7 +525,7 @@ class EfficientNet_B2_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 9109994,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 80.608,
                     "acc@5": 95.310,
                 }
@@ -547,7 +547,7 @@ class EfficientNet_B3_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 12233232,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 82.008,
                     "acc@5": 96.054,
                 }
@@ -569,7 +569,7 @@ class EfficientNet_B4_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 19341616,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 83.384,
                     "acc@5": 96.594,
                 }
@@ -591,7 +591,7 @@ class EfficientNet_B5_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 30389784,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 83.444,
                     "acc@5": 96.628,
                 }
@@ -613,7 +613,7 @@ class EfficientNet_B6_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 43040704,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 84.008,
                     "acc@5": 96.916,
                 }
@@ -635,7 +635,7 @@ class EfficientNet_B7_Weights(WeightsEnum):
             **_COMMON_META_V1,
             "num_params": 66347960,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 84.122,
                     "acc@5": 96.908,
                 }
@@ -659,7 +659,7 @@ class EfficientNet_V2_S_Weights(WeightsEnum):
             **_COMMON_META_V2,
             "num_params": 21458488,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 84.228,
                     "acc@5": 96.878,
                 }
@@ -687,7 +687,7 @@ class EfficientNet_V2_M_Weights(WeightsEnum):
             **_COMMON_META_V2,
             "num_params": 54139356,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 85.112,
                     "acc@5": 97.156,
                 }
@@ -718,7 +718,7 @@ class EfficientNet_V2_L_Weights(WeightsEnum):
             **_COMMON_META_V2,
             "num_params": 118515272,
             "_metrics": {
-                "ImageNetV1": {
+                "ImageNet1K": {
                     "acc@1": 85.808,
                     "acc@5": 97.788,
                 }
