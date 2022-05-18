@@ -100,7 +100,7 @@ def test_schema_meta_validation(model_fn):
         "detection": {"categories", ("_metrics", "COCO-val2017", "box_map")},
         "quantization": classification_fields | {"backend", "unquantized"},
         "segmentation": {"categories", ("_metrics", "COCO-val2017", "miou"), ("_metrics", "COCO-val2017", "pixel_acc")},
-        "video": classification_fields,
+        "video": {"categories", ("_metrics", "Kinetics-400", "acc@1"), ("_metrics", "Kinetics-400", "acc@5")},
         "optical_flow": set(),
     }
     model_name = model_fn.__name__

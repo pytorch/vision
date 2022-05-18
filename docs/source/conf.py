@@ -442,7 +442,7 @@ generate_weights_table(
     dataset="COCO-val2017",
 )
 generate_weights_table(
-    module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="ImageNet1K"
+    module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="Kinetics-400"
 )
 
 
