@@ -153,6 +153,7 @@ html_css_files = [
 
 html_js_files = [
     "https://cdn.datatables.net/1.10.23/js/jquery.dataTables.min.js",
+    "https://cdn.datatables.net/plug-ins/1.12.0/sorting/natural.js",
     "js/data_table.js",
 ]
 
