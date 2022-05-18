@@ -61,9 +61,11 @@ class FCN_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
-            "metrics": {
-                "miou": 60.5,
-                "pixel_acc": 91.4,
+            "_metrics": {
+                "COCO": {
+                    "miou": 60.5,
+                    "pixel_acc": 91.4,
+                }
             },
         },
     )
@@ -78,9 +80,11 @@ class FCN_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
-            "metrics": {
-                "miou": 63.7,
-                "pixel_acc": 91.9,
+            "_metrics": {
+                "COCO": {
+                    "miou": 63.7,
+                    "pixel_acc": 91.9,
+                }
             },
         },
     )
