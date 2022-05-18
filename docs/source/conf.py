@@ -439,7 +439,7 @@ generate_weights_table(
     module=M.segmentation,
     table_name="segmentation",
     metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")],
-    dataset="COCO-val2017",
+    dataset="COCO-val2017-VOC-labels",
 )
 generate_weights_table(
     module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="Kinetics-400"

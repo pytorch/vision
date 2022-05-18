@@ -66,7 +66,7 @@ class FCN_ResNet50_Weights(WeightsEnum):
             "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
             "_metrics": {
-                "COCO-val2017": {
+                "COCO-val2017-VOC-labels": {
                     "miou": 60.5,
                     "pixel_acc": 91.4,
                 }
@@ -85,7 +85,7 @@ class FCN_ResNet101_Weights(WeightsEnum):
             "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
             "_metrics": {
-                "COCO-val2017": {
+                "COCO-val2017-VOC-labels": {
                     "miou": 63.7,
                     "pixel_acc": 91.9,
                 }
