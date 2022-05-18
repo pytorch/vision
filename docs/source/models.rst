@@ -120,6 +120,25 @@ behavior, such as batch normalization. To switch between these modes, use
     # Set model to eval mode
     model.eval()
 
+Using models from Hub
+---------------------
+
+Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:
+
+.. code:: python
+
+    import torch
+
+    # Option 1: passing weights param as string
+    model = torch.hub.load("pytorch/vision", "resnet50", weights="IMAGENET1K_V2")
+
+    # Option 2: passing weights param as enum
+    weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
+    model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
+
+The only exception to the above are the detection models included on
+:mod:`torchvision.models.detection`. These models require TorchVision
+to be installed because they depend on custom C++ operators.
 
 Classification
 ==============
@@ -494,23 +513,3 @@ The following Optical Flow models are available, with or without pre-trained
    :maxdepth: 1
 
    models/raft
-
-Using models from Hub
-=====================
-
-Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:
-
-.. code:: python
-
-    import torch
-
-    # Option 1: passing weights param as string
-    model = torch.hub.load("pytorch/vision", "resnet50", weights="IMAGENET1K_V2")
-
-    # Option 2: passing weights param as enum
-    weights = torch.hub.load("pytorch/vision", "get_weight", weights="ResNet50_Weights.IMAGENET1K_V2")
-    model = torch.hub.load("pytorch/vision", "resnet50", weights=weights)
-
-The only exception to the above are the detection models included on
-:mod:`torchvision.models.detection`. These models require TorchVision
-to be installed because they depend on custom C++ operators.
