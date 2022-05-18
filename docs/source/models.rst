@@ -1,7 +1,7 @@
 .. _models:
 
-Models and pre-trained weights - New
-####################################
+Models and pre-trained weights
+##############################
 
 The ``torchvision.models`` subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
