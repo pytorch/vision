@@ -661,6 +661,7 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
             "metrics": {
                 "box_map": 39.2,
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
