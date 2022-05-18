@@ -531,7 +531,7 @@ class Raft_Large_Weights(WeightsEnum):
                 "kitti_train_per_image_epe": 5.0172,
                 "kitti_train_fl_all": 17.4506,
             },
-            "_doc": """These weights were ported from the original paper. They are trained on Chairs + Things.""",
+            "_docs": """These weights were ported from the original paper. They are trained on Chairs + Things.""",
         },
     )
 
@@ -548,7 +548,7 @@ class Raft_Large_Weights(WeightsEnum):
                 "kitti_train_per_image_epe": 4.5118,
                 "kitti_train_fl_all": 16.0679,
             },
-            "_doc": """These weights were trained from scratch on Chairs + Things.""",
+            "_docs": """These weights were trained from scratch on Chairs + Things.""",
         },
     )
 
@@ -564,7 +564,7 @@ class Raft_Large_Weights(WeightsEnum):
                 "sintel_test_cleanpass_epe": 1.94,
                 "sintel_test_finalpass_epe": 3.18,
             },
-            "_doc": """
+            "_docs": """
                 These weights were ported from the original paper. They are trained on Chairs + Things and fine-tuned on
                 Sintel (C+T+S+K+H).
             """,
@@ -582,7 +582,7 @@ class Raft_Large_Weights(WeightsEnum):
                 "sintel_test_cleanpass_epe": 1.819,
                 "sintel_test_finalpass_epe": 3.067,
             },
-            "_doc": """
+            "_docs": """
                 These weights were trained from scratch on Chairs + Things and fine-tuned on Sintel (C+T+S+K+H).
             """,
         },
@@ -599,7 +599,7 @@ class Raft_Large_Weights(WeightsEnum):
             "metrics": {
                 "kitti_test_fl_all": 5.10,
             },
-            "_doc": """
+            "_docs": """
                 These weights were ported from the original paper. They are trained on Chairs + Things, fine-tuned on
                 Sintel and then on Kitti.
             """,
@@ -616,7 +616,7 @@ class Raft_Large_Weights(WeightsEnum):
             "metrics": {
                 "kitti_test_fl_all": 5.19,
             },
-            "_doc": """
+            "_docs": """
                 These weights were trained from scratch on Chairs + Things, fine-tuned on Sintel and then on Kitti.
             """,
         },
@@ -640,7 +640,7 @@ class Raft_Small_Weights(WeightsEnum):
                 "kitti_train_per_image_epe": 7.6557,
                 "kitti_train_fl_all": 25.2801,
             },
-            "_doc": """These weights were ported from the original paper. They are trained on Chairs + Things.""",
+            "_docs": """These weights were ported from the original paper. They are trained on Chairs + Things.""",
         },
     )
     C_T_V2 = Weights(
@@ -656,7 +656,7 @@ class Raft_Small_Weights(WeightsEnum):
                 "kitti_train_per_image_epe": 7.5978,
                 "kitti_train_fl_all": 25.2369,
             },
-            "_doc": """These weights were trained from scratch on Chairs + Things.""",
+            "_docs": """These weights were trained from scratch on Chairs + Things.""",
         },
     )
 
