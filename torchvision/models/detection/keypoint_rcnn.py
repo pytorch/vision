@@ -322,9 +322,11 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 59137258,
             "recipe": "https://github.com/pytorch/vision/issues/1606",
-            "metrics": {
-                "box_map": 50.6,
-                "kp_map": 61.1,
+            "_metrics": {
+                "COCO": {
+                    "box_map": 50.6,
+                    "kp_map": 61.1,
+                }
             },
         },
     )
@@ -335,9 +337,11 @@ class KeypointRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 59137258,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#keypoint-r-cnn",
-            "metrics": {
-                "box_map": 54.6,
-                "kp_map": 65.0,
+            "_metrics": {
+                "COCO": {
+                    "box_map": 54.6,
+                    "kp_map": 65.0,
+                }
             },
         },
     )

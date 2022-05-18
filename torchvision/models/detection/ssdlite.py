@@ -193,8 +193,10 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
-            "metrics": {
-                "box_map": 21.3,
+            "_metrics": {
+                "COCO": {
+                    "box_map": 21.3,
+                }
             },
         },
     )

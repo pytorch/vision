@@ -383,8 +383,10 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 41755286,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn",
-            "metrics": {
-                "box_map": 37.0,
+            "_metrics": {
+                "COCO": {
+                    "box_map": 37.0,
+                }
             },
         },
     )
@@ -399,8 +401,10 @@ class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 43712278,
             "recipe": "https://github.com/pytorch/vision/pull/5763",
-            "metrics": {
-                "box_map": 46.7,
+            "_metrics": {
+                "COCO": {
+                    "box_map": 46.7,
+                }
             },
         },
     )
@@ -415,8 +419,10 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn",
-            "metrics": {
-                "box_map": 32.8,
+            "_metrics": {
+                "COCO": {
+                    "box_map": 32.8,
+                }
             },
         },
     )
@@ -431,8 +437,10 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn",
-            "metrics": {
-                "box_map": 22.8,
+            "_metrics": {
+                "COCO": {
+                    "box_map": 22.8,
+                }
             },
         },
     )
