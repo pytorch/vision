@@ -322,9 +322,11 @@ class R3D_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 33371472,
-            "metrics": {
-                "acc@1": 52.75,
-                "acc@5": 75.45,
+            "_metrics": {
+                "ImageNetV1": {
+                    "acc@1": 52.75,
+                    "acc@5": 75.45,
+                }
             },
         },
     )
@@ -338,9 +340,11 @@ class MC3_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 11695440,
-            "metrics": {
-                "acc@1": 53.90,
-                "acc@5": 76.29,
+            "_metrics": {
+                "ImageNetV1": {
+                    "acc@1": 53.90,
+                    "acc@5": 76.29,
+                }
             },
         },
     )
@@ -354,9 +358,11 @@ class R2Plus1D_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 31505325,
-            "metrics": {
-                "acc@1": 57.50,
-                "acc@5": 78.81,
+            "_metrics": {
+                "ImageNetV1": {
+                    "acc@1": 57.50,
+                    "acc@5": 78.81,
+                }
             },
         },
     )
