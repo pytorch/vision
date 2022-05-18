@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+32a7c7b ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+20c8fcf ) &#x25BC</a>
     </div>
     
 
@@ -335,6 +335,7 @@
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
 <span class="kn">from</span> <span class="nn">._box_convert</span> <span class="kn">import</span> <span class="n">_box_cxcywh_to_xyxy</span><span class="p">,</span> <span class="n">_box_xyxy_to_cxcywh</span><span class="p">,</span> <span class="n">_box_xywh_to_xyxy</span><span class="p">,</span> <span class="n">_box_xyxy_to_xywh</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_upcast</span>
 
 
 <div class="viewcode-block" id="nms"><a class="viewcode-back" href="../../../generated/torchvision.ops.nms.html#torchvision.ops.nms">[docs]</a><span class="k">def</span> <span class="nf">nms</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">scores</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">iou_threshold</span><span class="p">:</span> <span class="nb">float</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
@@ -543,14 +544,6 @@
     <span class="k">return</span> <span class="n">boxes</span>
 
 
-<span class="k">def</span> <span class="nf">_upcast</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="c1"># Protects from numerical overflows in multiplications by upcasting to the equivalent higher type</span>
-    <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">is_floating_point</span><span class="p">():</span>
-        <span class="k">return</span> <span class="n">t</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span> <span class="k">else</span> <span class="n">t</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-    <span class="k">else</span><span class="p">:</span>
-        <span class="k">return</span> <span class="n">t</span> <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">int32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">int64</span><span class="p">)</span> <span class="k">else</span> <span class="n">t</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
-
-
 <span class="k">def</span> <span class="nf">box_area</span><span class="p">(</span><span class="n">boxes</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Computes the area of a set of bounding boxes, which are specified by their</span>
@@ -658,22 +651,7 @@
     <span class="n">boxes1</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes1</span><span class="p">)</span>
     <span class="n">boxes2</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
 
-    <span class="n">inter</span><span class="p">,</span> <span class="n">union</span> <span class="o">=</span> <span class="n">_box_inter_union</span><span class="p">(</span><span class="n">boxes1</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">)</span>
-    <span class="n">iou</span> <span class="o">=</span> <span class="n">inter</span> <span class="o">/</span> <span class="n">union</span>
-
-    <span class="n">lti</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
-    <span class="n">rbi</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">:],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">:])</span>
-
-    <span class="n">whi</span> <span class="o">=</span> <span class="p">(</span><span class="n">rbi</span> <span class="o">-</span> <span class="n">lti</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># [N,M,2]</span>
-    <span class="n">diagonal_distance_squared</span> <span class="o">=</span> <span class="p">(</span><span class="n">whi</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">whi</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span>
-
-    <span class="c1"># centers of boxes</span>
-    <span class="n">x_p</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="n">y_p</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="n">x_g</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="n">y_g</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="c1"># The distance between boxes&#39; centers squared.</span>
-    <span class="n">centers_distance_squared</span> <span class="o">=</span> <span class="p">(</span><span class="n">x_p</span> <span class="o">-</span> <span class="n">x_g</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span> <span class="o">+</span> <span class="p">(</span><span class="n">y_p</span> <span class="o">-</span> <span class="n">y_g</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span>
+    <span class="n">diou</span><span class="p">,</span> <span class="n">iou</span> <span class="o">=</span> <span class="n">_box_diou_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">,</span> <span class="n">eps</span><span class="p">)</span>
 
     <span class="n">w_pred</span> <span class="o">=</span> <span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
     <span class="n">h_pred</span> <span class="o">=</span> <span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">-</span> <span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
@@ -684,7 +662,7 @@
     <span class="n">v</span> <span class="o">=</span> <span class="p">(</span><span class="mi">4</span> <span class="o">/</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">pi</span> <span class="o">**</span> <span class="mi">2</span><span class="p">))</span> <span class="o">*</span> <span class="n">torch</span><span class="o">.</span><span class="n">pow</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">w_gt</span> <span class="o">/</span> <span class="n">h_gt</span><span class="p">)</span> <span class="o">-</span> <span class="n">torch</span><span class="o">.</span><span class="n">atan</span><span class="p">(</span><span class="n">w_pred</span> <span class="o">/</span> <span class="n">h_pred</span><span class="p">)),</span> <span class="mi">2</span><span class="p">)</span>
     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">iou</span> <span class="o">+</span> <span class="n">v</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">iou</span> <span class="o">-</span> <span class="p">(</span><span class="n">centers_distance_squared</span> <span class="o">/</span> <span class="n">diagonal_distance_squared</span><span class="p">)</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">v</span>
+    <span class="k">return</span> <span class="n">diou</span> <span class="o">-</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">v</span>
 
 
 <span class="k">def</span> <span class="nf">distance_box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
@@ -708,16 +686,17 @@
 
     <span class="n">boxes1</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes1</span><span class="p">)</span>
     <span class="n">boxes2</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
+    <span class="n">diou</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">_box_diou_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">diou</span>
 
-    <span class="n">inter</span><span class="p">,</span> <span class="n">union</span> <span class="o">=</span> <span class="n">_box_inter_union</span><span class="p">(</span><span class="n">boxes1</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">)</span>
-    <span class="n">iou</span> <span class="o">=</span> <span class="n">inter</span> <span class="o">/</span> <span class="n">union</span>
 
+<span class="k">def</span> <span class="nf">_box_diou_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">,</span> <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Tensor</span><span class="p">,</span> <span class="n">Tensor</span><span class="p">]:</span>
+
+    <span class="n">iou</span> <span class="o">=</span> <span class="n">box_iou</span><span class="p">(</span><span class="n">boxes1</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">)</span>
     <span class="n">lti</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="p">:</span><span class="mi">2</span><span class="p">],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">])</span>
     <span class="n">rbi</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="kc">None</span><span class="p">,</span> <span class="mi">2</span><span class="p">:],</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">:])</span>
-
     <span class="n">whi</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">rbi</span> <span class="o">-</span> <span class="n">lti</span><span class="p">)</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>  <span class="c1"># [N,M,2]</span>
     <span class="n">diagonal_distance_squared</span> <span class="o">=</span> <span class="p">(</span><span class="n">whi</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">whi</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span>
-
     <span class="c1"># centers of boxes</span>
     <span class="n">x_p</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">2</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
     <span class="n">y_p</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes1</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
@@ -725,10 +704,9 @@
     <span class="n">y_g</span> <span class="o">=</span> <span class="p">(</span><span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">boxes2</span><span class="p">[:,</span> <span class="mi">3</span><span class="p">])</span> <span class="o">/</span> <span class="mi">2</span>
     <span class="c1"># The distance between boxes&#39; centers squared.</span>
     <span class="n">centers_distance_squared</span> <span class="o">=</span> <span class="p">(</span><span class="n">_upcast</span><span class="p">(</span><span class="n">x_p</span> <span class="o">-</span> <span class="n">x_g</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">_upcast</span><span class="p">(</span><span class="n">y_p</span> <span class="o">-</span> <span class="n">y_g</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
-
     <span class="c1"># The distance IoU is the IoU penalized by a normalized</span>
     <span class="c1"># distance between boxes&#39; centers squared.</span>
-    <span class="k">return</span> <span class="n">iou</span> <span class="o">-</span> <span class="p">(</span><span class="n">centers_distance_squared</span> <span class="o">/</span> <span class="n">diagonal_distance_squared</span><span class="p">)</span>
+    <span class="k">return</span> <span class="n">iou</span> <span class="o">-</span> <span class="p">(</span><span class="n">centers_distance_squared</span> <span class="o">/</span> <span class="n">diagonal_distance_squared</span><span class="p">),</span> <span class="n">iou</span>
 
 
 <div class="viewcode-block" id="masks_to_boxes"><a class="viewcode-back" href="../../../generated/torchvision.ops.masks_to_boxes.html#torchvision.ops.masks_to_boxes">[docs]</a><span class="k">def</span> <span class="nf">masks_to_boxes</span><span class="p">(</span><span class="n">masks</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>

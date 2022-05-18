@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+32a7c7b ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+20c8fcf ) &#x25BC</a>
     </div>
     
 
@@ -329,7 +329,8 @@
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-<span class="kn">from</span> <span class="nn">.giou_loss</span> <span class="kn">import</span> <span class="n">_upcast</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_upcast_non_float</span>
+<span class="kn">from</span> <span class="nn">.diou_loss</span> <span class="kn">import</span> <span class="n">_diou_iou_loss</span>
 
 
 <div class="viewcode-block" id="complete_box_iou_loss"><a class="viewcode-back" href="../../../generated/torchvision.ops.complete_box_iou_loss.html#torchvision.ops.complete_box_iou_loss">[docs]</a><span class="k">def</span> <span class="nf">complete_box_iou_loss</span><span class="p">(</span>
@@ -358,49 +359,27 @@
 <span class="sd">            ``&#39;sum&#39;``: The output will be summed. Default: ``&#39;none&#39;``</span>
 <span class="sd">        eps : (float): small number to prevent division by zero. Default: 1e-7</span>
 
-<span class="sd">    Reference:</span>
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: Loss tensor with the reduction option applied.</span>
 
-<span class="sd">    Complete Intersection over Union Loss (Zhaohui Zheng et. al)</span>
-<span class="sd">    https://arxiv.org/abs/1911.08287</span>
+<span class="sd">    Reference:</span>
+<span class="sd">        Zhaohui Zheng et. al: Complete Intersection over Union Loss:</span>
+<span class="sd">        https://arxiv.org/abs/1911.08287</span>
 
 <span class="sd">    &quot;&quot;&quot;</span>
 
-    <span class="c1"># Original Implementation : https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py</span>
+    <span class="c1"># Original Implementation from https://github.com/facebookresearch/detectron2/blob/main/detectron2/layers/losses.py</span>
 
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">complete_box_iou_loss</span><span class="p">)</span>
 
-    <span class="n">boxes1</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes1</span><span class="p">)</span>
-    <span class="n">boxes2</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
+    <span class="n">boxes1</span> <span class="o">=</span> <span class="n">_upcast_non_float</span><span class="p">(</span><span class="n">boxes1</span><span class="p">)</span>
+    <span class="n">boxes2</span> <span class="o">=</span> <span class="n">_upcast_non_float</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
+
+    <span class="n">diou_loss</span><span class="p">,</span> <span class="n">iou</span> <span class="o">=</span> <span class="n">_diou_iou_loss</span><span class="p">(</span><span class="n">boxes1</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">)</span>
 
     <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">boxes1</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">x1g</span><span class="p">,</span> <span class="n">y1g</span><span class="p">,</span> <span class="n">x2g</span><span class="p">,</span> <span class="n">y2g</span> <span class="o">=</span> <span class="n">boxes2</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="c1"># Intersection keypoints</span>
-    <span class="n">xkis1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x1g</span><span class="p">)</span>
-    <span class="n">ykis1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="n">y1g</span><span class="p">)</span>
-    <span class="n">xkis2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">x2g</span><span class="p">)</span>
-    <span class="n">ykis2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="n">y2g</span><span class="p">)</span>
-
-    <span class="n">intsct</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
-    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">ykis2</span> <span class="o">&gt;</span> <span class="n">ykis1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">xkis2</span> <span class="o">&gt;</span> <span class="n">xkis1</span><span class="p">)</span>
-    <span class="n">intsct</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">xkis2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">xkis1</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">ykis2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">ykis1</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
-    <span class="n">union</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">x2g</span> <span class="o">-</span> <span class="n">x1g</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y2g</span> <span class="o">-</span> <span class="n">y1g</span><span class="p">)</span> <span class="o">-</span> <span class="n">intsct</span> <span class="o">+</span> <span class="n">eps</span>
-    <span class="n">iou</span> <span class="o">=</span> <span class="n">intsct</span> <span class="o">/</span> <span class="n">union</span>
-
-    <span class="c1"># smallest enclosing box</span>
-    <span class="n">xc1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x1g</span><span class="p">)</span>
-    <span class="n">yc1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="n">y1g</span><span class="p">)</span>
-    <span class="n">xc2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">x2g</span><span class="p">)</span>
-    <span class="n">yc2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="n">y2g</span><span class="p">)</span>
-    <span class="n">diag_len</span> <span class="o">=</span> <span class="p">((</span><span class="n">xc2</span> <span class="o">-</span> <span class="n">xc1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">yc2</span> <span class="o">-</span> <span class="n">yc1</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="n">eps</span>
-
-    <span class="c1"># centers of boxes</span>
-    <span class="n">x_p</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span> <span class="o">+</span> <span class="n">x1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="n">y_p</span> <span class="o">=</span> <span class="p">(</span><span class="n">y2</span> <span class="o">+</span> <span class="n">y1</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="n">x_g</span> <span class="o">=</span> <span class="p">(</span><span class="n">x1g</span> <span class="o">+</span> <span class="n">x2g</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="n">y_g</span> <span class="o">=</span> <span class="p">(</span><span class="n">y1g</span> <span class="o">+</span> <span class="n">y2g</span><span class="p">)</span> <span class="o">/</span> <span class="mi">2</span>
-    <span class="n">distance</span> <span class="o">=</span> <span class="p">((</span><span class="n">x_p</span> <span class="o">-</span> <span class="n">x_g</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span> <span class="o">+</span> <span class="p">((</span><span class="n">y_p</span> <span class="o">-</span> <span class="n">y_g</span><span class="p">)</span> <span class="o">**</span> <span class="mi">2</span><span class="p">)</span>
 
     <span class="c1"># width and height of boxes</span>
     <span class="n">w_pred</span> <span class="o">=</span> <span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span>
@@ -411,7 +390,7 @@
     <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
         <span class="n">alpha</span> <span class="o">=</span> <span class="n">v</span> <span class="o">/</span> <span class="p">(</span><span class="mi">1</span> <span class="o">-</span> <span class="n">iou</span> <span class="o">+</span> <span class="n">v</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
 
-    <span class="n">loss</span> <span class="o">=</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">iou</span> <span class="o">+</span> <span class="p">(</span><span class="n">distance</span> <span class="o">/</span> <span class="n">diag_len</span><span class="p">)</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">v</span>
+    <span class="n">loss</span> <span class="o">=</span> <span class="n">diou_loss</span> <span class="o">+</span> <span class="n">alpha</span> <span class="o">*</span> <span class="n">v</span>
     <span class="k">if</span> <span class="n">reduction</span> <span class="o">==</span> <span class="s2">&quot;mean&quot;</span><span class="p">:</span>
         <span class="n">loss</span> <span class="o">=</span> <span class="n">loss</span><span class="o">.</span><span class="n">mean</span><span class="p">()</span> <span class="k">if</span> <span class="n">loss</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">0</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="o">*</span> <span class="n">loss</span><span class="o">.</span><span class="n">sum</span><span class="p">()</span>
     <span class="k">elif</span> <span class="n">reduction</span> <span class="o">==</span> <span class="s2">&quot;sum&quot;</span><span class="p">:</span>

@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+32a7c7b ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+20c8fcf ) &#x25BC</a>
     </div>
     
 
@@ -327,16 +327,9 @@
               
   <h1>Source code for torchvision.ops.giou_loss</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">torch</span>
-<span class="kn">from</span> <span class="nn">torch</span> <span class="kn">import</span> <span class="n">Tensor</span>
 
 <span class="kn">from</span> <span class="nn">..utils</span> <span class="kn">import</span> <span class="n">_log_api_usage_once</span>
-
-
-<span class="k">def</span> <span class="nf">_upcast</span><span class="p">(</span><span class="n">t</span><span class="p">:</span> <span class="n">Tensor</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tensor</span><span class="p">:</span>
-    <span class="c1"># Protects from numerical overflows in multiplications by upcasting to the equivalent higher type</span>
-    <span class="k">if</span> <span class="n">t</span><span class="o">.</span><span class="n">dtype</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">):</span>
-        <span class="k">return</span> <span class="n">t</span><span class="o">.</span><span class="n">float</span><span class="p">()</span>
-    <span class="k">return</span> <span class="n">t</span>
+<span class="kn">from</span> <span class="nn">._utils</span> <span class="kn">import</span> <span class="n">_upcast_non_float</span><span class="p">,</span> <span class="n">_loss_inter_union</span>
 
 
 <div class="viewcode-block" id="generalized_box_iou_loss"><a class="viewcode-back" href="../../../generated/torchvision.ops.generalized_box_iou_loss.html#torchvision.ops.generalized_box_iou_loss">[docs]</a><span class="k">def</span> <span class="nf">generalized_box_iou_loss</span><span class="p">(</span>
@@ -345,10 +338,8 @@
     <span class="n">reduction</span><span class="p">:</span> <span class="nb">str</span> <span class="o">=</span> <span class="s2">&quot;none&quot;</span><span class="p">,</span>
     <span class="n">eps</span><span class="p">:</span> <span class="nb">float</span> <span class="o">=</span> <span class="mf">1e-7</span><span class="p">,</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">:</span>
-    <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">    Original implementation from</span>
-<span class="sd">    https://github.com/facebookresearch/fvcore/blob/bfff2ef/fvcore/nn/giou_loss.py</span>
 
+    <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">    Gradient-friendly IoU loss with an additional penalty that is non-zero when the</span>
 <span class="sd">    boxes do not overlap and scales with the size of their smallest enclosing box.</span>
 <span class="sd">    This loss is symmetric, so the boxes1 and boxes2 arguments are interchangeable.</span>
@@ -366,30 +357,27 @@
 <span class="sd">            ``&#39;sum&#39;``: The output will be summed. Default: ``&#39;none&#39;``</span>
 <span class="sd">        eps (float): small number to prevent division by zero. Default: 1e-7</span>
 
+<span class="sd">    Returns:</span>
+<span class="sd">        Tensor: Loss tensor with the reduction option applied.</span>
+
 <span class="sd">    Reference:</span>
 <span class="sd">        Hamid Rezatofighi et. al: Generalized Intersection over Union:</span>
 <span class="sd">        A Metric and A Loss for Bounding Box Regression:</span>
 <span class="sd">        https://arxiv.org/abs/1902.09630</span>
 <span class="sd">    &quot;&quot;&quot;</span>
+
+    <span class="c1"># Original implementation from https://github.com/facebookresearch/fvcore/blob/bfff2ef/fvcore/nn/giou_loss.py</span>
+
     <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_scripting</span><span class="p">()</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">jit</span><span class="o">.</span><span class="n">is_tracing</span><span class="p">():</span>
         <span class="n">_log_api_usage_once</span><span class="p">(</span><span class="n">generalized_box_iou_loss</span><span class="p">)</span>
 
-    <span class="n">boxes1</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes1</span><span class="p">)</span>
-    <span class="n">boxes2</span> <span class="o">=</span> <span class="n">_upcast</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
+    <span class="n">boxes1</span> <span class="o">=</span> <span class="n">_upcast_non_float</span><span class="p">(</span><span class="n">boxes1</span><span class="p">)</span>
+    <span class="n">boxes2</span> <span class="o">=</span> <span class="n">_upcast_non_float</span><span class="p">(</span><span class="n">boxes2</span><span class="p">)</span>
+    <span class="n">intsctk</span><span class="p">,</span> <span class="n">unionk</span> <span class="o">=</span> <span class="n">_loss_inter_union</span><span class="p">(</span><span class="n">boxes1</span><span class="p">,</span> <span class="n">boxes2</span><span class="p">)</span>
+    <span class="n">iouk</span> <span class="o">=</span> <span class="n">intsctk</span> <span class="o">/</span> <span class="p">(</span><span class="n">unionk</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
+
     <span class="n">x1</span><span class="p">,</span> <span class="n">y1</span><span class="p">,</span> <span class="n">x2</span><span class="p">,</span> <span class="n">y2</span> <span class="o">=</span> <span class="n">boxes1</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
     <span class="n">x1g</span><span class="p">,</span> <span class="n">y1g</span><span class="p">,</span> <span class="n">x2g</span><span class="p">,</span> <span class="n">y2g</span> <span class="o">=</span> <span class="n">boxes2</span><span class="o">.</span><span class="n">unbind</span><span class="p">(</span><span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
-
-    <span class="c1"># Intersection keypoints</span>
-    <span class="n">xkis1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x1g</span><span class="p">)</span>
-    <span class="n">ykis1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">y1</span><span class="p">,</span> <span class="n">y1g</span><span class="p">)</span>
-    <span class="n">xkis2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x2</span><span class="p">,</span> <span class="n">x2g</span><span class="p">)</span>
-    <span class="n">ykis2</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">y2</span><span class="p">,</span> <span class="n">y2g</span><span class="p">)</span>
-
-    <span class="n">intsctk</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">x1</span><span class="p">)</span>
-    <span class="n">mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">ykis2</span> <span class="o">&gt;</span> <span class="n">ykis1</span><span class="p">)</span> <span class="o">&amp;</span> <span class="p">(</span><span class="n">xkis2</span> <span class="o">&gt;</span> <span class="n">xkis1</span><span class="p">)</span>
-    <span class="n">intsctk</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="n">xkis2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">xkis1</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span> <span class="o">*</span> <span class="p">(</span><span class="n">ykis2</span><span class="p">[</span><span class="n">mask</span><span class="p">]</span> <span class="o">-</span> <span class="n">ykis1</span><span class="p">[</span><span class="n">mask</span><span class="p">])</span>
-    <span class="n">unionk</span> <span class="o">=</span> <span class="p">(</span><span class="n">x2</span> <span class="o">-</span> <span class="n">x1</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y2</span> <span class="o">-</span> <span class="n">y1</span><span class="p">)</span> <span class="o">+</span> <span class="p">(</span><span class="n">x2g</span> <span class="o">-</span> <span class="n">x1g</span><span class="p">)</span> <span class="o">*</span> <span class="p">(</span><span class="n">y2g</span> <span class="o">-</span> <span class="n">y1g</span><span class="p">)</span> <span class="o">-</span> <span class="n">intsctk</span>
-    <span class="n">iouk</span> <span class="o">=</span> <span class="n">intsctk</span> <span class="o">/</span> <span class="p">(</span><span class="n">unionk</span> <span class="o">+</span> <span class="n">eps</span><span class="p">)</span>
 
     <span class="c1"># smallest enclosing box</span>
     <span class="n">xc1</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x1g</span><span class="p">)</span>
