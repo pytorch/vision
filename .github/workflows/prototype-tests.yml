@@ -20,10 +20,11 @@ jobs:
       - name: Install additional system packages on Linux
         if: startsWith( matrix.os, 'ubuntu' )
         run: |
-          sudo add-apt-repository multiverse
           sudo apt -qy update
-          sudo apt install libssl-dev libcurl4-openssl-dev zlib1g-dev
+          echo "###############################################################################"
           ls /usr/bin | grep libcrypto
+          echo "###############################################################################"
+          sudo apt install -qy libssl-dev libcurl4-openssl-dev zlib1g-dev
 
       - name: Set up python
         uses: actions/setup-python@v3
