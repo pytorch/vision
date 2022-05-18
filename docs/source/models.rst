@@ -101,6 +101,8 @@ You can construct a model with random weights by calling its constructor:
     convnext_base = models.convnext_base()
     convnext_large = models.convnext_large()
     swin_t = models.swin_t()
+    swin_s = models.swin_s()
+    swin_b = models.swin_b()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 
@@ -227,6 +229,8 @@ convnext_small                    83.616          96.650
 convnext_base                     84.062          96.870
 convnext_large                    84.414          96.976
 swin_t                            81.358          95.526
+swin_s                            
+swin_b
 ================================  =============   =============
 
 
@@ -468,6 +472,8 @@ SwinTransformer
     :template: function.rst
 
     swin_t
+    swin_s
+    swin_b
 
 Quantized Models
 ----------------
