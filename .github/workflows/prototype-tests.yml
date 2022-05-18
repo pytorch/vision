@@ -22,8 +22,7 @@ jobs:
         run: |
           ls -l /usr/lib/x86_64-linux-gnu/ | grep libcrypto
           echo "###############################################################################"
-          sudo apt -qy update
-          sudo apt install -qy libssl-dev libcurl4-openssl-dev zlib1g-dev
+          yum -y install openssl-devel openssl-static curl-devel zlib-devel
           echo "###############################################################################"
           ls -l /usr/lib/x86_64-linux-gnu/ | grep libcrypto
 
