@@ -426,6 +426,7 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
                 "acc@1": 74.046,
                 "acc@5": 91.716,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -439,6 +440,11 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
                 "acc@1": 75.804,
                 "acc@5": 92.742,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -456,6 +462,7 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
                 "acc@1": 76.420,
                 "acc@5": 93.136,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -469,6 +476,11 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
                 "acc@1": 78.828,
                 "acc@5": 94.502,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -486,6 +498,7 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
                 "acc@1": 77.950,
                 "acc@5": 93.966,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -499,6 +512,11 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
                 "acc@1": 80.876,
                 "acc@5": 95.444,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -516,6 +534,7 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
                 "acc@1": 78.948,
                 "acc@5": 94.576,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -529,6 +548,11 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
                 "acc@1": 81.982,
                 "acc@5": 95.972,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -546,6 +570,7 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
                 "acc@1": 80.032,
                 "acc@5": 95.048,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -559,6 +584,11 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
                 "acc@1": 82.828,
                 "acc@5": 96.330,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -576,6 +606,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@1": 80.424,
                 "acc@5": 95.240,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -589,6 +620,11 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@1": 82.886,
                 "acc@5": 96.328,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     IMAGENET1K_SWAG_E2E_V1 = Weights(
@@ -603,6 +639,10 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@1": 86.012,
                 "acc@5": 98.054,
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -618,6 +658,10 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
                 "acc@1": 83.976,
                 "acc@5": 97.244,
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -635,6 +679,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@1": 80.878,
                 "acc@5": 95.340,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -648,6 +693,11 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@1": 83.368,
                 "acc@5": 96.498,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     IMAGENET1K_SWAG_E2E_V1 = Weights(
@@ -662,6 +712,10 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@1": 86.838,
                 "acc@5": 98.362,
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -677,6 +731,10 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
                 "acc@1": 84.622,
                 "acc@5": 97.480,
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -695,6 +753,10 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
                 "acc@1": 88.228,
                 "acc@5": 98.682,
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -710,6 +772,10 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
                 "acc@1": 86.068,
                 "acc@5": 97.844,
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_SWAG_E2E_V1
@@ -727,6 +793,7 @@ class RegNet_X_400MF_Weights(WeightsEnum):
                 "acc@1": 72.834,
                 "acc@5": 90.950,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -740,6 +807,11 @@ class RegNet_X_400MF_Weights(WeightsEnum):
                 "acc@1": 74.864,
                 "acc@5": 92.322,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -757,6 +829,7 @@ class RegNet_X_800MF_Weights(WeightsEnum):
                 "acc@1": 75.212,
                 "acc@5": 92.348,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -770,6 +843,11 @@ class RegNet_X_800MF_Weights(WeightsEnum):
                 "acc@1": 77.522,
                 "acc@5": 93.826,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -787,6 +865,7 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
                 "acc@1": 77.040,
                 "acc@5": 93.440,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -800,6 +879,11 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
                 "acc@1": 79.668,
                 "acc@5": 94.922,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -817,6 +901,7 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
                 "acc@1": 78.364,
                 "acc@5": 93.992,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -830,6 +915,11 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
                 "acc@1": 81.196,
                 "acc@5": 95.430,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -847,6 +937,7 @@ class RegNet_X_8GF_Weights(WeightsEnum):
                 "acc@1": 79.344,
                 "acc@5": 94.686,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -860,6 +951,11 @@ class RegNet_X_8GF_Weights(WeightsEnum):
                 "acc@1": 81.682,
                 "acc@5": 95.678,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -877,6 +973,7 @@ class RegNet_X_16GF_Weights(WeightsEnum):
                 "acc@1": 80.058,
                 "acc@5": 94.944,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -890,6 +987,11 @@ class RegNet_X_16GF_Weights(WeightsEnum):
                 "acc@1": 82.716,
                 "acc@5": 96.196,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -907,6 +1009,7 @@ class RegNet_X_32GF_Weights(WeightsEnum):
                 "acc@1": 80.622,
                 "acc@5": 95.248,
             },
+            "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -920,6 +1023,11 @@ class RegNet_X_32GF_Weights(WeightsEnum):
                 "acc@1": 83.014,
                 "acc@5": 96.288,
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -932,8 +1040,8 @@ def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_Y_400MF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_Y_400MF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_Y_400MF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_Y_400MF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -941,7 +1049,7 @@ def regnet_y_400mf(*, weights: Optional[RegNet_Y_400MF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_Y_400MF_Weights
+    .. autoclass:: torchvision.models.RegNet_Y_400MF_Weights
         :members:
     """
     weights = RegNet_Y_400MF_Weights.verify(weights)
@@ -957,8 +1065,8 @@ def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_Y_800MF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_Y_800MF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_Y_800MF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_Y_800MF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -966,7 +1074,7 @@ def regnet_y_800mf(*, weights: Optional[RegNet_Y_800MF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_Y_800MF_Weights
+    .. autoclass:: torchvision.models.RegNet_Y_800MF_Weights
         :members:
     """
     weights = RegNet_Y_800MF_Weights.verify(weights)
@@ -982,8 +1090,8 @@ def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_Y_1_6GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_Y_1_6GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_Y_1_6GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_Y_1_6GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -991,7 +1099,7 @@ def regnet_y_1_6gf(*, weights: Optional[RegNet_Y_1_6GF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_Y_1_6GF_Weights
+    .. autoclass:: torchvision.models.RegNet_Y_1_6GF_Weights
         :members:
     """
     weights = RegNet_Y_1_6GF_Weights.verify(weights)
@@ -1009,8 +1117,8 @@ def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_Y_3_2GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_Y_3_2GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_Y_3_2GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_Y_3_2GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1018,7 +1126,7 @@ def regnet_y_3_2gf(*, weights: Optional[RegNet_Y_3_2GF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_Y_3_2GF_Weights
+    .. autoclass:: torchvision.models.RegNet_Y_3_2GF_Weights
         :members:
     """
     weights = RegNet_Y_3_2GF_Weights.verify(weights)
@@ -1036,8 +1144,8 @@ def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bo
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_Y_8GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_Y_8GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_Y_8GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_Y_8GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1045,7 +1153,7 @@ def regnet_y_8gf(*, weights: Optional[RegNet_Y_8GF_Weights] = None, progress: bo
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_Y_8GF_Weights
+    .. autoclass:: torchvision.models.RegNet_Y_8GF_Weights
         :members:
     """
     weights = RegNet_Y_8GF_Weights.verify(weights)
@@ -1063,8 +1171,8 @@ def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: 
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_Y_16GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_Y_16GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_Y_16GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_Y_16GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1072,7 +1180,7 @@ def regnet_y_16gf(*, weights: Optional[RegNet_Y_16GF_Weights] = None, progress: 
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_Y_16GF_Weights
+    .. autoclass:: torchvision.models.RegNet_Y_16GF_Weights
         :members:
     """
     weights = RegNet_Y_16GF_Weights.verify(weights)
@@ -1090,8 +1198,8 @@ def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: 
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_Y_32GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_Y_32GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_Y_32GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_Y_32GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1099,7 +1207,7 @@ def regnet_y_32gf(*, weights: Optional[RegNet_Y_32GF_Weights] = None, progress: 
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_Y_32GF_Weights
+    .. autoclass:: torchvision.models.RegNet_Y_32GF_Weights
         :members:
     """
     weights = RegNet_Y_32GF_Weights.verify(weights)
@@ -1117,8 +1225,8 @@ def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_Y_128GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_Y_128GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_Y_128GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_Y_128GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1126,7 +1234,7 @@ def regnet_y_128gf(*, weights: Optional[RegNet_Y_128GF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_Y_128GF_Weights
+    .. autoclass:: torchvision.models.RegNet_Y_128GF_Weights
         :members:
     """
     weights = RegNet_Y_128GF_Weights.verify(weights)
@@ -1144,8 +1252,8 @@ def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_X_400MF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_X_400MF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_X_400MF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_X_400MF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1153,7 +1261,7 @@ def regnet_x_400mf(*, weights: Optional[RegNet_X_400MF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_X_400MF_Weights
+    .. autoclass:: torchvision.models.RegNet_X_400MF_Weights
         :members:
     """
     weights = RegNet_X_400MF_Weights.verify(weights)
@@ -1169,8 +1277,8 @@ def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_X_800MF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_X_800MF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_X_800MF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_X_800MF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1178,7 +1286,7 @@ def regnet_x_800mf(*, weights: Optional[RegNet_X_800MF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_X_800MF_Weights
+    .. autoclass:: torchvision.models.RegNet_X_800MF_Weights
         :members:
     """
     weights = RegNet_X_800MF_Weights.verify(weights)
@@ -1194,8 +1302,8 @@ def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_X_1_6GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_X_1_6GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_X_1_6GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_X_1_6GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1203,7 +1311,7 @@ def regnet_x_1_6gf(*, weights: Optional[RegNet_X_1_6GF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_X_1_6GF_Weights
+    .. autoclass:: torchvision.models.RegNet_X_1_6GF_Weights
         :members:
 
     Args:
@@ -1223,8 +1331,8 @@ def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_X_3_2GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_X_3_2GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_X_3_2GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_X_3_2GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1232,7 +1340,7 @@ def regnet_x_3_2gf(*, weights: Optional[RegNet_X_3_2GF_Weights] = None, progress
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_X_3_2GF_Weights
+    .. autoclass:: torchvision.models.RegNet_X_3_2GF_Weights
         :members:
 
     Args:
@@ -1252,8 +1360,8 @@ def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bo
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_X_8GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_X_8GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_X_8GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_X_8GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1261,7 +1369,7 @@ def regnet_x_8gf(*, weights: Optional[RegNet_X_8GF_Weights] = None, progress: bo
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_X_8GF_Weights
+    .. autoclass:: torchvision.models.RegNet_X_8GF_Weights
         :members:
 
     Args:
@@ -1281,8 +1389,8 @@ def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: 
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_X_16GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_X_16GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_X_16GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_X_16GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1290,7 +1398,7 @@ def regnet_x_16gf(*, weights: Optional[RegNet_X_16GF_Weights] = None, progress: 
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_X_16GF_Weights
+    .. autoclass:: torchvision.models.RegNet_X_16GF_Weights
         :members:
 
     Args:
@@ -1310,8 +1418,8 @@ def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: 
     `Designing Network Design Spaces <https://arxiv.org/abs/2003.13678>`_.
 
     Args:
-        weights (:class:`torchvision.models.regnet.RegNet_X_32GF_Weights`, optional): The pretrained weights to use.
-            See :class:`~torchvision.models.regnet.RegNet_X_32GF_Weights` below for more details and possible values.
+        weights (:class:`~torchvision.models.RegNet_X_32GF_Weights`, optional): The pretrained weights to use.
+            See :class:`~torchvision.models.RegNet_X_32GF_Weights` below for more details and possible values.
             By default, no pretrained weights are used.
         progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
         **kwargs: parameters passed to either ``torchvision.models.regnet.RegNet`` or
@@ -1319,7 +1427,7 @@ def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: 
             <https://github.com/pytorch/vision/blob/main/torchvision/models/regnet.py>`_
             for more detail about the classes.
 
-    .. autoclass:: torchvision.models.regnet.RegNet_X_32GF_Weights
+    .. autoclass:: torchvision.models.RegNet_X_32GF_Weights
         :members:
 
     Args:
@@ -1330,3 +1438,27 @@ def regnet_x_32gf(*, weights: Optional[RegNet_X_32GF_Weights] = None, progress: 
 
     params = BlockParams.from_init_params(depth=23, w_0=320, w_a=69.86, w_m=2.0, group_width=168, **kwargs)
     return _regnet(params, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "regnet_y_400mf": RegNet_Y_400MF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_800mf": RegNet_Y_800MF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_1_6gf": RegNet_Y_1_6GF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_3_2gf": RegNet_Y_3_2GF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_8gf": RegNet_Y_8GF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_16gf": RegNet_Y_16GF_Weights.IMAGENET1K_V1.url,
+        "regnet_y_32gf": RegNet_Y_32GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_400mf": RegNet_X_400MF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_800mf": RegNet_X_800MF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_1_6gf": RegNet_X_1_6GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_3_2gf": RegNet_X_3_2GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_8gf": RegNet_X_8GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_16gf": RegNet_X_16GF_Weights.IMAGENET1K_V1.url,
+        "regnet_x_32gf": RegNet_X_32GF_Weights.IMAGENET1K_V1.url,
+    }
+)

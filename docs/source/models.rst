@@ -42,6 +42,7 @@ architectures for image classification:
 -  `RegNet`_
 -  `VisionTransformer`_
 -  `ConvNeXt`_
+-  `SwinTransformer`_
 
 You can construct a model with random weights by calling its constructor:
 
@@ -60,6 +61,8 @@ You can construct a model with random weights by calling its constructor:
     mobilenet_v3_large = models.mobilenet_v3_large()
     mobilenet_v3_small = models.mobilenet_v3_small()
     resnext50_32x4d = models.resnext50_32x4d()
+    resnext101_32x8d = models.resnext101_32x8d()
+    resnext101_64x4d = models.resnext101_64x4d()
     wide_resnet50_2 = models.wide_resnet50_2()
     mnasnet = models.mnasnet1_0()
     efficientnet_b0 = models.efficientnet_b0()
@@ -97,6 +100,7 @@ You can construct a model with random weights by calling its constructor:
     convnext_small = models.convnext_small()
     convnext_base = models.convnext_base()
     convnext_large = models.convnext_large()
+    swin_t = models.swin_t()
 
 We provide pre-trained models, using the PyTorch :mod:`torch.utils.model_zoo`.
 
@@ -174,13 +178,16 @@ Densenet-201                      76.896          93.370
 Densenet-161                      77.138          93.560
 Inception v3                      77.294          93.450
 GoogleNet                         69.778          89.530
-ShuffleNet V2 x1.0                69.362          88.316
 ShuffleNet V2 x0.5                60.552          81.746
+ShuffleNet V2 x1.0                69.362          88.316
+ShuffleNet V2 x1.5                72.996          91.086
+ShuffleNet V2 x2.0                76.230          93.006
 MobileNet V2                      71.878          90.286
 MobileNet V3 Large                74.042          91.340
 MobileNet V3 Small                67.668          87.402
 ResNeXt-50-32x4d                  77.618          93.698
 ResNeXt-101-32x8d                 79.312          94.526
+ResNeXt-101-64x4d                 83.246          96.454
 Wide ResNet-50-2                  78.468          94.086
 Wide ResNet-101-2                 78.848          94.284
 MNASNet 1.0                       73.456          91.510
@@ -219,6 +226,7 @@ convnext_tiny                     82.520          96.146
 convnext_small                    83.616          96.650
 convnext_base                     84.062          96.870
 convnext_large                    84.414          96.976
+swin_t                            81.358          95.526
 ================================  =============   =============
 
 
@@ -238,6 +246,7 @@ convnext_large                    84.414          96.976
 .. _RegNet: https://arxiv.org/abs/2003.13678
 .. _VisionTransformer: https://arxiv.org/abs/2010.11929
 .. _ConvNeXt: https://arxiv.org/abs/2201.03545
+.. _SwinTransformer: https://arxiv.org/abs/2103.14030
 
 .. currentmodule:: torchvision.models
 
@@ -360,6 +369,7 @@ ResNext
 
     resnext50_32x4d
     resnext101_32x8d
+    resnext101_64x4d
 
 Wide ResNet
 -----------
@@ -450,6 +460,15 @@ ConvNeXt
     convnext_base
     convnext_large
 
+SwinTransformer
+---------------
+
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
+
+    swin_t
+
 Quantized Models
 ----------------
 
@@ -466,8 +485,11 @@ a model with random weights by calling its constructor:
     resnet18 = models.quantization.resnet18()
     resnet50 = models.quantization.resnet50()
     resnext101_32x8d = models.quantization.resnext101_32x8d()
+    resnext101_64x4d = models.quantization.resnext101_64x4d()
     shufflenet_v2_x0_5 = models.quantization.shufflenet_v2_x0_5()
     shufflenet_v2_x1_0 = models.quantization.shufflenet_v2_x1_0()
+    shufflenet_v2_x1_5 = models.quantization.shufflenet_v2_x1_5()
+    shufflenet_v2_x2_0 = models.quantization.shufflenet_v2_x2_0()
 
 Obtaining a pre-trained quantized model can be done with a few lines of code:
 
@@ -486,11 +508,14 @@ Model                             Acc@1          Acc@5
 ================================  =============  =============
 MobileNet V2                      71.658         90.150
 MobileNet V3 Large                73.004         90.858
-ShuffleNet V2 x1.0                68.360         87.582
 ShuffleNet V2 x0.5                57.972         79.780
+ShuffleNet V2 x1.0                68.360         87.582
+ShuffleNet V2 x1.5                72.052         90.700
+ShuffleNet V2 x2.0                75.354         92.488
 ResNet 18                         69.494         88.882
 ResNet 50                         75.920         92.814
 ResNext 101 32x8d                 78.986         94.480
+ResNext 101 64x4d                 82.898         96.326
 Inception V3                      77.176         93.354
 GoogleNet                         69.826         89.404
 ================================  =============  =============

@@ -690,6 +690,7 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
             "metrics": {
                 "box_map": 36.4,
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -706,6 +707,7 @@ class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
             "metrics": {
                 "box_map": 41.5,
             },
+            "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
     DEFAULT = COCO_V1
@@ -879,3 +881,14 @@ def retinanet_resnet50_fpn_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "retinanet_resnet50_fpn_coco": RetinaNet_ResNet50_FPN_Weights.COCO_V1.url,
+    }
+)

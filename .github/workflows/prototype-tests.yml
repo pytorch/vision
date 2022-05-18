@@ -1,0 +1,44 @@
+name: tests
+
+on:
+  pull_request:
+
+jobs:
+  prototype:
+    strategy:
+      matrix:
+        os:
+          - ubuntu-latest
+          - windows-latest
+          - macos-latest
+      fail-fast: false
+
+    runs-on: ${{ matrix.os }}
+
+    steps:
+      - name: Set up python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.7
+
+      - name: Upgrade system packages
+        run: python -m pip install --upgrade pip setuptools wheel
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install PyTorch nightly builds
+        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
+
+      - name: Install torchvision
+        run: pip install --progress-bar=off --no-build-isolation --editable .
+
+      - name: Install other prototype dependencies
+        run: pip install --progress-bar=off scipy pycocotools h5py iopath
+
+      - name: Install test requirements
+        run: pip install --progress-bar=off pytest pytest-mock
+
+      - name: Run prototype tests
+        shell: bash
+        run: pytest --durations=20 test/test_prototype_*.py

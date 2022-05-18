@@ -106,6 +106,10 @@ class LRASPP_MobileNet_V3_Large_Weights(WeightsEnum):
                 "miou": 57.9,
                 "pixel_acc": 91.2,
             },
+            "_docs": """
+                These weights were trained on a subset of COCO, using only the 20 categories that are present in the
+                Pascal VOC dataset.
+            """,
         },
     )
     DEFAULT = COCO_WITH_VOC_LABELS_V1
@@ -123,13 +127,28 @@ def lraspp_mobilenet_v3_large(
     weights_backbone: Optional[MobileNet_V3_Large_Weights] = MobileNet_V3_Large_Weights.IMAGENET1K_V1,
     **kwargs: Any,
 ) -> LRASPP:
-    """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone.
+    """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone from
+    `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`_ paper.
 
     Args:
-        weights (LRASPP_MobileNet_V3_Large_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int, optional): number of output classes of the model (including the background)
-        weights_backbone (MobileNet_V3_Large_Weights, optional): The pretrained weights for the backbone
+        weights (:class:`~torchvision.models.segmentation.LRASPP_MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.segmentation.LRASPP_MobileNet_V3_Large_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model (including the background).
+        aux_loss (bool, optional): If True, it uses an auxiliary loss.
+        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The pretrained
+            weights for the backbone.
+        **kwargs: parameters passed to the ``torchvision.models.segmentation.LRASPP``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/segmentation/lraspp.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.segmentation.LRASPP_MobileNet_V3_Large_Weights
+        :members:
     """
     if kwargs.pop("aux_loss", False):
         raise NotImplementedError("This model does not use auxiliary loss")
@@ -150,3 +169,14 @@ def lraspp_mobilenet_v3_large(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "lraspp_mobilenet_v3_large_coco": LRASPP_MobileNet_V3_Large_Weights.COCO_WITH_VOC_LABELS_V1.url,
+    }
+)

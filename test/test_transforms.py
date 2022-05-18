@@ -8,6 +8,7 @@ import numpy as np
 import pytest
 import torch
 import torchvision.transforms as transforms
+import torchvision.transforms._pil_constants as _pil_constants
 import torchvision.transforms.functional as F
 import torchvision.transforms.functional_tensor as F_t
 from PIL import Image
@@ -173,7 +174,7 @@ class TestAccImage:
     def test_accimage_resize(self):
         trans = transforms.Compose(
             [
-                transforms.Resize(256, interpolation=Image.LINEAR),
+                transforms.Resize(256, interpolation=_pil_constants.LINEAR),
                 transforms.PILToTensor(),
                 transforms.ConvertImageDtype(dtype=torch.float),
             ]
@@ -1877,7 +1878,13 @@ def test_random_rotation():
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
     # assert changed type warning
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         t = transforms.RandomRotation((-10, 10), interpolation=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
@@ -2232,7 +2239,13 @@ def test_random_affine():
         assert t.fill == 10
 
     # assert changed type warning
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         t = transforms.RandomAffine(10, interpolation=2)
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 

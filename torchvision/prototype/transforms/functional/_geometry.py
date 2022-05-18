@@ -396,6 +396,20 @@ pad_image_tensor = _FT.pad
 pad_image_pil = _FP.pad
 
 
+def pad_segmentation_mask(
+    segmentation_mask: torch.Tensor, padding: List[int], padding_mode: str = "constant"
+) -> torch.Tensor:
+    num_masks, height, width = segmentation_mask.shape[-3:]
+    extra_dims = segmentation_mask.shape[:-3]
+
+    padded_mask = pad_image_tensor(
+        img=segmentation_mask.view(-1, num_masks, height, width), padding=padding, fill=0, padding_mode=padding_mode
+    )
+
+    new_height, new_width = padded_mask.shape[-2:]
+    return padded_mask.view(extra_dims + (num_masks, new_height, new_width))
+
+
 def pad_bounding_box(
     bounding_box: torch.Tensor, padding: List[int], format: features.BoundingBoxFormat
 ) -> torch.Tensor:
@@ -458,6 +472,95 @@ def perspective_image_pil(
     return _FP.perspective(img, perspective_coeffs, interpolation=pil_modes_mapping[interpolation], fill=fill)
 
 
+def perspective_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    perspective_coeffs: List[float],
+) -> torch.Tensor:
+
+    if len(perspective_coeffs) != 8:
+        raise ValueError("Argument perspective_coeffs should have 8 float values")
+
+    original_shape = bounding_box.shape
+    bounding_box = convert_bounding_box_format(
+        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
+    ).view(-1, 4)
+
+    dtype = bounding_box.dtype if torch.is_floating_point(bounding_box) else torch.float32
+    device = bounding_box.device
+
+    # perspective_coeffs are computed as endpoint -> start point
+    # We have to invert perspective_coeffs for bboxes:
+    # (x, y) - end point and (x_out, y_out) - start point
+    #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    # and we would like to get:
+    # x = (inv_coeffs[0] * x_out + inv_coeffs[1] * y_out + inv_coeffs[2])
+    #       / (inv_coeffs[6] * x_out + inv_coeffs[7] * y_out + 1)
+    # y = (inv_coeffs[3] * x_out + inv_coeffs[4] * y_out + inv_coeffs[5])
+    #       / (inv_coeffs[6] * x_out + inv_coeffs[7] * y_out + 1)
+    # and compute inv_coeffs in terms of coeffs
+
+    denom = perspective_coeffs[0] * perspective_coeffs[4] - perspective_coeffs[1] * perspective_coeffs[3]
+    if denom == 0:
+        raise RuntimeError(
+            f"Provided perspective_coeffs {perspective_coeffs} can not be inverted to transform bounding boxes. "
+            f"Denominator is zero, denom={denom}"
+        )
+
+    inv_coeffs = [
+        (perspective_coeffs[4] - perspective_coeffs[5] * perspective_coeffs[7]) / denom,
+        (-perspective_coeffs[1] + perspective_coeffs[2] * perspective_coeffs[7]) / denom,
+        (perspective_coeffs[1] * perspective_coeffs[5] - perspective_coeffs[2] * perspective_coeffs[4]) / denom,
+        (-perspective_coeffs[3] + perspective_coeffs[5] * perspective_coeffs[6]) / denom,
+        (perspective_coeffs[0] - perspective_coeffs[2] * perspective_coeffs[6]) / denom,
+        (-perspective_coeffs[0] * perspective_coeffs[5] + perspective_coeffs[2] * perspective_coeffs[3]) / denom,
+        (-perspective_coeffs[4] * perspective_coeffs[6] + perspective_coeffs[3] * perspective_coeffs[7]) / denom,
+        (-perspective_coeffs[0] * perspective_coeffs[7] + perspective_coeffs[1] * perspective_coeffs[6]) / denom,
+    ]
+
+    theta1 = torch.tensor(
+        [[inv_coeffs[0], inv_coeffs[1], inv_coeffs[2]], [inv_coeffs[3], inv_coeffs[4], inv_coeffs[5]]],
+        dtype=dtype,
+        device=device,
+    )
+
+    theta2 = torch.tensor(
+        [[inv_coeffs[6], inv_coeffs[7], 1.0], [inv_coeffs[6], inv_coeffs[7], 1.0]], dtype=dtype, device=device
+    )
+
+    # 1) Let's transform bboxes into a tensor of 4 points (top-left, top-right, bottom-left, bottom-right corners).
+    # Tensor of points has shape (N * 4, 3), where N is the number of bboxes
+    # Single point structure is similar to
+    # [(xmin, ymin, 1), (xmax, ymin, 1), (xmax, ymax, 1), (xmin, ymax, 1)]
+    points = bounding_box[:, [[0, 1], [2, 1], [2, 3], [0, 3]]].view(-1, 2)
+    points = torch.cat([points, torch.ones(points.shape[0], 1, device=points.device)], dim=-1)
+    # 2) Now let's transform the points using perspective matrices
+    #   x_out = (coeffs[0] * x + coeffs[1] * y + coeffs[2]) / (coeffs[6] * x + coeffs[7] * y + 1)
+    #   y_out = (coeffs[3] * x + coeffs[4] * y + coeffs[5]) / (coeffs[6] * x + coeffs[7] * y + 1)
+
+    numer_points = torch.matmul(points, theta1.T)
+    denom_points = torch.matmul(points, theta2.T)
+    transformed_points = numer_points / denom_points
+
+    # 3) Reshape transformed points to [N boxes, 4 points, x/y coords]
+    # and compute bounding box from 4 transformed points:
+    transformed_points = transformed_points.view(-1, 4, 2)
+    out_bbox_mins, _ = torch.min(transformed_points, dim=1)
+    out_bbox_maxs, _ = torch.max(transformed_points, dim=1)
+    out_bboxes = torch.cat([out_bbox_mins, out_bbox_maxs], dim=1)
+
+    # out_bboxes should be of shape [N boxes, 4]
+
+    return convert_bounding_box_format(
+        out_bboxes, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
+    ).view(original_shape)
+
+
+def perspective_segmentation_mask(img: torch.Tensor, perspective_coeffs: List[float]) -> torch.Tensor:
+    return perspective_image_tensor(img, perspective_coeffs=perspective_coeffs, interpolation=InterpolationMode.NEAREST)
+
+
 def _center_crop_parse_output_size(output_size: List[int]) -> List[int]:
     if isinstance(output_size, numbers.Number):
         return [int(output_size), int(output_size)]
@@ -514,6 +617,17 @@ def center_crop_image_pil(img: PIL.Image.Image, output_size: List[int]) -> PIL.I
 
     crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, image_height, image_width)
     return crop_image_pil(img, crop_top, crop_left, crop_height, crop_width)
+
+
+def center_crop_bounding_box(
+    bounding_box: torch.Tensor,
+    format: features.BoundingBoxFormat,
+    output_size: List[int],
+    image_size: Tuple[int, int],
+) -> torch.Tensor:
+    crop_height, crop_width = _center_crop_parse_output_size(output_size)
+    crop_top, crop_left = _center_crop_compute_crop_anchor(crop_height, crop_width, *image_size)
+    return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
 
 
 def resized_crop_image_tensor(
