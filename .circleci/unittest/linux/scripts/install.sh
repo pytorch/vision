@@ -33,6 +33,9 @@ printf "Installing PyTorch with %s\n" "${cudatoolkit}"
 if [ "${os}" == "MacOSX" ]; then
     conda install -y -c "pytorch-${UPLOAD_CHANNEL}" "pytorch-${UPLOAD_CHANNEL}"::pytorch "${cudatoolkit}"
 else
+    if [ "${PYTHON_VERSION}" = "3.10" ] && [ "${CU_VERSION:-}" == cpu ] && [ "${CU_VERSION:-}" == cpu ]; then
+        conda install numpy
+    fi
     conda install -y -c "pytorch-${UPLOAD_CHANNEL}" -c nvidia "pytorch-${UPLOAD_CHANNEL}"::pytorch[build="*${version}*"] "${cudatoolkit}"
 fi
 
