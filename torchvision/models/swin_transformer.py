@@ -435,16 +435,16 @@ class Swin_S_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
         url="https://download.pytorch.org/models/swin_s-30134662.pth",
         transforms=partial(
-            ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
+            ImageClassification, crop_size=224, resize_size=246, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META,
-            "num_params": 28288354,
+            "num_params": 49606258,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
             "metrics": {
-                "acc@1": 81.358,
-                "acc@5": 95.526,
+                "acc@1": 83.196,
+                "acc@5": 96.360,
             },
             "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
         },
@@ -460,12 +460,12 @@ class Swin_B_Weights(WeightsEnum):
         ),
         meta={
             **_COMMON_META,
-            "num_params": 28288354,
+            "num_params": 87768224,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
             "metrics": {
-                "acc@1": 81.358,
-                "acc@5": 95.526,
+                "acc@1": 83.582,
+                "acc@5": 96.640,
             },
             "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
         },
