@@ -3,7 +3,12 @@ import itertools
 import pytest
 import torch
 from common_utils import assert_equal
-from test_prototype_transforms_functional import make_images, make_bounding_boxes, make_one_hot_labels
+from test_prototype_transforms_functional import (
+    make_images,
+    make_bounding_boxes,
+    make_one_hot_labels,
+    make_segmentation_masks,
+)
 from torchvision.prototype import transforms, features
 from torchvision.transforms.functional import to_pil_image, pil_to_tensor
 
@@ -153,6 +158,8 @@ class TestSmoke:
                 transforms.RandomResizedCrop([16, 16]),
                 itertools.chain(
                     make_images(extra_dims=[(4,)]),
+                    make_bounding_boxes(),
+                    make_segmentation_masks(),
                     make_vanilla_tensor_images(),
                     make_pil_images(),
                 ),

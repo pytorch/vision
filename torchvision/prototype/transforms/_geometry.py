@@ -183,18 +183,18 @@ class RandomResizedCrop(Transform):
                 input, **params, size=list(self.size), interpolation=self.interpolation
             )
             return features.Image.new_like(input, output)
+        elif isinstance(input, features.BoundingBox):
+            output = F.resized_crop_bounding_box(input, **params, size=list(self.size))
+            return features.BoundingBox.new_like(input, output, image_size=cast(Tuple[int, int], tuple(self.size)))
+        elif isinstance(input, features.SegmentationMask):
+            output = F.resized_crop_segmentation_mask(input, **params, size=list(self.size))
+            return features.SegmentationMask.new_like(input, output)
         elif is_simple_tensor(input):
             return F.resized_crop_image_tensor(input, **params, size=list(self.size), interpolation=self.interpolation)
         elif isinstance(input, PIL.Image.Image):
             return F.resized_crop_image_pil(input, **params, size=list(self.size), interpolation=self.interpolation)
         else:
             return input
-
-    def forward(self, *inputs: Any) -> Any:
-        sample = inputs if len(inputs) > 1 else inputs[0]
-        if has_any(sample, features.BoundingBox, features.SegmentationMask):
-            raise TypeError(f"BoundingBox'es and SegmentationMask's are not supported by {type(self).__name__}()")
-        return super().forward(sample)
 
 
 class MultiCropResult(list):

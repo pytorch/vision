@@ -20,7 +20,7 @@ def query_image(sample: Any) -> Union[PIL.Image.Image, torch.Tensor, features.Im
     try:
         return next(query_recursively(fn, sample))[1]
     except StopIteration:
-        raise TypeError("No image was found in the sample")
+        raise TypeError("No image was found in the sample") from None
 
 
 def get_image_dimensions(image: Union[PIL.Image.Image, torch.Tensor, features.Image]) -> Tuple[int, int, int]:
