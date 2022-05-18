@@ -85,7 +85,7 @@ def test_schema_meta_validation(model_fn):
         "categories",
         "keypoint_names",
         "license",
-        "metrics",
+        "_metrics",
         "min_size",
         "num_params",
         "recipe",
@@ -93,13 +93,13 @@ def test_schema_meta_validation(model_fn):
         "_docs",
     }
     # mandatory fields for each computer vision task
-    classification_fields = {"categories", ("metrics", "acc@1"), ("metrics", "acc@5")}
+    classification_fields = {"categories", ("_metrics", "acc@1"), ("_metrics", "acc@5")}
     defaults = {
-        "all": {"metrics", "min_size", "num_params", "recipe"},
+        "all": {"_metrics", "min_size", "num_params", "recipe"},
         "models": classification_fields | {"_docs"},
-        "detection": {"categories", ("metrics", "box_map")},
+        "detection": {"categories", ("_metrics", "box_map")},
         "quantization": classification_fields | {"backend", "unquantized"},
-        "segmentation": {"categories", ("metrics", "miou"), ("metrics", "pixel_acc")},
+        "segmentation": {"categories", ("_metrics", "miou"), ("_metrics", "pixel_acc")},
         "video": classification_fields,
         "optical_flow": set(),
     }
@@ -115,7 +115,7 @@ def test_schema_meta_validation(model_fn):
     incorrect_params = []
     bad_names = []
     for w in weights_enum:
-        missing_fields = fields - (set(w.meta.keys()) | set(("metrics", x) for x in w.meta.get("metrics", {}).keys()))
+        missing_fields = fields - (set(w.meta.keys()) | set(("_metrics", x) for x in w.meta.get("_metrics", {}).keys()))
         unsupported_fields = set(w.meta.keys()) - permitted_fields
         if missing_fields or unsupported_fields:
             problematic_weights[w] = {"missing": missing_fields, "unsupported": unsupported_fields}
