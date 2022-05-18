@@ -18,7 +18,7 @@ jobs:
     # WITH INSTALLING ADDITIONAL SYSTEM PACKAGES
     steps:
       - name: Install additional system packages on Linux
-        if: matrix.os == "ubuntu-latest"
+        if: matrix.os == 'ubuntu-latest'
         run: |
           sudo apt update -qy
           sudo apt install libssl-dev
