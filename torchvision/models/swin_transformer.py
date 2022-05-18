@@ -422,7 +422,7 @@ class Swin_T_Weights(WeightsEnum):
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
             "_metrics": {
-                "ImageNet-1K": {  
+                "ImageNet-1K": {
                     "acc@1": 81.474,
                     "acc@5": 95.776,
                 }
