@@ -312,6 +312,7 @@ _COMMON_META = {
     "min_size": (1, 1),
     "categories": _KINETICS400_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
+    "_docs": """These weights reproduce closely the accuracy of the paper for 16-frame clip inputs.""",
 }
 
 
