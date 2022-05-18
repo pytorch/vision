@@ -18,10 +18,12 @@ jobs:
     # WITH INSTALLING ADDITIONAL SYSTEM PACKAGES
     steps:
       - name: Install additional system packages on Linux
-        if: matrix.os == 'ubuntu-latest'
+        if: startsWith( matrix.os, 'ubuntu' )
         run: |
-          sudo apt update -qy
-          sudo apt install libssl-dev
+          sudo add-apt-repository multiverse
+          sudo apt -qy update
+          sudo apt install libssl-dev libcurl4-openssl-dev zlib1g-dev
+          ls /usr/bin | grep libcrypto
 
       - name: Set up python
         uses: actions/setup-python@v3
