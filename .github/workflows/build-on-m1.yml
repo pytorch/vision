@@ -16,8 +16,7 @@ jobs:
           ENV_NAME: conda-env-${{ github.run_id }}
           PY_VERS: ${{ matrix.py_vers }}
         run: |
-          echo $PATH
-          . ~/miniconda3/etc/profile.d/conda.sh
+          source ~/miniconda3/etc/profile.d/conda.sh
           set -ex
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng openjpeg wheel pkg-config
           conda run -p ${ENV_NAME} python3 -c "import os;print(os.__file__)"
