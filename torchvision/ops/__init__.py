@@ -5,13 +5,13 @@ from .boxes import (
     remove_small_boxes,
     clip_boxes_to_image,
     box_area,
+    box_convert,
     box_iou,
     generalized_box_iou,
     distance_box_iou,
     complete_box_iou,
     masks_to_boxes,
 )
-from .boxes import box_convert
 from .ciou_loss import complete_box_iou_loss
 from .deform_conv import deform_conv2d, DeformConv2d
 from .diou_loss import distance_box_iou_loss
