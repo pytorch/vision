@@ -416,9 +416,11 @@ class Inception_V3_Weights(WeightsEnum):
             "min_size": (75, 75),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#inception-v3",
-            "metrics": {
-                "acc@1": 77.294,
-                "acc@5": 93.450,
+            "_metrics": {
+                "ImageNetV1": {
+                    "acc@1": 77.294,
+                    "acc@5": 93.450,
+                }
             },
             "_docs": """These weights are ported from the original paper.""",
         },

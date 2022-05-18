@@ -417,9 +417,11 @@ class Swin_T_Weights(WeightsEnum):
             "num_params": 28288354,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
-            "metrics": {
-                "acc@1": 81.358,
-                "acc@5": 95.526,
+            "_metrics": {
+                "ImageNetV1": {
+                    "acc@1": 81.358,
+                    "acc@5": 95.526,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
         },

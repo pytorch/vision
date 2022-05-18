@@ -284,9 +284,11 @@ class GoogLeNet_Weights(WeightsEnum):
             "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#googlenet",
-            "metrics": {
-                "acc@1": 69.778,
-                "acc@5": 89.530,
+            "_metrics": {
+                "ImageNetV1": {
+                    "acc@1": 69.778,
+                    "acc@5": 89.530,
+                }
             },
             "_docs": """These weights are ported from the original paper.""",
         },

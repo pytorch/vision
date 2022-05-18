@@ -61,9 +61,11 @@ class AlexNet_Weights(WeightsEnum):
             "min_size": (63, 63),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
-            "metrics": {
-                "acc@1": 56.522,
-                "acc@5": 79.066,
+            "_metrics": {
+                "ImageNetV1": {
+                    "acc@1": 56.522,
+                    "acc@5": 79.066,
+                }
             },
             "_docs": """
                 These weights reproduce closely the results of the paper using a simplified training recipe.
