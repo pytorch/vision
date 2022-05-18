@@ -421,9 +421,11 @@ class Swin_T_Weights(WeightsEnum):
             "num_params": 28288354,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
-            "metrics": {
-                "acc@1": 81.474,
-                "acc@5": 95.776,
+            "_metrics": {
+                "ImageNet-1K": {  
+                    "acc@1": 81.474,
+                    "acc@5": 95.776,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
         },
@@ -442,9 +444,11 @@ class Swin_S_Weights(WeightsEnum):
             "num_params": 49606258,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
-            "metrics": {
-                "acc@1": 83.196,
-                "acc@5": 96.360,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.196,
+                    "acc@5": 96.360,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
         },
@@ -463,9 +467,11 @@ class Swin_B_Weights(WeightsEnum):
             "num_params": 87768224,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
-            "metrics": {
-                "acc@1": 83.582,
-                "acc@5": 96.640,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.582,
+                    "acc@5": 96.640,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
         },

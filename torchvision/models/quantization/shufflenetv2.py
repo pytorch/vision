@@ -133,9 +133,11 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 1366792,
             "unquantized": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 57.972,
-                "acc@5": 79.780,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 57.972,
+                    "acc@5": 79.780,
+                }
             },
         },
     )
@@ -150,9 +152,11 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2278604,
             "unquantized": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 68.360,
-                "acc@5": 87.582,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 68.360,
+                    "acc@5": 87.582,
+                }
             },
         },
     )
@@ -168,9 +172,11 @@ class ShuffleNet_V2_X1_5_QuantizedWeights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 3503624,
             "unquantized": ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 72.052,
-                "acc@5": 90.700,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.052,
+                    "acc@5": 90.700,
+                }
             },
         },
     )
@@ -186,9 +192,11 @@ class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 7393996,
             "unquantized": ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 75.354,
-                "acc@5": 92.488,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.354,
+                    "acc@5": 92.488,
+                }
             },
         },
     )

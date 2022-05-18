@@ -687,8 +687,10 @@ class RetinaNet_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 34014999,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#retinanet",
-            "metrics": {
-                "box_map": 36.4,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 36.4,
+                }
             },
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
@@ -704,8 +706,10 @@ class RetinaNet_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 38198935,
             "recipe": "https://github.com/pytorch/vision/pull/5756",
-            "metrics": {
-                "box_map": 41.5,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 41.5,
+                }
             },
             "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
