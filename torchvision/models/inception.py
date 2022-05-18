@@ -417,7 +417,7 @@ class Inception_V3_Weights(WeightsEnum):
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#inception-v3",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 77.294,
                     "acc@5": 93.450,
                 }

@@ -423,7 +423,7 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
             "num_params": 4344144,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 74.046,
                     "acc@5": 91.716,
                 }
@@ -439,7 +439,7 @@ class RegNet_Y_400MF_Weights(WeightsEnum):
             "num_params": 4344144,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 75.804,
                     "acc@5": 92.742,
                 }
@@ -463,7 +463,7 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
             "num_params": 6432512,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 76.420,
                     "acc@5": 93.136,
                 }
@@ -479,7 +479,7 @@ class RegNet_Y_800MF_Weights(WeightsEnum):
             "num_params": 6432512,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 78.828,
                     "acc@5": 94.502,
                 }
@@ -503,7 +503,7 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
             "num_params": 11202430,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 77.950,
                     "acc@5": 93.966,
                 }
@@ -519,7 +519,7 @@ class RegNet_Y_1_6GF_Weights(WeightsEnum):
             "num_params": 11202430,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 80.876,
                     "acc@5": 95.444,
                 }
@@ -543,7 +543,7 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
             "num_params": 19436338,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 78.948,
                     "acc@5": 94.576,
                 }
@@ -559,7 +559,7 @@ class RegNet_Y_3_2GF_Weights(WeightsEnum):
             "num_params": 19436338,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 81.982,
                     "acc@5": 95.972,
                 }
@@ -583,7 +583,7 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
             "num_params": 39381472,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 80.032,
                     "acc@5": 95.048,
                 }
@@ -599,7 +599,7 @@ class RegNet_Y_8GF_Weights(WeightsEnum):
             "num_params": 39381472,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 82.828,
                     "acc@5": 96.330,
                 }
@@ -623,7 +623,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "num_params": 83590140,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 80.424,
                     "acc@5": 95.240,
                 }
@@ -639,7 +639,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "num_params": 83590140,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 82.886,
                     "acc@5": 96.328,
                 }
@@ -660,7 +660,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "num_params": 83590140,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 86.012,
                     "acc@5": 98.054,
                 }
@@ -681,7 +681,7 @@ class RegNet_Y_16GF_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 83590140,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 83.976,
                     "acc@5": 97.244,
                 }
@@ -704,7 +704,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "num_params": 145046770,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 80.878,
                     "acc@5": 95.340,
                 }
@@ -720,7 +720,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "num_params": 145046770,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 83.368,
                     "acc@5": 96.498,
                 }
@@ -741,7 +741,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "num_params": 145046770,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 86.838,
                     "acc@5": 98.362,
                 }
@@ -762,7 +762,7 @@ class RegNet_Y_32GF_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 145046770,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 84.622,
                     "acc@5": 97.480,
                 }
@@ -786,7 +786,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "num_params": 644812894,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 88.228,
                     "acc@5": 98.682,
                 }
@@ -807,7 +807,7 @@ class RegNet_Y_128GF_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 644812894,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 86.068,
                     "acc@5": 97.844,
                 }
@@ -830,7 +830,7 @@ class RegNet_X_400MF_Weights(WeightsEnum):
             "num_params": 5495976,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 72.834,
                     "acc@5": 90.950,
                 }
@@ -846,7 +846,7 @@ class RegNet_X_400MF_Weights(WeightsEnum):
             "num_params": 5495976,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 74.864,
                     "acc@5": 92.322,
                 }
@@ -870,7 +870,7 @@ class RegNet_X_800MF_Weights(WeightsEnum):
             "num_params": 7259656,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 75.212,
                     "acc@5": 92.348,
                 }
@@ -886,7 +886,7 @@ class RegNet_X_800MF_Weights(WeightsEnum):
             "num_params": 7259656,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 77.522,
                     "acc@5": 93.826,
                 }
@@ -910,7 +910,7 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
             "num_params": 9190136,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#small-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 77.040,
                     "acc@5": 93.440,
                 }
@@ -926,7 +926,7 @@ class RegNet_X_1_6GF_Weights(WeightsEnum):
             "num_params": 9190136,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 79.668,
                     "acc@5": 94.922,
                 }
@@ -950,7 +950,7 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
             "num_params": 15296552,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 78.364,
                     "acc@5": 93.992,
                 }
@@ -966,7 +966,7 @@ class RegNet_X_3_2GF_Weights(WeightsEnum):
             "num_params": 15296552,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 81.196,
                     "acc@5": 95.430,
                 }
@@ -990,7 +990,7 @@ class RegNet_X_8GF_Weights(WeightsEnum):
             "num_params": 39572648,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 79.344,
                     "acc@5": 94.686,
                 }
@@ -1006,7 +1006,7 @@ class RegNet_X_8GF_Weights(WeightsEnum):
             "num_params": 39572648,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 81.682,
                     "acc@5": 95.678,
                 }
@@ -1030,7 +1030,7 @@ class RegNet_X_16GF_Weights(WeightsEnum):
             "num_params": 54278536,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#medium-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 80.058,
                     "acc@5": 94.944,
                 }
@@ -1046,7 +1046,7 @@ class RegNet_X_16GF_Weights(WeightsEnum):
             "num_params": 54278536,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 82.716,
                     "acc@5": 96.196,
                 }
@@ -1070,7 +1070,7 @@ class RegNet_X_32GF_Weights(WeightsEnum):
             "num_params": 107811560,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#large-models",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 80.622,
                     "acc@5": 95.248,
                 }
@@ -1086,7 +1086,7 @@ class RegNet_X_32GF_Weights(WeightsEnum):
             "num_params": 107811560,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 83.014,
                     "acc@5": 96.288,
                 }

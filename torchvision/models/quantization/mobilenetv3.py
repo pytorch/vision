@@ -170,7 +170,7 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3",
             "unquantized": MobileNet_V3_Large_Weights.IMAGENET1K_V1,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 73.004,
                     "acc@5": 90.858,
                 }

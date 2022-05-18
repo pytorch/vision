@@ -406,13 +406,13 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
 
 
 generate_weights_table(
-    module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="ImageNet1K"
+    module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="ImageNet-1K"
 )
 generate_weights_table(
     module=M.quantization,
     table_name="classification_quant",
     metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
-    dataset="ImageNet1K",
+    dataset="ImageNet-1K",
 )
 generate_weights_table(
     module=M.detection,

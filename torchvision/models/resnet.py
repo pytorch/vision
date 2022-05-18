@@ -318,7 +318,7 @@ class ResNet18_Weights(WeightsEnum):
             "num_params": 11689512,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 69.758,
                     "acc@5": 89.078,
                 }
@@ -338,7 +338,7 @@ class ResNet34_Weights(WeightsEnum):
             "num_params": 21797672,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 73.314,
                     "acc@5": 91.420,
                 }
@@ -358,7 +358,7 @@ class ResNet50_Weights(WeightsEnum):
             "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 76.130,
                     "acc@5": 92.862,
                 }
@@ -374,7 +374,7 @@ class ResNet50_Weights(WeightsEnum):
             "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 80.858,
                     "acc@5": 95.434,
                 }
@@ -397,7 +397,7 @@ class ResNet101_Weights(WeightsEnum):
             "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 77.374,
                     "acc@5": 93.546,
                 }
@@ -413,7 +413,7 @@ class ResNet101_Weights(WeightsEnum):
             "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 81.886,
                     "acc@5": 95.780,
                 }
@@ -436,7 +436,7 @@ class ResNet152_Weights(WeightsEnum):
             "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 78.312,
                     "acc@5": 94.046,
                 }
@@ -452,7 +452,7 @@ class ResNet152_Weights(WeightsEnum):
             "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 82.284,
                     "acc@5": 96.002,
                 }
@@ -475,7 +475,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
             "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 77.618,
                     "acc@5": 93.698,
                 }
@@ -491,7 +491,7 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
             "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 81.198,
                     "acc@5": 95.340,
                 }
@@ -514,7 +514,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
             "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 79.312,
                     "acc@5": 94.526,
                 }
@@ -530,7 +530,7 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
             "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 82.834,
                     "acc@5": 96.228,
                 }
@@ -553,7 +553,7 @@ class ResNeXt101_64X4D_Weights(WeightsEnum):
             "num_params": 83455272,
             "recipe": "https://github.com/pytorch/vision/pull/5935",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 83.246,
                     "acc@5": 96.454,
                 }
@@ -576,7 +576,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
             "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 78.468,
                     "acc@5": 94.086,
                 }
@@ -592,7 +592,7 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
             "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 81.602,
                     "acc@5": 95.758,
                 }
@@ -615,7 +615,7 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
             "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 78.848,
                     "acc@5": 94.284,
                 }
@@ -631,7 +631,7 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
             "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 82.510,
                     "acc@5": 96.020,
                 }

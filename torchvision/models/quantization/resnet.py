@@ -170,7 +170,7 @@ class ResNet18_QuantizedWeights(WeightsEnum):
             "num_params": 11689512,
             "unquantized": ResNet18_Weights.IMAGENET1K_V1,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 69.494,
                     "acc@5": 88.882,
                 }
@@ -189,7 +189,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             "num_params": 25557032,
             "unquantized": ResNet50_Weights.IMAGENET1K_V1,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 75.920,
                     "acc@5": 92.814,
                 }
@@ -204,7 +204,7 @@ class ResNet50_QuantizedWeights(WeightsEnum):
             "num_params": 25557032,
             "unquantized": ResNet50_Weights.IMAGENET1K_V2,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 80.282,
                     "acc@5": 94.976,
                 }
@@ -223,7 +223,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             "num_params": 88791336,
             "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V1,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 78.986,
                     "acc@5": 94.480,
                 }
@@ -238,7 +238,7 @@ class ResNeXt101_32X8D_QuantizedWeights(WeightsEnum):
             "num_params": 88791336,
             "unquantized": ResNeXt101_32X8D_Weights.IMAGENET1K_V2,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 82.574,
                     "acc@5": 96.132,
                 }
@@ -258,7 +258,7 @@ class ResNeXt101_64X4D_QuantizedWeights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5935",
             "unquantized": ResNeXt101_64X4D_Weights.IMAGENET1K_V1,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 82.898,
                     "acc@5": 96.326,
                 }

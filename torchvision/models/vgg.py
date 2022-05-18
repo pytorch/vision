@@ -122,7 +122,7 @@ class VGG11_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 132863336,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 69.020,
                     "acc@5": 88.628,
                 }
@@ -140,7 +140,7 @@ class VGG11_BN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 132868840,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 70.370,
                     "acc@5": 89.810,
                 }
@@ -158,7 +158,7 @@ class VGG13_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 133047848,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 69.928,
                     "acc@5": 89.246,
                 }
@@ -176,7 +176,7 @@ class VGG13_BN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 133053736,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 71.586,
                     "acc@5": 90.374,
                 }
@@ -194,7 +194,7 @@ class VGG16_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 138357544,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 71.592,
                     "acc@5": 90.382,
                 }
@@ -216,7 +216,7 @@ class VGG16_Weights(WeightsEnum):
             "categories": None,
             "recipe": "https://github.com/amdegroot/ssd.pytorch#training-ssd",
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": float("nan"),
                     "acc@5": float("nan"),
                 }
@@ -239,7 +239,7 @@ class VGG16_BN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 138365992,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 73.360,
                     "acc@5": 91.516,
                 }
@@ -257,7 +257,7 @@ class VGG19_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 143667240,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 72.376,
                     "acc@5": 90.876,
                 }
@@ -275,7 +275,7 @@ class VGG19_BN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 143678248,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 74.218,
                     "acc@5": 91.842,
                 }

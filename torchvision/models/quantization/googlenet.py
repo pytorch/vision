@@ -118,7 +118,7 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": GoogLeNet_Weights.IMAGENET1K_V1,
             "_metrics": {
-                "ImageNet1K": {
+                "ImageNet-1K": {
                     "acc@1": 69.826,
                     "acc@5": 89.404,
                 }

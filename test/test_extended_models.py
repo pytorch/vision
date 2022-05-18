@@ -93,7 +93,7 @@ def test_schema_meta_validation(model_fn):
         "_docs",
     }
     # mandatory fields for each computer vision task
-    classification_fields = {"categories", ("_metrics", "ImageNet1K", "acc@1"), ("_metrics", "ImageNet1K", "acc@5")}
+    classification_fields = {"categories", ("_metrics", "ImageNet-1K", "acc@1"), ("_metrics", "ImageNet-1K", "acc@5")}
     defaults = {
         "all": {"_metrics", "min_size", "num_params", "recipe", "_docs"},
         "models": classification_fields,
