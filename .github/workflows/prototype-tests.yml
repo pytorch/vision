@@ -21,11 +21,11 @@ jobs:
       - name: Install additional system packages on Linux
         if: startsWith( matrix.os, 'ubuntu' )
         run: |
-          ls -l /usr/lib/x86_64-linux-gnu/ | grep libcrypto
+          ls -l /usr/lib64 | grep libcrypto
           echo "###############################################################################"
           yum -y install openssl-devel openssl-static curl-devel zlib-devel
           echo "###############################################################################"
-          ls -l /usr/lib/x86_64-linux-gnu/ | grep libcrypto
+          ls -l /usr/lib64 | grep libcrypto
 
       - name: Set up python
         uses: actions/setup-python@v3
