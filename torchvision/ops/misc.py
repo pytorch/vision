@@ -10,7 +10,6 @@ from ..utils import _log_api_usage_once
 interpolate = torch.nn.functional.interpolate
 
 
-# This is not in nn
 class FrozenBatchNorm2d(torch.nn.Module):
     """
     BatchNorm2d where the batch statistics and the affine parameters are fixed
@@ -297,3 +296,18 @@ class MLP(torch.nn.Sequential):
 
         super().__init__(*layers)
         _log_api_usage_once(self)
+
+
+class Permute(torch.nn.Module):
+    """This module returns a view of the tensor input with its dimensions permuted.
+
+    Args:
+        dims (List[int]): The desired ordering of dimensions
+    """
+
+    def __init__(self, dims: List[int]):
+        super().__init__()
+        self.dims = dims
+
+    def forward(self, x: Tensor) -> Tensor:
+        return torch.permute(x, self.dims)
