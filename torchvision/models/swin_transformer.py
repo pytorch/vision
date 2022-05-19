@@ -12,7 +12,7 @@ from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
 from .convnext import Permute
-from .vision_transformer import MLPBlock
+from .vision_transformer import MLPBlock  # TODO: remove this, patch the weights and use MLP instead
 
 
 __all__ = [
