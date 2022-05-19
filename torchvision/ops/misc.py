@@ -256,13 +256,11 @@ class SqueezeExcitation(torch.nn.Module):
 
 
 class MLP(torch.nn.Sequential):
-    """
-    This block implements the multi-layer perceptron (MLP) module.
+    """This block implements the multi-layer perceptron (MLP) module.
 
     Args:
         in_channels (int): Number of channels of the input
         hidden_channels (List[int]): List of the hidden channel dimensions
-        out_channels (int): Number of channels of the output
         norm_layer (Callable[..., torch.nn.Module], optional): Norm layer that will be stacked on top of the convolution layer. If ``None`` this layer wont be used. Default: ``None``
         activation_layer (Callable[..., torch.nn.Module], optional): Activation function which will be stacked on top of the normalization layer (if not None), otherwise on top of the conv layer. If ``None`` this layer wont be used. Default: ``torch.nn.ReLU``
         inplace (bool): Parameter for the activation layer, which can optionally do the operation in-place. Default ``True``
@@ -274,7 +272,6 @@ class MLP(torch.nn.Sequential):
         self,
         in_channels: int,
         hidden_channels: List[int],
-        out_channels: int,
         norm_layer: Optional[Callable[..., torch.nn.Module]] = None,
         activation_layer: Optional[Callable[..., torch.nn.Module]] = torch.nn.ReLU,
         inplace: Optional[bool] = True,
@@ -285,7 +282,7 @@ class MLP(torch.nn.Sequential):
 
         layers = []
         in_dim = in_channels
-        for hidden_dim in hidden_channels:
+        for hidden_dim in hidden_channels[:-1]:
             layers.append(torch.nn.Linear(in_dim, hidden_dim, bias=bias))
             if norm_layer is not None:
                 layers.append(norm_layer(hidden_dim))
@@ -293,7 +290,7 @@ class MLP(torch.nn.Sequential):
             layers.append(torch.nn.Dropout(dropout, **params))
             in_dim = hidden_dim
 
-        layers.append(torch.nn.Linear(in_dim, out_channels, bias=bias))
+        layers.append(torch.nn.Linear(in_dim, hidden_channels[-1], bias=bias))
         layers.append(torch.nn.Dropout(dropout, **params))
 
         super().__init__(*layers)

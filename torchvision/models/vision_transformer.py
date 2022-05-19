@@ -41,7 +41,7 @@ class MLPBlock(MLP):
     """Transformer MLP block."""
 
     def __init__(self, in_dim: int, mlp_dim: int, dropout: float):
-        super().__init__(in_dim, [mlp_dim], in_dim, activation_layer=nn.GELU, inplace=None, dropout=dropout)
+        super().__init__(in_dim, [mlp_dim, in_dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -62,6 +62,7 @@ class MLPBlock(MLP):
         version = local_metadata.get("version", None)
 
         if version is None or version < 2:
+            # Replacing legacy MLPBlock with MLP. See https://github.com/pytorch/vision/pull/6053
             for i in range(2):
                 for type in ["weight", "bias"]:
                     old_key = f"{prefix}linear_{i+1}.{type}"
