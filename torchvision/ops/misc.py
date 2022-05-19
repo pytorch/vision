@@ -281,19 +281,20 @@ class MLP(torch.nn.Sequential):
         bias: bool = True,
         dropout: float = 0.0,
     ):
+        params = {} if inplace is None else {"inplace": inplace}
+
         layers = []
         in_dim = in_channels
         for hidden_dim in hidden_channels:
             layers.append(torch.nn.Linear(in_dim, hidden_dim, bias=bias))
             if norm_layer is not None:
                 layers.append(norm_layer(hidden_dim))
-            params = {} if inplace is None else {"inplace": inplace}
             layers.append(activation_layer(**params))
-            layers.append(torch.nn.Dropout(dropout, inplace=inplace))
+            layers.append(torch.nn.Dropout(dropout, **params))
             in_dim = hidden_dim
 
         layers.append(torch.nn.Linear(in_dim, out_channels, bias=bias))
-        layers.append(torch.nn.Dropout(dropout, inplace=inplace))
+        layers.append(torch.nn.Dropout(dropout, **params))
 
         super().__init__(*layers)
         _log_api_usage_once(self)
