@@ -278,6 +278,8 @@ class MLP(torch.nn.Sequential):
         bias: bool = True,
         dropout: float = 0.0,
     ):
+        # The addition of `norm_layer` is inspired from the implementation of TorchMultimodal:
+        # https://github.com/facebookresearch/multimodal/blob/5dec8a/torchmultimodal/modules/layers/mlp.py
         params = {} if inplace is None else {"inplace": inplace}
 
         layers = []
