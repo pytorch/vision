@@ -427,7 +427,7 @@ class Swin_T_Weights(WeightsEnum):
                     "acc@5": 95.776,
                 }
             },
-            "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -450,7 +450,7 @@ class Swin_S_Weights(WeightsEnum):
                     "acc@5": 96.360,
                 }
             },
-            "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -473,7 +473,7 @@ class Swin_B_Weights(WeightsEnum):
                     "acc@5": 96.640,
                 }
             },
-            "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
