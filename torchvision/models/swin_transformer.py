@@ -5,8 +5,8 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from ..ops.stochastic_depth import StochasticDepth
 from ..ops.misc import MLP
+from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
