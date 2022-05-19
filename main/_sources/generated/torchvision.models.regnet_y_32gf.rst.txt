@@ -1,9 +1,0 @@
-﻿.. role:: hidden
-    :class: hidden-section
-.. currentmodule:: torchvision.models
-
-
-regnet_y_32gf
-=============
-
-.. autofunction:: regnet_y_32gf

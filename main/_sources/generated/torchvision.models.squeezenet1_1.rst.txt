@@ -1,9 +1,0 @@
-﻿.. role:: hidden
-    :class: hidden-section
-.. currentmodule:: torchvision.models
-
-
-squeezenet1_1
-=============
-
-.. autofunction:: squeezenet1_1

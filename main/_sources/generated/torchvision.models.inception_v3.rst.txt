@@ -1,9 +1,0 @@
-﻿.. role:: hidden
-    :class: hidden-section
-.. currentmodule:: torchvision.models
-
-
-inception_v3
-============
-
-.. autofunction:: inception_v3

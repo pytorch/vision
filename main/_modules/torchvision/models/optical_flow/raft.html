@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+20c8fcf ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+626d1a4 ) &#x25BC</a>
     </div>
     
 
@@ -237,7 +237,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../../ops.html">Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../io.html">Reading/Writing images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../../feature_extraction.html">Feature extraction for model inspection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../../models_new.html">Models and pre-trained weights - New</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
@@ -844,7 +843,20 @@
 <span class="p">}</span>
 
 
-<span class="k">class</span> <span class="nc">Raft_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="Raft_Large_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.Raft_Large_Weights">[docs]</a><span class="k">class</span> <span class="nc">Raft_Large_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The metrics reported here are as follows.</span>
+
+<span class="sd">    ``epe`` is the &quot;end-point-error&quot; and indicates how far (in pixels) the</span>
+<span class="sd">    predicted flow is from its true value. This is averaged over all pixels</span>
+<span class="sd">    of all images. ``per_image_epe`` is similar, but the average is different:</span>
+<span class="sd">    the epe is first computed on each image independently, and then averaged</span>
+<span class="sd">    over all images. This corresponds to &quot;Fl-epe&quot; (sometimes written &quot;F1-epe&quot;)</span>
+<span class="sd">    in the original paper, and it&#39;s only used on Kitti. ``fl-all`` is also a</span>
+<span class="sd">    Kitti-specific metric, defined by the author of the dataset and used for the</span>
+<span class="sd">    Kitti leaderboard. It corresponds to the average of pixels whose epe is</span>
+<span class="sd">    either &lt;3px, or &lt;5% of flow&#39;s 2-norm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">C_T_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/princeton-vl/RAFT</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_large_C_T_V1-22a6c225.pth&quot;</span><span class="p">,</span>
@@ -853,13 +865,14 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;sintel_train_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.4411</span><span class="p">,</span>
-                <span class="s2">&quot;sintel_train_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">2.7894</span><span class="p">,</span>
-                <span class="s2">&quot;kitti_train_per_image_epe&quot;</span><span class="p">:</span> <span class="mf">5.0172</span><span class="p">,</span>
-                <span class="s2">&quot;kitti_train_fl_all&quot;</span><span class="p">:</span> <span class="mf">17.4506</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Train-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.4411</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Train-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">2.7894</span><span class="p">},</span>
+                <span class="s2">&quot;Kitti-Train&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;per_image_epe&quot;</span><span class="p">:</span> <span class="mf">5.0172</span><span class="p">,</span> <span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">17.4506</span><span class="p">},</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were ported from the original paper. They are trained on Chairs + Things.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were ported from the original paper. They</span>
+<span class="s2">            are trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingThings3D`.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
 
@@ -870,13 +883,14 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;sintel_train_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.3822</span><span class="p">,</span>
-                <span class="s2">&quot;sintel_train_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">2.7161</span><span class="p">,</span>
-                <span class="s2">&quot;kitti_train_per_image_epe&quot;</span><span class="p">:</span> <span class="mf">4.5118</span><span class="p">,</span>
-                <span class="s2">&quot;kitti_train_fl_all&quot;</span><span class="p">:</span> <span class="mf">16.0679</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Train-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.3822</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Train-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">2.7161</span><span class="p">},</span>
+                <span class="s2">&quot;Kitti-Train&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;per_image_epe&quot;</span><span class="p">:</span> <span class="mf">4.5118</span><span class="p">,</span> <span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">16.0679</span><span class="p">},</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were trained from scratch on Chairs + Things.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were trained from scratch on</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingThings3D`.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
 
@@ -888,13 +902,19 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;sintel_test_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.94</span><span class="p">,</span>
-                <span class="s2">&quot;sintel_test_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">3.18</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Test-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.94</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Test-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">3.18</span><span class="p">},</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                These weights were ported from the original paper. They are trained on Chairs + Things and fine-tuned on</span>
-<span class="s2">                Sintel (C+T+S+K+H).</span>
+<span class="s2">                These weights were ported from the original paper. They are</span>
+<span class="s2">                trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D` and fine-tuned on</span>
+<span class="s2">                Sintel. The Sintel fine-tuning step is a combination of</span>
+<span class="s2">                :class:`~torchvision.datasets.Sintel`,</span>
+<span class="s2">                :class:`~torchvision.datasets.KittiFlow`,</span>
+<span class="s2">                :class:`~torchvision.datasets.HD1K`, and</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D` (clean pass).</span>
 <span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
@@ -906,12 +926,19 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;sintel_test_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.819</span><span class="p">,</span>
-                <span class="s2">&quot;sintel_test_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">3.067</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Test-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.819</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Test-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">3.067</span><span class="p">},</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                These weights were trained from scratch on Chairs + Things and fine-tuned on Sintel (C+T+S+K+H).</span>
+<span class="s2">                These weights were trained from scratch. They are</span>
+<span class="s2">                pre-trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D` and then</span>
+<span class="s2">                fine-tuned on Sintel. The Sintel fine-tuning step is a</span>
+<span class="s2">                combination of :class:`~torchvision.datasets.Sintel`,</span>
+<span class="s2">                :class:`~torchvision.datasets.KittiFlow`,</span>
+<span class="s2">                :class:`~torchvision.datasets.HD1K`, and</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D` (clean pass).</span>
 <span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
@@ -924,12 +951,16 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;kitti_test_fl_all&quot;</span><span class="p">:</span> <span class="mf">5.10</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Kitti-Test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">5.10</span><span class="p">},</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                These weights were ported from the original paper. They are trained on Chairs + Things, fine-tuned on</span>
-<span class="s2">                Sintel and then on Kitti.</span>
+<span class="s2">                These weights were ported from the original paper. They are</span>
+<span class="s2">                pre-trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D`,</span>
+<span class="s2">                fine-tuned on Sintel, and then fine-tuned on</span>
+<span class="s2">                :class:`~torchvision.datasets.KittiFlow`. The Sintel fine-tuning</span>
+<span class="s2">                step was described above.</span>
 <span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
@@ -941,19 +972,37 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">5257536</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;kitti_test_fl_all&quot;</span><span class="p">:</span> <span class="mf">5.19</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Kitti-Test&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">5.19</span><span class="p">},</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
-<span class="s2">                These weights were trained from scratch on Chairs + Things, fine-tuned on Sintel and then on Kitti.</span>
+<span class="s2">                These weights were trained from scratch. They are</span>
+<span class="s2">                pre-trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">                :class:`~torchvision.datasets.FlyingThings3D`,</span>
+<span class="s2">                fine-tuned on Sintel, and then fine-tuned on</span>
+<span class="s2">                :class:`~torchvision.datasets.KittiFlow`. The Sintel fine-tuning</span>
+<span class="s2">                step was described above.</span>
 <span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
 
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">C_T_SKHT_V2</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">C_T_SKHT_V2</span></div>
 
 
-<span class="k">class</span> <span class="nc">Raft_Small_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="Raft_Small_Weights"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.Raft_Small_Weights">[docs]</a><span class="k">class</span> <span class="nc">Raft_Small_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+    <span class="sd">&quot;&quot;&quot;The metrics reported here are as follows.</span>
+
+<span class="sd">    ``epe`` is the &quot;end-point-error&quot; and indicates how far (in pixels) the</span>
+<span class="sd">    predicted flow is from its true value. This is averaged over all pixels</span>
+<span class="sd">    of all images. ``per_image_epe`` is similar, but the average is different:</span>
+<span class="sd">    the epe is first computed on each image independently, and then averaged</span>
+<span class="sd">    over all images. This corresponds to &quot;Fl-epe&quot; (sometimes written &quot;F1-epe&quot;)</span>
+<span class="sd">    in the original paper, and it&#39;s only used on Kitti. ``fl-all`` is also a</span>
+<span class="sd">    Kitti-specific metric, defined by the author of the dataset and used for the</span>
+<span class="sd">    Kitti leaderboard. It corresponds to the average of pixels whose epe is</span>
+<span class="sd">    either &lt;3px, or &lt;5% of flow&#39;s 2-norm.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+
     <span class="n">C_T_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="c1"># Weights ported from https://github.com/princeton-vl/RAFT</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/raft_small_C_T_V1-ad48884c.pth&quot;</span><span class="p">,</span>
@@ -962,13 +1011,14 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">990162</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/princeton-vl/RAFT&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;sintel_train_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">2.1231</span><span class="p">,</span>
-                <span class="s2">&quot;sintel_train_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">3.2790</span><span class="p">,</span>
-                <span class="s2">&quot;kitti_train_per_image_epe&quot;</span><span class="p">:</span> <span class="mf">7.6557</span><span class="p">,</span>
-                <span class="s2">&quot;kitti_train_fl_all&quot;</span><span class="p">:</span> <span class="mf">25.2801</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Train-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">2.1231</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Train-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">3.2790</span><span class="p">},</span>
+                <span class="s2">&quot;Kitti-Train&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;per_image_epe&quot;</span><span class="p">:</span> <span class="mf">7.6557</span><span class="p">,</span> <span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">25.2801</span><span class="p">},</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were ported from the original paper. They are trained on Chairs + Things.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were ported from the original paper. They</span>
+<span class="s2">            are trained on :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingThings3D`.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
     <span class="n">C_T_V2</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
@@ -978,17 +1028,18 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">990162</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/optical_flow&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;sintel_train_cleanpass_epe&quot;</span><span class="p">:</span> <span class="mf">1.9901</span><span class="p">,</span>
-                <span class="s2">&quot;sintel_train_finalpass_epe&quot;</span><span class="p">:</span> <span class="mf">3.2831</span><span class="p">,</span>
-                <span class="s2">&quot;kitti_train_per_image_epe&quot;</span><span class="p">:</span> <span class="mf">7.5978</span><span class="p">,</span>
-                <span class="s2">&quot;kitti_train_fl_all&quot;</span><span class="p">:</span> <span class="mf">25.2369</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;Sintel-Train-Cleanpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">1.9901</span><span class="p">},</span>
+                <span class="s2">&quot;Sintel-Train-Finalpass&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;epe&quot;</span><span class="p">:</span> <span class="mf">3.2831</span><span class="p">},</span>
+                <span class="s2">&quot;Kitti-Train&quot;</span><span class="p">:</span> <span class="p">{</span><span class="s2">&quot;per_image_epe&quot;</span><span class="p">:</span> <span class="mf">7.5978</span><span class="p">,</span> <span class="s2">&quot;fl_all&quot;</span><span class="p">:</span> <span class="mf">25.2369</span><span class="p">},</span>
             <span class="p">},</span>
-            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were trained from scratch on Chairs + Things.&quot;&quot;&quot;</span><span class="p">,</span>
+            <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights were trained from scratch on</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingChairs` +</span>
+<span class="s2">            :class:`~torchvision.datasets.FlyingThings3D`.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
 
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">C_T_V2</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">C_T_V2</span></div>
 
 
 <span class="k">def</span> <span class="nf">_raft</span><span class="p">(</span>
@@ -1074,7 +1125,7 @@
     <span class="k">return</span> <span class="n">model</span>
 
 
-<div class="viewcode-block" id="raft_large"><a class="viewcode-back" href="../../../../generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.raft_large">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Large_Weights</span><span class="o">.</span><span class="n">C_T_SKHT_V2</span><span class="p">))</span>
+<div class="viewcode-block" id="raft_large"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.raft_large">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Large_Weights</span><span class="o">.</span><span class="n">C_T_SKHT_V2</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">raft_large</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Raft_Large_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAFT</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;RAFT model from</span>
 <span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
@@ -1082,13 +1133,19 @@
 <span class="sd">    Please see the example below for a tutorial on how to use this model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        weights(Raft_Large_weights, optional): The pretrained weights for the model</span>
-<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
-<span class="sd">        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class</span>
-<span class="sd">            to override any default.</span>
+<span class="sd">        weights(:class:`~torchvision.models.optical_flow.Raft_Large_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.optical_flow.Raft_Large_Weights`</span>
+<span class="sd">            below for more details, and possible values. By default, no</span>
+<span class="sd">            pre-trained weights are used.</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        RAFT: The model.</span>
+<span class="sd">    .. autoclass:: torchvision.models.optical_flow.Raft_Large_Weights</span>
+<span class="sd">        :members:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">weights</span> <span class="o">=</span> <span class="n">Raft_Large_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
@@ -1123,22 +1180,27 @@
     <span class="p">)</span></div>
 
 
-<div class="viewcode-block" id="raft_small"><a class="viewcode-back" href="../../../../generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.raft_small">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Small_Weights</span><span class="o">.</span><span class="n">C_T_V2</span><span class="p">))</span>
+<div class="viewcode-block" id="raft_small"><a class="viewcode-back" href="../../../../models/generated/torchvision.models.optical_flow.raft_small.html#torchvision.models.optical_flow.raft_small">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">Raft_Small_Weights</span><span class="o">.</span><span class="n">C_T_V2</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">raft_small</span><span class="p">(</span><span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Raft_Small_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">RAFT</span><span class="p">:</span>
     <span class="sd">&quot;&quot;&quot;RAFT &quot;small&quot; model from</span>
-<span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`_.</span>
+<span class="sd">    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow &lt;https://arxiv.org/abs/2003.12039&gt;`__.</span>
 
 <span class="sd">    Please see the example below for a tutorial on how to use this model.</span>
 
 <span class="sd">    Args:</span>
-<span class="sd">        weights(Raft_Small_weights, optional): The pretrained weights for the model</span>
-<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr</span>
-<span class="sd">        kwargs (dict): Parameters that will be passed to the :class:`~torchvision.models.optical_flow.RAFT` class</span>
-<span class="sd">            to override any default.</span>
+<span class="sd">        weights(:class:`~torchvision.models.optical_flow.Raft_Small_Weights`, optional): The</span>
+<span class="sd">            pretrained weights to use. See</span>
+<span class="sd">            :class:`~torchvision.models.optical_flow.Raft_Small_Weights`</span>
+<span class="sd">            below for more details, and possible values. By default, no</span>
+<span class="sd">            pre-trained weights are used.</span>
+<span class="sd">        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.</span>
+<span class="sd">        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``</span>
+<span class="sd">            base class. Please refer to the `source code</span>
+<span class="sd">            &lt;https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py&gt;`_</span>
+<span class="sd">            for more details about this class.</span>
 
-<span class="sd">    Returns:</span>
-<span class="sd">        RAFT: The model.</span>
-
+<span class="sd">    .. autoclass:: torchvision.models.optical_flow.Raft_Small_Weights</span>
+<span class="sd">        :members:</span>
 <span class="sd">    &quot;&quot;&quot;</span>
     <span class="n">weights</span> <span class="o">=</span> <span class="n">Raft_Small_Weights</span><span class="o">.</span><span class="n">verify</span><span class="p">(</span><span class="n">weights</span><span class="p">)</span>
 

@@ -1,9 +1,0 @@
-﻿.. role:: hidden
-    :class: hidden-section
-.. currentmodule:: torchvision.models
-
-
-convnext_tiny
-=============
-
-.. autofunction:: convnext_tiny

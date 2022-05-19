@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+20c8fcf ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+626d1a4 ) &#x25BC</a>
     </div>
     
 
@@ -237,7 +237,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../io.html">Reading/Writing images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models_new.html">Models and pre-trained weights - New</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
@@ -637,7 +636,7 @@
 <span class="p">}</span>
 
 
-<div class="viewcode-block" id="ResNet18_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.quantization.resnet18.html#torchvision.models.ResNet18_Weights">[docs]</a><span class="k">class</span> <span class="nc">ResNet18_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">ResNet18_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/resnet18-f37072fd.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -645,14 +644,16 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">11689512</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#resnet&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">69.758</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">89.078</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">69.758</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">89.078</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span>
 
 
 <span class="k">class</span> <span class="nc">ResNet34_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
@@ -663,9 +664,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">21797672</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#resnet&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">73.314</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">91.420</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">73.314</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">91.420</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -681,9 +684,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">25557032</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#resnet&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">76.130</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">92.862</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">76.130</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">92.862</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -695,9 +700,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">25557032</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.858</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.434</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">80.858</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.434</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                These weights improve upon the results of the original paper by using TorchVision&#39;s `new training recipe</span>
@@ -716,9 +723,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">44549160</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#resnet&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.374</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.546</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.374</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.546</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -730,9 +739,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">44549160</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.886</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.780</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.886</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.780</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                These weights improve upon the results of the original paper by using TorchVision&#39;s `new training recipe</span>
@@ -751,9 +762,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">60192808</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#resnet&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.312</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.046</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.312</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.046</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -765,9 +778,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">60192808</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.284</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.002</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.284</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.002</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                These weights improve upon the results of the original paper by using TorchVision&#39;s `new training recipe</span>
@@ -778,7 +793,7 @@
     <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
 
 
-<div class="viewcode-block" id="ResNeXt50_32X4D_Weights"><a class="viewcode-back" href="../../../generated/torchvision.models.resnext50_32x4d.html#torchvision.models.ResNeXt50_32X4D_Weights">[docs]</a><span class="k">class</span> <span class="nc">ResNeXt50_32X4D_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<span class="k">class</span> <span class="nc">ResNeXt50_32X4D_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/resnext50_32x4d-7cdf4587.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -786,9 +801,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">25028904</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#resnext&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.618</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.698</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">77.618</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">93.698</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -800,9 +817,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">25028904</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.198</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.340</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.198</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.340</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                These weights improve upon the results of the original paper by using TorchVision&#39;s `new training recipe</span>
@@ -810,10 +829,10 @@
 <span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
 
 
-<span class="k">class</span> <span class="nc">ResNeXt101_32X8D_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="ResNeXt101_32X8D_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.quantization.resnext101_32x8d.html#torchvision.models.ResNeXt101_32X8D_Weights">[docs]</a><span class="k">class</span> <span class="nc">ResNeXt101_32X8D_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/resnext101_32x8d-8ba56ff5.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">),</span>
@@ -821,9 +840,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">88791336</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/tree/main/references/classification#resnext&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">79.312</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.526</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">79.312</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.526</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -835,9 +856,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">88791336</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.834</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.228</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.834</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.228</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                These weights improve upon the results of the original paper by using TorchVision&#39;s `new training recipe</span>
@@ -845,10 +868,10 @@
 <span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V2</span></div>
 
 
-<span class="k">class</span> <span class="nc">ResNeXt101_64X4D_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
+<div class="viewcode-block" id="ResNeXt101_64X4D_Weights"><a class="viewcode-back" href="../../../models/generated/torchvision.models.quantization.resnext101_64x4d.html#torchvision.models.ResNeXt101_64X4D_Weights">[docs]</a><span class="k">class</span> <span class="nc">ResNeXt101_64X4D_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
     <span class="n">IMAGENET1K_V1</span> <span class="o">=</span> <span class="n">Weights</span><span class="p">(</span>
         <span class="n">url</span><span class="o">=</span><span class="s2">&quot;https://download.pytorch.org/models/resnext101_64x4d-173b62eb.pth&quot;</span><span class="p">,</span>
         <span class="n">transforms</span><span class="o">=</span><span class="n">partial</span><span class="p">(</span><span class="n">ImageClassification</span><span class="p">,</span> <span class="n">crop_size</span><span class="o">=</span><span class="mi">224</span><span class="p">,</span> <span class="n">resize_size</span><span class="o">=</span><span class="mi">232</span><span class="p">),</span>
@@ -856,9 +879,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">83455272</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/5935&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">83.246</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.454</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">83.246</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.454</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                These weights were trained from scratch by using TorchVision&#39;s `new training recipe</span>
@@ -866,7 +891,7 @@
 <span class="s2">            &quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
     <span class="p">)</span>
-    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span>
+    <span class="n">DEFAULT</span> <span class="o">=</span> <span class="n">IMAGENET1K_V1</span></div>
 
 
 <span class="k">class</span> <span class="nc">Wide_ResNet50_2_Weights</span><span class="p">(</span><span class="n">WeightsEnum</span><span class="p">):</span>
@@ -877,9 +902,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">68883240</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/912#issue-445437439&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.468</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.086</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.468</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.086</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -891,9 +918,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">68883240</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.602</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.758</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">81.602</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">95.758</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                These weights improve upon the results of the original paper by using TorchVision&#39;s `new training recipe</span>
@@ -912,9 +941,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">126886696</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/pull/912#issue-445437439&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.848</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.284</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">78.848</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">94.284</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;These weights reproduce closely the results of the paper using a simple training recipe.&quot;&quot;&quot;</span><span class="p">,</span>
         <span class="p">},</span>
@@ -926,9 +957,11 @@
             <span class="o">**</span><span class="n">_COMMON_META</span><span class="p">,</span>
             <span class="s2">&quot;num_params&quot;</span><span class="p">:</span> <span class="mi">126886696</span><span class="p">,</span>
             <span class="s2">&quot;recipe&quot;</span><span class="p">:</span> <span class="s2">&quot;https://github.com/pytorch/vision/issues/3995#new-recipe&quot;</span><span class="p">,</span>
-            <span class="s2">&quot;metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
-                <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.510</span><span class="p">,</span>
-                <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.020</span><span class="p">,</span>
+            <span class="s2">&quot;_metrics&quot;</span><span class="p">:</span> <span class="p">{</span>
+                <span class="s2">&quot;ImageNet-1K&quot;</span><span class="p">:</span> <span class="p">{</span>
+                    <span class="s2">&quot;acc@1&quot;</span><span class="p">:</span> <span class="mf">82.510</span><span class="p">,</span>
+                    <span class="s2">&quot;acc@5&quot;</span><span class="p">:</span> <span class="mf">96.020</span><span class="p">,</span>
+                <span class="p">}</span>
             <span class="p">},</span>
             <span class="s2">&quot;_docs&quot;</span><span class="p">:</span> <span class="s2">&quot;&quot;&quot;</span>
 <span class="s2">                These weights improve upon the results of the original paper by using TorchVision&#39;s `new training recipe</span>
@@ -1064,7 +1097,7 @@
     <span class="k">return</span> <span class="n">_resnet</span><span class="p">(</span><span class="n">Bottleneck</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">8</span><span class="p">,</span> <span class="mi">36</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
-<div class="viewcode-block" id="resnext50_32x4d"><a class="viewcode-back" href="../../../generated/torchvision.models.resnext50_32x4d.html#torchvision.models.resnext50_32x4d">[docs]</a><span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ResNeXt50_32X4D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
+<span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ResNeXt50_32X4D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>
 <span class="k">def</span> <span class="nf">resnext50_32x4d</span><span class="p">(</span>
     <span class="o">*</span><span class="p">,</span> <span class="n">weights</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">ResNeXt50_32X4D_Weights</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span> <span class="n">progress</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">:</span> <span class="n">Any</span>
 <span class="p">)</span> <span class="o">-&gt;</span> <span class="n">ResNet</span><span class="p">:</span>
@@ -1090,7 +1123,7 @@
 
     <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;groups&quot;</span><span class="p">,</span> <span class="mi">32</span><span class="p">)</span>
     <span class="n">_ovewrite_named_param</span><span class="p">(</span><span class="n">kwargs</span><span class="p">,</span> <span class="s2">&quot;width_per_group&quot;</span><span class="p">,</span> <span class="mi">4</span><span class="p">)</span>
-    <span class="k">return</span> <span class="n">_resnet</span><span class="p">(</span><span class="n">Bottleneck</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span></div>
+    <span class="k">return</span> <span class="n">_resnet</span><span class="p">(</span><span class="n">Bottleneck</span><span class="p">,</span> <span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">,</span> <span class="mi">6</span><span class="p">,</span> <span class="mi">3</span><span class="p">],</span> <span class="n">weights</span><span class="p">,</span> <span class="n">progress</span><span class="p">,</span> <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
 
 
 <span class="nd">@handle_legacy_interface</span><span class="p">(</span><span class="n">weights</span><span class="o">=</span><span class="p">(</span><span class="s2">&quot;pretrained&quot;</span><span class="p">,</span> <span class="n">ResNeXt101_32X8D_Weights</span><span class="o">.</span><span class="n">IMAGENET1K_V1</span><span class="p">))</span>

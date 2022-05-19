@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+20c8fcf ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+626d1a4 ) &#x25BC</a>
     </div>
     
 
@@ -237,7 +237,6 @@
 <li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../io.html">Reading/Writing images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models_new.html">Models and pre-trained weights - New</a></li>
 </ul>
 <p class="caption"><span class="caption-text">Examples and training references</span></p>
 <ul>
@@ -344,7 +343,7 @@
 <span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 
-<span class="k">class</span> <span class="nc">MNIST</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
+<div class="viewcode-block" id="MNIST"><a class="viewcode-back" href="../../../generated/torchvision.datasets.MNIST.html#torchvision.datasets.MNIST">[docs]</a><span class="k">class</span> <span class="nc">MNIST</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
     <span class="sd">&quot;&quot;&quot;`MNIST &lt;http://yann.lecun.com/exdb/mnist/&gt;`_ Dataset.</span>
 
 <span class="sd">    Args:</span>
@@ -455,7 +454,7 @@
 
         <span class="k">return</span> <span class="n">data</span><span class="p">,</span> <span class="n">targets</span>
 
-    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
+<div class="viewcode-block" id="MNIST.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.MNIST.html#torchvision.datasets.MNIST.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="sd">&quot;&quot;&quot;</span>
 <span class="sd">        Args:</span>
 <span class="sd">            index (int): Index</span>
@@ -475,7 +474,7 @@
         <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
 
-        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">target</span>
+        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">target</span></div>
 
     <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
         <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">data</span><span class="p">)</span>
@@ -524,7 +523,7 @@
 
     <span class="k">def</span> <span class="nf">extra_repr</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">str</span><span class="p">:</span>
         <span class="n">split</span> <span class="o">=</span> <span class="s2">&quot;Train&quot;</span> <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">train</span> <span class="ow">is</span> <span class="kc">True</span> <span class="k">else</span> <span class="s2">&quot;Test&quot;</span>
-        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Split: </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">&quot;</span>
+        <span class="k">return</span> <span class="sa">f</span><span class="s2">&quot;Split: </span><span class="si">{</span><span class="n">split</span><span class="si">}</span><span class="s2">&quot;</span></div>
 
 
 <span class="k">class</span> <span class="nc">FashionMNIST</span><span class="p">(</span><span class="n">MNIST</span><span class="p">):</span>

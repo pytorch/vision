@@ -90,7 +90,9 @@
     :class:`ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1 <ShuffleNet_V2_X2_0_Weights>`           76.23        93.006  7.4M          `link <https://github.com/pytorch/vision/pull/5906>`__
     :class:`SqueezeNet1_0_Weights.IMAGENET1K_V1 <SqueezeNet1_0_Weights>`                     58.092       80.42   1.2M          `link <https://github.com/pytorch/vision/pull/49#issuecomment-277560717>`__
     :class:`SqueezeNet1_1_Weights.IMAGENET1K_V1 <SqueezeNet1_1_Weights>`                     58.178       80.624  1.2M          `link <https://github.com/pytorch/vision/pull/49#issuecomment-277560717>`__
-    :class:`Swin_T_Weights.IMAGENET1K_V1 <Swin_T_Weights>`                                   81.358       95.526  28.3M         `link <https://github.com/pytorch/vision/tree/main/references/classification#swintransformer>`__
+    :class:`Swin_B_Weights.IMAGENET1K_V1 <Swin_B_Weights>`                                   83.582       96.64   87.8M         `link <https://github.com/pytorch/vision/tree/main/references/classification#swintransformer>`__
+    :class:`Swin_S_Weights.IMAGENET1K_V1 <Swin_S_Weights>`                                   83.196       96.36   49.6M         `link <https://github.com/pytorch/vision/tree/main/references/classification#swintransformer>`__
+    :class:`Swin_T_Weights.IMAGENET1K_V1 <Swin_T_Weights>`                                   81.474       95.776  28.3M         `link <https://github.com/pytorch/vision/tree/main/references/classification#swintransformer>`__
     :class:`VGG11_BN_Weights.IMAGENET1K_V1 <VGG11_BN_Weights>`                               70.37        89.81   132.9M        `link <https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg>`__
     :class:`VGG11_Weights.IMAGENET1K_V1 <VGG11_Weights>`                                     69.02        88.628  132.9M        `link <https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg>`__
     :class:`VGG13_BN_Weights.IMAGENET1K_V1 <VGG13_BN_Weights>`                               71.586       90.374  133.1M        `link <https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg>`__
