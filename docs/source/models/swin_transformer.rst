@@ -23,3 +23,5 @@ more details about this class.
     :template: function.rst
 
     swin_t
+    swin_s
+    swin_b
