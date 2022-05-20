@@ -35,11 +35,12 @@ class CelebA(VisionDataset):
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): Unsupported.
+        download (bool, optional): Deprecated.
 
             .. warning::
 
-                Downloading CelebA is not supported anymore as of 0.13. See
+                Downloading CelebA is not supported anymore as of 0.13 and this
+                parameter will be removed in 0.15. See
                 `this issue <https://github.com/pytorch/vision/issues/5705>`__
                 for more details.
                 Please download the files from
@@ -154,7 +155,8 @@ class CelebA(VisionDataset):
             return
 
         raise ValueError(
-            "Downloading CelebA is not supported anymore as of 0.13. See "
+            "Downloading CelebA is not supported anymore as of 0.13, and the "
+            "download parameter will be removed in 0.15. See "
             "https://github.com/pytorch/vision/issues/5705 for more details. "
             "Please download the files from "
             "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
