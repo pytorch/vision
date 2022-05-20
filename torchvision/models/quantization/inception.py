@@ -9,7 +9,7 @@ from torch import Tensor
 from torchvision.models import inception as inception_module
 from torchvision.models.inception import InceptionOutputs, Inception_V3_Weights
 
-from ...transforms._presets import ImageClassification, InterpolationMode
+from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -177,20 +177,22 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/inception_v3_google_fbgemm-71447a44.pth",
         transforms=partial(ImageClassification, crop_size=299, resize_size=342),
         meta={
-            "task": "image_classification",
-            "architecture": "InceptionV3",
-            "publication_year": 2015,
             "num_params": 27161264,
-            "size": (299, 299),
             "min_size": (75, 75),
             "categories": _IMAGENET_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
-            "quantization": "Post Training Quantization",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": Inception_V3_Weights.IMAGENET1K_V1,
-            "acc@1": 77.176,
-            "acc@5": 93.354,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.176,
+                    "acc@5": 93.354,
+                }
+            },
+            "_docs": """
+                These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -212,21 +214,38 @@ def inception_v3(
     **kwargs: Any,
 ) -> QuantizableInception3:
     r"""Inception v3 model architecture from
-    `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
+    `Rethinking the Inception Architecture for Computer Vision <http://arxiv.org/abs/1512.00567>`__.
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
         N x 3 x 299 x 299, so ensure your images are sized accordingly.
 
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (Inception_V3_QuantizedWeights or Inception_V3_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.Inception_V3_QuantizedWeights` or :class:`~torchvision.models.Inception_V3_Weights`, optional): The pretrained
+            weights for the model. See
+            :class:`~torchvision.models.quantization.Inception_V3_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableInception3``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/inception.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.Inception_V3_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.Inception_V3_Weights
+        :members:
+        :noindex:
     """
     weights = (Inception_V3_QuantizedWeights if quantize else Inception_V3_Weights).verify(weights)
 
@@ -255,3 +274,16 @@ def inception_v3(
             model.AuxLogits = None
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+from ..inception import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        # fp32 weights ported from TensorFlow, quantized in PyTorch
+        "inception_v3_google_fbgemm": Inception_V3_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+    }
+)

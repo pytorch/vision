@@ -156,7 +156,13 @@ class TestRotate:
     def test_rotate_interpolation_type(self):
         tensor, _ = _create_data(26, 26)
         # assert changed type warning
-        with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+                "Please use InterpolationMode enum."
+            ),
+        ):
             res1 = F.rotate(tensor, 45, interpolation=2)
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)
@@ -384,7 +390,13 @@ class TestAffine:
             assert_equal(res1, res2)
 
         # assert changed type warning
-        with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+                "Please use InterpolationMode enum."
+            ),
+        ):
             res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             assert_equal(res1, res2)
@@ -504,7 +516,13 @@ def test_perspective_interpolation_warning():
     spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
     epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
     tensor = torch.randint(0, 256, (3, 26, 26))
-    with pytest.warns(UserWarning, match="Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
         res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
         assert_equal(res1, res2)
@@ -584,7 +602,13 @@ def test_resize_asserts(device):
     tensor, pil_img = _create_data(26, 36, device=device)
 
     # assert changed type warning
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         res1 = F.resize(tensor, size=32, interpolation=2)
 
     res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
@@ -1030,25 +1054,9 @@ def test_resized_crop(device, mode):
         (F_t.adjust_contrast, (1.0,)),
         (F_t.adjust_hue, (-0.5,)),
         (F_t.adjust_saturation, (2.0,)),
-        (
-            F_t.pad,
-            (
-                [
-                    2,
-                ],
-                2,
-                "constant",
-            ),
-        ),
+        (F_t.pad, ([2], 2, "constant")),
         (F_t.resize, ([10, 11],)),
-        (
-            F_t.perspective,
-            (
-                [
-                    0.2,
-                ]
-            ),
-        ),
+        (F_t.perspective, ([0.2])),
         (F_t.gaussian_blur, ((2, 2), (0.7, 0.5))),
         (F_t.invert, ()),
         (F_t.posterize, (0,)),

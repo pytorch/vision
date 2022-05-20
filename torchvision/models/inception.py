@@ -7,7 +7,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -412,17 +412,17 @@ class Inception_V3_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/inception_v3_google-0cc3c7bd.pth",
         transforms=partial(ImageClassification, crop_size=299, resize_size=342),
         meta={
-            "task": "image_classification",
-            "architecture": "InceptionV3",
-            "publication_year": 2015,
             "num_params": 27161264,
-            "size": (299, 299),
             "min_size": (75, 75),
             "categories": _IMAGENET_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#inception-v3",
-            "acc@1": 77.294,
-            "acc@5": 93.450,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.294,
+                    "acc@5": 93.450,
+                }
+            },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -430,21 +430,29 @@ class Inception_V3_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", Inception_V3_Weights.IMAGENET1K_V1))
 def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bool = True, **kwargs: Any) -> Inception3:
-    r"""Inception v3 model architecture from
-    `"Rethinking the Inception Architecture for Computer Vision" <http://arxiv.org/abs/1512.00567>`_.
-    The required minimum input size of the model is 75x75.
+    """
+    Inception v3 model architecture from
+    `Rethinking the Inception Architecture for Computer Vision <http://arxiv.org/abs/1512.00567>`_.
 
     .. note::
         **Important**: In contrast to the other models the inception_v3 expects tensors with a size of
         N x 3 x 299 x 299, so ensure your images are sized accordingly.
 
     Args:
-        weights (Inception_V3_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        aux_logits (bool): If True, add an auxiliary branch that can improve training.
-            Default: *True*
-        transform_input (bool): If True, preprocesses the input according to the method with which it
-            was trained on ImageNet. Default: True if ``weights=Inception_V3_Weights.IMAGENET1K_V1``, else False.
+        weights (:class:`~torchvision.models.Inception_V3_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.Inception_V3_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.Inception3``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/inception.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Inception_V3_Weights
+        :members:
     """
     weights = Inception_V3_Weights.verify(weights)
 
@@ -465,3 +473,15 @@ def inception_v3(*, weights: Optional[Inception_V3_Weights] = None, progress: bo
             model.AuxLogits = None
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        # Inception v3 ported from TensorFlow
+        "inception_v3_google": Inception_V3_Weights.IMAGENET1K_V1.url,
+    }
+)

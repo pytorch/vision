@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 import torch.nn.init as init
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -115,13 +115,9 @@ def _squeezenet(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "SqueezeNet",
-    "publication_year": 2016,
-    "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/pull/49#issuecomment-277560717",
+    "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
 }
 
 
@@ -133,8 +129,12 @@ class SqueezeNet1_0_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (21, 21),
             "num_params": 1248424,
-            "acc@1": 58.092,
-            "acc@5": 80.420,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 58.092,
+                    "acc@5": 80.420,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -148,8 +148,12 @@ class SqueezeNet1_1_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (17, 17),
             "num_params": 1235496,
-            "acc@1": 58.178,
-            "acc@5": 80.624,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 58.178,
+                    "acc@5": 80.624,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -159,14 +163,25 @@ class SqueezeNet1_1_Weights(WeightsEnum):
 def squeezenet1_0(
     *, weights: Optional[SqueezeNet1_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> SqueezeNet:
-    r"""SqueezeNet model architecture from the `"SqueezeNet: AlexNet-level
-    accuracy with 50x fewer parameters and <0.5MB model size"
+    """SqueezeNet model architecture from the `SqueezeNet: AlexNet-level
+    accuracy with 50x fewer parameters and <0.5MB model size
     <https://arxiv.org/abs/1602.07360>`_ paper.
-    The required minimum input size of the model is 21x21.
 
     Args:
-        weights (SqueezeNet1_0_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.SqueezeNet1_0_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.SqueezeNet1_0_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.squeezenet.SqueezeNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/squeezenet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.SqueezeNet1_0_Weights
+        :members:
     """
     weights = SqueezeNet1_0_Weights.verify(weights)
     return _squeezenet("1_0", weights, progress, **kwargs)
@@ -176,15 +191,39 @@ def squeezenet1_0(
 def squeezenet1_1(
     *, weights: Optional[SqueezeNet1_1_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> SqueezeNet:
-    r"""SqueezeNet 1.1 model from the `official SqueezeNet repo
+    """SqueezeNet 1.1 model from the `official SqueezeNet repo
     <https://github.com/DeepScale/SqueezeNet/tree/master/SqueezeNet_v1.1>`_.
+
     SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
     than SqueezeNet 1.0, without sacrificing accuracy.
-    The required minimum input size of the model is 17x17.
 
     Args:
-        weights (SqueezeNet1_1_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.SqueezeNet1_1_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.SqueezeNet1_1_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.squeezenet.SqueezeNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/squeezenet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.SqueezeNet1_1_Weights
+        :members:
     """
     weights = SqueezeNet1_1_Weights.verify(weights)
     return _squeezenet("1_1", weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "squeezenet1_0": SqueezeNet1_0_Weights.IMAGENET1K_V1.url,
+        "squeezenet1_1": SqueezeNet1_1_Weights.IMAGENET1K_V1.url,
+    }
+)

@@ -56,8 +56,13 @@ def make_grid(
     """
     if not torch.jit.is_scripting() and not torch.jit.is_tracing():
         _log_api_usage_once(make_grid)
-    if not (torch.is_tensor(tensor) or (isinstance(tensor, list) and all(torch.is_tensor(t) for t in tensor))):
-        raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
+    if not torch.is_tensor(tensor):
+        if isinstance(tensor, list):
+            for t in tensor:
+                if not torch.is_tensor(t):
+                    raise TypeError(f"tensor or list of tensors expected, got a list containing {type(t)}")
+        else:
+            raise TypeError(f"tensor or list of tensors expected, got {type(tensor)}")
 
     if "range" in kwargs.keys():
         warnings.warn(
@@ -164,7 +169,7 @@ def draw_bounding_boxes(
     fill: Optional[bool] = False,
     width: int = 1,
     font: Optional[str] = None,
-    font_size: int = 10,
+    font_size: Optional[int] = None,
 ) -> torch.Tensor:
 
     """
@@ -223,6 +228,13 @@ def draw_bounding_boxes(
 
     colors = [(ImageColor.getrgb(color) if isinstance(color, str) else color) for color in colors]
 
+    if font is None:
+        if font_size is not None:
+            warnings.warn("Argument 'font_size' will be ignored since 'font' is not set.")
+        txt_font = ImageFont.load_default()
+    else:
+        txt_font = ImageFont.truetype(font=font, size=font_size or 10)
+
     # Handle Grayscale images
     if image.size(0) == 1:
         image = torch.tile(image, (3, 1, 1))
@@ -235,8 +247,6 @@ def draw_bounding_boxes(
         draw = ImageDraw.Draw(img_to_draw, "RGBA")
     else:
         draw = ImageDraw.Draw(img_to_draw)
-
-    txt_font = ImageFont.load_default() if font is None else ImageFont.truetype(font=font, size=font_size)
 
     for bbox, color, label in zip(img_boxes, colors, labels):  # type: ignore[arg-type]
         if fill:

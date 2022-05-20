@@ -235,6 +235,7 @@ def download_file_from_google_drive(file_id: str, root: str, filename: Optional[
 
     if check_integrity(fpath, md5):
         print(f"Using downloaded {'and verified ' if md5 else ''}file: {fpath}")
+        return
 
     url = "https://drive.google.com/uc"
     params = dict(id=file_id, export="download")

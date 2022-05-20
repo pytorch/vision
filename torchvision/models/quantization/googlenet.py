@@ -7,7 +7,7 @@ import torch.nn as nn
 from torch import Tensor
 from torch.nn import functional as F
 
-from ...transforms._presets import ImageClassification, InterpolationMode
+from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -111,20 +111,22 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/googlenet_fbgemm-c00238cf.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
-            "task": "image_classification",
-            "architecture": "GoogLeNet",
-            "publication_year": 2014,
             "num_params": 6624904,
-            "size": (224, 224),
             "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "backend": "fbgemm",
-            "quantization": "Post Training Quantization",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": GoogLeNet_Weights.IMAGENET1K_V1,
-            "acc@1": 69.826,
-            "acc@5": 89.404,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.826,
+                    "acc@5": 89.404,
+                }
+            },
+            "_docs": """
+                These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -145,18 +147,33 @@ def googlenet(
     quantize: bool = False,
     **kwargs: Any,
 ) -> QuantizableGoogLeNet:
-    r"""GoogLeNet (Inception v1) model architecture from
-    `"Going Deeper with Convolutions" <http://arxiv.org/abs/1409.4842>`_.
+    """GoogLeNet (Inception v1) model architecture from `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`__.
 
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (GoogLeNet_QuantizedWeights or GoogLeNet_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.GoogLeNet_QuantizedWeights` or :class:`~torchvision.models.GoogLeNet_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.GoogLeNet_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableGoogLeNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.googlenet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.GoogLeNet_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.GoogLeNet_Weights
+        :members:
+        :noindex:
     """
     weights = (GoogLeNet_QuantizedWeights if quantize else GoogLeNet_Weights).verify(weights)
 
@@ -188,3 +205,16 @@ def googlenet(
             )
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+from ..googlenet import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        # fp32 GoogLeNet ported from TensorFlow, with weights quantized in PyTorch
+        "googlenet_fbgemm": GoogLeNet_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+    }
+)

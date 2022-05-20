@@ -322,9 +322,6 @@ jobs:
     docker:
       - image: cimg/python:3.7
     steps:
-      - apt_install:
-          args: libturbojpeg-dev
-          descr: Install additional system libraries
       - checkout
       - install_torchvision:
           editable: true
@@ -356,20 +353,6 @@ jobs:
           descr: Install ONNX
       - run_tests_selective:
           file_or_dir: test/test_onnx.py
-
-  unittest_prototype:
-    docker:
-      - image: cimg/python:3.7
-    resource_class: xlarge
-    steps:
-      - checkout
-      - install_torchvision
-      - install_prototype_dependencies
-      - pip_install:
-          args: scipy pycocotools h5py
-          descr: Install optional dependencies
-      - run_tests_selective:
-          file_or_dir: test/test_prototype_*.py
 
   unittest_extended:
     docker:
@@ -673,7 +656,7 @@ jobs:
 
   smoke_test_docker_image_build:
     machine:
-      image: ubuntu-1604:201903-01
+      image: ubuntu-2004:202104-01
     resource_class: large
     environment:
       image_name: torchvision/smoke_test
@@ -708,7 +691,6 @@ jobs:
             conda env remove -n python${PYTHON_VERSION} || true
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            conda install "Pillow>=5.3.0,!=8.3.*"
             conda install -v -y -c pytorch-nightly pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
@@ -784,7 +766,7 @@ jobs:
   unittest_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.medium
     environment:
       image_name: "pytorch/manylinux-cuda102"
@@ -975,7 +957,7 @@ jobs:
   cmake_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
@@ -1120,7 +1102,6 @@ workflows:
     jobs:
       - unittest_torchhub
       - unittest_onnx
-      - unittest_prototype
       - unittest_extended
       {{ unittest_workflows() }}
 

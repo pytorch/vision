@@ -9,7 +9,7 @@ import torch.nn.functional as F
 import torch.utils.checkpoint as cp
 from torch import Tensor
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -34,22 +34,14 @@ class _DenseLayer(nn.Module):
         self, num_input_features: int, growth_rate: int, bn_size: int, drop_rate: float, memory_efficient: bool = False
     ) -> None:
         super().__init__()
-        self.norm1: nn.BatchNorm2d
-        self.add_module("norm1", nn.BatchNorm2d(num_input_features))
-        self.relu1: nn.ReLU
-        self.add_module("relu1", nn.ReLU(inplace=True))
-        self.conv1: nn.Conv2d
-        self.add_module(
-            "conv1", nn.Conv2d(num_input_features, bn_size * growth_rate, kernel_size=1, stride=1, bias=False)
-        )
-        self.norm2: nn.BatchNorm2d
-        self.add_module("norm2", nn.BatchNorm2d(bn_size * growth_rate))
-        self.relu2: nn.ReLU
-        self.add_module("relu2", nn.ReLU(inplace=True))
-        self.conv2: nn.Conv2d
-        self.add_module(
-            "conv2", nn.Conv2d(bn_size * growth_rate, growth_rate, kernel_size=3, stride=1, padding=1, bias=False)
-        )
+        self.norm1 = nn.BatchNorm2d(num_input_features)
+        self.relu1 = nn.ReLU(inplace=True)
+        self.conv1 = nn.Conv2d(num_input_features, bn_size * growth_rate, kernel_size=1, stride=1, bias=False)
+
+        self.norm2 = nn.BatchNorm2d(bn_size * growth_rate)
+        self.relu2 = nn.ReLU(inplace=True)
+        self.conv2 = nn.Conv2d(bn_size * growth_rate, growth_rate, kernel_size=3, stride=1, padding=1, bias=False)
+
         self.drop_rate = float(drop_rate)
         self.memory_efficient = memory_efficient
 
@@ -136,10 +128,10 @@ class _DenseBlock(nn.ModuleDict):
 class _Transition(nn.Sequential):
     def __init__(self, num_input_features: int, num_output_features: int) -> None:
         super().__init__()
-        self.add_module("norm", nn.BatchNorm2d(num_input_features))
-        self.add_module("relu", nn.ReLU(inplace=True))
-        self.add_module("conv", nn.Conv2d(num_input_features, num_output_features, kernel_size=1, stride=1, bias=False))
-        self.add_module("pool", nn.AvgPool2d(kernel_size=2, stride=2))
+        self.norm = nn.BatchNorm2d(num_input_features)
+        self.relu = nn.ReLU(inplace=True)
+        self.conv = nn.Conv2d(num_input_features, num_output_features, kernel_size=1, stride=1, bias=False)
+        self.pool = nn.AvgPool2d(kernel_size=2, stride=2)
 
 
 class DenseNet(nn.Module):
@@ -266,14 +258,10 @@ def _densenet(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "DenseNet",
-    "publication_year": 2016,
-    "size": (224, 224),
     "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/pull/116",
+    "_docs": """These weights are ported from LuaTorch.""",
 }
 
 
@@ -284,8 +272,12 @@ class DenseNet121_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 7978856,
-            "acc@1": 74.434,
-            "acc@5": 91.972,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.434,
+                    "acc@5": 91.972,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -298,8 +290,12 @@ class DenseNet161_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 28681000,
-            "acc@1": 77.138,
-            "acc@5": 93.560,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.138,
+                    "acc@5": 93.560,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -312,8 +308,12 @@ class DenseNet169_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 14149480,
-            "acc@1": 75.600,
-            "acc@5": 92.806,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.600,
+                    "acc@5": 92.806,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -326,8 +326,12 @@ class DenseNet201_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 20013928,
-            "acc@1": 76.896,
-            "acc@5": 93.370,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.896,
+                    "acc@5": 93.370,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -336,14 +340,22 @@ class DenseNet201_Weights(WeightsEnum):
 @handle_legacy_interface(weights=("pretrained", DenseNet121_Weights.IMAGENET1K_V1))
 def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
-    The required minimum input size of the model is 29x29.
+    `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
 
     Args:
-        weights (DenseNet121_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
+        weights (:class:`~torchvision.models.DenseNet121_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.DenseNet121_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.densenet.DenseNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/densenet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.DenseNet121_Weights
+        :members:
     """
     weights = DenseNet121_Weights.verify(weights)
 
@@ -353,14 +365,22 @@ def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool
 @handle_legacy_interface(weights=("pretrained", DenseNet161_Weights.IMAGENET1K_V1))
 def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
-    The required minimum input size of the model is 29x29.
+    `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
 
     Args:
-        weights (DenseNet161_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
+        weights (:class:`~torchvision.models.DenseNet161_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.DenseNet161_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.densenet.DenseNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/densenet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.DenseNet161_Weights
+        :members:
     """
     weights = DenseNet161_Weights.verify(weights)
 
@@ -370,14 +390,22 @@ def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool
 @handle_legacy_interface(weights=("pretrained", DenseNet169_Weights.IMAGENET1K_V1))
 def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
-    The required minimum input size of the model is 29x29.
+    `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
 
     Args:
-        weights (DenseNet169_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
+        weights (:class:`~torchvision.models.DenseNet169_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.DenseNet169_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.densenet.DenseNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/densenet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.DenseNet169_Weights
+        :members:
     """
     weights = DenseNet169_Weights.verify(weights)
 
@@ -387,15 +415,37 @@ def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool
 @handle_legacy_interface(weights=("pretrained", DenseNet201_Weights.IMAGENET1K_V1))
 def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from
-    `"Densely Connected Convolutional Networks" <https://arxiv.org/pdf/1608.06993.pdf>`_.
-    The required minimum input size of the model is 29x29.
+    `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
 
     Args:
-        weights (DenseNet201_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        memory_efficient (bool) - If True, uses checkpointing. Much more memory efficient,
-          but slower. Default: *False*. See `"paper" <https://arxiv.org/pdf/1707.06990.pdf>`_.
+        weights (:class:`~torchvision.models.DenseNet201_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.DenseNet201_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.densenet.DenseNet``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/densenet.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.DenseNet201_Weights
+        :members:
     """
     weights = DenseNet201_Weights.verify(weights)
 
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "densenet121": DenseNet121_Weights.IMAGENET1K_V1.url,
+        "densenet169": DenseNet169_Weights.IMAGENET1K_V1.url,
+        "densenet201": DenseNet201_Weights.IMAGENET1K_V1.url,
+        "densenet161": DenseNet161_Weights.IMAGENET1K_V1.url,
+    }
+)

@@ -10,9 +10,9 @@ dependencies:
   - jpeg
   - ca-certificates
   - hdf5
+  - setuptools
   - pip:
     - future
-    - pillow >=5.3.0, !=8.3.*
     - scipy
     - av != 9.1.1
     - dataclasses

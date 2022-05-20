@@ -21,9 +21,14 @@
 # sys.path.insert(0, os.path.abspath('.'))
 
 import os
+import textwrap
+from copy import copy
+from pathlib import Path
 
 import pytorch_sphinx_theme
 import torchvision
+import torchvision.models as M
+from tabulate import tabulate
 
 
 # -- General configuration ------------------------------------------------
@@ -292,5 +297,156 @@ def inject_minigalleries(app, what, name, obj, options, lines):
         lines.append("\n")
 
 
+def inject_weight_metadata(app, what, name, obj, options, lines):
+    """This hook is used to generate docs for the models weights.
+
+    Objects like ResNet18_Weights are enums with fields, where each field is a Weight object.
+    Enums aren't easily documented in Python so the solution we're going for is to:
+
+    - add an autoclass directive in the model's builder docstring, e.g.
+
+    ```
+    .. autoclass:: torchvision.models.ResNet34_Weights
+        :members:
+    ```
+
+    (see resnet.py for an example)
+    - then this hook is called automatically when building the docs, and it generates the text that gets
+      used within the autoclass directive.
+    """
+
+    if obj.__name__.endswith(("_Weights", "_QuantizedWeights")):
+
+        if len(obj) == 0:
+            lines[:] = ["There are no available pre-trained weights."]
+            return
+
+        lines[:] = [
+            "The model builder above accepts the following values as the ``weights`` parameter.",
+            f"``{obj.__name__}.DEFAULT`` is equivalent to ``{obj.DEFAULT}``.",
+        ]
+
+        if obj.__doc__ != "An enumeration.":
+            # We only show the custom enum doc if it was overriden. The default one from Python is "An enumeration"
+            lines.append("")
+            lines.append(obj.__doc__)
+
+        lines.append("")
+
+        for field in obj:
+            meta = copy(field.meta)
+
+            lines += [f"**{str(field)}**:", ""]
+            lines += [meta.pop("_docs")]
+
+            if field == obj.DEFAULT:
+                lines += [f"Also available as ``{obj.__name__}.DEFAULT``."]
+            lines += [""]
+
+            table = []
+            metrics = meta.pop("_metrics")
+            for dataset, dataset_metrics in metrics.items():
+                for metric_name, metric_value in dataset_metrics.items():
+                    table.append((f"{metric_name} (on {dataset})", str(metric_value)))
+
+            for k, v in meta.items():
+                if k in {"recipe", "license"}:
+                    v = f"`link <{v}>`__"
+                elif k == "min_size":
+                    v = f"height={v[0]}, width={v[1]}"
+                elif k in {"categories", "keypoint_names"} and isinstance(v, list):
+                    max_visible = 3
+                    v_sample = ", ".join(v[:max_visible])
+                    v = f"{v_sample}, ... ({len(v)-max_visible} omitted)" if len(v) > max_visible else v_sample
+                table.append((str(k), str(v)))
+            table = tabulate(table, tablefmt="rst")
+            lines += [".. rst-class:: table-weights"]  # Custom CSS class, see custom_torchvision.css
+            lines += [".. table::", ""]
+            lines += textwrap.indent(table, " " * 4).split("\n")
+            lines.append("")
+            lines.append(
+                f"The inference transforms are available at ``{str(field)}.transforms`` and "
+                f"perform the following preprocessing operations: {field.transforms().describe()}"
+            )
+            lines.append("")
+
+
+def generate_weights_table(module, table_name, metrics, dataset, include_patterns=None, exclude_patterns=None):
+    weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
+    weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
+    weights = [w for weight_enum in weight_enums for w in weight_enum]
+
+    if include_patterns is not None:
+        weights = [w for w in weights if any(p in str(w) for p in include_patterns)]
+    if exclude_patterns is not None:
+        weights = [w for w in weights if all(p not in str(w) for p in exclude_patterns)]
+
+    metrics_keys, metrics_names = zip(*metrics)
+    column_names = ["Weight"] + list(metrics_names) + ["Params", "Recipe"]
+    column_names = [f"**{name}**" for name in column_names]  # Add bold
+
+    content = [
+        (
+            f":class:`{w} <{type(w).__name__}>`",
+            *(w.meta["_metrics"][dataset][metric] for metric in metrics_keys),
+            f"{w.meta['num_params']/1e6:.1f}M",
+            f"`link <{w.meta['recipe']}>`__",
+        )
+        for w in weights
+    ]
+    table = tabulate(content, headers=column_names, tablefmt="rst")
+
+    generated_dir = Path("generated")
+    generated_dir.mkdir(exist_ok=True)
+    with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
+        table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
+        table_file.write(".. table::\n")
+        table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
+        table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
+
+
+generate_weights_table(
+    module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="ImageNet-1K"
+)
+generate_weights_table(
+    module=M.quantization,
+    table_name="classification_quant",
+    metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
+    dataset="ImageNet-1K",
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="detection",
+    metrics=[("box_map", "Box MAP")],
+    exclude_patterns=["Mask", "Keypoint"],
+    dataset="COCO-val2017",
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="instance_segmentation",
+    metrics=[("box_map", "Box MAP"), ("mask_map", "Mask MAP")],
+    dataset="COCO-val2017",
+    include_patterns=["Mask"],
+)
+generate_weights_table(
+    module=M.detection,
+    table_name="detection_keypoint",
+    metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")],
+    dataset="COCO-val2017",
+    include_patterns=["Keypoint"],
+)
+generate_weights_table(
+    module=M.segmentation,
+    table_name="segmentation",
+    metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")],
+    dataset="COCO-val2017-VOC-labels",
+)
+generate_weights_table(
+    module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="Kinetics-400"
+)
+
+
 def setup(app):
+
     app.connect("autodoc-process-docstring", inject_minigalleries)
+    app.connect("autodoc-process-docstring", inject_weight_metadata)

@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch import Tensor
 
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -184,26 +184,27 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "ShuffleNetV2",
-    "publication_year": 2018,
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
-    "recipe": "https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0",
+    "recipe": "https://github.com/ericsun99/Shufflenet-v2-Pytorch",
 }
 
 
 class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
+        # Weights ported from https://github.com/ericsun99/Shufflenet-v2-Pytorch
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 1366792,
-            "acc@1": 69.362,
-            "acc@5": 88.316,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 60.552,
+                    "acc@5": 81.746,
+                }
+            },
+            "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -211,24 +212,68 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
 
 class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
+        # Weights ported from https://github.com/ericsun99/Shufflenet-v2-Pytorch
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 2278604,
-            "acc@1": 60.552,
-            "acc@5": 81.746,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.362,
+                    "acc@5": 88.316,
+                }
+            },
+            "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
 
 
 class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/shufflenetv2_x1_5-3c479a10.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
+            "num_params": 3503624,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.996,
+                    "acc@5": 91.086,
+                }
+            },
+            "_docs": """
+                These weights were trained from scratch by using TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
-    pass
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/shufflenetv2_x2_0-8be3c8ee.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
+            "num_params": 7393996,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.230,
+                    "acc@5": 93.006,
+                }
+            },
+            "_docs": """
+                These weights were trained from scratch by using TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
 
 
 @handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1))
@@ -236,13 +281,25 @@ def shufflenet_v2_x0_5(
     *, weights: Optional[ShuffleNet_V2_X0_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     """
-    Constructs a ShuffleNetV2 with 0.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    Constructs a ShuffleNetV2 architecture with 0.5x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
-        weights (ShuffleNet_V2_X0_5_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ShuffleNet_V2_X0_5_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ShuffleNet_V2_X0_5_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.shufflenetv2.ShuffleNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X0_5_Weights
+        :members:
     """
     weights = ShuffleNet_V2_X0_5_Weights.verify(weights)
 
@@ -254,50 +311,100 @@ def shufflenet_v2_x1_0(
     *, weights: Optional[ShuffleNet_V2_X1_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     """
-    Constructs a ShuffleNetV2 with 1.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    Constructs a ShuffleNetV2 architecture with 1.0x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
-        weights (ShuffleNet_V2_X1_0_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ShuffleNet_V2_X1_0_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ShuffleNet_V2_X1_0_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.shufflenetv2.ShuffleNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X1_0_Weights
+        :members:
     """
     weights = ShuffleNet_V2_X1_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x1_5(
     *, weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     """
-    Constructs a ShuffleNetV2 with 1.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    Constructs a ShuffleNetV2 architecture with 1.5x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
-        weights (ShuffleNet_V2_X1_5_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ShuffleNet_V2_X1_5_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ShuffleNet_V2_X1_5_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.shufflenetv2.ShuffleNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X1_5_Weights
+        :members:
     """
     weights = ShuffleNet_V2_X1_5_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x2_0(
     *, weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
     """
-    Constructs a ShuffleNetV2 with 2.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    Constructs a ShuffleNetV2 architecture with 2.0x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
 
     Args:
-        weights (ShuffleNet_V2_X2_0_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.ShuffleNet_V2_X2_0_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.ShuffleNet_V2_X2_0_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.shufflenetv2.ShuffleNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X2_0_Weights
+        :members:
     """
     weights = ShuffleNet_V2_X2_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "shufflenetv2_x0.5": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1.url,
+        "shufflenetv2_x1.0": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1.url,
+        "shufflenetv2_x1.5": None,
+        "shufflenetv2_x2.0": None,
+    }
+)

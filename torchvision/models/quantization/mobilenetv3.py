@@ -6,7 +6,7 @@ from torch import nn, Tensor
 from torch.ao.quantization import QuantStub, DeQuantStub
 
 from ...ops.misc import Conv2dNormActivation, SqueezeExcitation
-from ...transforms._presets import ImageClassification, InterpolationMode
+from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -140,6 +140,10 @@ def _mobilenet_v3_model(
     _replace_relu(model)
 
     if quantize:
+        # Instead of quantizing the model and then loading the quantized weights we take a different approach.
+        # We prepare the QAT model, load the QAT weights from training and then convert it.
+        # This is done to avoid extremely low accuracies observed on the specific model. This is rather a workaround
+        # for an unresolved bug on the eager quantization API detailed at: https://github.com/pytorch/vision/issues/5890
         model.fuse_model(is_qat=True)
         model.qconfig = torch.ao.quantization.get_default_qat_qconfig(backend)
         torch.ao.quantization.prepare_qat(model, inplace=True)
@@ -159,20 +163,22 @@ class MobileNet_V3_Large_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/mobilenet_v3_large_qnnpack-5bcacf28.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
-            "task": "image_classification",
-            "architecture": "MobileNetV3",
-            "publication_year": 2019,
             "num_params": 5483032,
-            "size": (224, 224),
             "min_size": (1, 1),
             "categories": _IMAGENET_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "backend": "qnnpack",
-            "quantization": "Quantization Aware Training",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv3",
             "unquantized": MobileNet_V3_Large_Weights.IMAGENET1K_V1,
-            "acc@1": 73.004,
-            "acc@5": 90.858,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 73.004,
+                    "acc@5": 90.858,
+                }
+            },
+            "_docs": """
+                These weights were produced by doing Quantization Aware Training (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_QNNPACK_V1
@@ -194,20 +200,47 @@ def mobilenet_v3_large(
     **kwargs: Any,
 ) -> QuantizableMobileNetV3:
     """
-    Constructs a MobileNetV3 Large architecture from
-    `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
+    MobileNetV3 (Large) model from
+    `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`_.
 
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (MobileNet_V3_Large_QuantizedWeights or MobileNet_V3_Large_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, returns a quantized model, else returns a float model
+        weights (:class:`~torchvision.models.quantization.MobileNet_V3_Large_QuantizedWeights` or :class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.MobileNet_V3_Large_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        quantize (bool): If True, return a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.MobileNet_V3_Large_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/mobilenetv3.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.MobileNet_V3_Large_QuantizedWeights
+        :members:
+    .. autoclass:: torchvision.models.MobileNet_V3_Large_Weights
+        :members:
+        :noindex:
     """
     weights = (MobileNet_V3_Large_QuantizedWeights if quantize else MobileNet_V3_Large_Weights).verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_large", **kwargs)
     return _mobilenet_v3_model(inverted_residual_setting, last_channel, weights, progress, quantize, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+from ..mobilenetv3 import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        "mobilenet_v3_large_qnnpack": MobileNet_V3_Large_QuantizedWeights.IMAGENET1K_QNNPACK_V1.url,
+    }
+)

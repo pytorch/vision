@@ -7,7 +7,7 @@ from torch.ao.quantization import QuantStub, DeQuantStub
 from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, MobileNet_V2_Weights
 
 from ...ops.misc import Conv2dNormActivation
-from ...transforms._presets import ImageClassification, InterpolationMode
+from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
@@ -69,20 +69,22 @@ class MobileNet_V2_QuantizedWeights(WeightsEnum):
         url="https://download.pytorch.org/models/quantized/mobilenet_v2_qnnpack_37f702c5.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
-            "task": "image_classification",
-            "architecture": "MobileNetV2",
-            "publication_year": 2018,
             "num_params": 3504872,
-            "size": (224, 224),
             "min_size": (1, 1),
             "categories": _IMAGENET_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
             "backend": "qnnpack",
-            "quantization": "Quantization Aware Training",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#qat-mobilenetv2",
             "unquantized": MobileNet_V2_Weights.IMAGENET1K_V1,
-            "acc@1": 71.658,
-            "acc@5": 90.150,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.658,
+                    "acc@5": 90.150,
+                }
+            },
+            "_docs": """
+                These weights were produced by doing Quantization Aware Training (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_QNNPACK_V1
@@ -105,18 +107,31 @@ def mobilenet_v2(
 ) -> QuantizableMobileNetV2:
     """
     Constructs a MobileNetV2 architecture from
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
+    `MobileNetV2: Inverted Residuals and Linear Bottlenecks
     <https://arxiv.org/abs/1801.04381>`_.
 
-    Note that quantize = True returns a quantized model with 8 bit
-    weights. Quantized models only support inference and run on CPUs.
-    GPU inference is not yet supported
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (GoogLeNet_QuantizedWeights or GoogLeNet_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize(bool): If True, returns a quantized model, else returns a float model
+        weights (:class:`~torchvision.models.quantization.MobileNet_V2_QuantizedWeights` or :class:`~torchvision.models.MobileNet_V2_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.MobileNet_V2_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        quantize (bool, optional): If True, returns a quantized version of the model. Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableMobileNetV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/mobilenetv2.py>`_
+            for more details about this class.
+    .. autoclass:: torchvision.models.quantization.MobileNet_V2_QuantizedWeights
+        :members:
+    .. autoclass:: torchvision.models.MobileNet_V2_Weights
+        :members:
+        :noindex:
     """
     weights = (MobileNet_V2_QuantizedWeights if quantize else MobileNet_V2_Weights).verify(weights)
 
@@ -135,3 +150,15 @@ def mobilenet_v2(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+from ..mobilenetv2 import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        "mobilenet_v2_qnnpack": MobileNet_V2_QuantizedWeights.IMAGENET1K_QNNPACK_V1.url,
+    }
+)

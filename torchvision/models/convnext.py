@@ -5,9 +5,9 @@ import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
 
-from ..ops.misc import Conv2dNormActivation
+from ..ops.misc import Conv2dNormActivation, Permute
 from ..ops.stochastic_depth import StochasticDepth
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -33,15 +33,6 @@ class LayerNorm2d(nn.LayerNorm):
         x = F.layer_norm(x, self.normalized_shape, self.weight, self.bias, self.eps)
         x = x.permute(0, 3, 1, 2)
         return x
-
-
-class Permute(nn.Module):
-    def __init__(self, dims: List[int]):
-        super().__init__()
-        self.dims = dims
-
-    def forward(self, x):
-        return torch.permute(x, self.dims)
 
 
 class CNBlock(nn.Module):
@@ -204,14 +195,14 @@ def _convnext(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "ConvNeXt",
-    "publication_year": 2022,
-    "size": (224, 224),
     "min_size": (32, 32),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#convnext",
+    "_docs": """
+        These weights improve upon the results of the original paper by using a modified version of TorchVision's
+        `new training recipe
+        <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+    """,
 }
 
 
@@ -222,8 +213,12 @@ class ConvNeXt_Tiny_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 28589128,
-            "acc@1": 82.520,
-            "acc@5": 96.146,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.520,
+                    "acc@5": 96.146,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -236,8 +231,12 @@ class ConvNeXt_Small_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 50223688,
-            "acc@1": 83.616,
-            "acc@5": 96.650,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.616,
+                    "acc@5": 96.650,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -250,8 +249,12 @@ class ConvNeXt_Base_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 88591464,
-            "acc@1": 84.062,
-            "acc@5": 96.870,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 84.062,
+                    "acc@5": 96.870,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -264,8 +267,12 @@ class ConvNeXt_Large_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 197767336,
-            "acc@1": 84.414,
-            "acc@5": 96.976,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 84.414,
+                    "acc@5": 96.976,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -273,11 +280,21 @@ class ConvNeXt_Large_Weights(WeightsEnum):
 
 @handle_legacy_interface(weights=("pretrained", ConvNeXt_Tiny_Weights.IMAGENET1K_V1))
 def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: bool = True, **kwargs: Any) -> ConvNeXt:
-    r"""ConvNeXt Tiny model architecture from the
-    `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
+    """ConvNeXt Tiny model architecture from the
+    `A ConvNet for the 2020s <https://arxiv.org/abs/2201.03545>`_ paper.
+
     Args:
-        weights (ConvNeXt_Tiny_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.convnext.ConvNeXt_Tiny_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.convnext.ConvNeXt_Tiny_Weights`
+            below for more details and possible values. By default, no pre-trained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.convnext.ConvNext``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ConvNeXt_Tiny_Weights
+        :members:
     """
     weights = ConvNeXt_Tiny_Weights.verify(weights)
 
@@ -295,11 +312,21 @@ def convnext_tiny(*, weights: Optional[ConvNeXt_Tiny_Weights] = None, progress: 
 def convnext_small(
     *, weights: Optional[ConvNeXt_Small_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ConvNeXt:
-    r"""ConvNeXt Small model architecture from the
-    `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
+    """ConvNeXt Small model architecture from the
+    `A ConvNet for the 2020s <https://arxiv.org/abs/2201.03545>`_ paper.
+
     Args:
-        weights (ConvNeXt_Small_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.convnext.ConvNeXt_Small_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.convnext.ConvNeXt_Small_Weights`
+            below for more details and possible values. By default, no pre-trained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.convnext.ConvNext``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ConvNeXt_Small_Weights
+        :members:
     """
     weights = ConvNeXt_Small_Weights.verify(weights)
 
@@ -315,11 +342,21 @@ def convnext_small(
 
 @handle_legacy_interface(weights=("pretrained", ConvNeXt_Base_Weights.IMAGENET1K_V1))
 def convnext_base(*, weights: Optional[ConvNeXt_Base_Weights] = None, progress: bool = True, **kwargs: Any) -> ConvNeXt:
-    r"""ConvNeXt Base model architecture from the
-    `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
+    """ConvNeXt Base model architecture from the
+    `A ConvNet for the 2020s <https://arxiv.org/abs/2201.03545>`_ paper.
+
     Args:
-        weights (ConvNeXt_Base_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.convnext.ConvNeXt_Base_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.convnext.ConvNeXt_Base_Weights`
+            below for more details and possible values. By default, no pre-trained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.convnext.ConvNext``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ConvNeXt_Base_Weights
+        :members:
     """
     weights = ConvNeXt_Base_Weights.verify(weights)
 
@@ -337,11 +374,21 @@ def convnext_base(*, weights: Optional[ConvNeXt_Base_Weights] = None, progress: 
 def convnext_large(
     *, weights: Optional[ConvNeXt_Large_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ConvNeXt:
-    r"""ConvNeXt Large model architecture from the
-    `"A ConvNet for the 2020s" <https://arxiv.org/abs/2201.03545>`_ paper.
+    """ConvNeXt Large model architecture from the
+    `A ConvNet for the 2020s <https://arxiv.org/abs/2201.03545>`_ paper.
+
     Args:
-        weights (ConvNeXt_Large_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.convnext.ConvNeXt_Large_Weights`, optional): The pretrained
+            weights to use. See :class:`~torchvision.models.convnext.ConvNeXt_Large_Weights`
+            below for more details and possible values. By default, no pre-trained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.convnext.ConvNext``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/convnext.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.ConvNeXt_Large_Weights
+        :members:
     """
     weights = ConvNeXt_Large_Weights.verify(weights)
 

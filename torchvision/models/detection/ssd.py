@@ -7,7 +7,7 @@ import torch.nn.functional as F
 from torch import nn, Tensor
 
 from ...ops import boxes as box_ops
-from ...transforms._presets import ObjectDetection, InterpolationMode
+from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
 from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
@@ -30,15 +30,16 @@ class SSD300_VGG16_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/ssd300_vgg16_coco-b556d3b4.pth",
         transforms=ObjectDetection,
         meta={
-            "task": "image_object_detection",
-            "architecture": "SSD",
-            "publication_year": 2015,
             "num_params": 35641826,
-            "size": (300, 300),
             "categories": _COCO_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
-            "map": 25.1,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 25.1,
+                }
+            },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -580,9 +581,8 @@ def ssd300_vgg16(
     trainable_backbone_layers: Optional[int] = None,
     **kwargs: Any,
 ) -> SSD:
-    """Constructs an SSD model with input size 300x300 and a VGG16 backbone.
-
-    Reference: `"SSD: Single Shot MultiBox Detector" <https://arxiv.org/abs/1512.02325>`_.
+    """The SSD300 model is based on the `SSD: Single Shot MultiBox Detector
+    <https://arxiv.org/abs/1512.02325>`_ paper.
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes but they will be resized
@@ -617,13 +617,26 @@ def ssd300_vgg16(
         >>> predictions = model(x)
 
     Args:
-        weights (SSD300_VGG16_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.detection.SSD300_VGG16_Weights`, optional): The pretrained
+                weights to use. See
+                :class:`~torchvision.models.detection.SSD300_VGG16_Weights`
+                below for more details, and possible values. By default, no
+                pre-trained weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr
+            Default is True.
         num_classes (int, optional): number of output classes of the model (including the background)
-        weights_backbone (VGG16_Weights, optional): The pretrained weights for the backbone
+        weights_backbone (:class:`~torchvision.models.VGG16_Weights`, optional): The pretrained weights for the
+            backbone
         trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
             Valid values are between 0 and 5, with 5 meaning all backbone layers are trainable. If ``None`` is
             passed (the default) this value is set to 4.
+        **kwargs: parameters passed to the ``torchvision.models.detection.SSD``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.SSD300_VGG16_Weights
+        :members:
     """
     weights = SSD300_VGG16_Weights.verify(weights)
     weights_backbone = VGG16_Weights.verify(weights_backbone)
@@ -662,3 +675,25 @@ def ssd300_vgg16(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "ssd300_vgg16_coco": SSD300_VGG16_Weights.COCO_V1.url,
+    }
+)
+
+
+backbone_urls = _ModelURLs(
+    {
+        # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses
+        # the same input standardization method as the paper.
+        # Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
+        # Only the `features` weights have proper values, those on the `classifier` module are filled with nans.
+        "vgg16_features": VGG16_Weights.IMAGENET1K_FEATURES.url,
+    }
+)

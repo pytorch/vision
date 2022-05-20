@@ -219,4 +219,8 @@ class VOC(Dataset):
         dp = Filter(archive_dp, self._filter_anns)
         dp = Mapper(dp, self._parse_detection_ann, input_col=1)
 
-        return sorted({instance["name"] for _, anns in dp for instance in anns["object"]})
+        categories = sorted({instance["name"] for _, anns in dp for instance in anns["object"]})
+        # We add a background category to be used during segmentation
+        categories.insert(0, "__background__")
+
+        return categories

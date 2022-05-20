@@ -6,7 +6,7 @@ import torch
 from torch import nn, Tensor
 
 from ..ops.misc import Conv2dNormActivation, SqueezeExcitation as SElayer
-from ..transforms._presets import ImageClassification, InterpolationMode
+from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
@@ -304,13 +304,8 @@ def _mobilenet_v3(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "MobileNetV3",
-    "publication_year": 2019,
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
 }
 
 
@@ -322,8 +317,13 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
-            "acc@1": 74.042,
-            "acc@5": 91.340,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.042,
+                    "acc@5": 91.340,
+                }
+            },
+            "_docs": """These weights were trained from scratch by using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -333,8 +333,17 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
-            "acc@1": 75.274,
-            "acc@5": 92.566,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.274,
+                    "acc@5": 92.566,
+                }
+            },
+            "_docs": """
+                These weights improve marginally upon the results of the original paper by using a modified version of
+                TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -348,8 +357,15 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2542856,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
-            "acc@1": 67.668,
-            "acc@5": 87.402,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 67.668,
+                    "acc@5": 87.402,
+                }
+            },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a simple training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -361,11 +377,23 @@ def mobilenet_v3_large(
 ) -> MobileNetV3:
     """
     Constructs a large MobileNetV3 architecture from
-    `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
+    `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__.
 
     Args:
-        weights (MobileNet_V3_Large_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MobileNet_V3_Large_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.MobileNetV3``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv3.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MobileNet_V3_Large_Weights
+        :members:
     """
     weights = MobileNet_V3_Large_Weights.verify(weights)
 
@@ -379,13 +407,37 @@ def mobilenet_v3_small(
 ) -> MobileNetV3:
     """
     Constructs a small MobileNetV3 architecture from
-    `"Searching for MobileNetV3" <https://arxiv.org/abs/1905.02244>`_.
+    `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__.
 
     Args:
-        weights (MobileNet_V3_Small_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
+        weights (:class:`~torchvision.models.MobileNet_V3_Small_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.MobileNet_V3_Small_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.resnet.MobileNetV3``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/mobilenetv3.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.MobileNet_V3_Small_Weights
+        :members:
     """
     weights = MobileNet_V3_Small_Weights.verify(weights)
 
     inverted_residual_setting, last_channel = _mobilenet_v3_conf("mobilenet_v3_small", **kwargs)
     return _mobilenet_v3(inverted_residual_setting, last_channel, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "mobilenet_v3_large": MobileNet_V3_Large_Weights.IMAGENET1K_V1.url,
+        "mobilenet_v3_small": MobileNet_V3_Small_Weights.IMAGENET1K_V1.url,
+    }
+)

@@ -6,11 +6,16 @@ import torch.nn as nn
 from torch import Tensor
 from torchvision.models import shufflenetv2
 
-from ...transforms._presets import ImageClassification, InterpolationMode
+from ...transforms._presets import ImageClassification
 from .._api import WeightsEnum, Weights
 from .._meta import _IMAGENET_CATEGORIES
 from .._utils import handle_legacy_interface, _ovewrite_named_param
-from ..shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights
+from ..shufflenetv2 import (
+    ShuffleNet_V2_X0_5_Weights,
+    ShuffleNet_V2_X1_0_Weights,
+    ShuffleNet_V2_X1_5_Weights,
+    ShuffleNet_V2_X2_0_Weights,
+)
 from .utils import _fuse_modules, _replace_relu, quantize_model
 
 
@@ -18,8 +23,12 @@ __all__ = [
     "QuantizableShuffleNetV2",
     "ShuffleNet_V2_X0_5_QuantizedWeights",
     "ShuffleNet_V2_X1_0_QuantizedWeights",
+    "ShuffleNet_V2_X1_5_QuantizedWeights",
+    "ShuffleNet_V2_X2_0_QuantizedWeights",
     "shufflenet_v2_x0_5",
     "shufflenet_v2_x1_0",
+    "shufflenet_v2_x1_5",
+    "shufflenet_v2_x2_0",
 ]
 
 
@@ -57,8 +66,11 @@ class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
         r"""Fuse conv/bn/relu modules in shufflenetv2 model
 
         Fuse conv+bn+relu/ conv+relu/conv+bn modules to prepare for quantization.
-        Model is modified in place.  Note that this operation does not change numerics
-        and the model after modification is in floating point
+        Model is modified in place.
+
+        .. note::
+            Note that this operation does not change numerics
+            and the model after modification is in floating point
         """
         for name, m in self._modules.items():
             if name in ["conv1", "conv5"] and m is not None:
@@ -102,16 +114,14 @@ def _shufflenetv2(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "ShuffleNetV2",
-    "publication_year": 2018,
-    "size": (224, 224),
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "interpolation": InterpolationMode.BILINEAR,
     "backend": "fbgemm",
-    "quantization": "Post Training Quantization",
     "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
+    "_docs": """
+        These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+        weights listed below.
+    """,
 }
 
 
@@ -123,8 +133,12 @@ class ShuffleNet_V2_X0_5_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 1366792,
             "unquantized": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1,
-            "acc@1": 57.972,
-            "acc@5": 79.780,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 57.972,
+                    "acc@5": 79.780,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -138,8 +152,52 @@ class ShuffleNet_V2_X1_0_QuantizedWeights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2278604,
             "unquantized": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1,
-            "acc@1": 68.360,
-            "acc@5": 87.582,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 68.360,
+                    "acc@5": 87.582,
+                }
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V1
+
+
+class ShuffleNet_V2_X1_5_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/shufflenetv2_x1_5_fbgemm-d7401f05.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
+            "num_params": 3503624,
+            "unquantized": ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.052,
+                    "acc@5": 90.700,
+                }
+            },
+        },
+    )
+    DEFAULT = IMAGENET1K_FBGEMM_V1
+
+
+class ShuffleNet_V2_X2_0_QuantizedWeights(WeightsEnum):
+    IMAGENET1K_FBGEMM_V1 = Weights(
+        url="https://download.pytorch.org/models/quantized/shufflenetv2_x2_0_fbgemm-5cac526c.pth",
+        transforms=partial(ImageClassification, crop_size=224, resize_size=232),
+        meta={
+            **_COMMON_META,
+            "recipe": "https://github.com/pytorch/vision/pull/5906",
+            "num_params": 7393996,
+            "unquantized": ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.354,
+                    "acc@5": 92.488,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -162,14 +220,35 @@ def shufflenet_v2_x0_5(
 ) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 0.5x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (ShuffleNet_V2_X0_5_QuantizedWeights or ShuffleNet_V2_X0_5_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights` or :class:`~torchvision.models.ShuffleNet_V2_X0_5_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ShuffleNet_V2_X0_5_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X0_5_Weights
+        :members:
+        :noindex:
     """
     weights = (ShuffleNet_V2_X0_5_QuantizedWeights if quantize else ShuffleNet_V2_X0_5_Weights).verify(weights)
     return _shufflenetv2(
@@ -194,16 +273,140 @@ def shufflenet_v2_x1_0(
 ) -> QuantizableShuffleNetV2:
     """
     Constructs a ShuffleNetV2 with 1.0x output channels, as described in
-    `"ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design"
-    <https://arxiv.org/abs/1807.11164>`_.
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
 
     Args:
-        weights (ShuffleNet_V2_X1_0_QuantizedWeights or ShuffleNet_V2_X1_0_Weights, optional): The pretrained
-            weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        quantize (bool): If True, return a quantized version of the model
+        weights (:class:`~torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights` or :class:`~torchvision.models.ShuffleNet_V2_X1_0_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ShuffleNet_V2_X1_0_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X1_0_Weights
+        :members:
+        :noindex:
     """
     weights = (ShuffleNet_V2_X1_0_QuantizedWeights if quantize else ShuffleNet_V2_X1_0_Weights).verify(weights)
     return _shufflenetv2(
         [4, 8, 4], [24, 116, 232, 464, 1024], weights=weights, progress=progress, quantize=quantize, **kwargs
     )
+
+
+def shufflenet_v2_x1_5(
+    *,
+    weights: Optional[Union[ShuffleNet_V2_X1_5_QuantizedWeights, ShuffleNet_V2_X1_5_Weights]] = None,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any,
+) -> QuantizableShuffleNetV2:
+    """
+    Constructs a ShuffleNetV2 with 1.5x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
+
+    Args:
+        weights (:class:`~torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights` or :class:`~torchvision.models.ShuffleNet_V2_X1_5_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ShuffleNet_V2_X1_5_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X1_5_Weights
+        :members:
+        :noindex:
+    """
+    weights = (ShuffleNet_V2_X1_5_QuantizedWeights if quantize else ShuffleNet_V2_X1_5_Weights).verify(weights)
+    return _shufflenetv2(
+        [4, 8, 4], [24, 176, 352, 704, 1024], weights=weights, progress=progress, quantize=quantize, **kwargs
+    )
+
+
+def shufflenet_v2_x2_0(
+    *,
+    weights: Optional[Union[ShuffleNet_V2_X2_0_QuantizedWeights, ShuffleNet_V2_X2_0_Weights]] = None,
+    progress: bool = True,
+    quantize: bool = False,
+    **kwargs: Any,
+) -> QuantizableShuffleNetV2:
+    """
+    Constructs a ShuffleNetV2 with 2.0x output channels, as described in
+    `ShuffleNet V2: Practical Guidelines for Efficient CNN Architecture Design
+    <https://arxiv.org/abs/1807.11164>`__.
+
+    .. note::
+        Note that ``quantize = True`` returns a quantized model with 8 bit
+        weights. Quantized models only support inference and run on CPUs.
+        GPU inference is not yet supported.
+
+    Args:
+        weights (:class:`~torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights` or :class:`~torchvision.models.ShuffleNet_V2_X2_0_Weights`, optional): The
+            pretrained weights for the model. See
+            :class:`~torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the download to stderr.
+            Default is True.
+        quantize (bool, optional): If True, return a quantized version of the model.
+            Default is False.
+        **kwargs: parameters passed to the ``torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/shufflenetv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.quantization.ShuffleNet_V2_X2_0_QuantizedWeights
+        :members:
+
+    .. autoclass:: torchvision.models.ShuffleNet_V2_X2_0_Weights
+        :members:
+        :noindex:
+    """
+    weights = (ShuffleNet_V2_X2_0_QuantizedWeights if quantize else ShuffleNet_V2_X2_0_Weights).verify(weights)
+    return _shufflenetv2(
+        [4, 8, 4], [24, 244, 488, 976, 2048], weights=weights, progress=progress, quantize=quantize, **kwargs
+    )
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+from ..shufflenetv2 import model_urls  # noqa: F401
+
+
+quant_model_urls = _ModelURLs(
+    {
+        "shufflenetv2_x0.5_fbgemm": ShuffleNet_V2_X0_5_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+        "shufflenetv2_x1.0_fbgemm": ShuffleNet_V2_X1_0_QuantizedWeights.IMAGENET1K_FBGEMM_V1.url,
+    }
+)

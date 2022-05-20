@@ -4,6 +4,7 @@ import sys
 import numpy as np
 import pytest
 import torch
+import torchvision.transforms._pil_constants as _pil_constants
 from common_utils import (
     get_tmp_dir,
     int_dtypes,
@@ -15,7 +16,6 @@ from common_utils import (
     cpu_and_gpu,
     assert_equal,
 )
-from PIL import Image
 from torchvision import transforms as T
 from torchvision.transforms import InterpolationMode
 from torchvision.transforms import functional as F
@@ -59,12 +59,11 @@ def _test_functional_op(f, device, channels=3, fn_kwargs=None, test_exact_match=
         _assert_approx_equal_tensor_to_pil(transformed_tensor, transformed_pil_img, **match_kwargs)
 
 
-def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_match=True, **match_kwargs):
-    # TODO: change the name: it's not a method, it's a class.
+def _test_class_op(transform_cls, device, channels=3, meth_kwargs=None, test_exact_match=True, **match_kwargs):
     meth_kwargs = meth_kwargs or {}
 
     # test for class interface
-    f = method(**meth_kwargs)
+    f = transform_cls(**meth_kwargs)
     scripted_fn = torch.jit.script(f)
 
     tensor, pil_img = _create_data(26, 34, channels, device=device)
@@ -86,7 +85,7 @@ def _test_class_op(method, device, channels=3, meth_kwargs=None, test_exact_matc
     _test_transform_vs_scripted_on_batch(f, scripted_fn, batch_tensors)
 
     with get_tmp_dir() as tmp_dir:
-        scripted_fn.save(os.path.join(tmp_dir, f"t_{method.__name__}.pt"))
+        scripted_fn.save(os.path.join(tmp_dir, f"t_{transform_cls.__name__}.pt"))
 
 
 def _test_op(func, method, device, channels=3, fn_kwargs=None, meth_kwargs=None, test_exact_match=True, **match_kwargs):
@@ -772,13 +771,13 @@ def test_autoaugment__op_apply_shear(interpolation, mode):
             matrix = (1, level, 0, 0, 1, 0)
         elif mode == "Y":
             matrix = (1, 0, 0, level, 1, 0)
-        return pil_img.transform((image_size, image_size), Image.AFFINE, matrix, resample=resample)
+        return pil_img.transform((image_size, image_size), _pil_constants.AFFINE, matrix, resample=resample)
 
     t_img, pil_img = _create_data(image_size, image_size)
 
     resample_pil = {
-        F.InterpolationMode.NEAREST: Image.NEAREST,
-        F.InterpolationMode.BILINEAR: Image.BILINEAR,
+        F.InterpolationMode.NEAREST: _pil_constants.NEAREST,
+        F.InterpolationMode.BILINEAR: _pil_constants.BILINEAR,
     }[interpolation]
 
     level = 0.3

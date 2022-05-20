@@ -7,7 +7,7 @@ import torch
 from torch import nn, Tensor
 
 from ...ops.misc import Conv2dNormActivation
-from ...transforms._presets import ObjectDetection, InterpolationMode
+from ...transforms._presets import ObjectDetection
 from ...utils import _log_api_usage_once
 from .. import mobilenet
 from .._api import WeightsEnum, Weights
@@ -189,15 +189,16 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
         url="https://download.pytorch.org/models/ssdlite320_mobilenet_v3_large_coco-a79551df.pth",
         transforms=ObjectDetection,
         meta={
-            "task": "image_object_detection",
-            "architecture": "SSDLite",
-            "publication_year": 2018,
             "num_params": 3440060,
-            "size": (320, 320),
             "categories": _COCO_CATEGORIES,
-            "interpolation": InterpolationMode.BILINEAR,
+            "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssdlite320-mobilenetv3-large",
-            "map": 21.3,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 21.3,
+                }
+            },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -217,11 +218,9 @@ def ssdlite320_mobilenet_v3_large(
     norm_layer: Optional[Callable[..., nn.Module]] = None,
     **kwargs: Any,
 ) -> SSD:
-    """Constructs an SSDlite model with input size 320x320 and a MobileNetV3 Large backbone, as described at
-    `"Searching for MobileNetV3"
-    <https://arxiv.org/abs/1905.02244>`_ and
-    `"MobileNetV2: Inverted Residuals and Linear Bottlenecks"
-    <https://arxiv.org/abs/1801.04381>`_.
+    """SSDlite model architecture with input size 320x320 and a MobileNetV3 Large backbone, as
+    described at `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`__ and
+    `MobileNetV2: Inverted Residuals and Linear Bottlenecks <https://arxiv.org/abs/1801.04381>`__.
 
     See :func:`~torchvision.models.detection.ssd300_vgg16` for more details.
 
@@ -233,15 +232,31 @@ def ssdlite320_mobilenet_v3_large(
         >>> predictions = model(x)
 
     Args:
-        weights (FasterRCNN_ResNet50_FPN_Weights, optional): The pretrained weights for the model
-        progress (bool): If True, displays a progress bar of the download to stderr
-        num_classes (int, optional): number of output classes of the model (including the background)
-        weights_backbone (ResNet50_Weights, optional): The pretrained weights for the backbone
-        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers starting from final block.
-            Valid values are between 0 and 6, with 6 meaning all backbone layers are trainable. If ``None`` is
-            passed (the default) this value is set to 6.
+        weights (:class:`~torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        num_classes (int, optional): number of output classes of the model
+            (including the background).
+        weights_backbone (:class:`~torchvision.models.MobileNet_V3_Large_Weights`, optional): The pretrained
+            weights for the backbone.
+        trainable_backbone_layers (int, optional): number of trainable (not frozen) layers
+            starting from final block. Valid values are between 0 and 6, with 6 meaning all
+            backbone layers are trainable. If ``None`` is passed (the default) this value is
+            set to 6.
         norm_layer (callable, optional): Module specifying the normalization layer to use.
+        **kwargs: parameters passed to the ``torchvision.models.detection.ssd.SSD``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/detection/ssd.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.detection.SSDLite320_MobileNet_V3_Large_Weights
+        :members:
     """
+
     weights = SSDLite320_MobileNet_V3_Large_Weights.verify(weights)
     weights_backbone = MobileNet_V3_Large_Weights.verify(weights_backbone)
 
@@ -309,3 +324,14 @@ def ssdlite320_mobilenet_v3_large(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "ssdlite320_mobilenet_v3_large_coco": SSDLite320_MobileNet_V3_Large_Weights.COCO_V1.url,
+    }
+)
