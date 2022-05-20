@@ -156,11 +156,11 @@ def _read_from_stream(
         start_offset = int(math.floor(start_offset * (1 / stream.time_base)))
         if end_offset != float("inf"):
             end_offset = int(math.ceil(end_offset * (1 / stream.time_base)))
-    else:
-        warnings.warn(
-            "The pts_unit 'pts' gives wrong results and will be removed in a "
-            + "follow-up version. Please use pts_unit 'sec'."
-        )
+    # else:
+        # warnings.warn(
+        #    "The pts_unit 'pts' gives wrong results and will be removed in a "
+        #    + "follow-up version. Please use pts_unit 'sec'."
+        # )
 
     frames = {}
     should_buffer = True
