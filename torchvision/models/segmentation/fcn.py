@@ -50,6 +50,10 @@ class FCNHead(nn.Sequential):
 _COMMON_META = {
     "categories": _VOC_CATEGORIES,
     "min_size": (1, 1),
+    "_docs": """
+        These weights were trained on a subset of COCO, using only the 20 categories that are present in the Pascal VOC
+        dataset.
+    """,
 }
 
 
@@ -61,9 +65,11 @@ class FCN_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
-            "metrics": {
-                "miou": 60.5,
-                "pixel_acc": 91.4,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 60.5,
+                    "pixel_acc": 91.4,
+                }
             },
         },
     )
@@ -78,9 +84,11 @@ class FCN_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
-            "metrics": {
-                "miou": 63.7,
-                "pixel_acc": 91.9,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 63.7,
+                    "pixel_acc": 91.9,
+                }
             },
         },
     )
