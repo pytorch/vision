@@ -1,10 +1,11 @@
+from __future__ import annotations
+
 import abc
-import hashlib
-import itertools
 import pathlib
-from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn, Set
+from typing import Optional, Tuple, Callable, BinaryIO, Any, Union, NoReturn, Set
 from urllib.parse import urlparse
 
+from torch.hub import tqdm
 from torchdata.datapipes.iter import (
     IterableWrapper,
     FileLister,
@@ -13,27 +14,23 @@ from torchdata.datapipes.iter import (
     ZipArchiveLoader,
     TarArchiveLoader,
     RarArchiveLoader,
+    OnlineReader,
+    HashChecker,
 )
-from torchvision.datasets.utils import (
-    download_url,
-    _detect_file_type,
-    extract_archive,
-    _decompress,
-    download_file_from_google_drive,
-    _get_redirect_url,
-    _get_google_drive_file_id,
-)
+from torchvision.datasets.utils import _detect_file_type, extract_archive, _decompress
 from typing_extensions import Literal
 
 
 class OnlineResource(abc.ABC):
     def __init__(
         self,
+        url: str,
         *,
         file_name: str,
         sha256: Optional[str] = None,
         preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], None]]] = None,
     ) -> None:
+        self.url = url
         self.file_name = file_name
         self.sha256 = sha256
 
@@ -57,7 +54,42 @@ class OnlineResource(abc.ABC):
     def _decompress(file: pathlib.Path) -> None:
         _decompress(str(file), remove_finished=True)
 
-    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
+    @classmethod
+    def from_http(cls, url: str, *, file_name: Optional[str] = None, **kwargs: Any) -> OnlineResource:
+        return cls(url, file_name=file_name or pathlib.Path(urlparse(url).path).name, **kwargs)
+
+    @classmethod
+    def from_gdrive(cls, id: str, **kwargs: Any) -> OnlineResource:
+        return cls(f"https://drive.google.com/uc?export=download&id={id}", **kwargs)
+
+    def download(self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False) -> pathlib.Path:
+        root = pathlib.Path(root).expanduser().resolve()
+        root.mkdir(parents=True, exist_ok=True)
+        file = root / self.file_name
+
+        if not file.exists():
+            dp = IterableWrapper([self.url])
+            dp = OnlineReader(dp)
+            stream = list(dp)[0][1]
+
+            with open(file, "wb") as fh, tqdm() as progress_bar:
+                for chunk in iter(lambda: stream.read(1024 * 1024), b""):  # type: ignore[no-any-return]
+                    # filter out keep-alive new chunks
+                    if not chunk:
+                        continue
+
+                    fh.write(chunk)
+                    progress_bar.update(len(chunk))
+
+        if self.sha256 and not skip_integrity_check:
+            dp = IterableWrapper([str(file)])
+            dp = FileOpener(dp, mode="rb")
+            dp = HashChecker(dp, {str(file): self.sha256}, hash_type="sha256")
+            list(dp)
+
+        return file
+
+    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, BinaryIO]]:
         if path.is_dir():
             return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
@@ -77,7 +109,7 @@ class OnlineResource(abc.ABC):
 
     def _guess_archive_loader(
         self, path: pathlib.Path
-    ) -> Optional[Callable[[IterDataPipe[Tuple[str, IO]]], IterDataPipe[Tuple[str, IO]]]]:
+    ) -> Optional[Callable[[IterDataPipe[Tuple[str, BinaryIO]]], IterDataPipe[Tuple[str, BinaryIO]]]]:
         try:
             _, archive_type, _ = _detect_file_type(path.name)
         except RuntimeError:
@@ -86,7 +118,7 @@ class OnlineResource(abc.ABC):
 
     def load(
         self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False
-    ) -> IterDataPipe[Tuple[str, IO]]:
+    ) -> IterDataPipe[Tuple[str, BinaryIO]]:
         root = pathlib.Path(root)
         path = root / self.file_name
 
@@ -122,108 +154,22 @@ class OnlineResource(abc.ABC):
         # priority that we want for the best I/O performance.
         return self._loader(min(candidates, key=lambda candidate: len(candidate.suffixes)))
 
-    @abc.abstractmethod
-    def _download(self, root: pathlib.Path) -> None:
-        pass
-
-    def download(self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False) -> pathlib.Path:
-        root = pathlib.Path(root)
-        self._download(root)
-        path = root / self.file_name
-        if self.sha256 and not skip_integrity_check:
-            self._check_sha256(path)
-        return path
-
-    def _check_sha256(self, path: pathlib.Path, *, chunk_size: int = 1024 * 1024) -> None:
-        hash = hashlib.sha256()
-        with open(path, "rb") as file:
-            for chunk in iter(lambda: file.read(chunk_size), b""):
-                hash.update(chunk)
-        sha256 = hash.hexdigest()
-        if sha256 != self.sha256:
-            raise RuntimeError(
-                f"After the download, the SHA256 checksum of {path} didn't match the expected one: "
-                f"{sha256} != {self.sha256}"
-            )
-
-
-class HttpResource(OnlineResource):
-    def __init__(
-        self, url: str, *, file_name: Optional[str] = None, mirrors: Sequence[str] = (), **kwargs: Any
-    ) -> None:
-        super().__init__(file_name=file_name or pathlib.Path(urlparse(url).path).name, **kwargs)
-        self.url = url
-        self.mirrors = mirrors
-        self._resolved = False
-
-    def resolve(self) -> OnlineResource:
-        if self._resolved:
-            return self
-
-        redirect_url = _get_redirect_url(self.url)
-        if redirect_url == self.url:
-            self._resolved = True
-            return self
-
-        meta = {
-            attr.lstrip("_"): getattr(self, attr)
-            for attr in (
-                "file_name",
-                "sha256",
-                "_preprocess",
-            )
-        }
-
-        gdrive_id = _get_google_drive_file_id(redirect_url)
-        if gdrive_id:
-            return GDriveResource(gdrive_id, **meta)
-
-        http_resource = HttpResource(redirect_url, **meta)
-        http_resource._resolved = True
-        return http_resource
-
-    def _download(self, root: pathlib.Path) -> None:
-        if not self._resolved:
-            return self.resolve()._download(root)
-
-        for url in itertools.chain((self.url,), self.mirrors):
-
-            try:
-                download_url(url, str(root), filename=self.file_name, md5=None)
-            # TODO: make this more precise
-            except Exception:
-                continue
-
-            return
-        else:
-            # TODO: make this more informative
-            raise RuntimeError("Download failed!")
-
-
-class GDriveResource(OnlineResource):
-    def __init__(self, id: str, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.id = id
-
-    def _download(self, root: pathlib.Path) -> None:
-        download_file_from_google_drive(self.id, root=str(root), filename=self.file_name, md5=None)
-
 
 class ManualDownloadResource(OnlineResource):
-    def __init__(self, instructions: str, **kwargs: Any) -> None:
-        super().__init__(**kwargs)
-        self.instructions = instructions
+    def __init__(self, url: str, *, instructions: str, **kwargs: Any) -> None:
+        super().__init__(url, **kwargs)
+        self._instructions = instructions
 
-    def _download(self, root: pathlib.Path) -> NoReturn:
+    def download(self, root: Union[str, pathlib.Path], **_: Any) -> NoReturn:
+        root = pathlib.Path(root)
         raise RuntimeError(
             f"The file {self.file_name} cannot be downloaded automatically. "
             f"Please follow the instructions below and place it in {root}\n\n"
-            f"{self.instructions}"
+            f"{self._instructions}"
         )
 
-
-class KaggleDownloadResource(ManualDownloadResource):
-    def __init__(self, challenge_url: str, *, file_name: str, **kwargs: Any) -> None:
+    @classmethod
+    def from_kaggle(cls, challenge_url: str, *, file_name: str, **kwargs: Any) -> ManualDownloadResource:
         instructions = "\n".join(
             (
                 "1. Register and login at https://www.kaggle.com",
@@ -233,4 +179,4 @@ class KaggleDownloadResource(ManualDownloadResource):
                 f"5. Select {file_name} in the 'Data Explorer' and click the download button",
             )
         )
-        super().__init__(instructions, file_name=file_name, **kwargs)
+        return cls(challenge_url, instructions=instructions, file_name=file_name, **kwargs)

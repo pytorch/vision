@@ -10,7 +10,7 @@ from torchdata.datapipes.iter import (
     Filter,
     Mapper,
 )
-from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
+from torchvision.prototype.datasets.utils import Dataset, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
     path_comparator,
@@ -58,7 +58,7 @@ class _CifarBase(Dataset):
 
     def _resources(self) -> List[OnlineResource]:
         return [
-            HttpResource(
+            OnlineResource.from_http(
                 f"https://www.cs.toronto.edu/~kriz/{self._FILE_NAME}",
                 sha256=self._SHA256,
             )

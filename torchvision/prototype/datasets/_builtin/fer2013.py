@@ -3,11 +3,7 @@ from typing import Any, Dict, List, Union
 
 import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, CSVDictParser
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    OnlineResource,
-    KaggleDownloadResource,
-)
+from torchvision.prototype.datasets.utils import Dataset, ManualDownloadResource
 from torchvision.prototype.datasets.utils._internal import (
     hint_sharding,
     hint_shuffling,
@@ -43,8 +39,8 @@ class FER2013(Dataset):
         "test": "dec8dfe8021e30cd6704b85ec813042b4a5d99d81cb55e023291a94104f575c3",
     }
 
-    def _resources(self) -> List[OnlineResource]:
-        archive = KaggleDownloadResource(
+    def _resources(self) -> List[ManualDownloadResource]:
+        archive = ManualDownloadResource.from_kaggle(
             "https://www.kaggle.com/c/challenges-in-representation-learning-facial-expression-recognition-challenge",
             file_name=f"{self._split}.csv.zip",
             sha256=self._CHECKSUMS[self._split],
