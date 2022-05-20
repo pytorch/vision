@@ -99,7 +99,6 @@ class VideoClassification(nn.Module):
             vid = vid.unsqueeze(dim=0)
             need_squeeze = True
 
-        vid = vid.permute(0, 1, 4, 2, 3)  # (N, T, H, W, C) => (N, T, C, H, W)
         N, T, C, H, W = vid.shape
         vid = vid.view(-1, C, H, W)
         vid = F.resize(vid, self.resize_size, interpolation=self.interpolation)
