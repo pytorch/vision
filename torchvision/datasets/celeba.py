@@ -35,15 +35,16 @@ class CelebA(VisionDataset):
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): If true, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
+        download (bool, optional): Unsupported.
 
             .. warning::
 
                 Downloading CelebA is not supported anymore as of 0.13. See
                 `this issue <https://github.com/pytorch/vision/issues/5705>`__
                 for more details.
+                Please download the files from
+                https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract
+                them in ``root/celeba``.
     """
 
     base_folder = "celeba"
@@ -154,13 +155,11 @@ class CelebA(VisionDataset):
 
         raise ValueError(
             "Downloading CelebA is not supported anymore as of 0.13. See "
-            "https://github.com/pytorch/vision/issues/5705 for more details."
+            "https://github.com/pytorch/vision/issues/5705 for more details. "
+            "Please download the files from "
+            "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
+            "in ``root/celeba``."
         )
-        # TODO maybe uncomment lines below to put back download if it ever gets fixed.
-        # for (file_id, md5, filename) in self.file_list:
-        #     download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
-
-        # extract_archive(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))
