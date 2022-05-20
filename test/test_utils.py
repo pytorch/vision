@@ -45,8 +45,8 @@ def test_normalize_in_make_grid():
 
     # Rounding the result to one decimal for comparison
     n_digits = 1
-    rounded_grid_max = torch.round(grid_max * 10**n_digits) / (10**n_digits)
-    rounded_grid_min = torch.round(grid_min * 10**n_digits) / (10**n_digits)
+    rounded_grid_max = torch.round(grid_max * 10 ** n_digits) / (10 ** n_digits)
+    rounded_grid_min = torch.round(grid_min * 10 ** n_digits) / (10 ** n_digits)
 
     assert_equal(norm_max, rounded_grid_max, msg="Normalized max is not equal to 1")
     assert_equal(norm_min, rounded_grid_min, msg="Normalized min is not equal to 0")

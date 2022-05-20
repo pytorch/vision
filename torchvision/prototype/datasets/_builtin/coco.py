@@ -151,7 +151,7 @@ class Coco(Dataset):
     )
 
     _META_FILE_PATTERN = re.compile(
-        rf"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
+        fr"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
     )
 
     def _filter_meta_files(self, data: Tuple[str, Any]) -> bool:
