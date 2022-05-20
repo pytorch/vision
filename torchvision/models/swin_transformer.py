@@ -5,14 +5,13 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
+from ..ops.misc import MLP, Permute
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
-from .convnext import Permute
-from .vision_transformer import MLPBlock
 
 
 __all__ = [
@@ -263,7 +262,13 @@ class SwinTransformerBlock(nn.Module):
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
-        self.mlp = MLPBlock(dim, int(dim * mlp_ratio), dropout)
+        self.mlp = MLP(dim, [int(dim * mlp_ratio), dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
+
+        for m in self.mlp.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.normal_(m.bias, std=1e-6)
 
     def forward(self, x: Tensor):
         x = x + self.stochastic_depth(self.attn(self.norm1(x)))
@@ -412,7 +417,7 @@ _COMMON_META = {
 
 class Swin_T_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_t-4c37bd06.pth",
+        url="https://download.pytorch.org/models/swin_t-704ceda3.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=232, interpolation=InterpolationMode.BICUBIC
         ),
@@ -435,7 +440,7 @@ class Swin_T_Weights(WeightsEnum):
 
 class Swin_S_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_s-30134662.pth",
+        url="https://download.pytorch.org/models/swin_s-5e29d889.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=246, interpolation=InterpolationMode.BICUBIC
         ),
@@ -458,7 +463,7 @@ class Swin_S_Weights(WeightsEnum):
 
 class Swin_B_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_b-1f1feb5c.pth",
+        url="https://download.pytorch.org/models/swin_b-68c6b09e.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
         ),
