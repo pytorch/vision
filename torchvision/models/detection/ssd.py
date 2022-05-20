@@ -34,9 +34,12 @@ class SSD300_VGG16_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
-            "metrics": {
-                "box_map": 25.1,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 25.1,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -672,3 +675,25 @@ def ssd300_vgg16(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "ssd300_vgg16_coco": SSD300_VGG16_Weights.COCO_V1.url,
+    }
+)
+
+
+backbone_urls = _ModelURLs(
+    {
+        # We port the features of a VGG16 backbone trained by amdegroot because unlike the one on TorchVision, it uses
+        # the same input standardization method as the paper.
+        # Ref: https://s3.amazonaws.com/amdegroot-models/vgg16_reducedfc.pth
+        # Only the `features` weights have proper values, those on the `classifier` module are filled with nans.
+        "vgg16_features": VGG16_Weights.IMAGENET1K_FEATURES.url,
+    }
+)

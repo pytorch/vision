@@ -43,8 +43,9 @@ from pathlib import Path
 
 dog1_int = read_image(str(Path('assets') / 'dog1.jpg'))
 dog2_int = read_image(str(Path('assets') / 'dog2.jpg'))
+dog_list = [dog1_int, dog2_int]
 
-grid = make_grid([dog1_int, dog2_int, dog1_int, dog2_int])
+grid = make_grid(dog_list)
 show(grid)
 
 ####################################
@@ -65,28 +66,23 @@ show(result)
 
 #####################################
 # Naturally, we can also plot bounding boxes produced by torchvision detection
-# models.  Here is demo with a Faster R-CNN model loaded from
+# models.  Here is a demo with a Faster R-CNN model loaded from
 # :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn`
-# model. You can also try using a RetinaNet with
-# :func:`~torchvision.models.detection.retinanet_resnet50_fpn`, an SSDlite with
-# :func:`~torchvision.models.detection.ssdlite320_mobilenet_v3_large` or an SSD with
-# :func:`~torchvision.models.detection.ssd300_vgg16`. For more details
-# on the output of such models, you may refer to :ref:`instance_seg_output`.
+# model. For more details on the output of such models, you may
+# refer to :ref:`instance_seg_output`.
 
 from torchvision.models.detection import fasterrcnn_resnet50_fpn, FasterRCNN_ResNet50_FPN_Weights
 
 
-batch_int = torch.stack([dog1_int, dog2_int])
-
 weights = FasterRCNN_ResNet50_FPN_Weights.DEFAULT
 transforms = weights.transforms()
 
-batch = transforms(batch_int)
+images = [transforms(d) for d in dog_list]
 
 model = fasterrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
-outputs = model(batch)
+outputs = model(images)
 print(outputs)
 
 #####################################
@@ -96,7 +92,7 @@ print(outputs)
 score_threshold = .8
 dogs_with_boxes = [
     draw_bounding_boxes(dog_int, boxes=output['boxes'][output['scores'] > score_threshold], width=4)
-    for dog_int, output in zip(batch_int, outputs)
+    for dog_int, output in zip(dog_list, outputs)
 ]
 show(dogs_with_boxes)
 
@@ -114,14 +110,8 @@ show(dogs_with_boxes)
 # ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 #
 # We will see how to use it with torchvision's FCN Resnet-50, loaded with
-# :func:`~torchvision.models.segmentation.fcn_resnet50`.  You can also try using
-# DeepLabv3 (:func:`~torchvision.models.segmentation.deeplabv3_resnet50`) or
-# lraspp mobilenet models
-# (:func:`~torchvision.models.segmentation.lraspp_mobilenet_v3_large`).
-#
-# Let's start by looking at the output of the model. Remember that in general,
-# images must be normalized before they're passed to a semantic segmentation
-# model.
+# :func:`~torchvision.models.segmentation.fcn_resnet50`. Let's start by looking
+# at the output of the model.
 
 from torchvision.models.segmentation import fcn_resnet50, FCN_ResNet50_Weights
 
@@ -131,8 +121,8 @@ transforms = weights.transforms(resize_size=None)
 model = fcn_resnet50(weights=weights, progress=False)
 model = model.eval()
 
-normalized_batch = transforms(batch)
-output = model(normalized_batch)['out']
+batch = torch.stack([transforms(d) for d in dog_list])
+output = model(batch)['out']
 print(output.shape, output.min().item(), output.max().item())
 
 #####################################
@@ -145,18 +135,13 @@ print(output.shape, output.min().item(), output.max().item())
 # Let's plot the masks that have been detected for the dog class and for the
 # boat class:
 
-sem_classes = [
-    '__background__', 'aeroplane', 'bicycle', 'bird', 'boat', 'bottle', 'bus',
-    'car', 'cat', 'chair', 'cow', 'diningtable', 'dog', 'horse', 'motorbike',
-    'person', 'pottedplant', 'sheep', 'sofa', 'train', 'tvmonitor'
-]
-sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(sem_classes)}
+sem_class_to_idx = {cls: idx for (idx, cls) in enumerate(weights.meta["categories"])}
 
 normalized_masks = torch.nn.functional.softmax(output, dim=1)
 
 dog_and_boat_masks = [
     normalized_masks[img_idx, sem_class_to_idx[cls]]
-    for img_idx in range(batch.shape[0])
+    for img_idx in range(len(dog_list))
     for cls in ('dog', 'boat')
 ]
 
@@ -195,7 +180,7 @@ from torchvision.utils import draw_segmentation_masks
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=0.7)
-    for img, mask in zip(batch_int, boolean_dog_masks)
+    for img, mask in zip(dog_list, boolean_dog_masks)
 ]
 show(dogs_with_masks)
 
@@ -241,7 +226,7 @@ all_classes_masks = all_classes_masks.swapaxes(0, 1)
 
 dogs_with_masks = [
     draw_segmentation_masks(img, masks=mask, alpha=.6)
-    for img, mask in zip(batch_int, all_classes_masks)
+    for img, mask in zip(dog_list, all_classes_masks)
 ]
 show(dogs_with_masks)
 
@@ -272,12 +257,12 @@ from torchvision.models.detection import maskrcnn_resnet50_fpn, MaskRCNN_ResNet5
 weights = MaskRCNN_ResNet50_FPN_Weights.DEFAULT
 transforms = weights.transforms()
 
-batch = transforms(batch_int)
+images = [transforms(d) for d in dog_list]
 
 model = maskrcnn_resnet50_fpn(weights=weights, progress=False)
 model = model.eval()
 
-output = model(batch)
+output = model(images)
 print(output)
 
 #####################################
@@ -304,30 +289,13 @@ print(f"shape = {dog1_masks.shape}, dtype = {dog1_masks.dtype}, "
       f"min = {dog1_masks.min()}, max = {dog1_masks.max()}")
 
 #####################################
-# Here the masks corresponds to probabilities indicating, for each pixel, how
+# Here the masks correspond to probabilities indicating, for each pixel, how
 # likely it is to belong to the predicted label of that instance. Those
 # predicted labels correspond to the 'labels' element in the same output dict.
 # Let's see which labels were predicted for the instances of the first image.
 
-inst_classes = [
-    '__background__', 'person', 'bicycle', 'car', 'motorcycle', 'airplane', 'bus',
-    'train', 'truck', 'boat', 'traffic light', 'fire hydrant', 'N/A', 'stop sign',
-    'parking meter', 'bench', 'bird', 'cat', 'dog', 'horse', 'sheep', 'cow',
-    'elephant', 'bear', 'zebra', 'giraffe', 'N/A', 'backpack', 'umbrella', 'N/A', 'N/A',
-    'handbag', 'tie', 'suitcase', 'frisbee', 'skis', 'snowboard', 'sports ball',
-    'kite', 'baseball bat', 'baseball glove', 'skateboard', 'surfboard', 'tennis racket',
-    'bottle', 'N/A', 'wine glass', 'cup', 'fork', 'knife', 'spoon', 'bowl',
-    'banana', 'apple', 'sandwich', 'orange', 'broccoli', 'carrot', 'hot dog', 'pizza',
-    'donut', 'cake', 'chair', 'couch', 'potted plant', 'bed', 'N/A', 'dining table',
-    'N/A', 'N/A', 'toilet', 'N/A', 'tv', 'laptop', 'mouse', 'remote', 'keyboard', 'cell phone',
-    'microwave', 'oven', 'toaster', 'sink', 'refrigerator', 'N/A', 'book',
-    'clock', 'vase', 'scissors', 'teddy bear', 'hair drier', 'toothbrush'
-]
-
-inst_class_to_idx = {cls: idx for (idx, cls) in enumerate(inst_classes)}
-
 print("For the first dog, the following instances were detected:")
-print([inst_classes[label] for label in dog1_output['labels']])
+print([weights.meta["categories"][label] for label in dog1_output['labels']])
 
 #####################################
 # Interestingly, the model detects two persons in the image. Let's go ahead and
@@ -369,7 +337,7 @@ boolean_masks = [
 
 dogs_with_masks = [
     draw_segmentation_masks(img, mask.squeeze(1))
-    for img, mask in zip(batch_int, boolean_masks)
+    for img, mask in zip(dog_list, boolean_masks)
 ]
 show(dogs_with_masks)
 
@@ -379,14 +347,14 @@ show(dogs_with_masks)
 # instance with class 15 (which corresponds to 'bench') was not selected.
 
 #####################################
+# .. _keypoint_output:
+#
 # Visualizing keypoints
 # ------------------------------
 # The :func:`~torchvision.utils.draw_keypoints` function can be used to
 # draw keypoints on images. We will see how to use it with
 # torchvision's KeypointRCNN loaded with :func:`~torchvision.models.detection.keypointrcnn_resnet50_fpn`.
 # We will first have a look at output of the model.
-#
-# Note that the keypoint detection model does not need normalized images.
 #
 
 from torchvision.models.detection import keypointrcnn_resnet50_fpn, KeypointRCNN_ResNet50_FPN_Weights
