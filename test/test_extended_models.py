@@ -85,7 +85,7 @@ def test_schema_meta_validation(model_fn):
         "categories",
         "keypoint_names",
         "license",
-        "metrics",
+        "_metrics",
         "min_size",
         "num_params",
         "recipe",
@@ -93,19 +93,23 @@ def test_schema_meta_validation(model_fn):
         "_docs",
     }
     # mandatory fields for each computer vision task
-    classification_fields = {"categories", ("metrics", "acc@1"), ("metrics", "acc@5")}
+    classification_fields = {"categories", ("_metrics", "ImageNet-1K", "acc@1"), ("_metrics", "ImageNet-1K", "acc@5")}
     defaults = {
-        "all": {"metrics", "min_size", "num_params", "recipe"},
+        "all": {"_metrics", "min_size", "num_params", "recipe", "_docs"},
         "models": classification_fields,
-        "detection": {"categories", ("metrics", "box_map")},
+        "detection": {"categories", ("_metrics", "COCO-val2017", "box_map")},
         "quantization": classification_fields | {"backend", "unquantized"},
-        "segmentation": {"categories", ("metrics", "miou"), ("metrics", "pixel_acc")},
-        "video": classification_fields,
+        "segmentation": {
+            "categories",
+            ("_metrics", "COCO-val2017-VOC-labels", "miou"),
+            ("_metrics", "COCO-val2017-VOC-labels", "pixel_acc"),
+        },
+        "video": {"categories", ("_metrics", "Kinetics-400", "acc@1"), ("_metrics", "Kinetics-400", "acc@5")},
         "optical_flow": set(),
     }
     model_name = model_fn.__name__
     module_name = model_fn.__module__.split(".")[-2]
-    fields = defaults["all"] | defaults[module_name]
+    expected_fields = defaults["all"] | defaults[module_name]
 
     weights_enum = _get_model_weights(model_fn)
     if len(weights_enum) == 0:
@@ -115,7 +119,13 @@ def test_schema_meta_validation(model_fn):
     incorrect_params = []
     bad_names = []
     for w in weights_enum:
-        missing_fields = fields - (set(w.meta.keys()) | set(("metrics", x) for x in w.meta.get("metrics", {}).keys()))
+        actual_fields = set(w.meta.keys())
+        actual_fields |= set(
+            ("_metrics", dataset, metric_key)
+            for dataset in w.meta.get("_metrics", {}).keys()
+            for metric_key in w.meta.get("_metrics", {}).get(dataset, {}).keys()
+        )
+        missing_fields = expected_fields - actual_fields
         unsupported_fields = set(w.meta.keys()) - permitted_fields
         if missing_fields or unsupported_fields:
             problematic_weights[w] = {"missing": missing_fields, "unsupported": unsupported_fields}

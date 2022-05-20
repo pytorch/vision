@@ -107,7 +107,7 @@ def get_weight(name: str) -> WeightsEnum:
     return weights_enum.from_str(value_name)
 
 
-def get_enum_from_fn(fn: Callable) -> WeightsEnum:
+def _get_enum_from_fn(fn: Callable) -> WeightsEnum:
     """
     Internal method that gets the weight enum of a specific model builder method.
     Might be removed after the handle_legacy_interface is removed.

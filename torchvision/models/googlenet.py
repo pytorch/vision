@@ -284,10 +284,13 @@ class GoogLeNet_Weights(WeightsEnum):
             "min_size": (15, 15),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#googlenet",
-            "metrics": {
-                "acc@1": 69.778,
-                "acc@5": 89.530,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.778,
+                    "acc@5": 89.530,
+                }
             },
+            "_docs": """These weights are ported from the original paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -297,8 +300,6 @@ class GoogLeNet_Weights(WeightsEnum):
 def googlenet(*, weights: Optional[GoogLeNet_Weights] = None, progress: bool = True, **kwargs: Any) -> GoogLeNet:
     """GoogLeNet (Inception v1) model architecture from
     `Going Deeper with Convolutions <http://arxiv.org/abs/1409.4842>`_.
-
-    The required minimum input size of the model is 15x15.
 
     Args:
         weights (:class:`~torchvision.models.GoogLeNet_Weights`, optional): The

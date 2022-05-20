@@ -61,10 +61,15 @@ class AlexNet_Weights(WeightsEnum):
             "min_size": (63, 63),
             "categories": _IMAGENET_CATEGORIES,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#alexnet-and-vgg",
-            "metrics": {
-                "acc@1": 56.522,
-                "acc@5": 79.066,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 56.522,
+                    "acc@5": 79.066,
+                }
             },
+            "_docs": """
+                These weights reproduce closely the results of the paper using a simplified training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -73,8 +78,6 @@ class AlexNet_Weights(WeightsEnum):
 @handle_legacy_interface(weights=("pretrained", AlexNet_Weights.IMAGENET1K_V1))
 def alexnet(*, weights: Optional[AlexNet_Weights] = None, progress: bool = True, **kwargs: Any) -> AlexNet:
     """AlexNet model architecture from `One weird trick for parallelizing convolutional neural networks <https://arxiv.org/abs/1404.5997>`__.
-
-    The required minimum input size of the model is 63x63.
 
     .. note::
         AlexNet was originally introduced in the `ImageNet Classification with
