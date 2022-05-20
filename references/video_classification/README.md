@@ -18,7 +18,7 @@ We assume the training and validation AVI videos are stored at `/data/kinectics4
 
 Run the training on a single node with 8 GPUs:
 ```bash
-torchrun --nproc_per_node=8 train.py --data-path=/data/kinectics400 --train-dir=train --val-dir=val --batch-size=16 --cache-dataset --sync-bn --amp
+torchrun --nproc_per_node=8 train.py --data-path=/data/kinectics400 --kinetics-version="400" --batch-size=16 --cache-dataset --sync-bn --amp
 ```
 
 **Note:** all our models were trained on 8 nodes with 8 V100 GPUs each for a total of 64 GPUs. Expected training time for 64 GPUs is 24 hours, depending on the storage solution.
@@ -30,5 +30,13 @@ torchrun --nproc_per_node=8 train.py --data-path=/data/kinectics400 --train-dir=
 
 
 ```bash
-python train.py --data-path=/data/kinectics400 --train-dir=train --val-dir=val --batch-size=8 --cache-dataset
+python train.py --data-path=/data/kinectics400 --kinetics-version="400" --batch-size=8 --cache-dataset
 ```
+
+
+### Additional Kinetics versions
+
+Since the original release, additional versions of Kinetics dataset became available (Kinetics 600).
+Our training scripts support these versions of dataset as well by setting the `--kinetics-version` parameter to `"600"`.
+
+**Note:** training on Kinetics 600 requires a different set of hyperparameters for optimal performance. We do not provide Kinetics 600 pretrained models.
