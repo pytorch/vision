@@ -1,8 +1,8 @@
 import csv
 import os
+import warnings
 from collections import namedtuple
 from typing import Any, Callable, List, Optional, Union, Tuple
-import warnings
 
 import PIL
 import torch
