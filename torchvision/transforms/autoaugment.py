@@ -1,6 +1,6 @@
 import math
 from enum import Enum
-from typing import Dict, List, Optional, Tuple
+from typing import List, Tuple, Optional, Dict
 
 import torch
 from torch import Tensor

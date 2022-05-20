@@ -1,7 +1,7 @@
 import warnings
 from collections import namedtuple
 from functools import partial
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Optional, Tuple, List, Callable, Any
 
 import torch
 import torch.nn as nn
@@ -10,9 +10,9 @@ from torch import Tensor
 
 from ..transforms._presets import ImageClassification
 from ..utils import _log_api_usage_once
-from ._api import Weights, WeightsEnum
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _ovewrite_named_param, handle_legacy_interface
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNet_Weights", "googlenet"]

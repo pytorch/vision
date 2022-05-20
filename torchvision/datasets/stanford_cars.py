@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, Optional, Tuple
+from typing import Callable, Optional, Any, Tuple
 
 from PIL import Image
 

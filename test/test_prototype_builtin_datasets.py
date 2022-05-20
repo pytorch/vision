@@ -5,14 +5,14 @@ from pathlib import Path
 
 import pytest
 import torch
-from builtin_dataset_mocks import DATASET_MOCKS, parametrize_dataset_mocks
-from torch.testing._comparison import assert_equal, ObjectPair, TensorLikePair
+from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
+from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
-from torchdata.datapipes.iter import ShardingFilter, Shuffler
+from torchdata.datapipes.iter import Shuffler, ShardingFilter
 from torchvision._utils import sequence_to_str
-from torchvision.prototype import datasets, transforms
+from torchvision.prototype import transforms, datasets
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 from torchvision.prototype.features import Image, Label
 

@@ -2,18 +2,22 @@ import abc
 import io
 import pathlib
 import pickle
-from typing import Any, BinaryIO, cast, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, Iterator, cast, BinaryIO, Union
 
 import numpy as np
-from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Filter,
+    Mapper,
+)
 from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    hint_sharding,
     hint_shuffling,
     path_comparator,
+    hint_sharding,
     read_categories_file,
 )
-from torchvision.prototype.features import Image, Label
+from torchvision.prototype.features import Label, Image
 
 from .._api import register_dataset, register_info
 

@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import Dict, List, Optional, Tuple
 
 import torch
-from torch import nn, Tensor
+from torch import Tensor, nn
 from torch.nn import functional as F
 from torchvision.ops import FrozenBatchNorm2d, generalized_box_iou_loss
 

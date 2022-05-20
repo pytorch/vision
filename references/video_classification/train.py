@@ -11,11 +11,7 @@ import torchvision.datasets.video_utils
 import utils
 from torch import nn
 from torch.utils.data.dataloader import default_collate
-from torchvision.datasets.samplers import (
-    DistributedSampler,
-    RandomClipSampler,
-    UniformClipSampler,
-)
+from torchvision.datasets.samplers import DistributedSampler, UniformClipSampler, RandomClipSampler
 
 
 def train_one_epoch(model, criterion, optimizer, lr_scheduler, data_loader, device, epoch, print_freq, scaler=None):

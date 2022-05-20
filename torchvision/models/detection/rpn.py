@@ -1,9 +1,10 @@
-from typing import Dict, List, Optional, Tuple
+from typing import List, Optional, Dict, Tuple
 
 import torch
 from torch import nn, Tensor
 from torch.nn import functional as F
-from torchvision.ops import boxes as box_ops, Conv2dNormActivation
+from torchvision.ops import Conv2dNormActivation
+from torchvision.ops import boxes as box_ops
 
 from . import _utils as det_utils
 

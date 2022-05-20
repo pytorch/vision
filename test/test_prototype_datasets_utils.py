@@ -5,8 +5,8 @@ import pytest
 import torch
 from datasets_utils import make_fake_flo_file
 from torchvision.datasets._optical_flow import _read_flo as read_flo_ref
-from torchvision.prototype.datasets.utils import Dataset, GDriveResource, HttpResource
-from torchvision.prototype.datasets.utils._internal import fromfile, read_flo
+from torchvision.prototype.datasets.utils import HttpResource, GDriveResource, Dataset
+from torchvision.prototype.datasets.utils._internal import read_flo, fromfile
 
 
 @pytest.mark.filterwarnings("error:The given NumPy array is not writeable:UserWarning")

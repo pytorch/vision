@@ -1,18 +1,23 @@
 import pathlib
 import re
-from typing import Any, BinaryIO, Dict, List, Tuple, Union
+from typing import Any, Dict, List, Tuple, BinaryIO, Union
 
 import numpy as np
-from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    Filter,
+    IterKeyZipper,
+)
 from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
+    INFINITE_BUFFER_SIZE,
+    read_mat,
     hint_sharding,
     hint_shuffling,
-    INFINITE_BUFFER_SIZE,
     read_categories_file,
-    read_mat,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
+from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
 from .._api import register_dataset, register_info
 

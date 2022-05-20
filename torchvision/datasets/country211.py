@@ -2,7 +2,7 @@ from pathlib import Path
 from typing import Callable, Optional
 
 from .folder import ImageFolder
-from .utils import download_and_extract_archive, verify_str_arg
+from .utils import verify_str_arg, download_and_extract_archive
 
 
 class Country211(ImageFolder):

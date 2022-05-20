@@ -1,5 +1,5 @@
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Type, TypeVar, Union
+from typing import Any, Dict, List, Callable, Type, Optional, Union, TypeVar
 
 from torchvision.prototype.datasets import home
 from torchvision.prototype.datasets.utils import Dataset

@@ -1,30 +1,30 @@
 import csv
 import functools
 import pathlib
-from typing import Any, BinaryIO, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Callable, Union
 
 from torchdata.datapipes.iter import (
-    CSVDictParser,
-    CSVParser,
-    Demultiplexer,
-    Filter,
     IterDataPipe,
-    IterKeyZipper,
-    LineReader,
     Mapper,
+    Filter,
+    IterKeyZipper,
+    Demultiplexer,
+    LineReader,
+    CSVParser,
+    CSVDictParser,
 )
 from torchvision.prototype.datasets.utils import Dataset, GDriveResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
-    getitem,
+    INFINITE_BUFFER_SIZE,
+    read_mat,
     hint_sharding,
     hint_shuffling,
-    INFINITE_BUFFER_SIZE,
-    path_accessor,
+    getitem,
     path_comparator,
     read_categories_file,
-    read_mat,
+    path_accessor,
 )
-from torchvision.prototype.features import _Feature, BoundingBox, EncodedImage, Label
+from torchvision.prototype.features import Label, BoundingBox, _Feature, EncodedImage
 
 from .._api import register_dataset, register_info
 

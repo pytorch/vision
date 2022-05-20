@@ -1,10 +1,7 @@
 import pytest
 import torch
 from common_utils import assert_equal
-from torchvision.models.detection.anchor_utils import (
-    AnchorGenerator,
-    DefaultBoxGenerator,
-)
+from torchvision.models.detection.anchor_utils import AnchorGenerator, DefaultBoxGenerator
 from torchvision.models.detection.image_list import ImageList
 
 

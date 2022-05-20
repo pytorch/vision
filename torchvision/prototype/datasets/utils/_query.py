@@ -1,5 +1,5 @@
 import collections.abc
-from typing import Any, Callable, cast, Iterator, Optional, Tuple, TypeVar
+from typing import Any, Callable, Iterator, Optional, Tuple, TypeVar, cast
 
 from torchvision.prototype.features import BoundingBox, Image
 

@@ -2,14 +2,17 @@ import pathlib
 from typing import Any, Dict, List, Union
 
 import torch
-from torchdata.datapipes.iter import CSVDictParser, IterDataPipe, Mapper
+from torchdata.datapipes.iter import IterDataPipe, Mapper, CSVDictParser
 from torchvision.prototype.datasets.utils import (
     Dataset,
-    KaggleDownloadResource,
     OnlineResource,
+    KaggleDownloadResource,
 )
-from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling
-from torchvision.prototype.features import Image, Label
+from torchvision.prototype.datasets.utils._internal import (
+    hint_sharding,
+    hint_shuffling,
+)
+from torchvision.prototype.features import Label, Image
 
 from .._api import register_dataset, register_info
 

@@ -3,7 +3,7 @@ import numbers
 import random
 import warnings
 from collections.abc import Sequence
-from typing import List, Optional, Tuple
+from typing import Tuple, List, Optional
 
 import torch
 from torch import Tensor
@@ -15,7 +15,7 @@ except ImportError:
 
 from ..utils import _log_api_usage_once
 from . import functional as F
-from .functional import _interpolation_modes_from_int, InterpolationMode
+from .functional import InterpolationMode, _interpolation_modes_from_int
 
 __all__ = [
     "Compose",
