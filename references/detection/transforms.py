@@ -442,28 +442,40 @@ class RandomShortestSize(nn.Module):
 
 
 class SimpleCopyPaste(torch.nn.Module):
-    def __init__(self):
+    def __init__(self, inplace=True):
         super().__init__()
+        self.inplace = inplace
 
     def combine_masks(self, masks):
         return masks.sum(dim=0).greater(0)
 
-    def forward(self, batch: torch.Tensor, target: torch.Tensor) -> Tuple[torch.Tensor, torch.Tensor]:
+    def forward(
+        self, batch: torch.Tensor, target: List[Dict[str, Tensor]]
+    ) -> Tuple[torch.Tensor, List[Dict[str, Tensor]]]:
 
         # validate inputs
         if batch.ndim != 4:
             raise ValueError(f"Batch ndim should be 4. Got {batch.ndim}.")
         if not batch.is_floating_point():
             raise TypeError(f"Batch dtype should be a float tensor. Got {batch.dtype}.")
+        if not isinstance(target, tuple):
+            raise TypeError(f"Target type should be a tuple of dictionaries. Got {type(target)}.")
+        if not len(target) == len(batch):
+            raise ValueError(f"batch and target lengths do not match. Got {len(batch)} and {len(target)}.")
 
-        # create copy of batch and target as the original will be modified
-        batch_rolled = batch.roll(1, 0).detach().clone()
-        target_rolled = copy.deepcopy(target[-1:] + target[:-1])
+        if not self.inplace:
+            batch = batch.clone().detach()
+            target = copy.deepcopy(target)
+
+        shift = 1
+
+        # create shifted copy of target as the original will be modified
+        target_rolled = copy.deepcopy(target[-shift:] + target[:-shift])
 
         # collect binary paste masks for all images
         paste_masks = []
 
-        for source_image, paste_image, source_data, paste_data in zip(batch, batch_rolled, target, target_rolled):
+        for source_data, paste_data in zip(target, target_rolled):
             number_of_masks = len(paste_data["masks"])
             random_selection = torch.randint(0, number_of_masks, (number_of_masks,)).unique()
 
@@ -493,8 +505,14 @@ class SimpleCopyPaste(torch.nn.Module):
         # update the original images with paste images
         paste_masks = torch.stack(paste_masks).to(torch.uint8)
         paste_masks = F.gaussian_blur(paste_masks, kernel_size=(5, 5), sigma=2.0)  # Adds Gaussian Filter
+
+        # Clone batch as it will be modified
+        batch_rolled = batch.roll(shift, 0).clone().detach()
+
+        # Black out areas which will be replaced
         batch.mul_(torch.unsqueeze(torch.logical_not(paste_masks), 1))
 
+        # Copy and paste areas from rolled batch and paste on source batch
         paste_images = batch_rolled * torch.unsqueeze(paste_masks, 1)
         batch.add_(paste_images)
 
