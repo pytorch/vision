@@ -2,6 +2,7 @@ import csv
 import os
 from collections import namedtuple
 from typing import Any, Callable, List, Optional, Union, Tuple
+import warnings
 
 import PIL
 import torch
@@ -72,7 +73,7 @@ class CelebA(VisionDataset):
         target_type: Union[List[str], str] = "attr",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        download: bool = False,
+        download: bool = None,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = split
@@ -84,6 +85,15 @@ class CelebA(VisionDataset):
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError("target_transform is specified but target_type is empty")
 
+        if download is not None:
+            warnings.warn(
+                "Downloading CelebA is not supported anymore as of 0.13, and the "
+                "download parameter will be removed in 0.15. See "
+                "https://github.com/pytorch/vision/issues/5705 for more details. "
+                "Please download the files from "
+                "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
+                "in ``root/celeba``."
+            )
         if download:
             self.download()
 
