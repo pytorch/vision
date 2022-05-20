@@ -5,20 +5,24 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
+from ..ops.misc import MLP
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
-from .convnext import Permute
-from .vision_transformer import MLPBlock
+from .convnext import Permute  # TODO: move Permute on ops
 
 
 __all__ = [
     "SwinTransformer",
     "Swin_T_Weights",
+    "Swin_S_Weights",
+    "Swin_B_Weights",
     "swin_t",
+    "swin_s",
+    "swin_b",
 ]
 
 
@@ -259,7 +263,13 @@ class SwinTransformerBlock(nn.Module):
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
-        self.mlp = MLPBlock(dim, int(dim * mlp_ratio), dropout)
+        self.mlp = MLP(dim, [int(dim * mlp_ratio), dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
+
+        for m in self.mlp.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.normal_(m.bias, std=1e-6)
 
     def forward(self, x: Tensor):
         x = x + self.stochastic_depth(self.attn(self.norm1(x)))
@@ -408,9 +418,9 @@ _COMMON_META = {
 
 class Swin_T_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_t-81486767.pth",
+        url="https://download.pytorch.org/models/swin_t-704ceda3.pth",
         transforms=partial(
-            ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
+            ImageClassification, crop_size=224, resize_size=232, interpolation=InterpolationMode.BICUBIC
         ),
         meta={
             **_COMMON_META,
@@ -419,11 +429,57 @@ class Swin_T_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
             "_metrics": {
                 "ImageNet-1K": {
-                    "acc@1": 81.358,
-                    "acc@5": 95.526,
+                    "acc@1": 81.474,
+                    "acc@5": 95.776,
                 }
             },
-            "_docs": """These weights reproduce closely the results of the paper using its training recipe.""",
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class Swin_S_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_s-5e29d889.pth",
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=246, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META,
+            "num_params": 49606258,
+            "min_size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.196,
+                    "acc@5": 96.360,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
+        },
+    )
+    DEFAULT = IMAGENET1K_V1
+
+
+class Swin_B_Weights(WeightsEnum):
+    IMAGENET1K_V1 = Weights(
+        url="https://download.pytorch.org/models/swin_b-68c6b09e.pth",
+        transforms=partial(
+            ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
+        ),
+        meta={
+            **_COMMON_META,
+            "num_params": 87768224,
+            "min_size": (224, 224),
+            "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.582,
+                    "acc@5": 96.640,
+                }
+            },
+            "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -459,6 +515,78 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, *
         num_heads=[3, 6, 12, 24],
         window_size=7,
         stochastic_depth_prob=0.2,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+    """
+    Constructs a swin_small architecture from
+    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.Swin_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_S_Weights
+        :members:
+    """
+    weights = Swin_S_Weights.verify(weights)
+
+    return _swin_transformer(
+        patch_size=4,
+        embed_dim=96,
+        depths=[2, 2, 18, 2],
+        num_heads=[3, 6, 12, 24],
+        window_size=7,
+        stochastic_depth_prob=0.3,
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, **kwargs: Any) -> SwinTransformer:
+    """
+    Constructs a swin_base architecture from
+    `Swin Transformer: Hierarchical Vision Transformer using Shifted Windows <https://arxiv.org/pdf/2103.14030>`_.
+
+    Args:
+        weights (:class:`~torchvision.models.Swin_B_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.Swin_B_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.swin_transformer.SwinTransformer``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/swin_transformer.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.Swin_B_Weights
+        :members:
+    """
+    weights = Swin_B_Weights.verify(weights)
+
+    return _swin_transformer(
+        patch_size=4,
+        embed_dim=128,
+        depths=[2, 2, 18, 2],
+        num_heads=[4, 8, 16, 32],
+        window_size=7,
+        stochastic_depth_prob=0.5,
         weights=weights,
         progress=progress,
         **kwargs,

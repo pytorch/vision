@@ -87,6 +87,7 @@ TorchVision provides commonly used building blocks as layers:
     DeformConv2d
     DropBlock2d
     DropBlock3d
+    MLP
     FrozenBatchNorm2d
     SqueezeExcitation
     StochasticDepth

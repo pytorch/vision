@@ -19,7 +19,7 @@ from .drop_block import drop_block2d, DropBlock2d, drop_block3d, DropBlock3d
 from .feature_pyramid_network import FeaturePyramidNetwork
 from .focal_loss import sigmoid_focal_loss
 from .giou_loss import generalized_box_iou_loss
-from .misc import FrozenBatchNorm2d, Conv2dNormActivation, Conv3dNormActivation, SqueezeExcitation
+from .misc import FrozenBatchNorm2d, Conv2dNormActivation, Conv3dNormActivation, SqueezeExcitation, MLP
 from .poolers import MultiScaleRoIAlign
 from .ps_roi_align import ps_roi_align, PSRoIAlign
 from .ps_roi_pool import ps_roi_pool, PSRoIPool
@@ -61,6 +61,7 @@ __all__ = [
     "Conv2dNormActivation",
     "Conv3dNormActivation",
     "SqueezeExcitation",
+    "MLP",
     "generalized_box_iou_loss",
     "distance_box_iou_loss",
     "complete_box_iou_loss",
