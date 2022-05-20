@@ -6,7 +6,7 @@ import torch
 from torch import nn, Tensor
 
 
-def _get_clones(module: nn.Module, N: int) -> nn.Module:
+def _get_clones(module: nn.Module, N: int) -> nn.ModuleList:
     return nn.ModuleList([copy.deepcopy(module) for i in range(N)])
 
 
@@ -43,7 +43,7 @@ class TransformerEncoderLayer(nn.Module):
         src: Tensor,
         src_mask: Optional[Tensor] = None,
         src_key_padding_mask: Optional[Tensor] = None,
-        pos_embed: Optional[Tensor] = None,
+        pos_embedding: Optional[Tensor] = None,
     ) -> Tensor:
         x = src
         if self.norm_first:
@@ -269,7 +269,7 @@ class Transformer(nn.Module):
         query_pos_embed = query_pos_embed.unsqueeze(1).repeat(1, bs, 1)
         mask = mask.flatten(1)
 
-        tgt = torch.zeros_like(query_embed)  # TODO: torch.fx
+        tgt = torch.zeros_like(query_pos_embed)  # TODO: torch.fx
         memory = self.encoder(src, src_key_padding_mask=mask, pos=pos_embed)
         hs = self.decoder(tgt, memory, memory_key_padding_mask=mask, pos=pos_embed, query_pos=query_pos_embed)
         return hs.transpose(1, 2), memory.permute(1, 2, 0).view(bs, c, h, w)
