@@ -261,6 +261,7 @@ _COMMON_META = {
     "min_size": (29, 29),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/116",
+    "_docs": """These weights are ported from LuaTorch.""",
 }
 
 
@@ -271,9 +272,11 @@ class DenseNet121_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 7978856,
-            "metrics": {
-                "acc@1": 74.434,
-                "acc@5": 91.972,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.434,
+                    "acc@5": 91.972,
+                }
             },
         },
     )
@@ -287,9 +290,11 @@ class DenseNet161_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 28681000,
-            "metrics": {
-                "acc@1": 77.138,
-                "acc@5": 93.560,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.138,
+                    "acc@5": 93.560,
+                }
             },
         },
     )
@@ -303,9 +308,11 @@ class DenseNet169_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 14149480,
-            "metrics": {
-                "acc@1": 75.600,
-                "acc@5": 92.806,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.600,
+                    "acc@5": 92.806,
+                }
             },
         },
     )
@@ -319,9 +326,11 @@ class DenseNet201_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 20013928,
-            "metrics": {
-                "acc@1": 76.896,
-                "acc@5": 93.370,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.896,
+                    "acc@5": 93.370,
+                }
             },
         },
     )
@@ -332,7 +341,6 @@ class DenseNet201_Weights(WeightsEnum):
 def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-121 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet121_Weights`, optional): The
@@ -358,7 +366,6 @@ def densenet121(*, weights: Optional[DenseNet121_Weights] = None, progress: bool
 def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-161 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet161_Weights`, optional): The
@@ -384,7 +391,6 @@ def densenet161(*, weights: Optional[DenseNet161_Weights] = None, progress: bool
 def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-169 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet169_Weights`, optional): The
@@ -410,7 +416,6 @@ def densenet169(*, weights: Optional[DenseNet169_Weights] = None, progress: bool
 def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool = True, **kwargs: Any) -> DenseNet:
     r"""Densenet-201 model from
     `Densely Connected Convolutional Networks <https://arxiv.org/abs/1608.06993>`_.
-    The required minimum input size of the model is 29x29.
 
     Args:
         weights (:class:`~torchvision.models.DenseNet201_Weights`, optional): The
@@ -430,3 +435,17 @@ def densenet201(*, weights: Optional[DenseNet201_Weights] = None, progress: bool
     weights = DenseNet201_Weights.verify(weights)
 
     return _densenet(32, (6, 12, 48, 32), 64, weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "densenet121": DenseNet121_Weights.IMAGENET1K_V1.url,
+        "densenet169": DenseNet169_Weights.IMAGENET1K_V1.url,
+        "densenet201": DenseNet201_Weights.IMAGENET1K_V1.url,
+        "densenet161": DenseNet161_Weights.IMAGENET1K_V1.url,
+    }
+)
