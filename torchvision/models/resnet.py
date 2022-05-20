@@ -700,10 +700,9 @@ def resnet50(*, weights: Optional[ResNet50_Weights] = None, progress: bool = Tru
     """ResNet-50 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     .. note::
-       Bottleneck in torchvision places the stride for downsampling at 3x3 convolution (``conv2``)
-       while original implementation places the stride at the first 1x1 convolution (``conv1``)
-       according to the paper.
-       This variant improves the accuracy and it's known as `ResNet V1.5 
+       The bottleneck of TorchVision places the stride for downsampling to the second 3x3
+       convolution while the original paper places it to the first 1x1 convolution.
+       This variant improves the accuracy and is known as `ResNet V1.5
        <https://ngc.nvidia.com/catalog/model-scripts/nvidia:resnet_50_v1_5_for_pytorch>`_.
 
     Args:
@@ -732,10 +731,9 @@ def resnet101(*, weights: Optional[ResNet101_Weights] = None, progress: bool = T
     """ResNet-101 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     .. note::
-       Bottleneck in torchvision places the stride for downsampling at 3x3 convolution (``conv2``)
-       while original implementation places the stride at the first 1x1 convolution (``conv1``)
-       according to the paper.
-       This variant improves the accuracy and it's known as `ResNet V1.5 
+       The bottleneck of TorchVision places the stride for downsampling to the second 3x3
+       convolution while the original paper places it to the first 1x1 convolution.
+       This variant improves the accuracy and is known as `ResNet V1.5
        <https://ngc.nvidia.com/catalog/model-scripts/nvidia:resnet_50_v1_5_for_pytorch>`_.
 
     Args:
@@ -764,10 +762,9 @@ def resnet152(*, weights: Optional[ResNet152_Weights] = None, progress: bool = T
     """ResNet-152 from `Deep Residual Learning for Image Recognition <https://arxiv.org/pdf/1512.03385.pdf>`__.
 
     .. note::
-       Bottleneck in torchvision places the stride for downsampling at 3x3 convolution (``conv2``)
-       while original implementation places the stride at the first 1x1 convolution (``conv1``)
-       according to the paper.
-       This variant improves the accuracy and it's known as `ResNet V1.5 
+       The bottleneck of TorchVision places the stride for downsampling to the second 3x3
+       convolution while the original paper places it to the first 1x1 convolution.
+       This variant improves the accuracy and is known as `ResNet V1.5
        <https://ngc.nvidia.com/catalog/model-scripts/nvidia:resnet_50_v1_5_for_pytorch>`_.
 
     Args:
