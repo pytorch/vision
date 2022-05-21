@@ -204,7 +204,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+e345f5b ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.13.0a0+9147c34 ) &#x25BC</a>
     </div>
     
 
@@ -480,14 +480,13 @@
         <span class="n">gc</span><span class="o">.</span><span class="n">collect</span><span class="p">()</span>
 
     <span class="k">if</span> <span class="n">pts_unit</span> <span class="o">==</span> <span class="s2">&quot;sec&quot;</span><span class="p">:</span>
+        <span class="c1"># TODO: we should change all of this from ground up to simply take</span>
+        <span class="c1"># sec and convert to MS in C++</span>
         <span class="n">start_offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">start_offset</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">stream</span><span class="o">.</span><span class="n">time_base</span><span class="p">)))</span>
         <span class="k">if</span> <span class="n">end_offset</span> <span class="o">!=</span> <span class="nb">float</span><span class="p">(</span><span class="s2">&quot;inf&quot;</span><span class="p">):</span>
             <span class="n">end_offset</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">ceil</span><span class="p">(</span><span class="n">end_offset</span> <span class="o">*</span> <span class="p">(</span><span class="mi">1</span> <span class="o">/</span> <span class="n">stream</span><span class="o">.</span><span class="n">time_base</span><span class="p">)))</span>
     <span class="k">else</span><span class="p">:</span>
-        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-            <span class="s2">&quot;The pts_unit &#39;pts&#39; gives wrong results and will be removed in a &quot;</span>
-            <span class="o">+</span> <span class="s2">&quot;follow-up version. Please use pts_unit &#39;sec&#39;.&quot;</span>
-        <span class="p">)</span>
+        <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span><span class="s2">&quot;The pts_unit &#39;pts&#39; gives wrong results. Please use pts_unit &#39;sec&#39;.&quot;</span><span class="p">)</span>
 
     <span class="n">frames</span> <span class="o">=</span> <span class="p">{}</span>
     <span class="n">should_buffer</span> <span class="o">=</span> <span class="kc">True</span>
@@ -503,9 +502,9 @@
             <span class="c1"># can&#39;t use regex directly because of some weird characters sometimes...</span>
             <span class="n">pos</span> <span class="o">=</span> <span class="n">extradata</span><span class="o">.</span><span class="n">find</span><span class="p">(</span><span class="sa">b</span><span class="s2">&quot;DivX&quot;</span><span class="p">)</span>
             <span class="n">d</span> <span class="o">=</span> <span class="n">extradata</span><span class="p">[</span><span class="n">pos</span><span class="p">:]</span>
-            <span class="n">o</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">br</span><span class="s2">&quot;DivX(\d+)Build(\d+)(\w)&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+            <span class="n">o</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">rb</span><span class="s2">&quot;DivX(\d+)Build(\d+)(\w)&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">o</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
-                <span class="n">o</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">br</span><span class="s2">&quot;DivX(\d+)b(\d+)(\w)&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
+                <span class="n">o</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">rb</span><span class="s2">&quot;DivX(\d+)b(\d+)(\w)&quot;</span><span class="p">,</span> <span class="n">d</span><span class="p">)</span>
             <span class="k">if</span> <span class="n">o</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
                 <span class="n">should_buffer</span> <span class="o">=</span> <span class="n">o</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span> <span class="o">==</span> <span class="sa">b</span><span class="s2">&quot;p&quot;</span>
     <span class="n">seek_offset</span> <span class="o">=</span> <span class="n">start_offset</span>
