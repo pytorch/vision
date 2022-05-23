@@ -130,8 +130,8 @@ def main(args):
 
     # Data loading code
     print("Loading data")
-    traindir = os.path.join(args.data_path, args.train_dir)
-    valdir = os.path.join(args.data_path, args.val_dir)
+    traindir = os.path.join(args.data_path, "train")
+    valdir = os.path.join(args.data_path, "val")
 
     print("Loading training data")
     st = time.time()
@@ -145,9 +145,11 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset = torchvision.datasets.Kinetics400(
-            traindir,
+        dataset = torchvision.datasets.Kinetics(
+            args.data_path,
             frames_per_clip=args.clip_len,
+            num_classes=args.kinetics_version,
+            split="train",
             step_between_clips=1,
             transform=transform_train,
             frame_rate=15,
@@ -155,6 +157,7 @@ def main(args):
                 "avi",
                 "mp4",
             ),
+            output_format="TCHW",
         )
         if args.cache_dataset:
             print(f"Saving dataset_train to {cache_path}")
@@ -179,9 +182,11 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset_test = torchvision.datasets.Kinetics400(
-            valdir,
+        dataset_test = torchvision.datasets.Kinetics(
+            args.data_path,
             frames_per_clip=args.clip_len,
+            num_classes=args.kinetics_version,
+            split="val",
             step_between_clips=1,
             transform=transform_test,
             frame_rate=15,
@@ -189,6 +194,7 @@ def main(args):
                 "avi",
                 "mp4",
             ),
+            output_format="TCHW",
         )
         if args.cache_dataset:
             print(f"Saving dataset_test to {cache_path}")
@@ -312,8 +318,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description="PyTorch Video Classification Training")
 
     parser.add_argument("--data-path", default="/datasets01_101/kinetics/070618/", type=str, help="dataset path")
-    parser.add_argument("--train-dir", default="train_avi-480p", type=str, help="name of train dir")
-    parser.add_argument("--val-dir", default="val_avi-480p", type=str, help="name of val dir")
+    parser.add_argument(
+        "--kinetics-version", default="400", type=str, choices=["400", "600"], help="Select kinetics version"
+    )
     parser.add_argument("--model", default="r2plus1d_18", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument("--clip-len", default=16, type=int, metavar="N", help="number of frames per clip")

@@ -1,12 +1,13 @@
 import csv
 import os
+import warnings
 from collections import namedtuple
 from typing import Any, Callable, List, Optional, Union, Tuple
 
 import PIL
 import torch
 
-from .utils import download_file_from_google_drive, check_integrity, verify_str_arg, extract_archive
+from .utils import check_integrity, verify_str_arg
 from .vision import VisionDataset
 
 CSV = namedtuple("CSV", ["header", "index", "data"])
@@ -35,9 +36,17 @@ class CelebA(VisionDataset):
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): If true, downloads the dataset from the internet and
-            puts it in root directory. If dataset is already downloaded, it is not
-            downloaded again.
+        download (bool, optional): Deprecated.
+
+            .. warning::
+
+                Downloading CelebA is not supported anymore as of 0.13 and this
+                parameter will be removed in 0.15. See
+                `this issue <https://github.com/pytorch/vision/issues/5705>`__
+                for more details.
+                Please download the files from
+                https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract
+                them in ``root/celeba``.
     """
 
     base_folder = "celeba"
@@ -64,7 +73,7 @@ class CelebA(VisionDataset):
         target_type: Union[List[str], str] = "attr",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        download: bool = False,
+        download: bool = None,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = split
@@ -76,6 +85,15 @@ class CelebA(VisionDataset):
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError("target_transform is specified but target_type is empty")
 
+        if download is not None:
+            warnings.warn(
+                "Downloading CelebA is not supported anymore as of 0.13, and the "
+                "download parameter will be removed in 0.15. See "
+                "https://github.com/pytorch/vision/issues/5705 for more details. "
+                "Please download the files from "
+                "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
+                "in ``root/celeba``."
+            )
         if download:
             self.download()
 
@@ -146,10 +164,14 @@ class CelebA(VisionDataset):
             print("Files already downloaded and verified")
             return
 
-        for (file_id, md5, filename) in self.file_list:
-            download_file_from_google_drive(file_id, os.path.join(self.root, self.base_folder), filename, md5)
-
-        extract_archive(os.path.join(self.root, self.base_folder, "img_align_celeba.zip"))
+        raise ValueError(
+            "Downloading CelebA is not supported anymore as of 0.13, and the "
+            "download parameter will be removed in 0.15. See "
+            "https://github.com/pytorch/vision/issues/5705 for more details. "
+            "Please download the files from "
+            "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
+            "in ``root/celeba``."
+        )
 
     def __getitem__(self, index: int) -> Tuple[Any, Any]:
         X = PIL.Image.open(os.path.join(self.root, self.base_folder, "img_align_celeba", self.filename[index]))

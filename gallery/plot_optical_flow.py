@@ -72,8 +72,7 @@ _ = urlretrieve(video_url, video_path)
 # single model input.
 
 from torchvision.io import read_video
-frames, _, _ = read_video(str(video_path))
-frames = frames.permute(0, 3, 1, 2)  # (N, H, W, C) -> (N, C, H, W)
+frames, _, _ = read_video(str(video_path), output_format="TCHW")
 
 img1_batch = torch.stack([frames[100], frames[150]])
 img2_batch = torch.stack([frames[101], frames[151]])

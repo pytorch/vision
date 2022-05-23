@@ -29,7 +29,10 @@ class ObjectDetection(nn.Module):
         return self.__class__.__name__ + "()"
 
     def describe(self) -> str:
-        return "The images are rescaled to ``[0.0, 1.0]``."
+        return (
+            "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
+            "The images are rescaled to ``[0.0, 1.0]``."
+        )
 
 
 class ImageClassification(nn.Module):
@@ -70,6 +73,7 @@ class ImageClassification(nn.Module):
 
     def describe(self) -> str:
         return (
+            "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
             f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
             f"followed by a central crop of ``crop_size={self.crop_size}``. Finally the values are first rescaled to "
             f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``."
@@ -99,7 +103,6 @@ class VideoClassification(nn.Module):
             vid = vid.unsqueeze(dim=0)
             need_squeeze = True
 
-        vid = vid.permute(0, 1, 4, 2, 3)  # (N, T, H, W, C) => (N, T, C, H, W)
         N, T, C, H, W = vid.shape
         vid = vid.view(-1, C, H, W)
         vid = F.resize(vid, self.resize_size, interpolation=self.interpolation)
@@ -126,9 +129,11 @@ class VideoClassification(nn.Module):
 
     def describe(self) -> str:
         return (
-            f"The video frames are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
+            "Accepts batched ``(B, T, C, H, W)`` and single ``(T, C, H, W)`` video frame ``torch.Tensor`` objects. "
+            f"The frames are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``, "
             f"followed by a central crop of ``crop_size={self.crop_size}``. Finally the values are first rescaled to "
-            f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``."
+            f"``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and ``std={self.std}``. Finally the output "
+            "dimensions are permuted to ``(..., C, T, H, W)`` tensors."
         )
 
 
@@ -167,6 +172,7 @@ class SemanticSegmentation(nn.Module):
 
     def describe(self) -> str:
         return (
+            "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
             f"The images are resized to ``resize_size={self.resize_size}`` using ``interpolation={self.interpolation}``. "
             f"Finally the values are first rescaled to ``[0.0, 1.0]`` and then normalized using ``mean={self.mean}`` and "
             f"``std={self.std}``."
@@ -196,4 +202,7 @@ class OpticalFlow(nn.Module):
         return self.__class__.__name__ + "()"
 
     def describe(self) -> str:
-        return "The images are rescaled to ``[-1.0, 1.0]``."
+        return (
+            "Accepts ``PIL.Image``, batched ``(B, C, H, W)`` and single ``(C, H, W)`` image ``torch.Tensor`` objects. "
+            "The images are rescaled to ``[-1.0, 1.0]``."
+        )

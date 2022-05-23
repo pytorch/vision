@@ -630,6 +630,10 @@ def center_crop_bounding_box(
     return crop_bounding_box(bounding_box, format, top=crop_top, left=crop_left)
 
 
+def center_crop_segmentation_mask(segmentation_mask: torch.Tensor, output_size: List[int]) -> torch.Tensor:
+    return center_crop_image_tensor(img=segmentation_mask, output_size=output_size)
+
+
 def resized_crop_image_tensor(
     img: torch.Tensor,
     top: int,
