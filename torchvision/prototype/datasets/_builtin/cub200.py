@@ -107,10 +107,8 @@ class CUB200(Dataset):
             return 0
         elif path.name == "train_test_split.txt":
             return 1
-        elif path.name == "images.txt":
-            return 2
         elif path.name == "bounding_boxes.txt":
-            return 3
+            return 2
         else:
             return None
 
@@ -180,13 +178,15 @@ class CUB200(Dataset):
         prepare_ann_fn: Callable
         if self._year == "2011":
             archive_dp, segmentations_dp = resource_dps
-            images_dp, split_dp, image_files_dp, bounding_boxes_dp = Demultiplexer(
-                archive_dp, 4, self._2011_classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
-            )
 
+            image_files_dp = Filter(archive_dp, path_comparator("name", "images.txt"))
             image_files_dp = CSVParser(image_files_dp, dialect="cub200")
             image_files_map = dict(
                 (image_id, rel_posix_path.rsplit("/", maxsplit=1)[1]) for image_id, rel_posix_path in image_files_dp
+            )
+
+            images_dp, split_dp, bounding_boxes_dp = Demultiplexer(
+                archive_dp, 3, self._2011_classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
             )
 
             split_dp = CSVParser(split_dp, dialect="cub200")
