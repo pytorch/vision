@@ -10,6 +10,7 @@ from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
+from torchdata.dataloader2.linter import _check_shuffle_before_sharding
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
 from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
@@ -134,16 +135,23 @@ class TestCommon:
 
         next(iter(dl))
 
-    # TODO: we need to enforce not only that both a Shuffler and a ShardingFilter are part of the datapipe, but also
-    #  that the Shuffler comes before the ShardingFilter. Early commits in https://github.com/pytorch/vision/pull/5680
-    #  contain a custom test for that, but we opted to wait for a potential solution / test from torchdata for now.
     @parametrize_dataset_mocks(DATASET_MOCKS)
-    @pytest.mark.parametrize("annotation_dp_type", (Shuffler, ShardingFilter))
-    def test_has_annotations(self, dataset_mock, config, annotation_dp_type):
+    def test_datapipe_shuffling_sharding(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
 
-        if not any(isinstance(dp, annotation_dp_type) for dp in extract_datapipes(dataset)):
-            raise AssertionError(f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe.")
+        # _check_shuffle_before_sharding() will only check if the Shuffler comes before the ShardingFilter.
+        # However, it will not check if a Shuffler or ShardingFilter are present in the first place.
+        for annotation_dp_type, annotation in [
+            (Shuffler, "hint_shuffling"),
+            (ShardingFilter, "hint_sharding"),
+        ]:
+            if not any(isinstance(dp, annotation_dp_type) for dp in extract_datapipes(dataset)):
+                raise AssertionError(
+                    f"The dataset doesn't contain a {annotation_dp_type.__name__}() datapipe. "
+                    f"Please add a `dp = {annotation}(dp)` annotation."
+                )
+
+        assert _check_shuffle_before_sharding(dataset), "hint_shuffling() needs to be placed before hint_sharding()."
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_save_load(self, dataset_mock, config):
