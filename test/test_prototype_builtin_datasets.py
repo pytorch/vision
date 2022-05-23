@@ -7,7 +7,12 @@ import pytest
 import torch
 from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
+
+# TODO: replace with torchdata.dataloader2.DataLoader2 as soon as it is stable-ish
 from torch.utils.data import DataLoader
+
+# TODO: replace with torchdata.dataloader2._graph_utils.{traverse, get_all_graph_datapipes} as soon as
+#  https://github.com/pytorch/data/issues/435 is resolved
 from torch.utils.data.graph import traverse
 from torch.utils.data.graph_settings import get_all_graph_pipes
 from torchdata.datapipes.iter import Shuffler, ShardingFilter
