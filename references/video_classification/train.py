@@ -157,6 +157,7 @@ def main(args):
                 "avi",
                 "mp4",
             ),
+            output_format="TCHW",
         )
         if args.cache_dataset:
             print(f"Saving dataset_train to {cache_path}")
@@ -193,6 +194,7 @@ def main(args):
                 "avi",
                 "mp4",
             ),
+            output_format="TCHW",
         )
         if args.cache_dataset:
             print(f"Saving dataset_test to {cache_path}")
