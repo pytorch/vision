@@ -1,4 +1,3 @@
-import enum
 import functools
 import pathlib
 import re
@@ -10,7 +9,6 @@ from torchdata.datapipes.iter import (
     IterKeyZipper,
     Mapper,
     Filter,
-    Demultiplexer,
     TarArchiveLoader,
     Enumerator,
 )
@@ -27,6 +25,7 @@ from torchvision.prototype.datasets.utils._internal import (
     hint_shuffling,
     read_categories_file,
     path_accessor,
+    path_comparator,
 )
 from torchvision.prototype.features import Label, EncodedImage
 
@@ -44,11 +43,6 @@ def _info() -> Dict[str, Any]:
 class ImageNetResource(ManualDownloadResource):
     def __init__(self, **kwargs: Any) -> None:
         super().__init__("Register on https://image-net.org/ and follow the instructions there.", **kwargs)
-
-
-class ImageNetDemux(enum.IntEnum):
-    META = 0
-    LABEL = 1
 
 
 @register_dataset(NAME)
@@ -108,12 +102,6 @@ class ImageNet(Dataset):
     def _prepare_test_data(self, data: Tuple[str, BinaryIO]) -> Tuple[None, Tuple[str, BinaryIO]]:
         return None, data
 
-    def _classifiy_devkit(self, data: Tuple[str, BinaryIO]) -> Optional[int]:
-        return {
-            "meta.mat": ImageNetDemux.META,
-            "ILSVRC2012_validation_ground_truth.txt": ImageNetDemux.LABEL,
-        }.get(pathlib.Path(data[0]).name)
-
     # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
     # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
     _WNID_MAP = {
@@ -172,13 +160,11 @@ class ImageNet(Dataset):
         else:  # config.split == "val":
             images_dp, devkit_dp = resource_dps
 
-            meta_dp, label_dp = Demultiplexer(
-                devkit_dp, 2, self._classifiy_devkit, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
-            )
-
+            meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
             meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
-            _, wnids = zip(*next(iter(meta_dp)))
+            _, wnids = zip(*list(meta_dp)[0])
 
+            label_dp = Filter(devkit_dp, path_comparator("name", "ILSVRC2012_validation_ground_truth.txt"))
             label_dp = LineReader(label_dp, decode=True, return_path=False)
             # We cannot use self._wnids here, since we use a different order than the dataset
             label_dp = Mapper(label_dp, functools.partial(self._imagenet_label_to_wnid, wnids=wnids))
@@ -204,15 +190,12 @@ class ImageNet(Dataset):
             "test": 100_000,
         }[self._split]
 
-    def _filter_meta(self, data: Tuple[str, Any]) -> bool:
-        return self._classifiy_devkit(data) == ImageNetDemux.META
-
     def _generate_categories(self) -> List[Tuple[str, ...]]:
         self._split = "val"
         resources = self._resources()
 
         devkit_dp = resources[1].load(self._root)
-        meta_dp = Filter(devkit_dp, self._filter_meta)
+        meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
         meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
 
         categories_and_wnids = cast(List[Tuple[str, ...]], next(iter(meta_dp)))
