@@ -224,6 +224,32 @@ Note that the above command corresponds to training on a single node with 8 GPUs
 For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 64`.
 
+
+### SwinTransformer
+```
+torchrun --nproc_per_node=8 train.py\ 
+--model $MODEL --epochs 300 --batch-size 128 --opt adamw --lr 0.001 --weight-decay 0.05 --norm-weight-decay 0.0  --bias-weight-decay 0.0 --transformer-embedding-decay 0.0 --lr-scheduler cosineannealinglr --lr-min 0.00001 --lr-warmup-method linear  --lr-warmup-epochs 20 --lr-warmup-decay 0.01 --amp --label-smoothing 0.1 --mixup-alpha 0.8 --clip-grad-norm 5.0 --cutmix-alpha 1.0 --random-erase 0.25 --interpolation bicubic --auto-augment ta_wide --model-ema --ra-sampler --ra-reps 4  --val-resize-size 224
+```
+Here `$MODEL` is one of `swin_t`, `swin_s` or `swin_b`.
+Note that `--val-resize-size` was optimized in a post-training step, see their `Weights` entry for the exact value.
+
+
+
+
+### ShuffleNet V2
+```
+torchrun --nproc_per_node=8 train.py \
+--batch-size=128 \
+--lr=0.5 --lr-scheduler=cosineannealinglr --lr-warmup-epochs=5 --lr-warmup-method=linear \
+--auto-augment=ta_wide --epochs=600 --random-erase=0.1 --weight-decay=0.00002 \
+--norm-weight-decay=0.0 --label-smoothing=0.1 --mixup-alpha=0.2 --cutmix-alpha=1.0 \
+--train-crop-size=176 --model-ema --val-resize-size=232 --ra-sampler --ra-reps=4
+```
+Here `$MODEL` is either `shufflenet_v2_x1_5` or `shufflenet_v2_x2_0`.
+
+The models `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0` were contributed by the community. See [PR-849](https://github.com/pytorch/vision/pull/849#issuecomment-483391686) for details.
+
+
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).
 
@@ -250,6 +276,21 @@ For all post training quantized models, the settings are:
 python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
 ```
 Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d`, `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0`.
+
+### Quantized ShuffleNet V2
+
+Here are commands that we use to quantized the `shufflenet_v2_x1_5` and `shufflenet_v2_x2_0` models.
+```
+# For shufflenet_v2_x1_5
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+    --model=shufflenet_v2_x1_5 --weights="ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1" \
+    --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
+
+# For shufflenet_v2_x2_0
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+    --model=shufflenet_v2_x2_0 --weights="ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1" \
+    --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
+```
 
 ### QAT MobileNetV2
 

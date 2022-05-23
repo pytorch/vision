@@ -1,6 +1,7 @@
 import datetime
 import os
 import time
+import warnings
 
 import presets
 import torch
@@ -50,6 +51,7 @@ def evaluate(model, criterion, data_loader, device):
     model.eval()
     metric_logger = utils.MetricLogger(delimiter="  ")
     header = "Test:"
+    num_processed_samples = 0
     with torch.inference_mode():
         for video, target in metric_logger.log_every(data_loader, 100, header):
             video = video.to(device, non_blocking=True)
@@ -64,7 +66,28 @@ def evaluate(model, criterion, data_loader, device):
             metric_logger.update(loss=loss.item())
             metric_logger.meters["acc1"].update(acc1.item(), n=batch_size)
             metric_logger.meters["acc5"].update(acc5.item(), n=batch_size)
+            num_processed_samples += batch_size
     # gather the stats from all processes
+    num_processed_samples = utils.reduce_across_processes(num_processed_samples)
+    if isinstance(data_loader.sampler, DistributedSampler):
+        # Get the len of UniformClipSampler inside DistributedSampler
+        num_data_from_sampler = len(data_loader.sampler.dataset)
+    else:
+        num_data_from_sampler = len(data_loader.sampler)
+
+    if (
+        hasattr(data_loader.dataset, "__len__")
+        and num_data_from_sampler != num_processed_samples
+        and torch.distributed.get_rank() == 0
+    ):
+        # See FIXME above
+        warnings.warn(
+            f"It looks like the sampler has {num_data_from_sampler} samples, but {num_processed_samples} "
+            "samples were used for the validation, which might bias the results. "
+            "Try adjusting the batch size and / or the world size. "
+            "Setting the world size to 1 is always a safe bet."
+        )
+
     metric_logger.synchronize_between_processes()
 
     print(
@@ -99,12 +122,16 @@ def main(args):
 
     device = torch.device(args.device)
 
-    torch.backends.cudnn.benchmark = True
+    if args.use_deterministic_algorithms:
+        torch.backends.cudnn.benchmark = False
+        torch.use_deterministic_algorithms(True)
+    else:
+        torch.backends.cudnn.benchmark = True
 
     # Data loading code
     print("Loading data")
-    traindir = os.path.join(args.data_path, args.train_dir)
-    valdir = os.path.join(args.data_path, args.val_dir)
+    traindir = os.path.join(args.data_path, "train")
+    valdir = os.path.join(args.data_path, "val")
 
     print("Loading training data")
     st = time.time()
@@ -118,9 +145,11 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset = torchvision.datasets.Kinetics400(
-            traindir,
+        dataset = torchvision.datasets.Kinetics(
+            args.data_path,
             frames_per_clip=args.clip_len,
+            num_classes=args.kinetics_version,
+            split="train",
             step_between_clips=1,
             transform=transform_train,
             frame_rate=15,
@@ -152,9 +181,11 @@ def main(args):
     else:
         if args.distributed:
             print("It is recommended to pre-compute the dataset cache on a single-gpu first, as it will be faster")
-        dataset_test = torchvision.datasets.Kinetics400(
-            valdir,
+        dataset_test = torchvision.datasets.Kinetics(
+            args.data_path,
             frames_per_clip=args.clip_len,
+            num_classes=args.kinetics_version,
+            split="val",
             step_between_clips=1,
             transform=transform_test,
             frame_rate=15,
@@ -173,7 +204,7 @@ def main(args):
     test_sampler = UniformClipSampler(dataset_test.video_clips, args.clips_per_video)
     if args.distributed:
         train_sampler = DistributedSampler(train_sampler)
-        test_sampler = DistributedSampler(test_sampler)
+        test_sampler = DistributedSampler(test_sampler, shuffle=False)
 
     data_loader = torch.utils.data.DataLoader(
         dataset,
@@ -248,6 +279,9 @@ def main(args):
             scaler.load_state_dict(checkpoint["scaler"])
 
     if args.test_only:
+        # We disable the cudnn benchmarking because it can noticeably affect the accuracy
+        torch.backends.cudnn.benchmark = False
+        torch.backends.cudnn.deterministic = True
         evaluate(model, criterion, data_loader_test, device=device)
         return
 
@@ -282,8 +316,9 @@ def parse_args():
     parser = argparse.ArgumentParser(description="PyTorch Video Classification Training")
 
     parser.add_argument("--data-path", default="/datasets01_101/kinetics/070618/", type=str, help="dataset path")
-    parser.add_argument("--train-dir", default="train_avi-480p", type=str, help="name of train dir")
-    parser.add_argument("--val-dir", default="val_avi-480p", type=str, help="name of val dir")
+    parser.add_argument(
+        "--kinetics-version", default="400", type=str, choices=["400", "600"], help="Select kinetics version"
+    )
     parser.add_argument("--model", default="r2plus1d_18", type=str, help="model name")
     parser.add_argument("--device", default="cuda", type=str, help="device (Use cuda or cpu Default: cuda)")
     parser.add_argument("--clip-len", default=16, type=int, metavar="N", help="number of frames per clip")
@@ -334,6 +369,9 @@ def parse_args():
         dest="test_only",
         help="Only test the model",
         action="store_true",
+    )
+    parser.add_argument(
+        "--use-deterministic-algorithms", action="store_true", help="Forces the use of deterministic algorithms only."
     )
 
     # distributed training parameters

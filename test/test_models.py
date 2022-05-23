@@ -18,6 +18,7 @@ from common_utils import map_nested_tensor_object, freeze_rng_state, set_rng_see
 from torchvision import models
 
 ACCEPT = os.getenv("EXPECTTEST_ACCEPT", "0") == "1"
+SKIP_BIG_MODEL = os.getenv("SKIP_BIG_MODEL", "1") == "1"
 
 
 def get_models_from_module(module):
@@ -231,6 +232,7 @@ autocast_flaky_numerics = (
     "lraspp_mobilenet_v3_large",
     "maskrcnn_resnet50_fpn",
     "maskrcnn_resnet50_fpn_v2",
+    "keypointrcnn_resnet50_fpn",
 )
 
 # The tests for the following quantized models are flaky possibly due to inconsistent
@@ -261,7 +263,7 @@ _model_params = {
         "num_classes": 2,
         "min_size": 224,
         "max_size": 224,
-        "box_score_thresh": 0.15,
+        "box_score_thresh": 0.17,
         "input_shape": (3, 224, 224),
     },
     "fasterrcnn_resnet50_fpn": {
@@ -313,6 +315,7 @@ slow_models = [
     "convnext_base",
     "convnext_large",
     "resnext101_32x8d",
+    "resnext101_64x4d",
     "wide_resnet101_2",
     "efficientnet_b6",
     "efficientnet_b7",
@@ -323,10 +326,19 @@ slow_models = [
     "regnet_y_128gf",
     "regnet_x_16gf",
     "regnet_x_32gf",
+    "swin_t",
+    "swin_s",
+    "swin_b",
 ]
 for m in slow_models:
     _model_params[m] = {"input_shape": (1, 3, 64, 64)}
 
+
+# skip big models to reduce memory usage on CI test
+skipped_big_models = {
+    "vit_h_14",
+    "regnet_y_128gf",
+}
 
 # The following contains configuration and expected values to be used tests that are model specific
 _model_tests_values = {
@@ -591,6 +603,8 @@ def test_classification_model(model_fn, dev):
         "input_shape": (1, 3, 224, 224),
     }
     model_name = model_fn.__name__
+    if dev == "cuda" and SKIP_BIG_MODEL and model_name in skipped_big_models:
+        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
@@ -605,7 +619,7 @@ def test_classification_model(model_fn, dev):
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
@@ -658,7 +672,7 @@ def test_segmentation_model(model_fn, dev):
     _check_jit_scriptable(model, (x,), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
     _check_fx_compatible(model, x, eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
             # See autocast_flaky_numerics comment at top of file.
@@ -756,7 +770,7 @@ def test_detection_model(model_fn, dev):
     full_validation = check_out(out)
     _check_jit_scriptable(model, ([x],), unwrapper=script_model_unwrapper.get(model_name, None), eager_out=out)
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(model_input)
             # See autocast_flaky_numerics comment at top of file.
@@ -822,7 +836,7 @@ def test_video_model(model_fn, dev):
     _check_fx_compatible(model, x, eager_out=out)
     assert out.shape[-1] == 50
 
-    if dev == torch.device("cuda"):
+    if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
             assert out.shape[-1] == 50

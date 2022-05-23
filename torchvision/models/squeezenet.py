@@ -115,11 +115,9 @@ def _squeezenet(
 
 
 _COMMON_META = {
-    "task": "image_classification",
-    "architecture": "SqueezeNet",
-    "size": (224, 224),
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/49#issuecomment-277560717",
+    "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
 }
 
 
@@ -131,8 +129,12 @@ class SqueezeNet1_0_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (21, 21),
             "num_params": 1248424,
-            "acc@1": 58.092,
-            "acc@5": 80.420,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 58.092,
+                    "acc@5": 80.420,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -146,8 +148,12 @@ class SqueezeNet1_1_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (17, 17),
             "num_params": 1235496,
-            "acc@1": 58.178,
-            "acc@5": 80.624,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 58.178,
+                    "acc@5": 80.624,
+                }
+            },
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -160,8 +166,6 @@ def squeezenet1_0(
     """SqueezeNet model architecture from the `SqueezeNet: AlexNet-level
     accuracy with 50x fewer parameters and <0.5MB model size
     <https://arxiv.org/abs/1602.07360>`_ paper.
-
-    The required minimum input size of the model is 21x21.
 
     Args:
         weights (:class:`~torchvision.models.SqueezeNet1_0_Weights`, optional): The
@@ -192,7 +196,6 @@ def squeezenet1_1(
 
     SqueezeNet 1.1 has 2.4x less computation and slightly fewer parameters
     than SqueezeNet 1.0, without sacrificing accuracy.
-    The required minimum input size of the model is 17x17.
 
     Args:
         weights (:class:`~torchvision.models.SqueezeNet1_1_Weights`, optional): The
@@ -212,3 +215,15 @@ def squeezenet1_1(
     """
     weights = SqueezeNet1_1_Weights.verify(weights)
     return _squeezenet("1_1", weights, progress, **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "squeezenet1_0": SqueezeNet1_0_Weights.IMAGENET1K_V1.url,
+        "squeezenet1_1": SqueezeNet1_1_Weights.IMAGENET1K_V1.url,
+    }
+)
