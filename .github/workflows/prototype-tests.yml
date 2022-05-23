@@ -53,7 +53,7 @@ jobs:
           - "3.10"
       fail-fast: false
 
-    runs-on: macos-latest
+    runs-on: macos-12
 
     steps:
       - name: Set up python
