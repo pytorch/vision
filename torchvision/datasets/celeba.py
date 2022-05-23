@@ -1,5 +1,6 @@
 import csv
 import os
+import warnings
 from collections import namedtuple
 from typing import Any, Callable, List, Optional, Union, Tuple
 
@@ -35,11 +36,12 @@ class CelebA(VisionDataset):
             and returns a transformed version. E.g, ``transforms.PILToTensor``
         target_transform (callable, optional): A function/transform that takes in the
             target and transforms it.
-        download (bool, optional): Unsupported.
+        download (bool, optional): Deprecated.
 
             .. warning::
 
-                Downloading CelebA is not supported anymore as of 0.13. See
+                Downloading CelebA is not supported anymore as of 0.13 and this
+                parameter will be removed in 0.15. See
                 `this issue <https://github.com/pytorch/vision/issues/5705>`__
                 for more details.
                 Please download the files from
@@ -71,7 +73,7 @@ class CelebA(VisionDataset):
         target_type: Union[List[str], str] = "attr",
         transform: Optional[Callable] = None,
         target_transform: Optional[Callable] = None,
-        download: bool = False,
+        download: bool = None,
     ) -> None:
         super().__init__(root, transform=transform, target_transform=target_transform)
         self.split = split
@@ -83,6 +85,15 @@ class CelebA(VisionDataset):
         if not self.target_type and self.target_transform is not None:
             raise RuntimeError("target_transform is specified but target_type is empty")
 
+        if download is not None:
+            warnings.warn(
+                "Downloading CelebA is not supported anymore as of 0.13, and the "
+                "download parameter will be removed in 0.15. See "
+                "https://github.com/pytorch/vision/issues/5705 for more details. "
+                "Please download the files from "
+                "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
+                "in ``root/celeba``."
+            )
         if download:
             self.download()
 
@@ -154,7 +165,8 @@ class CelebA(VisionDataset):
             return
 
         raise ValueError(
-            "Downloading CelebA is not supported anymore as of 0.13. See "
+            "Downloading CelebA is not supported anymore as of 0.13, and the "
+            "download parameter will be removed in 0.15. See "
             "https://github.com/pytorch/vision/issues/5705 for more details. "
             "Please download the files from "
             "https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them "
