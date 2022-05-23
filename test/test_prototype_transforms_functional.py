@@ -423,7 +423,7 @@ def center_crop_bounding_box():
 
 def center_crop_segmentation_mask():
     for mask, output_size in itertools.product(
-        make_segmentation_masks(image_sizes=((16, 16), (7, 33), (31, 9)), extra_dims=((), (4,), (2, 3))),
+        make_segmentation_masks(image_sizes=((16, 16), (7, 33), (31, 9))),
         [[4, 3], [42, 70], [4]],  # crop sizes < image sizes, crop_sizes > image sizes, single crop size
     ):
         yield SampleInput(mask, output_size)
