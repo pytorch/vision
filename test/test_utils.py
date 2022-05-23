@@ -120,6 +120,7 @@ def test_draw_boxes_colors(colors):
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     utils.draw_bounding_boxes(img, boxes, fill=False, width=7, colors=colors)
 
+
 def test_draw_boxes_vanilla():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     img_cp = img.clone()
@@ -177,11 +178,12 @@ def test_draw_boxes_warning():
 
 def test_draw_no_boxes():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
-    boxes = torch.full((0,4), 0, dtype=torch.float)
+    boxes = torch.full((0, 4), 0, dtype=torch.float)
     with pytest.warns(UserWarning, match=re.escape("boxes doesn't contain any box. No box was drawn")):
         res = utils.draw_bounding_boxes(img, boxes)
         # Check that the function didnt change the image
         assert res.eq(img).all()
+
 
 @pytest.mark.parametrize(
     "colors",
@@ -272,6 +274,7 @@ def test_draw_segmentation_masks_errors():
         bad_colors = ("red", "blue")  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
 
+
 def test_draw_no_segmention_mask():
     img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
     masks = torch.full((0, 100, 100), 0, dtype=torch.bool)
@@ -279,6 +282,7 @@ def test_draw_no_segmention_mask():
         res = utils.draw_segmentation_masks(img, masks)
         # Check that the function didnt change the image
         assert res.eq(img).all()
+
 
 def test_draw_keypoints_vanilla():
     # Keypoints is declared on top as global variable
