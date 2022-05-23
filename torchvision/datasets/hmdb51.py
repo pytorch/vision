@@ -37,11 +37,13 @@ class HMDB51(VisionDataset):
             otherwise from the ``test`` split.
         transform (callable, optional): A function/transform that takes in a TxHxWxC video
             and returns a transformed version.
+        output_format (str, optional): The format of the output video tensors (before transforms).
+            Can be either "THWC" (default) or "TCHW".
 
     Returns:
         tuple: A 3-tuple with the following entries:
 
-            - video (Tensor[T, H, W, C]): The `T` video frames
+            - video (Tensor[T, H, W, C] or Tensor[T, C, H, W]): The `T` video frames
             - audio(Tensor[K, L]): the audio frames, where `K` is the number of channels
               and `L` is the number of points
             - label (int): class of the video clip
@@ -71,6 +73,7 @@ class HMDB51(VisionDataset):
         _video_height: int = 0,
         _video_min_dimension: int = 0,
         _audio_samples: int = 0,
+        output_format: str = "THWC",
     ) -> None:
         super().__init__(root)
         if fold not in (1, 2, 3):
@@ -96,6 +99,7 @@ class HMDB51(VisionDataset):
             _video_height=_video_height,
             _video_min_dimension=_video_min_dimension,
             _audio_samples=_audio_samples,
+            output_format=output_format,
         )
         # we bookkeep the full version of video clips because we want to be able
         # to return the meta data of full version rather than the subset version of
