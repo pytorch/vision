@@ -6,11 +6,13 @@ namespace ffmpeg {
 
 namespace {
 bool operator==(const VideoFormat& x, const AVFrame& y) {
-  return x.width == y.width && x.height == y.height && x.format == y.format;
+  return x.width == static_cast<size_t>(y.width) &&
+      x.height == static_cast<size_t>(y.height) && x.format == y.format;
 }
 
 bool operator==(const VideoFormat& x, const AVCodecContext& y) {
-  return x.width == y.width && x.height == y.height && x.format == y.pix_fmt;
+  return x.width == static_cast<size_t>(y.width) &&
+      x.height == static_cast<size_t>(y.height) && x.format == y.pix_fmt;
 }
 
 VideoFormat& toVideoFormat(VideoFormat& x, const AVFrame& y) {
@@ -80,6 +82,7 @@ int VideoStream::initFormat() {
       : -1;
 }
 
+// copies frame bytes via sws_scale call in video_sampler.cpp
 int VideoStream::copyFrameBytes(ByteStorage* out, bool flush) {
   if (!sampler_) {
     sampler_ = std::make_unique<VideoSampler>(SWS_AREA, loggingUuid_);
@@ -110,7 +113,9 @@ int VideoStream::copyFrameBytes(ByteStorage* out, bool flush) {
             << ", minDimension: " << format_.format.video.minDimension
             << ", crop: " << format_.format.video.cropImage;
   }
-
+  // calls to a sampler that converts the frame from YUV422 to RGB24, and
+  // optionally crops and resizes the frame. Frame bytes are copied from
+  // frame_->data to out buffer
   return sampler_->sample(flush ? nullptr : frame_, out);
 }
 

@@ -1,5 +1,5 @@
-torchvision.io
-==============
+Reading/Writing images and videos
+=================================
 
 .. currentmodule:: torchvision.io
 
@@ -10,11 +10,13 @@ images.
 Video
 -----
 
-.. autofunction:: read_video
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
 
-.. autofunction:: read_video_timestamps
-
-.. autofunction:: write_video
+    read_video
+    read_video_timestamps
+    write_video
 
 
 Fine-grained video API
@@ -24,8 +26,11 @@ In addition to the :mod:`read_video` function, we provide a high-performance
 lower-level API for more fine-grained control compared to the :mod:`read_video` function.
 It does all this whilst fully supporting torchscript.
 
-.. autoclass:: VideoReader
-    :members: __next__, get_metadata, set_current_stream, seek
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    VideoReader
 
 
 Example of inspecting a video:
@@ -59,14 +64,23 @@ Example of inspecting a video:
 Image
 -----
 
-.. autofunction:: read_image
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
 
-.. autofunction:: decode_image
+    ImageReadMode
 
-.. autofunction:: encode_jpeg
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
 
-.. autofunction:: write_jpeg
-
-.. autofunction:: encode_png
-
-.. autofunction:: write_png
+    read_image
+    decode_image
+    encode_jpeg
+    decode_jpeg
+    write_jpeg
+    encode_png
+    decode_png
+    write_png
+    read_file
+    write_file

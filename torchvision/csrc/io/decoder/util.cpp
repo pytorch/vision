@@ -49,8 +49,8 @@ inline size_t getSize(const AVSubtitleRect& x) {
     switch (y.type) {
       case SUBTITLE_BITMAP:
         for (int i = 0; i < y.nb_colors; ++i) {
-          s += sizeof(y.pict.linesize[i]);
-          s += y.pict.linesize[i];
+          s += sizeof(y.linesize[i]);
+          s += y.linesize[i];
         }
         break;
       case SUBTITLE_TEXT:
@@ -93,14 +93,14 @@ inline bool serializeItem(
     switch (x.type) {
       case SUBTITLE_BITMAP:
         for (int i = 0; i < x.nb_colors; ++i) {
-          if (!serializeItem(d, l, p, x.pict.linesize[i])) {
+          if (!serializeItem(d, l, p, x.linesize[i])) {
             return false;
           }
-          if (p + x.pict.linesize[i] > l) {
+          if (p + x.linesize[i] > l) {
             return false;
           }
-          memcpy(d + p, x.pict.data[i], x.pict.linesize[i]);
-          p += x.pict.linesize[i];
+          memcpy(d + p, x.data[i], x.linesize[i]);
+          p += x.linesize[i];
         }
         return true;
       case SUBTITLE_TEXT: {
@@ -172,15 +172,15 @@ inline bool deserializeItem(
     switch (x.type) {
       case SUBTITLE_BITMAP:
         for (int i = 0; i < x.nb_colors; ++i) {
-          if (!deserializeItem(y, l, p, x.pict.linesize[i])) {
+          if (!deserializeItem(y, l, p, x.linesize[i])) {
             return false;
           }
-          if (p + x.pict.linesize[i] > l) {
+          if (p + x.linesize[i] > l) {
             return false;
           }
-          x.pict.data[i] = (uint8_t*)av_malloc(x.pict.linesize[i]);
-          memcpy(x.pict.data[i], y + p, x.pict.linesize[i]);
-          p += x.pict.linesize[i];
+          x.data[i] = (uint8_t*)av_malloc(x.linesize[i]);
+          memcpy(x.data[i], y + p, x.linesize[i]);
+          p += x.linesize[i];
         }
         return true;
       case SUBTITLE_TEXT: {

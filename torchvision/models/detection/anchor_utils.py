@@ -1,8 +1,9 @@
 import math
+from typing import List, Optional
+
 import torch
 from torch import nn, Tensor
 
-from typing import List, Optional
 from .image_list import ImageList
 
 
@@ -36,7 +37,7 @@ class AnchorGenerator(nn.Module):
         sizes=((128, 256, 512),),
         aspect_ratios=((0.5, 1.0, 2.0),),
     ):
-        super(AnchorGenerator, self).__init__()
+        super().__init__()
 
         if not isinstance(sizes[0], (list, tuple)):
             # TODO change this
@@ -44,19 +45,23 @@ class AnchorGenerator(nn.Module):
         if not isinstance(aspect_ratios[0], (list, tuple)):
             aspect_ratios = (aspect_ratios,) * len(sizes)
 
-        assert len(sizes) == len(aspect_ratios)
-
         self.sizes = sizes
         self.aspect_ratios = aspect_ratios
-        self.cell_anchors = [self.generate_anchors(size, aspect_ratio)
-                             for size, aspect_ratio in zip(sizes, aspect_ratios)]
+        self.cell_anchors = [
+            self.generate_anchors(size, aspect_ratio) for size, aspect_ratio in zip(sizes, aspect_ratios)
+        ]
 
     # TODO: https://github.com/pytorch/pytorch/issues/26792
     # For every (aspect_ratios, scales) combination, output a zero-centered anchor with those values.
     # (scales, aspect_ratios) are usually an element of zip(self.scales, self.aspect_ratios)
     # This method assumes aspect ratio = height / width for an anchor.
-    def generate_anchors(self, scales: List[int], aspect_ratios: List[float], dtype: torch.dtype = torch.float32,
-                         device: torch.device = torch.device("cpu")):
+    def generate_anchors(
+        self,
+        scales: List[int],
+        aspect_ratios: List[float],
+        dtype: torch.dtype = torch.float32,
+        device: torch.device = torch.device("cpu"),
+    ):
         scales = torch.as_tensor(scales, dtype=dtype, device=device)
         aspect_ratios = torch.as_tensor(aspect_ratios, dtype=dtype, device=device)
         h_ratios = torch.sqrt(aspect_ratios)
@@ -69,8 +74,7 @@ class AnchorGenerator(nn.Module):
         return base_anchors.round()
 
     def set_cell_anchors(self, dtype: torch.dtype, device: torch.device):
-        self.cell_anchors = [cell_anchor.to(dtype=dtype, device=device)
-                             for cell_anchor in self.cell_anchors]
+        self.cell_anchors = [cell_anchor.to(dtype=dtype, device=device) for cell_anchor in self.cell_anchors]
 
     def num_anchors_per_location(self):
         return [len(s) * len(a) for s, a in zip(self.sizes, self.aspect_ratios)]
@@ -80,38 +84,31 @@ class AnchorGenerator(nn.Module):
     def grid_anchors(self, grid_sizes: List[List[int]], strides: List[List[Tensor]]) -> List[Tensor]:
         anchors = []
         cell_anchors = self.cell_anchors
-        assert cell_anchors is not None
+        torch._assert(cell_anchors is not None, "cell_anchors should not be None")
+        torch._assert(
+            len(grid_sizes) == len(strides) == len(cell_anchors),
+            "Anchors should be Tuple[Tuple[int]] because each feature "
+            "map could potentially have different sizes and aspect ratios. "
+            "There needs to be a match between the number of "
+            "feature maps passed and the number of sizes / aspect ratios specified.",
+        )
 
-        if not (len(grid_sizes) == len(strides) == len(cell_anchors)):
-            raise ValueError("Anchors should be Tuple[Tuple[int]] because each feature "
-                             "map could potentially have different sizes and aspect ratios. "
-                             "There needs to be a match between the number of "
-                             "feature maps passed and the number of sizes / aspect ratios specified.")
-
-        for size, stride, base_anchors in zip(
-            grid_sizes, strides, cell_anchors
-        ):
+        for size, stride, base_anchors in zip(grid_sizes, strides, cell_anchors):
             grid_height, grid_width = size
             stride_height, stride_width = stride
             device = base_anchors.device
 
             # For output anchor, compute [x_center, y_center, x_center, y_center]
-            shifts_x = torch.arange(
-                0, grid_width, dtype=torch.float32, device=device
-            ) * stride_width
-            shifts_y = torch.arange(
-                0, grid_height, dtype=torch.float32, device=device
-            ) * stride_height
-            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x)
+            shifts_x = torch.arange(0, grid_width, dtype=torch.int32, device=device) * stride_width
+            shifts_y = torch.arange(0, grid_height, dtype=torch.int32, device=device) * stride_height
+            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
             shift_x = shift_x.reshape(-1)
             shift_y = shift_y.reshape(-1)
             shifts = torch.stack((shift_x, shift_y, shift_x, shift_y), dim=1)
 
             # For every (base anchor, output anchor) pair,
             # offset each zero-centered base anchor by the center of the output anchor.
-            anchors.append(
-                (shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4)
-            )
+            anchors.append((shifts.view(-1, 1, 4) + base_anchors.view(1, -1, 4)).reshape(-1, 4))
 
         return anchors
 
@@ -119,8 +116,13 @@ class AnchorGenerator(nn.Module):
         grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
-        strides = [[torch.tensor(image_size[0] // g[0], dtype=torch.int64, device=device),
-                    torch.tensor(image_size[1] // g[1], dtype=torch.int64, device=device)] for g in grid_sizes]
+        strides = [
+            [
+                torch.empty((), dtype=torch.int64, device=device).fill_(image_size[0] // g[0]),
+                torch.empty((), dtype=torch.int64, device=device).fill_(image_size[1] // g[1]),
+            ]
+            for g in grid_sizes
+        ]
         self.set_cell_anchors(dtype, device)
         anchors_over_all_feature_maps = self.grid_anchors(grid_sizes, strides)
         anchors: List[List[torch.Tensor]] = []
@@ -138,88 +140,129 @@ class DefaultBoxGenerator(nn.Module):
     Args:
         aspect_ratios (List[List[int]]): A list with all the aspect ratios used in each feature map.
         min_ratio (float): The minimum scale :math:`\text{s}_{\text{min}}` of the default boxes used in the estimation
-            of the scales of each feature map.
+            of the scales of each feature map. It is used only if the ``scales`` parameter is not provided.
         max_ratio (float): The maximum scale :math:`\text{s}_{\text{max}}`  of the default boxes used in the estimation
-            of the scales of each feature map.
+            of the scales of each feature map. It is used only if the ``scales`` parameter is not provided.
+        scales (List[float]], optional): The scales of the default boxes. If not provided it will be estimated using
+            the ``min_ratio`` and ``max_ratio`` parameters.
         steps (List[int]], optional): It's a hyper-parameter that affects the tiling of defalt boxes. If not provided
             it will be estimated from the data.
         clip (bool): Whether the standardized values of default boxes should be clipped between 0 and 1. The clipping
             is applied while the boxes are encoded in format ``(cx, cy, w, h)``.
     """
 
-    def __init__(self, aspect_ratios: List[List[int]], min_ratio: float = 0.15, max_ratio: float = 0.9,
-                 steps: Optional[List[int]] = None, clip: bool = True):
+    def __init__(
+        self,
+        aspect_ratios: List[List[int]],
+        min_ratio: float = 0.15,
+        max_ratio: float = 0.9,
+        scales: Optional[List[float]] = None,
+        steps: Optional[List[int]] = None,
+        clip: bool = True,
+    ):
         super().__init__()
-        if steps is not None:
-            assert len(aspect_ratios) == len(steps)
+        if steps is not None and len(aspect_ratios) != len(steps):
+            raise ValueError("aspect_ratios and steps should have the same length")
         self.aspect_ratios = aspect_ratios
         self.steps = steps
         self.clip = clip
         num_outputs = len(aspect_ratios)
 
         # Estimation of default boxes scales
-        # Inspired from https://github.com/weiliu89/caffe/blob/ssd/examples/ssd/ssd_pascal.py#L311-L317
-        min_centile = int(100 * min_ratio)
-        max_centile = int(100 * max_ratio)
-        conv4_centile = min_centile // 2  # assume half of min_ratio as in paper
-        step = (max_centile - min_centile) // (num_outputs - 2)
-        centiles = [conv4_centile, min_centile]
-        for c in range(min_centile, max_centile + 1, step):
-            centiles.append(c + step)
-        self.scales = [c / 100 for c in centiles]
+        if scales is None:
+            if num_outputs > 1:
+                range_ratio = max_ratio - min_ratio
+                self.scales = [min_ratio + range_ratio * k / (num_outputs - 1.0) for k in range(num_outputs)]
+                self.scales.append(1.0)
+            else:
+                self.scales = [min_ratio, max_ratio]
+        else:
+            self.scales = scales
 
-        self._wh_pairs = []
+        self._wh_pairs = self._generate_wh_pairs(num_outputs)
+
+    def _generate_wh_pairs(
+        self, num_outputs: int, dtype: torch.dtype = torch.float32, device: torch.device = torch.device("cpu")
+    ) -> List[Tensor]:
+        _wh_pairs: List[Tensor] = []
         for k in range(num_outputs):
             # Adding the 2 default width-height pairs for aspect ratio 1 and scale s'k
             s_k = self.scales[k]
             s_prime_k = math.sqrt(self.scales[k] * self.scales[k + 1])
-            wh_pairs = [(s_k, s_k), (s_prime_k, s_prime_k)]
+            wh_pairs = [[s_k, s_k], [s_prime_k, s_prime_k]]
 
             # Adding 2 pairs for each aspect ratio of the feature map k
             for ar in self.aspect_ratios[k]:
                 sq_ar = math.sqrt(ar)
                 w = self.scales[k] * sq_ar
                 h = self.scales[k] / sq_ar
-                wh_pairs.extend([(w, h), (h, w)])
+                wh_pairs.extend([[w, h], [h, w]])
 
-            self._wh_pairs.append(wh_pairs)
+            _wh_pairs.append(torch.as_tensor(wh_pairs, dtype=dtype, device=device))
+        return _wh_pairs
 
     def num_anchors_per_location(self):
         # Estimate num of anchors based on aspect ratios: 2 default boxes + 2 * ratios of feaure map.
         return [2 + 2 * len(r) for r in self.aspect_ratios]
 
+    # Default Boxes calculation based on page 6 of SSD paper
+    def _grid_default_boxes(
+        self, grid_sizes: List[List[int]], image_size: List[int], dtype: torch.dtype = torch.float32
+    ) -> Tensor:
+        default_boxes = []
+        for k, f_k in enumerate(grid_sizes):
+            # Now add the default boxes for each width-height pair
+            if self.steps is not None:
+                x_f_k = image_size[0] / self.steps[k]
+                y_f_k = image_size[1] / self.steps[k]
+            else:
+                y_f_k, x_f_k = f_k
+
+            shifts_x = ((torch.arange(0, f_k[1]) + 0.5) / x_f_k).to(dtype=dtype)
+            shifts_y = ((torch.arange(0, f_k[0]) + 0.5) / y_f_k).to(dtype=dtype)
+            shift_y, shift_x = torch.meshgrid(shifts_y, shifts_x, indexing="ij")
+            shift_x = shift_x.reshape(-1)
+            shift_y = shift_y.reshape(-1)
+
+            shifts = torch.stack((shift_x, shift_y) * len(self._wh_pairs[k]), dim=-1).reshape(-1, 2)
+            # Clipping the default boxes while the boxes are encoded in format (cx, cy, w, h)
+            _wh_pair = self._wh_pairs[k].clamp(min=0, max=1) if self.clip else self._wh_pairs[k]
+            wh_pairs = _wh_pair.repeat((f_k[0] * f_k[1]), 1)
+
+            default_box = torch.cat((shifts, wh_pairs), dim=1)
+
+            default_boxes.append(default_box)
+
+        return torch.cat(default_boxes, dim=0)
+
     def __repr__(self) -> str:
-        s = self.__class__.__name__ + '('
-        s += 'aspect_ratios={aspect_ratios}'
-        s += ', clip={clip}'
-        s += ', scales={scales}'
-        s += ', steps={steps}'
-        s += ')'
-        return s.format(**self.__dict__)
+        s = (
+            f"{self.__class__.__name__}("
+            f"aspect_ratios={self.aspect_ratios}"
+            f", clip={self.clip}"
+            f", scales={self.scales}"
+            f", steps={self.steps}"
+            ")"
+        )
+        return s
 
     def forward(self, image_list: ImageList, feature_maps: List[Tensor]) -> List[Tensor]:
         grid_sizes = [feature_map.shape[-2:] for feature_map in feature_maps]
         image_size = image_list.tensors.shape[-2:]
         dtype, device = feature_maps[0].dtype, feature_maps[0].device
-
-        # Default Boxes calculation based on page 6 of SSD paper
-        default_boxes: List[List[float]] = []
-        for k, f_k in enumerate(grid_sizes):
-            # Now add the default boxes for each width-height pair
-            for j in range(f_k[0]):
-                cy = (j + 0.5) / (float(f_k[0]) if self.steps is None else image_size[1] / self.steps[k])
-                for i in range(f_k[1]):
-                    cx = (i + 0.5) / (float(f_k[1]) if self.steps is None else image_size[0] / self.steps[k])
-                    default_boxes.extend([[cx, cy, w, h] for w, h in self._wh_pairs[k]])
+        default_boxes = self._grid_default_boxes(grid_sizes, image_size, dtype=dtype)
+        default_boxes = default_boxes.to(device)
 
         dboxes = []
+        x_y_size = torch.tensor([image_size[1], image_size[0]], device=default_boxes.device)
         for _ in image_list.image_sizes:
-            dboxes_in_image = torch.tensor(default_boxes, dtype=dtype, device=device)
-            if self.clip:
-                dboxes_in_image.clamp_(min=0, max=1)
-            dboxes_in_image = torch.cat([dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:],
-                                         dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:]], -1)
-            dboxes_in_image[:, 0::2] *= image_size[1]
-            dboxes_in_image[:, 1::2] *= image_size[0]
+            dboxes_in_image = default_boxes
+            dboxes_in_image = torch.cat(
+                [
+                    (dboxes_in_image[:, :2] - 0.5 * dboxes_in_image[:, 2:]) * x_y_size,
+                    (dboxes_in_image[:, :2] + 0.5 * dboxes_in_image[:, 2:]) * x_y_size,
+                ],
+                -1,
+            )
             dboxes.append(dboxes_in_image)
         return dboxes

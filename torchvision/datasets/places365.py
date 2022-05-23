@@ -117,7 +117,7 @@ class Places365(VisionDataset):
         if not self._check_integrity(file, md5, download):
             self.download_devkit()
 
-        with open(file, "r") as fh:
+        with open(file) as fh:
             class_to_idx = dict(process(line) for line in fh)
 
         return sorted(class_to_idx.keys()), class_to_idx
@@ -132,7 +132,7 @@ class Places365(VisionDataset):
         if not self._check_integrity(file, md5, download):
             self.download_devkit()
 
-        with open(file, "r") as fh:
+        with open(file) as fh:
             images = [process(line) for line in fh]
 
         _, targets = zip(*images)

@@ -5,13 +5,25 @@ namespace vision {
 namespace image {
 
 #if !PNG_FOUND
-torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
+torch::Tensor decode_png(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool allow_16_bits) {
   TORCH_CHECK(
       false, "decode_png: torchvision not compiled with libPNG support");
 }
 #else
 
-torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
+bool is_little_endian() {
+  uint32_t x = 1;
+  return *(uint8_t*)&x;
+}
+
+torch::Tensor decode_png(
+    const torch::Tensor& data,
+    ImageReadMode mode,
+    bool allow_16_bits) {
+  C10_LOG_API_USAGE_ONCE("torchvision.csrc.io.image.cpu.decode_png.decode_png");
   // Check that the input tensor dtype is uint8
   TORCH_CHECK(data.dtype() == torch::kU8, "Expected a torch.uint8 tensor");
   // Check that the input tensor is 1-dimensional
@@ -55,6 +67,7 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
 
   png_uint_32 width, height;
   int bit_depth, color_type;
+  int interlace_type;
   auto retval = png_get_IHDR(
       png_ptr,
       info_ptr,
@@ -62,7 +75,7 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
       &height,
       &bit_depth,
       &color_type,
-      nullptr,
+      &interlace_type,
       nullptr,
       nullptr);
 
@@ -71,7 +84,25 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     TORCH_CHECK(retval == 1, "Could read image metadata from content.")
   }
 
+  auto max_bit_depth = allow_16_bits ? 16 : 8;
+  auto err_msg = "At most " + std::to_string(max_bit_depth) +
+      "-bit PNG images are supported currently.";
+  if (bit_depth > max_bit_depth) {
+    png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
+    TORCH_CHECK(false, err_msg)
+  }
+
   int channels = png_get_channels(png_ptr, info_ptr);
+
+  if (color_type == PNG_COLOR_TYPE_GRAY && bit_depth < 8)
+    png_set_expand_gray_1_2_4_to_8(png_ptr);
+
+  int number_of_passes;
+  if (interlace_type == PNG_INTERLACE_ADAM7) {
+    number_of_passes = png_set_interlace_handling(png_ptr);
+  } else {
+    number_of_passes = 1;
+  }
 
   if (mode != IMAGE_READ_MODE_UNCHANGED) {
     // TODO: consider supporting PNG_INFO_tRNS
@@ -152,13 +183,46 @@ torch::Tensor decode_png(const torch::Tensor& data, ImageReadMode mode) {
     png_read_update_info(png_ptr, info_ptr);
   }
 
-  auto tensor =
-      torch::empty({int64_t(height), int64_t(width), channels}, torch::kU8);
-  auto ptr = tensor.accessor<uint8_t, 3>().data();
-  auto bytes = png_get_rowbytes(png_ptr, info_ptr);
-  for (png_uint_32 i = 0; i < height; ++i) {
-    png_read_row(png_ptr, ptr, nullptr);
-    ptr += bytes;
+  auto num_pixels_per_row = width * channels;
+  auto tensor = torch::empty(
+      {int64_t(height), int64_t(width), channels},
+      bit_depth <= 8 ? torch::kU8 : torch::kI32);
+
+  if (bit_depth <= 8) {
+    auto t_ptr = tensor.accessor<uint8_t, 3>().data();
+    for (int pass = 0; pass < number_of_passes; pass++) {
+      for (png_uint_32 i = 0; i < height; ++i) {
+        png_read_row(png_ptr, t_ptr, nullptr);
+        t_ptr += num_pixels_per_row;
+      }
+      t_ptr = tensor.accessor<uint8_t, 3>().data();
+    }
+  } else {
+    // We're reading a 16bits png, but pytorch doesn't support uint16.
+    // So we read each row in a 16bits tmp_buffer which we then cast into
+    // a int32 tensor instead.
+    if (is_little_endian()) {
+      png_set_swap(png_ptr);
+    }
+    int32_t* t_ptr = tensor.accessor<int32_t, 3>().data();
+
+    // We create a tensor instead of malloc-ing for automatic memory management
+    auto tmp_buffer_tensor = torch::empty(
+        {int64_t(num_pixels_per_row * sizeof(uint16_t))}, torch::kU8);
+    uint16_t* tmp_buffer =
+        (uint16_t*)tmp_buffer_tensor.accessor<uint8_t, 1>().data();
+
+    for (int pass = 0; pass < number_of_passes; pass++) {
+      for (png_uint_32 i = 0; i < height; ++i) {
+        png_read_row(png_ptr, (uint8_t*)tmp_buffer, nullptr);
+        // Now we copy the uint16 values into the int32 tensor.
+        for (size_t j = 0; j < num_pixels_per_row; ++j) {
+          t_ptr[j] = (int32_t)tmp_buffer[j];
+        }
+        t_ptr += num_pixels_per_row;
+      }
+      t_ptr = tensor.accessor<int32_t, 3>().data();
+    }
   }
   png_destroy_read_struct(&png_ptr, &info_ptr, nullptr);
   return tensor.permute({2, 0, 1});

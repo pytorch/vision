@@ -3,8 +3,11 @@
 Illustration of transforms
 ==========================
 
-This example illustrates the various transforms available in :mod:`torchvision.transforms`.
+This example illustrates the various transforms available in :ref:`the
+torchvision.transforms module <transforms>`.
 """
+
+# sphinx_gallery_thumbnail_path = "../../gallery/assets/transforms_thumbnail.png"
 
 from PIL import Image
 from pathlib import Path
@@ -168,6 +171,68 @@ resized_crops = [resize_cropper(orig_img) for _ in range(4)]
 plot(resized_crops)
 
 ####################################
+# RandomInvert
+# ~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandomInvert` transform
+# (see also :func:`~torchvision.transforms.functional.invert`)
+# randomly inverts the colors of the given image.
+inverter = T.RandomInvert()
+invertered_imgs = [inverter(orig_img) for _ in range(4)]
+plot(invertered_imgs)
+
+####################################
+# RandomPosterize
+# ~~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandomPosterize` transform
+# (see also :func:`~torchvision.transforms.functional.posterize`)
+# randomly posterizes the image by reducing the number of bits
+# of each color channel.
+posterizer = T.RandomPosterize(bits=2)
+posterized_imgs = [posterizer(orig_img) for _ in range(4)]
+plot(posterized_imgs)
+
+####################################
+# RandomSolarize
+# ~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandomSolarize` transform
+# (see also :func:`~torchvision.transforms.functional.solarize`)
+# randomly solarizes the image by inverting all pixel values above
+# the threshold.
+solarizer = T.RandomSolarize(threshold=192.0)
+solarized_imgs = [solarizer(orig_img) for _ in range(4)]
+plot(solarized_imgs)
+
+####################################
+# RandomAdjustSharpness
+# ~~~~~~~~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandomAdjustSharpness` transform
+# (see also :func:`~torchvision.transforms.functional.adjust_sharpness`)
+# randomly adjusts the sharpness of the given image.
+sharpness_adjuster = T.RandomAdjustSharpness(sharpness_factor=2)
+sharpened_imgs = [sharpness_adjuster(orig_img) for _ in range(4)]
+plot(sharpened_imgs)
+
+####################################
+# RandomAutocontrast
+# ~~~~~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandomAutocontrast` transform
+# (see also :func:`~torchvision.transforms.functional.autocontrast`)
+# randomly applies autocontrast to the given image.
+autocontraster = T.RandomAutocontrast()
+autocontrasted_imgs = [autocontraster(orig_img) for _ in range(4)]
+plot(autocontrasted_imgs)
+
+####################################
+# RandomEqualize
+# ~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandomEqualize` transform
+# (see also :func:`~torchvision.transforms.functional.equalize`)
+# randomly equalizes the histogram of the given image.
+equalizer = T.RandomEqualize()
+equalized_imgs = [equalizer(orig_img) for _ in range(4)]
+plot(equalized_imgs)
+
+####################################
 # AutoAugment
 # ~~~~~~~~~~~
 # The :class:`~torchvision.transforms.AutoAugment` transform
@@ -181,6 +246,30 @@ imgs = [
 ]
 row_title = [str(policy).split('.')[-1] for policy in policies]
 plot(imgs, row_title=row_title)
+
+####################################
+# RandAugment
+# ~~~~~~~~~~~
+# The :class:`~torchvision.transforms.RandAugment` transform automatically augments the data.
+augmenter = T.RandAugment()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
+
+####################################
+# TrivialAugmentWide
+# ~~~~~~~~~~~~~~~~~~
+# The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically augments the data.
+augmenter = T.TrivialAugmentWide()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
+
+####################################
+# AugMix
+# ~~~~~~
+# The :class:`~torchvision.transforms.AugMix` transform automatically augments the data.
+augmenter = T.AugMix()
+imgs = [augmenter(orig_img) for _ in range(4)]
+plot(imgs)
 
 ####################################
 # Randomly-applied transforms

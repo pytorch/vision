@@ -1,5 +1,7 @@
-torchvision.ops
-===============
+.. _ops:
+
+Operators
+=========
 
 .. currentmodule:: torchvision.ops
 
@@ -8,26 +10,49 @@ torchvision.ops
 .. note::
   All operators have native support for TorchScript.
 
+.. autosummary::
+    :toctree: generated/
+    :template: function.rst
 
-.. autofunction:: nms
-.. autofunction:: batched_nms
-.. autofunction:: remove_small_boxes
-.. autofunction:: clip_boxes_to_image
-.. autofunction:: box_convert
-.. autofunction:: box_area
-.. autofunction:: box_iou
-.. autofunction:: generalized_box_iou
-.. autofunction:: roi_align
-.. autofunction:: ps_roi_align
-.. autofunction:: roi_pool
-.. autofunction:: ps_roi_pool
-.. autofunction:: deform_conv2d
-.. autofunction:: sigmoid_focal_loss
+    batched_nms
+    box_area
+    box_convert
+    box_iou
+    clip_boxes_to_image
+    complete_box_iou
+    complete_box_iou_loss
+    deform_conv2d
+    drop_block2d
+    drop_block3d
+    generalized_box_iou
+    generalized_box_iou_loss
+    distance_box_iou
+    distance_box_iou_loss
+    masks_to_boxes
+    nms
+    ps_roi_align
+    ps_roi_pool
+    remove_small_boxes
+    roi_align
+    roi_pool
+    sigmoid_focal_loss
+    stochastic_depth
 
-.. autoclass:: RoIAlign
-.. autoclass:: PSRoIAlign
-.. autoclass:: RoIPool
-.. autoclass:: PSRoIPool
-.. autoclass:: DeformConv2d
-.. autoclass:: MultiScaleRoIAlign
-.. autoclass:: FeaturePyramidNetwork
+.. autosummary::
+    :toctree: generated/
+    :template: class.rst
+
+    RoIAlign
+    PSRoIAlign
+    RoIPool
+    PSRoIPool
+    DeformConv2d
+    MultiScaleRoIAlign
+    FeaturePyramidNetwork
+    StochasticDepth
+    FrozenBatchNorm2d
+    Conv2dNormActivation
+    Conv3dNormActivation
+    SqueezeExcitation
+    DropBlock2d
+    DropBlock3d
