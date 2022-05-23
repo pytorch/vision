@@ -50,6 +50,10 @@ class FCNHead(nn.Sequential):
 _COMMON_META = {
     "categories": _VOC_CATEGORIES,
     "min_size": (1, 1),
+    "_docs": """
+        These weights were trained on a subset of COCO, using only the 20 categories that are present in the Pascal VOC
+        dataset.
+    """,
 }
 
 
@@ -61,9 +65,11 @@ class FCN_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 35322218,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet50",
-            "metrics": {
-                "miou": 60.5,
-                "pixel_acc": 91.4,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 60.5,
+                    "pixel_acc": 91.4,
+                }
             },
         },
     )
@@ -78,9 +84,11 @@ class FCN_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 54314346,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet101",
-            "metrics": {
-                "miou": 63.7,
-                "pixel_acc": 91.9,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 63.7,
+                    "pixel_acc": 91.9,
+                }
             },
         },
     )
@@ -212,3 +220,15 @@ def fcn_resnet101(
         model.load_state_dict(weights.get_state_dict(progress=progress))
 
     return model
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from .._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "fcn_resnet50_coco": FCN_ResNet50_Weights.COCO_WITH_VOC_LABELS_V1.url,
+        "fcn_resnet101_coco": FCN_ResNet101_Weights.COCO_WITH_VOC_LABELS_V1.url,
+    }
+)

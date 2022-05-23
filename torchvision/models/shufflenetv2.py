@@ -186,21 +186,25 @@ def _shufflenetv2(
 _COMMON_META = {
     "min_size": (1, 1),
     "categories": _IMAGENET_CATEGORIES,
-    "recipe": "https://github.com/barrh/Shufflenet-v2-Pytorch/tree/v0.1.0",
+    "recipe": "https://github.com/ericsun99/Shufflenet-v2-Pytorch",
 }
 
 
 class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
+        # Weights ported from https://github.com/ericsun99/Shufflenet-v2-Pytorch
         url="https://download.pytorch.org/models/shufflenetv2_x0.5-f707e7126e.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 1366792,
-            "metrics": {
-                "acc@1": 60.552,
-                "acc@5": 81.746,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 60.552,
+                    "acc@5": 81.746,
+                }
             },
+            "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -208,15 +212,19 @@ class ShuffleNet_V2_X0_5_Weights(WeightsEnum):
 
 class ShuffleNet_V2_X1_0_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
+        # Weights ported from https://github.com/ericsun99/Shufflenet-v2-Pytorch
         url="https://download.pytorch.org/models/shufflenetv2_x1-5666bf0f80.pth",
         transforms=partial(ImageClassification, crop_size=224),
         meta={
             **_COMMON_META,
             "num_params": 2278604,
-            "metrics": {
-                "acc@1": 69.362,
-                "acc@5": 88.316,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.362,
+                    "acc@5": 88.316,
+                }
             },
+            "_docs": """These weights were trained from scratch to reproduce closely the results of the paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -230,10 +238,16 @@ class ShuffleNet_V2_X1_5_Weights(WeightsEnum):
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 3503624,
-            "metrics": {
-                "acc@1": 72.996,
-                "acc@5": 91.086,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.996,
+                    "acc@5": 91.086,
+                }
             },
+            "_docs": """
+                These weights were trained from scratch by using TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -247,10 +261,16 @@ class ShuffleNet_V2_X2_0_Weights(WeightsEnum):
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/pull/5906",
             "num_params": 7393996,
-            "metrics": {
-                "acc@1": 76.230,
-                "acc@5": 93.006,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.230,
+                    "acc@5": 93.006,
+                }
             },
+            "_docs": """
+                These weights were trained from scratch by using TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -316,7 +336,7 @@ def shufflenet_v2_x1_0(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 116, 232, 464, 1024], **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x1_5(
     *, weights: Optional[ShuffleNet_V2_X1_5_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
@@ -346,7 +366,7 @@ def shufflenet_v2_x1_5(
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 176, 352, 704, 1024], **kwargs)
 
 
-@handle_legacy_interface(weights=("pretrained", None))
+@handle_legacy_interface(weights=("pretrained", ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1))
 def shufflenet_v2_x2_0(
     *, weights: Optional[ShuffleNet_V2_X2_0_Weights] = None, progress: bool = True, **kwargs: Any
 ) -> ShuffleNetV2:
@@ -374,3 +394,17 @@ def shufflenet_v2_x2_0(
     weights = ShuffleNet_V2_X2_0_Weights.verify(weights)
 
     return _shufflenetv2(weights, progress, [4, 8, 4], [24, 244, 488, 976, 2048], **kwargs)
+
+
+# The dictionary below is internal implementation detail and will be removed in v0.15
+from ._utils import _ModelURLs
+
+
+model_urls = _ModelURLs(
+    {
+        "shufflenetv2_x0.5": ShuffleNet_V2_X0_5_Weights.IMAGENET1K_V1.url,
+        "shufflenetv2_x1.0": ShuffleNet_V2_X1_0_Weights.IMAGENET1K_V1.url,
+        "shufflenetv2_x1.5": None,
+        "shufflenetv2_x2.0": None,
+    }
+)
