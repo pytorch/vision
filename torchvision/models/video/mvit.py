@@ -1,7 +1,6 @@
 from functools import partial
-from typing import Callable, List, Optional, Tuple
+from typing import Callable, List, Optional, Sequence, Tuple
 
-import numpy
 import torch
 import torch.fx
 import torch.nn as nn
@@ -12,6 +11,13 @@ from .._utils import _make_divisible
 
 
 __all__ = ["mvit_b_16"]
+
+
+def _prod(s: Sequence[int]) -> int:
+    product = 1
+    for v in s:
+        product *= v
+    return product
 
 
 def _attention_pool(
@@ -161,9 +167,9 @@ class MultiScaleAttention(nn.Module):
             self.proj_drop = nn.Dropout(dropout_rate)
 
         # Skip pooling with kernel and stride size of (1, 1, 1).
-        if kernel_q is not None and numpy.prod(kernel_q) == 1 and numpy.prod(stride_q) == 1:
+        if kernel_q is not None and _prod(kernel_q) == 1 and _prod(stride_q) == 1:
             kernel_q = None
-        if kernel_kv is not None and numpy.prod(kernel_kv) == 1 and numpy.prod(stride_kv) == 1:
+        if kernel_kv is not None and _prod(kernel_kv) == 1 and _prod(stride_kv) == 1:
             kernel_kv = None
 
         self.pool_q = (
@@ -209,22 +215,6 @@ class MultiScaleAttention(nn.Module):
         )
         self.norm_v = norm_layer(head_dim) if kernel_kv is not None else None
 
-    def _qkv_proj(
-        self,
-        q: torch.Tensor,
-        q_size: List[int],
-        k: torch.Tensor,
-        k_size: List[int],
-        v: torch.Tensor,
-        v_size: List[int],
-        batch_size: List[int],
-        chan_size: List[int],
-    ) -> Tuple[torch.Tensor, torch.Tensor, torch.Tensor]:
-        q = self.q(q).reshape(batch_size, q_size, self.num_heads, chan_size // self.num_heads).permute(0, 2, 1, 3)
-        k = self.k(k).reshape(batch_size, k_size, self.num_heads, chan_size // self.num_heads).permute(0, 2, 1, 3)
-        v = self.v(v).reshape(batch_size, v_size, self.num_heads, chan_size // self.num_heads).permute(0, 2, 1, 3)
-        return q, k, v
-
     def _qkv_pool(
         self,
         q: torch.Tensor,
@@ -251,33 +241,6 @@ class MultiScaleAttention(nn.Module):
             norm=self.norm_v,
         )
         return q, q_shape, k, k_shape, v, v_shape
-
-    def _get_qkv_length(
-        self,
-        q_shape: List[int],
-        k_shape: List[int],
-        v_shape: List[int],
-    ) -> Tuple[int, int, int]:
-        q_N = numpy.prod(q_shape) + 1
-        k_N = numpy.prod(k_shape) + 1
-        v_N = numpy.prod(v_shape) + 1
-        return q_N, k_N, v_N
-
-    def _reshape_qkv_to_seq(
-        self,
-        q: torch.Tensor,
-        k: torch.Tensor,
-        v: torch.Tensor,
-        q_N: int,
-        v_N: int,
-        k_N: int,
-        B: int,
-        C: int,
-    ) -> Tuple[int, int, int]:
-        q = q.permute(0, 2, 1, 3).reshape(B, q_N, C)
-        v = v.permute(0, 2, 1, 3).reshape(B, v_N, C)
-        k = k.permute(0, 2, 1, 3).reshape(B, k_N, C)
-        return q, k, v
 
     def forward(self, x: torch.Tensor, thw_shape: List[int]) -> Tuple[torch.Tensor, List[int]]:
         """
@@ -413,7 +376,7 @@ class MultiScaleBlock(nn.Module):
 
         self.pool_skip = (
             nn.MaxPool3d(kernel_skip, stride_skip, padding_skip, ceil_mode=False)
-            if len(stride_skip) > 0 and numpy.prod(stride_skip) > 1
+            if len(stride_skip) > 0 and _prod(stride_skip) > 1
             else None
         )
 
@@ -452,7 +415,7 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
     def __init__(
         self,
         embed_dim: int,
-        patch_embed_shape: List[int],
+        patch_embed_shape: Tuple[int, int, int],
     ) -> None:
         """
         Args:
@@ -503,8 +466,6 @@ class create_vit_basic_head(nn.Module):
         # Projection configs.
         in_features: int,
         out_features: int,
-        # Pooling configs.
-        seq_pool_type: str = "cls",
         # Dropout configs.
         dropout_rate: float = 0.5,
         # Activation configs.
@@ -586,50 +547,6 @@ class PatchEmbed(nn.Module):
         x = self.patch_model(x)
         # B C (T) H W -> B (T)HW C
         return x.flatten(2).transpose(1, 2)
-
-
-def create_conv_patch_embed(
-    in_channels: int,
-    out_channels: int,
-    conv_kernel_size: Tuple[int] = (1, 16, 16),
-    conv_stride: Tuple[int] = (1, 4, 4),
-    conv_padding: Tuple[int] = (1, 7, 7),
-    conv_bias: bool = True,
-) -> nn.Module:
-    """
-    Creates the transformer basic patch embedding. It performs Convolution, flatten and
-    transpose.
-
-    ::
-
-                                        Conv3d
-                                           ↓
-                                        flatten
-                                           ↓
-                                       transpose
-
-    Args:
-        in_channels (int): input channel size of the convolution.
-        out_channels (int): output channel size of the convolution.
-        conv_kernel_size (tuple): convolutional kernel size(s).
-        conv_stride (tuple): convolutional stride size(s).
-        conv_padding (tuple): convolutional padding size(s).
-        conv_bias (bool): convolutional bias. If true, adds a learnable bias to the
-            output.
-        conv (callable): Callable used to build the convolution layer.
-
-    Returns:
-        (nn.Module): transformer patch embedding layer.
-    """
-    conv_module = nn.Conv3d(
-        in_channels=in_channels,
-        out_channels=out_channels,
-        kernel_size=conv_kernel_size,
-        stride=conv_stride,
-        padding=conv_padding,
-        bias=conv_bias,
-    )
-    return PatchEmbed(patch_model=conv_module)
 
 
 class MultiscaleVisionTransformers(nn.Module):
@@ -834,18 +751,20 @@ def create_multiscale_vision_transformers(
     if isinstance(spatial_size, int):
         spatial_size = (spatial_size, spatial_size)
 
-    patch_embed = create_conv_patch_embed(
-        in_channels=input_channels,
-        out_channels=patch_embed_dim,
-        conv_kernel_size=conv_patch_embed_kernel,
-        conv_stride=conv_patch_embed_stride,
-        conv_padding=conv_patch_embed_padding,
+    patch_embed = PatchEmbed(
+        patch_model=nn.Conv3d(
+            in_channels=input_channels,
+            out_channels=patch_embed_dim,
+            kernel_size=conv_patch_embed_kernel,
+            stride=conv_patch_embed_stride,
+            padding=conv_patch_embed_padding,
+            bias=True,
+        )
     )
 
-    input_dims = [temporal_size, spatial_size[0], spatial_size[1]]
-    input_stirde = conv_patch_embed_stride
+    input_dims = (temporal_size, spatial_size[0], spatial_size[1])
 
-    patch_embed_shape = [input_dims[i] // input_stirde[i] for i in range(len(input_dims))]
+    patch_embed_shape = tuple(v // conv_patch_embed_stride[i] for i, v in enumerate(input_dims))
 
     cls_positional_encoding = SpatioTemporalClsPositionalEncoding(
         embed_dim=patch_embed_dim,
@@ -867,10 +786,10 @@ def create_multiscale_vision_transformers(
 
     mvit_blocks = nn.ModuleList()
 
-    pool_q = [[] for i in range(depth)]
-    pool_kv = [[] for i in range(depth)]
-    stride_q = [[] for i in range(depth)]
-    stride_kv = [[] for i in range(depth)]
+    pool_q = [[] for _ in range(depth)]
+    pool_kv = [[] for _ in range(depth)]
+    stride_q = [[] for _ in range(depth)]
+    stride_kv = [[] for _ in range(depth)]
 
     if pool_q_stride_size is not None:
         for i in range(len(pool_q_stride_size)):
