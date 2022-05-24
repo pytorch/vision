@@ -316,6 +316,8 @@ def mnasnet0_75(*, weights: Optional[MNASNet0_75_Weights] = None, progress: bool
             <https://github.com/pytorch/vision/blob/main/torchvision/models/mnasnet.py>`_
             for more details about this class.
 
+    .. autoclass:: torchvision.models.MNASNet0_75_Weights
+        :members:
     """
     weights = MNASNet0_75_Weights.verify(weights)
 
@@ -366,6 +368,8 @@ def mnasnet1_3(*, weights: Optional[MNASNet1_3_Weights] = None, progress: bool =
             <https://github.com/pytorch/vision/blob/main/torchvision/models/mnasnet.py>`_
             for more details about this class.
 
+    .. autoclass:: torchvision.models.MNASNet1_3_Weights
+        :members:
     """
     weights = MNASNet1_3_Weights.verify(weights)
 
