@@ -471,7 +471,7 @@ Here is an example of how to use the pre-trained video classification models:
     from torchvision.io.video import read_video
     from torchvision.models.video import r3d_18, R3D_18_Weights
 
-    vid, _, _ = read_video("test/assets/videos/v_SoccerJuggling_g23_c01.avi")
+    vid, _, _ = read_video("test/assets/videos/v_SoccerJuggling_g23_c01.avi", output_format="TCHW")
     vid = vid[:32]  # optionally shorten duration
 
     # Step 1: Initialize model with the best available weights
