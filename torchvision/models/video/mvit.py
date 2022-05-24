@@ -310,9 +310,9 @@ class MultiScaleBlock(nn.Module):
         qkv_bias: bool = False,
         dropout_rate: float = 0.0,
         droppath_rate: float = 0.0,
-        act_layer: nn.Module = nn.GELU,
-        norm_layer: nn.Module = nn.LayerNorm,
-        attn_norm_layer: nn.Module = nn.LayerNorm,
+        act_layer: Callable[..., nn.Module] = nn.GELU,
+        norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
+        attn_norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         kernel_q: _size_3_t = (1, 1, 1),
         kernel_kv: _size_3_t = (1, 1, 1),
         stride_q: _size_3_t = (1, 1, 1),
@@ -460,7 +460,7 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
         return x
 
 
-class create_vit_basic_head(nn.Module):
+class ClassificationHead(nn.Module):
     def __init__(
         self,
         # Projection configs.
@@ -468,52 +468,16 @@ class create_vit_basic_head(nn.Module):
         out_features: int,
         # Dropout configs.
         dropout_rate: float = 0.5,
-        # Activation configs.
-        activation: Optional[Callable] = None,
-    ) -> nn.Module:
-        """
-        Creates vision transformer basic head.
-
-        ::
-
-
-                                            Pooling
-                                              ↓
-                                            Dropout
-                                              ↓
-                                          Projection
-                                              ↓
-                                          Activation
-
-
-        Activation examples include: ReLU, Softmax, Sigmoid, and None.
-        Pool type examples include: cls, mean and none.
-
-        Args:
-
-            in_features: input channel size of the resnet head.
-            out_features: output channel size of the resnet head.
-
-            pool_type (str): Pooling type. It supports "cls", "mean " and "none". If set to
-                "cls", it assumes the first element in the input is the cls token and
-                returns it. If set to "mean", it returns the mean of the entire sequence.
-
-            activation (callable): a callable that constructs vision transformer head
-                activation layer, examples include: nn.ReLU, nn.Softmax, nn.Sigmoid, and
-                None (not applying activation).
-
-            dropout_rate (float): dropout rate.
-        """
+    ) -> None:
         super().__init__()
-        self.dropout = nn.Dropout(dropout_rate) if dropout_rate > 0.0 else None
+        self.dropout = nn.Dropout(dropout_rate)
         self.proj = nn.Linear(in_features, out_features)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         # Pick cls embedding
         x = x[:, 0]
         # Performs dropout.
-        if self.dropout is not None:
-            x = self.dropout(x)
+        x = self.dropout(x)
         # Performs projection.
         x = self.proj(x)
         return x
@@ -662,9 +626,7 @@ def create_multiscale_vision_transformers(
     pool_kv_stride_adaptive: Optional[_size_3_t] = (1, 8, 8),
     pool_kvq_kernel: Optional[_size_3_t] = (3, 3, 3),
     # Head config.
-    head: Optional[Callable] = create_vit_basic_head,
     head_dropout_rate: float = 0.5,
-    head_activation: Optional[Callable] = None,
     num_classes: int = 400,
     **kwargs,
 ) -> nn.Module:
@@ -715,9 +677,7 @@ def create_multiscale_vision_transformers(
         pool_kvq_kernel (Optional[_size_3_t]): Pooling kernel size for q and kv. It None,
             the kernel_size is [s + 1 if s > 1 else s for s in stride_size].
 
-        head (Callable): Head model.
         head_dropout_rate (float): Dropout rate in the head.
-        head_activation (Callable): Activation in the head.
         num_classes (int): Number of classes in the final classification head.
 
     Example usage (building a MViT_B model for Kinetics400):
@@ -773,9 +733,6 @@ def create_multiscale_vision_transformers(
 
     dpr = [x.item() for x in torch.linspace(0, droppath_rate_block, depth)]  # stochastic depth decay rule
 
-    if dropout_rate_block > 0.0:
-        pos_drop = nn.Dropout(p=dropout_rate_block)
-
     dim_mul, head_mul = torch.ones(depth + 1), torch.ones(depth + 1)
     if embed_dim_mul is not None:
         for i in range(len(embed_dim_mul)):
@@ -816,6 +773,7 @@ def create_multiscale_vision_transformers(
             else:
                 pool_kv[pool_kv_stride_size[i][0]] = [s + 1 if s > 1 else s for s in pool_kv_stride_size[i][1:]]
 
+    dim_out = 0
     for i in range(depth):
         num_heads = _make_divisible(num_heads * head_mul[i], 1)
         patch_embed_dim = _make_divisible(patch_embed_dim * dim_mul[i], num_heads, min_value=8)
@@ -844,23 +802,18 @@ def create_multiscale_vision_transformers(
         )
 
     embed_dim = dim_out
-    norm_embed = None if norm_layer is None else norm_layer(embed_dim)
-    if head is not None:
-        head_model = head(
-            in_features=embed_dim,
-            out_features=num_classes,
-            dropout_rate=head_dropout_rate,
-            activation=head_activation,
-        )
-    else:
-        head_model = None
+    head_model = ClassificationHead(
+        in_features=embed_dim,
+        out_features=num_classes,
+        dropout_rate=head_dropout_rate,
+    )
 
     return MultiscaleVisionTransformers(
         patch_embed=patch_embed,
         cls_positional_encoding=cls_positional_encoding,
-        pos_drop=pos_drop if dropout_rate_block > 0.0 else None,
+        pos_drop=nn.Dropout(p=dropout_rate_block) if dropout_rate_block > 0.0 else None,
         blocks=mvit_blocks,
-        norm_embed=norm_embed,
+        norm_embed=norm_layer(embed_dim),
         head=head_model,
     )
 
