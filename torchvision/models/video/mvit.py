@@ -49,11 +49,9 @@ def _attention_pool(
     if pool is None:
         return tensor, thw_shape
     tensor_dim = tensor.ndim
-    if tensor_dim == 4:
-        pass
-    elif tensor_dim == 3:
+    if tensor_dim == 3:
         tensor = tensor.unsqueeze(1)
-    else:
+    elif tensor_dim != 4:
         raise NotImplementedError(f"Unsupported input dimension {tensor.shape}")
 
     cls_tok, tensor = tensor[:, :, :1, :], tensor[:, :, 1:, :]
@@ -78,9 +76,7 @@ def _attention_pool(
     if norm is not None and not isinstance(norm, nn.BatchNorm3d):
         tensor = norm(tensor)
 
-    if tensor_dim == 4:
-        pass
-    else:  # For the case tensor_dim == 3.
+    if tensor_dim == 3:
         tensor = tensor.squeeze(1)
     return tensor, thw_shape
 
@@ -239,19 +235,19 @@ class MultiScaleAttention(nn.Module):
             q,
             self.pool_q,
             thw_shape,
-            norm=self.norm_q if hasattr(self, "norm_q") else None,
+            norm=self.norm_q,
         )
         k, k_shape = _attention_pool(
             k,
             self.pool_k,
             thw_shape,
-            norm=self.norm_k if hasattr(self, "norm_k") else None,
+            norm=self.norm_k,
         )
         v, v_shape = _attention_pool(
             v,
             self.pool_v,
             thw_shape,
-            norm=self.norm_v if hasattr(self, "norm_v") else None,
+            norm=self.norm_v,
         )
         return q, q_shape, k, k_shape, v, v_shape
 
@@ -260,7 +256,7 @@ class MultiScaleAttention(nn.Module):
         q_shape: List[int],
         k_shape: List[int],
         v_shape: List[int],
-    ) -> Tuple[int]:
+    ) -> Tuple[int, int, int]:
         q_N = numpy.prod(q_shape) + 1
         k_N = numpy.prod(k_shape) + 1
         v_N = numpy.prod(v_shape) + 1
@@ -276,7 +272,7 @@ class MultiScaleAttention(nn.Module):
         k_N: int,
         B: int,
         C: int,
-    ) -> Tuple[int]:
+    ) -> Tuple[int, int, int]:
         q = q.permute(0, 2, 1, 3).reshape(B, q_N, C)
         v = v.permute(0, 2, 1, 3).reshape(B, v_N, C)
         k = k.permute(0, 2, 1, 3).reshape(B, k_N, C)
@@ -455,7 +451,7 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
     def __init__(
         self,
         embed_dim: int,
-        patch_embed_shape: Tuple[int, int, int],
+        patch_embed_shape: List[int],
     ) -> None:
         """
         Args:
@@ -532,18 +528,6 @@ def c2_msra_fill(module: nn.Module) -> None:
         nn.init.constant_(module.bias, 0)
 
 
-def set_attributes(self, params: List[object] = None) -> None:
-    """
-    An utility function used in classes to set attributes from the input list of parameters.
-    Args:
-        params (list): list of parameters.
-    """
-    if params:
-        for k, v in params.items():
-            if k != "self":
-                setattr(self, k, v)
-
-
 def round_width(width, multiplier, min_width=8, divisor=8, ceil=False):
     """
     Round width of filters based on width multiplier
@@ -566,31 +550,6 @@ def round_width(width, multiplier, min_width=8, divisor=8, ceil=False):
     if width_out < 0.9 * width:
         width_out += divisor
     return int(width_out)
-
-
-def round_repeats(repeats, multiplier):
-    """
-    Round number of layers based on depth multiplier.
-    """
-    if not multiplier:
-        return repeats
-    return int(math.ceil(multiplier * repeats))
-
-
-class SequencePool(nn.Module):
-    """
-    Sequence pool produces a single embedding from a sequence of embeddings. Currently
-    it supports "mean" and "cls".
-
-    """
-
-    def __init__(self) -> None:
-
-        super().__init__()
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        x = x[:, 0]
-        return x
 
 
 class create_vit_basic_head(nn.Module):
@@ -673,11 +632,10 @@ class PatchEmbed(nn.Module):
 
     def __init__(
         self,
-        patch_model: nn.Module = None,
+        patch_model: nn.Module,
     ) -> None:
         super().__init__()
-        set_attributes(self, locals())
-        assert self.patch_model is not None
+        self.patch_model = patch_model
 
     def forward(self, x) -> torch.Tensor:
         x = self.patch_model(x)
@@ -868,10 +826,12 @@ class MultiscaleVisionTransformers(nn.Module):
             head (Optional[nn.Module]): Head module.
         """
         super().__init__()
-        set_attributes(self, locals())
-        assert hasattr(
-            cls_positional_encoding, "patch_embed_shape"
-        ), "cls_positional_encoding should have attribute patch_embed_shape."
+        self.patch_embed = patch_embed
+        self.cls_positional_encoding = cls_positional_encoding
+        self.pos_drop = pos_drop
+        self.blocks = blocks
+        self.norm_embed = norm_embed
+        self.head = head
         init_net_weights(self, init_std=0.02, style="vit")
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
@@ -896,14 +856,12 @@ def create_multiscale_vision_transformers(
     spatial_size: _size_2_t,
     temporal_size: int,
     depth: int = 16,
-    norm: str = "layernorm",
     # Patch embed config.
     input_channels: int = 3,
     patch_embed_dim: int = 96,
     conv_patch_embed_kernel: Tuple[int] = (3, 7, 7),
     conv_patch_embed_stride: Tuple[int] = (2, 4, 4),
     conv_patch_embed_padding: Tuple[int] = (1, 3, 3),
-    enable_patch_embed_norm: bool = False,
     # Attention block config.
     num_heads: int = 1,
     mlp_ratio: float = 4.0,
@@ -934,7 +892,6 @@ def create_multiscale_vision_transformers(
             int is given, it assumes the width and the height are the same.
         temporal_size (int): Number of frames in the input video.
         depth (int): The depth of the model.
-        norm (str): Normalization layer. It currently supports "layernorm".
 
         input_channels (int): Channel dimension of the input video.
         patch_embed_dim (int): Embedding dimension after patchifing the video input.
@@ -944,8 +901,6 @@ def create_multiscale_vision_transformers(
             patchifing the video input.
         conv_patch_embed_padding (Tuple[int]): Padding size of the convolution for
             patchifing the video input.
-        enable_patch_embed_norm (bool): If True, apply normalization after patchifing
-            the video input.
 
         num_heads (int): Number of heads in the first transformer block.
         mlp_ratio (float): Mlp ratio which controls the feature dimension in the
@@ -1083,10 +1038,8 @@ def create_multiscale_vision_transformers(
             divisor=round_width(num_heads, head_mul[i + 1]),
         )
 
-        block_func = MultiScaleBlock
-
         mvit_blocks.append(
-            block_func(
+            MultiScaleBlock(
                 dim=patch_embed_dim,
                 dim_out=dim_out,
                 num_heads=num_heads,
