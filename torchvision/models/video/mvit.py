@@ -295,12 +295,12 @@ class MultiScaleAttention(nn.Module):
         q, k, v = qkv[0], qkv[1], qkv[2]
         q, q_shape, k, k_shape, v, v_shape = self._qkv_pool(q, k, v, thw_shape)
 
-        attn = (q * self.scale) @ k.transpose(-2, -1)
+        attn = torch.matmul(q * self.scale, k.transpose(-2, -1))
         attn = attn.softmax(dim=-1)
 
         N = q.shape[2]
 
-        x = (attn @ v + q).transpose(1, 2).reshape(B, N, C)
+        x = (torch.matmul(attn, v) + q).transpose(1, 2).reshape(B, N, C)
 
         x = self.proj(x)
         if self.dropout_rate > 0.0:
