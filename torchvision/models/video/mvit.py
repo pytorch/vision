@@ -20,75 +20,64 @@ def _prod(s: Sequence[int]) -> int:
     return product
 
 
-def _attention_pool(
-    tensor: torch.Tensor,
-    pool: Optional[nn.Module],
-    thw_shape: List[int],
-    norm: Optional[nn.Module] = None,
-) -> Tuple[torch.Tensor, List[int]]:
-    """
-    Apply pool to a flattened input (given pool operation and the unflattened shape).
-
-
-                                         Input
-                                           ↓
-                                        Reshape
-                                           ↓
-                                          Pool
-                                           ↓
-                                        Reshape
-                                           ↓
-                                          Norm
-
-
-    Args:
-        tensor (torch.Tensor): Input tensor.
-        pool (Optional[Callable]): Pool operation that is applied to the input tensor.
-            If pool is none, return the input tensor.
-        thw_shape (List): The shape of the input tensor (before flattening).
-        norm: (Optional[Callable]): Optional normalization operation applied to
-         tensor after pool.
-
-    Returns:
-        tensor (torch.Tensor): Input tensor after pool.
-        thw_shape (List[int]): Output tensor shape (before flattening).
-    """
-    if pool is None:
-        return tensor, thw_shape
-    tensor_dim = tensor.ndim
+def _unsqueeze(tensor: torch.Tensor) -> Tuple[torch.Tensor, int]:
+    tensor_dim = tensor.dim()
     if tensor_dim == 3:
         tensor = tensor.unsqueeze(1)
     elif tensor_dim != 4:
         raise NotImplementedError(f"Unsupported input dimension {tensor.shape}")
+    return tensor, tensor_dim
 
-    cls_tok, tensor = tensor[:, :, :1, :], tensor[:, :, 1:, :]
-
-    B, N, L, C = tensor.shape
-    T, H, W = thw_shape
-    tensor = tensor.reshape(B * N, T, H, W, C).permute(0, 4, 1, 2, 3).contiguous()
-
-    if isinstance(norm, nn.BatchNorm3d):
-        # If use BN, we apply norm before pooling instead of after pooling.
-        tensor = norm(tensor)
-        # We also empirically find that adding a GELU here is beneficial.
-        tensor = nn.functional.gelu(tensor)
-
-    tensor = pool(tensor)
-
-    thw_shape = [tensor.shape[2], tensor.shape[3], tensor.shape[4]]
-    L_pooled = tensor.shape[2] * tensor.shape[3] * tensor.shape[4]
-    tensor = tensor.reshape(B, N, C, L_pooled).transpose(2, 3)
-
-    tensor = torch.cat((cls_tok, tensor), dim=2)
-    if norm is not None and not isinstance(norm, nn.BatchNorm3d):
-        tensor = norm(tensor)
-
+def _squeeze(tensor: torch.Tensor, tensor_dim: int) -> torch.Tensor:
     if tensor_dim == 3:
         tensor = tensor.squeeze(1)
-    return tensor, thw_shape
+    return tensor
 
 
-torch.fx.wrap("_attention_pool")
+torch.fx.wrap("_unsqueeze")
+torch.fx.wrap("_squeeze")
+
+
+class AttentionPool(nn.Module):
+    def __init__(self, pool: Optional[nn.Module], norm: Optional[nn.Module]):
+        super().__init__()
+        self.pool = pool
+        self.norm = norm
+        self._norm_before_pool = isinstance(norm, nn.BatchNorm3d)
+
+    def forward(
+        self,
+        tensor: torch.Tensor,
+        thw_shape: List[int],
+    ) -> Tuple[torch.Tensor, List[int]]:
+        if self.pool is None:
+            return tensor, thw_shape
+        tensor, tensor_dim = _unsqueeze(tensor)
+
+        cls_tok, tensor = tensor[:, :, :1, :], tensor[:, :, 1:, :]
+
+        B, N, L, C = tensor.shape
+        T, H, W = thw_shape
+        tensor = tensor.reshape(B * N, T, H, W, C).permute(0, 4, 1, 2, 3).contiguous()
+
+        if self.norm is not None and self._norm_before_pool:
+            # If use BN, we apply norm before pooling instead of after pooling.
+            tensor = self.norm(tensor)
+            # We also empirically find that adding a GELU here is beneficial.
+            tensor = nn.functional.gelu(tensor)
+
+        tensor = self.pool(tensor)
+
+        thw_shape = [tensor.shape[2], tensor.shape[3], tensor.shape[4]]
+        L_pooled = tensor.shape[2] * tensor.shape[3] * tensor.shape[4]
+        tensor = tensor.reshape(B, N, C, L_pooled).transpose(2, 3)
+
+        tensor = torch.cat((cls_tok, tensor), dim=2)
+        if self.norm is not None and not self._norm_before_pool:
+            tensor = self.norm(tensor)
+
+        tensor = _squeeze(tensor, tensor_dim)
+        return tensor, thw_shape
 
 
 class MultiScaleAttention(nn.Module):
@@ -163,8 +152,7 @@ class MultiScaleAttention(nn.Module):
 
         self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
         self.proj = nn.Linear(dim, dim, bias=True if bias_on else False)
-        if dropout_rate > 0.0:
-            self.proj_drop = nn.Dropout(dropout_rate)
+        self.proj_drop = nn.Dropout(dropout_rate)
 
         # Skip pooling with kernel and stride size of (1, 1, 1).
         if kernel_q is not None and _prod(kernel_q) == 1 and _prod(stride_q) == 1:
@@ -172,7 +160,7 @@ class MultiScaleAttention(nn.Module):
         if kernel_kv is not None and _prod(kernel_kv) == 1 and _prod(stride_kv) == 1:
             kernel_kv = None
 
-        self.pool_q = (
+        self.att_pool_q = AttentionPool(
             nn.Conv3d(
                 head_dim,
                 head_dim,
@@ -181,12 +169,10 @@ class MultiScaleAttention(nn.Module):
                 padding=padding_q,
                 groups=head_dim if depthwise_conv else 1,
                 bias=False,
-            )
-            if kernel_q is not None
-            else None
+            ) if kernel_q is not None else None,
+            norm_layer(head_dim) if kernel_q is not None else None
         )
-        self.norm_q = norm_layer(head_dim) if kernel_q is not None else None
-        self.pool_k = (
+        self.att_pool_k = AttentionPool(
             nn.Conv3d(
                 head_dim,
                 head_dim,
@@ -195,12 +181,10 @@ class MultiScaleAttention(nn.Module):
                 padding=padding_kv,
                 groups=head_dim if depthwise_conv else 1,
                 bias=False,
-            )
-            if kernel_kv is not None
-            else None
+            ) if kernel_kv is not None else None,
+            norm_layer(head_dim) if kernel_kv is not None else None
         )
-        self.norm_k = norm_layer(head_dim) if kernel_kv is not None else None
-        self.pool_v = (
+        self.att_pool_v = AttentionPool(
             nn.Conv3d(
                 head_dim,
                 head_dim,
@@ -209,38 +193,9 @@ class MultiScaleAttention(nn.Module):
                 padding=padding_kv,
                 groups=head_dim if depthwise_conv else 1,
                 bias=False,
-            )
-            if kernel_kv is not None
-            else None
+            ) if kernel_kv is not None else None,
+            norm_layer(head_dim) if kernel_kv is not None else None
         )
-        self.norm_v = norm_layer(head_dim) if kernel_kv is not None else None
-
-    def _qkv_pool(
-        self,
-        q: torch.Tensor,
-        k: torch.Tensor,
-        v: torch.Tensor,
-        thw_shape: List[int],
-    ) -> Tuple[torch.Tensor, List[int], torch.Tensor, List[int], torch.Tensor, List[int]]:
-        q, q_shape = _attention_pool(
-            q,
-            self.pool_q,
-            thw_shape,
-            norm=self.norm_q,
-        )
-        k, k_shape = _attention_pool(
-            k,
-            self.pool_k,
-            thw_shape,
-            norm=self.norm_k,
-        )
-        v, v_shape = _attention_pool(
-            v,
-            self.pool_v,
-            thw_shape,
-            norm=self.norm_v,
-        )
-        return q, q_shape, k, k_shape, v, v_shape
 
     def forward(self, x: torch.Tensor, thw_shape: List[int]) -> Tuple[torch.Tensor, List[int]]:
         """
@@ -253,7 +208,18 @@ class MultiScaleAttention(nn.Module):
 
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
         q, k, v = qkv[0], qkv[1], qkv[2]
-        q, q_shape, k, k_shape, v, v_shape = self._qkv_pool(q, k, v, thw_shape)
+        q, q_shape = self.att_pool_q(
+            q,
+            thw_shape,
+        )
+        k, k_shape = self.att_pool_k(
+            k,
+            thw_shape,
+        )
+        v, v_shape = self.att_pool_v(
+            v,
+            thw_shape,
+        )
 
         attn = torch.matmul(q * self.scale, k.transpose(-2, -1))
         attn = attn.softmax(dim=-1)
@@ -263,13 +229,9 @@ class MultiScaleAttention(nn.Module):
         x = (torch.matmul(attn, v) + q).transpose(1, 2).reshape(B, N, C)
 
         x = self.proj(x)
-        if self.dropout_rate > 0.0:
-            x = self.proj_drop(x)
+        x = self.proj_drop(x)
         return x, q_shape
 
-
-
-torch.fx.wrap("_attention_pool")
 
 class MultiScaleBlock(nn.Module):
     """
@@ -373,12 +335,16 @@ class MultiScaleBlock(nn.Module):
         self.mlp = MLP(dim, [mlp_hidden_dim, dim_out], activation_layer=act_layer, dropout=dropout_rate, bias=bias_on, inplace=None)
         if dim != dim_out:
             self.proj = nn.Linear(dim, dim_out, bias=bias_on)
+        else:
+            self.proj = None
 
-        self.pool_skip = (
+        self.att_pool_skip = AttentionPool(
             nn.MaxPool3d(kernel_skip, stride_skip, padding_skip, ceil_mode=False)
             if len(stride_skip) > 0 and _prod(stride_skip) > 1
-            else None
+            else None,
+            None
         )
+        self.need_permutation = [isinstance(self.norm1, nn.BatchNorm1d), isinstance(self.norm2, nn.BatchNorm1d)]
 
     def forward(self, x: torch.Tensor, thw_shape: List[int]) -> Tuple[torch.Tensor, List[int]]:
         """
@@ -390,18 +356,18 @@ class MultiScaleBlock(nn.Module):
         x_block, thw_shape_new = self.attn(
             (
                 self.norm1(x.permute(0, 2, 1)).permute(0, 2, 1)
-                if isinstance(self.norm1, nn.BatchNorm1d)
+                if self.need_permutation[0]
                 else self.norm1(x)
             ),
             thw_shape,
         )
-        x_res, _ = _attention_pool(x, self.pool_skip, thw_shape)
+        x_res, _ = self.att_pool_skip(x, thw_shape)
         x = x_res + self.stochastic_depth(x_block)
         x_norm = (
-            self.norm2(x.permute(0, 2, 1)).permute(0, 2, 1) if isinstance(self.norm2, nn.BatchNorm1d) else self.norm2(x)
+            self.norm2(x.permute(0, 2, 1)).permute(0, 2, 1) if self.need_permutation[1] else self.norm2(x)
         )
         x_mlp = self.mlp(x_norm)
-        if self.dim != self.dim_out:
+        if self.proj is not None:
             x = self.proj(x_norm)
         x = x + self.stochastic_depth(x_mlp)
         return x, thw_shape_new
