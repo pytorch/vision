@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import abc
+import functools
 import pathlib
 from typing import Optional, Tuple, Callable, BinaryIO, Any, Union, NoReturn, Set
+from typing import TypeVar, Iterator
 from urllib.parse import urlparse
 
 from torch.hub import tqdm
@@ -16,9 +18,28 @@ from torchdata.datapipes.iter import (
     RarArchiveLoader,
     OnlineReader,
     HashChecker,
+    StreamReader,
+    Saver,
+    Forker,
+    Zipper,
+    Mapper,
 )
 from torchvision.datasets.utils import _detect_file_type, extract_archive, _decompress
 from typing_extensions import Literal
+
+D = TypeVar("D")
+
+
+class ProgressBar(IterDataPipe[D]):
+    def __init__(self, datapipe: IterDataPipe[D]) -> None:
+        self.datapipe = datapipe
+
+    def __iter__(self) -> Iterator[D]:
+        with tqdm() as progress_bar:
+            for data in self.datapipe:
+                _, chunk = data
+                progress_bar.update(len(chunk))
+                yield data
 
 
 class OnlineResource(abc.ABC):
@@ -62,30 +83,46 @@ class OnlineResource(abc.ABC):
     def from_gdrive(cls, id: str, **kwargs: Any) -> OnlineResource:
         return cls(f"https://drive.google.com/uc?export=download&id={id}", **kwargs)
 
+    def _filepath_fn(self, root: pathlib.Path, file_name: str) -> str:
+        return str(root / file_name)
+
     def download(self, root: Union[str, pathlib.Path], *, skip_integrity_check: bool = False) -> pathlib.Path:
         root = pathlib.Path(root).expanduser().resolve()
         root.mkdir(parents=True, exist_ok=True)
-        file = root / self.file_name
 
-        if not file.exists():
-            dp = IterableWrapper([self.url])
-            dp = OnlineReader(dp)
-            stream = list(dp)[0][1]
+        filepath_fn = functools.partial(self._filepath_fn, root)
+        file = pathlib.Path(filepath_fn(self.file_name))
 
-            with open(file, "wb") as fh, tqdm() as progress_bar:
-                for chunk in iter(lambda: stream.read(1024 * 1024), b""):  # type: ignore[no-any-return]
-                    # filter out keep-alive new chunks
-                    if not chunk:
-                        continue
+        if file.exists():
+            return file
 
-                    fh.write(chunk)
-                    progress_bar.update(len(chunk))
+        dp = IterableWrapper([self.url])
+        dp = OnlineReader(dp)
+        # FIXME: this currently only works for GDrive
+        #  See https://github.com/pytorch/data/issues/451 for details
+        dp = Mapper(dp, filepath_fn, input_col=0)
+        dp = StreamReader(dp, chunk=32 * 1024 * 1024)
+        dp: IterDataPipe[Tuple[str, bytes]] = ProgressBar(dp)
 
-        if self.sha256 and not skip_integrity_check:
-            dp = IterableWrapper([str(file)])
-            dp = FileOpener(dp, mode="rb")
-            dp = HashChecker(dp, {str(file): self.sha256}, hash_type="sha256")
-            list(dp)
+        check_hash = self.sha256 and not skip_integrity_check
+        if check_hash:
+            # We can get away with a buffer_size of 1 since both datapipes are iterated at the same time. See the
+            # comment in the check_hash branch below for details.
+            dp, hash_checker_fork = Forker(dp, 2, buffer_size=1)
+            # FIXME: HashChecker does not work with chunks
+            #  See https://github.com/pytorch/data/issues/452 for details
+            hash_checker_fork = HashChecker(hash_checker_fork, {str(file): self.sha256}, hash_type="sha256")
+
+        dp = Saver(dp, mode="wb")
+
+        if check_hash:
+            # This makes sure that both forks are iterated at the same time for two reasons:
+            # 1. Forker caches the items. Iterating separately would mean we load the full data into memory.
+            # 2. The first iteration would trigger the progress bar. Thus, if we for example at first only perform the
+            #    hash check, the progress bar is finished and the whole storing on disk part is not captured.
+            dp = Zipper(dp, hash_checker_fork)
+
+        list(dp)
 
         return file
 
