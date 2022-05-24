@@ -76,6 +76,7 @@ pre-trained weights:
    :maxdepth: 1
 
    models/googlenet_quant
+   models/mobilenetv2_quant
 
 
 Table of all available quantized classification weights
