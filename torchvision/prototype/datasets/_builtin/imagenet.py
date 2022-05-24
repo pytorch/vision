@@ -109,8 +109,12 @@ class ImageNet(Dataset):
         "n03710721": "tank suit",
     }
 
-    def _extract_categories_and_wnids(self, data: Tuple[str, BinaryIO]) -> List[Tuple[str, str]]:
-        synsets = read_mat(data[1], squeeze_me=True)["synsets"]
+    def _extract_categories_and_wnids(self, devkit_dp: IterDataPipe[Tuple[str, BinaryIO]]) -> List[Tuple[str, str]]:
+        meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
+
+        _, buffer = list(meta_dp)[0]
+        synsets = read_mat(buffer, squeeze_me=True)["synsets"]
+
         return [
             (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
             for _, wnid, category, _, num_children, *_ in synsets
@@ -160,9 +164,7 @@ class ImageNet(Dataset):
         else:  # config.split == "val":
             images_dp, devkit_dp = resource_dps
 
-            meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
-            meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
-            _, wnids = zip(*list(meta_dp)[0])
+            _, wnids = zip(*self._extract_categories_and_wnids(devkit_dp))
 
             label_dp = Filter(devkit_dp, path_comparator("name", "ILSVRC2012_validation_ground_truth.txt"))
             label_dp = LineReader(label_dp, decode=True, return_path=False)
@@ -195,9 +197,7 @@ class ImageNet(Dataset):
         resources = self._resources()
 
         devkit_dp = resources[1].load(self._root)
-        meta_dp = Filter(devkit_dp, path_comparator("name", "meta.mat"))
-        meta_dp = Mapper(meta_dp, self._extract_categories_and_wnids)
 
-        categories_and_wnids = cast(List[Tuple[str, ...]], next(iter(meta_dp)))
+        categories_and_wnids = self._extract_categories_and_wnids(devkit_dp)
         categories_and_wnids.sort(key=lambda category_and_wnid: category_and_wnid[1])
         return categories_and_wnids
