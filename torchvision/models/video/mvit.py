@@ -67,7 +67,7 @@ def _attention_pool(
     T, H, W = thw_shape
     tensor = tensor.reshape(B * N, T, H, W, C).permute(0, 4, 1, 2, 3).contiguous()
 
-    if isinstance(norm, (nn.BatchNorm3d, nn.Identity)):
+    if isinstance(norm, nn.BatchNorm3d):
         # If use BN, we apply norm before pooling instead of after pooling.
         tensor = norm(tensor)
         # We also empirically find that adding a GELU here is beneficial.
@@ -367,7 +367,7 @@ class MultiScaleBlock(nn.Module):
             bias_on=bias_on,
             depthwise_conv=depthwise_conv,
         )
-        self.drop_path = StochasticDepth(droppath_rate, "row") if droppath_rate > 0.0 else nn.Identity()
+        self.stochastic_depth = StochasticDepth(droppath_rate, "row")
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
         self.mlp = MLP(dim, [mlp_hidden_dim, dim_out], activation_layer=act_layer, dropout=dropout_rate, bias=bias_on, inplace=None)
@@ -396,14 +396,14 @@ class MultiScaleBlock(nn.Module):
             thw_shape,
         )
         x_res, _ = _attention_pool(x, self.pool_skip, thw_shape)
-        x = x_res + self.drop_path(x_block)
+        x = x_res + self.stochastic_depth(x_block)
         x_norm = (
             self.norm2(x.permute(0, 2, 1)).permute(0, 2, 1) if isinstance(self.norm2, nn.BatchNorm1d) else self.norm2(x)
         )
         x_mlp = self.mlp(x_norm)
         if self.dim != self.dim_out:
             x = self.proj(x_norm)
-        x = x + self.drop_path(x_mlp)
+        x = x + self.stochastic_depth(x_mlp)
         return x, thw_shape_new
 
 
