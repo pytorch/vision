@@ -1,4 +1,3 @@
-import math
 from functools import partial
 from typing import Callable, List, Optional, Tuple
 
@@ -7,7 +6,9 @@ import torch
 import torch.fx
 import torch.nn as nn
 from torch.nn.common_types import _size_2_t, _size_3_t
-from torchvision.ops import StochasticDepth, MLP
+
+from ...ops import StochasticDepth, MLP
+from .._utils import _make_divisible
 
 
 __all__ = ["mvit_b_16"]
@@ -496,62 +497,6 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
         return x
 
 
-def c2_xavier_fill(module: nn.Module) -> None:
-    """
-    Initialize `module.weight` using the "XavierFill" implemented in Caffe2.
-    Also initializes `module.bias` to 0.
-
-    Args:
-        module (torch.nn.Module): module to initialize.
-    """
-    # Caffe2 implementation of XavierFill in fact
-    # corresponds to kaiming_uniform_ in PyTorch
-    nn.init.kaiming_uniform_(module.weight, a=1)
-    if module.bias is not None:
-        # pyre-fixme[6]: Expected `Tensor` for 1st param but got `Union[nn.Module,
-        #  torch.Tensor]`.
-        nn.init.constant_(module.bias, 0)
-
-
-def c2_msra_fill(module: nn.Module) -> None:
-    """
-    Initialize `module.weight` using the "MSRAFill" implemented in Caffe2.
-    Also initializes `module.bias` to 0.
-
-    Args:
-        module (torch.nn.Module): module to initialize.
-    """
-    nn.init.kaiming_normal_(module.weight, mode="fan_out", nonlinearity="relu")
-    if module.bias is not None:
-        # pyre-fixme[6]: Expected `Tensor` for 1st param but got `Union[nn.Module,
-        #  torch.Tensor]`.
-        nn.init.constant_(module.bias, 0)
-
-
-def round_width(width, multiplier, min_width=8, divisor=8, ceil=False):
-    """
-    Round width of filters based on width multiplier
-    Args:
-        width (int): the channel dimensions of the input.
-        multiplier (float): the multiplication factor.
-        min_width (int): the minimum width after multiplication.
-        divisor (int): the new width should be dividable by divisor.
-        ceil (bool): If True, use ceiling as the rounding method.
-    """
-    if not multiplier:
-        return width
-
-    width *= multiplier
-    min_width = min_width or divisor
-    if ceil:
-        width_out = max(min_width, int(math.ceil(width / divisor)) * divisor)
-    else:
-        width_out = max(min_width, int(width + divisor / 2) // divisor * divisor)
-    if width_out < 0.9 * width:
-        width_out += divisor
-    return int(width_out)
-
-
 class create_vit_basic_head(nn.Module):
     def __init__(
         self,
@@ -687,93 +632,6 @@ def create_conv_patch_embed(
     return PatchEmbed(patch_model=conv_module)
 
 
-def _init_resnet_weights(model: nn.Module, fc_init_std: float = 0.01) -> None:
-    """
-    Performs ResNet style weight initialization. That is, recursively initialize the
-    given model in the following way for each type:
-        Conv - Follow the initialization of kaiming_normal:
-            https://pytorch.org/docs/stable/_modules/torch/nn/init.html#kaiming_normal_
-        BatchNorm - Set weight and bias of last BatchNorm at every residual bottleneck
-            to 0.
-        Linear - Set weight to 0 mean Gaussian with std deviation fc_init_std and bias
-            to 0.
-    Args:
-        model (nn.Module): Model to be initialized.
-        fc_init_std (float): the expected standard deviation for fully-connected layer.
-    """
-    for m in model.modules():
-        if isinstance(m, (nn.Conv2d, nn.Conv3d)):
-            """
-            Follow the initialization method proposed in:
-            {He, Kaiming, et al.
-            "Delving deep into rectifiers: Surpassing human-level
-            performance on imagenet classification."
-            arXiv preprint arXiv:1502.01852 (2015)}
-            """
-            c2_msra_fill(m)
-        elif isinstance(m, nn.modules.batchnorm._NormBase):
-            if m.weight is not None:
-                if hasattr(m, "block_final_bn") and m.block_final_bn:
-                    m.weight.data.fill_(0.0)
-                else:
-                    m.weight.data.fill_(1.0)
-            if m.bias is not None:
-                m.bias.data.zero_()
-        if isinstance(m, nn.Linear):
-            if hasattr(m, "xavier_init") and m.xavier_init:
-                c2_xavier_fill(m)
-            else:
-                m.weight.data.normal_(mean=0.0, std=fc_init_std)
-            if m.bias is not None:
-                m.bias.data.zero_()
-    return model
-
-
-def _init_vit_weights(model: nn.Module, trunc_normal_std: float = 0.02) -> None:
-    """
-    Weight initialization for vision transformers.
-
-    Args:
-        model (nn.Module): Model to be initialized.
-        trunc_normal_std (float): the expected standard deviation for fully-connected
-            layer and ClsPositionalEncoding.
-    """
-    for m in model.modules():
-        if isinstance(m, nn.Linear):
-            nn.init.trunc_normal_(m.weight, std=trunc_normal_std)
-            if isinstance(m, nn.Linear) and m.bias is not None:
-                nn.init.constant_(m.bias, 0)
-        elif isinstance(m, nn.LayerNorm):
-            nn.init.constant_(m.bias, 0)
-            nn.init.constant_(m.weight, 1.0)
-        elif isinstance(m, SpatioTemporalClsPositionalEncoding):
-            for weights in m.parameters():
-                nn.init.trunc_normal_(weights, std=trunc_normal_std)
-
-
-def init_net_weights(
-    model: nn.Module,
-    init_std: float = 0.01,
-    style: str = "resnet",
-) -> None:
-    """
-    Performs weight initialization. Options include ResNet style weight initialization
-    and transformer style weight initialization.
-
-    Args:
-        model (nn.Module): Model to be initialized.
-        init_std (float): The expected standard deviation for initialization.
-        style (str): Options include "resnet" and "vit".
-    """
-    assert style in ["resnet", "vit"]
-    if style == "resnet":
-        return _init_resnet_weights(model, init_std)
-    elif style == "vit":
-        return _init_vit_weights(model, init_std)
-    else:
-        raise NotImplementedError
-
-
 class MultiscaleVisionTransformers(nn.Module):
     """
     Multiscale Vision Transformers
@@ -832,7 +690,17 @@ class MultiscaleVisionTransformers(nn.Module):
         self.blocks = blocks
         self.norm_embed = norm_embed
         self.head = head
-        init_net_weights(self, init_std=0.02, style="vit")
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.trunc_normal_(m.weight, std=0.02)
+                if isinstance(m, nn.Linear) and m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.LayerNorm):
+                nn.init.constant_(m.bias, 0)
+                nn.init.constant_(m.weight, 1.0)
+            elif isinstance(m, SpatioTemporalClsPositionalEncoding):
+                for weights in m.parameters():
+                    nn.init.trunc_normal_(weights, std=0.02)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
         if self.patch_embed is not None:
@@ -1030,12 +898,10 @@ def create_multiscale_vision_transformers(
                 pool_kv[pool_kv_stride_size[i][0]] = [s + 1 if s > 1 else s for s in pool_kv_stride_size[i][1:]]
 
     for i in range(depth):
-        num_heads = round_width(num_heads, head_mul[i], min_width=1, divisor=1)
-        patch_embed_dim = round_width(patch_embed_dim, dim_mul[i], divisor=num_heads)
-        dim_out = round_width(
-            patch_embed_dim,
-            dim_mul[i + 1],
-            divisor=round_width(num_heads, head_mul[i + 1]),
+        num_heads = _make_divisible(num_heads * head_mul[i], 1)
+        patch_embed_dim = _make_divisible(patch_embed_dim * dim_mul[i], num_heads, min_value=8)
+        dim_out = _make_divisible(
+            patch_embed_dim * dim_mul[i + 1], divisor=_make_divisible(num_heads * head_mul[i + 1], 8), min_value=8,
         )
 
         mvit_blocks.append(
