@@ -4,12 +4,13 @@ from typing import Callable, List, Optional, Tuple
 
 import numpy
 import torch
+import torch.fx
 import torch.nn as nn
 from torch.nn.common_types import _size_2_t, _size_3_t
 from torchvision.ops import StochasticDepth
 
 
-__all__ = ["create_mvit_b_16", "create_multiscale_vision_transformers"]
+__all__ = ["mvit_b_16"]
 
 
 class Mlp(nn.Module):
@@ -80,7 +81,7 @@ def _attention_pool(
     pool: Optional[Callable],
     thw_shape: List[int],
     norm: Optional[Callable] = None,
-) -> torch.Tensor:
+) -> Tuple[torch.Tensor, List[int]]:
     """
     Apply pool to a flattened input (given pool operation and the unflattened shape).
 
@@ -145,6 +146,9 @@ def _attention_pool(
     else:  # For the case tensor_dim == 3.
         tensor = tensor.squeeze(1)
     return tensor, thw_shape
+
+
+torch.fx.wrap("_attention_pool")
 
 
 class MultiScaleAttention(nn.Module):
@@ -292,7 +296,7 @@ class MultiScaleAttention(nn.Module):
         q: torch.Tensor,
         k: torch.Tensor,
         v: torch.Tensor,
-        thw_shape: Tuple[torch.Tensor, List[int]],
+        thw_shape: List[int],
     ) -> Tuple[torch.Tensor, List[int], torch.Tensor, List[int], torch.Tensor, List[int]]:
         q, q_shape = _attention_pool(
             q,
@@ -366,6 +370,9 @@ class MultiScaleAttention(nn.Module):
             x = self.proj_drop(x)
         return x, q_shape
 
+
+
+torch.fx.wrap("_attention_pool")
 
 class MultiScaleBlock(nn.Module):
     """
@@ -667,7 +674,7 @@ class create_vit_basic_head(nn.Module):
         # Dropout configs.
         dropout_rate: float = 0.5,
         # Activation configs.
-        activation: Callable = None,
+        activation: Optional[Callable] = None,
     ) -> nn.Module:
         """
         Creates vision transformer basic head.
@@ -984,7 +991,7 @@ def create_multiscale_vision_transformers(
     # Head config.
     head: Optional[Callable] = create_vit_basic_head,
     head_dropout_rate: float = 0.5,
-    head_activation: Callable = None,
+    head_activation: Optional[Callable] = None,
     num_classes: int = 400,
     **kwargs,
 ) -> nn.Module:
@@ -1127,7 +1134,7 @@ def create_multiscale_vision_transformers(
         for i in range(depth):
             if len(stride_q[i]) > 0:
                 _stride_kv = [max(_stride_kv[d] // stride_q[i][d], 1) for d in range(len(_stride_kv))]
-            pool_kv_stride_size.append([i] + _stride_kv)
+            pool_kv_stride_size.append([i] + list(_stride_kv))
 
     if pool_kv_stride_size is not None:
         for i in range(len(pool_kv_stride_size)):
@@ -1190,7 +1197,7 @@ def create_multiscale_vision_transformers(
     )
 
 
-def create_mvit_b_16(
+def mvit_b_16(
     spatial_size=224,
     temporal_size=16,
     num_classes=400,
