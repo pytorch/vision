@@ -7,73 +7,10 @@ import torch
 import torch.fx
 import torch.nn as nn
 from torch.nn.common_types import _size_2_t, _size_3_t
-from torchvision.ops import StochasticDepth
+from torchvision.ops import StochasticDepth, MLP
 
 
 __all__ = ["mvit_b_16"]
-
-
-class Mlp(nn.Module):
-    """
-    A MLP block that contains two linear layers with a normalization layer. The MLP
-    block is used in a transformer model after the attention block.
-
-    ::
-
-                         Linear (in_features, hidden_features)
-                                           ↓
-                                 Normalization (act_layer)
-                                           ↓
-                                Dropout (p=dropout_rate)
-                                           ↓
-                         Linear (hidden_features, out_features)
-                                           ↓
-                                Dropout (p=dropout_rate)
-    """
-
-    def __init__(
-        self,
-        in_features: int,
-        hidden_features: Optional[int] = None,
-        out_features: Optional[int] = None,
-        act_layer: Callable = nn.GELU,
-        dropout_rate: float = 0.0,
-        bias_on: bool = True,
-    ) -> None:
-        """
-        Args:
-            in_features (int): Input feature dimension.
-            hidden_features (Optional[int]): Hidden feature dimension. By default,
-                hidden feature is set to input feature dimension.
-            out_features (Optional[int]): Output feature dimension. By default, output
-                features dimension is set to input feature dimension.
-            act_layer (Callable): Activation layer used after the first linear layer.
-            dropout_rate (float): Dropout rate after each linear layer. Dropout is not used
-                by default.
-        """
-        super().__init__()
-        self.dropout_rate = dropout_rate
-        out_features = out_features or in_features
-        hidden_features = hidden_features or in_features
-        self.fc1 = nn.Linear(in_features, hidden_features, bias=bias_on)
-        self.act = act_layer()
-        self.fc2 = nn.Linear(hidden_features, out_features, bias=bias_on)
-        if self.dropout_rate > 0.0:
-            self.dropout = nn.Dropout(dropout_rate)
-
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x (tensor): Input tensor.
-        """
-        x = self.fc1(x)
-        x = self.act(x)
-        if self.dropout_rate > 0.0:
-            x = self.dropout(x)
-        x = self.fc2(x)
-        if self.dropout_rate > 0.0:
-            x = self.dropout(x)
-        return x
 
 
 def _attention_pool(
@@ -473,14 +410,7 @@ class MultiScaleBlock(nn.Module):
         self.drop_path = StochasticDepth(droppath_rate, "row") if droppath_rate > 0.0 else nn.Identity()
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = Mlp(
-            in_features=dim,
-            hidden_features=mlp_hidden_dim,
-            out_features=dim_out,
-            act_layer=act_layer,
-            dropout_rate=dropout_rate,
-            bias_on=bias_on,
-        )
+        self.mlp = MLP(dim, [mlp_hidden_dim, dim_out], activation_layer=act_layer, dropout=dropout_rate, bias=bias_on, inplace=None)
         if dim != dim_out:
             self.proj = nn.Linear(dim, dim_out, bias=bias_on)
 
