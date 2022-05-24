@@ -149,6 +149,7 @@ pre-trained weights:
    models/googlenet_quant
    models/inception_quant
    models/mobilenetv2_quant
+   models/resnet_quant
 
 |
 
