@@ -22,9 +22,9 @@ def _prod(s: Sequence[int]) -> int:
 
 def _attention_pool(
     tensor: torch.Tensor,
-    pool: Optional[Callable],
+    pool: Optional[nn.Module],
     thw_shape: List[int],
-    norm: Optional[Callable] = None,
+    norm: Optional[nn.Module] = None,
 ) -> Tuple[torch.Tensor, List[int]]:
     """
     Apply pool to a flattened input (given pool operation and the unflattened shape).
@@ -128,7 +128,7 @@ class MultiScaleAttention(nn.Module):
         kernel_kv: _size_3_t = (1, 1, 1),
         stride_q: _size_3_t = (1, 1, 1),
         stride_kv: _size_3_t = (1, 1, 1),
-        norm_layer: Callable = nn.LayerNorm,
+        norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         depthwise_conv: bool = True,
         bias_on: bool = True,
     ) -> None:
