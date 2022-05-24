@@ -848,6 +848,9 @@ def test_video_model(model_fn, dev):
     if dev == "cuda":
         with torch.cuda.amp.autocast():
             out = model(x)
+            # See autocast_flaky_numerics comment at top of file.
+            if model_name not in autocast_flaky_numerics:
+                _assert_expected(out.cpu(), model_name, prec=0.1)
             assert out.shape[-1] == num_classes
 
     _check_input_backprop(model, x)
