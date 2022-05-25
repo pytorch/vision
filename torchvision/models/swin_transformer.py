@@ -43,10 +43,8 @@ class PatchMerging(nn.Module):
         Args:
             x (Tensor): input tensor with expected layout of [... H W C]
         """
-        H, W, C = x.shape[-3:]
-
-        if (H % 2 == 1) or (W % 2 == 1):
-            x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+        H, W, _ = x.shape[-3:]
+        x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
 
         x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
         x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
