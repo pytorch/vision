@@ -155,6 +155,18 @@ def shifted_window_attention(
 torch.fx.wrap("shifted_window_attention")
 
 
+def _fix_window_and_shift_size(input_hw: List[int], window_size: List[int], shift_size: List[int]):
+    # Handle case where window_size is larger than input tensor
+    for i in range(2):
+        if input_hw[i] <= window_size[i]:
+            window_size[i] = input_hw[i]
+            shift_size[i] = 0
+    return window_size, shift_size
+
+
+torch.fx.wrap("_fix_window_and_shift_size")
+
+
 class ShiftedWindowAttention(nn.Module):
     """
     See :func:`shifted_window_attention`.
@@ -211,13 +223,8 @@ class ShiftedWindowAttention(nn.Module):
             Tensor with same layout as input, i.e. [B, H, W, C]
         """
         _, H, W, _ = x.shape
-        size_hw = [H, W]
-        window_size, shift_size = self.window_size.copy(), self.shift_size.copy()
-        # Handle case where window_size is larger than input tensor
-        for i in range(2):
-            if size_hw[i] <= window_size[i]:
-                window_size[i] = size_hw[i]
-                shift_size[i] = 0
+        input_hw = [H, W]
+        window_size, shift_size = _fix_window_and_shift_size(input_hw, self.window_size, self.shift_size)
 
         N = window_size[0] * window_size[1]
         relative_position_bias = self.relative_position_bias_table[self.relative_position_index[:N, :N]]  # type: ignore[index]
