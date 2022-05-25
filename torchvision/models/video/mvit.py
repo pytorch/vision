@@ -43,7 +43,9 @@ class AttentionPool(nn.Module):
         super().__init__()
         self.pool = pool
         self.norm = norm
-        self._norm_before_pool = isinstance(norm, nn.BatchNorm3d)
+        # The standard mvit uses layer norm and normalizes after pooling. Nevertheless in some production use-cases, it
+        # might be prefered to "absorb" the norm in order to make the inference faster.
+        self.norm_before_pool = isinstance(norm, (nn.BatchNorm3d, nn.Identity))
 
     def forward(
         self,
@@ -60,7 +62,7 @@ class AttentionPool(nn.Module):
         T, H, W = thw_shape
         tensor = tensor.reshape(B * N, T, H, W, C).permute(0, 4, 1, 2, 3).contiguous()
 
-        if self.norm is not None and self._norm_before_pool:
+        if self.norm is not None and self.norm_before_pool:
             # If use BN, we apply norm before pooling instead of after pooling.
             tensor = self.norm(tensor)
             # We also empirically find that adding a GELU here is beneficial.
@@ -73,7 +75,7 @@ class AttentionPool(nn.Module):
         tensor = tensor.reshape(B, N, C, L_pooled).transpose(2, 3)
 
         tensor = torch.cat((cls_tok, tensor), dim=2)
-        if self.norm is not None and not self._norm_before_pool:
+        if self.norm is not None and not self.norm_before_pool:
             tensor = self.norm(tensor)
 
         tensor = _squeeze(tensor, tensor_dim)
