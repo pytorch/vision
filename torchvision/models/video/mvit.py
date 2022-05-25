@@ -573,7 +573,6 @@ def create_multiscale_vision_transformers(
     temporal_size: int,
     depth: int = 16,
     # Patch embed config.
-    input_channels: int = 3,
     patch_embed_dim: int = 96,
     conv_patch_embed_kernel: Tuple[int, int, int] = (3, 7, 7),
     conv_patch_embed_stride: Tuple[int, int, int] = (2, 4, 4),
@@ -607,7 +606,6 @@ def create_multiscale_vision_transformers(
         temporal_size (int): Number of frames in the input video.
         depth (int): The depth of the model.
 
-        input_channels (int): Channel dimension of the input video.
         patch_embed_dim (int): Embedding dimension after patchifing the video input.
         conv_patch_embed_kernel (Tuple[int]): Kernel size of the convolution for
             patchifing the video input.
@@ -680,7 +678,7 @@ def create_multiscale_vision_transformers(
 
     patch_embed = PatchEmbed(
         patch_model=nn.Conv3d(
-            in_channels=input_channels,
+            in_channels=3,
             out_channels=patch_embed_dim,
             kernel_size=conv_patch_embed_kernel,
             stride=conv_patch_embed_stride,
