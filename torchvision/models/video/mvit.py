@@ -432,9 +432,6 @@ def create_multiscale_vision_transformers(
     embed_dim_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     atten_head_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     pool_q_stride_size: Optional[List[List[int]]] = ([1, 1, 2, 2], [3, 1, 2, 2], [14, 1, 2, 2]),
-    pool_kv_stride_size: Optional[List[List[int]]] = None,
-    pool_kv_stride_adaptive: Optional[Tuple[int, int, int]] = (1, 8, 8),
-    pool_kvq_kernel: Optional[Tuple[int, int, int]] = (3, 3, 3),
     # Head config.
     head_dropout_rate: float = 0.5,
     num_classes: int = 400,
@@ -462,15 +459,6 @@ def create_multiscale_vision_transformers(
         pool_q_stride_size (Optional[List[List[int]]]): List of stride sizes for the
             pool q at each layer. Format:
             [[i, stride_t_i, stride_h_i, stride_w_i], ...,].
-        pool_kv_stride_size (Optional[List[List[int]]]): List of stride sizes for the
-            pool kv at each layer. Format:
-            [[i, stride_t_i, stride_h_i, stride_w_i], ...,].
-        pool_kv_stride_adaptive (Optional[Tuple[int, int, int]]): Initial kv stride size for the
-            first block. The stride size will be further reduced at the layer where q
-            is pooled with the ratio of the stride of q pooling. If
-            pool_kv_stride_adaptive is set, then pool_kv_stride_size should be none.
-        pool_kvq_kernel (Optional[Tuple[int, int, int]]): Pooling kernel size for q and kv. It None,
-            the kernel_size is [s + 1 if s > 1 else s for s in stride_size].
 
         head_dropout_rate (float): Dropout rate in the head.
         num_classes (int): Number of classes in the final classification head.
@@ -482,23 +470,16 @@ def create_multiscale_vision_transformers(
         embed_dim_mul = [[1, 2.0], [3, 2.0], [14, 2.0]]
         atten_head_mul = [[1, 2.0], [3, 2.0], [14, 2.0]]
         pool_q_stride_size = [[1, 1, 2, 2], [3, 1, 2, 2], [14, 1, 2, 2]]
-        pool_kv_stride_adaptive = [1, 8, 8]
-        pool_kvq_kernel = [3, 3, 3]
         num_classes = 400
-        MViT_B = create_multiscale_vision_transformers(
+        MViTv2_S = create_multiscale_vision_transformers(
             spatial_size=spatial_size,
             temporal_size=temporal_size,
             embed_dim_mul=embed_dim_mul,
             atten_head_mul=atten_head_mul,
             pool_q_stride_size=pool_q_stride_size,
-            pool_kv_stride_adaptive=pool_kv_stride_adaptive,
-            pool_kvq_kernel=pool_kvq_kernel,
             num_classes=num_classes,
         )
     """
-
-    if pool_kv_stride_adaptive is not None:
-        assert pool_kv_stride_size is None, "pool_kv_stride_size should be none if pool_kv_stride_adaptive is set."
     norm_layer = partial(nn.LayerNorm, eps=1e-6)
     block_norm_layer = partial(nn.LayerNorm, eps=1e-6)
     attn_norm_layer = partial(nn.LayerNorm, eps=1e-6)
@@ -537,30 +518,22 @@ def create_multiscale_vision_transformers(
     stride_q = [[] for _ in range(depth)]
     stride_kv = [[] for _ in range(depth)]
 
+    pool_kvq_kernel = (3, 3, 3)
     if pool_q_stride_size is not None:
         for i in range(len(pool_q_stride_size)):
             stride_q[pool_q_stride_size[i][0]] = pool_q_stride_size[i][1:]
-            if pool_kvq_kernel is not None:
-                pool_q[pool_q_stride_size[i][0]] = pool_kvq_kernel
-            else:
-                pool_q[pool_q_stride_size[i][0]] = [s + 1 if s > 1 else s for s in pool_q_stride_size[i][1:]]
+            pool_q[pool_q_stride_size[i][0]] = pool_kvq_kernel
 
-    # If POOL_KV_STRIDE_ADAPTIVE is not None, initialize POOL_KV_STRIDE.
-    if pool_kv_stride_adaptive is not None:
-        _stride_kv = pool_kv_stride_adaptive
-        pool_kv_stride_size = []
-        for i in range(depth):
-            if len(stride_q[i]) > 0:
-                _stride_kv = [max(_stride_kv[d] // stride_q[i][d], 1) for d in range(len(_stride_kv))]
-            pool_kv_stride_size.append([i] + list(_stride_kv))
+    _stride_kv = (1, 8, 8)
+    pool_kv_stride_size = []
+    for i in range(depth):
+        if len(stride_q[i]) > 0:
+            _stride_kv = [max(_stride_kv[d] // stride_q[i][d], 1) for d in range(len(_stride_kv))]
+        pool_kv_stride_size.append([i] + list(_stride_kv))
 
-    if pool_kv_stride_size is not None:
-        for i in range(len(pool_kv_stride_size)):
-            stride_kv[pool_kv_stride_size[i][0]] = pool_kv_stride_size[i][1:]
-            if pool_kvq_kernel is not None:
-                pool_kv[pool_kv_stride_size[i][0]] = pool_kvq_kernel
-            else:
-                pool_kv[pool_kv_stride_size[i][0]] = [s + 1 if s > 1 else s for s in pool_kv_stride_size[i][1:]]
+    for i in range(len(pool_kv_stride_size)):
+        stride_kv[pool_kv_stride_size[i][0]] = pool_kv_stride_size[i][1:]
+        pool_kv[pool_kv_stride_size[i][0]] = pool_kvq_kernel
 
     dim_out = 0
     for i in range(depth):
@@ -603,6 +576,7 @@ def create_multiscale_vision_transformers(
     )
 
 
+# TODO: rename this. This is actually the small version for v2
 def mvit_b_16(
     spatial_size=(224, 224),
     temporal_size=16,
