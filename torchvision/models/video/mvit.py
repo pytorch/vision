@@ -4,7 +4,6 @@ from typing import Callable, List, Optional, Sequence, Tuple
 import torch
 import torch.fx
 import torch.nn as nn
-from torch.nn.common_types import _size_2_t, _size_3_t
 
 from ...ops import StochasticDepth, MLP
 from .._utils import _make_divisible
@@ -27,6 +26,7 @@ def _unsqueeze(tensor: torch.Tensor) -> Tuple[torch.Tensor, int]:
     elif tensor_dim != 4:
         raise NotImplementedError(f"Unsupported input dimension {tensor.shape}")
     return tensor, tensor_dim
+
 
 def _squeeze(tensor: torch.Tensor, tensor_dim: int) -> torch.Tensor:
     if tensor_dim == 3:
@@ -115,10 +115,10 @@ class MultiScaleAttention(nn.Module):
         num_heads: int = 8,
         qkv_bias: bool = False,
         dropout_rate: float = 0.0,
-        kernel_q: _size_3_t = (1, 1, 1),
-        kernel_kv: _size_3_t = (1, 1, 1),
-        stride_q: _size_3_t = (1, 1, 1),
-        stride_kv: _size_3_t = (1, 1, 1),
+        kernel_q: Tuple[int, int, int] = (1, 1, 1),
+        kernel_kv: Tuple[int, int, int] = (1, 1, 1),
+        stride_q: Tuple[int, int, int] = (1, 1, 1),
+        stride_kv: Tuple[int, int, int] = (1, 1, 1),
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         depthwise_conv: bool = True,
         bias_on: bool = True,
@@ -130,14 +130,14 @@ class MultiScaleAttention(nn.Module):
             qkv_bias (bool): If set to False, the qkv layer will not learn an additive
                 bias. Default: False.
             dropout_rate (float): Dropout rate.
-            kernel_q (_size_3_t): Pooling kernel size for q. If both pooling kernel
+            kernel_q (Tuple[int, int, int]): Pooling kernel size for q. If both pooling kernel
                 size and pooling stride size are 1 for all the dimensions, pooling is
                 disabled.
-            kernel_kv (_size_3_t): Pooling kernel size for kv. If both pooling kernel
+            kernel_kv (Tuple[int, int, int]): Pooling kernel size for kv. If both pooling kernel
                 size and pooling stride size are 1 for all the dimensions, pooling is
                 disabled.
-            stride_q (_size_3_t): Pooling kernel stride for q.
-            stride_kv (_size_3_t): Pooling kernel stride for kv.
+            stride_q (Tuple[int, int, int]): Pooling kernel stride for q.
+            stride_kv (Tuple[int, int, int]): Pooling kernel stride for kv.
             norm_layer (nn.Module): Normalization layer used after pooling.
             depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
             bias_on (bool): Wether use biases for linear layers.
@@ -157,10 +157,8 @@ class MultiScaleAttention(nn.Module):
         self.proj_drop = nn.Dropout(dropout_rate)
 
         # Skip pooling with kernel and stride size of (1, 1, 1).
-        if kernel_q is not None and _prod(kernel_q) == 1 and _prod(stride_q) == 1:
-            kernel_q = None
-        if kernel_kv is not None and _prod(kernel_kv) == 1 and _prod(stride_kv) == 1:
-            kernel_kv = None
+        skip_pool_q = _prod(kernel_q) == 1 and _prod(stride_q) == 1
+        skip_pool_kv = _prod(kernel_kv) == 1 and _prod(stride_kv) == 1
 
         self.att_pool_q = AttentionPool(
             nn.Conv3d(
@@ -171,8 +169,10 @@ class MultiScaleAttention(nn.Module):
                 padding=padding_q,
                 groups=head_dim if depthwise_conv else 1,
                 bias=False,
-            ) if kernel_q is not None else None,
-            norm_layer(head_dim) if kernel_q is not None else None
+            )
+            if not skip_pool_q
+            else None,
+            norm_layer(head_dim) if not skip_pool_q else None,
         )
         self.att_pool_k = AttentionPool(
             nn.Conv3d(
@@ -183,8 +183,10 @@ class MultiScaleAttention(nn.Module):
                 padding=padding_kv,
                 groups=head_dim if depthwise_conv else 1,
                 bias=False,
-            ) if kernel_kv is not None else None,
-            norm_layer(head_dim) if kernel_kv is not None else None
+            )
+            if not skip_pool_kv
+            else None,
+            norm_layer(head_dim) if not skip_pool_kv else None,
         )
         self.att_pool_v = AttentionPool(
             nn.Conv3d(
@@ -195,8 +197,10 @@ class MultiScaleAttention(nn.Module):
                 padding=padding_kv,
                 groups=head_dim if depthwise_conv else 1,
                 bias=False,
-            ) if kernel_kv is not None else None,
-            norm_layer(head_dim) if kernel_kv is not None else None
+            )
+            if not skip_pool_kv
+            else None,
+            norm_layer(head_dim) if not skip_pool_kv else None,
         )
 
     def forward(self, x: torch.Tensor, thw_shape: List[int]) -> Tuple[torch.Tensor, List[int]]:
@@ -277,10 +281,10 @@ class MultiScaleBlock(nn.Module):
         act_layer: Callable[..., nn.Module] = nn.GELU,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
-        kernel_q: _size_3_t = (1, 1, 1),
-        kernel_kv: _size_3_t = (1, 1, 1),
-        stride_q: _size_3_t = (1, 1, 1),
-        stride_kv: _size_3_t = (1, 1, 1),
+        kernel_q: Tuple[int, int, int] = (1, 1, 1),
+        kernel_kv: Tuple[int, int, int] = (1, 1, 1),
+        stride_q: Tuple[int, int, int] = (1, 1, 1),
+        stride_kv: Tuple[int, int, int] = (1, 1, 1),
         depthwise_conv: bool = True,
         bias_on: bool = True,
     ) -> None:
@@ -298,13 +302,13 @@ class MultiScaleBlock(nn.Module):
             act_layer (nn.Module): Activation layer used in the Mlp layer.
             norm_layer (nn.Module): Normalization layer.
             attn_norm_layer (nn.Module): Normalization layer in the attention module.
-            kernel_q (_size_3_t): Pooling kernel size for q. If pooling kernel size is
+            kernel_q (Tuple[int, int, int]): Pooling kernel size for q. If pooling kernel size is
                 1 for all the dimensions, pooling is not used (by default).
-            kernel_kv (_size_3_t): Pooling kernel size for kv. If pooling kernel size
+            kernel_kv (Tuple[int, int, int]): Pooling kernel size for kv. If pooling kernel size
                 is 1 for all the dimensions, pooling is not used. By default, pooling
                 is disabled.
-            stride_q (_size_3_t): Pooling kernel stride for q.
-            stride_kv (_size_3_t): Pooling kernel stride for kv.
+            stride_q (Tuple[int, int, int]): Pooling kernel stride for q.
+            stride_kv (Tuple[int, int, int]): Pooling kernel stride for kv.
             has_cls_embed (bool): If set to True, the first token of the input tensor
                 should be a cls token. Otherwise, the input tensor does not contain a
                 cls token. Pooling is not applied to the cls token.
@@ -334,17 +338,18 @@ class MultiScaleBlock(nn.Module):
         self.stochastic_depth = StochasticDepth(droppath_rate, "row")
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = int(dim * mlp_ratio)
-        self.mlp = MLP(dim, [mlp_hidden_dim, dim_out], activation_layer=act_layer, dropout=dropout_rate, bias=bias_on, inplace=None)
+        self.mlp = MLP(
+            dim, [mlp_hidden_dim, dim_out], activation_layer=act_layer, dropout=dropout_rate, bias=bias_on, inplace=None
+        )
+        self.proj: Optional[nn.Module] = None
         if dim != dim_out:
             self.proj = nn.Linear(dim, dim_out, bias=bias_on)
-        else:
-            self.proj = None
 
         self.att_pool_skip = AttentionPool(
             nn.MaxPool3d(kernel_skip, stride_skip, padding_skip, ceil_mode=False)
             if len(stride_skip) > 0 and _prod(stride_skip) > 1
             else None,
-            None
+            None,
         )
         self.need_permutation = [isinstance(self.norm1, nn.BatchNorm1d), isinstance(self.norm2, nn.BatchNorm1d)]
 
@@ -356,18 +361,12 @@ class MultiScaleBlock(nn.Module):
         """
 
         x_block, thw_shape_new = self.attn(
-            (
-                self.norm1(x.permute(0, 2, 1)).permute(0, 2, 1)
-                if self.need_permutation[0]
-                else self.norm1(x)
-            ),
+            (self.norm1(x.permute(0, 2, 1)).permute(0, 2, 1) if self.need_permutation[0] else self.norm1(x)),
             thw_shape,
         )
         x_res, _ = self.att_pool_skip(x, thw_shape)
         x = x_res + self.stochastic_depth(x_block)
-        x_norm = (
-            self.norm2(x.permute(0, 2, 1)).permute(0, 2, 1) if self.need_permutation[1] else self.norm2(x)
-        )
+        x_norm = self.norm2(x.permute(0, 2, 1)).permute(0, 2, 1) if self.need_permutation[1] else self.norm2(x)
         x_mlp = self.mlp(x_norm)
         if self.proj is not None:
             x = self.proj(x_norm)
@@ -570,15 +569,15 @@ class MultiscaleVisionTransformers(nn.Module):
 
 
 def create_multiscale_vision_transformers(
-    spatial_size: _size_2_t,
+    spatial_size: Tuple[int, int],
     temporal_size: int,
     depth: int = 16,
     # Patch embed config.
     input_channels: int = 3,
     patch_embed_dim: int = 96,
-    conv_patch_embed_kernel: Tuple[int] = (3, 7, 7),
-    conv_patch_embed_stride: Tuple[int] = (2, 4, 4),
-    conv_patch_embed_padding: Tuple[int] = (1, 3, 3),
+    conv_patch_embed_kernel: Tuple[int, int, int] = (3, 7, 7),
+    conv_patch_embed_stride: Tuple[int, int, int] = (2, 4, 4),
+    conv_patch_embed_padding: Tuple[int, int, int] = (1, 3, 3),
     # Attention block config.
     num_heads: int = 1,
     mlp_ratio: float = 4.0,
@@ -591,8 +590,8 @@ def create_multiscale_vision_transformers(
     atten_head_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     pool_q_stride_size: Optional[List[List[int]]] = ([1, 1, 2, 2], [3, 1, 2, 2], [14, 1, 2, 2]),
     pool_kv_stride_size: Optional[List[List[int]]] = None,
-    pool_kv_stride_adaptive: Optional[_size_3_t] = (1, 8, 8),
-    pool_kvq_kernel: Optional[_size_3_t] = (3, 3, 3),
+    pool_kv_stride_adaptive: Optional[Tuple[int, int, int]] = (1, 8, 8),
+    pool_kvq_kernel: Optional[Tuple[int, int, int]] = (3, 3, 3),
     # Head config.
     head_dropout_rate: float = 0.5,
     num_classes: int = 400,
@@ -603,7 +602,7 @@ def create_multiscale_vision_transformers(
     (ViT) is a specific case of MViT that only uses a single scale attention block.
 
     Args:
-        spatial_size (_size_2_t): Input video spatial resolution (H, W). If a single
+        spatial_size (Tuple[int, int]): Input video spatial resolution (H, W). If a single
             int is given, it assumes the width and the height are the same.
         temporal_size (int): Number of frames in the input video.
         depth (int): The depth of the model.
@@ -638,11 +637,11 @@ def create_multiscale_vision_transformers(
         pool_kv_stride_size (Optional[List[List[int]]]): List of stride sizes for the
             pool kv at each layer. Format:
             [[i, stride_t_i, stride_h_i, stride_w_i], ...,].
-        pool_kv_stride_adaptive (Optional[_size_3_t]): Initial kv stride size for the
+        pool_kv_stride_adaptive (Optional[Tuple[int, int, int]]): Initial kv stride size for the
             first block. The stride size will be further reduced at the layer where q
             is pooled with the ratio of the stride of q pooling. If
             pool_kv_stride_adaptive is set, then pool_kv_stride_size should be none.
-        pool_kvq_kernel (Optional[_size_3_t]): Pooling kernel size for q and kv. It None,
+        pool_kvq_kernel (Optional[Tuple[int, int, int]]): Pooling kernel size for q and kv. It None,
             the kernel_size is [s + 1 if s > 1 else s for s in stride_size].
 
         head_dropout_rate (float): Dropout rate in the head.
@@ -746,7 +745,9 @@ def create_multiscale_vision_transformers(
         num_heads = _make_divisible(num_heads * head_mul[i], 1)
         patch_embed_dim = _make_divisible(patch_embed_dim * dim_mul[i], num_heads, min_value=8)
         dim_out = _make_divisible(
-            patch_embed_dim * dim_mul[i + 1], divisor=_make_divisible(num_heads * head_mul[i + 1], 8), min_value=8,
+            patch_embed_dim * dim_mul[i + 1],
+            divisor=_make_divisible(num_heads * head_mul[i + 1], 8),
+            min_value=8,
         )
 
         mvit_blocks.append(
