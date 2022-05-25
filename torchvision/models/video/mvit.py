@@ -274,7 +274,6 @@ class MultiScaleBlock(nn.Module):
         dim: int,
         dim_out: int,
         num_heads: int,
-        mlp_ratio: float = 4.0,
         qkv_bias: bool = False,
         dropout_rate: float = 0.0,
         droppath_rate: float = 0.0,
@@ -293,8 +292,6 @@ class MultiScaleBlock(nn.Module):
             dim (int): Input feature dimension.
             dim_out (int): Output feature dimension.
             num_heads (int): Number of heads in the attention layer.
-            mlp_ratio (float): Mlp ratio which controls the feature dimension in the
-                hidden layer of the Mlp block.
             qkv_bias (bool): If set to False, the qkv layer will not learn an additive
                 bias. Default: False.
             dropout_rate (float): DropOut rate. If set to 0, DropOut is disabled.
@@ -337,7 +334,7 @@ class MultiScaleBlock(nn.Module):
         )
         self.stochastic_depth = StochasticDepth(droppath_rate, "row")
         self.norm2 = norm_layer(dim)
-        mlp_hidden_dim = int(dim * mlp_ratio)
+        mlp_hidden_dim = 4 * dim  # 4x mlp ratio
         self.mlp = MLP(
             dim, [mlp_hidden_dim, dim_out], activation_layer=act_layer, dropout=dropout_rate, bias=bias_on, inplace=None
         )
@@ -579,7 +576,6 @@ def create_multiscale_vision_transformers(
     conv_patch_embed_padding: Tuple[int, int, int] = (1, 3, 3),
     # Attention block config.
     num_heads: int = 1,
-    mlp_ratio: float = 4.0,
     qkv_bias: bool = True,
     dropout_rate_block: float = 0.0,
     droppath_rate_block: float = 0.0,
@@ -615,8 +611,6 @@ def create_multiscale_vision_transformers(
             patchifing the video input.
 
         num_heads (int): Number of heads in the first transformer block.
-        mlp_ratio (float): Mlp ratio which controls the feature dimension in the
-            hidden layer of the Mlp block.
         qkv_bias (bool): If set to False, the qkv layer will not learn an additive
             bias. Default: True.
         dropout_rate_block (float): Dropout rate for the attention block.
@@ -753,7 +747,6 @@ def create_multiscale_vision_transformers(
                 dim=patch_embed_dim,
                 dim_out=dim_out,
                 num_heads=num_heads,
-                mlp_ratio=mlp_ratio,
                 qkv_bias=qkv_bias,
                 dropout_rate=dropout_rate_block,
                 droppath_rate=dpr[i],
