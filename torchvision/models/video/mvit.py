@@ -507,7 +507,6 @@ class MultiscaleVisionTransformers(nn.Module):
         self,
         patch_embed: Optional[nn.Module],
         cls_positional_encoding: nn.Module,
-        pos_drop: Optional[nn.Module],
         blocks: nn.ModuleList,
         norm_embed: Optional[nn.Module],
         head: Optional[nn.Module],
@@ -516,7 +515,6 @@ class MultiscaleVisionTransformers(nn.Module):
         Args:
             patch_embed (nn.Module): Patch embed module.
             cls_positional_encoding (nn.Module): Positional encoding module.
-            pos_drop (Optional[nn.Module]): Dropout module after patch embed.
             blocks (nn.ModuleList): Stack of multi-scale transformer blocks.
             norm_layer (nn.Module): Normalization layer before head.
             head (Optional[nn.Module]): Head module.
@@ -524,7 +522,6 @@ class MultiscaleVisionTransformers(nn.Module):
         super().__init__()
         self.patch_embed = patch_embed
         self.cls_positional_encoding = cls_positional_encoding
-        self.pos_drop = pos_drop
         self.blocks = blocks
         self.norm_embed = norm_embed
         self.head = head
@@ -544,9 +541,6 @@ class MultiscaleVisionTransformers(nn.Module):
         if self.patch_embed is not None:
             x = self.patch_embed(x)
         x = self.cls_positional_encoding(x)
-
-        if self.pos_drop is not None:
-            x = self.pos_drop(x)
 
         thw = self.cls_positional_encoding.patch_embed_shape
         for blk in self.blocks:
@@ -569,7 +563,6 @@ def create_multiscale_vision_transformers(
     conv_patch_embed_padding: Tuple[int, int, int] = (1, 3, 3),
     # Attention block config.
     num_heads: int = 1,
-    dropout_rate_block: float = 0.0,
     droppath_rate_block: float = 0.0,
     depthwise_conv: bool = True,
     bias_on: bool = True,
@@ -603,7 +596,6 @@ def create_multiscale_vision_transformers(
             patchifing the video input.
 
         num_heads (int): Number of heads in the first transformer block.
-        dropout_rate_block (float): Dropout rate for the attention block.
         droppath_rate_block (float): Droppath rate for the attention block.
         depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
         bias_on (bool): Wether use biases for linear layers.
@@ -737,7 +729,6 @@ def create_multiscale_vision_transformers(
                 dim=patch_embed_dim,
                 dim_out=dim_out,
                 num_heads=num_heads,
-                dropout_rate=dropout_rate_block,
                 droppath_rate=dpr[i],
                 norm_layer=block_norm_layer,
                 attn_norm_layer=attn_norm_layer,
@@ -760,7 +751,6 @@ def create_multiscale_vision_transformers(
     return MultiscaleVisionTransformers(
         patch_embed=patch_embed,
         cls_positional_encoding=cls_positional_encoding,
-        pos_drop=nn.Dropout(p=dropout_rate_block) if dropout_rate_block > 0.0 else None,
         blocks=mvit_blocks,
         norm_embed=norm_layer(embed_dim),
         head=head_model,
