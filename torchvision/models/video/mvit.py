@@ -93,7 +93,6 @@ class MultiScaleAttention(nn.Module):
         stride_q: Tuple[int, int, int] = (1, 1, 1),
         stride_kv: Tuple[int, int, int] = (1, 1, 1),
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
-        depthwise_conv: bool = True,
     ) -> None:
         """
         Args:
@@ -109,7 +108,6 @@ class MultiScaleAttention(nn.Module):
             stride_q (Tuple[int, int, int]): Pooling kernel stride for q.
             stride_kv (Tuple[int, int, int]): Pooling kernel stride for kv.
             norm_layer (nn.Module): Normalization layer used after pooling.
-            depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
         """
 
         super().__init__()
@@ -136,7 +134,7 @@ class MultiScaleAttention(nn.Module):
                 kernel_q,
                 stride=stride_q,
                 padding=padding_q,
-                groups=head_dim if depthwise_conv else 1,
+                groups=head_dim,
                 bias=False,
             )
             if not skip_pool_q
@@ -150,7 +148,7 @@ class MultiScaleAttention(nn.Module):
                 kernel_kv,
                 stride=stride_kv,
                 padding=padding_kv,
-                groups=head_dim if depthwise_conv else 1,
+                groups=head_dim,
                 bias=False,
             )
             if not skip_pool_kv
@@ -164,7 +162,7 @@ class MultiScaleAttention(nn.Module):
                 kernel_kv,
                 stride=stride_kv,
                 padding=padding_kv,
-                groups=head_dim if depthwise_conv else 1,
+                groups=head_dim,
                 bias=False,
             )
             if not skip_pool_kv
@@ -217,7 +215,6 @@ class MultiScaleBlock(nn.Module):
         kernel_kv: Tuple[int, int, int] = (1, 1, 1),
         stride_q: Tuple[int, int, int] = (1, 1, 1),
         stride_kv: Tuple[int, int, int] = (1, 1, 1),
-        depthwise_conv: bool = True,
     ) -> None:
         """
         Args:
@@ -239,7 +236,6 @@ class MultiScaleBlock(nn.Module):
             has_cls_embed (bool): If set to True, the first token of the input tensor
                 should be a cls token. Otherwise, the input tensor does not contain a
                 cls token. Pooling is not applied to the cls token.
-            depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
         """
         super().__init__()
         self.dim = dim
@@ -257,7 +253,6 @@ class MultiScaleBlock(nn.Module):
             stride_q=stride_q,
             stride_kv=stride_kv,
             norm_layer=attn_norm_layer,
-            depthwise_conv=depthwise_conv,
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
@@ -438,7 +433,6 @@ def create_multiscale_vision_transformers(
     # Attention block config.
     num_heads: int = 1,
     stochastic_depth_prob_block: float = 0.0,
-    depthwise_conv: bool = True,
     embed_dim_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     atten_head_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     pool_q_stride_size: Optional[List[List[int]]] = ([1, 1, 2, 2], [3, 1, 2, 2], [14, 1, 2, 2]),
@@ -470,7 +464,6 @@ def create_multiscale_vision_transformers(
 
         num_heads (int): Number of heads in the first transformer block.
         stochastic_depth_prob_block (float): Stochastic Depth probability for the attention block.
-        depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
         embed_dim_mul (Optional[List[List[int]]]): Dimension multiplication at layer i.
             If X is used, then the next block will increase the embed dimension by X
             times. Format: [depth_i, mul_dim_ratio].
@@ -608,7 +601,6 @@ def create_multiscale_vision_transformers(
                 kernel_kv=pool_kv[i],
                 stride_q=stride_q[i],
                 stride_kv=stride_kv[i],
-                depthwise_conv=depthwise_conv,
             )
         )
 
