@@ -364,7 +364,8 @@ class SwinTransformer(nn.Module):
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob (float): Stochastic depth rate. Default: 0.0.
-        num_classes (int): Number of classes for classification head. Default: 1000.
+        num_classes (int, optional): Number of classes for classification head,
+            if None then the model have no head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
         patch_embed (nn.Module, optional): Patch Embedding layer. Default: None.
@@ -381,7 +382,7 @@ class SwinTransformer(nn.Module):
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
-        num_classes: int = 1000,
+        num_classes: Optional[int] = 1000,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         block: Optional[Callable[..., nn.Module]] = None,
         patch_embed: Optional[Callable[..., nn.Module]] = None,
