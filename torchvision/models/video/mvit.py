@@ -113,7 +113,6 @@ class MultiScaleAttention(nn.Module):
         self,
         dim: int,
         num_heads: int = 8,
-        qkv_bias: bool = False,
         dropout_rate: float = 0.0,
         kernel_q: Tuple[int, int, int] = (1, 1, 1),
         kernel_kv: Tuple[int, int, int] = (1, 1, 1),
@@ -127,8 +126,6 @@ class MultiScaleAttention(nn.Module):
         Args:
             dim (int): Input feature dimension.
             num_heads (int): Number of heads in the attention layer.
-            qkv_bias (bool): If set to False, the qkv layer will not learn an additive
-                bias. Default: False.
             dropout_rate (float): Dropout rate.
             kernel_q (Tuple[int, int, int]): Pooling kernel size for q. If both pooling kernel
                 size and pooling stride size are 1 for all the dimensions, pooling is
@@ -152,7 +149,7 @@ class MultiScaleAttention(nn.Module):
         padding_q = [int(q // 2) for q in kernel_q]
         padding_kv = [int(kv // 2) for kv in kernel_kv]
 
-        self.qkv = nn.Linear(dim, dim * 3, bias=qkv_bias)
+        self.qkv = nn.Linear(dim, dim * 3)
         self.proj = nn.Linear(dim, dim, bias=True if bias_on else False)
         self.proj_drop = nn.Dropout(dropout_rate)
 
@@ -274,7 +271,6 @@ class MultiScaleBlock(nn.Module):
         dim: int,
         dim_out: int,
         num_heads: int,
-        qkv_bias: bool = False,
         dropout_rate: float = 0.0,
         droppath_rate: float = 0.0,
         act_layer: Callable[..., nn.Module] = nn.GELU,
@@ -292,8 +288,6 @@ class MultiScaleBlock(nn.Module):
             dim (int): Input feature dimension.
             dim_out (int): Output feature dimension.
             num_heads (int): Number of heads in the attention layer.
-            qkv_bias (bool): If set to False, the qkv layer will not learn an additive
-                bias. Default: False.
             dropout_rate (float): DropOut rate. If set to 0, DropOut is disabled.
             droppath_rate (float): DropPath rate. If set to 0, DropPath is disabled.
             act_layer (nn.Module): Activation layer used in the Mlp layer.
@@ -322,7 +316,6 @@ class MultiScaleBlock(nn.Module):
         self.attn = MultiScaleAttention(
             dim,
             num_heads=num_heads,
-            qkv_bias=qkv_bias,
             dropout_rate=dropout_rate,
             kernel_q=kernel_q,
             kernel_kv=kernel_kv,
@@ -576,7 +569,6 @@ def create_multiscale_vision_transformers(
     conv_patch_embed_padding: Tuple[int, int, int] = (1, 3, 3),
     # Attention block config.
     num_heads: int = 1,
-    qkv_bias: bool = True,
     dropout_rate_block: float = 0.0,
     droppath_rate_block: float = 0.0,
     depthwise_conv: bool = True,
@@ -611,8 +603,6 @@ def create_multiscale_vision_transformers(
             patchifing the video input.
 
         num_heads (int): Number of heads in the first transformer block.
-        qkv_bias (bool): If set to False, the qkv layer will not learn an additive
-            bias. Default: True.
         dropout_rate_block (float): Dropout rate for the attention block.
         droppath_rate_block (float): Droppath rate for the attention block.
         depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
@@ -747,7 +737,6 @@ def create_multiscale_vision_transformers(
                 dim=patch_embed_dim,
                 dim_out=dim_out,
                 num_heads=num_heads,
-                qkv_bias=qkv_bias,
                 dropout_rate=dropout_rate_block,
                 droppath_rate=dpr[i],
                 norm_layer=block_norm_layer,
