@@ -488,7 +488,8 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   AVPacket* avPacket;
   avPacket = av_packet_alloc();
   if (avPacket == nullptr) {
-    LOG(ERROR) << "decoder as not able to allocate the packet.";
+    LOG(ERROR) << "uuid=" << params_.loggingUuid
+               << " decoder as not able to allocate the packet.";
     return AVERROR_BUFFER_TOO_SMALL;
   }
   avPacket->data = nullptr;
@@ -506,6 +507,7 @@ int Decoder::getFrame(size_t workingTimeInMs) {
   bool decodedFrame = false;
   while (!interrupted_ && inRange_.any() && !decodedFrame) {
     if (watcher() == false) {
+      LOG(ERROR) << "uuid=" << params_.loggingUuid << " hit ETIMEDOUT";
       result = ETIMEDOUT;
       break;
     }
@@ -522,7 +524,8 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       break;
     } else if (result < 0) {
       flushStreams();
-      LOG(ERROR) << "Error detected: " << Util::generateErrorDesc(result);
+      LOG(ERROR) << "uuid=" << params_.loggingUuid
+                 << " error detected: " << Util::generateErrorDesc(result);
       break;
     }
 
@@ -543,7 +546,8 @@ int Decoder::getFrame(size_t workingTimeInMs) {
       // packet either got consumed completely or not at all
       if ((result = processPacket(
                stream, avPacket, &gotFrame, &hasMsg, params_.fastSeek)) < 0) {
-        LOG(ERROR) << "processPacket failed with code: " << result;
+        LOG(ERROR) << "uuid=" << params_.loggingUuid
+                   << " processPacket failed with code: " << result;
         break;
       }
 
