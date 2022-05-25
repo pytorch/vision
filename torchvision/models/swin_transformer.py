@@ -118,10 +118,11 @@ def shifted_window_attention(
     if sum(shift_size) > 0:
         # generate attention mask
         attn_mask = x.new_zeros((pad_H, pad_W))
-        slices = [((0, -window_size[i]), (-window_size[i], -shift_size[i]), (-shift_size[i], None)) for i in range(2)]
+        h_slices = ((0, -window_size[0]), (-window_size[0], -shift_size[0]), (-shift_size[0], None))
+        w_slices = ((0, -window_size[1]), (-window_size[1], -shift_size[1]), (-shift_size[1], None))
         count = 0
-        for h in slices[0]:
-            for w in slices[1]:
+        for h in h_slices:
+            for w in w_slices:
                 attn_mask[h[0] : h[1], w[0] : w[1]] = count
                 count += 1
         attn_mask = attn_mask.view(pad_H // window_size[0], window_size[0], pad_W // window_size[1], window_size[1])
@@ -184,8 +185,8 @@ class ShiftedWindowAttention(nn.Module):
         dropout: float = 0.0,
     ):
         super().__init__()
-        # Assert for 2d shift window attention
-        assert len(window_size) == 2 and len(shift_size) == 2, "window_size and shift_size must be of length 2"
+        if len(window_size) != 2 or len(shift_size) != 2:
+            raise ValueError("window_size and shift_size must be of length 2")
         self.window_size = window_size
         self.shift_size = shift_size
         self.num_heads = num_heads
