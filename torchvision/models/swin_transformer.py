@@ -493,7 +493,7 @@ _COMMON_META = {
 
 class Swin_T_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_t-704ceda3.pth",
+        url="https://download.pytorch.org/models/swin_t-2a53f41a.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=232, interpolation=InterpolationMode.BICUBIC
         ),
@@ -516,7 +516,7 @@ class Swin_T_Weights(WeightsEnum):
 
 class Swin_S_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_s-5e29d889.pth",
+        url="https://download.pytorch.org/models/swin_s-5acd2824.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=246, interpolation=InterpolationMode.BICUBIC
         ),
@@ -539,7 +539,7 @@ class Swin_S_Weights(WeightsEnum):
 
 class Swin_B_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_b-68c6b09e.pth",
+        url="https://download.pytorch.org/models/swin_b-ff10ecec.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
         ),
