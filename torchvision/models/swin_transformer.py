@@ -504,7 +504,7 @@ class Swin_T_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
             "_metrics": {
                 "ImageNet-1K": {
-                    "acc@1": 81.474,
+                    "acc@1": 81.470,
                     "acc@5": 95.776,
                 }
             },
@@ -528,7 +528,7 @@ class Swin_S_Weights(WeightsEnum):
             "_metrics": {
                 "ImageNet-1K": {
                     "acc@1": 83.196,
-                    "acc@5": 96.360,
+                    "acc@5": 96.362,
                 }
             },
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
@@ -550,7 +550,7 @@ class Swin_B_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
             "_metrics": {
                 "ImageNet-1K": {
-                    "acc@1": 83.582,
+                    "acc@1": 83.584,
                     "acc@5": 96.640,
                 }
             },
