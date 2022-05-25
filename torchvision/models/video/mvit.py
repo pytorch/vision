@@ -300,7 +300,6 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
                 (T, H, W) after patch embedding.
         """
         super().__init__()
-        assert len(patch_embed_shape) == 3, "Patch_embed_shape should be in the form of (T, H, W)."
         self._patch_embed_shape = patch_embed_shape
         self.num_spatial_patch = patch_embed_shape[1] * patch_embed_shape[2]
         self.num_temporal_patch = patch_embed_shape[0]
@@ -427,9 +426,6 @@ def create_multiscale_vision_transformers(
     depth: int = 16,
     # Patch embed config.
     patch_embed_dim: int = 96,
-    conv_patch_embed_kernel: Tuple[int, int, int] = (3, 7, 7),
-    conv_patch_embed_stride: Tuple[int, int, int] = (2, 4, 4),
-    conv_patch_embed_padding: Tuple[int, int, int] = (1, 3, 3),
     # Attention block config.
     num_heads: int = 1,
     stochastic_depth_prob_block: float = 0.0,
@@ -449,18 +445,11 @@ def create_multiscale_vision_transformers(
     (ViT) is a specific case of MViT that only uses a single scale attention block.
 
     Args:
-        spatial_size (Tuple[int, int]): Input video spatial resolution (H, W). If a single
-            int is given, it assumes the width and the height are the same.
+        spatial_size (Tuple[int, int]): Input video spatial resolution (H, W).
         temporal_size (int): Number of frames in the input video.
         depth (int): The depth of the model.
 
         patch_embed_dim (int): Embedding dimension after patchifing the video input.
-        conv_patch_embed_kernel (Tuple[int]): Kernel size of the convolution for
-            patchifing the video input.
-        conv_patch_embed_stride (Tuple[int]): Stride size of the convolution for
-            patchifing the video input.
-        conv_patch_embed_padding (Tuple[int]): Padding size of the convolution for
-            patchifing the video input.
 
         num_heads (int): Number of heads in the first transformer block.
         stochastic_depth_prob_block (float): Stochastic Depth probability for the attention block.
@@ -488,7 +477,7 @@ def create_multiscale_vision_transformers(
 
     Example usage (building a MViT_B model for Kinetics400):
 
-        spatial_size = 224
+        spatial_size = (224, 224)
         temporal_size = 16
         embed_dim_mul = [[1, 2.0], [3, 2.0], [14, 2.0]]
         atten_head_mul = [[1, 2.0], [3, 2.0], [14, 2.0]]
@@ -514,24 +503,18 @@ def create_multiscale_vision_transformers(
     block_norm_layer = partial(nn.LayerNorm, eps=1e-6)
     attn_norm_layer = partial(nn.LayerNorm, eps=1e-6)
 
-    if isinstance(spatial_size, int):
-        spatial_size = (spatial_size, spatial_size)
-
+    s = (2, 4, 4)
     patch_embed = PatchEmbed(
         patch_model=nn.Conv3d(
             in_channels=3,
             out_channels=patch_embed_dim,
-            kernel_size=conv_patch_embed_kernel,
-            stride=conv_patch_embed_stride,
-            padding=conv_patch_embed_padding,
+            kernel_size=(3, 7, 7),
+            stride=s,
+            padding=(1, 3, 3),
             bias=True,
         )
     )
-
-    input_dims = (temporal_size, spatial_size[0], spatial_size[1])
-
-    patch_embed_shape = tuple(v // conv_patch_embed_stride[i] for i, v in enumerate(input_dims))
-
+    patch_embed_shape = (temporal_size // s[0], spatial_size[0] // s[1], spatial_size[1] // s[2])
     cls_positional_encoding = SpatioTemporalClsPositionalEncoding(
         embed_dim=patch_embed_dim,
         patch_embed_shape=patch_embed_shape,
@@ -621,7 +604,7 @@ def create_multiscale_vision_transformers(
 
 
 def mvit_b_16(
-    spatial_size=224,
+    spatial_size=(224, 224),
     temporal_size=16,
     num_classes=400,
     **kwargs,
