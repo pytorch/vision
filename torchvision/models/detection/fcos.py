@@ -201,7 +201,10 @@ class FCOSClassificationHead(nn.Module):
 
 class FCOSRegressionHead(nn.Module):
     """
-    A regression head for use in FCOS.
+    A regression head for use in FCOS, which combines regression branch and center-ness branch.
+    This can obtain better performance.
+
+    Reference: `FCOS: A simple and strong anchor-free object detector <https://arxiv.org/abs/2006.09214>`_.
 
     Args:
         in_channels (int): number of channels of the input feature
@@ -655,9 +658,12 @@ class FCOS_ResNet50_FPN_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#fcos-resnet-50-fpn",
-            "metrics": {
-                "box_map": 39.2,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 39.2,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -680,6 +686,7 @@ def fcos_resnet50_fpn(
     Constructs a FCOS model with a ResNet-50-FPN backbone.
 
     Reference: `FCOS: Fully Convolutional One-Stage Object Detection <https://arxiv.org/abs/1904.01355>`_.
+               `FCOS: A simple and strong anchor-free object detector <https://arxiv.org/abs/2006.09214>`_.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
