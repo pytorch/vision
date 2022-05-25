@@ -5,7 +5,7 @@ import torch
 import torch.nn.functional as F
 from torch import nn, Tensor
 
-from ..ops.misc import MLP, Permute
+from ..ops.misc import MLP
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
@@ -41,7 +41,9 @@ class PatchMerging(nn.Module):
     def forward(self, x: Tensor):
         """
         Args:
-            x (Tensor): input tensor with expected layout of [... H W C]
+            x (Tensor): input tensor with expected layout of [..., H, W, C]
+        Returns:
+            Tensor with layout of [..., H/2, W/2, 2*C]
         """
         H, W, _ = x.shape[-3:]
         x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
@@ -94,12 +96,6 @@ def shifted_window_attention(
     pad_b = (window_size[0] - H % window_size[0]) % window_size[0]
     x = F.pad(input, (0, 0, 0, pad_r, 0, pad_b))
     _, pad_H, pad_W, _ = x.shape
-
-    # If window size is larger than feature size, there is no need to shift window.
-    if window_size[0] >= pad_H:
-        shift_size[0] = 0
-    if window_size[1] >= pad_W:
-        shift_size[1] = 0
 
     # cyclic shift
     if sum(shift_size) > 0:
@@ -159,6 +155,18 @@ def shifted_window_attention(
 torch.fx.wrap("shifted_window_attention")
 
 
+def _fix_window_and_shift_size(input_hw: List[int], window_size: List[int], shift_size: List[int]):
+    # Handle case where window_size is larger than input tensor
+    for i in range(2):
+        if input_hw[i] <= window_size[i]:
+            window_size[i] = input_hw[i]
+            shift_size[i] = 0
+    return window_size, shift_size
+
+
+torch.fx.wrap("_fix_window_and_shift_size")
+
+
 class ShiftedWindowAttention(nn.Module):
     """
     See :func:`shifted_window_attention`.
@@ -202,16 +210,25 @@ class ShiftedWindowAttention(nn.Module):
         relative_coords[:, :, 0] += self.window_size[0] - 1  # shift to start from 0
         relative_coords[:, :, 1] += self.window_size[1] - 1
         relative_coords[:, :, 0] *= 2 * self.window_size[1] - 1
-        relative_position_index = relative_coords.sum(-1).view(-1)  # Wh*Ww*Wh*Ww
+        relative_position_index = relative_coords.sum(-1)  # Wh*Ww, Wh*Ww
         self.register_buffer("relative_position_index", relative_position_index)
 
         nn.init.trunc_normal_(self.relative_position_bias_table, std=0.02)
 
     def forward(self, x: Tensor):
-        relative_position_bias = self.relative_position_bias_table[self.relative_position_index]  # type: ignore[index]
-        relative_position_bias = relative_position_bias.view(
-            self.window_size[0] * self.window_size[1], self.window_size[0] * self.window_size[1], -1
-        )
+        """
+        Args:
+            x (Tensor): Tensor with layout of [B, H, W, C]
+        Returns:
+            Tensor with same layout as input, i.e. [B, H, W, C]
+        """
+        _, H, W, _ = x.shape
+        input_hw = [H, W]
+        window_size, shift_size = _fix_window_and_shift_size(input_hw, self.window_size, self.shift_size)
+
+        N = window_size[0] * window_size[1]
+        relative_position_bias = self.relative_position_bias_table[self.relative_position_index[:N, :N]]  # type: ignore[index]
+        relative_position_bias = relative_position_bias.view(N, N, -1)
         relative_position_bias = relative_position_bias.permute(2, 0, 1).contiguous().unsqueeze(0)
 
         return shifted_window_attention(
@@ -219,9 +236,9 @@ class ShiftedWindowAttention(nn.Module):
             self.qkv.weight,
             self.proj.weight,
             relative_position_bias,
-            self.window_size,
+            window_size,
             self.num_heads,
-            shift_size=self.shift_size,
+            shift_size=shift_size,
             attention_dropout=self.attention_dropout,
             dropout=self.dropout,
             qkv_bias=self.qkv.bias,
@@ -285,12 +302,59 @@ class SwinTransformerBlock(nn.Module):
         return x
 
 
+class PatchEmbed(nn.Module):
+    """Split image into non-overlapping patches
+
+    Args:
+        patch_size (List[int]): Patch token size.
+        embed_dim (int): Number of linear projection output channels.
+        in_chanels (int): Number of input channels. Default: 3.
+        norm_layer (Optional[Callable[..., nn.Module]]): Normalization layer. Default: None.
+    """
+
+    def __init__(
+        self,
+        patch_size: List[int],
+        embed_dim: int,
+        in_channels: int = 3,
+        norm_layer: Optional[Callable[..., nn.Module]] = None,
+    ):
+        super().__init__()
+        self.patch_size = patch_size
+        self.proj = nn.Conv2d(
+            in_channels, embed_dim, kernel_size=(patch_size[0], patch_size[1]), stride=(patch_size[0], patch_size[1])
+        )
+        self.norm: Optional[nn.Module]
+        if norm_layer is not None:
+            self.norm = norm_layer(embed_dim)
+        else:
+            self.norm = None
+
+    def forward(self, x: Tensor) -> Tensor:
+        """
+        Args:
+            x (Tensor): batch of images with layout [B, C, H, W]
+        Returns:
+            Tensor with layout [B, H/patch_size[0], W/patch_size[1], embed_dim]
+        """
+        _, _, H, W = x.shape
+        pad_r = (self.patch_size[1] - W % self.patch_size[1]) % self.patch_size[1]
+        pad_b = (self.patch_size[0] - H % self.patch_size[0]) % self.patch_size[0]
+        x = F.pad(x, (0, pad_r, 0, pad_b))
+
+        x = self.proj(x)
+        x = x.permute(0, 2, 3, 1)
+        if self.norm is not None:
+            x = self.norm(x)
+        return x
+
+
 class SwinTransformer(nn.Module):
     """
     Implements Swin Transformer from the `"Swin Transformer: Hierarchical Vision Transformer using
     Shifted Windows" <https://arxiv.org/pdf/2103.14030>`_ paper.
     Args:
-        patch_size (int): Patch size.
+        patch_size (List[int]): Patch size.
         embed_dim (int): Patch embedding dimension.
         depths (List(int)): Depth of each Swin Transformer layer.
         num_heads (List(int)): Number of attention heads in different layers.
@@ -302,11 +366,12 @@ class SwinTransformer(nn.Module):
         num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
+        patch_embed (nn.Module, optional): Patch Embedding layer. Default: None.
     """
 
     def __init__(
         self,
-        patch_size: int,
+        patch_size: List[int],
         embed_dim: int,
         depths: List[int],
         num_heads: List[int],
@@ -318,6 +383,7 @@ class SwinTransformer(nn.Module):
         num_classes: int = 1000,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         block: Optional[Callable[..., nn.Module]] = None,
+        patch_embed: Optional[Callable[..., nn.Module]] = None,
     ):
         super().__init__()
         _log_api_usage_once(self)
@@ -329,16 +395,11 @@ class SwinTransformer(nn.Module):
         if norm_layer is None:
             norm_layer = partial(nn.LayerNorm, eps=1e-5)
 
-        layers: List[nn.Module] = []
-        # split image into non-overlapping patches
-        layers.append(
-            nn.Sequential(
-                nn.Conv2d(3, embed_dim, kernel_size=patch_size, stride=patch_size),
-                Permute([0, 2, 3, 1]),
-                norm_layer(embed_dim),
-            )
-        )
+        if patch_embed is None:
+            patch_embed = PatchEmbed
+        self.patch_embed = patch_embed(patch_size, embed_dim, norm_layer=norm_layer)
 
+        layers: List[nn.Module] = []
         total_stage_blocks = sum(depths)
         stage_block_id = 0
         # build SwinTransformer blocks
@@ -371,7 +432,11 @@ class SwinTransformer(nn.Module):
         num_features = embed_dim * 2 ** (len(depths) - 1)
         self.norm = norm_layer(num_features)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.head = nn.Linear(num_features, num_classes)
+        self.head: Optional[nn.Module]
+        if num_classes is not None:
+            self.head = nn.Linear(num_features, num_classes)
+        else:
+            self.head = None
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -380,17 +445,19 @@ class SwinTransformer(nn.Module):
                     nn.init.zeros_(m.bias)
 
     def forward(self, x):
+        x = self.patch_embed(x)
         x = self.features(x)
         x = self.norm(x)
         x = x.permute(0, 3, 1, 2)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        x = self.head(x)
+        if self.num_classes is not None:
+            x = self.head(x)
         return x
 
 
 def _swin_transformer(
-    patch_size: int,
+    patch_size: List[int],
     embed_dim: int,
     depths: List[int],
     num_heads: List[int],
@@ -426,7 +493,7 @@ _COMMON_META = {
 
 class Swin_T_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_t-704ceda3.pth",
+        url="https://download.pytorch.org/models/swin_t-2a53f41a.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=232, interpolation=InterpolationMode.BICUBIC
         ),
@@ -437,7 +504,7 @@ class Swin_T_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
             "_metrics": {
                 "ImageNet-1K": {
-                    "acc@1": 81.474,
+                    "acc@1": 81.470,
                     "acc@5": 95.776,
                 }
             },
@@ -449,7 +516,7 @@ class Swin_T_Weights(WeightsEnum):
 
 class Swin_S_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_s-5e29d889.pth",
+        url="https://download.pytorch.org/models/swin_s-5acd2824.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=246, interpolation=InterpolationMode.BICUBIC
         ),
@@ -461,7 +528,7 @@ class Swin_S_Weights(WeightsEnum):
             "_metrics": {
                 "ImageNet-1K": {
                     "acc@1": 83.196,
-                    "acc@5": 96.360,
+                    "acc@5": 96.362,
                 }
             },
             "_docs": """These weights reproduce closely the results of the paper using a similar training recipe.""",
@@ -472,7 +539,7 @@ class Swin_S_Weights(WeightsEnum):
 
 class Swin_B_Weights(WeightsEnum):
     IMAGENET1K_V1 = Weights(
-        url="https://download.pytorch.org/models/swin_b-68c6b09e.pth",
+        url="https://download.pytorch.org/models/swin_b-ff10ecec.pth",
         transforms=partial(
             ImageClassification, crop_size=224, resize_size=238, interpolation=InterpolationMode.BICUBIC
         ),
@@ -483,7 +550,7 @@ class Swin_B_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#swintransformer",
             "_metrics": {
                 "ImageNet-1K": {
-                    "acc@1": 83.582,
+                    "acc@1": 83.584,
                     "acc@5": 96.640,
                 }
             },
@@ -517,7 +584,7 @@ def swin_t(*, weights: Optional[Swin_T_Weights] = None, progress: bool = True, *
     weights = Swin_T_Weights.verify(weights)
 
     return _swin_transformer(
-        patch_size=4,
+        patch_size=[4, 4],
         embed_dim=96,
         depths=[2, 2, 6, 2],
         num_heads=[3, 6, 12, 24],
@@ -553,7 +620,7 @@ def swin_s(*, weights: Optional[Swin_S_Weights] = None, progress: bool = True, *
     weights = Swin_S_Weights.verify(weights)
 
     return _swin_transformer(
-        patch_size=4,
+        patch_size=[4, 4],
         embed_dim=96,
         depths=[2, 2, 18, 2],
         num_heads=[3, 6, 12, 24],
@@ -589,7 +656,7 @@ def swin_b(*, weights: Optional[Swin_B_Weights] = None, progress: bool = True, *
     weights = Swin_B_Weights.verify(weights)
 
     return _swin_transformer(
-        patch_size=4,
+        patch_size=[4, 4],
         embed_dim=128,
         depths=[2, 2, 18, 2],
         num_heads=[4, 8, 16, 32],
