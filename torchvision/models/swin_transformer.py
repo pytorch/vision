@@ -39,18 +39,23 @@ class PatchMerging(nn.Module):
         self.norm = norm_layer(4 * dim)
 
     def forward(self, x: Tensor):
-        B, H, W, C = x.shape
+        """
+        Args:
+            x (Tensor): input tensor with expected layout of [... H W C]
+        """
+        H, W, C = x.shape[-3:]
 
-        x0 = x[:, 0::2, 0::2, :]  # B H/2 W/2 C
-        x1 = x[:, 1::2, 0::2, :]  # B H/2 W/2 C
-        x2 = x[:, 0::2, 1::2, :]  # B H/2 W/2 C
-        x3 = x[:, 1::2, 1::2, :]  # B H/2 W/2 C
-        x = torch.cat([x0, x1, x2, x3], -1)  # B H/2 W/2 4*C
-        x = x.view(B, -1, 4 * C)  # B H/2*W/2 4*C
+        if (H % 2 == 1) or (W % 2 == 1):
+            x = F.pad(x, (0, 0, 0, W % 2, 0, H % 2))
+
+        x0 = x[..., 0::2, 0::2, :]  # ... H/2 W/2 C
+        x1 = x[..., 1::2, 0::2, :]  # ... H/2 W/2 C
+        x2 = x[..., 0::2, 1::2, :]  # ... H/2 W/2 C
+        x3 = x[..., 1::2, 1::2, :]  # ... H/2 W/2 C
+        x = torch.cat([x0, x1, x2, x3], -1)  # ... H/2 W/2 4*C
 
         x = self.norm(x)
-        x = self.reduction(x)
-        x = x.view(B, H // 2, W // 2, 2 * C)
+        x = self.reduction(x)  # ... H/2 W/2 2*C
         return x
 
 
@@ -239,6 +244,7 @@ class SwinTransformerBlock(nn.Module):
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
         norm_layer (nn.Module): Normalization layer.  Default: nn.LayerNorm.
+        attn_layer (nn.Module): Attention layer. Default: ShiftedWindowAttention
     """
 
     def __init__(
@@ -252,11 +258,12 @@ class SwinTransformerBlock(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
+        attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
     ):
         super().__init__()
 
         self.norm1 = norm_layer(dim)
-        self.attn = ShiftedWindowAttention(
+        self.attn = attn_layer(
             dim,
             window_size,
             shift_size,
