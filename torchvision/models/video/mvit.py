@@ -83,32 +83,6 @@ class AttentionPool(nn.Module):
 
 
 class MultiScaleAttention(nn.Module):
-    """
-    Implementation of a multiscale attention block. Compare to a conventional attention
-    block, a multiscale attention block optionally supports pooling (either
-    before or after qkv projection). If pooling is not used, a multiscale attention
-    block is equivalent to a conventional attention block.
-
-    ::
-                                   Input
-                                     |
-                    |----------------|-----------------|
-                    ↓                ↓                 ↓
-                  Linear           Linear            Linear
-                    &                &                 &
-                 Pool (Q)         Pool (K)          Pool (V)
-                    → -------------- ←                 |
-                             ↓                         |
-                       MatMul & Scale                  |
-                             ↓                         |
-                          Softmax                      |
-                             → ----------------------- ←
-                                         ↓
-                                   MatMul & Scale
-                                         ↓
-                                      DropOut
-    """
-
     def __init__(
         self,
         dim: int,
@@ -201,12 +175,6 @@ class MultiScaleAttention(nn.Module):
         )
 
     def forward(self, x: torch.Tensor, thw_shape: List[int]) -> Tuple[torch.Tensor, List[int]]:
-        """
-        Args:
-            x (torch.Tensor): Input tensor.
-            thw_shape (List): The shape of the input tensor (before flattening).
-        """
-
         B, N, C = x.shape
 
         qkv = self.qkv(x).reshape(B, N, 3, self.num_heads, -1).permute(2, 0, 3, 1, 4)
@@ -237,42 +205,13 @@ class MultiScaleAttention(nn.Module):
 
 
 class MultiScaleBlock(nn.Module):
-    """
-    Implementation of a multiscale vision transformer block. Each block contains a
-    multiscale attention layer and a Mlp layer.
-
-    ::
-
-
-                                      Input
-                                        |-------------------+
-                                        ↓                   |
-                                       Norm                 |
-                                        ↓                   |
-                                MultiScaleAttention        Pool
-                                        ↓                   |
-                                     DropPath               |
-                                        ↓                   |
-                                    Summation ←-------------+
-                                        |
-                                        |-------------------+
-                                        ↓                   |
-                                       Norm                 |
-                                        ↓                   |
-                                       Mlp                 Proj
-                                        ↓                   |
-                                     DropPath               |
-                                        ↓                   |
-                                    Summation  ←------------+
-    """
-
     def __init__(
         self,
         dim: int,
         dim_out: int,
         num_heads: int,
         dropout_rate: float = 0.0,
-        droppath_rate: float = 0.0,
+        stochastic_depth_prob: float = 0.0,
         act_layer: Callable[..., nn.Module] = nn.GELU,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         attn_norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
@@ -289,7 +228,7 @@ class MultiScaleBlock(nn.Module):
             dim_out (int): Output feature dimension.
             num_heads (int): Number of heads in the attention layer.
             dropout_rate (float): DropOut rate. If set to 0, DropOut is disabled.
-            droppath_rate (float): DropPath rate. If set to 0, DropPath is disabled.
+            stochastic_depth_prob (float): Stochastic Depth probability. If set to 0, it's disabled.
             act_layer (nn.Module): Activation layer used in the Mlp layer.
             norm_layer (nn.Module): Normalization layer.
             attn_norm_layer (nn.Module): Normalization layer in the attention module.
@@ -325,7 +264,7 @@ class MultiScaleBlock(nn.Module):
             bias_on=bias_on,
             depthwise_conv=depthwise_conv,
         )
-        self.stochastic_depth = StochasticDepth(droppath_rate, "row")
+        self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = 4 * dim  # 4x mlp ratio
         self.mlp = MLP(
@@ -344,12 +283,6 @@ class MultiScaleBlock(nn.Module):
         self.need_permutation = [isinstance(self.norm1, nn.BatchNorm1d), isinstance(self.norm2, nn.BatchNorm1d)]
 
     def forward(self, x: torch.Tensor, thw_shape: List[int]) -> Tuple[torch.Tensor, List[int]]:
-        """
-        Args:
-            x (torch.Tensor): Input tensor.
-            thw_shape (List): The shape of the input tensor (before flattening).
-        """
-
         x_block, thw_shape_new = self.attn(
             (self.norm1(x.permute(0, 2, 1)).permute(0, 2, 1) if self.need_permutation[0] else self.norm1(x)),
             thw_shape,
@@ -365,10 +298,6 @@ class MultiScaleBlock(nn.Module):
 
 
 class SpatioTemporalClsPositionalEncoding(nn.Module):
-    """
-    Add a cls token and apply a spatiotemporal encoding to a tensor.
-    """
-
     def __init__(
         self,
         embed_dim: int,
@@ -397,10 +326,6 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
         return self._patch_embed_shape
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Args:
-            x (torch.Tensor): Input tensor.
-        """
         B, N, C = x.shape
 
         cls_tokens = self.cls_token.expand(B, -1, -1)
@@ -420,10 +345,8 @@ class SpatioTemporalClsPositionalEncoding(nn.Module):
 class ClassificationHead(nn.Module):
     def __init__(
         self,
-        # Projection configs.
         in_features: int,
         out_features: int,
-        # Dropout configs.
         dropout_rate: float = 0.5,
     ) -> None:
         super().__init__()
@@ -431,32 +354,13 @@ class ClassificationHead(nn.Module):
         self.proj = nn.Linear(in_features, out_features)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # Pick cls embedding
         x = x[:, 0]
-        # Performs dropout.
         x = self.dropout(x)
-        # Performs projection.
         x = self.proj(x)
         return x
 
 
 class PatchEmbed(nn.Module):
-    """
-    Transformer basic patch embedding module. Performs patchifying input, flatten and
-    and transpose.
-
-    ::
-
-                                       PatchModel
-                                           ↓
-                                        flatten
-                                           ↓
-                                       transpose
-
-    The builder can be found in `create_patch_embed`.
-
-    """
-
     def __init__(
         self,
         patch_model: nn.Module,
@@ -476,31 +380,6 @@ class MultiscaleVisionTransformers(nn.Module):
     Haoqi Fan, Bo Xiong, Karttikeya Mangalam, Yanghao Li, Zhicheng Yan, Jitendra Malik,
     Christoph Feichtenhofer
     https://arxiv.org/abs/2104.11227
-
-    ::
-
-                                       PatchEmbed
-                                           ↓
-                                   PositionalEncoding
-                                           ↓
-                                        Dropout
-                                           ↓
-                                     Normalization
-                                           ↓
-                                         Block 1
-                                           ↓
-                                           .
-                                           .
-                                           .
-                                           ↓
-                                         Block N
-                                           ↓
-                                     Normalization
-                                           ↓
-                                          Head
-
-
-    The builder can be found in `create_mvit`.
     """
 
     def __init__(
@@ -563,7 +442,7 @@ def create_multiscale_vision_transformers(
     conv_patch_embed_padding: Tuple[int, int, int] = (1, 3, 3),
     # Attention block config.
     num_heads: int = 1,
-    droppath_rate_block: float = 0.0,
+    stochastic_depth_prob_block: float = 0.0,
     depthwise_conv: bool = True,
     bias_on: bool = True,
     embed_dim_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
@@ -596,7 +475,7 @@ def create_multiscale_vision_transformers(
             patchifing the video input.
 
         num_heads (int): Number of heads in the first transformer block.
-        droppath_rate_block (float): Droppath rate for the attention block.
+        stochastic_depth_prob_block (float): Stochastic Depth probability for the attention block.
         depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
         bias_on (bool): Wether use biases for linear layers.
         embed_dim_mul (Optional[List[List[int]]]): Dimension multiplication at layer i.
@@ -672,7 +551,7 @@ def create_multiscale_vision_transformers(
         patch_embed_shape=patch_embed_shape,
     )
 
-    dpr = [x.item() for x in torch.linspace(0, droppath_rate_block, depth)]  # stochastic depth decay rule
+    dpr = [x.item() for x in torch.linspace(0, stochastic_depth_prob_block, depth)]  # stochastic depth decay rule
 
     dim_mul, head_mul = torch.ones(depth + 1), torch.ones(depth + 1)
     if embed_dim_mul is not None:
@@ -729,7 +608,7 @@ def create_multiscale_vision_transformers(
                 dim=patch_embed_dim,
                 dim_out=dim_out,
                 num_heads=num_heads,
-                droppath_rate=dpr[i],
+                stochastic_depth_prob=dpr[i],
                 norm_layer=block_norm_layer,
                 attn_norm_layer=attn_norm_layer,
                 kernel_q=pool_q[i],
