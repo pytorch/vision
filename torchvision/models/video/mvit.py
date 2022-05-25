@@ -94,7 +94,6 @@ class MultiScaleAttention(nn.Module):
         stride_kv: Tuple[int, int, int] = (1, 1, 1),
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
         depthwise_conv: bool = True,
-        bias_on: bool = True,
     ) -> None:
         """
         Args:
@@ -111,7 +110,6 @@ class MultiScaleAttention(nn.Module):
             stride_kv (Tuple[int, int, int]): Pooling kernel stride for kv.
             norm_layer (nn.Module): Normalization layer used after pooling.
             depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
-            bias_on (bool): Wether use biases for linear layers.
         """
 
         super().__init__()
@@ -124,7 +122,7 @@ class MultiScaleAttention(nn.Module):
         padding_kv = [int(kv // 2) for kv in kernel_kv]
 
         self.qkv = nn.Linear(dim, dim * 3)
-        self.proj = nn.Linear(dim, dim, bias=True if bias_on else False)
+        self.proj = nn.Linear(dim, dim)
         self.proj_drop = nn.Dropout(dropout_rate)
 
         # Skip pooling with kernel and stride size of (1, 1, 1).
@@ -220,7 +218,6 @@ class MultiScaleBlock(nn.Module):
         stride_q: Tuple[int, int, int] = (1, 1, 1),
         stride_kv: Tuple[int, int, int] = (1, 1, 1),
         depthwise_conv: bool = True,
-        bias_on: bool = True,
     ) -> None:
         """
         Args:
@@ -243,7 +240,6 @@ class MultiScaleBlock(nn.Module):
                 should be a cls token. Otherwise, the input tensor does not contain a
                 cls token. Pooling is not applied to the cls token.
             depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
-            bias_on (bool): Wether use biases for linear layers.
         """
         super().__init__()
         self.dim = dim
@@ -261,18 +257,17 @@ class MultiScaleBlock(nn.Module):
             stride_q=stride_q,
             stride_kv=stride_kv,
             norm_layer=attn_norm_layer,
-            bias_on=bias_on,
             depthwise_conv=depthwise_conv,
         )
         self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
         self.norm2 = norm_layer(dim)
         mlp_hidden_dim = 4 * dim  # 4x mlp ratio
         self.mlp = MLP(
-            dim, [mlp_hidden_dim, dim_out], activation_layer=act_layer, dropout=dropout_rate, bias=bias_on, inplace=None
+            dim, [mlp_hidden_dim, dim_out], activation_layer=act_layer, dropout=dropout_rate, inplace=None
         )
         self.proj: Optional[nn.Module] = None
         if dim != dim_out:
-            self.proj = nn.Linear(dim, dim_out, bias=bias_on)
+            self.proj = nn.Linear(dim, dim_out)
 
         self.att_pool_skip = AttentionPool(
             nn.MaxPool3d(kernel_skip, stride_skip, padding_skip, ceil_mode=False)
@@ -444,7 +439,6 @@ def create_multiscale_vision_transformers(
     num_heads: int = 1,
     stochastic_depth_prob_block: float = 0.0,
     depthwise_conv: bool = True,
-    bias_on: bool = True,
     embed_dim_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     atten_head_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     pool_q_stride_size: Optional[List[List[int]]] = ([1, 1, 2, 2], [3, 1, 2, 2], [14, 1, 2, 2]),
@@ -477,7 +471,6 @@ def create_multiscale_vision_transformers(
         num_heads (int): Number of heads in the first transformer block.
         stochastic_depth_prob_block (float): Stochastic Depth probability for the attention block.
         depthwise_conv (bool): Wether use depthwise or full convolution for pooling.
-        bias_on (bool): Wether use biases for linear layers.
         embed_dim_mul (Optional[List[List[int]]]): Dimension multiplication at layer i.
             If X is used, then the next block will increase the embed dimension by X
             times. Format: [depth_i, mul_dim_ratio].
@@ -615,7 +608,6 @@ def create_multiscale_vision_transformers(
                 kernel_kv=pool_kv[i],
                 stride_q=stride_q[i],
                 stride_kv=stride_kv[i],
-                bias_on=bias_on,
                 depthwise_conv=depthwise_conv,
             )
         )
