@@ -9,7 +9,7 @@ from ...ops import StochasticDepth, MLP
 from .._utils import _make_divisible
 
 
-__all__ = ["mvit_b_16"]
+__all__ = ["mvitv2_t", "mvitv2_s", "mvitv2_b"]
 
 
 def _prod(s: Sequence[int]) -> int:
@@ -428,7 +428,7 @@ def create_multiscale_vision_transformers(
     patch_embed_dim: int = 96,
     # Attention block config.
     num_heads: int = 1,
-    stochastic_depth_prob_block: float = 0.0,
+    stochastic_depth_prob: float = 0.0,
     embed_dim_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     atten_head_mul: Optional[List[List[int]]] = ([1, 2.0], [3, 2.0], [14, 2.0]),
     pool_q_stride_size: Optional[List[List[int]]] = ([1, 1, 2, 2], [3, 1, 2, 2], [14, 1, 2, 2]),
@@ -449,7 +449,7 @@ def create_multiscale_vision_transformers(
         patch_embed_dim (int): Embedding dimension after patchifing the video input.
 
         num_heads (int): Number of heads in the first transformer block.
-        stochastic_depth_prob_block (float): Stochastic Depth probability for the attention block.
+        stochastic_depth_prob (float): Stochastic Depth probability for the attention block.
         embed_dim_mul (Optional[List[List[int]]]): Dimension multiplication at layer i.
             If X is used, then the next block will increase the embed dimension by X
             times. Format: [depth_i, mul_dim_ratio].
@@ -501,7 +501,7 @@ def create_multiscale_vision_transformers(
         patch_embed_shape=patch_embed_shape,
     )
 
-    dpr = [x.item() for x in torch.linspace(0, stochastic_depth_prob_block, depth)]  # stochastic depth decay rule
+    dpr = [x.item() for x in torch.linspace(0, stochastic_depth_prob, depth)]  # stochastic depth decay rule
 
     dim_mul, head_mul = torch.ones(depth + 1), torch.ones(depth + 1)
     if embed_dim_mul is not None:
@@ -576,16 +576,71 @@ def create_multiscale_vision_transformers(
     )
 
 
-# TODO: rename this. This is actually the small version for v2
-def mvit_b_16(
-    spatial_size=(224, 224),
-    temporal_size=16,
-    num_classes=400,
-    **kwargs,
-):
+def mvitv2_t(num_classes=400, **kwargs):
     return create_multiscale_vision_transformers(
-        spatial_size=spatial_size,
-        temporal_size=temporal_size,
+        spatial_size=(224, 224),
+        temporal_size=16,
+        depth=10,
+        embed_dim_mul=[[1, 2.0], [3, 2.0], [8, 2.0]],
+        atten_head_mul=[[1, 2.0], [3, 2.0], [8, 2.0]],
+        pool_q_stride_size=[[0, 1, 1, 1], [1, 1, 2, 2], [2, 1, 1, 1], [3, 1, 2, 2], [4, 1, 1, 1], [5, 1, 1, 1],
+                            [6, 1, 1, 1], [7, 1, 1, 1], [8, 1, 2, 2], [9, 1, 1, 1]],
+        droppath_rate_block=0.1,
         num_classes=num_classes,
-        **kwargs,
     )
+
+
+def mvitv2_s(num_classes=400, **kwargs):
+    return create_multiscale_vision_transformers(
+        spatial_size=(224, 224),
+        temporal_size = 16,
+        depth = 16,
+        embed_dim_mul = [[1, 2.0], [3, 2.0], [14, 2.0]],
+        atten_head_mul = [[1, 2.0], [3, 2.0], [14, 2.0]],
+        pool_q_stride_size = [[0, 1, 1, 1], [1, 1, 2, 2], [2, 1, 1, 1], [3, 1, 2, 2], [4, 1, 1, 1], [5, 1, 1, 1],
+                              [6, 1, 1, 1], [7, 1, 1, 1], [8, 1, 1, 1], [9, 1, 1, 1], [10, 1, 1, 1], [11, 1, 1, 1],
+                              [12, 1, 1, 1], [13, 1, 1, 1], [14, 1, 2, 2], [15, 1, 1, 1]],
+        droppath_rate_block = 0.1,
+        num_classes=num_classes,
+    )
+
+
+def mvitv2_b(num_classes=400, **kwargs):
+    return create_multiscale_vision_transformers(
+        spatial_size=(224, 224),
+        temporal_size=32,
+        depth=24,
+        embed_dim_mul=[[2, 2.0], [5, 2.0], [21, 2.0]],
+        atten_head_mul=[[2, 2.0], [5, 2.0], [21, 2.0]],
+        pool_q_stride_size=[[0, 1, 1, 1], [1, 1, 1, 1], [2, 1, 2, 2], [3, 1, 1, 1], [4, 1, 1, 1], [5, 1, 2, 2],
+                            [6, 1, 1, 1], [7, 1, 1, 1], [8, 1, 1, 1], [9, 1, 1, 1], [10, 1, 1, 1], [11, 1, 1, 1],
+                            [12, 1, 1, 1], [13, 1, 1, 1], [14, 1, 1, 1], [15, 1, 1, 1], [16, 1, 1, 1],
+                            [17, 1, 1, 1], [18, 1, 1, 1], [19, 1, 1, 1], [20, 1, 1, 1], [21, 1, 2, 2],
+                            [22, 1, 1, 1], [23, 1, 1, 1]],
+        stochastic_depth_prob=0.3,
+        num_classes=num_classes,
+    )
+
+"""
+def mvitv2_l(num_classes=400, **kwargs):
+    return create_multiscale_vision_transformers(
+        spatial_size=(312, 312),
+        temporal_size=40,
+        depth=48,
+        num_heads=2,
+        embed_dim_mul=[[2, 2.0], [8, 2.0], [44, 2.0]],
+        atten_head_mul=[[2, 2.0], [8, 2.0], [44, 2.0]],
+        pool_q_stride_size=[[0, 1, 1, 1], [1, 1, 1, 1], [2, 1, 2, 2], [3, 1, 1, 1], [4, 1, 1, 1], [5, 1, 1, 1],
+                            [6, 1, 1, 1], [7, 1, 1, 1], [8, 1, 2, 2], [9, 1, 1, 1], [10, 1, 1, 1], [11, 1, 1, 1],
+                            [12, 1, 1, 1], [13, 1, 1, 1], [14, 1, 1, 1], [15, 1, 1, 1], [16, 1, 1, 1],
+                            [17, 1, 1, 1], [18, 1, 1, 1], [19, 1, 1, 1], [20, 1, 1, 1], [21, 1, 1, 1],
+                            [22, 1, 1, 1], [23, 1, 1, 1], [24, 1, 1, 1], [25, 1, 1, 1], [26, 1, 1, 1],
+                            [27, 1, 1, 1], [28, 1, 1, 1], [29, 1, 1, 1], [30, 1, 1, 1], [31, 1, 1, 1],
+                            [32, 1, 1, 1], [33, 1, 1, 1], [34, 1, 1, 1], [35, 1, 1, 1], [36, 1, 1, 1],
+                            [37, 1, 1, 1], [38, 1, 1, 1], [39, 1, 1, 1], [40, 1, 1, 1], [41, 1, 1, 1],
+                            [42, 1, 1, 1], [43, 1, 1, 1], [44, 1, 2, 2], [45, 1, 1, 1], [46, 1, 1, 1],
+                            [47, 1, 1, 1]],
+        droppath_rate_block=0.5,
+        num_classes=num_classes,
+    )
+"""
