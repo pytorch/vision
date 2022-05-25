@@ -1,0 +1,12 @@
+.. rst-class:: table-weights
+.. table::
+    :widths: 100 20 20  20 10
+
+    =================================================================  ===========  ===========  ============  ======================================================================================
+    **Weight**                                                           **Acc@1**    **Acc@5**  **Params**    **Recipe**
+    =================================================================  ===========  ===========  ============  ======================================================================================
+    :class:`MC3_18_Weights.KINETICS400_V1 <MC3_18_Weights>`                  53.9         76.29  11.7M         `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    :class:`R2Plus1D_18_Weights.KINETICS400_V1 <R2Plus1D_18_Weights>`        57.5         78.81  31.5M         `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    :class:`R3D_18_Weights.KINETICS400_V1 <R3D_18_Weights>`                  52.75        75.45  33.4M         `link <https://github.com/pytorch/vision/tree/main/references/video_classification>`__
+    =================================================================  ===========  ===========  ============  ======================================================================================
+

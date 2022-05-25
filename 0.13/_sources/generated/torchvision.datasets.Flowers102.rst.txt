@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Flowers102
+==========
+
+.. autoclass:: Flowers102
+    :members:
+        __getitem__,
+        
+    :special-members:

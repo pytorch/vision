@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models.segmentation
+
+
+fcn_resnet101
+=============
+
+.. autofunction:: fcn_resnet101

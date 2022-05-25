@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+WIDERFace
+=========
+
+.. autoclass:: WIDERFace
+    :members:
+        __getitem__,
+        
+    :special-members:

@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+HD1K
+====
+
+.. autoclass:: HD1K
+    :members:
+        __getitem__,
+        
+    :special-members:

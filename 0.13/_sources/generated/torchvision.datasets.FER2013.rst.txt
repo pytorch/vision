@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+FER2013
+=======
+
+.. autoclass:: FER2013
+    :members:
+        __getitem__,
+        
+    :special-members:

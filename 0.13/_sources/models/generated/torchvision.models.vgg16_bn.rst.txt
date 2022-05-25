@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.models
+
+
+vgg16_bn
+========
+
+.. autofunction:: vgg16_bn

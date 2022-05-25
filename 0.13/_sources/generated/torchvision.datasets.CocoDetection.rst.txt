@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+CocoDetection
+=============
+
+.. autoclass:: CocoDetection
+    :members:
+        __getitem__,
+        
+    :special-members:

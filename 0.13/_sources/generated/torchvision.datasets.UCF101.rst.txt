@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+UCF101
+======
+
+.. autoclass:: UCF101
+    :members:
+        __getitem__,
+        
+    :special-members:

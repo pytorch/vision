@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Country211
+==========
+
+.. autoclass:: Country211
+    :members:
+        __getitem__,
+        
+    :special-members:

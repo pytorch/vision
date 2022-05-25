@@ -1,0 +1,13 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.datasets
+
+
+Kinetics
+========
+
+.. autoclass:: Kinetics
+    :members:
+        __getitem__,
+        
+    :special-members:

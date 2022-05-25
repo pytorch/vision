@@ -1,0 +1,9 @@
+﻿.. role:: hidden
+    :class: hidden-section
+.. currentmodule:: torchvision.utils
+
+
+draw_bounding_boxes
+===================
+
+.. autofunction:: draw_bounding_boxes
