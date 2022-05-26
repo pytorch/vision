@@ -142,7 +142,7 @@ commands:
         default: true
     steps:
       - pip_install:
-          args: --pre torch --extra-index-url https://download.pytorch.org/whl/test/cpu/torch_test.html
+          args: --pre torch -f https://download.pytorch.org/whl/test/cpu/torch_test.html
           descr: Install PyTorch from nightly releases
       - pip_install:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
