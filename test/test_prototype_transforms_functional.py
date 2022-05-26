@@ -383,6 +383,15 @@ def pad_segmentation_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
+def pad_bounding_box():
+    for bounding_box, padding in itertools.product(
+        make_bounding_boxes(),
+        [[1], [1, 1], [1, 1, 2, 2]],
+    ):
+        yield SampleInput(bounding_box, padding=padding, format=bounding_box.format)
+
+
+@register_kernel_info_from_sample_inputs_fn
 def perspective_bounding_box():
     for bounding_box, perspective_coeffs in itertools.product(
         make_bounding_boxes(),
@@ -1103,22 +1112,67 @@ def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     torch.testing.assert_close(out_mask, expected_mask)
 
 
+def _parse_padding(padding):
+    if isinstance(padding, int):
+        return [padding] * 4
+    if isinstance(padding, list):
+        if len(padding) == 1:
+            return padding * 4
+        if len(padding) == 2:
+            return padding * 2  # [left, up, right, down]
+
+    return padding
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("padding", [[1], [1, 1], [1, 1, 2, 2]])
+def test_correctness_pad_bounding_box(device, padding):
+    def _compute_expected_bbox(bbox, padding_):
+        pad_left, pad_up, _, _ = _parse_padding(padding_)
+
+        bbox_format = bbox.format
+        bbox_dtype = bbox.dtype
+        bbox = convert_bounding_box_format(bbox, old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
+
+        bbox[0::2] += pad_left
+        bbox[1::2] += pad_up
+
+        bbox = convert_bounding_box_format(
+            bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
+        )
+        if bbox.dtype != bbox_dtype:
+            # Temporary cast to original dtype
+            # e.g. float32 -> int
+            bbox = bbox.to(bbox_dtype)
+        return bbox
+
+    for bboxes in make_bounding_boxes():
+        bboxes = bboxes.to(device)
+        bboxes_format = bboxes.format
+        bboxes_image_size = bboxes.image_size
+
+        output_boxes = F.pad_bounding_box(bboxes, padding, format=bboxes_format)
+
+        if bboxes.ndim < 2:
+            bboxes = [bboxes]
+
+        expected_bboxes = []
+        for bbox in bboxes:
+            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            expected_bboxes.append(_compute_expected_bbox(bbox, padding))
+
+        if len(expected_bboxes) > 1:
+            expected_bboxes = torch.stack(expected_bboxes)
+        else:
+            expected_bboxes = expected_bboxes[0]
+        torch.testing.assert_close(output_boxes, expected_bboxes)
+
+
 @pytest.mark.parametrize("padding", [[1, 2, 3, 4], [1], 1, [1, 2]])
 def test_correctness_pad_segmentation_mask(padding):
-    def _compute_expected_mask():
-        def parse_padding():
-            if isinstance(padding, int):
-                return [padding] * 4
-            if isinstance(padding, list):
-                if len(padding) == 1:
-                    return padding * 4
-                if len(padding) == 2:
-                    return padding * 2  # [left, up, right, down]
-
-            return padding
-
+    def _compute_expected_mask(mask, padding_):
         h, w = mask.shape[-2], mask.shape[-1]
-        pad_left, pad_up, pad_right, pad_down = parse_padding()
+        pad_left, pad_up, pad_right, pad_down = _parse_padding(padding_)
 
         new_h = h + pad_up + pad_down
         new_w = w + pad_left + pad_right
@@ -1132,7 +1186,7 @@ def test_correctness_pad_segmentation_mask(padding):
     for mask in make_segmentation_masks():
         out_mask = F.pad_segmentation_mask(mask, padding, "constant")
 
-        expected_mask = _compute_expected_mask()
+        expected_mask = _compute_expected_mask(mask, padding)
         torch.testing.assert_close(out_mask, expected_mask)
 
 
