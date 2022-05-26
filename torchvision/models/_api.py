@@ -61,7 +61,7 @@ class WeightsEnum(StrEnum):
         return obj
 
     def get_state_dict(self, progress: bool) -> OrderedDict[str, torch.Tensor]:
-        return load_state_dict_from_url(self.url, progress=progress)
+        return OrderedDict(load_state_dict_from_url(self.url, progress=progress))
 
     def __repr__(self) -> str:
         return f"{self.__class__.__name__}.{self._name_}"
