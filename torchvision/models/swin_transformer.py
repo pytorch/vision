@@ -436,7 +436,7 @@ class SwinTransformer(nn.Module):
         num_features = embed_dim * 2 ** (len(depths) - 1)
         self.norm = norm_layer(num_features)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
-        self.head: Optional[nn.Module]
+        self.head: Optional[nn.Module] = None
         if num_classes is not None:
             self.head = nn.Linear(num_features, num_classes)
         else:
