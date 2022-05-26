@@ -417,6 +417,7 @@ def pad_bounding_box(
 
     bounding_box = bounding_box.clone()
 
+    # this works without conversion since padding only affects xy coordinates
     bounding_box[..., 0] += left
     bounding_box[..., 1] += top
     if format == features.BoundingBoxFormat.XYXY:
