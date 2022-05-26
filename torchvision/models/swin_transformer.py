@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Callable, List, Any
+from typing import Optional, Callable, List, Tuple, Any
 
 import torch
 import torch.nn.functional as F
@@ -156,7 +156,9 @@ def shifted_window_attention(
 torch.fx.wrap("shifted_window_attention")
 
 
-def _fix_window_and_shift_size(input_hw: List[int], window_size: List[int], shift_size: List[int]):
+def _fix_window_and_shift_size(
+    input_hw: List[int], window_size: List[int], shift_size: List[int]
+) -> Tuple[List[int], List[int]]:
     # Handle case where window_size is larger than input tensor
     for i in range(2):
         if input_hw[i] <= window_size[i]:
