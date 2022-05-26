@@ -1,11 +1,11 @@
 import importlib
 import inspect
 import sys
-import torch
 from dataclasses import dataclass, fields
 from inspect import signature
 from typing import Any, Callable, Dict, cast, OrderedDict
 
+import torch
 from torchvision._utils import StrEnum
 
 from .._internally_replaced_utils import load_state_dict_from_url
