@@ -415,16 +415,15 @@ def pad_bounding_box(
 ) -> torch.Tensor:
     left, _, top, _ = _FT._parse_pad_padding(padding)
 
-    bounding_box = convert_bounding_box_format(
-        bounding_box, old_format=format, new_format=features.BoundingBoxFormat.XYXY
-    )
+    bounding_box = bounding_box.clone()
 
-    bounding_box[..., 0::2] += left
-    bounding_box[..., 1::2] += top
-
-    return convert_bounding_box_format(
-        bounding_box, old_format=features.BoundingBoxFormat.XYXY, new_format=format, copy=False
-    )
+    # this works without conversion since padding only affects xy coordinates
+    bounding_box[..., 0] += left
+    bounding_box[..., 1] += top
+    if format == features.BoundingBoxFormat.XYXY:
+        bounding_box[..., 2] += left
+        bounding_box[..., 3] += top
+    return bounding_box
 
 
 crop_image_tensor = _FT.crop
