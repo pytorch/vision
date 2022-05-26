@@ -366,8 +366,7 @@ class SwinTransformer(nn.Module):
         dropout (float): Dropout rate. Default: 0.0.
         attention_dropout (float): Attention dropout rate. Default: 0.0.
         stochastic_depth_prob (float): Stochastic depth rate. Default: 0.0.
-        num_classes (int, optional): Number of classes for classification head,
-            if None then the model have no head. Default: 1000.
+        num_classes (int): Number of classes for classification head. Default: 1000.
         block (nn.Module, optional): SwinTransformer Block. Default: None.
         norm_layer (nn.Module, optional): Normalization layer. Default: None.
         patch_embed (nn.Module, optional): Patch Embedding layer. Default: None.
@@ -384,7 +383,7 @@ class SwinTransformer(nn.Module):
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
-        num_classes: Optional[int] = 1000,
+        num_classes: int = 1000,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
         block: Optional[Callable[..., nn.Module]] = None,
         patch_embed: Optional[Callable[..., nn.Module]] = None,
@@ -437,10 +436,7 @@ class SwinTransformer(nn.Module):
         self.norm = norm_layer(num_features)
         self.avgpool = nn.AdaptiveAvgPool2d(1)
         self.head: Optional[nn.Module] = None
-        if num_classes is not None:
-            self.head = nn.Linear(num_features, num_classes)
-        else:
-            self.head = None
+        self.head = nn.Linear(num_features, num_classes)
 
         for m in self.modules():
             if isinstance(m, nn.Linear):
@@ -455,8 +451,7 @@ class SwinTransformer(nn.Module):
         x = x.permute(0, 3, 1, 2)
         x = self.avgpool(x)
         x = torch.flatten(x, 1)
-        if self.num_classes is not None:
-            x = self.head(x)
+        x = self.head(x)
         return x
 
 
