@@ -3,7 +3,7 @@ import inspect
 import sys
 from dataclasses import dataclass, fields
 from inspect import signature
-from typing import Any, Callable, Dict, cast
+from typing import Any, Callable, Dict, Mapping, cast
 
 from torchvision._utils import StrEnum
 
@@ -59,7 +59,7 @@ class WeightsEnum(StrEnum):
                 )
         return obj
 
-    def get_state_dict(self, progress: bool) -> Dict[str, Any]:
+    def get_state_dict(self, progress: bool) -> Mapping[str, Any]:
         return load_state_dict_from_url(self.url, progress=progress)
 
     def __repr__(self) -> str:
