@@ -318,9 +318,6 @@ _model_params = {
     "mvitv2_b": {
         "input_shape": (1, 3, 32, 224, 224),
     },
-    "mvitv2_l": {
-        "input_shape": (1, 3, 40, 312, 312),
-    },
 }
 # speeding up slow models:
 slow_models = [
@@ -350,6 +347,7 @@ for m in slow_models:
 skipped_big_models = {
     "vit_h_14",
     "regnet_y_128gf",
+    "mvitv2_b",
 }
 
 # The following contains configuration and expected values to be used tests that are model specific
@@ -842,6 +840,8 @@ def test_video_model(model_fn, dev):
         "num_classes": 50,
     }
     model_name = model_fn.__name__
+    if dev == "cuda" and SKIP_BIG_MODEL and model_name in skipped_big_models:
+        pytest.skip("Skipped to reduce memory usage. Set env var SKIP_BIG_MODEL=0 to enable test for this model")
     kwargs = {**defaults, **_model_params.get(model_name, {})}
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")

@@ -195,8 +195,16 @@ class MultiscaleBlock(nn.Module):
     ) -> None:
         super().__init__()
 
+        self.pool_skip: Optional[nn.Module] = None
+        if _prod(stride_q) > 1:
+            kernel_skip = cast(Tuple[int, int, int], tuple(s + 1 if s > 1 else s for s in stride_q))
+            padding_skip = cast(Tuple[int, int, int], tuple(int(k // 2) for k in kernel_skip))
+            self.pool_skip = Pool(nn.MaxPool3d(kernel_skip, stride=stride_q, padding=padding_skip), None)
+
         self.norm1 = norm_layer(input_channels)
+        self.norm2 = norm_layer(input_channels)
         self.needs_transposal = isinstance(self.norm1, nn.BatchNorm1d)
+
         self.attn = MultiscaleAttention(
             input_channels,
             num_heads,
@@ -207,7 +215,6 @@ class MultiscaleBlock(nn.Module):
             stride_kv=stride_kv,
             norm_layer=norm_layer,
         )
-        self.norm2 = norm_layer(input_channels)
         self.mlp = MLP(
             input_channels,
             [4 * input_channels, output_channels],
@@ -216,17 +223,11 @@ class MultiscaleBlock(nn.Module):
             inplace=None,
         )
 
+        self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
+
         self.project: Optional[nn.Module] = None
         if input_channels != output_channels:
             self.project = nn.Linear(input_channels, output_channels)
-
-        self.pool_skip: Optional[nn.Module] = None
-        if _prod(stride_q) > 1:
-            kernel_skip = cast(Tuple[int, int, int], tuple(s + 1 if s > 1 else s for s in stride_q))
-            padding_skip = cast(Tuple[int, int, int], tuple(int(k // 2) for k in kernel_skip))
-            self.pool_skip = Pool(nn.MaxPool3d(kernel_skip, stride=stride_q, padding=padding_skip), None)
-
-        self.stochastic_depth = StochasticDepth(stochastic_depth_prob, "row")
 
     def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
         x_skip = x if self.pool_skip is None else self.pool_skip(x, thw)[0]
@@ -355,12 +356,12 @@ class MultiscaleVisionTransformer(nn.Module):
             if isinstance(m, nn.Linear):
                 nn.init.trunc_normal_(m.weight, std=0.02)
                 if isinstance(m, nn.Linear) and m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+                    nn.init.constant_(m.bias, 0.0)
             elif isinstance(m, nn.LayerNorm):
                 if m.weight is not None:
                     nn.init.constant_(m.weight, 1.0)
                 if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
+                    nn.init.constant_(m.bias, 0.0)
             elif isinstance(m, PositionalEncoding):
                 for weights in m.parameters():
                     nn.init.trunc_normal_(weights, std=0.02)
