@@ -1,0 +1,48 @@
+name: Build on M1
+on:
+  pull_request:
+    paths:
+      - .github/workflows/build-m1-binaries.yml
+  push:
+    branches:
+      - nightly
+  workflow_dispatch:
+jobs:
+  build_wheels:
+    name: "Build TorchVision M1 wheels"
+    runs-on: macos-m1
+    strategy:
+      matrix:
+        py_vers: [ "3.8", "3.9", "3.10" ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+      - name: Build TorchVision M1 wheel
+        shell: arch -arch arm64 bash {0}
+        env:
+          ENV_NAME: conda-env-${{ github.run_id }}
+          PY_VERS: ${{ matrix.py_vers }}
+        run: |
+          echo $PATH
+          . ~/miniconda3/etc/profile.d/conda.sh
+          set -ex
+          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng openjpeg wheel pkg-config
+          conda run -p ${ENV_NAME} python3 -mpip install torch --extra-index-url=https://download.pytorch.org/whl/nightly torch
+          conda run -p ${ENV_NAME} python3 -mpip install delocate
+          conda run -p ${ENV_NAME} python3 setup.py bdist_wheel
+          conda env remove -p ${ENV_NAME}
+      - name: Upload wheel to GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: torchvision-py${{ matrix.py_vers }}-macos11-m1
+          path: dist/
+      - name: Upload wheel to S3
+        shell: arch -arch arm64 bash {0}
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY }}
+          CHANNEL: nightly
+        run: |
+          for pkg in dist/*; do
+            aws s3 cp "$pkg" "s3://pytorch/whl/${CHANNEL}/cpu/" --acl public-read
+          done
