@@ -309,6 +309,18 @@ _model_params = {
         "image_size": 56,
         "input_shape": (1, 3, 56, 56),
     },
+    "mvitv2_t": {
+        "input_shape": (1, 3, 16, 224, 224),
+    },
+    "mvitv2_s": {
+        "input_shape": (1, 3, 16, 224, 224),
+    },
+    "mvitv2_b": {
+        "input_shape": (1, 3, 32, 224, 224),
+    },
+    "mvitv2_l": {
+        "input_shape": (1, 3, 40, 312, 312),
+    },
 }
 # speeding up slow models:
 slow_models = [
