@@ -1183,7 +1183,7 @@ def test_correctness_pad_segmentation_mask(padding, padding_mode):
         new_w = w + pad_left + pad_right
 
         new_shape = (*mask.shape[:-2], new_h, new_w) if len(mask.shape) > 2 else (new_h, new_w)
-        output = torch.zeros(new_shape, dtype=torch.long)
+        output = torch.zeros(new_shape, dtype=mask.dtype)
         output[..., pad_up:-pad_down, pad_left:-pad_right] = mask
 
         if padding_mode_ == "edge":
