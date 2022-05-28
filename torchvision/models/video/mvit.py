@@ -31,7 +31,7 @@ def _unsqueeze(x: torch.Tensor) -> Tuple[torch.Tensor, int]:
     if tensor_dim == 3:
         x = x.unsqueeze(1)
     elif tensor_dim != 4:
-        raise NotImplementedError(f"Unsupported input dimension {x.shape}")
+        raise ValueError(f"Unsupported input dimension {x.shape}")
     return x, tensor_dim
 
 
@@ -277,10 +277,13 @@ class MultiscaleVisionTransformer(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         num_classes: int = 400,
-        block: Optional[Callable[..., nn.Module]] = None,
+        block: Callable[..., nn.Module] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         super().__init__()
+        num_blocks = len(blocks)
+        if num_blocks != len(embed_channels) or num_blocks != len(heads):
+            raise ValueError("The parameters 'embed_channels', 'blocks' and 'heads' must have equal length.")
 
         if block is None:
             block = MultiscaleBlock
@@ -304,7 +307,7 @@ class MultiscaleVisionTransformer(nn.Module):
             temporal_size=temporal_size // self.conv_proj.stride[0],
         )
 
-        # Encoder module
+        # Encoder modules
         self.blocks = nn.ModuleList()
         stage_block_id = 0
         pool_countdown = blocks[0]
@@ -313,7 +316,7 @@ class MultiscaleVisionTransformer(nn.Module):
         total_stage_blocks = sum(blocks)
         for i, num_subblocks in enumerate(blocks):
             for j in range(num_subblocks):
-                next_block_index = i + 1 if j + 1 == num_subblocks and i + 1 < len(embed_channels) else i
+                next_block_index = i + 1 if j + 1 == num_subblocks and i + 1 < num_blocks else i
                 output_channels = embed_channels[next_block_index]
 
                 stride_q = (1, 1, 1)
@@ -367,7 +370,7 @@ class MultiscaleVisionTransformer(nn.Module):
                     nn.init.trunc_normal_(weights, std=0.02)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # patchify and reshape: (B, C, T, H, W) -> (B, patch_embed_dim, T', H', W') -> (B, THW', patch_embed_dim)
+        # patchify and reshape: (B, C, T, H, W) -> (B, embed_channels[0], T', H', W') -> (B, THW', embed_channels[0])
         x = self.conv_proj(x)
         x = x.flatten(2).transpose(1, 2)
 
