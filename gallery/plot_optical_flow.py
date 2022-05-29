@@ -72,8 +72,7 @@ _ = urlretrieve(video_url, video_path)
 # single model input.
 
 from torchvision.io import read_video
-frames, _, _ = read_video(str(video_path))
-frames = frames.permute(0, 3, 1, 2)  # (N, H, W, C) -> (N, C, H, W)
+frames, _, _ = read_video(str(video_path), output_format="TCHW")
 
 img1_batch = torch.stack([frames[100], frames[150]])
 img2_batch = torch.stack([frames[101], frames[151]])
@@ -81,11 +80,11 @@ img2_batch = torch.stack([frames[101], frames[151]])
 plot(img1_batch)
 
 #########################
-# The RAFT model that we will use accepts RGB float images with pixel values in
-# [-1, 1]. The frames we got from :func:`~torchvision.io.read_video` are int
-# images with values in [0, 255], so we will have to pre-process them. We also
-# reduce the image sizes for the example to run faster. Image dimension must be
-# divisible by 8.
+# The RAFT model accepts RGB images. We first get the frames from
+# :func:`~torchvision.io.read_video` and resize them to ensure their
+# dimensions are divisible by 8. Then we use the transforms bundled into the
+# weights in order to preprocess the input and rescale its values to the
+# required ``[-1, 1]`` interval.
 
 from torchvision.models.optical_flow import Raft_Large_Weights
 

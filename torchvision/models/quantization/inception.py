@@ -183,10 +183,16 @@ class Inception_V3_QuantizedWeights(WeightsEnum):
             "backend": "fbgemm",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": Inception_V3_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 77.176,
-                "acc@5": 93.354,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.176,
+                    "acc@5": 93.354,
+                }
             },
+            "_docs": """
+                These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1

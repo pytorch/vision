@@ -317,10 +317,13 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
-            "metrics": {
-                "acc@1": 74.042,
-                "acc@5": 91.340,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 74.042,
+                    "acc@5": 91.340,
+                }
             },
+            "_docs": """These weights were trained from scratch by using a simple training recipe.""",
         },
     )
     IMAGENET1K_V2 = Weights(
@@ -330,10 +333,17 @@ class MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 5483032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
-            "metrics": {
-                "acc@1": 75.274,
-                "acc@5": 92.566,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.274,
+                    "acc@5": 92.566,
+                }
             },
+            "_docs": """
+                These weights improve marginally upon the results of the original paper by using a modified version of
+                TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V2
@@ -347,10 +357,15 @@ class MobileNet_V3_Small_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 2542856,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv3-large--small",
-            "metrics": {
-                "acc@1": 67.668,
-                "acc@5": 87.402,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 67.668,
+                    "acc@5": 87.402,
+                }
             },
+            "_docs": """
+                These weights improve upon the results of the original paper by using a simple training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1

@@ -131,6 +131,10 @@ def _deeplabv3_resnet(
 _COMMON_META = {
     "categories": _VOC_CATEGORIES,
     "min_size": (1, 1),
+    "_docs": """
+        These weights were trained on a subset of COCO, using only the 20 categories that are present in the Pascal VOC
+        dataset.
+    """,
 }
 
 
@@ -142,9 +146,11 @@ class DeepLabV3_ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 42004074,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_resnet50",
-            "metrics": {
-                "miou": 66.4,
-                "pixel_acc": 92.4,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 66.4,
+                    "pixel_acc": 92.4,
+                }
             },
         },
     )
@@ -159,9 +165,11 @@ class DeepLabV3_ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 60996202,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#fcn_resnet101",
-            "metrics": {
-                "miou": 67.4,
-                "pixel_acc": 92.4,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 67.4,
+                    "pixel_acc": 92.4,
+                }
             },
         },
     )
@@ -176,9 +184,11 @@ class DeepLabV3_MobileNet_V3_Large_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 11029328,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/segmentation#deeplabv3_mobilenet_v3_large",
-            "metrics": {
-                "miou": 60.3,
-                "pixel_acc": 91.2,
+            "_metrics": {
+                "COCO-val2017-VOC-labels": {
+                    "miou": 60.3,
+                    "pixel_acc": 91.2,
+                }
             },
         },
     )

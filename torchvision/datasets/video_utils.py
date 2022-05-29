@@ -99,6 +99,7 @@ class VideoClips:
             on the resampled video
         num_workers (int): how many subprocesses to use for data loading.
             0 means that the data will be loaded in the main process. (default: 0)
+        output_format (str): The format of the output video tensors. Can be either "THWC" (default) or "TCHW".
     """
 
     def __init__(
@@ -115,6 +116,7 @@ class VideoClips:
         _video_max_dimension: int = 0,
         _audio_samples: int = 0,
         _audio_channels: int = 0,
+        output_format: str = "THWC",
     ) -> None:
 
         self.video_paths = video_paths
@@ -127,6 +129,9 @@ class VideoClips:
         self._video_max_dimension = _video_max_dimension
         self._audio_samples = _audio_samples
         self._audio_channels = _audio_channels
+        self.output_format = output_format.upper()
+        if self.output_format not in ("THWC", "TCHW"):
+            raise ValueError(f"output_format should be either 'THWC' or 'TCHW', got {output_format}.")
 
         if _precomputed_metadata is None:
             self._compute_frame_pts()
@@ -366,6 +371,11 @@ class VideoClips:
             video = video[resampling_idx]
             info["video_fps"] = self.frame_rate
         assert len(video) == self.num_frames, f"{video.shape} x {self.num_frames}"
+
+        if self.output_format == "TCHW":
+            # [T,H,W,C] --> [T,C,H,W]
+            video = video.permute(0, 3, 1, 2)
+
         return video, audio, info, video_idx
 
     def __getstate__(self) -> Dict[str, Any]:

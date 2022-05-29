@@ -225,10 +225,13 @@ class MNASNet0_5_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 2218512,
-            "metrics": {
-                "acc@1": 67.734,
-                "acc@5": 87.490,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 67.734,
+                    "acc@5": 87.490,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -242,10 +245,16 @@ class MNASNet0_75_Weights(WeightsEnum):
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/pull/6019",
             "num_params": 3170208,
-            "metrics": {
-                "acc@1": 71.180,
-                "acc@5": 90.496,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.180,
+                    "acc@5": 90.496,
+                }
             },
+            "_docs": """
+                These weights were trained from scratch by using TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -258,10 +267,13 @@ class MNASNet1_0_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 4383312,
-            "metrics": {
-                "acc@1": 73.456,
-                "acc@5": 91.510,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 73.456,
+                    "acc@5": 91.510,
+                }
             },
+            "_docs": """These weights reproduce closely the results of the paper.""",
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -275,10 +287,16 @@ class MNASNet1_3_Weights(WeightsEnum):
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/pull/6019",
             "num_params": 6282256,
-            "metrics": {
-                "acc@1": 76.506,
-                "acc@5": 93.522,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.506,
+                    "acc@5": 93.522,
+                }
             },
+            "_docs": """
+                These weights were trained from scratch by using TorchVision's `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1

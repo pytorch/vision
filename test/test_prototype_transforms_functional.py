@@ -10,10 +10,10 @@ from common_utils import cpu_and_gpu
 from torch import jit
 from torch.nn.functional import one_hot
 from torchvision.prototype import features
+from torchvision.prototype.transforms.functional._geometry import _center_crop_compute_padding
 from torchvision.prototype.transforms.functional._meta import convert_bounding_box_format
 from torchvision.transforms.functional import _get_perspective_coeffs
 from torchvision.transforms.functional_tensor import _max_value as get_max_value
-
 
 make_tensor = functools.partial(torch.testing.make_tensor, device="cpu")
 
@@ -383,6 +383,15 @@ def pad_segmentation_mask():
 
 
 @register_kernel_info_from_sample_inputs_fn
+def pad_bounding_box():
+    for bounding_box, padding in itertools.product(
+        make_bounding_boxes(),
+        [[1], [1, 1], [1, 1, 2, 2]],
+    ):
+        yield SampleInput(bounding_box, padding=padding, format=bounding_box.format)
+
+
+@register_kernel_info_from_sample_inputs_fn
 def perspective_bounding_box():
     for bounding_box, perspective_coeffs in itertools.product(
         make_bounding_boxes(),
@@ -419,6 +428,14 @@ def center_crop_bounding_box():
         yield SampleInput(
             bounding_box, format=bounding_box.format, output_size=output_size, image_size=bounding_box.image_size
         )
+
+
+def center_crop_segmentation_mask():
+    for mask, output_size in itertools.product(
+        make_segmentation_masks(image_sizes=((16, 16), (7, 33), (31, 9))),
+        [[4, 3], [42, 70], [4]],  # crop sizes < image sizes, crop_sizes > image sizes, single crop size
+    ):
+        yield SampleInput(mask, output_size)
 
 
 @pytest.mark.parametrize(
@@ -1095,22 +1112,67 @@ def test_correctness_pad_segmentation_mask_on_fixed_input(device):
     torch.testing.assert_close(out_mask, expected_mask)
 
 
+def _parse_padding(padding):
+    if isinstance(padding, int):
+        return [padding] * 4
+    if isinstance(padding, list):
+        if len(padding) == 1:
+            return padding * 4
+        if len(padding) == 2:
+            return padding * 2  # [left, up, right, down]
+
+    return padding
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("padding", [[1], [1, 1], [1, 1, 2, 2]])
+def test_correctness_pad_bounding_box(device, padding):
+    def _compute_expected_bbox(bbox, padding_):
+        pad_left, pad_up, _, _ = _parse_padding(padding_)
+
+        bbox_format = bbox.format
+        bbox_dtype = bbox.dtype
+        bbox = convert_bounding_box_format(bbox, old_format=bbox_format, new_format=features.BoundingBoxFormat.XYXY)
+
+        bbox[0::2] += pad_left
+        bbox[1::2] += pad_up
+
+        bbox = convert_bounding_box_format(
+            bbox, old_format=features.BoundingBoxFormat.XYXY, new_format=bbox_format, copy=False
+        )
+        if bbox.dtype != bbox_dtype:
+            # Temporary cast to original dtype
+            # e.g. float32 -> int
+            bbox = bbox.to(bbox_dtype)
+        return bbox
+
+    for bboxes in make_bounding_boxes():
+        bboxes = bboxes.to(device)
+        bboxes_format = bboxes.format
+        bboxes_image_size = bboxes.image_size
+
+        output_boxes = F.pad_bounding_box(bboxes, padding, format=bboxes_format)
+
+        if bboxes.ndim < 2:
+            bboxes = [bboxes]
+
+        expected_bboxes = []
+        for bbox in bboxes:
+            bbox = features.BoundingBox(bbox, format=bboxes_format, image_size=bboxes_image_size)
+            expected_bboxes.append(_compute_expected_bbox(bbox, padding))
+
+        if len(expected_bboxes) > 1:
+            expected_bboxes = torch.stack(expected_bboxes)
+        else:
+            expected_bboxes = expected_bboxes[0]
+        torch.testing.assert_close(output_boxes, expected_bboxes)
+
+
 @pytest.mark.parametrize("padding", [[1, 2, 3, 4], [1], 1, [1, 2]])
 def test_correctness_pad_segmentation_mask(padding):
-    def _compute_expected_mask():
-        def parse_padding():
-            if isinstance(padding, int):
-                return [padding] * 4
-            if isinstance(padding, list):
-                if len(padding) == 1:
-                    return padding * 4
-                if len(padding) == 2:
-                    return padding * 2  # [left, up, right, down]
-
-            return padding
-
+    def _compute_expected_mask(mask, padding_):
         h, w = mask.shape[-2], mask.shape[-1]
-        pad_left, pad_up, pad_right, pad_down = parse_padding()
+        pad_left, pad_up, pad_right, pad_down = _parse_padding(padding_)
 
         new_h = h + pad_up + pad_down
         new_w = w + pad_left + pad_right
@@ -1124,7 +1186,7 @@ def test_correctness_pad_segmentation_mask(padding):
     for mask in make_segmentation_masks():
         out_mask = F.pad_segmentation_mask(mask, padding, "constant")
 
-        expected_mask = _compute_expected_mask()
+        expected_mask = _compute_expected_mask(mask, padding)
         torch.testing.assert_close(out_mask, expected_mask)
 
 
@@ -1337,3 +1399,26 @@ def test_correctness_center_crop_bounding_box(device, output_size):
         else:
             expected_bboxes = expected_bboxes[0]
         torch.testing.assert_close(output_boxes, expected_bboxes)
+
+
+@pytest.mark.parametrize("device", cpu_and_gpu())
+@pytest.mark.parametrize("output_size", [[4, 2], [4], [7, 6]])
+def test_correctness_center_crop_segmentation_mask(device, output_size):
+    def _compute_expected_segmentation_mask(mask, output_size):
+        crop_height, crop_width = output_size if len(output_size) > 1 else [output_size[0], output_size[0]]
+
+        _, image_height, image_width = mask.shape
+        if crop_width > image_height or crop_height > image_width:
+            padding = _center_crop_compute_padding(crop_height, crop_width, image_height, image_width)
+            mask = F.pad_image_tensor(mask, padding, fill=0)
+
+        left = round((image_width - crop_width) * 0.5)
+        top = round((image_height - crop_height) * 0.5)
+
+        return mask[:, top : top + crop_height, left : left + crop_width]
+
+    mask = torch.randint(0, 2, size=(1, 6, 6), dtype=torch.long, device=device)
+    actual = F.center_crop_segmentation_mask(mask, output_size)
+
+    expected = _compute_expected_segmentation_mask(mask, output_size)
+    torch.testing.assert_close(expected, actual)

@@ -183,12 +183,12 @@ class TestFxFeatureExtraction:
         out_agg = 0
         for node_out in out.values():
             if isinstance(node_out, Sequence):
-                out_agg += sum(o.mean() for o in node_out if o is not None)
+                out_agg += sum(o.float().mean() for o in node_out if o is not None)
             elif isinstance(node_out, Mapping):
-                out_agg += sum(o.mean() for o in node_out.values() if o is not None)
+                out_agg += sum(o.float().mean() for o in node_out.values() if o is not None)
             else:
                 # Assume that the only other alternative at this point is a Tensor
-                out_agg += node_out.mean()
+                out_agg += node_out.float().mean()
         out_agg.backward()
 
     def test_feature_extraction_methods_equivalence(self):
@@ -224,12 +224,12 @@ class TestFxFeatureExtraction:
         out_agg = 0
         for node_out in fgn_out.values():
             if isinstance(node_out, Sequence):
-                out_agg += sum(o.mean() for o in node_out if o is not None)
+                out_agg += sum(o.float().mean() for o in node_out if o is not None)
             elif isinstance(node_out, Mapping):
-                out_agg += sum(o.mean() for o in node_out.values() if o is not None)
+                out_agg += sum(o.float().mean() for o in node_out.values() if o is not None)
             else:
                 # Assume that the only other alternative at this point is a Tensor
-                out_agg += node_out.mean()
+                out_agg += node_out.float().mean()
         out_agg.backward()
 
     def test_train_eval(self):
@@ -239,7 +239,7 @@ class TestFxFeatureExtraction:
                 self.dropout = torch.nn.Dropout(p=1.0)
 
             def forward(self, x):
-                x = x.mean()
+                x = x.float().mean()
                 x = self.dropout(x)  # dropout
                 if self.training:
                     x += 100  # add
@@ -330,4 +330,4 @@ class TestFxFeatureExtraction:
         # Check forward
         out = model(self.inp)
         # And backward
-        out["leaf_module"].mean().backward()
+        out["leaf_module"].float().mean().backward()
