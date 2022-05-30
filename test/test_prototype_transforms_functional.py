@@ -1175,9 +1175,11 @@ def test_correctness_pad_segmentation_mask(padding, padding_mode):
         h, w = mask.shape[-2], mask.shape[-1]
         pad_left, pad_up, pad_right, pad_down = _parse_padding(padding_)
 
-        # expected output can be computed on positive pad values only
-        # but F.pad_* can also crop for negative values
-        assert pad_left > 0 and pad_up > 0 and pad_right > 0 and pad_down > 0
+        if any(pad <= 0 for pad in [pad_left, pad_up, pad_right, pad_down]):
+            raise pytest.UsageError(
+                "Expected output can be computed on positive pad values only, "
+                "but F.pad_* can also crop for negative values"
+            )
 
         new_h = h + pad_up + pad_down
         new_w = w + pad_left + pad_right
@@ -1187,28 +1189,30 @@ def test_correctness_pad_segmentation_mask(padding, padding_mode):
         output[..., pad_up:-pad_down, pad_left:-pad_right] = mask
 
         if padding_mode_ == "edge":
+            # pad top-left corner, left vertical block, bottom-left corner
             output[..., :pad_up, :pad_left] = mask[..., 0, 0].unsqueeze(-1).unsqueeze(-2)
             output[..., pad_up:-pad_down, :pad_left] = mask[..., :, 0].unsqueeze(-1)
             output[..., -pad_down:, :pad_left] = mask[..., -1, 0].unsqueeze(-1).unsqueeze(-2)
-
+            # pad top-right corner, right vertical block, bottom-right corner
             output[..., :pad_up, -pad_right:] = mask[..., 0, -1].unsqueeze(-1).unsqueeze(-2)
             output[..., pad_up:-pad_down, -pad_right:] = mask[..., :, -1].unsqueeze(-1)
             output[..., -pad_down:, -pad_right:] = mask[..., -1, -1].unsqueeze(-1).unsqueeze(-2)
-
+            # pad top and bottom horizontal blocks
             output[..., :pad_up, pad_left:-pad_right] = mask[..., 0, :].unsqueeze(-2)
             output[..., -pad_down:, pad_left:-pad_right] = mask[..., -1, :].unsqueeze(-2)
         elif padding_mode_ in ("reflect", "symmetric"):
             d1 = 1 if padding_mode_ == "reflect" else 0
             d2 = -1 if padding_mode_ == "reflect" else None
             both = (-1, -2)
+            # pad top-left corner, left vertical block, bottom-left corner
             output[..., :pad_up, :pad_left] = mask[..., d1 : pad_up + d1, d1 : pad_left + d1].flip(both)
             output[..., pad_up:-pad_down, :pad_left] = mask[..., :, d1 : pad_left + d1].flip(-1)
             output[..., -pad_down:, :pad_left] = mask[..., -pad_down - d1 : d2, d1 : pad_left + d1].flip(both)
-
+            # pad top-right corner, right vertical block, bottom-right corner
             output[..., :pad_up, -pad_right:] = mask[..., d1 : pad_up + d1, -pad_right - d1 : d2].flip(both)
             output[..., pad_up:-pad_down, -pad_right:] = mask[..., :, -pad_right - d1 : d2].flip(-1)
             output[..., -pad_down:, -pad_right:] = mask[..., -pad_down - d1 : d2, -pad_right - d1 : d2].flip(both)
-
+            # pad top and bottom horizontal blocks
             output[..., :pad_up, pad_left:-pad_right] = mask[..., d1 : pad_up + d1, :].flip(-2)
             output[..., -pad_down:, pad_left:-pad_right] = mask[..., -pad_down - d1 : d2, :].flip(-2)
 
