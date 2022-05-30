@@ -347,7 +347,7 @@ for m in slow_models:
 skipped_big_models = {
     "vit_h_14",
     "regnet_y_128gf",
-    "mvitv2_b",
+    "mvit_v2_b",
 }
 
 # The following contains configuration and expected values to be used tests that are model specific
