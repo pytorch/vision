@@ -468,7 +468,8 @@ def mvitv2_t(*, weights: Optional[MViTV2_T_Weights] = None, progress: bool = Tru
     """
     Constructs a tiny MViTv2 architecture from
     `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
-    <https://arxiv.org/abs/2112.01526>`__.
+    <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
+    <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
         weights (:class:`~torchvision.models.video.MViTV2_T_Weights`, optional): The
@@ -503,9 +504,10 @@ def mvitv2_t(*, weights: Optional[MViTV2_T_Weights] = None, progress: bool = Tru
 
 def mvitv2_s(*, weights: Optional[MViTV2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTv2:
     """
-    Constructs a tiny MViTv2 architecture from
+    Constructs a small MViTv2 architecture from
     `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
-    <https://arxiv.org/abs/2112.01526>`__.
+    <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
+    <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
         weights (:class:`~torchvision.models.video.MViTV2_S_Weights`, optional): The
@@ -540,9 +542,10 @@ def mvitv2_s(*, weights: Optional[MViTV2_S_Weights] = None, progress: bool = Tru
 
 def mvitv2_b(*, weights: Optional[MViTV2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTv2:
     """
-    Constructs a tiny MViTv2 architecture from
+    Constructs a base MViTv2 architecture from
     `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
-    <https://arxiv.org/abs/2112.01526>`__.
+    <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
+    <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
         weights (:class:`~torchvision.models.video.MViTV2_B_Weights`, optional): The
