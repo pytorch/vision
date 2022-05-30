@@ -100,6 +100,7 @@ __all__ = (
     "GTSRB",
     "CLEVRClassification",
     "OxfordIIITPet",
+    "PCAM",
     "Country211",
     "FGVCAircraft",
     "EuroSAT",

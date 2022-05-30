@@ -1,7 +1,9 @@
 # Optional list of dependencies required by the package
 dependencies = ["torch"]
 
+from torchvision.models import get_weight
 from torchvision.models.alexnet import alexnet
+from torchvision.models.convnext import convnext_tiny, convnext_small, convnext_base, convnext_large
 from torchvision.models.densenet import densenet121, densenet169, densenet201, densenet161
 from torchvision.models.efficientnet import (
     efficientnet_b0,
@@ -12,6 +14,9 @@ from torchvision.models.efficientnet import (
     efficientnet_b5,
     efficientnet_b6,
     efficientnet_b7,
+    efficientnet_v2_s,
+    efficientnet_v2_m,
+    efficientnet_v2_l,
 )
 from torchvision.models.googlenet import googlenet
 from torchvision.models.inception import inception_v3
@@ -55,12 +60,19 @@ from torchvision.models.segmentation import (
     deeplabv3_mobilenet_v3_large,
     lraspp_mobilenet_v3_large,
 )
-from torchvision.models.shufflenetv2 import shufflenet_v2_x0_5, shufflenet_v2_x1_0
+from torchvision.models.shufflenetv2 import (
+    shufflenet_v2_x0_5,
+    shufflenet_v2_x1_0,
+    shufflenet_v2_x1_5,
+    shufflenet_v2_x2_0,
+)
 from torchvision.models.squeezenet import squeezenet1_0, squeezenet1_1
+from torchvision.models.swin_transformer import swin_t, swin_s, swin_b
 from torchvision.models.vgg import vgg11, vgg13, vgg16, vgg19, vgg11_bn, vgg13_bn, vgg16_bn, vgg19_bn
 from torchvision.models.vision_transformer import (
     vit_b_16,
     vit_b_32,
     vit_l_16,
     vit_l_32,
+    vit_h_14,
 )

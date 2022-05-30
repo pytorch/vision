@@ -1,10 +1,11 @@
 import math
 from collections import OrderedDict
-from typing import List, Tuple
+from typing import Dict, List, Optional, Tuple
 
 import torch
 from torch import Tensor, nn
-from torchvision.ops.misc import FrozenBatchNorm2d
+from torch.nn import functional as F
+from torchvision.ops import FrozenBatchNorm2d, complete_box_iou_loss, distance_box_iou_loss, generalized_box_iou_loss
 
 
 class BalancedPositiveNegativeSampler:
@@ -159,8 +160,14 @@ class BoxCoder:
         return targets
 
     def decode(self, rel_codes: Tensor, boxes: List[Tensor]) -> Tensor:
-        assert isinstance(boxes, (list, tuple))
-        assert isinstance(rel_codes, torch.Tensor)
+        torch._assert(
+            isinstance(boxes, (list, tuple)),
+            "This function expects boxes of type list or tuple.",
+        )
+        torch._assert(
+            isinstance(rel_codes, torch.Tensor),
+            "This function expects rel_codes of type torch.Tensor.",
+        )
         boxes_per_image = [b.size(0) for b in boxes]
         concat_boxes = torch.cat(boxes, dim=0)
         box_sum = 0
@@ -333,7 +340,7 @@ class Matcher:
         """
         self.BELOW_LOW_THRESHOLD = -1
         self.BETWEEN_THRESHOLDS = -2
-        assert low_threshold <= high_threshold
+        torch._assert(low_threshold <= high_threshold, "low_threshold should be <= high_threshold")
         self.high_threshold = high_threshold
         self.low_threshold = low_threshold
         self.allow_low_quality_matches = allow_low_quality_matches
@@ -371,8 +378,10 @@ class Matcher:
         matches[between_thresholds] = self.BETWEEN_THRESHOLDS
 
         if self.allow_low_quality_matches:
-            assert all_matches is not None
-            self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
+            if all_matches is None:
+                torch._assert(False, "all_matches should not be None")
+            else:
+                self.set_low_quality_matches_(matches, all_matches, match_quality_matrix)
 
         return matches
 
@@ -468,3 +477,62 @@ def retrieve_out_channels(model: nn.Module, size: Tuple[int, int]) -> List[int]:
         model.train()
 
     return out_channels
+
+
+@torch.jit.unused
+def _fake_cast_onnx(v: Tensor) -> int:
+    return v  # type: ignore[return-value]
+
+
+def _topk_min(input: Tensor, orig_kval: int, axis: int) -> int:
+    """
+    ONNX spec requires the k-value to be less than or equal to the number of inputs along
+    provided dim. Certain models use the number of elements along a particular axis instead of K
+    if K exceeds the number of elements along that axis. Previously, python's min() function was
+    used to determine whether to use the provided k-value or the specified dim axis value.
+
+    However in cases where the model is being exported in tracing mode, python min() is
+    static causing the model to be traced incorrectly and eventually fail at the topk node.
+    In order to avoid this situation, in tracing mode, torch.min() is used instead.
+
+    Args:
+        input (Tensor): The orignal input tensor.
+        orig_kval (int): The provided k-value.
+        axis(int): Axis along which we retreive the input size.
+
+    Returns:
+        min_kval (int): Appropriately selected k-value.
+    """
+    if not torch.jit.is_tracing():
+        return min(orig_kval, input.size(axis))
+    axis_dim_val = torch._shape_as_tensor(input)[axis].unsqueeze(0)
+    min_kval = torch.min(torch.cat((torch.tensor([orig_kval], dtype=axis_dim_val.dtype), axis_dim_val), 0))
+    return _fake_cast_onnx(min_kval)
+
+
+def _box_loss(
+    type: str,
+    box_coder: BoxCoder,
+    anchors_per_image: Tensor,
+    matched_gt_boxes_per_image: Tensor,
+    bbox_regression_per_image: Tensor,
+    cnf: Optional[Dict[str, float]] = None,
+) -> Tensor:
+    torch._assert(type in ["l1", "smooth_l1", "ciou", "diou", "giou"], f"Unsupported loss: {type}")
+
+    if type == "l1":
+        target_regression = box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+        return F.l1_loss(bbox_regression_per_image, target_regression, reduction="sum")
+    elif type == "smooth_l1":
+        target_regression = box_coder.encode_single(matched_gt_boxes_per_image, anchors_per_image)
+        beta = cnf["beta"] if cnf is not None and "beta" in cnf else 1.0
+        return F.smooth_l1_loss(bbox_regression_per_image, target_regression, reduction="sum", beta=beta)
+    else:
+        bbox_per_image = box_coder.decode_single(bbox_regression_per_image, anchors_per_image)
+        eps = cnf["eps"] if cnf is not None and "eps" in cnf else 1e-7
+        if type == "ciou":
+            return complete_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
+        if type == "diou":
+            return distance_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)
+        # otherwise giou
+        return generalized_box_iou_loss(bbox_per_image, matched_gt_boxes_per_image, reduction="sum", eps=eps)

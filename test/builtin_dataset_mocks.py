@@ -1,115 +1,111 @@
+import bz2
 import collections.abc
-import contextlib
 import csv
 import functools
 import gzip
+import io
 import itertools
 import json
 import lzma
 import pathlib
 import pickle
 import random
-import tempfile
+import shutil
 import unittest.mock
+import warnings
 import xml.etree.ElementTree as ET
 from collections import defaultdict, Counter
 
 import numpy as np
-import PIL.Image
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file
+from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype import datasets
-from torchvision.prototype.datasets._api import find
-from torchvision.prototype.utils._internal import sequence_to_str
 
 make_tensor = functools.partial(_make_tensor, device="cpu")
 make_scalar = functools.partial(make_tensor, ())
-
-TEST_HOME = pathlib.Path(tempfile.mkdtemp())
 
 
 __all__ = ["DATASET_MOCKS", "parametrize_dataset_mocks"]
 
 
 class DatasetMock:
-    def __init__(self, name, mock_data_fn):
-        self.dataset = find(name)
-        self.info = self.dataset.info
-        self.name = self.info.name
-
-        self.root = TEST_HOME / self.dataset.name
+    def __init__(self, name, *, mock_data_fn, configs):
+        # FIXME: error handling for unknown names
+        self.name = name
         self.mock_data_fn = mock_data_fn
-        self.configs = self.info._configs
-        self._cache = {}
+        self.configs = configs
 
-    def _parse_mock_data(self, config, mock_infos):
-        if mock_infos is None:
+    def _parse_mock_info(self, mock_info):
+        if mock_info is None:
             raise pytest.UsageError(
                 f"The mock data function for dataset '{self.name}' returned nothing. It needs to at least return an "
                 f"integer indicating the number of samples for the current `config`."
             )
-
-        key_types = set(type(key) for key in mock_infos) if isinstance(mock_infos, dict) else {}
-        if datasets.utils.DatasetConfig not in key_types:
-            mock_infos = {config: mock_infos}
-        elif len(key_types) > 1:
+        elif isinstance(mock_info, int):
+            mock_info = dict(num_samples=mock_info)
+        elif not isinstance(mock_info, dict):
             raise pytest.UsageError(
-                f"Unable to handle the returned dictionary of the mock data function for dataset {self.name}. If "
-                f"returned dictionary uses `DatasetConfig` as key type, all keys should be of that type."
+                f"The mock data function for dataset '{self.name}' returned a {type(mock_info)}. The returned object "
+                f"should be a dictionary containing at least the number of samples for the key `'num_samples'`. If no "
+                f"additional information is required for specific tests, the number of samples can also be returned as "
+                f"an integer."
+            )
+        elif "num_samples" not in mock_info:
+            raise pytest.UsageError(
+                f"The dictionary returned by the mock data function for dataset '{self.name}' has to contain a "
+                f"`'num_samples'` entry indicating the number of samples."
             )
 
-        for config_, mock_info in mock_infos.items():
-            if config_ in self._cache:
-                raise pytest.UsageError(
-                    f"The mock info for config {config_} of dataset {self.name} generated for config {config} "
-                    f"already exists in the cache."
-                )
-            if isinstance(mock_info, int):
-                mock_infos[config_] = dict(num_samples=mock_info)
-            elif not isinstance(mock_info, dict):
-                raise pytest.UsageError(
-                    f"The mock data function for dataset '{self.name}' returned a {type(mock_infos)} for `config` "
-                    f"{config_}. The returned object should be a dictionary containing at least the number of "
-                    f"samples for the key `'num_samples'`. If no additional information is required for specific "
-                    f"tests, the number of samples can also be returned as an integer."
-                )
-            elif "num_samples" not in mock_info:
-                raise pytest.UsageError(
-                    f"The dictionary returned by the mock data function for dataset '{self.name}' and config "
-                    f"{config_} has to contain a `'num_samples'` entry indicating the number of samples."
-                )
+        return mock_info
 
-        return mock_infos
+    def load(self, config):
+        # `datasets.home()` is patched to a temporary directory through the autouse fixture `test_home` in
+        # test/test_prototype_builtin_datasets.py
+        root = pathlib.Path(datasets.home()) / self.name
+        # We cannot place the mock data upfront in `root`. Loading a dataset calls `OnlineResource.load`. In turn,
+        # this will only download **and** preprocess if the file is not present. In other words, if we already place
+        # the file in `root` before the resource is loaded, we are effectively skipping the preprocessing.
+        # To avoid that we first place the mock data in a temporary directory and patch the download logic to move it to
+        # `root` only when it is requested.
+        tmp_mock_data_folder = root / "__mock__"
+        tmp_mock_data_folder.mkdir(parents=True)
 
-    def _prepare_resources(self, config):
-        if config in self._cache:
-            return self._cache[config]
+        mock_info = self._parse_mock_info(self.mock_data_fn(tmp_mock_data_folder, config))
 
-        self.root.mkdir(exist_ok=True)
-        mock_infos = self._parse_mock_data(config, self.mock_data_fn(self.info, self.root, config))
-
-        available_file_names = {path.name for path in self.root.glob("*")}
-        for config_, mock_info in mock_infos.items():
-            required_file_names = {resource.file_name for resource in self.dataset.resources(config_)}
-            missing_file_names = required_file_names - available_file_names
-            if missing_file_names:
+        def patched_download(resource, root, **kwargs):
+            src = tmp_mock_data_folder / resource.file_name
+            if not src.exists():
                 raise pytest.UsageError(
-                    f"Dataset '{self.name}' requires the files {sequence_to_str(sorted(missing_file_names))} "
-                    f"for {config_}, but they were not created by the mock data function."
+                    f"Dataset '{self.name}' requires the file {resource.file_name} for {config}"
+                    f"but it was not created by the mock data function."
                 )
 
-            self._cache[config_] = mock_info
+            dst = root / resource.file_name
+            shutil.move(str(src), str(root))
 
-        return self._cache[config]
+            return dst
 
-    @contextlib.contextmanager
-    def prepare(self, config):
-        mock_info = self._prepare_resources(config)
-        with unittest.mock.patch("torchvision.prototype.datasets._api.home", return_value=str(TEST_HOME)):
-            yield mock_info
+        with unittest.mock.patch(
+            "torchvision.prototype.datasets.utils._resource.OnlineResource.download", new=patched_download
+        ):
+            dataset = datasets.load(self.name, **config)
+
+        extra_files = list(tmp_mock_data_folder.glob("**/*"))
+        if extra_files:
+            raise pytest.UsageError(
+                (
+                    f"Dataset '{self.name}' created the following files for {config} in the mock data function, "
+                    f"but they were not loaded:\n\n"
+                )
+                + "\n".join(str(file.relative_to(tmp_mock_data_folder)) for file in extra_files)
+            )
+
+        tmp_mock_data_folder.rmdir()
+
+        return dataset, mock_info
 
 
 def config_id(name, config):
@@ -156,10 +152,16 @@ def parametrize_dataset_mocks(*dataset_mocks, marks=None):
 DATASET_MOCKS = {}
 
 
-def register_mock(fn):
-    name = fn.__name__.replace("_", "-")
-    DATASET_MOCKS[name] = DatasetMock(name, fn)
-    return fn
+def register_mock(name=None, *, configs):
+    def wrapper(mock_data_fn):
+        nonlocal name
+        if name is None:
+            name = mock_data_fn.__name__
+        DATASET_MOCKS[name] = DatasetMock(name, mock_data_fn=mock_data_fn, configs=configs)
+
+        return mock_data_fn
+
+    return wrapper
 
 
 class MNISTMockData:
@@ -237,78 +239,80 @@ class MNISTMockData:
         return num_samples
 
 
-@register_mock
-def mnist(info, root, config):
-    train = config.split == "train"
-    images_file = f"{'train' if train else 't10k'}-images-idx3-ubyte.gz"
-    labels_file = f"{'train' if train else 't10k'}-labels-idx1-ubyte.gz"
+def mnist(root, config):
+    prefix = "train" if config["split"] == "train" else "t10k"
     return MNISTMockData.generate(
         root,
-        num_categories=len(info.categories),
-        images_file=images_file,
-        labels_file=labels_file,
+        num_categories=10,
+        images_file=f"{prefix}-images-idx3-ubyte.gz",
+        labels_file=f"{prefix}-labels-idx1-ubyte.gz",
     )
 
 
-DATASET_MOCKS.update({name: DatasetMock(name, mnist) for name in ["fashionmnist", "kmnist"]})
+DATASET_MOCKS.update(
+    {
+        name: DatasetMock(name, mock_data_fn=mnist, configs=combinations_grid(split=("train", "test")))
+        for name in ["mnist", "fashionmnist", "kmnist"]
+    }
+)
 
 
-@register_mock
-def emnist(info, root, _):
-    # The image sets that merge some lower case letters in their respective upper case variant, still use dense
-    # labels in the data files. Thus, num_categories != len(categories) there.
-    num_categories = defaultdict(
-        lambda: len(info.categories), {image_set: 47 for image_set in ("Balanced", "By_Merge")}
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "test"),
+        image_set=("Balanced", "By_Merge", "By_Class", "Letters", "Digits", "MNIST"),
     )
-
-    mock_infos = {}
+)
+def emnist(root, config):
+    num_samples_map = {}
     file_names = set()
-    for config in info._configs:
-        prefix = f"emnist-{config.image_set.replace('_', '').lower()}-{config.split}"
+    for split, image_set in itertools.product(
+        ("train", "test"),
+        ("Balanced", "By_Merge", "By_Class", "Letters", "Digits", "MNIST"),
+    ):
+        prefix = f"emnist-{image_set.replace('_', '').lower()}-{split}"
         images_file = f"{prefix}-images-idx3-ubyte.gz"
         labels_file = f"{prefix}-labels-idx1-ubyte.gz"
         file_names.update({images_file, labels_file})
-        mock_infos[config] = dict(
-            num_samples=MNISTMockData.generate(
-                root,
-                num_categories=num_categories[config.image_set],
-                images_file=images_file,
-                labels_file=labels_file,
-            )
+        num_samples_map[(split, image_set)] = MNISTMockData.generate(
+            root,
+            # The image sets that merge some lower case letters in their respective upper case variant, still use dense
+            # labels in the data files. Thus, num_categories != len(categories) there.
+            num_categories=47 if config["image_set"] in ("Balanced", "By_Merge") else 62,
+            images_file=images_file,
+            labels_file=labels_file,
         )
 
     make_zip(root, "emnist-gzip.zip", *file_names)
 
-    return mock_infos
+    return num_samples_map[(config["split"], config["image_set"])]
 
 
-@register_mock
-def qmnist(info, root, config):
-    num_categories = len(info.categories)
-    if config.split == "train":
+@register_mock(configs=combinations_grid(split=("train", "test", "test10k", "test50k", "nist")))
+def qmnist(root, config):
+    num_categories = 10
+    if config["split"] == "train":
         num_samples = num_samples_gen = num_categories + 2
         prefix = "qmnist-train"
         suffix = ".gz"
         compressor = gzip.open
-        mock_infos = num_samples
-    elif config.split.startswith("test"):
+    elif config["split"].startswith("test"):
         # The split 'test50k' is defined as the last 50k images beginning at index 10000. Thus, we need to create
         # more than 10000 images for the dataset to not be empty.
         num_samples_gen = 10001
+        num_samples = {
+            "test": num_samples_gen,
+            "test10k": min(num_samples_gen, 10_000),
+            "test50k": num_samples_gen - 10_000,
+        }[config["split"]]
         prefix = "qmnist-test"
         suffix = ".gz"
         compressor = gzip.open
-        mock_infos = {
-            info.make_config(split="test"): num_samples_gen,
-            info.make_config(split="test10k"): min(num_samples_gen, 10_000),
-            info.make_config(split="test50k"): num_samples_gen - 10_000,
-        }
-    else:  # config.split == "nist"
+    else:  # config["split"] == "nist"
         num_samples = num_samples_gen = num_categories + 3
         prefix = "xnist"
         suffix = ".xz"
         compressor = lzma.open
-        mock_infos = num_samples
 
     MNISTMockData.generate(
         root,
@@ -320,7 +324,7 @@ def qmnist(info, root, config):
         label_dtype=torch.int32,
         compressor=compressor,
     )
-    return mock_infos
+    return num_samples
 
 
 class CIFARMockData:
@@ -361,8 +365,8 @@ class CIFARMockData:
         make_tar(root, name, folder, compression="gz")
 
 
-@register_mock
-def cifar10(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def cifar10(root, config):
     train_files = [f"data_batch_{idx}" for idx in range(1, 6)]
     test_files = ["test_batch"]
 
@@ -376,11 +380,11 @@ def cifar10(info, root, config):
         labels_key="labels",
     )
 
-    return len(train_files if config.split == "train" else test_files)
+    return len(train_files if config["split"] == "train" else test_files)
 
 
-@register_mock
-def cifar100(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def cifar100(root, config):
     train_files = ["train"]
     test_files = ["test"]
 
@@ -394,11 +398,11 @@ def cifar100(info, root, config):
         labels_key="fine_labels",
     )
 
-    return len(train_files if config.split == "train" else test_files)
+    return len(train_files if config["split"] == "train" else test_files)
 
 
-@register_mock
-def caltech101(info, root, config):
+@register_mock(configs=[dict()])
+def caltech101(root, config):
     def create_ann_file(root, name):
         import scipy.io
 
@@ -417,15 +421,17 @@ def caltech101(info, root, config):
     images_root = root / "101_ObjectCategories"
     anns_root = root / "Annotations"
 
-    ann_category_map = {
-        "Faces_2": "Faces",
-        "Faces_3": "Faces_easy",
-        "Motorbikes_16": "Motorbikes",
-        "Airplanes_Side_2": "airplanes",
+    image_category_map = {
+        "Faces": "Faces_2",
+        "Faces_easy": "Faces_3",
+        "Motorbikes": "Motorbikes_16",
+        "airplanes": "Airplanes_Side_2",
     }
 
+    categories = ["Faces", "Faces_easy", "Motorbikes", "airplanes", "yin_yang"]
+
     num_images_per_category = 2
-    for category in info.categories:
+    for category in categories:
         create_image_folder(
             root=images_root,
             name=category,
@@ -434,7 +440,7 @@ def caltech101(info, root, config):
         )
         create_ann_folder(
             root=anns_root,
-            name=ann_category_map.get(category, category),
+            name=image_category_map.get(category, category),
             file_name_fn=lambda idx: f"annotation_{idx + 1:04d}.mat",
             num_examples=num_images_per_category,
         )
@@ -444,19 +450,26 @@ def caltech101(info, root, config):
 
     make_tar(root, f"{anns_root.name}.tar", anns_root)
 
-    return num_images_per_category * len(info.categories)
+    return num_images_per_category * len(categories)
 
 
-@register_mock
-def caltech256(info, root, config):
+@register_mock(configs=[dict()])
+def caltech256(root, config):
     dir = root / "256_ObjectCategories"
     num_images_per_category = 2
 
-    for idx, category in enumerate(info.categories, 1):
+    categories = [
+        (1, "ak47"),
+        (127, "laptop-101"),
+        (198, "spider"),
+        (257, "clutter"),
+    ]
+
+    for category_idx, category in categories:
         files = create_image_folder(
             dir,
-            name=f"{idx:03d}.{category}",
-            file_name_fn=lambda image_idx: f"{idx:03d}_{image_idx + 1:04d}.jpg",
+            name=f"{category_idx:03d}.{category}",
+            file_name_fn=lambda image_idx: f"{category_idx:03d}_{image_idx + 1:04d}.jpg",
             num_examples=num_images_per_category,
         )
         if category == "spider":
@@ -464,76 +477,65 @@ def caltech256(info, root, config):
 
     make_tar(root, f"{dir.name}.tar", dir)
 
-    return num_images_per_category * len(info.categories)
+    return num_images_per_category * len(categories)
 
 
-@register_mock
-def imagenet(info, root, config):
-    wnids = tuple(info.extra.wnid_to_category.keys())
-    if config.split == "train":
-        images_root = root / "ILSVRC2012_img_train"
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def imagenet(root, config):
+    from scipy.io import savemat
 
-        num_samples = len(wnids)
+    info = datasets.info("imagenet")
 
-        for wnid in wnids:
-            files = create_image_folder(
-                root=images_root,
+    if config["split"] == "train":
+        num_samples = len(info["wnids"])
+        archive_name = "ILSVRC2012_img_train.tar"
+
+        files = []
+        for wnid in info["wnids"]:
+            create_image_folder(
+                root=root,
                 name=wnid,
                 file_name_fn=lambda image_idx: f"{wnid}_{image_idx:04d}.JPEG",
                 num_examples=1,
             )
-            make_tar(images_root, f"{wnid}.tar", files[0].parent)
-    elif config.split == "val":
+            files.append(make_tar(root, f"{wnid}.tar"))
+    elif config["split"] == "val":
         num_samples = 3
-        files = create_image_folder(
-            root=root,
-            name="ILSVRC2012_img_val",
-            file_name_fn=lambda image_idx: f"ILSVRC2012_val_{image_idx + 1:08d}.JPEG",
-            num_examples=num_samples,
-        )
-        images_root = files[0].parent
-    else:  # config.split == "test"
-        images_root = root / "ILSVRC2012_img_test_v10102019"
+        archive_name = "ILSVRC2012_img_val.tar"
+        files = [create_image_file(root, f"ILSVRC2012_val_{idx + 1:08d}.JPEG") for idx in range(num_samples)]
 
-        num_samples = 3
+        devkit_root = root / "ILSVRC2012_devkit_t12"
+        data_root = devkit_root / "data"
+        data_root.mkdir(parents=True)
 
-        create_image_folder(
-            root=images_root,
-            name="test",
-            file_name_fn=lambda image_idx: f"ILSVRC2012_test_{image_idx + 1:08d}.JPEG",
-            num_examples=num_samples,
-        )
-    make_tar(root, f"{images_root.name}.tar", images_root)
+        with open(data_root / "ILSVRC2012_validation_ground_truth.txt", "w") as file:
+            for label in torch.randint(0, len(info["wnids"]), (num_samples,)).tolist():
+                file.write(f"{label}\n")
 
-    devkit_root = root / "ILSVRC2012_devkit_t12"
-    devkit_root.mkdir()
-    data_root = devkit_root / "data"
-    data_root.mkdir()
-    with open(data_root / "ILSVRC2012_validation_ground_truth.txt", "w") as file:
-        for label in torch.randint(0, len(wnids), (num_samples,)).tolist():
-            file.write(f"{label}\n")
-    make_tar(root, f"{devkit_root}.tar.gz", devkit_root, compression="gz")
+        num_children = 0
+        synsets = [
+            (idx, wnid, category, "", num_children, [], 0, 0)
+            for idx, (category, wnid) in enumerate(zip(info["categories"], info["wnids"]), 1)
+        ]
+        num_children = 1
+        synsets.extend((0, "", "", "", num_children, [], 0, 0) for _ in range(5))
+        with warnings.catch_warnings():
+            # The warning is not for savemat, but rather for some internals savemet is using
+            warnings.filterwarnings("ignore", category=np.VisibleDeprecationWarning)
+            savemat(data_root / "meta.mat", dict(synsets=synsets))
+
+        make_tar(root, devkit_root.with_suffix(".tar.gz").name, compression="gz")
+    else:  # config["split"] == "test"
+        num_samples = 5
+        archive_name = "ILSVRC2012_img_test_v10102019.tar"
+        files = [create_image_file(root, f"ILSVRC2012_test_{idx + 1:08d}.JPEG") for idx in range(num_samples)]
+
+    make_tar(root, archive_name, *files)
 
     return num_samples
 
 
 class CocoMockData:
-    @classmethod
-    def _make_images_archive(cls, root, name, *, num_samples):
-        image_paths = create_image_folder(
-            root, name, file_name_fn=lambda idx: f"{idx:012d}.jpg", num_examples=num_samples
-        )
-
-        images_meta = []
-        for path in image_paths:
-            with PIL.Image.open(path) as image:
-                width, height = image.size
-            images_meta.append(dict(file_name=path.name, id=int(path.stem), width=width, height=height))
-
-        make_zip(root, f"{name}.zip")
-
-        return images_meta
-
     @classmethod
     def _make_annotations_json(
         cls,
@@ -601,16 +603,38 @@ class CocoMockData:
         cls,
         root,
         *,
+        split,
         year,
         num_samples,
     ):
         annotations_dir = root / "annotations"
         annotations_dir.mkdir()
 
-        for split in ("train", "val"):
-            config_name = f"{split}{year}"
+        for split_ in ("train", "val"):
+            config_name = f"{split_}{year}"
 
-            images_meta = cls._make_images_archive(root, config_name, num_samples=num_samples)
+            images_meta = [
+                dict(
+                    file_name=f"{idx:012d}.jpg",
+                    id=idx,
+                    width=width,
+                    height=height,
+                )
+                for idx, (height, width) in enumerate(
+                    torch.randint(3, 11, size=(num_samples, 2), dtype=torch.int).tolist()
+                )
+            ]
+
+            if split_ == split:
+                create_image_folder(
+                    root,
+                    config_name,
+                    file_name_fn=lambda idx: images_meta[idx]["file_name"],
+                    num_examples=num_samples,
+                    size=lambda idx: (3, images_meta[idx]["height"], images_meta[idx]["width"]),
+                )
+                make_zip(root, f"{config_name}.zip")
+
             cls._make_annotations(
                 annotations_dir,
                 config_name,
@@ -622,14 +646,15 @@ class CocoMockData:
         return num_samples
 
 
-@register_mock
-def coco(info, root, config):
-    return dict(
-        zip(
-            [config_ for config_ in info._configs if config_.year == config.year],
-            itertools.repeat(CocoMockData.generate(root, year=config.year, num_samples=5)),
-        )
+@register_mock(
+    configs=combinations_grid(
+        split=("train", "val"),
+        year=("2017", "2014"),
+        annotations=("instances", "captions", None),
     )
+)
+def coco(root, config):
+    return CocoMockData.generate(root, split=config["split"], year=config["year"], num_samples=5)
 
 
 class SBDMockData:
@@ -701,23 +726,23 @@ class SBDMockData:
         return num_samples_map
 
 
-@register_mock
-def sbd(info, root, _):
-    num_samples_map = SBDMockData.generate(root)
-    return {config: num_samples_map[config.split] for config in info._configs}
+@register_mock(configs=combinations_grid(split=("train", "val", "train_noval")))
+def sbd(root, config):
+    return SBDMockData.generate(root)[config["split"]]
 
 
-@register_mock
-def semeion(info, root, config):
+@register_mock(configs=[dict()])
+def semeion(root, config):
     num_samples = 3
+    num_categories = 10
 
     images = torch.rand(num_samples, 256)
-    labels = one_hot(torch.randint(len(info.categories), size=(num_samples,)))
+    labels = one_hot(torch.randint(num_categories, size=(num_samples,)), num_classes=num_categories)
     with open(root / "semeion.data", "w") as fh:
         for image, one_hot_label in zip(images, labels):
             image_columns = " ".join([f"{pixel.item():.4f}" for pixel in image])
             labels_columns = " ".join([str(label.item()) for label in one_hot_label])
-            fh.write(f"{image_columns} {labels_columns}\n")
+            fh.write(f"{image_columns} {labels_columns} \n")
 
     return num_samples
 
@@ -772,38 +797,42 @@ class VOCMockData:
     def _make_detection_ann_file(cls, root, name):
         def add_child(parent, name, text=None):
             child = ET.SubElement(parent, name)
-            child.text = text
+            child.text = str(text)
             return child
 
         def add_name(obj, name="dog"):
             add_child(obj, "name", name)
-            return name
 
-        def add_bndbox(obj, bndbox=None):
-            if bndbox is None:
-                bndbox = {"xmin": "1", "xmax": "2", "ymin": "3", "ymax": "4"}
+        def add_size(obj):
+            obj = add_child(obj, "size")
+            size = {"width": 0, "height": 0, "depth": 3}
+            for name, text in size.items():
+                add_child(obj, name, text)
 
+        def add_bndbox(obj):
             obj = add_child(obj, "bndbox")
+            bndbox = {"xmin": 1, "xmax": 2, "ymin": 3, "ymax": 4}
             for name, text in bndbox.items():
                 add_child(obj, name, text)
 
-            return bndbox
-
         annotation = ET.Element("annotation")
+        add_size(annotation)
         obj = add_child(annotation, "object")
-        data = dict(name=add_name(obj), bndbox=add_bndbox(obj))
+        add_name(obj)
+        add_bndbox(obj)
 
         with open(root / name, "wb") as fh:
             fh.write(ET.tostring(annotation))
-
-        return data
 
     @classmethod
     def generate(cls, root, *, year, trainval):
         archive_folder = root
         if year == "2011":
-            archive_folder /= "TrainVal"
-        data_folder = archive_folder / "VOCdevkit" / f"VOC{year}"
+            archive_folder = root / "TrainVal"
+            data_folder = archive_folder / "VOCdevkit"
+        else:
+            archive_folder = data_folder = root / "VOCdevkit"
+        data_folder = data_folder / f"VOC{year}"
         data_folder.mkdir(parents=True, exist_ok=True)
 
         ids, num_samples_map = cls._make_split_files(data_folder, year=year, trainval=trainval)
@@ -813,20 +842,28 @@ class VOCMockData:
             (cls._make_detection_anns_folder, "Annotations", ".xml"),
         ]:
             make_folder_fn(data_folder, name, file_name_fn=lambda idx: ids[idx] + suffix, num_examples=len(ids))
-        make_tar(root, (cls._TRAIN_VAL_FILE_NAMES if trainval else cls._TEST_FILE_NAMES)[year], data_folder)
+        make_tar(root, (cls._TRAIN_VAL_FILE_NAMES if trainval else cls._TEST_FILE_NAMES)[year], archive_folder)
 
         return num_samples_map
 
 
-@register_mock
-def voc(info, root, config):
-    trainval = config.split != "test"
-    num_samples_map = VOCMockData.generate(root, year=config.year, trainval=trainval)
-    return {
-        config_: num_samples_map[config_.split]
-        for config_ in info._configs
-        if config_.year == config.year and ((config_.split == "test") ^ trainval)
-    }
+@register_mock(
+    configs=[
+        *combinations_grid(
+            split=("train", "val", "trainval"),
+            year=("2007", "2008", "2009", "2010", "2011", "2012"),
+            task=("detection", "segmentation"),
+        ),
+        *combinations_grid(
+            split=("test",),
+            year=("2007",),
+            task=("detection", "segmentation"),
+        ),
+    ],
+)
+def voc(root, config):
+    trainval = config["split"] != "test"
+    return VOCMockData.generate(root, year=config["year"], trainval=trainval)[config["split"]]
 
 
 class CelebAMockData:
@@ -917,14 +954,74 @@ class CelebAMockData:
         return num_samples_map
 
 
-@register_mock
-def celeba(info, root, _):
-    num_samples_map = CelebAMockData.generate(root)
-    return {config: num_samples_map[config.split] for config in info._configs}
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def celeba(root, config):
+    return CelebAMockData.generate(root)[config["split"]]
 
 
-@register_mock
-def dtd(info, root, _):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def country211(root, config):
+    split_folder = pathlib.Path(root, "country211", "valid" if config["split"] == "val" else config["split"])
+    split_folder.mkdir(parents=True, exist_ok=True)
+
+    num_examples = {
+        "train": 3,
+        "val": 4,
+        "test": 5,
+    }[config["split"]]
+
+    classes = ("AD", "BS", "GR")
+    for cls in classes:
+        create_image_folder(
+            split_folder,
+            name=cls,
+            file_name_fn=lambda idx: f"{idx}.jpg",
+            num_examples=num_examples,
+        )
+    make_tar(root, f"{split_folder.parent.name}.tgz", split_folder.parent, compression="gz")
+    return num_examples * len(classes)
+
+
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def food101(root, config):
+    data_folder = root / "food-101"
+
+    num_images_per_class = 3
+    image_folder = data_folder / "images"
+    categories = ["apple_pie", "baby_back_ribs", "waffles"]
+    image_ids = []
+    for category in categories:
+        image_files = create_image_folder(
+            image_folder,
+            category,
+            file_name_fn=lambda idx: f"{idx:04d}.jpg",
+            num_examples=num_images_per_class,
+        )
+        image_ids.extend(path.relative_to(path.parents[1]).with_suffix("").as_posix() for path in image_files)
+
+    meta_folder = data_folder / "meta"
+    meta_folder.mkdir()
+
+    with open(meta_folder / "classes.txt", "w") as file:
+        for category in categories:
+            file.write(f"{category}\n")
+
+    splits = ["train", "test"]
+    num_samples_map = {}
+    for offset, split in enumerate(splits):
+        image_ids_in_split = image_ids[offset :: len(splits)]
+        num_samples_map[split] = len(image_ids_in_split)
+        with open(meta_folder / f"{split}.txt", "w") as file:
+            for image_id in image_ids_in_split:
+                file.write(f"{image_id}\n")
+
+    make_tar(root, f"{data_folder.name}.tar.gz", compression="gz")
+
+    return num_samples_map[config["split"]]
+
+
+@register_mock(configs=combinations_grid(split=("train", "val", "test"), fold=(1, 4, 10)))
+def dtd(root, config):
     data_folder = root / "dtd"
 
     num_images_per_class = 3
@@ -964,20 +1061,21 @@ def dtd(info, root, _):
             with open(meta_folder / f"{split}{fold}.txt", "w") as file:
                 file.write("\n".join(image_ids_in_config) + "\n")
 
-            num_samples_map[info.make_config(split=split, fold=str(fold))] = len(image_ids_in_config)
+            num_samples_map[(split, fold)] = len(image_ids_in_config)
 
     make_tar(root, "dtd-r1.0.1.tar.gz", data_folder, compression="gz")
 
-    return num_samples_map
+    return num_samples_map[config["split"], config["fold"]]
 
 
-@register_mock
-def fer2013(info, root, config):
-    num_samples = 5 if config.split == "train" else 3
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def fer2013(root, config):
+    split = config["split"]
+    num_samples = 5 if split == "train" else 3
 
-    path = root / f"{config.split}.csv"
+    path = root / f"{split}.csv"
     with open(path, "w", newline="") as file:
-        field_names = ["emotion"] if config.split == "train" else []
+        field_names = ["emotion"] if split == "train" else []
         field_names.append("pixels")
 
         file.write(",".join(field_names) + "\n")
@@ -987,7 +1085,7 @@ def fer2013(info, root, config):
             rowdict = {
                 "pixels": " ".join([str(int(pixel)) for pixel in torch.randint(256, (48 * 48,), dtype=torch.uint8)])
             }
-            if config.split == "train":
+            if split == "train":
                 rowdict["emotion"] = int(torch.randint(7, ()))
             writer.writerow(rowdict)
 
@@ -996,9 +1094,9 @@ def fer2013(info, root, config):
     return num_samples
 
 
-@register_mock
-def gtsrb(info, root, config):
-    num_examples_per_class = 5 if config.split == "train" else 3
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def gtsrb(root, config):
+    num_examples_per_class = 5 if config["split"] == "train" else 3
     classes = ("00000", "00042", "00012")
     num_examples = num_examples_per_class * len(classes)
 
@@ -1025,8 +1123,10 @@ def gtsrb(info, root, config):
                     }
                 )
 
+    archive_folder = root / "GTSRB"
+
     if config["split"] == "train":
-        train_folder = root / "GTSRB" / "Training"
+        train_folder = archive_folder / "Training"
         train_folder.mkdir(parents=True)
 
         for class_idx in classes:
@@ -1041,9 +1141,9 @@ def gtsrb(info, root, config):
                 num_examples=num_examples_per_class,
                 class_idx=int(class_idx),
             )
-        make_zip(root, "GTSRB-Training_fixed.zip", train_folder)
+        make_zip(root, "GTSRB-Training_fixed.zip", archive_folder)
     else:
-        test_folder = root / "GTSRB" / "Final_Test"
+        test_folder = archive_folder / "Final_Test"
         test_folder.mkdir(parents=True)
 
         create_image_folder(
@@ -1053,7 +1153,7 @@ def gtsrb(info, root, config):
             num_examples=num_examples,
         )
 
-        make_zip(root, "GTSRB_Final_Test_Images.zip", test_folder)
+        make_zip(root, "GTSRB_Final_Test_Images.zip", archive_folder)
 
         _make_ann_file(
             path=root / "GT-final_test.csv",
@@ -1066,8 +1166,8 @@ def gtsrb(info, root, config):
     return num_examples
 
 
-@register_mock
-def clevr(info, root, config):
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def clevr(root, config):
     data_folder = root / "CLEVR_v1.0"
 
     num_samples_map = {
@@ -1108,7 +1208,7 @@ def clevr(info, root, config):
 
     make_zip(root, f"{data_folder.name}.zip", data_folder)
 
-    return {config_: num_samples_map[config_.split] for config_ in info._configs}
+    return num_samples_map[config["split"]]
 
 
 class OxfordIIITPetMockData:
@@ -1172,10 +1272,9 @@ class OxfordIIITPetMockData:
         return num_samples_map
 
 
-@register_mock
-def oxford_iiit_pet(info, root, config):
-    num_samples_map = OxfordIIITPetMockData.generate(root)
-    return {config_: num_samples_map[config_.split] for config_ in info._configs}
+@register_mock(name="oxford-iiit-pet", configs=combinations_grid(split=("trainval", "test")))
+def oxford_iiit_pet(root, config):
+    return OxfordIIITPetMockData.generate(root)[config["split"]]
 
 
 class _CUB200MockData:
@@ -1339,27 +1438,131 @@ class CUB2002010MockData(_CUB200MockData):
         return num_samples_map
 
 
-@register_mock
-def cub200(info, root, config):
-    num_samples_map = (CUB2002011MockData if config.year == "2011" else CUB2002010MockData).generate(root)
-    return {config_: num_samples_map[config_.split] for config_ in info._configs if config_.year == config.year}
+@register_mock(configs=combinations_grid(split=("train", "test"), year=("2010", "2011")))
+def cub200(root, config):
+    num_samples_map = (CUB2002011MockData if config["year"] == "2011" else CUB2002010MockData).generate(root)
+    return num_samples_map[config["split"]]
 
 
-@register_mock
-def svhn(info, root, config):
+@register_mock(configs=[dict()])
+def eurosat(root, config):
+    data_folder = root / "2750"
+    data_folder.mkdir(parents=True)
+
+    num_examples_per_class = 3
+    categories = ["AnnualCrop", "Forest"]
+    for category in categories:
+        create_image_folder(
+            root=data_folder,
+            name=category,
+            file_name_fn=lambda idx: f"{category}_{idx + 1}.jpg",
+            num_examples=num_examples_per_class,
+        )
+    make_zip(root, "EuroSAT.zip", data_folder)
+    return len(categories) * num_examples_per_class
+
+
+@register_mock(configs=combinations_grid(split=("train", "test", "extra")))
+def svhn(root, config):
     import scipy.io as sio
 
     num_samples = {
         "train": 2,
         "test": 3,
         "extra": 4,
-    }[config.split]
+    }[config["split"]]
 
     sio.savemat(
-        root / f"{config.split}_32x32.mat",
+        root / f"{config['split']}_32x32.mat",
         {
             "X": np.random.randint(256, size=(32, 32, 3, num_samples), dtype=np.uint8),
             "y": np.random.randint(10, size=(num_samples,), dtype=np.uint8),
         },
     )
+    return num_samples
+
+
+@register_mock(configs=combinations_grid(split=("train", "val", "test")))
+def pcam(root, config):
+    import h5py
+
+    num_images = {"train": 2, "test": 3, "val": 4}[config["split"]]
+
+    split = "valid" if config["split"] == "val" else config["split"]
+
+    images_io = io.BytesIO()
+    with h5py.File(images_io, "w") as f:
+        f["x"] = np.random.randint(0, 256, size=(num_images, 10, 10, 3), dtype=np.uint8)
+
+    targets_io = io.BytesIO()
+    with h5py.File(targets_io, "w") as f:
+        f["y"] = np.random.randint(0, 2, size=(num_images, 1, 1, 1), dtype=np.uint8)
+
+    # Create .gz compressed files
+    images_file = root / f"camelyonpatch_level_2_split_{split}_x.h5.gz"
+    targets_file = root / f"camelyonpatch_level_2_split_{split}_y.h5.gz"
+    for compressed_file_name, uncompressed_file_io in ((images_file, images_io), (targets_file, targets_io)):
+        compressed_data = gzip.compress(uncompressed_file_io.getbuffer())
+        with open(compressed_file_name, "wb") as compressed_file:
+            compressed_file.write(compressed_data)
+
+    return num_images
+
+
+@register_mock(name="stanford-cars", configs=combinations_grid(split=("train", "test")))
+def stanford_cars(root, config):
+    import scipy.io as io
+    from numpy.core.records import fromarrays
+
+    split = config["split"]
+    num_samples = {"train": 5, "test": 7}[split]
+    num_categories = 3
+
+    if split == "train":
+        images_folder_name = "cars_train"
+        devkit = root / "devkit"
+        devkit.mkdir()
+        annotations_mat_path = devkit / "cars_train_annos.mat"
+    else:
+        images_folder_name = "cars_test"
+        annotations_mat_path = root / "cars_test_annos_withlabels.mat"
+
+    create_image_folder(
+        root=root,
+        name=images_folder_name,
+        file_name_fn=lambda image_index: f"{image_index:5d}.jpg",
+        num_examples=num_samples,
+    )
+
+    make_tar(root, f"cars_{split}.tgz", images_folder_name)
+    bbox = np.random.randint(1, 200, num_samples, dtype=np.uint8)
+    classes = np.random.randint(1, num_categories + 1, num_samples, dtype=np.uint8)
+    fnames = [f"{i:5d}.jpg" for i in range(num_samples)]
+    rec_array = fromarrays(
+        [bbox, bbox, bbox, bbox, classes, fnames],
+        names=["bbox_x1", "bbox_y1", "bbox_x2", "bbox_y2", "class", "fname"],
+    )
+
+    io.savemat(annotations_mat_path, {"annotations": rec_array})
+    if split == "train":
+        make_tar(root, "car_devkit.tgz", devkit, compression="gz")
+
+    return num_samples
+
+
+@register_mock(configs=combinations_grid(split=("train", "test")))
+def usps(root, config):
+    num_samples = {"train": 15, "test": 7}[config["split"]]
+
+    with bz2.open(root / f"usps{'.t' if not config['split'] == 'train' else ''}.bz2", "wb") as fh:
+        lines = []
+        for _ in range(num_samples):
+            label = make_tensor(1, low=1, high=11, dtype=torch.int)
+            values = make_tensor(256, low=-1, high=1, dtype=torch.float)
+            lines.append(
+                " ".join([f"{int(label)}", *(f"{idx}:{float(value):.6f}" for idx, value in enumerate(values, 1))])
+            )
+
+        fh.write("\n".join(lines).encode())
+
     return num_samples

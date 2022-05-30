@@ -412,14 +412,15 @@ class TestONNXExporter:
     def get_image(self, rel_path: str, size: Tuple[int, int]) -> torch.Tensor:
         import os
 
+        import torchvision.transforms._pil_constants as _pil_constants
         from PIL import Image
-        from torchvision import transforms
+        from torchvision.transforms import functional as F
 
         data_dir = os.path.join(os.path.dirname(__file__), "assets")
         path = os.path.join(data_dir, *rel_path.split("/"))
-        image = Image.open(path).convert("RGB").resize(size, Image.BILINEAR)
+        image = Image.open(path).convert("RGB").resize(size, _pil_constants.BILINEAR)
 
-        return transforms.ToTensor()(image)
+        return F.convert_image_dtype(F.pil_to_tensor(image))
 
     def get_test_images(self) -> Tuple[List[torch.Tensor], List[torch.Tensor]]:
         return (
@@ -430,7 +431,9 @@ class TestONNXExporter:
     def test_faster_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.faster_rcnn.fasterrcnn_resnet50_fpn(
+            weights=models.detection.faster_rcnn.FasterRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         # Test exported model on images of different size, or dummy input
@@ -486,7 +489,9 @@ class TestONNXExporter:
     def test_mask_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_image = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.mask_rcnn.maskrcnn_resnet50_fpn(
+            weights=models.detection.mask_rcnn.MaskRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         # Test exported model on images of different size, or dummy input
@@ -548,7 +553,9 @@ class TestONNXExporter:
     def test_keypoint_rcnn(self):
         images, test_images = self.get_test_images()
         dummy_images = [torch.ones(3, 100, 100) * 0.3]
-        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(pretrained=True, min_size=200, max_size=300)
+        model = models.detection.keypoint_rcnn.keypointrcnn_resnet50_fpn(
+            weights=models.detection.keypoint_rcnn.KeypointRCNN_ResNet50_FPN_Weights.DEFAULT, min_size=200, max_size=300
+        )
         model.eval()
         model(images)
         self.run_model(
@@ -570,7 +577,7 @@ class TestONNXExporter:
         )
 
     def test_shufflenet_v2_dynamic_axes(self):
-        model = models.shufflenet_v2_x0_5(pretrained=True)
+        model = models.shufflenet_v2_x0_5(weights=models.ShuffleNet_V2_X0_5_Weights.DEFAULT)
         dummy_input = torch.randn(1, 3, 224, 224, requires_grad=True)
         test_inputs = torch.cat([dummy_input, dummy_input, dummy_input], 0)
 

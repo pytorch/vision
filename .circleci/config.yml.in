@@ -146,7 +146,7 @@ commands:
         default: true
     steps:
       - pip_install:
-          args: --pre torch -f https://download.pytorch.org/whl/nightly/cpu/torch_nightly.html
+          args: --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu
           descr: Install PyTorch from nightly releases
       - pip_install:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
@@ -155,8 +155,11 @@ commands:
   install_prototype_dependencies:
     steps:
       - pip_install:
-          args: iopath git+https://github.com/pytorch/data
-          descr: Install prototype dependencies
+          args: iopath
+          descr: Install third-party dependencies
+      - pip_install:
+          args: --pre torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+          descr: Install torchdata from nightly releases
 
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
   # This command can be used if only a selection of tests need to be run, for ad-hoc files.
@@ -173,6 +176,26 @@ commands:
           command: pytest --junitxml=test-results/junit.xml -v --durations 20 <<parameters.file_or_dir>>
       - store_test_results:
           path: test-results
+
+  download_model_weights:
+    parameters:
+      extract_roots:
+        type: string
+        default: "torchvision/models"
+      background:
+        type: boolean
+        default: true
+    steps:
+      - apt_install:
+          args: parallel wget
+          descr: Install download utilitites
+      - run:
+          name: Download model weights
+          background: << parameters.background >>
+          command: |
+            mkdir -p ~/.cache/torch/hub/checkpoints
+            python scripts/collect_model_urls.py << parameters.extract_roots >> \
+                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
 
 binary_common: &binary_common
   parameters:
@@ -243,7 +266,7 @@ smoke_test_common: &smoke_test_common
 jobs:
   circleci_consistency:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - pip_install:
@@ -256,7 +279,7 @@ jobs:
 
   lint_python_and_config:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - pip_install:
@@ -275,7 +298,7 @@ jobs:
 
   lint_c:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - apt_install:
           args: libtinfo5
@@ -297,11 +320,8 @@ jobs:
 
   type_check_python:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
-      - apt_install:
-          args: libturbojpeg-dev
-          descr: Install additional system libraries
       - checkout
       - install_torchvision:
           editable: true
@@ -315,7 +335,7 @@ jobs:
 
   unittest_torchhub:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - install_torchvision
@@ -324,7 +344,7 @@ jobs:
 
   unittest_onnx:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - checkout
       - install_torchvision
@@ -334,30 +354,19 @@ jobs:
       - run_tests_selective:
           file_or_dir: test/test_onnx.py
 
-  unittest_prototype:
+  unittest_extended:
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     resource_class: xlarge
     steps:
       - checkout
-      - run:
-          name: Download model weights
-          background: true
-          command: |
-            sudo apt update -qy && sudo apt install -qy parallel wget
-            mkdir -p ~/.cache/torch/hub/checkpoints
-            python scripts/collect_model_urls.py torchvision/prototype/models \
-                | parallel -j0 'wget --no-verbose -O ~/.cache/torch/hub/checkpoints/`basename {}` {}\?source=ci'
+      - download_model_weights
       - install_torchvision
-      - install_prototype_dependencies
-      - pip_install:
-          args: scipy pycocotools
-          descr: Install optional dependencies
       - run:
-          name: Enable prototype tests
-          command: echo 'export PYTORCH_TEST_WITH_PROTOTYPE=1' >> $BASH_ENV
+          name: Enable extended tests
+          command: echo 'export PYTORCH_TEST_WITH_EXTENDED=1' >> $BASH_ENV
       - run_tests_selective:
-          file_or_dir: test/test_prototype_*.py
+          file_or_dir: test/test_extended_*.py
 
   binary_linux_wheel:
     <<: *binary_common
@@ -509,7 +518,7 @@ jobs:
   binary_android_build:
     <<: *torchvision_android_params
     docker:
-      - image: circleci/android:api-29-ndk
+      - image: cimg/android:2021.08-ndk
     resource_class: xlarge
     steps:
     - attach_workspace:
@@ -528,7 +537,7 @@ jobs:
   binary_android_upload:
     <<: *torchvision_android_params
     docker:
-      - image: circleci/android:api-29-ndk
+      - image: cimg/android:2021.08-ndk
     resource_class: xlarge
     steps:
     - attach_workspace:
@@ -587,7 +596,7 @@ jobs:
         description: "What whl subfolder to upload to, e.g., blank or cu100/ (trailing slash is important)"
         type: string
     docker:
-      - image: circleci/python:3.7
+      - image: cimg/python:3.7
     steps:
       - attach_workspace:
           at: ~/workspace
@@ -647,7 +656,7 @@ jobs:
 
   smoke_test_docker_image_build:
     machine:
-      image: ubuntu-1604:201903-01
+      image: ubuntu-2004:202104-01
     resource_class: large
     environment:
       image_name: torchvision/smoke_test
@@ -682,7 +691,6 @@ jobs:
             conda env remove -n python${PYTHON_VERSION} || true
             conda create -yn python${PYTHON_VERSION} python=${PYTHON_VERSION}
             conda activate python${PYTHON_VERSION}
-            conda install "Pillow>=5.3.0,!=8.3.*"
             conda install -v -y -c pytorch-nightly pytorch
             conda install -v -y $(ls ~/workspace/torchvision*.tar.bz2)
       - run:
@@ -758,7 +766,7 @@ jobs:
   unittest_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.medium
     environment:
       image_name: "pytorch/manylinux-cuda102"
@@ -848,7 +856,7 @@ jobs:
     executor:
       name: windows-gpu
     environment:
-      CUDA_VERSION: "11.1"
+      CUDA_VERSION: "11.3"
       PYTHON_VERSION: << parameters.python_version >>
     steps:
       - checkout
@@ -949,7 +957,7 @@ jobs:
   cmake_linux_gpu:
     <<: *binary_common
     machine:
-      image: ubuntu-1604-cuda-10.2:202012-01
+      image: ubuntu-2004-cuda-11.4:202110-01
     resource_class: gpu.nvidia.small
     environment:
       PYTHON_VERSION: << parameters.python_version >>
@@ -1011,12 +1019,13 @@ jobs:
   build_docs:
     <<: *binary_common
     docker:
-      - image: "pytorch/manylinux-cuda100"
+      - image: cimg/python:3.7
     resource_class: 2xlarge+
     steps:
       - attach_workspace:
           at: ~/workspace
       - checkout
+      - download_model_weights
       - run:
           name: Setup
           command: .circleci/unittest/linux/scripts/setup_env.sh
@@ -1069,7 +1078,8 @@ jobs:
             # Don't use "checkout" step since it uses ssh, which cannot git push
             # https://circleci.com/docs/2.0/configuration-reference/#checkout
             set -ex
-            tag=${CIRCLE_TAG:1:5}
+            # Change v1.12.1rc1 into 1.12 (only major.minor)
+            tag=$(echo $CIRCLE_TAG | sed -e 's/v*\([0-9]*\.[0-9]*\).*/\1/')
             target=${tag:-main}
             ~/workspace/.circleci/build_docs/commit_docs.sh ~/workspace $target
 
@@ -1092,7 +1102,7 @@ workflows:
     jobs:
       - unittest_torchhub
       - unittest_onnx
-      - unittest_prototype
+      - unittest_extended
       {{ unittest_workflows() }}
 
   cmake:

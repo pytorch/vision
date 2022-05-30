@@ -38,7 +38,7 @@ def _register_custom_op():
         # ONNX doesn't support negative sampling_ratio
         if sampling_ratio < 0:
             warnings.warn(
-                "ONNX doesn't support negative sampling ratio, therefore is is set to 0 in order to be exported."
+                "ONNX doesn't support negative sampling ratio, therefore is set to 0 in order to be exported."
             )
             sampling_ratio = 0
         return g.op(

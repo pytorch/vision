@@ -1,35 +1,27 @@
 import enum
-import functools
-import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 
-import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Shuffler,
-    Filter,
-    IterKeyZipper,
-    Demultiplexer,
-    LineReader,
-    CSVParser,
-)
+from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, LineReader, CSVParser
 from torchvision.prototype.datasets.utils import (
     Dataset,
-    DatasetConfig,
-    DatasetInfo,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     hint_sharding,
     path_comparator,
     getitem,
+    read_categories_file,
+    hint_shuffling,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
+
+from .._api import register_dataset, register_info
+
+
+NAME = "dtd"
 
 
 class DTDDemux(enum.IntEnum):
@@ -38,23 +30,40 @@ class DTDDemux(enum.IntEnum):
     IMAGES = 2
 
 
-class DTD(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "dtd",
-            type=DatasetType.IMAGE,
-            homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
-            valid_options=dict(
-                split=("train", "test", "val"),
-                fold=tuple(str(fold) for fold in range(1, 11)),
-            ),
-        )
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    return dict(categories=read_categories_file(NAME))
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
+
+@register_dataset(NAME)
+class DTD(Dataset):
+    """DTD Dataset.
+    homepage="https://www.robots.ox.ac.uk/~vgg/data/dtd/",
+    """
+
+    def __init__(
+        self,
+        root: Union[str, pathlib.Path],
+        *,
+        split: str = "train",
+        fold: int = 1,
+        skip_validation_check: bool = False,
+    ) -> None:
+        self._split = self._verify_str_arg(split, "split", {"train", "val", "test"})
+
+        if not (1 <= fold <= 10):
+            raise ValueError(f"The fold parameter should be an integer in [1, 10]. Got {fold}")
+        self._fold = fold
+
+        self._categories = _info()["categories"]
+
+        super().__init__(root, skip_integrity_check=skip_validation_check)
+
+    def _resources(self) -> List[OnlineResource]:
         archive = HttpResource(
             "https://www.robots.ox.ac.uk/~vgg/data/dtd/download/dtd-r1.0.1.tar.gz",
             sha256="e42855a52a4950a3b59612834602aa253914755c95b0cff9ead6d07395f8e205",
-            decompress=True,
+            preprocess="decompress",
         )
         return [archive]
 
@@ -72,14 +81,10 @@ class DTD(Dataset):
 
     def _image_key_fn(self, data: Tuple[str, Any]) -> str:
         path = pathlib.Path(data[0])
-        return str(path.relative_to(path.parents[1]))
+        # The split files contain hardcoded posix paths for the images, e.g. banded/banded_0001.jpg
+        return str(path.relative_to(path.parents[1]).as_posix())
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[Tuple[str, List[str]], Tuple[str, io.IOBase]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[str, List[str]], Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         (_, joint_categories_data), image_data = data
         _, *joint_categories = joint_categories_data
         path, buffer = image_data
@@ -88,27 +93,21 @@ class DTD(Dataset):
 
         return dict(
             joint_categories={category for category in joint_categories if category},
-            label=Label(self.info.categories.index(category), category=category),
+            label=Label.from_category(category, categories=self._categories),
             path=path,
-            image=decoder(buffer) if decoder else buffer,
+            image=EncodedImage.from_file(buffer),
         )
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
 
         splits_dp, joint_categories_dp, images_dp = Demultiplexer(
             archive_dp, 3, self._classify_archive, drop_none=True, buffer_size=INFINITE_BUFFER_SIZE
         )
 
-        splits_dp = Filter(splits_dp, path_comparator("name", f"{config.split}{config.fold}.txt"))
+        splits_dp = Filter(splits_dp, path_comparator("name", f"{self._split}{self._fold}.txt"))
         splits_dp = LineReader(splits_dp, decode=True, return_path=False)
-        splits_dp = Shuffler(splits_dp, buffer_size=INFINITE_BUFFER_SIZE)
+        splits_dp = hint_shuffling(splits_dp)
         splits_dp = hint_sharding(splits_dp)
 
         joint_categories_dp = CSVParser(joint_categories_dp, delimiter=" ")
@@ -127,15 +126,18 @@ class DTD(Dataset):
             ref_key_fn=self._image_key_fn,
             buffer_size=INFINITE_BUFFER_SIZE,
         )
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
 
     def _filter_images(self, data: Tuple[str, Any]) -> bool:
         return self._classify_archive(data) == DTDDemux.IMAGES
 
-    def _generate_categories(self, root: pathlib.Path) -> List[str]:
-        resources = self.resources(self.default_config)
+    def _generate_categories(self) -> List[str]:
+        resources = self._resources()
 
-        dp = resources[0].load(root)
+        dp = resources[0].load(self._root)
         dp = Filter(dp, self._filter_images)
 
         return sorted({pathlib.Path(path).parent.name for path, _ in dp})
+
+    def __len__(self) -> int:
+        return 1_880  # All splits have the same length

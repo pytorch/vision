@@ -22,6 +22,7 @@ class OpticalFlowPresetEval(torch.nn.Module):
 class OpticalFlowPresetTrain(torch.nn.Module):
     def __init__(
         self,
+        *,
         # RandomResizeAndCrop params
         crop_size,
         min_scale=-0.2,

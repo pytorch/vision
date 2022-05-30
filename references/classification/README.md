@@ -43,7 +43,7 @@ Since it expects tensors with a size of N x 3 x 299 x 299, to validate the model
 
 ```
 torchrun --nproc_per_node=8 train.py --model inception_v3\
-      --val-resize-size 342 --val-crop-size 299 --train-crop-size 299 --test-only --pretrained
+      --test-only --weights Inception_V3_Weights.IMAGENET1K_V1
 ```
 
 ### ResNet
@@ -88,7 +88,7 @@ Then we averaged the parameters of the last 3 checkpoints that improved the Acc@
 and [#3354](https://github.com/pytorch/vision/pull/3354) for details.
 
 
-### EfficientNet
+### EfficientNet-V1
 
 The weights of the B0-B4 variants are ported from Ross Wightman's [timm repo](https://github.com/rwightman/pytorch-image-models/blob/01cb46a9a50e3ba4be167965b5764e9702f09b30/timm/models/efficientnet.py#L95-L108).
 
@@ -96,23 +96,35 @@ The weights of the B5-B7 variants are ported from Luke Melas' [EfficientNet-PyTo
 
 All models were trained using Bicubic interpolation and each have custom crop and resize sizes. To validate the models use the following commands:
 ```
-torchrun --nproc_per_node=8 train.py --model efficientnet_b0 --interpolation bicubic\
-     --val-resize-size 256 --val-crop-size 224 --train-crop-size 224 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b1 --interpolation bicubic\
-      --val-resize-size 256 --val-crop-size 240 --train-crop-size 240 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b2 --interpolation bicubic\
-      --val-resize-size 288 --val-crop-size 288 --train-crop-size 288 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b3 --interpolation bicubic\
-      --val-resize-size 320 --val-crop-size 300 --train-crop-size 300 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b4 --interpolation bicubic\
-      --val-resize-size 384 --val-crop-size 380 --train-crop-size 380 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b5 --interpolation bicubic\
-      --val-resize-size 456 --val-crop-size 456 --train-crop-size 456 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b6 --interpolation bicubic\
-      --val-resize-size 528 --val-crop-size 528 --train-crop-size 528 --test-only --pretrained
-torchrun --nproc_per_node=8 train.py --model efficientnet_b7 --interpolation bicubic\
-      --val-resize-size 600 --val-crop-size 600 --train-crop-size 600 --test-only --pretrained
+torchrun --nproc_per_node=8 train.py --model efficientnet_b0 --test-only --weights EfficientNet_B0_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b1 --test-only --weights EfficientNet_B1_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b2 --test-only --weights EfficientNet_B2_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b3 --test-only --weights EfficientNet_B3_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b4 --test-only --weights EfficientNet_B4_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b5 --test-only --weights EfficientNet_B5_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b6 --test-only --weights EfficientNet_B6_Weights.IMAGENET1K_V1
+torchrun --nproc_per_node=8 train.py --model efficientnet_b7 --test-only --weights EfficientNet_B7_Weights.IMAGENET1K_V1
 ```
+
+
+### EfficientNet-V2
+```
+torchrun --nproc_per_node=8 train.py \
+--model $MODEL --batch-size 128 --lr 0.5 --lr-scheduler cosineannealinglr \
+--lr-warmup-epochs 5 --lr-warmup-method linear --auto-augment ta_wide --epochs 600 --random-erase 0.1 \
+--label-smoothing 0.1 --mixup-alpha 0.2 --cutmix-alpha 1.0 --weight-decay 0.00002 --norm-weight-decay 0.0 \
+--train-crop-size $TRAIN_SIZE --model-ema --val-crop-size $EVAL_SIZE --val-resize-size $EVAL_SIZE \
+--ra-sampler --ra-reps 4
+```
+Here `$MODEL` is one of `efficientnet_v2_s` and `efficientnet_v2_m`. 
+Note that the Small variant had a `$TRAIN_SIZE` of `300` and a `$EVAL_SIZE` of `384`, while the Medium `384` and `480` respectively.
+
+Note that the above command corresponds to training on a single node with 8 GPUs.
+For generatring the pre-trained weights, we trained with 4 nodes, each with 8 GPUs (for a total of 32 GPUs),
+and `--batch_size 32`.
+
+The weights of the Large variant are ported from the original paper rather than trained from scratch. See the `EfficientNet_V2_L_Weights` entry for their exact preprocessing transforms.
+
 
 ### RegNet
 
@@ -201,15 +213,42 @@ and `--batch_size 64`.
 ### ConvNeXt
 ```
 torchrun --nproc_per_node=8 train.py\ 
---model convnext_tiny --batch-size 128 --opt adamw --lr 1e-3 --lr-scheduler cosineannealinglr \ 
+--model $MODEL --batch-size 128 --opt adamw --lr 1e-3 --lr-scheduler cosineannealinglr \ 
 --lr-warmup-epochs 5 --lr-warmup-method linear --auto-augment ta_wide --epochs 600 --random-erase 0.1 \ 
 --label-smoothing 0.1 --mixup-alpha 0.2 --cutmix-alpha 1.0 --weight-decay 0.05 --norm-weight-decay 0.0 \
---train-crop-size 176 --model-ema --val-resize-size 236 --ra-sampler --ra-reps 4
+--train-crop-size 176 --model-ema --val-resize-size 232 --ra-sampler --ra-reps 4
 ```
+Here `$MODEL` is one of `convnext_tiny`, `convnext_small`, `convnext_base` and `convnext_large`. Note that each variant had its `--val-resize-size` optimized in a post-training step, see their `Weights` entry for their exact value.
 
 Note that the above command corresponds to training on a single node with 8 GPUs.
 For generatring the pre-trained weights, we trained with 2 nodes, each with 8 GPUs (for a total of 16 GPUs),
 and `--batch_size 64`.
+
+
+### SwinTransformer
+```
+torchrun --nproc_per_node=8 train.py\ 
+--model $MODEL --epochs 300 --batch-size 128 --opt adamw --lr 0.001 --weight-decay 0.05 --norm-weight-decay 0.0  --bias-weight-decay 0.0 --transformer-embedding-decay 0.0 --lr-scheduler cosineannealinglr --lr-min 0.00001 --lr-warmup-method linear  --lr-warmup-epochs 20 --lr-warmup-decay 0.01 --amp --label-smoothing 0.1 --mixup-alpha 0.8 --clip-grad-norm 5.0 --cutmix-alpha 1.0 --random-erase 0.25 --interpolation bicubic --auto-augment ta_wide --model-ema --ra-sampler --ra-reps 4  --val-resize-size 224
+```
+Here `$MODEL` is one of `swin_t`, `swin_s` or `swin_b`.
+Note that `--val-resize-size` was optimized in a post-training step, see their `Weights` entry for the exact value.
+
+
+
+
+### ShuffleNet V2
+```
+torchrun --nproc_per_node=8 train.py \
+--batch-size=128 \
+--lr=0.5 --lr-scheduler=cosineannealinglr --lr-warmup-epochs=5 --lr-warmup-method=linear \
+--auto-augment=ta_wide --epochs=600 --random-erase=0.1 --weight-decay=0.00002 \
+--norm-weight-decay=0.0 --label-smoothing=0.1 --mixup-alpha=0.2 --cutmix-alpha=1.0 \
+--train-crop-size=176 --model-ema --val-resize-size=232 --ra-sampler --ra-reps=4
+```
+Here `$MODEL` is either `shufflenet_v2_x1_5` or `shufflenet_v2_x2_0`.
+
+The models `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0` were contributed by the community. See [PR-849](https://github.com/pytorch/vision/pull/849#issuecomment-483391686) for details.
+
 
 ## Mixed precision training
 Automatic Mixed Precision (AMP) training on GPU for Pytorch can be enabled with the [torch.cuda.amp](https://pytorch.org/docs/stable/amp.html?highlight=amp#module-torch.cuda.amp).
@@ -237,6 +276,21 @@ For all post training quantized models, the settings are:
 python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' --model='$MODEL'
 ```
 Here `$MODEL` is one of `googlenet`, `inception_v3`, `resnet18`, `resnet50`, `resnext101_32x8d`, `shufflenet_v2_x0_5` and `shufflenet_v2_x1_0`.
+
+### Quantized ShuffleNet V2
+
+Here are commands that we use to quantized the `shufflenet_v2_x1_5` and `shufflenet_v2_x2_0` models.
+```
+# For shufflenet_v2_x1_5
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+    --model=shufflenet_v2_x1_5 --weights="ShuffleNet_V2_X1_5_Weights.IMAGENET1K_V1" \
+    --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
+
+# For shufflenet_v2_x2_0
+python train_quantization.py --device='cpu' --post-training-quantize --backend='fbgemm' \
+    --model=shufflenet_v2_x2_0 --weights="ShuffleNet_V2_X2_0_Weights.IMAGENET1K_V1" \
+    --train-crop-size 176 --val-resize-size 232 --data-path /datasets01_ontap/imagenet_full_size/061417/
+```
 
 ### QAT MobileNetV2
 

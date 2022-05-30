@@ -442,11 +442,14 @@ class QMNIST(MNIST):
 
     def _load_data(self):
         data = read_sn3_pascalvincent_tensor(self.images_file)
-        assert data.dtype == torch.uint8
-        assert data.ndimension() == 3
+        if data.dtype != torch.uint8:
+            raise TypeError(f"data should be of dtype torch.uint8 instead of {data.dtype}")
+        if data.ndimension() != 3:
+            raise ValueError("data should have 3 dimensions instead of {data.ndimension()}")
 
         targets = read_sn3_pascalvincent_tensor(self.labels_file).long()
-        assert targets.ndimension() == 2
+        if targets.ndimension() != 2:
+            raise ValueError(f"targets should have 2 dimensions instead of {targets.ndimension()}")
 
         if self.what == "test10k":
             data = data[0:10000, :, :].clone()
@@ -530,13 +533,17 @@ def read_sn3_pascalvincent_tensor(path: str, strict: bool = True) -> torch.Tenso
 
 def read_label_file(path: str) -> torch.Tensor:
     x = read_sn3_pascalvincent_tensor(path, strict=False)
-    assert x.dtype == torch.uint8
-    assert x.ndimension() == 1
+    if x.dtype != torch.uint8:
+        raise TypeError(f"x should be of dtype torch.uint8 instead of {x.dtype}")
+    if x.ndimension() != 1:
+        raise ValueError(f"x should have 1 dimension instead of {x.ndimension()}")
     return x.long()
 
 
 def read_image_file(path: str) -> torch.Tensor:
     x = read_sn3_pascalvincent_tensor(path, strict=False)
-    assert x.dtype == torch.uint8
-    assert x.ndimension() == 3
+    if x.dtype != torch.uint8:
+        raise TypeError(f"x should be of dtype torch.uint8 instead of {x.dtype}")
+    if x.ndimension() != 3:
+        raise ValueError(f"x should have 3 dimension instead of {x.ndimension()}")
     return x

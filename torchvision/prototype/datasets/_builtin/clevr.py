@@ -1,18 +1,8 @@
-import functools
-import io
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Any, Dict, List, Optional, Tuple, BinaryIO, Union
 
-import torch
 from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, JsonParser, UnBatcher
-from torchvision.prototype.datasets.utils import (
-    Dataset,
-    DatasetConfig,
-    DatasetInfo,
-    HttpResource,
-    OnlineResource,
-    DatasetType,
-)
+from torchvision.prototype.datasets.utils import Dataset, HttpResource, OnlineResource
 from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     hint_sharding,
@@ -21,19 +11,32 @@ from torchvision.prototype.datasets.utils._internal import (
     path_accessor,
     getitem,
 )
-from torchvision.prototype.features import Label
+from torchvision.prototype.features import Label, EncodedImage
+
+from .._api import register_dataset, register_info
+
+NAME = "clevr"
 
 
+@register_info(NAME)
+def _info() -> Dict[str, Any]:
+    return dict()
+
+
+@register_dataset(NAME)
 class CLEVR(Dataset):
-    def _make_info(self) -> DatasetInfo:
-        return DatasetInfo(
-            "clevr",
-            type=DatasetType.IMAGE,
-            homepage="https://cs.stanford.edu/people/jcjohns/clevr/",
-            valid_options=dict(split=("train", "val", "test")),
-        )
+    """
+    - **homepage**: https://cs.stanford.edu/people/jcjohns/clevr/
+    """
 
-    def resources(self, config: DatasetConfig) -> List[OnlineResource]:
+    def __init__(
+        self, root: Union[str, pathlib.Path], *, split: str = "train", skip_integrity_check: bool = False
+    ) -> None:
+        self._split = self._verify_str_arg(split, "split", ("train", "val", "test"))
+
+        super().__init__(root, skip_integrity_check=skip_integrity_check)
+
+    def _resources(self) -> List[OnlineResource]:
         archive = HttpResource(
             "https://dl.fbaipublicfiles.com/clevr/CLEVR_v1.0.zip",
             sha256="5cd61cf1096ed20944df93c9adb31e74d189b8459a94f54ba00090e5c59936d1",
@@ -53,31 +56,20 @@ class CLEVR(Dataset):
         key, _ = data
         return key == "scenes"
 
-    def _add_empty_anns(self, data: Tuple[str, io.IOBase]) -> Tuple[Tuple[str, io.IOBase], None]:
+    def _add_empty_anns(self, data: Tuple[str, BinaryIO]) -> Tuple[Tuple[str, BinaryIO], None]:
         return data, None
 
-    def _collate_and_decode_sample(
-        self,
-        data: Tuple[Tuple[str, io.IOBase], Optional[Dict[str, Any]]],
-        *,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> Dict[str, Any]:
+    def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Optional[Dict[str, Any]]]) -> Dict[str, Any]:
         image_data, scenes_data = data
         path, buffer = image_data
 
         return dict(
             path=path,
-            image=decoder(buffer) if decoder else buffer,
+            image=EncodedImage.from_file(buffer),
             label=Label(len(scenes_data["objects"])) if scenes_data else None,
         )
 
-    def _make_datapipe(
-        self,
-        resource_dps: List[IterDataPipe],
-        *,
-        config: DatasetConfig,
-        decoder: Optional[Callable[[io.IOBase], torch.Tensor]],
-    ) -> IterDataPipe[Dict[str, Any]]:
+    def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:
         archive_dp = resource_dps[0]
         images_dp, scenes_dp = Demultiplexer(
             archive_dp,
@@ -87,12 +79,12 @@ class CLEVR(Dataset):
             buffer_size=INFINITE_BUFFER_SIZE,
         )
 
-        images_dp = Filter(images_dp, path_comparator("parent.name", config.split))
-        images_dp = hint_sharding(images_dp)
+        images_dp = Filter(images_dp, path_comparator("parent.name", self._split))
         images_dp = hint_shuffling(images_dp)
+        images_dp = hint_sharding(images_dp)
 
-        if config.split != "test":
-            scenes_dp = Filter(scenes_dp, path_comparator("name", f"CLEVR_{config.split}_scenes.json"))
+        if self._split != "test":
+            scenes_dp = Filter(scenes_dp, path_comparator("name", f"CLEVR_{self._split}_scenes.json"))
             scenes_dp = JsonParser(scenes_dp)
             scenes_dp = Mapper(scenes_dp, getitem(1, "scenes"))
             scenes_dp = UnBatcher(scenes_dp)
@@ -107,4 +99,7 @@ class CLEVR(Dataset):
         else:
             dp = Mapper(images_dp, self._add_empty_anns)
 
-        return Mapper(dp, functools.partial(self._collate_and_decode_sample, decoder=decoder))
+        return Mapper(dp, self._prepare_sample)
+
+    def __len__(self) -> int:
+        return 70_000 if self._split == "train" else 15_000

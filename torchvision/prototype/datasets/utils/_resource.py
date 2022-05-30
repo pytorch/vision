@@ -2,8 +2,7 @@ import abc
 import hashlib
 import itertools
 import pathlib
-import warnings
-from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
+from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn, Set
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
@@ -11,8 +10,8 @@ from torchdata.datapipes.iter import (
     FileLister,
     FileOpener,
     IterDataPipe,
-    ZipArchiveReader,
-    TarArchiveReader,
+    ZipArchiveLoader,
+    TarArchiveLoader,
     RarArchiveLoader,
 )
 from torchvision.datasets.utils import (
@@ -21,7 +20,10 @@ from torchvision.datasets.utils import (
     extract_archive,
     _decompress,
     download_file_from_google_drive,
+    _get_redirect_url,
+    _get_google_drive_file_id,
 )
+from typing_extensions import Literal
 
 
 class OnlineResource(abc.ABC):
@@ -30,37 +32,32 @@ class OnlineResource(abc.ABC):
         *,
         file_name: str,
         sha256: Optional[str] = None,
-        decompress: bool = False,
-        extract: bool = False,
-        preprocess: Optional[Callable[[pathlib.Path], pathlib.Path]] = None,
-        loader: Optional[Callable[[pathlib.Path], IterDataPipe[Tuple[str, IO]]]] = None,
+        preprocess: Optional[Union[Literal["decompress", "extract"], Callable[[pathlib.Path], None]]] = None,
     ) -> None:
         self.file_name = file_name
         self.sha256 = sha256
 
-        if preprocess and (decompress or extract):
-            warnings.warn("The parameters 'decompress' and 'extract' are ignored when 'preprocess' is passed.")
-        elif extract:
-            preprocess = self._extract
-        elif decompress:
-            preprocess = self._decompress
+        if isinstance(preprocess, str):
+            if preprocess == "decompress":
+                preprocess = self._decompress
+            elif preprocess == "extract":
+                preprocess = self._extract
+            else:
+                raise ValueError(
+                    f"Only `'decompress'` or `'extract'` are valid if `preprocess` is passed as string,"
+                    f"but got {preprocess} instead."
+                )
         self._preprocess = preprocess
 
-        if loader is None:
-            loader = self._default_loader
-        self._loader = loader
+    @staticmethod
+    def _extract(file: pathlib.Path) -> None:
+        extract_archive(str(file), to_path=str(file).replace("".join(file.suffixes), ""), remove_finished=False)
 
     @staticmethod
-    def _extract(file: pathlib.Path) -> pathlib.Path:
-        return pathlib.Path(
-            extract_archive(str(file), to_path=str(file).replace("".join(file.suffixes), ""), remove_finished=False)
-        )
+    def _decompress(file: pathlib.Path) -> None:
+        _decompress(str(file), remove_finished=True)
 
-    @staticmethod
-    def _decompress(file: pathlib.Path) -> pathlib.Path:
-        return pathlib.Path(_decompress(str(file), remove_finished=True))
-
-    def _default_loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
+    def _loader(self, path: pathlib.Path) -> IterDataPipe[Tuple[str, IO]]:
         if path.is_dir():
             return FileOpener(FileLister(str(path), recursive=True), mode="rb")
 
@@ -73,8 +70,8 @@ class OnlineResource(abc.ABC):
         return dp
 
     _ARCHIVE_LOADERS = {
-        ".tar": TarArchiveReader,
-        ".zip": ZipArchiveReader,
+        ".tar": TarArchiveLoader,
+        ".zip": ZipArchiveLoader,
         ".rar": RarArchiveLoader,
     }
 
@@ -92,22 +89,38 @@ class OnlineResource(abc.ABC):
     ) -> IterDataPipe[Tuple[str, IO]]:
         root = pathlib.Path(root)
         path = root / self.file_name
+
         # Instead of the raw file, there might also be files with fewer suffixes after decompression or directories
-        # with no suffixes at all. Thus, we look for all paths that share the same name without suffixes as the raw
-        # file.
-        path_candidates = {file for file in path.parent.glob(path.name.replace("".join(path.suffixes), "") + "*")}
-        # If we don't find anything, we try to download the raw file.
-        if not path_candidates:
-            path_candidates = {self.download(root, skip_integrity_check=skip_integrity_check)}
-        # If the only thing we find is the raw file, we use it and optionally perform some preprocessing steps.
-        if path_candidates == {path}:
-            if self._preprocess:
-                path = self._preprocess(path)
-        # Otherwise we use the path with the fewest suffixes. This gives us the extracted > decompressed > raw priority
-        # that we want.
-        else:
-            path = min(path_candidates, key=lambda path: len(path.suffixes))
-        return self._loader(path)
+        # with no suffixes at all. `pathlib.Path().stem` will only give us the name with the last suffix removed, which
+        # is not sufficient for files with multiple suffixes, e.g. foo.tar.gz.
+        stem = path.name.replace("".join(path.suffixes), "")
+
+        def find_candidates() -> Set[pathlib.Path]:
+            # Although it looks like we could glob for f"{stem}*" to find the file candidates as well as the folder
+            # candidate simultaneously, that would also pick up other files that share the same prefix. For example, the
+            # test split of the stanford-cars dataset uses the files
+            # - cars_test.tgz
+            # - cars_test_annos_withlabels.mat
+            # Globbing for `"cars_test*"` picks up both.
+            candidates = {file for file in path.parent.glob(f"{stem}.*")}
+            folder_candidate = path.parent / stem
+            if folder_candidate.exists():
+                candidates.add(folder_candidate)
+
+            return candidates
+
+        candidates = find_candidates()
+
+        if not candidates:
+            self.download(root, skip_integrity_check=skip_integrity_check)
+            if self._preprocess is not None:
+                self._preprocess(path)
+            candidates = find_candidates()
+
+        # We use the path with the fewest suffixes. This gives us the
+        # extracted > decompressed > raw
+        # priority that we want for the best I/O performance.
+        return self._loader(min(candidates, key=lambda candidate: len(candidate.suffixes)))
 
     @abc.abstractmethod
     def _download(self, root: pathlib.Path) -> None:
@@ -141,9 +154,40 @@ class HttpResource(OnlineResource):
         super().__init__(file_name=file_name or pathlib.Path(urlparse(url).path).name, **kwargs)
         self.url = url
         self.mirrors = mirrors
+        self._resolved = False
+
+    def resolve(self) -> OnlineResource:
+        if self._resolved:
+            return self
+
+        redirect_url = _get_redirect_url(self.url)
+        if redirect_url == self.url:
+            self._resolved = True
+            return self
+
+        meta = {
+            attr.lstrip("_"): getattr(self, attr)
+            for attr in (
+                "file_name",
+                "sha256",
+                "_preprocess",
+            )
+        }
+
+        gdrive_id = _get_google_drive_file_id(redirect_url)
+        if gdrive_id:
+            return GDriveResource(gdrive_id, **meta)
+
+        http_resource = HttpResource(redirect_url, **meta)
+        http_resource._resolved = True
+        return http_resource
 
     def _download(self, root: pathlib.Path) -> None:
+        if not self._resolved:
+            return self.resolve()._download(root)
+
         for url in itertools.chain((self.url,), self.mirrors):
+
             try:
                 download_url(url, str(root), filename=self.file_name, md5=None)
             # TODO: make this more precise
@@ -172,9 +216,9 @@ class ManualDownloadResource(OnlineResource):
 
     def _download(self, root: pathlib.Path) -> NoReturn:
         raise RuntimeError(
-            f"The file {self.file_name} cannot be downloaded automatically. "
-            f"Please follow the instructions below and place it in {root}\n\n"
-            f"{self.instructions}"
+            f"The file {self.file_name} was not found, and cannot be downloaded automatically.\n\n"
+            f"{self.instructions.strip()}\n\n"
+            f"Once it is downloaded, please place the file in {root}."
         )
 
 

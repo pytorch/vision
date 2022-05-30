@@ -2,6 +2,8 @@ import colorsys
 import itertools
 import math
 import os
+import re
+from functools import partial
 from typing import Sequence
 
 import numpy as np
@@ -23,12 +25,11 @@ from common_utils import (
 )
 from torchvision.transforms import InterpolationMode
 
-
 NEAREST, BILINEAR, BICUBIC = InterpolationMode.NEAREST, InterpolationMode.BILINEAR, InterpolationMode.BICUBIC
 
 
 @pytest.mark.parametrize("device", cpu_and_gpu())
-@pytest.mark.parametrize("fn", [F.get_image_size, F.get_image_num_channels])
+@pytest.mark.parametrize("fn", [F.get_image_size, F.get_image_num_channels, F.get_dimensions])
 def test_image_sizes(device, fn):
     script_F = torch.jit.script(fn)
 
@@ -66,7 +67,7 @@ class TestRotate:
     IMG_W = 26
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
-    @pytest.mark.parametrize("height, width", [(26, IMG_W), (32, IMG_W)])
+    @pytest.mark.parametrize("height, width", [(7, 33), (26, IMG_W), (32, IMG_W)])
     @pytest.mark.parametrize(
         "center",
         [
@@ -76,7 +77,7 @@ class TestRotate:
         ],
     )
     @pytest.mark.parametrize("dt", ALL_DTYPES)
-    @pytest.mark.parametrize("angle", range(-180, 180, 17))
+    @pytest.mark.parametrize("angle", range(-180, 180, 34))
     @pytest.mark.parametrize("expand", [True, False])
     @pytest.mark.parametrize(
         "fill",
@@ -141,7 +142,13 @@ class TestRotate:
     def test_rotate_deprecation_resample(self):
         tensor, _ = _create_data(26, 26)
         # assert deprecation warning and non-BC
-        with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "The parameter 'resample' is deprecated since 0.12 and will be removed 0.14. "
+                "Please use 'interpolation' instead."
+            ),
+        ):
             res1 = F.rotate(tensor, 45, resample=2)
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)
@@ -149,7 +156,13 @@ class TestRotate:
     def test_rotate_interpolation_type(self):
         tensor, _ = _create_data(26, 26)
         # assert changed type warning
-        with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+                "Please use InterpolationMode enum."
+            ),
+        ):
             res1 = F.rotate(tensor, 45, interpolation=2)
             res2 = F.rotate(tensor, 45, interpolation=BILINEAR)
             assert_equal(res1, res2)
@@ -365,18 +378,36 @@ class TestAffine:
         tensor, pil_img = _create_data(26, 26, device=device)
 
         # assert deprecation warning and non-BC
-        with pytest.warns(UserWarning, match=r"Argument resample is deprecated and will be removed"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "The parameter 'resample' is deprecated since 0.12 and will be removed in 0.14. "
+                "Please use 'interpolation' instead."
+            ),
+        ):
             res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], resample=2)
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             assert_equal(res1, res2)
 
         # assert changed type warning
-        with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+                "Please use InterpolationMode enum."
+            ),
+        ):
             res1 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=2)
             res2 = F.affine(tensor, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], interpolation=BILINEAR)
             assert_equal(res1, res2)
 
-        with pytest.warns(UserWarning, match=r"Argument fillcolor is deprecated and will be removed"):
+        with pytest.warns(
+            UserWarning,
+            match=re.escape(
+                "The parameter 'fillcolor' is deprecated since 0.12 and will be removed in 0.14. "
+                "Please use 'fill' instead."
+            ),
+        ):
             res1 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fillcolor=10)
             res2 = F.affine(pil_img, 45, translate=[0, 0], scale=1.0, shear=[0.0, 0.0], fill=10)
             # we convert the PIL images to numpy as assert_equal doesn't work on PIL images.
@@ -485,7 +516,13 @@ def test_perspective_interpolation_warning():
     spoints = [[0, 0], [33, 0], [33, 25], [0, 25]]
     epoints = [[3, 2], [32, 3], [30, 24], [2, 25]]
     tensor = torch.randint(0, 256, (3, 26, 26))
-    with pytest.warns(UserWarning, match="Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         res1 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=2)
         res2 = F.perspective(tensor, startpoints=spoints, endpoints=epoints, interpolation=BILINEAR)
         assert_equal(res1, res2)
@@ -565,7 +602,13 @@ def test_resize_asserts(device):
     tensor, pil_img = _create_data(26, 36, device=device)
 
     # assert changed type warning
-    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+    with pytest.warns(
+        UserWarning,
+        match=re.escape(
+            "Argument 'interpolation' of type int is deprecated since 0.13 and will be removed in 0.15. "
+            "Please use InterpolationMode enum."
+        ),
+    ):
         res1 = F.resize(tensor, size=32, interpolation=2)
 
     res2 = F.resize(tensor, size=32, interpolation=BILINEAR)
@@ -637,11 +680,13 @@ def test_resize_antialias(device, dt, size, interpolation):
 def test_assert_resize_antialias(interpolation):
 
     # Checks implementation on very large scales
-    # and catch TORCH_CHECK inside interpolate_aa_kernels.cu
+    # and catch TORCH_CHECK inside PyTorch implementation
     torch.manual_seed(12)
-    tensor, pil_img = _create_data(1000, 1000, device="cuda")
+    tensor, _ = _create_data(1000, 1000, device="cuda")
 
-    with pytest.raises(RuntimeError, match=r"Max supported scale factor is"):
+    # Error message is not yet updated in pytorch nightly
+    # with pytest.raises(RuntimeError, match=r"Provided interpolation parameters can not be handled"):
+    with pytest.raises(RuntimeError, match=r"Too much shared memory required"):
         F.resize(tensor, size=(5, 5), interpolation=interpolation, antialias=True)
 
 
@@ -656,32 +701,12 @@ def test_interpolate_antialias_backward(device, dt, size, interpolation):
         return
 
     torch.manual_seed(12)
-    if interpolation == BILINEAR:
-        forward_op = torch.ops.torchvision._interpolate_bilinear2d_aa
-        backward_op = torch.ops.torchvision._interpolate_bilinear2d_aa_backward
-    elif interpolation == BICUBIC:
-        forward_op = torch.ops.torchvision._interpolate_bicubic2d_aa
-        backward_op = torch.ops.torchvision._interpolate_bicubic2d_aa_backward
-
-    class F(torch.autograd.Function):
-        @staticmethod
-        def forward(ctx, i):
-            result = forward_op(i, size, False)
-            ctx.save_for_backward(i, result)
-            return result
-
-        @staticmethod
-        def backward(ctx, grad_output):
-            i, result = ctx.saved_tensors
-            ishape = i.shape
-            oshape = result.shape[2:]
-            return backward_op(grad_output, oshape, ishape, False)
-
     x = (torch.rand(1, 32, 29, 3, dtype=torch.double, device=device).permute(0, 3, 1, 2).requires_grad_(True),)
-    assert torch.autograd.gradcheck(F.apply, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
+    resize = partial(F.resize, size=size, interpolation=interpolation, antialias=True)
+    assert torch.autograd.gradcheck(resize, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
 
     x = (torch.rand(1, 3, 32, 29, dtype=torch.double, device=device, requires_grad=True),)
-    assert torch.autograd.gradcheck(F.apply, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
+    assert torch.autograd.gradcheck(resize, x, eps=1e-8, atol=1e-6, rtol=1e-6, fast_mode=False)
 
 
 def check_functional_vs_PIL_vs_scripted(
@@ -1019,7 +1044,9 @@ def test_resized_crop(device, mode):
 @pytest.mark.parametrize(
     "func, args",
     [
+        (F_t.get_dimensions, ()),
         (F_t.get_image_size, ()),
+        (F_t.get_image_num_channels, ()),
         (F_t.vflip, ()),
         (F_t.hflip, ()),
         (F_t.crop, (1, 2, 4, 5)),
@@ -1027,25 +1054,9 @@ def test_resized_crop(device, mode):
         (F_t.adjust_contrast, (1.0,)),
         (F_t.adjust_hue, (-0.5,)),
         (F_t.adjust_saturation, (2.0,)),
-        (
-            F_t.pad,
-            (
-                [
-                    2,
-                ],
-                2,
-                "constant",
-            ),
-        ),
+        (F_t.pad, ([2], 2, "constant")),
         (F_t.resize, ([10, 11],)),
-        (
-            F_t.perspective,
-            (
-                [
-                    0.2,
-                ]
-            ),
-        ),
+        (F_t.perspective, ([0.2])),
         (F_t.gaussian_blur, ((2, 2), (0.7, 0.5))),
         (F_t.invert, ()),
         (F_t.posterize, (0,)),

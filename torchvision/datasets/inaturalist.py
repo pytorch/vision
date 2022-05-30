@@ -22,7 +22,7 @@ DATASET_MD5 = {
     "2017": "7c784ea5e424efaec655bd392f87301f",
     "2018": "b1c6952ce38f31868cc50ea72d066cc3",
     "2019": "c60a6e2962c9b8ccbd458d12c8582644",
-    "2021_train": "38a7bb733f7a09214d44293460ec0021",
+    "2021_train": "e0526d53c7f7b2e3167b2b43bb2690ed",
     "2021_train_mini": "db6ed8330e634445efc8fec83ae81442",
     "2021_valid": "f6f6e0e242e3d4c9569ba56400938afc",
 }
