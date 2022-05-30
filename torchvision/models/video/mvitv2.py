@@ -1,6 +1,6 @@
 import math
 from functools import partial
-from typing import Any, Callable, List, Optional, Sequence, Tuple, cast
+from typing import Any, Callable, List, Optional, Sequence, Tuple
 
 import torch
 import torch.fx
@@ -94,11 +94,11 @@ class MultiscaleAttention(nn.Module):
         self,
         embed_dim: int,
         num_heads: int,
+        kernel_q: List[int],
+        kernel_kv: List[int],
+        stride_q: List[int],
+        stride_kv: List[int],
         dropout: float = 0.0,
-        kernel_q: Tuple[int, int, int] = (1, 1, 1),
-        kernel_kv: Tuple[int, int, int] = (1, 1, 1),
-        stride_q: Tuple[int, int, int] = (1, 1, 1),
-        stride_kv: Tuple[int, int, int] = (1, 1, 1),
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ) -> None:
         super().__init__()
@@ -115,14 +115,14 @@ class MultiscaleAttention(nn.Module):
 
         self.pool_q: Optional[nn.Module] = None
         if _prod(kernel_q) > 1 or _prod(stride_q) > 1:
-            padding_q = cast(Tuple[int, int, int], tuple(int(q // 2) for q in kernel_q))
+            padding_q = [int(q // 2) for q in kernel_q]
             self.pool_q = Pool(
                 nn.Conv3d(
                     self.head_dim,
                     self.head_dim,
-                    kernel_q,
-                    stride=stride_q,
-                    padding=padding_q,
+                    kernel_q,  # type: ignore[arg-type]
+                    stride=stride_q,  # type: ignore[arg-type]
+                    padding=padding_q,  # type: ignore[arg-type]
                     groups=self.head_dim,
                     bias=False,
                 ),
@@ -132,14 +132,14 @@ class MultiscaleAttention(nn.Module):
         self.pool_k: Optional[nn.Module] = None
         self.pool_v: Optional[nn.Module] = None
         if _prod(kernel_kv) > 1 or _prod(stride_kv) > 1:
-            padding_kv = cast(Tuple[int, int, int], tuple(int(kv // 2) for kv in kernel_kv))
+            padding_kv = [int(kv // 2) for kv in kernel_kv]
             self.pool_k = Pool(
                 nn.Conv3d(
                     self.head_dim,
                     self.head_dim,
-                    kernel_kv,
-                    stride=stride_kv,
-                    padding=padding_kv,
+                    kernel_kv,  # type: ignore[arg-type]
+                    stride=stride_kv,  # type: ignore[arg-type]
+                    padding=padding_kv,  # type: ignore[arg-type]
                     groups=self.head_dim,
                     bias=False,
                 ),
@@ -149,9 +149,9 @@ class MultiscaleAttention(nn.Module):
                 nn.Conv3d(
                     self.head_dim,
                     self.head_dim,
-                    kernel_kv,
-                    stride=stride_kv,
-                    padding=padding_kv,
+                    kernel_kv,  # type: ignore[arg-type]
+                    stride=stride_kv,  # type: ignore[arg-type]
+                    padding=padding_kv,  # type: ignore[arg-type]
                     groups=self.head_dim,
                     bias=False,
                 ),
@@ -185,21 +185,23 @@ class MultiscaleBlock(nn.Module):
         input_channels: int,
         output_channels: int,
         num_heads: int,
+        kernel_q: List[int],
+        kernel_kv: List[int],
+        stride_q: List[int],
+        stride_kv: List[int],
         dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
-        kernel_q: Tuple[int, int, int] = (1, 1, 1),
-        kernel_kv: Tuple[int, int, int] = (1, 1, 1),
-        stride_q: Tuple[int, int, int] = (1, 1, 1),
-        stride_kv: Tuple[int, int, int] = (1, 1, 1),
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ) -> None:
         super().__init__()
 
         self.pool_skip: Optional[nn.Module] = None
         if _prod(stride_q) > 1:
-            kernel_skip = cast(Tuple[int, int, int], tuple(s + 1 if s > 1 else s for s in stride_q))
-            padding_skip = cast(Tuple[int, int, int], tuple(int(k // 2) for k in kernel_skip))
-            self.pool_skip = Pool(nn.MaxPool3d(kernel_skip, stride=stride_q, padding=padding_skip), None)
+            kernel_skip = [s + 1 if s > 1 else s for s in stride_q]
+            padding_skip = [int(k // 2) for k in kernel_skip]
+            self.pool_skip = Pool(
+                nn.MaxPool3d(kernel_skip, stride=stride_q, padding=padding_skip), None  # type: ignore[arg-type]
+            )
 
         self.norm1 = norm_layer(input_channels)
         self.norm2 = norm_layer(input_channels)
@@ -208,11 +210,11 @@ class MultiscaleBlock(nn.Module):
         self.attn = MultiscaleAttention(
             input_channels,
             num_heads,
-            dropout=dropout,
             kernel_q=kernel_q,
             kernel_kv=kernel_kv,
             stride_q=stride_q,
             stride_kv=stride_kv,
+            dropout=dropout,
             norm_layer=norm_layer,
         )
         self.mlp = MLP(
@@ -270,9 +272,9 @@ class MViTv2(nn.Module):
         embed_channels: List[int],
         blocks: List[int],
         heads: List[int],
-        pool_kv_stride: Tuple[int, int, int] = (1, 8, 8),
-        pool_q_stride: Tuple[int, int, int] = (1, 2, 2),
-        pool_kvq_kernel: Tuple[int, int, int] = (3, 3, 3),
+        pool_kv_stride: List[int],
+        pool_q_stride: List[int],
+        pool_kvq_kernel: List[int],
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
@@ -289,9 +291,9 @@ class MViTv2(nn.Module):
             embed_channels (list of ints): A list with the embedding dimensions of each block group.
             blocks (list of ints): A list with the number of blocks of each block group.
             heads (list of ints): A list with the number of heads of each block group.
-            pool_kv_stride (tuple of ints): The initialize pooling stride of the first block.
-            pool_q_stride (tuple of ints): The pooling stride which reduces q in each block group.
-            pool_kvq_kernel (tuple of ints): The pooling kernel for the attention.
+            pool_kv_stride (list of ints): The initiale pooling stride of the first block.
+            pool_q_stride (list of ints): The pooling stride which reduces q in each block group.
+            pool_kvq_kernel (list of ints): The pooling kernel for the attention.
             dropout (float): Dropout rate. Default: 0.0.
             attention_dropout (float): Attention dropout rate. Default: 0.0.
             stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
@@ -343,12 +345,12 @@ class MViTv2(nn.Module):
                 next_block_index = i + 1 if j + 1 == num_subblocks and i + 1 < num_blocks else i
                 output_channels = embed_channels[next_block_index]
 
-                stride_q = (1, 1, 1)
+                stride_q = [1, 1, 1]
                 if pool_countdown == 0:
                     stride_q = pool_q_stride
                     pool_countdown = blocks[next_block_index]
 
-                stride_kv = cast(Tuple[int, int, int], tuple(max(s // stride_q[d], 1) for d, s in enumerate(stride_kv)))
+                stride_kv = [max(s // stride_q[d], 1) for d, s in enumerate(stride_kv)]
 
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * stage_block_id / (total_stage_blocks - 1.0)
@@ -358,12 +360,12 @@ class MViTv2(nn.Module):
                         input_channels=input_channels,
                         output_channels=output_channels,
                         num_heads=heads[i],
-                        dropout=attention_dropout,
-                        stochastic_depth_prob=sd_prob,
                         kernel_q=pool_kvq_kernel,
                         kernel_kv=pool_kvq_kernel,
                         stride_q=stride_q,
                         stride_kv=stride_kv,
+                        dropout=attention_dropout,
+                        stochastic_depth_prob=sd_prob,
                         norm_layer=norm_layer,
                     )
                 )
@@ -437,6 +439,9 @@ def _mvitv2(
         embed_channels=embed_channels,
         blocks=blocks,
         heads=heads,
+        pool_kv_stride=kwargs.pop("pool_kv_stride", [1, 8, 8]),
+        pool_q_stride=kwargs.pop("pool_q_stride", [1, 2, 2]),
+        pool_kvq_kernel=kwargs.pop("pool_kvq_kernel", [3, 3, 3]),
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
     )
