@@ -1,6 +1,6 @@
 import glob
 import os
-from typing import Any, Callable, Dict, List, Optional, Tuple
+from typing import Optional, Callable, Tuple, Dict, Any, List
 
 from torch import Tensor
 

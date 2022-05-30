@@ -1,4 +1,4 @@
-from typing import Any, Callable, List, Optional, Sequence, Tuple, Type, Union
+from typing import Tuple, Optional, Callable, List, Sequence, Type, Any, Union
 
 import torch.nn as nn
 from torch import Tensor

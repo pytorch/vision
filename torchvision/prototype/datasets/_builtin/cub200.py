@@ -6,33 +6,33 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 from torchdata.datapipes.iter import (
-    CSVDictParser,
-    CSVParser,
-    Demultiplexer,
-    Filter,
     IterDataPipe,
-    IterKeyZipper,
-    LineReader,
     Mapper,
+    Filter,
+    IterKeyZipper,
+    Demultiplexer,
+    LineReader,
+    CSVParser,
+    CSVDictParser,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    DatasetType,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    getitem,
+    INFINITE_BUFFER_SIZE,
+    read_mat,
     hint_sharding,
     hint_shuffling,
-    INFINITE_BUFFER_SIZE,
-    path_accessor,
+    getitem,
     path_comparator,
-    read_mat,
+    path_accessor,
 )
-from torchvision.prototype.features import BoundingBox, Feature, Label
+from torchvision.prototype.features import Label, BoundingBox, Feature
 
 csv.register_dialect("cub200", delimiter=" ")
 

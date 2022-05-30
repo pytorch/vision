@@ -3,27 +3,31 @@ import functools
 import io
 import pathlib
 import pickle
-from typing import Any, Callable, cast, Dict, Iterator, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Tuple, Union, Iterator, cast
 
 import numpy as np
 import torch
-from torchdata.datapipes.iter import Filter, IterDataPipe, Mapper
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Filter,
+    Mapper,
+)
 from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    DatasetType,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    hint_sharding,
     hint_shuffling,
     image_buffer_from_array,
     path_comparator,
+    hint_sharding,
 )
-from torchvision.prototype.features import Image, Label
+from torchvision.prototype.features import Label, Image
 
 __all__ = ["Cifar10", "Cifar100"]
 

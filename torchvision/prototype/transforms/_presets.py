@@ -1,7 +1,7 @@
 from typing import Dict, Optional, Tuple
 
 import torch
-from torch import nn, Tensor
+from torch import Tensor, nn
 
 from ...transforms import functional as F, InterpolationMode
 

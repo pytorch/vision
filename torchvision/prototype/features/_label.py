@@ -1,6 +1,6 @@
-from typing import Any, Dict, Optional, Tuple
+from typing import Dict, Any, Optional, Tuple
 
-from ._feature import DEFAULT, Feature
+from ._feature import Feature, DEFAULT
 
 
 class Label(Feature):

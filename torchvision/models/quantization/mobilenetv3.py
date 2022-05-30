@@ -2,11 +2,11 @@ from typing import Any, List, Optional
 
 import torch
 from torch import nn, Tensor
-from torch.ao.quantization import DeQuantStub, fuse_modules, QuantStub
+from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from ...ops.misc import ConvNormActivation, SqueezeExcitation
-from ..mobilenetv3 import _mobilenet_v3_conf, InvertedResidual, InvertedResidualConfig, MobileNetV3, model_urls
+from ..mobilenetv3 import InvertedResidual, InvertedResidualConfig, MobileNetV3, model_urls, _mobilenet_v3_conf
 from .utils import _replace_relu
 
 

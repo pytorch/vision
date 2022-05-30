@@ -1,6 +1,6 @@
 import functools
 import warnings
-from typing import Any, Callable, Dict, Optional, Tuple, TypeVar, Union
+from typing import Any, Dict, Optional, TypeVar, Callable, Tuple, Union
 
 from torch import nn
 from torchvision.prototype.utils._internal import kwonly_to_pos_or_kw

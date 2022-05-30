@@ -15,10 +15,10 @@ from ....models.detection.ssdlite import (
     SSD,
     SSDLiteHead,
 )
-from .._api import Weights, WeightsEnum
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
-from .._utils import _ovewrite_value_param, handle_legacy_interface
-from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
 
 
 __all__ = [

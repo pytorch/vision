@@ -4,23 +4,27 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, UnBatcher
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    UnBatcher,
+)
 from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    DatasetType,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
+    read_mat,
     hint_sharding,
     hint_shuffling,
     image_buffer_from_array,
-    read_mat,
 )
-from torchvision.prototype.features import Image, Label
+from torchvision.prototype.features import Label, Image
 
 
 class SVHN(Dataset):

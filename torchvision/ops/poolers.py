@@ -1,5 +1,5 @@
 import warnings
-from typing import Dict, List, Optional, Tuple, Union
+from typing import Optional, List, Dict, Tuple, Union
 
 import torch
 import torch.fx

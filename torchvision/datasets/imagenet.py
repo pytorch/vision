@@ -3,7 +3,7 @@ import shutil
 import tempfile
 import warnings
 from contextlib import contextmanager
-from typing import Any, Dict, Iterator, List, Optional, Tuple
+from typing import Any, Dict, List, Iterator, Optional, Tuple
 
 import torch
 

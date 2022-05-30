@@ -3,24 +3,24 @@ import hashlib
 import itertools
 import pathlib
 import warnings
-from typing import Any, Callable, IO, NoReturn, Optional, Sequence, Tuple, Union
+from typing import Optional, Sequence, Tuple, Callable, IO, Any, Union, NoReturn
 from urllib.parse import urlparse
 
 from torchdata.datapipes.iter import (
+    IterableWrapper,
     FileLister,
     FileOpener,
-    IterableWrapper,
     IterDataPipe,
-    RarArchiveLoader,
-    TarArchiveReader,
     ZipArchiveReader,
+    TarArchiveReader,
+    RarArchiveLoader,
 )
 from torchvision.datasets.utils import (
-    _decompress,
-    _detect_file_type,
-    download_file_from_google_drive,
     download_url,
+    _detect_file_type,
     extract_archive,
+    _decompress,
+    download_file_from_google_drive,
 )
 
 

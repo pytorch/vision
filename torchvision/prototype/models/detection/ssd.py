@@ -4,11 +4,16 @@ from typing import Any, Optional
 from torchvision.prototype.transforms import CocoEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ....models.detection.ssd import _validate_trainable_layers, _vgg_extractor, DefaultBoxGenerator, SSD
-from .._api import Weights, WeightsEnum
+from ....models.detection.ssd import (
+    _validate_trainable_layers,
+    _vgg_extractor,
+    DefaultBoxGenerator,
+    SSD,
+)
+from .._api import WeightsEnum, Weights
 from .._meta import _COCO_CATEGORIES
-from .._utils import _ovewrite_value_param, handle_legacy_interface
-from ..vgg import vgg16, VGG16_Weights
+from .._utils import handle_legacy_interface, _ovewrite_value_param
+from ..vgg import VGG16_Weights, vgg16
 
 
 __all__ = [

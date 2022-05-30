@@ -5,23 +5,30 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 from xml.etree import ElementTree
 
 import torch
-from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    Filter,
+    Demultiplexer,
+    IterKeyZipper,
+    LineReader,
+)
 from torchvision.datasets import VOCDetection
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    DatasetType,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
+    path_accessor,
     getitem,
+    INFINITE_BUFFER_SIZE,
+    path_comparator,
     hint_sharding,
     hint_shuffling,
-    INFINITE_BUFFER_SIZE,
-    path_accessor,
-    path_comparator,
 )
 from torchvision.prototype.features import BoundingBox
 

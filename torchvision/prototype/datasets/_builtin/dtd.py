@@ -6,24 +6,29 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
 from torchdata.datapipes.iter import (
-    CSVParser,
-    Demultiplexer,
-    Filter,
     IterDataPipe,
-    IterKeyZipper,
-    LineReader,
     Mapper,
     Shuffler,
+    Filter,
+    IterKeyZipper,
+    Demultiplexer,
+    LineReader,
+    CSVParser,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    DatasetType,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import getitem, hint_sharding, INFINITE_BUFFER_SIZE, path_comparator
+from torchvision.prototype.datasets.utils._internal import (
+    INFINITE_BUFFER_SIZE,
+    hint_sharding,
+    path_comparator,
+    getitem,
+)
 from torchvision.prototype.features import Label
 
 

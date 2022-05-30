@@ -9,7 +9,21 @@ import os.path
 import pathlib
 import pickle
 import platform
-from typing import Any, BinaryIO, Callable, cast, Dict, IO, Iterator, Optional, Sequence, Sized, Tuple, TypeVar, Union
+from typing import BinaryIO
+from typing import (
+    Sequence,
+    Callable,
+    Union,
+    Any,
+    Tuple,
+    TypeVar,
+    Iterator,
+    Dict,
+    Optional,
+    IO,
+    Sized,
+)
+from typing import cast
 
 import numpy as np
 import PIL.Image

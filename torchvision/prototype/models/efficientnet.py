@@ -6,9 +6,9 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.efficientnet import EfficientNet, MBConvConfig
-from ._api import Weights, WeightsEnum
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _ovewrite_named_param, handle_legacy_interface
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [

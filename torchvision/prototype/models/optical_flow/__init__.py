@@ -1,1 +1,1 @@
-from .raft import RAFT, raft_large, Raft_Large_Weights, raft_small, Raft_Small_Weights
+from .raft import RAFT, raft_large, raft_small, Raft_Large_Weights, Raft_Small_Weights

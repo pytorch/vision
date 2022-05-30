@@ -1,4 +1,4 @@
-from typing import Any, Callable, cast, Dict, Mapping, Optional, Sequence, Set, Tuple, Type, TypeVar
+from typing import Tuple, cast, TypeVar, Set, Dict, Any, Callable, Optional, Mapping, Type, Sequence
 
 import torch
 from torch._C import _TensorBase, DisableTorchFunction

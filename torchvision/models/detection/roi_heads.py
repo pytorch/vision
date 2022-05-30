@@ -1,10 +1,11 @@
-from typing import Dict, List, Optional, Tuple
+from typing import Optional, List, Dict, Tuple
 
 import torch
 import torch.nn.functional as F
 import torchvision
 from torch import nn, Tensor
-from torchvision.ops import boxes as box_ops, roi_align
+from torchvision.ops import boxes as box_ops
+from torchvision.ops import roi_align
 
 from . import _utils as det_utils
 

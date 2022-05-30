@@ -3,12 +3,13 @@ import io
 import os
 import os.path
 import pathlib
-from typing import Any, Callable, Collection, Dict, List, Optional, Tuple, Union
+from typing import Callable, Optional, Collection
+from typing import Union, Tuple, List, Dict, Any
 
 import torch
-from torchdata.datapipes.iter import FileLister, FileOpener, Filter, IterDataPipe, Mapper, Shuffler
+from torchdata.datapipes.iter import IterDataPipe, FileLister, FileOpener, Mapper, Shuffler, Filter
 from torchvision.prototype.datasets.decoder import pil
-from torchvision.prototype.datasets.utils._internal import hint_sharding, INFINITE_BUFFER_SIZE
+from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, hint_sharding
 
 
 __all__ = ["from_data_folder", "from_image_folder"]

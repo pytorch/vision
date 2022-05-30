@@ -1,6 +1,6 @@
 import warnings
 from collections import namedtuple
-from typing import Any, Callable, List, Optional, Tuple
+from typing import Optional, Tuple, List, Callable, Any
 
 import torch
 import torch.nn as nn

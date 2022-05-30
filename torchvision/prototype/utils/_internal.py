@@ -7,7 +7,7 @@ import os
 import os.path
 import textwrap
 import warnings
-from typing import Any, Callable, cast, Collection, Iterable, Iterator, Mapping, NoReturn, Sequence, Tuple, TypeVar
+from typing import Collection, Sequence, Callable, Any, Iterator, NoReturn, Mapping, TypeVar, Iterable, Tuple, cast
 
 __all__ = [
     "StrEnum",

@@ -5,10 +5,10 @@ from torch import nn
 from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ...models.regnet import BlockParams, RegNet
-from ._api import Weights, WeightsEnum
+from ...models.regnet import RegNet, BlockParams
+from ._api import WeightsEnum, Weights
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import _ovewrite_named_param, handle_legacy_interface
+from ._utils import handle_legacy_interface, _ovewrite_named_param
 
 
 __all__ = [

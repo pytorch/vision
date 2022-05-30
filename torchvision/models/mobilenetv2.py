@@ -1,8 +1,9 @@
 import warnings
-from typing import Any, Callable, List, Optional
+from typing import Callable, Any, Optional, List
 
 import torch
-from torch import nn, Tensor
+from torch import Tensor
+from torch import nn
 
 from .._internally_replaced_utils import load_state_dict_from_url
 from ..ops.misc import ConvNormActivation

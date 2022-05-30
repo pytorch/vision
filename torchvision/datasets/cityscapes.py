@@ -1,11 +1,11 @@
 import json
 import os
 from collections import namedtuple
-from typing import Any, Callable, Dict, List, Optional, Tuple, Union
+from typing import Any, Callable, Dict, List, Optional, Union, Tuple
 
 from PIL import Image
 
-from .utils import extract_archive, iterable_to_str, verify_str_arg
+from .utils import extract_archive, verify_str_arg, iterable_to_str
 from .vision import VisionDataset
 
 

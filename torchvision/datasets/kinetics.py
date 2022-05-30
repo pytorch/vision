@@ -10,7 +10,7 @@ from typing import Any, Callable, Dict, Optional, Tuple
 from torch import Tensor
 
 from .folder import find_classes, make_dataset
-from .utils import check_integrity, download_and_extract_archive, download_url, verify_str_arg
+from .utils import download_and_extract_archive, download_url, verify_str_arg, check_integrity
 from .video_utils import VideoClips
 from .vision import VisionDataset
 

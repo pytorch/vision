@@ -1,5 +1,5 @@
 from collections import OrderedDict
-from typing import Dict, List, Optional, Tuple
+from typing import Tuple, List, Dict, Optional
 
 import torch.nn.functional as F
 from torch import nn, Tensor

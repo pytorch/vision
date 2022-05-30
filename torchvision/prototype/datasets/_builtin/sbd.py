@@ -2,27 +2,34 @@ import functools
 import io
 import pathlib
 import re
-from typing import Any, Callable, cast, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple, cast
 
 import numpy as np
 import torch
-from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, LineReader, Mapper
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    Demultiplexer,
+    Filter,
+    IterKeyZipper,
+    LineReader,
+)
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    DatasetType,
     HttpResource,
     OnlineResource,
+    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    getitem,
-    hint_sharding,
-    hint_shuffling,
     INFINITE_BUFFER_SIZE,
+    read_mat,
+    getitem,
     path_accessor,
     path_comparator,
-    read_mat,
+    hint_sharding,
+    hint_shuffling,
 )
 from torchvision.prototype.features import Feature
 
