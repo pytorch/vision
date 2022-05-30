@@ -415,7 +415,6 @@ class MViTv2(nn.Module):
 
 
 def _mvitv2(
-    temporal_size: int,
     embed_channels: List[int],
     blocks: List[int],
     heads: List[int],
@@ -428,8 +427,9 @@ def _mvitv2(
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
         _ovewrite_named_param(kwargs, "spatial_size", weights.meta["min_size"][0])
-        # TODO: add min_temporal_size in the meta-data?
+        _ovewrite_named_param(kwargs, "temporal_size", weights.meta["min_temporal_size"])
     spatial_size = kwargs.pop("spatial_size", (224, 224))
+    temporal_size = kwargs.pop("temporal_size", 16)
 
     model = MViTv2(
         spatial_size=spatial_size,
