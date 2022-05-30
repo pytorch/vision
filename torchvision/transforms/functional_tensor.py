@@ -996,7 +996,7 @@ def elastic_transform(
         if sigma[0] > 0.0:
             dx = gaussian_blur(
                 dx,
-                [int(8 * sigma + 1), int(8 * sigma + 1)],
+                [int(8 * sigma[0] + 1), int(8 * sigma[0] + 1)],
                 sigma,
             )
         dx = dx * alpha[0] / size[0]
@@ -1005,7 +1005,7 @@ def elastic_transform(
         if sigma[1] > 0.0:
             dy = gaussian_blur(
                 dy,
-                [int(8 * sigma + 1), int(8 * sigma + 1)],
+                [int(8 * sigma[1] + 1), int(8 * sigma[1] + 1)],
                 sigma,
             )
         dy = dy * alpha[1] / size[1]
