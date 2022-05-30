@@ -1013,22 +1013,24 @@ def elastic_transform(
         torch.manual_seed(random_state)
 
     if displacement is not None:
+        if alpha is not None or sigma is not None:
+            raise ValueError("alpha and sigma must be None if displacement is given or vice versa")
         displacement = displacement.to(img.device)
     elif alpha is not None and sigma is not None:
-        dx = torch.empty([1, 1] + size, device=img.device).uniform_(-1, 1)
+        dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
         if sigma[0] > 0.0:
             dx = gaussian_blur(
                 dx,
-                [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
+                [int(8 * sigma + 1), int(8 * sigma + 1)],
                 sigma,
             )
         dx = dx * alpha[0] / size[0]
+        dy = torch.rand([1, 1] + size, device=img.device) * 2 - 1
 
-        dy = torch.empty([1, 1] + size, device=img.device).uniform_(-1, 1)
         if sigma[1] > 0.0:
             dy = gaussian_blur(
                 dy,
-                [4 * int(sigma[0]) + 1, 4 * int(sigma[1]) + 1],
+                [int(8 * sigma + 1), int(8 * sigma + 1)],
                 sigma,
             )
         dy = dy * alpha[1] / size[1]
