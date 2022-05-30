@@ -309,13 +309,13 @@ _model_params = {
         "image_size": 56,
         "input_shape": (1, 3, 56, 56),
     },
-    "mvitv2_t": {
+    "mvit_v2_t": {
         "input_shape": (1, 3, 16, 224, 224),
     },
-    "mvitv2_s": {
+    "mvit_v2_s": {
         "input_shape": (1, 3, 16, 224, 224),
     },
-    "mvitv2_b": {
+    "mvit_v2_b": {
         "input_shape": (1, 3, 32, 224, 224),
     },
 }

@@ -12,7 +12,15 @@ from .._api import WeightsEnum
 from .._utils import _ovewrite_named_param
 
 
-__all__ = ["MViTv2", "MViTV2_T_Weights", "MViTV2_S_Weights", "MViTV2_B_Weights", "mvitv2_t", "mvitv2_s", "mvitv2_b"]
+__all__ = [
+    "MViTV2",
+    "MViT_V2_T_Weights",
+    "MViT_V2_S_Weights",
+    "MViT_V2_B_Weights",
+    "mvit_v2_t",
+    "mvit_v2_s",
+    "mvit_v2_b",
+]
 
 
 # TODO: add weights
@@ -264,7 +272,7 @@ class PositionalEncoding(nn.Module):
         return torch.cat((class_token, x), dim=1) + pos_embedding
 
 
-class MViTv2(nn.Module):
+class MViTV2(nn.Module):
     def __init__(
         self,
         spatial_size: Tuple[int, int],
@@ -283,7 +291,7 @@ class MViTv2(nn.Module):
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         """
-        MViTv2 main class.
+        MViT V2 main class.
 
         Args:
             spatial_size (tuple of ints): The spacial size of the input as ``(H, W)``.
@@ -424,7 +432,7 @@ def _mvitv2(
     weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
-) -> MViTv2:
+) -> MViTV2:
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
@@ -433,7 +441,7 @@ def _mvitv2(
     spatial_size = kwargs.pop("spatial_size", (224, 224))
     temporal_size = kwargs.pop("temporal_size", 16)
 
-    model = MViTv2(
+    model = MViTV2(
         spatial_size=spatial_size,
         temporal_size=temporal_size,
         embed_channels=embed_channels,
@@ -452,29 +460,29 @@ def _mvitv2(
     return model
 
 
-class MViTV2_T_Weights(WeightsEnum):
+class MViT_V2_T_Weights(WeightsEnum):
     pass
 
 
-class MViTV2_S_Weights(WeightsEnum):
+class MViT_V2_S_Weights(WeightsEnum):
     pass
 
 
-class MViTV2_B_Weights(WeightsEnum):
+class MViT_V2_B_Weights(WeightsEnum):
     pass
 
 
-def mvitv2_t(*, weights: Optional[MViTV2_T_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTv2:
+def mvit_v2_t(*, weights: Optional[MViT_V2_T_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTV2:
     """
-    Constructs a tiny MViTv2 architecture from
+    Constructs a tiny MViTV2 architecture from
     `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
     <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
     <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
-        weights (:class:`~torchvision.models.video.MViTV2_T_Weights`, optional): The
+        weights (:class:`~torchvision.models.video.MViT_V2_T_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.models.video.MViTV2_T_Weights` below for
+            :class:`~torchvision.models.video.MViT_V2_T_Weights` below for
             more details, and possible values. By default, no pre-trained
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
@@ -484,10 +492,10 @@ def mvitv2_t(*, weights: Optional[MViTV2_T_Weights] = None, progress: bool = Tru
             <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.video.MViTV2_T_Weights
+    .. autoclass:: torchvision.models.video.MViT_V2_T_Weights
         :members:
     """
-    weights = MViTV2_T_Weights.verify(weights)
+    weights = MViT_V2_T_Weights.verify(weights)
 
     return _mvitv2(
         spatial_size=(224, 224),
@@ -502,17 +510,17 @@ def mvitv2_t(*, weights: Optional[MViTV2_T_Weights] = None, progress: bool = Tru
     )
 
 
-def mvitv2_s(*, weights: Optional[MViTV2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTv2:
+def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTV2:
     """
-    Constructs a small MViTv2 architecture from
+    Constructs a small MViTV2 architecture from
     `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
     <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
     <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
-        weights (:class:`~torchvision.models.video.MViTV2_S_Weights`, optional): The
+        weights (:class:`~torchvision.models.video.MViT_V2_S_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.models.video.MViTV2_S_Weights` below for
+            :class:`~torchvision.models.video.MViT_V2_S_Weights` below for
             more details, and possible values. By default, no pre-trained
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
@@ -522,10 +530,10 @@ def mvitv2_s(*, weights: Optional[MViTV2_S_Weights] = None, progress: bool = Tru
             <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.video.MViTV2_S_Weights
+    .. autoclass:: torchvision.models.video.MViT_V2_S_Weights
         :members:
     """
-    weights = MViTV2_S_Weights.verify(weights)
+    weights = MViT_V2_S_Weights.verify(weights)
 
     return _mvitv2(
         spatial_size=(224, 224),
@@ -540,17 +548,17 @@ def mvitv2_s(*, weights: Optional[MViTV2_S_Weights] = None, progress: bool = Tru
     )
 
 
-def mvitv2_b(*, weights: Optional[MViTV2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTv2:
+def mvit_v2_b(*, weights: Optional[MViT_V2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTV2:
     """
-    Constructs a base MViTv2 architecture from
+    Constructs a base MViTV2 architecture from
     `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
     <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
     <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
-        weights (:class:`~torchvision.models.video.MViTV2_B_Weights`, optional): The
+        weights (:class:`~torchvision.models.video.MViT_V2_B_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.models.video.MViTV2_B_Weights` below for
+            :class:`~torchvision.models.video.MViT_V2_B_Weights` below for
             more details, and possible values. By default, no pre-trained
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
@@ -560,10 +568,10 @@ def mvitv2_b(*, weights: Optional[MViTV2_B_Weights] = None, progress: bool = Tru
             <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.video.MViTV2_B_Weights
+    .. autoclass:: torchvision.models.video.MViT_V2_B_Weights
         :members:
     """
-    weights = MViTV2_B_Weights.verify(weights)
+    weights = MViT_V2_B_Weights.verify(weights)
 
     return _mvitv2(
         spatial_size=(224, 224),
