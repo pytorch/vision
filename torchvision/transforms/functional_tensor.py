@@ -968,7 +968,8 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 
     img[..., i : i + h, j : j + w] = v
     return img
-    
+
+
 def elastic_transform(
     img: Tensor,
     alpha: Optional[List[float]] = None,
