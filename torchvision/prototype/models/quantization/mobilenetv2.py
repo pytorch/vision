@@ -5,14 +5,14 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ....models.quantization.mobilenetv2 import (
+    _replace_relu,
     QuantizableInvertedResidual,
     QuantizableMobileNetV2,
-    _replace_relu,
     quantize_model,
 )
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from ..mobilenetv2 import MobileNet_V2_Weights
 
 

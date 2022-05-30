@@ -4,13 +4,12 @@ from typing import Any, Optional
 from torchvision.prototype.transforms import VocEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ....models.segmentation.deeplabv3 import DeepLabV3, _deeplabv3_mobilenetv3, _deeplabv3_resnet
-from .._api import WeightsEnum, Weights
+from ....models.segmentation.deeplabv3 import _deeplabv3_mobilenetv3, _deeplabv3_resnet, DeepLabV3
+from .._api import Weights, WeightsEnum
 from .._meta import _VOC_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..mobilenetv3 import MobileNet_V3_Large_Weights, mobilenet_v3_large
-from ..resnet import resnet50, resnet101
-from ..resnet import ResNet50_Weights, ResNet101_Weights
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..mobilenetv3 import mobilenet_v3_large, MobileNet_V3_Large_Weights
+from ..resnet import resnet101, ResNet101_Weights, resnet50, ResNet50_Weights
 
 
 __all__ = [

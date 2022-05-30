@@ -2,15 +2,13 @@ import math
 import warnings
 from collections import OrderedDict
 from functools import partial
-from typing import Callable, Dict, List, Tuple, Optional
+from typing import Callable, Dict, List, Optional, Tuple
 
 import torch
 from torch import nn, Tensor
 
 from ..._internally_replaced_utils import load_state_dict_from_url
-from ...ops import sigmoid_focal_loss, generalized_box_iou_loss
-from ...ops import boxes as box_ops
-from ...ops import misc as misc_nn_ops
+from ...ops import boxes as box_ops, generalized_box_iou_loss, misc as misc_nn_ops, sigmoid_focal_loss
 from ...ops.feature_pyramid_network import LastLevelP6P7
 from ...utils import _log_api_usage_once
 from ..resnet import resnet50

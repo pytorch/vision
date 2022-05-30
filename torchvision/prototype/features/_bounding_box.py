@@ -1,11 +1,11 @@
 import enum
 import functools
-from typing import Callable, Union, Tuple, Dict, Any, Optional, cast
+from typing import Any, Callable, cast, Dict, Optional, Tuple, Union
 
 import torch
 from torchvision.prototype.utils._internal import StrEnum
 
-from ._feature import Feature, DEFAULT
+from ._feature import DEFAULT, Feature
 
 
 class BoundingBoxFormat(StrEnum):

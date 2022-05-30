@@ -8,10 +8,10 @@ from ..mobilenetv3 import mobilenet_v3_large
 from ..resnet import resnet50
 from ._utils import overwrite_eps
 from .anchor_utils import AnchorGenerator
-from .backbone_utils import _resnet_fpn_extractor, _validate_trainable_layers, _mobilenet_extractor
+from .backbone_utils import _mobilenet_extractor, _resnet_fpn_extractor, _validate_trainable_layers
 from .generalized_rcnn import GeneralizedRCNN
 from .roi_heads import RoIHeads
-from .rpn import RPNHead, RegionProposalNetwork
+from .rpn import RegionProposalNetwork, RPNHead
 from .transform import GeneralizedRCNNTransform
 
 
@@ -228,7 +228,7 @@ class FasterRCNN(GeneralizedRCNN):
         if box_head is None:
             resolution = box_roi_pool.output_size[0]
             representation_size = 1024
-            box_head = TwoMLPHead(out_channels * resolution ** 2, representation_size)
+            box_head = TwoMLPHead(out_channels * resolution**2, representation_size)
 
         if box_predictor is None:
             representation_size = 1024

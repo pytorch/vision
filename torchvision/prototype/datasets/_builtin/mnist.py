@@ -4,31 +4,26 @@ import io
 import operator
 import pathlib
 import string
-from typing import Any, Callable, Dict, Iterator, List, Optional, Tuple, cast, BinaryIO, Union, Sequence
+from typing import Any, BinaryIO, Callable, cast, Dict, Iterator, List, Optional, Sequence, Tuple, Union
 
 import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Demultiplexer,
-    Mapper,
-    Zipper,
-)
+from torchdata.datapipes.iter import Demultiplexer, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
-    DatasetType,
     DatasetConfig,
     DatasetInfo,
+    DatasetType,
     HttpResource,
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    image_buffer_from_array,
     Decompressor,
-    INFINITE_BUFFER_SIZE,
     fromfile,
     hint_sharding,
     hint_shuffling,
+    image_buffer_from_array,
+    INFINITE_BUFFER_SIZE,
 )
 from torchvision.prototype.features import Image, Label
 

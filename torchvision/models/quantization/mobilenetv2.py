@@ -1,8 +1,7 @@
 from typing import Any
 
-from torch import Tensor
-from torch import nn
-from torch.ao.quantization import QuantStub, DeQuantStub, fuse_modules
+from torch import nn, Tensor
+from torch.ao.quantization import DeQuantStub, fuse_modules, QuantStub
 from torchvision.models.mobilenetv2 import InvertedResidual, MobileNetV2, model_urls
 
 from ..._internally_replaced_utils import load_state_dict_from_url

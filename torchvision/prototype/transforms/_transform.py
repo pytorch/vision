@@ -1,7 +1,7 @@
 import collections.abc
 import inspect
 import re
-from typing import Any, Callable, Dict, Optional, Type, Union, cast, Set, Collection
+from typing import Any, Callable, cast, Collection, Dict, Optional, Set, Type, Union
 
 import torch
 from torch import nn

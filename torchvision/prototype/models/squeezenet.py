@@ -5,9 +5,9 @@ from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
 from ...models.squeezenet import SqueezeNet
-from ._api import WeightsEnum, Weights
+from ._api import Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = ["SqueezeNet", "SqueezeNet1_0_Weights", "SqueezeNet1_1_Weights", "squeezenet1_0", "squeezenet1_1"]

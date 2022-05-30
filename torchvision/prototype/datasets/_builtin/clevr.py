@@ -4,22 +4,22 @@ import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, JsonParser, UnBatcher
+from torchdata.datapipes.iter import Demultiplexer, Filter, IterDataPipe, IterKeyZipper, JsonParser, Mapper, UnBatcher
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
+    DatasetType,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
+    getitem,
     hint_sharding,
     hint_shuffling,
-    path_comparator,
+    INFINITE_BUFFER_SIZE,
     path_accessor,
-    getitem,
+    path_comparator,
 )
 from torchvision.prototype.features import Label
 

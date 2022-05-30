@@ -3,7 +3,7 @@ from collections import OrderedDict
 from typing import List, Tuple
 
 import torch
-from torch import Tensor, nn
+from torch import nn, Tensor
 from torchvision.ops.misc import FrozenBatchNorm2d
 
 

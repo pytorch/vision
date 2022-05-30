@@ -1,32 +1,26 @@
 import csv
 import functools
 import io
-from typing import Any, Callable, Dict, List, Optional, Tuple, Iterator, Sequence
+from typing import Any, Callable, Dict, Iterator, List, Optional, Sequence, Tuple
 
 import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
-    Zipper,
-    IterKeyZipper,
-)
+from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper, Zipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
+    DatasetType,
     GDriveResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
     getitem,
-    path_accessor,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    path_accessor,
 )
-from torchvision.prototype.features import Feature, Label, BoundingBox
+from torchvision.prototype.features import BoundingBox, Feature, Label
 
 csv.register_dialect("celeba", delimiter=" ", skipinitialspace=True)
 

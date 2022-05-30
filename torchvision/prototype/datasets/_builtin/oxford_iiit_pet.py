@@ -5,20 +5,20 @@ import pathlib
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, IterKeyZipper, Demultiplexer, CSVDictParser
+from torchdata.datapipes.iter import CSVDictParser, Demultiplexer, Filter, IterDataPipe, IterKeyZipper, Mapper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
+    DatasetType,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    INFINITE_BUFFER_SIZE,
+    getitem,
     hint_sharding,
     hint_shuffling,
-    getitem,
+    INFINITE_BUFFER_SIZE,
     path_accessor,
     path_comparator,
 )

@@ -10,14 +10,14 @@ from ....models.video.resnet import (
     BasicStem,
     Bottleneck,
     Conv2Plus1D,
-    Conv3DSimple,
     Conv3DNoTemporal,
+    Conv3DSimple,
     R2Plus1dStem,
     VideoResNet,
 )
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _KINETICS400_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = [

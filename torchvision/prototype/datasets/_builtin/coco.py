@@ -3,37 +3,37 @@ import io
 import pathlib
 import re
 from collections import OrderedDict
-from typing import Any, Callable, Dict, List, Optional, Tuple, cast
+from typing import Any, Callable, cast, Dict, List, Optional, Tuple
 
 import torch
 from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
     Demultiplexer,
+    Filter,
     Grouper,
+    IterDataPipe,
     IterKeyZipper,
     JsonParser,
+    Mapper,
     UnBatcher,
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
+    DatasetType,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    MappingIterator,
-    INFINITE_BUFFER_SIZE,
     BUILTIN_DIR,
     getitem,
-    path_accessor,
     hint_sharding,
     hint_shuffling,
+    INFINITE_BUFFER_SIZE,
+    MappingIterator,
+    path_accessor,
 )
-from torchvision.prototype.features import BoundingBox, Label, Feature
+from torchvision.prototype.features import BoundingBox, Feature, Label
 from torchvision.prototype.utils._internal import FrozenMapping
 
 
@@ -134,7 +134,7 @@ class Coco(Dataset):
     )
 
     _META_FILE_PATTERN = re.compile(
-        fr"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
+        rf"(?P<annotations>({'|'.join(_ANN_DECODERS.keys())}))_(?P<split>[a-zA-Z]+)(?P<year>\d+)[.]json"
     )
 
     def _filter_meta_files(self, data: Tuple[str, Any], *, split: str, year: str, annotations: str) -> bool:

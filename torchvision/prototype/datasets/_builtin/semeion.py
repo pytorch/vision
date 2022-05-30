@@ -3,21 +3,17 @@ import io
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    CSVParser,
-)
+from torchdata.datapipes.iter import CSVParser, IterDataPipe, Mapper
 from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
+    DatasetType,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import image_buffer_from_array, hint_sharding, hint_shuffling
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, image_buffer_from_array
 from torchvision.prototype.features import Image, Label
 
 

@@ -1,6 +1,6 @@
 import warnings
 from collections import namedtuple
-from typing import Callable, Any, Optional, Tuple, List
+from typing import Any, Callable, List, Optional, Tuple
 
 import torch
 import torch.nn.functional as F

@@ -4,14 +4,10 @@ from typing import Any, List, Optional, Union
 from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ....models.quantization.shufflenetv2 import (
-    QuantizableShuffleNetV2,
-    _replace_relu,
-    quantize_model,
-)
-from .._api import WeightsEnum, Weights
+from ....models.quantization.shufflenetv2 import _replace_relu, QuantizableShuffleNetV2, quantize_model
+from .._api import Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from ..shufflenetv2 import ShuffleNet_V2_X0_5_Weights, ShuffleNet_V2_X1_0_Weights
 
 

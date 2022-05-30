@@ -1,7 +1,7 @@
 from typing import Any, Dict, Sequence
 
 import torch
-from torchvision.prototype.features import Image, BoundingBox, Label
+from torchvision.prototype.features import BoundingBox, Image, Label
 from torchvision.prototype.transforms import Transform
 
 

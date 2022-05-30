@@ -1,10 +1,10 @@
-from typing import Any, Type, Union, List
+from typing import Any, List, Type, Union
 
 import torch
 import torch.nn as nn
 from torch import Tensor
 from torch.ao.quantization import fuse_modules
-from torchvision.models.resnet import Bottleneck, BasicBlock, ResNet, model_urls
+from torchvision.models.resnet import BasicBlock, Bottleneck, model_urls, ResNet
 
 from ..._internally_replaced_utils import load_state_dict_from_url
 from .utils import _replace_relu, quantize_model

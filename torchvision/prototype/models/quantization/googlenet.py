@@ -5,14 +5,10 @@ from typing import Any, Optional, Union
 from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ....models.quantization.googlenet import (
-    QuantizableGoogLeNet,
-    _replace_relu,
-    quantize_model,
-)
-from .._api import WeightsEnum, Weights
+from ....models.quantization.googlenet import _replace_relu, QuantizableGoogLeNet, quantize_model
+from .._api import Weights, WeightsEnum
 from .._meta import _IMAGENET_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_named_param
+from .._utils import _ovewrite_named_param, handle_legacy_interface
 from ..googlenet import GoogLeNet_Weights
 
 

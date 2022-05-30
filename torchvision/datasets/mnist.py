@@ -12,7 +12,7 @@ import numpy as np
 import torch
 from PIL import Image
 
-from .utils import download_and_extract_archive, extract_archive, verify_str_arg, check_integrity
+from .utils import check_integrity, download_and_extract_archive, extract_archive, verify_str_arg
 from .vision import VisionDataset
 
 

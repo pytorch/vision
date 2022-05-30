@@ -6,22 +6,17 @@ from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import numpy as np
 import torch
-from torchdata.datapipes.iter import (
-    IterDataPipe,
-    Mapper,
-    Filter,
-    IterKeyZipper,
-)
+from torchdata.datapipes.iter import Filter, IterDataPipe, IterKeyZipper, Mapper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
+    DatasetType,
     HttpResource,
     OnlineResource,
-    DatasetType,
 )
-from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE, read_mat, hint_sharding, hint_shuffling
-from torchvision.prototype.features import Label, BoundingBox, Feature
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, INFINITE_BUFFER_SIZE, read_mat
+from torchvision.prototype.features import BoundingBox, Feature, Label
 
 
 class Caltech101(Dataset):

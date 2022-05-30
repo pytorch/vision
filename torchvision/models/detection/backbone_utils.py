@@ -1,12 +1,11 @@
 import warnings
-from typing import Callable, Dict, Optional, List, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from torch import nn, Tensor
 from torchvision.ops import misc as misc_nn_ops
-from torchvision.ops.feature_pyramid_network import FeaturePyramidNetwork, LastLevelMaxPool, ExtraFPNBlock
+from torchvision.ops.feature_pyramid_network import ExtraFPNBlock, FeaturePyramidNetwork, LastLevelMaxPool
 
-from .. import mobilenet
-from .. import resnet
+from .. import mobilenet, resnet
 from .._utils import IntermediateLayerGetter
 
 

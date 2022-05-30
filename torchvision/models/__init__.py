@@ -11,9 +11,4 @@ from .shufflenetv2 import *
 from .efficientnet import *
 from .regnet import *
 from .vision_transformer import *
-from . import detection
-from . import feature_extraction
-from . import optical_flow
-from . import quantization
-from . import segmentation
-from . import video
+from . import detection, feature_extraction, optical_flow, quantization, segmentation, video

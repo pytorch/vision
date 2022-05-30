@@ -10,9 +10,9 @@ from torchvision.transforms.functional import InterpolationMode
 from ...ops.misc import ConvNormActivation
 from ...ops.stochastic_depth import StochasticDepth
 from ...utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = ["ConvNeXt", "ConvNeXt_Tiny_Weights", "convnext_tiny"]

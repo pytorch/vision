@@ -1,9 +1,9 @@
-from typing import Dict, Any, Union, Tuple
+from typing import Any, Dict, Tuple, Union
 
 import torch
 from torchvision.prototype.utils._internal import StrEnum
 
-from ._feature import Feature, DEFAULT
+from ._feature import DEFAULT, Feature
 
 
 class ColorSpace(StrEnum):

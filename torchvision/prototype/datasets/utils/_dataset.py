@@ -6,15 +6,14 @@ import io
 import itertools
 import os
 import pathlib
-from typing import Any, Callable, Dict, List, Optional, Sequence, Union, Tuple, Collection
+from typing import Any, Callable, Collection, Dict, List, Optional, Sequence, Tuple, Union
 
 import torch
 from torch.utils.data import IterDataPipe
-from torchvision.prototype.utils._internal import FrozenBunch, make_repr
-from torchvision.prototype.utils._internal import add_suggestion, sequence_to_str
+from torchvision.prototype.utils._internal import add_suggestion, FrozenBunch, make_repr, sequence_to_str
 
 from .._home import use_sharded_dataset
-from ._internal import BUILTIN_DIR, _make_sharded_datapipe
+from ._internal import _make_sharded_datapipe, BUILTIN_DIR
 from ._resource import OnlineResource
 
 

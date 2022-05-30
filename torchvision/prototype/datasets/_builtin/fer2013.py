@@ -1,24 +1,20 @@
 import functools
 import io
-from typing import Any, Callable, Dict, List, Optional, Union, cast
+from typing import Any, Callable, cast, Dict, List, Optional, Union
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, CSVDictParser
+from torchdata.datapipes.iter import CSVDictParser, IterDataPipe, Mapper
 from torchvision.prototype.datasets.decoder import raw
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    OnlineResource,
     DatasetType,
     KaggleDownloadResource,
+    OnlineResource,
 )
-from torchvision.prototype.datasets.utils._internal import (
-    hint_sharding,
-    hint_shuffling,
-    image_buffer_from_array,
-)
-from torchvision.prototype.features import Label, Image
+from torchvision.prototype.datasets.utils._internal import hint_sharding, hint_shuffling, image_buffer_from_array
+from torchvision.prototype.features import Image, Label
 
 
 class FER2013(Dataset):

@@ -10,10 +10,10 @@ from ....models.detection.mask_rcnn import (
     misc_nn_ops,
     overwrite_eps,
 )
-from .._api import WeightsEnum, Weights
+from .._api import Weights, WeightsEnum
 from .._meta import _COCO_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, resnet50
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet50, ResNet50_Weights
 
 
 __all__ = [

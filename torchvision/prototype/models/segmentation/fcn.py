@@ -4,11 +4,11 @@ from typing import Any, Optional
 from torchvision.prototype.transforms import VocEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ....models.segmentation.fcn import FCN, _fcn_resnet
-from .._api import WeightsEnum, Weights
+from ....models.segmentation.fcn import _fcn_resnet, FCN
+from .._api import Weights, WeightsEnum
 from .._meta import _VOC_CATEGORIES
-from .._utils import handle_legacy_interface, _ovewrite_value_param
-from ..resnet import ResNet50_Weights, ResNet101_Weights, resnet50, resnet101
+from .._utils import _ovewrite_value_param, handle_legacy_interface
+from ..resnet import resnet101, ResNet101_Weights, resnet50, ResNet50_Weights
 
 
 __all__ = ["FCN", "FCN_ResNet50_Weights", "FCN_ResNet101_Weights", "fcn_resnet50", "fcn_resnet101"]

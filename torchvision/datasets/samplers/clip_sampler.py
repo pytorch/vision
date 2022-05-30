@@ -1,5 +1,5 @@
 import math
-from typing import Optional, List, Iterator, Sized, Union, cast
+from typing import cast, Iterator, List, Optional, Sized, Union
 
 import torch
 import torch.distributed as dist

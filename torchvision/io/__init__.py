@@ -9,8 +9,6 @@ try:
 except ModuleNotFoundError:
     _HAS_VIDEO_DECODER = False
 from ._video_opt import (
-    Timebase,
-    VideoMetaData,
     _HAS_VIDEO_OPT,
     _probe_video_from_file,
     _probe_video_from_memory,
@@ -18,32 +16,29 @@ from ._video_opt import (
     _read_video_from_memory,
     _read_video_timestamps_from_file,
     _read_video_timestamps_from_memory,
+    Timebase,
+    VideoMetaData,
 )
 from .image import (
-    ImageReadMode,
     decode_image,
     decode_jpeg,
     decode_png,
     encode_jpeg,
     encode_png,
+    ImageReadMode,
     read_file,
     read_image,
     write_file,
     write_jpeg,
     write_png,
 )
-from .video import (
-    read_video,
-    read_video_timestamps,
-    write_video,
-)
+from .video import read_video, read_video_timestamps, write_video
 
 
 if _HAS_VIDEO_OPT:
 
     def _has_video_opt() -> bool:
         return True
-
 
 else:
 

@@ -4,22 +4,22 @@ from functools import partial
 from typing import Any, Callable, Dict, List, Optional, Tuple
 
 import torch
-from torchdata.datapipes.iter import IterDataPipe, Mapper, Filter, CSVDictParser, Zipper, Demultiplexer
+from torchdata.datapipes.iter import CSVDictParser, Demultiplexer, Filter, IterDataPipe, Mapper, Zipper
 from torchvision.prototype.datasets.utils import (
     Dataset,
     DatasetConfig,
     DatasetInfo,
-    OnlineResource,
     DatasetType,
     HttpResource,
+    OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
-    path_comparator,
     hint_sharding,
     hint_shuffling,
     INFINITE_BUFFER_SIZE,
+    path_comparator,
 )
-from torchvision.prototype.features import Label, BoundingBox
+from torchvision.prototype.features import BoundingBox, Label
 
 
 class GTSRB(Dataset):

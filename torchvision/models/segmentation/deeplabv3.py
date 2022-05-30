@@ -4,10 +4,9 @@ import torch
 from torch import nn
 from torch.nn import functional as F
 
-from .. import mobilenetv3
-from .. import resnet
+from .. import mobilenetv3, resnet
 from ..feature_extraction import create_feature_extractor
-from ._utils import _SimpleSegmentationModel, _load_weights
+from ._utils import _load_weights, _SimpleSegmentationModel
 from .fcn import FCNHead
 
 

@@ -12,17 +12,14 @@ import urllib
 import urllib.error
 import urllib.request
 import zipfile
-from typing import Any, Callable, List, Iterable, Optional, TypeVar, Dict, IO, Tuple, Iterator
+from typing import Any, Callable, Dict, IO, Iterable, Iterator, List, Optional, Tuple, TypeVar
 from urllib.parse import urlparse
 
 import requests
 import torch
 from torch.utils.model_zoo import tqdm
 
-from .._internally_replaced_utils import (
-    _download_file_from_remote_location,
-    _is_remote_location_available,
-)
+from .._internally_replaced_utils import _download_file_from_remote_location, _is_remote_location_available
 
 
 USER_AGENT = "pytorch/vision"

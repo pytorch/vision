@@ -5,10 +5,10 @@ from typing import Any, Optional
 from torchvision.prototype.transforms import ImageNetEval
 from torchvision.transforms.functional import InterpolationMode
 
-from ...models.googlenet import GoogLeNet, GoogLeNetOutputs, _GoogLeNetOutputs
-from ._api import WeightsEnum, Weights
+from ...models.googlenet import _GoogLeNetOutputs, GoogLeNet, GoogLeNetOutputs
+from ._api import Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
-from ._utils import handle_legacy_interface, _ovewrite_named_param
+from ._utils import _ovewrite_named_param, handle_legacy_interface
 
 
 __all__ = ["GoogLeNet", "GoogLeNetOutputs", "_GoogLeNetOutputs", "GoogLeNet_Weights", "googlenet"]
