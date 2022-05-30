@@ -7,14 +7,14 @@ import torch.fx
 import torch.nn as nn
 
 from ...ops import StochasticDepth, MLP
+from ...utils import _log_api_usage_once
 from .._api import WeightsEnum
 from .._utils import _ovewrite_named_param
 
 
-__all__ = ["mvitv2_t", "mvitv2_s", "mvitv2_b", "MViTV2_T_Weights", "MViTV2_S_Weights", "MViTV2_B_Weights"]
+__all__ = ["MViTv2", "MViTV2_T_Weights", "MViTV2_S_Weights", "MViTV2_B_Weights", "mvitv2_t", "mvitv2_s", "mvitv2_b"]
 
 
-# TODO: add docs
 # TODO: add weights
 # TODO: test on references
 
@@ -262,7 +262,7 @@ class PositionalEncoding(nn.Module):
         return torch.cat((class_token, x), dim=1) + pos_embedding
 
 
-class MultiscaleVisionTransformer(nn.Module):
+class MViTv2(nn.Module):
     def __init__(
         self,
         spatial_size: Tuple[int, int],
@@ -277,10 +277,34 @@ class MultiscaleVisionTransformer(nn.Module):
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         num_classes: int = 400,
-        block: Callable[..., nn.Module] = None,
+        block: Optional[Callable[..., nn.Module]] = None,
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
+        """
+        MViTv2 main class.
+
+        Args:
+            spatial_size (tuple of ints): The spacial size of the input as ``(H, W)``.
+            temporal_size (int): The temporal size ``T`` of the input.
+            embed_channels (list of ints): A list with the embedding dimensions of each block group.
+            blocks (list of ints): A list with the number of blocks of each block group.
+            heads (list of ints): A list with the number of heads of each block group.
+            pool_kv_stride (tuple of ints): The initialize pooling stride of the first block.
+            pool_q_stride (tuple of ints): The pooling stride which reduces q in each block group.
+            pool_kvq_kernel (tuple of ints): The pooling kernel for the attention.
+            dropout (float): Dropout rate. Default: 0.0.
+            attention_dropout (float): Attention dropout rate. Default: 0.0.
+            stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
+            num_classes (int): The number of classes.
+            block (callable, optional): Module specifying the layer which consists of the attention and mlp.
+            norm_layer (callable, optional): Module specifying the normalization layer to use.
+        """
         super().__init__()
+        # This implementation employs a different parameterization scheme than the one used at PyTorch Video:
+        # https://github.com/facebookresearch/pytorchvideo/blob/718d0a4/pytorchvideo/models/vision_transformers.py
+        # We remove any experimental configuration that didn't make it to the final variants of the models. To represent
+        # the configuration of the architecture we use the simplified form suggested at Table 1 of the paper.
+        _log_api_usage_once(self)
         num_blocks = len(blocks)
         if num_blocks != len(embed_channels) or num_blocks != len(heads):
             raise ValueError("The parameters 'embed_channels', 'blocks' and 'heads' must have equal length.")
@@ -307,7 +331,7 @@ class MultiscaleVisionTransformer(nn.Module):
             temporal_size=temporal_size // self.conv_proj.stride[0],
         )
 
-        # Encoder modules
+        # Encoder module
         self.blocks = nn.ModuleList()
         stage_block_id = 0
         pool_countdown = blocks[0]
@@ -399,7 +423,7 @@ def _mvitv2(
     weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
-) -> MultiscaleVisionTransformer:
+) -> MViTv2:
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
@@ -407,7 +431,7 @@ def _mvitv2(
         # TODO: add min_temporal_size in the meta-data?
     spatial_size = kwargs.pop("spatial_size", (224, 224))
 
-    model = MultiscaleVisionTransformer(
+    model = MViTv2(
         spatial_size=spatial_size,
         temporal_size=temporal_size,
         embed_channels=embed_channels,
@@ -435,9 +459,28 @@ class MViTV2_B_Weights(WeightsEnum):
     pass
 
 
-def mvitv2_t(
-    *, weights: Optional[MViTV2_T_Weights] = None, progress: bool = True, **kwargs: Any
-) -> MultiscaleVisionTransformer:
+def mvitv2_t(*, weights: Optional[MViTV2_T_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTv2:
+    """
+    Constructs a tiny MViTv2 architecture from
+    `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
+    <https://arxiv.org/abs/2112.01526>`__.
+
+    Args:
+        weights (:class:`~torchvision.models.video.MViTV2_T_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.MViTV2_T_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.MViTV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.video.MViTV2_T_Weights
+        :members:
+    """
     weights = MViTV2_T_Weights.verify(weights)
 
     return _mvitv2(
@@ -453,9 +496,28 @@ def mvitv2_t(
     )
 
 
-def mvitv2_s(
-    *, weights: Optional[MViTV2_S_Weights] = None, progress: bool = True, **kwargs: Any
-) -> MultiscaleVisionTransformer:
+def mvitv2_s(*, weights: Optional[MViTV2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTv2:
+    """
+    Constructs a tiny MViTv2 architecture from
+    `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
+    <https://arxiv.org/abs/2112.01526>`__.
+
+    Args:
+        weights (:class:`~torchvision.models.video.MViTV2_S_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.MViTV2_S_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.MViTV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.video.MViTV2_S_Weights
+        :members:
+    """
     weights = MViTV2_S_Weights.verify(weights)
 
     return _mvitv2(
@@ -471,9 +533,28 @@ def mvitv2_s(
     )
 
 
-def mvitv2_b(
-    *, weights: Optional[MViTV2_B_Weights] = None, progress: bool = True, **kwargs: Any
-) -> MultiscaleVisionTransformer:
+def mvitv2_b(*, weights: Optional[MViTV2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTv2:
+    """
+    Constructs a tiny MViTv2 architecture from
+    `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
+    <https://arxiv.org/abs/2112.01526>`__.
+
+    Args:
+        weights (:class:`~torchvision.models.video.MViTV2_B_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.MViTV2_B_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.MViTV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.video.MViTV2_B_Weights
+        :members:
+    """
     weights = MViTV2_B_Weights.verify(weights)
 
     return _mvitv2(
