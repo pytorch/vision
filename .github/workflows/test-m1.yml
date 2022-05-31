@@ -13,7 +13,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Run tests
+      - name: Install TorchVision
         shell: arch -arch arm64 bash {0}
         env:
           ENV_NAME: conda-env-${{ github.run_id }}
@@ -26,5 +26,11 @@ jobs:
           conda run -p ${ENV_NAME} python3 -mpip install torch --extra-index-url=https://download.pytorch.org/whl/nightly
           conda run -p ${ENV_NAME} python3 setup.py develop
           conda run -p ${ENV_NAME} python3 -mpip install pytest pytest-mock
-          conda run -p ${ENV_NAME} python3 -mpytest -v --durations 20
+      - name: Run tests
+        shell: arch -arch arm64 bash {0}
+        env:
+          ENV_NAME: conda-env-${{ github.run_id }}
+          PY_VERS: ${{ matrix.py_vers }}
+        run: |
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --durations 20
           conda env remove -p ${ENV_NAME}
