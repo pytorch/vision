@@ -1,0 +1,39 @@
+name: Unit-tests on M1
+on:
+  pull_request:
+
+jobs:
+  tests:
+    name: "Build TorchVision M1 wheels"
+    runs-on: macos-m1
+    strategy:
+      matrix:
+        py_vers: [ "3.8"]
+
+    steps:
+      - name: Set up python
+        uses: actions/setup-python@v3
+        with:
+          python-version: 3.8
+
+      - name: Upgrade system packages
+        run: python -m pip install --upgrade pip setuptools wheel
+
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install PyTorch nightly builds
+        run: pip install --progress-bar=off --pre torch torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu/
+
+      - name: Install torchvision
+        run: pip install --progress-bar=off --no-build-isolation --editable .
+
+      - name: Install other prototype dependencies
+        run: pip install --progress-bar=off scipy pycocotools h5py iopath
+
+      - name: Install test requirements
+        run: pip install --progress-bar=off pytest pytest-mock
+
+      - name: Run prototype tests
+        shell: bash
+        run: pytest -v --durations 20
