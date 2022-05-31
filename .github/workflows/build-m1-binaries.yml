@@ -23,13 +23,30 @@ jobs:
           ENV_NAME: conda-env-${{ github.run_id }}
           PY_VERS: ${{ matrix.py_vers }}
         run: |
-          echo $PATH
           . ~/miniconda3/etc/profile.d/conda.sh
           set -ex
+          export BUILD_VERSION=0.14.0.dev$(date "+%Y%m%d")
+          WHL_NAME=torchvision-${BUILD_VERSION}-cp${PY_VERS/.}-cp${PY_VERS/.}-macosx_11_0_arm64.whl
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng openjpeg wheel pkg-config
-          conda run -p ${ENV_NAME} python3 -mpip install torch --extra-index-url=https://download.pytorch.org/whl/nightly torch
+          conda run -p ${ENV_NAME} python3 -mpip install torch --extra-index-url=https://download.pytorch.org/whl/nightly
           conda run -p ${ENV_NAME} python3 -mpip install delocate
           conda run -p ${ENV_NAME} python3 setup.py bdist_wheel
+          conda run -p ${ENV_NAME} DYLD_FALLBACK_LIBRARY_PATH="${ENV_NAME}/lib" delocate-wheel -v --ignore-missing-dependencies dist/${WHL_NAME}
+          conda env remove -p ${ENV_NAME}
+      - name: Test wheel
+        shell: arch -arch arm64 bash {0}
+        env:
+          ENV_NAME: conda-test-env-${{ github.run_id }}
+          PY_VERS: ${{ matrix.py_vers }}
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          set -ex
+          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy
+          conda run -p ${ENV_NAME} python3 -mpip install torch --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 -mpip install dist/*.whl
+          # Test torch is importable, by changing cwd and running import commands
+          conda run --cwd /tmp -p ${ENV_NAME} python3 -c "import torchvision;print('torchvision version is ', torchvision.__version__)"
+          conda run --cwd /tmp -p ${ENV_NAME} python3 -c "import torch;import torchvision;print('Is torchvision useable?', all(x is not None for x in [torch.ops.image.decode_png, torch.ops.torchvision.roi_align]))"
           conda env remove -p ${ENV_NAME}
       - name: Upload wheel to GitHub
         uses: actions/upload-artifact@v3
