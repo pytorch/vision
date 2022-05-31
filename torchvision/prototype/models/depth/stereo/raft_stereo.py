@@ -6,11 +6,10 @@ import torch.nn.functional as F
 from torch import Tensor
 from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
-from torchvision.ops import Conv2dNormActivation
-
-from torchvision.utils import _log_api_usage_once
 from torchvision.models._api import Weights, WeightsEnum
 from torchvision.models.optical_flow._utils import grid_sample, make_coords_grid, upsample_flow
+from torchvision.ops import Conv2dNormActivation
+from torchvision.utils import _log_api_usage_once
 
 
 # Write helper function here temporarily
@@ -90,7 +89,9 @@ class BaseEncoder(nn.Module):
     It must downsample its input by 8.
     """
 
-    def __init__(self, *, block=ResidualBlock, layers=(64, 64, 96, 128), strides=(2, 1, 2, 2), norm_layer=nn.BatchNorm2d):
+    def __init__(
+        self, *, block=ResidualBlock, layers=(64, 64, 96, 128), strides=(2, 1, 2, 2), norm_layer=nn.BatchNorm2d
+    ):
         super().__init__()
 
         if len(layers) != 4:
@@ -115,7 +116,7 @@ class BaseEncoder(nn.Module):
                 if m.bias is not None:
                     nn.init.constant_(m.bias, 0)
 
-        num_downsampling = sum([x-1 for x in strides])
+        num_downsampling = sum([x - 1 for x in strides])
         self.downsampling_ratio = 2 ** (num_downsampling)
 
     def _make_2_blocks(self, block, in_channels, out_channels, norm_layer, first_stride):
@@ -163,10 +164,22 @@ class MultiLevelContextEncoder(nn.Module):
         base_dim = base_encoder.output_dim
 
         # Layer to output hidden_state and context separately (each produce output_dim//2 dims)
-        self.out_hidden_states = nn.ModuleList([self._make_out_layer(base_dim, output_dim // 2, with_block=with_block, block=block) for with_block in out_with_blocks])
-        self.out_contexts = nn.ModuleList([self._make_out_layer(base_dim, output_dim // 2, with_block=with_block, block=block) for with_block in out_with_blocks])
+        self.out_hidden_states = nn.ModuleList(
+            [
+                self._make_out_layer(base_dim, output_dim // 2, with_block=with_block, block=block)
+                for with_block in out_with_blocks
+            ]
+        )
+        self.out_contexts = nn.ModuleList(
+            [
+                self._make_out_layer(base_dim, output_dim // 2, with_block=with_block, block=block)
+                for with_block in out_with_blocks
+            ]
+        )
 
-        self.downsamplers = nn.ModuleList([self._make_downsampler(block, base_dim, base_dim) for i in range(1, self.num_level)])
+        self.downsamplers = nn.ModuleList(
+            [self._make_downsampler(block, base_dim, base_dim) for i in range(1, self.num_level)]
+        )
 
     def _make_out_layer(self, in_channels, out_channels, with_block=1, block=ResidualBlock):
         conv_layer = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
@@ -234,7 +247,7 @@ class MotionEncoder(nn.Module):
         return torch.cat([corr_flow, flow_orig], dim=1)
 
 
-# REUSE torchvision.models.optical_flow.raft.ConvGRU
+# Modified torchvision.models.optical_flow.raft.ConvGRU
 class ConvGRU(nn.Module):
     """Convolutional Gru unit."""
 
@@ -244,11 +257,13 @@ class ConvGRU(nn.Module):
         self.convr = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
         self.convq = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
 
-    def forward(self, h, x):
+    # Modified to accept pre-convolved contexts, see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
+    def forward(self, h, context, x):
         hx = torch.cat([h, x], dim=1)
-        z = torch.sigmoid(self.convz(hx))
-        r = torch.sigmoid(self.convr(hx))
-        q = torch.tanh(self.convq(torch.cat([r * h, x], dim=1)))
+        cz, cr, cq = context
+        z = torch.sigmoid(self.convz(hx) + cz)
+        r = torch.sigmoid(self.convr(hx) + cr)
+        q = torch.tanh(self.convq(torch.cat([r * h, x], dim=1)) + cq)
         h = (1 - z) * h + z * q
         return h
 
@@ -290,10 +305,12 @@ class MultiLevelUpdateBlock(nn.Module):
                 input_dim += hidden_dims[i + 1]
             gru_input_dims.append(input_dim)
 
-        self.grus = nn.ModuleList([
-            ConvGRU(input_size=gru_input_dims[i], hidden_size=hidden_dims[i], kernel_size=3, padding=1)
-            for i in range(len(hidden_dims))
-        ])
+        self.grus = nn.ModuleList(
+            [
+                ConvGRU(input_size=gru_input_dims[i], hidden_size=hidden_dims[i], kernel_size=3, padding=1)
+                for i in range(len(hidden_dims))
+            ]
+        )
 
         self.hidden_dims = hidden_dims
 
@@ -310,12 +327,15 @@ class MultiLevelUpdateBlock(nn.Module):
             for it in num_processed:
                 # X is concatination of downsampled hidden_dim (or motion_features if no bigger dim) with
                 # upsampled hidden_dim (or nothing if not exist)
-                features = self._downsample2x(hidden_states[i - 1]) if i > 0 else self.motion_encoder(depth, corr_features)
+                features = (
+                    self._downsample2x(hidden_states[i - 1]) if i > 0 else self.motion_encoder(depth, corr_features)
+                )
                 if i < len(self.grus) - 1:
                     features = torch.cat([features, self._upsample2x(hidden_states[i + 1])], dim=1)
-                x = torch.cat([contexts[i], features], dim=1)
+                # x = torch.cat([contexts[i], features], dim=1)
+                x = features
 
-                hidden_states[i] = self.grus[i](hidden_states[i], x)
+                hidden_states[i] = self.grus[i](hidden_states[i], contexts[i], x)
 
                 # NOTE: For slow-fast gru, we dont always want to calculate delta depth for every call on UpdateBlock
                 # Hence we move the delta depth calculation to the RAFT-Stereo main forward
@@ -325,8 +345,7 @@ class MultiLevelUpdateBlock(nn.Module):
 
 # MODIFIED from torchvision.models.optical_flow.raft.MaskPredictor
 class MaskPredictor(nn.Module):
-    """Mask predictor to be used when upsampling the predicted depth.
-    """
+    """Mask predictor to be used when upsampling the predicted depth."""
 
     def __init__(self, *, in_channels, hidden_size, out_channels, multiplier=0.25):
         super().__init__()
@@ -420,15 +439,24 @@ class CorrBlock(nn.Module):
         fmap1 = fmap1.view(batch_size, num_channels, h, w)
         fmap2 = fmap2.view(batch_size, num_channels, h, w)
 
-        corr = torch.einsum("aijk,aijh->ajkh", fmap1, fmap2) 
+        corr = torch.einsum("aijk,aijh->ajkh", fmap1, fmap2)
         corr = corr.view(batch_size, h, w, 1, w)
         return corr / torch.sqrt(torch.tensor(num_channels))
 
 
 # MODIFIED from torchvision.models.optical_flow.raft.RAFT
 class RaftStereo(nn.Module):
-    def __init__(self, *, feature_encoder, context_encoder,
-            corr_block, update_block, depth_head, mask_predictor=None, slow_fast=False):
+    def __init__(
+        self,
+        *,
+        feature_encoder,
+        context_encoder,
+        corr_block,
+        update_block,
+        depth_head,
+        mask_predictor=None,
+        slow_fast=False,
+    ):
         """RAFT-Stereo model from
         `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
         `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
@@ -479,6 +507,12 @@ class RaftStereo(nn.Module):
         self.depth_head = depth_head
         self.mask_predictor = mask_predictor
 
+        hidden_dims = self.update_block.hidden_dims
+        # Follow the original implementation to do pre convolution on the context
+        # See: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/raft_stereo.py#L32
+        self.context_convs = nn.ModuleList(
+            [nn.Conv2d(hidden_dims[i], hidden_dims[i] * 3, kernel_size=3, padding=1) for i in range(self.num_level)]
+        )
         self.slow_fast = slow_fast
 
     def forward(self, image1, image2, num_iter: int = 12):
@@ -486,7 +520,9 @@ class RaftStereo(nn.Module):
         if (h, w) != image2.shape[-2:]:
             raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")
         if not (h % self.base_downsampling_ratio == 0) and (w % self.base_downsampling_ratio == 0):
-            raise ValueError(f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got {h} (h) and {w} (w)")
+            raise ValueError(
+                f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got {h} (h) and {w} (w)"
+            )
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
@@ -507,7 +543,7 @@ class RaftStereo(nn.Module):
         for i in range(len(context_outs)):
             hidden_state, context = torch.split(context_outs[i], [hidden_dims[i], context_out_channels[i]], dim=1)
             hidden_states.append(torch.tanh(hidden_state))
-            contexts.append(F.relu(context))
+            contexts.append(self.context_convs[i](F.relu(context)).split(split_size=hidden_dims, dim=1))
 
         _, Cf, Hf, Wf = fmap1.shape
         coords0 = make_coords_grid(batch_size, Hf, Wf).to(fmap1.device)
@@ -523,7 +559,9 @@ class RaftStereo(nn.Module):
                 # We process lower resolution multiple times more often
                 for i in range(1, self.num_level):
                     num_processed = [0] * (self.num_level - i) + [1] * i
-                    hidden_states = self.update_block(hidden_states, contexts, corr_features, depth, num_processed=num_processed)
+                    hidden_states = self.update_block(
+                        hidden_states, contexts, corr_features, depth, num_processed=num_processed
+                    )
             hidden_states = self.update_block(hidden_states, contexts, corr_features, depth, num_processed=[1, 1, 1])
             # Take the largest hidden_state to get the depth
             hidden_state = hidden_states[0]
@@ -533,7 +571,9 @@ class RaftStereo(nn.Module):
 
             coords1 = coords1 + delta_depth
             up_mask = None if self.mask_predictor is None else self.mask_predictor(hidden_state)
-            upsampled_depth = upsample_with_mask_and_factor(x=(coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio)
+            upsampled_depth = upsample_with_mask_and_factor(
+                x=(coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio
+            )
             depth_predictions.append(upsampled_depth)
 
         return depth_predictions
@@ -572,26 +612,38 @@ def _raft_stereo(
 
     if shared_encoder_weight:
         base_encoder = BaseEncoder(
-            block=context_encoder_block, layers=context_encoder_layers[:-1],
-            strides=context_encoder_strides, norm_layer=nn.BatchNorm2d
+            block=context_encoder_block,
+            layers=context_encoder_layers[:-1],
+            strides=context_encoder_strides,
+            norm_layer=nn.BatchNorm2d,
         )
         feature_base_encoder = base_encoder
         context_base_encoder = base_encoder
     else:
         feature_base_encoder = BaseEncoder(
-            block=feature_encoder_block, layers=feature_encoder_layers[:-1],
-            strides=feature_encoder_strides, norm_layer=nn.InstanceNorm2d
+            block=feature_encoder_block,
+            layers=feature_encoder_layers[:-1],
+            strides=feature_encoder_strides,
+            norm_layer=nn.InstanceNorm2d,
         )
         context_base_encoder = BaseEncoder(
-            block=context_encoder_block, layers=context_encoder_layers[:-1],
-            strides=context_encoder_strides, norm_layer=nn.BatchNorm2d
+            block=context_encoder_block,
+            layers=context_encoder_layers[:-1],
+            strides=context_encoder_strides,
+            norm_layer=nn.BatchNorm2d,
         )
     feature_encoder = FeatureEncoder(
-        feature_base_encoder, output_dim=feature_encoder_layers[-1],
-        shared_base=shared_encoder_weight, block=feature_encoder_block)
+        feature_base_encoder,
+        output_dim=feature_encoder_layers[-1],
+        shared_base=shared_encoder_weight,
+        block=feature_encoder_block,
+    )
     context_encoder = MultiLevelContextEncoder(
-        context_base_encoder, output_dim=context_encoder_layers[-1],
-        out_with_blocks=context_encoder_out_with_blocks, block=context_encoder_block)
+        context_base_encoder,
+        output_dim=context_encoder_layers[-1],
+        out_with_blocks=context_encoder_out_with_blocks,
+        block=context_encoder_block,
+    )
 
     feature_downsampling_ratio = feature_encoder.base_downsampling_ratio
 
