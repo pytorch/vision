@@ -10,7 +10,7 @@ on:
   workflow_dispatch:
 jobs:
   tests:
-    name: "Build TorchVision M1 wheels"
+    name: "Unit-tests on M1"
     runs-on: macos-m1
     strategy:
       matrix:

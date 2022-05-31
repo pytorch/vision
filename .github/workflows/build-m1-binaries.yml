@@ -50,6 +50,7 @@ jobs:
           conda run --cwd /tmp -p ${ENV_NAME} python3 -c "import torch;import torchvision;print('Is torchvision useable?', all(x is not None for x in [torch.ops.image.decode_png, torch.ops.torchvision.roi_align]))"
           conda env remove -p ${ENV_NAME}
       - name: Upload wheel to GitHub
+        if: ${{ github.event_name == 'push' && steps.extract_branch.outputs.branch == 'nightly' }}
         uses: actions/upload-artifact@v3
         with:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1
