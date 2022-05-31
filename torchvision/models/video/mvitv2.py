@@ -23,6 +23,8 @@ __all__ = [
 ]
 
 
+# TODO: check if we should implement relative pos embedding (Section 4.1 in the paper). Ref:
+# https://github.com/facebookresearch/mvit/blob/main/mvit/models/attention.py#L45
 # TODO: add weights
 # TODO: test on references
 
