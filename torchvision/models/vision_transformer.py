@@ -39,6 +39,7 @@ class ConvStemConfig(NamedTuple):
 
 class MLPBlock(MLP):
     """Transformer MLP block."""
+
     _version = 2
 
     def __init__(self, in_dim: int, mlp_dim: int, dropout: float):
