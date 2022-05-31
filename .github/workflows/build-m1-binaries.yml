@@ -49,6 +49,7 @@ jobs:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1
           path: dist/
       - name: Upload wheel to S3
+        if: ${{ github.event_name == 'push' && steps.extract_branch.outputs.branch == 'nightly' }}
         shell: arch -arch arm64 bash {0}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
