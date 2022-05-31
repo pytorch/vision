@@ -1,7 +1,13 @@
 name: Build on M1
 on:
   pull_request:
-
+    paths:
+      - .github/workflows/build-m1-binaries.yml
+  push:
+    branches:
+      - nightly
+      - main
+  workflow_dispatch:
 jobs:
   build_wheels:
     name: "Build TorchVision M1 wheels"
