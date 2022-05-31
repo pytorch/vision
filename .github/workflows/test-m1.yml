@@ -25,6 +25,6 @@ jobs:
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng openjpeg wheel pkg-config
           conda run -p ${ENV_NAME} python3 -mpip install torch --extra-index-url=https://download.pytorch.org/whl/nightly
           conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -mpip install scipy pytest pytest-mock
+          conda run -p ${ENV_NAME} python3 -mpip install pytest pytest-mock
           pytest -v --durations 20
           conda env remove -p ${ENV_NAME}
