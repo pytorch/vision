@@ -161,7 +161,11 @@ class MultiLevelContextEncoder(nn.Module):
         self.base_encoder = base_encoder
         self.base_downsampling_ratio = base_encoder.downsampling_ratio
         base_dim = base_encoder.output_dim
-        self.output_layers = nn.ModuleList([self._make_out_layer(base_dim, output_dim, with_block=with_block, block=block) for with_block in out_with_blocks])
+
+        # Layer to output hidden_state and context separately (each produce output_dim//2 dims)
+        self.out_hidden_states = nn.ModuleList([self._make_out_layer(base_dim, output_dim // 2, with_block=with_block, block=block) for with_block in out_with_blocks])
+        self.out_contexts = nn.ModuleList([self._make_out_layer(base_dim, output_dim // 2, with_block=with_block, block=block) for with_block in out_with_blocks])
+
         self.downsamplers = nn.ModuleList([self._make_downsampler(block, base_dim, base_dim) for i in range(1, self.num_level)])
 
     def _make_out_layer(self, in_channels, out_channels, with_block=1, block=ResidualBlock):
@@ -179,10 +183,10 @@ class MultiLevelContextEncoder(nn.Module):
 
     def forward(self, x):
         x = self.base_encoder(x)
-        outs = [self.output_layers[0](x)]
+        outs = [torch.cat([self.out_hidden_states[0](x), self.out_contexts[0](x)], dim=1)]
         for i in range(0, self.num_level - 1):
             x = self.downsamplers[i](x)
-            outs.append(self.output_layers[i + 1](x))
+            outs.append(torch.cat([self.out_hidden_states[i + 1](x), self.out_contexts[i + 1](x)], dim=1))
         return outs
 
 
@@ -637,6 +641,10 @@ class Raft_Stereo_Shared_Weights(WeightsEnum):
     pass
 
 
+class Raft_Stereo_Weights(WeightsEnum):
+    pass
+
+
 def raft_stereo_shared(*, weights: Optional[Raft_Stereo_Shared_Weights] = None, progress=True, **kwargs) -> RaftStereo:
     """RAFT model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
@@ -672,6 +680,61 @@ def raft_stereo_shared(*, weights: Optional[Raft_Stereo_Shared_Weights] = None, 
         # Context encoder
         context_encoder_layers=(64, 64, 96, 128, 256),
         context_encoder_strides=(2, 1, 2, 2),
+        context_encoder_out_with_blocks=[1, 1, 0],
+        context_encoder_block=ResidualBlock,
+        # Correlation block
+        corr_block_num_levels=4,
+        corr_block_radius=4,
+        # Motion encoder
+        motion_encoder_corr_layers=(64, 64),
+        motion_encoder_flow_layers=(64, 64),
+        motion_encoder_out_channels=128,
+        # Update block
+        update_block_hidden_dims=[128, 128, 128],
+        # Flow head
+        flow_head_hidden_size=256,
+        # Mask predictor
+        mask_predictor_hidden_size=256,
+        use_mask_predictor=True,
+        **kwargs,
+    )
+
+
+def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True, **kwargs) -> RaftStereo:
+    """RAFT model from
+    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
+
+    Please see the example below for a tutorial on how to use this model.
+
+    Args:
+        weights(:class:`~torchvision.models.optical_flow.Raft_Stereo_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.optical_flow.Raft_Stereo_Weights`
+            below for more details, and possible values. By default, no
+            pre-trained weights are used.
+        progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.optical_flow.Raft_Stereo_Weights
+        :members:
+    """
+
+    weights = Raft_Stereo_Weights.verify(weights)
+
+    return _raft_stereo(
+        weights=weights,
+        progress=progress,
+        shared_encoder_weight=False,
+        # Feature encoder
+        feature_encoder_layers=(64, 64, 96, 128, 256),
+        feature_encoder_strides=(1, 1, 2, 2),
+        feature_encoder_block=ResidualBlock,
+        # Context encoder
+        context_encoder_layers=(64, 64, 96, 128, 256),
+        context_encoder_strides=(1, 1, 2, 2),
         context_encoder_out_with_blocks=[1, 1, 0],
         context_encoder_block=ResidualBlock,
         # Correlation block
