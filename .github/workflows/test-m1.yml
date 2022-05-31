@@ -37,5 +37,7 @@ jobs:
           ENV_NAME: conda-env-${{ github.run_id }}
           PY_VERS: ${{ matrix.py_vers }}
         run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          set -ex
           conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --durations 20
           conda env remove -p ${ENV_NAME}
