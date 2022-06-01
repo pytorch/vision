@@ -376,6 +376,7 @@ Box MAPs are reported on COCO val2017:
 
 .. include:: generated/detection_table.rst
 
+
 Instance Segmentation
 ---------------------
 
@@ -480,6 +481,18 @@ Table of all available video classification weights
 Accuracies are reported on Kinetics-400 using single crops for clip length 16:
 
 .. include:: generated/video_table.rst
+
+Optical Flow
+============
+
+.. currentmodule:: torchvision.models.optical_flow
+
+The following Optical Flow models are available, with or without pre-trained
+
+.. toctree::
+   :maxdepth: 1
+
+   models/raft
 
 Using models from Hub
 =====================
