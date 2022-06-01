@@ -80,7 +80,7 @@ class Pool(nn.Module):
         class_token, x = torch.tensor_split(x, indices=(1,), dim=2)
         x = x.transpose(2, 3)
         B, N, C = x.shape[:3]
-        x = x.reshape((B * N, C) + thw)
+        x = x.reshape((B * N, C) + thw).contiguous()
 
         # normalizing prior pooling is useful when we use BN which can be absorbed to speed up inference
         if self.norm_before_pool and self.norm_act is not None:
@@ -271,7 +271,7 @@ class PositionalEncoding(nn.Module):
         pos_embedding.add_(self.spatial_pos.unsqueeze(0).expand(self.temporal_size, -1, -1).reshape(-1, embed_size))
         pos_embedding = torch.cat((self.class_pos.unsqueeze(0), pos_embedding), dim=0).unsqueeze(0)
         class_token = self.class_token.expand(x.size(0), -1).unsqueeze(1)
-        return torch.cat((class_token, x), dim=1) + pos_embedding
+        return torch.cat((class_token, x), dim=1).add_(pos_embedding)
 
 
 class MViTV2(nn.Module):
