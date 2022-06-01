@@ -208,9 +208,11 @@ class MobileNet_V2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#mobilenetv2",
-            "metrics": {
-                "acc@1": 71.878,
-                "acc@5": 90.286,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 71.878,
+                    "acc@5": 90.286,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -221,9 +223,11 @@ class MobileNet_V2_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-reg-tuning",
-            "metrics": {
-                "acc@1": 72.154,
-                "acc@5": 90.822,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 72.154,
+                    "acc@5": 90.822,
+                }
             },
             "_docs": """
                 These weights improve upon the results of the original paper by using a modified version of TorchVision's

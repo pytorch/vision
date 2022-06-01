@@ -317,9 +317,11 @@ class ResNet18_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 11689512,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "metrics": {
-                "acc@1": 69.758,
-                "acc@5": 89.078,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.758,
+                    "acc@5": 89.078,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -335,9 +337,11 @@ class ResNet34_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 21797672,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "metrics": {
-                "acc@1": 73.314,
-                "acc@5": 91.420,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 73.314,
+                    "acc@5": 91.420,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -353,9 +357,11 @@ class ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "metrics": {
-                "acc@1": 76.130,
-                "acc@5": 92.862,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.130,
+                    "acc@5": 92.862,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -367,9 +373,11 @@ class ResNet50_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 25557032,
             "recipe": "https://github.com/pytorch/vision/issues/3995#issuecomment-1013906621",
-            "metrics": {
-                "acc@1": 80.858,
-                "acc@5": 95.434,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 80.858,
+                    "acc@5": 95.434,
+                }
             },
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -388,9 +396,11 @@ class ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "metrics": {
-                "acc@1": 77.374,
-                "acc@5": 93.546,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.374,
+                    "acc@5": 93.546,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -402,9 +412,11 @@ class ResNet101_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 44549160,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 81.886,
-                "acc@5": 95.780,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 81.886,
+                    "acc@5": 95.780,
+                }
             },
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -423,9 +435,11 @@ class ResNet152_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnet",
-            "metrics": {
-                "acc@1": 78.312,
-                "acc@5": 94.046,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 78.312,
+                    "acc@5": 94.046,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -437,9 +451,11 @@ class ResNet152_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 60192808,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 82.284,
-                "acc@5": 96.002,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.284,
+                    "acc@5": 96.002,
+                }
             },
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -458,9 +474,11 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
-            "metrics": {
-                "acc@1": 77.618,
-                "acc@5": 93.698,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 77.618,
+                    "acc@5": 93.698,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -472,9 +490,11 @@ class ResNeXt50_32X4D_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 25028904,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 81.198,
-                "acc@5": 95.340,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 81.198,
+                    "acc@5": 95.340,
+                }
             },
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -493,9 +513,11 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#resnext",
-            "metrics": {
-                "acc@1": 79.312,
-                "acc@5": 94.526,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 79.312,
+                    "acc@5": 94.526,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -507,9 +529,11 @@ class ResNeXt101_32X8D_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 88791336,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "metrics": {
-                "acc@1": 82.834,
-                "acc@5": 96.228,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.834,
+                    "acc@5": 96.228,
+                }
             },
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -528,9 +552,11 @@ class ResNeXt101_64X4D_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 83455272,
             "recipe": "https://github.com/pytorch/vision/pull/5935",
-            "metrics": {
-                "acc@1": 83.246,
-                "acc@5": 96.454,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 83.246,
+                    "acc@5": 96.454,
+                }
             },
             "_docs": """
                 These weights were trained from scratch by using TorchVision's `new training recipe
@@ -549,9 +575,11 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
-            "metrics": {
-                "acc@1": 78.468,
-                "acc@5": 94.086,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 78.468,
+                    "acc@5": 94.086,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -563,9 +591,11 @@ class Wide_ResNet50_2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 68883240,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe-with-fixres",
-            "metrics": {
-                "acc@1": 81.602,
-                "acc@5": 95.758,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 81.602,
+                    "acc@5": 95.758,
+                }
             },
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe
@@ -584,9 +614,11 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/pull/912#issue-445437439",
-            "metrics": {
-                "acc@1": 78.848,
-                "acc@5": 94.284,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 78.848,
+                    "acc@5": 94.284,
+                }
             },
             "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
         },
@@ -598,9 +630,11 @@ class Wide_ResNet101_2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 126886696,
             "recipe": "https://github.com/pytorch/vision/issues/3995#new-recipe",
-            "metrics": {
-                "acc@1": 82.510,
-                "acc@5": 96.020,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 82.510,
+                    "acc@5": 96.020,
+                }
             },
             "_docs": """
                 These weights improve upon the results of the original paper by using TorchVision's `new training recipe

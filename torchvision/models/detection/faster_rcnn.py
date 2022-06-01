@@ -383,8 +383,10 @@ class FasterRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 41755286,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-resnet-50-fpn",
-            "metrics": {
-                "box_map": 37.0,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 37.0,
+                }
             },
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
@@ -400,8 +402,10 @@ class FasterRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 43712278,
             "recipe": "https://github.com/pytorch/vision/pull/5763",
-            "metrics": {
-                "box_map": 46.7,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 46.7,
+                }
             },
             "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
@@ -417,8 +421,10 @@ class FasterRCNN_MobileNet_V3_Large_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-fpn",
-            "metrics": {
-                "box_map": 32.8,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 32.8,
+                }
             },
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
@@ -434,8 +440,10 @@ class FasterRCNN_MobileNet_V3_Large_320_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 19386354,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#faster-r-cnn-mobilenetv3-large-320-fpn",
-            "metrics": {
-                "box_map": 22.8,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 22.8,
+                }
             },
             "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
