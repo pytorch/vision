@@ -146,7 +146,7 @@ commands:
         default: true
     steps:
       - pip_install:
-          args: --pre torch --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+          args: --pre torch -f https://download.pytorch.org/whl/nightly/cpu
           descr: Install PyTorch from nightly releases
       - pip_install:
           args: --no-build-isolation <<# parameters.editable >> --editable <</ parameters.editable >> .
@@ -158,7 +158,7 @@ commands:
           args: iopath
           descr: Install third-party dependencies
       - pip_install:
-          args: --pre torchdata --extra-index-url https://download.pytorch.org/whl/nightly/cpu
+          args: --pre torchdata -f https://download.pytorch.org/whl/nightly/cpu
           descr: Install torchdata from nightly releases
 
   # Most of the test suite is handled by the `unittest` jobs, with completely different workflow and setup.
