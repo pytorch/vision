@@ -347,7 +347,6 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             metrics = meta.pop("_metrics")
             for dataset, dataset_metrics in metrics.items():
                 for metric_name, metric_value in dataset_metrics.items():
-                    metric_name = metric_name.replace("_", "-")
                     table.append((f"{metric_name} (on {dataset})", str(metric_value)))
 
             for k, v in meta.items():
