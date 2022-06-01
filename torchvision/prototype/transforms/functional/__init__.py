@@ -46,6 +46,7 @@ from ._geometry import (
     resize_image_pil,
     resize_segmentation_mask,
     center_crop_bounding_box,
+    center_crop_segmentation_mask,
     center_crop_image_tensor,
     center_crop_image_pil,
     resized_crop_bounding_box,
