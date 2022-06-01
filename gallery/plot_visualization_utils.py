@@ -379,6 +379,8 @@ show(dogs_with_masks)
 # instance with class 15 (which corresponds to 'bench') was not selected.
 
 #####################################
+# .. _keypoint_output:
+#
 # Visualizing keypoints
 # ------------------------------
 # The :func:`~torchvision.utils.draw_keypoints` function can be used to
