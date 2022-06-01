@@ -28,7 +28,7 @@ jobs:
           set -ex
           export BUILD_VERSION=0.14.0.dev$(date "+%Y%m%d")
           WHL_NAME=torchvision-${BUILD_VERSION}-cp${PY_VERS/.}-cp${PY_VERS/.}-macosx_11_0_arm64.whl
-          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng openjpeg wheel pkg-config
+          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng libjpeg wheel pkg-config
           conda run -p ${ENV_NAME} python3 -mpip install torch --extra-index-url=https://download.pytorch.org/whl/nightly
           conda run -p ${ENV_NAME} python3 -mpip install delocate
           conda run -p ${ENV_NAME} python3 setup.py bdist_wheel
