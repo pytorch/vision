@@ -50,6 +50,10 @@ class FCNHead(nn.Sequential):
 _COMMON_META = {
     "categories": _VOC_CATEGORIES,
     "min_size": (1, 1),
+    "_docs": """
+        These weights were trained on a subset of COCO, using only the 20 categories that are present in the Pascal VOC
+        dataset.
+    """,
 }
 
 

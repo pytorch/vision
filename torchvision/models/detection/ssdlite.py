@@ -196,6 +196,7 @@ class SSDLite320_MobileNet_V3_Large_Weights(WeightsEnum):
             "metrics": {
                 "box_map": 21.3,
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1

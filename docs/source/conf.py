@@ -345,9 +345,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             metrics = meta.pop("metrics", {})
             meta_with_metrics = dict(meta, **metrics)
 
-            custom_docs = meta_with_metrics.pop("_docs", None)  # Custom per-Weights docs
-            if custom_docs is not None:
-                lines += [custom_docs]
+            lines += [meta_with_metrics.pop("_docs")]
 
             if field == obj.DEFAULT:
                 lines += [f"Also available as ``{obj.__name__}.DEFAULT``."]
