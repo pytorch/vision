@@ -5,22 +5,15 @@
 # https://github.com/facebookresearch/ClassyVision/blob/309d4f12431c6b4d8540010a781dc2aa25fe88e7/classy_vision/models/resnext3d_stem.py
 # https://github.com/facebookresearch/ClassyVision/blob/309d4f12431c6b4d8540010a781dc2aa25fe88e7/classy_vision/models/resnext3d.py
 
+from ast import Call
 from collections import OrderedDict
-import torch.nn as nn
-from ....utils import _log_api_usage_once
-from typing import Optional, List
+from torch import Tensor, nn
+from ...utils import _log_api_usage_once
+from typing import Callable, Optional, List
 
-_skip_transformations = {
-    "postactivated_shortcut": PostactivatedShortcutTransformation,
-    "preactivated_shortcut": PreactivatedShortcutTransformation,
-    # For more types of skip transformations, add them below
-}
-
-_model_stems = {
-    "r2plus1d_stem": R2Plus1DStem,
-    "resnext3d_stem": ResNeXt3DStem,
-    # For more types of model stem, add them below
-}
+__all__ = [
+    "ResNeXt3D",
+]
 
 def _r2plus1_unit(
     dim_in: int,
@@ -336,13 +329,6 @@ class PreactivatedBottleneckTransformation(nn.Module):
         return x
 
 
-residual_transformations = {
-    "basic_r2plus1d_transformation": BasicR2Plus1DTransformation,
-    "basic_transformation": BasicTransformation,
-    "postactivated_bottleneck_transformation": PostactivatedBottleneckTransformation,
-    "preactivated_bottleneck_transformation": PreactivatedBottleneckTransformation,
-    # For more types of residual transformations, add them below
-}
 
 class PostactivatedShortcutTransformation(nn.Module):
     """
@@ -429,8 +415,8 @@ class ResBlock(nn.Module):
         temporal_conv_1x1: bool,
         temporal_stride: int,
         spatial_stride: int,
-        skip_transformation_type: str,
-        residual_transformation_type: str,
+        skip_transformation: Callable[..., nn.Module],
+        residual_transformation: Callable[..., nn.Module],
         num_groups: int = 1,
         inplace_relu: bool = True,
         bn_eps: float = 1e-5,
@@ -439,12 +425,8 @@ class ResBlock(nn.Module):
     ):
         super().__init__()
 
-        assert skip_transformation_type in _skip_transformations, (
-            "unknown skip transformation: %s" % skip_transformation_type
-        )
-
         if (dim_in != dim_out) or (spatial_stride != 1) or (temporal_stride != 1):
-            self.skip = _skip_transformations[skip_transformation_type](
+            self.skip = skip_transformation(
                 dim_in,
                 dim_out,
                 temporal_stride,
@@ -454,10 +436,8 @@ class ResBlock(nn.Module):
                 disable_pre_activation=disable_pre_activation,
             )
 
-        assert residual_transformation_type in residual_transformations, (
-            "unknown residual transformation: %s" % residual_transformation_type
-        )
-        self.residual = residual_transformations[residual_transformation_type](
+    
+        self.residual = residual_transformation(
             dim_in,
             dim_out,
             temporal_stride,
@@ -500,8 +480,8 @@ class ResStage(nn.Module):
         spatial_stride: List[int],
         num_blocks: List[int],
         num_groups: List[int],
-        skip_transformation_type: str,
-        residual_transformation_type: str,
+        skip_transformation: Callable[..., nn.Module],
+        residual_transformation: Callable[..., nn.Module],
         inplace_relu: bool = True,
         bn_eps: float = 1e-5,
         bn_mmt: float = 0.1,
@@ -553,8 +533,8 @@ class ResStage(nn.Module):
                     temporal_conv_1x1[p],
                     temporal_stride[p] if i == 0 else 1,
                     spatial_stride[p] if i == 0 else 1,
-                    skip_transformation_type,
-                    residual_transformation_type,
+                    skip_transformation,
+                    residual_transformation,
                     num_groups=num_groups[p],
                     inplace_relu=inplace_relu,
                     bn_eps=bn_eps,
@@ -565,7 +545,7 @@ class ResStage(nn.Module):
                 blocks.append((block_name, res_block))
 
             if final_stage and (
-                residual_transformation_type == "preactivated_bottleneck_transformation"
+                isinstance(residual_transformation, PreactivatedBottleneckTransformation)
             ):
                 # For pre-activation residual transformation, we conduct
                 # activation in the final stage before continuing forward pass
@@ -859,6 +839,158 @@ class R2Plus1DStem(ResNeXt3DStem):
             ],  # padding
             maxpool=[maxpool],
         )
+       
+class ResNeXt3D(nn.Module):
+    """
+    Implementation of:
+        1. Conventional `post-activated 3D ResNe(X)t <https://arxiv.org/
+        abs/1812.03982>`_.
+        2. `Pre-activated 3D ResNe(X)t <https://arxiv.org/abs/1811.12814>`_.
+        The model consists of one stem, a number of stages, and one or multiple
+        heads that are attached to different blocks in the stage.
+    """
+
+    def __init__(
+        self,
+        input_planes,
+        clip_crop_size,
+        skip_transformation,
+        residual_transformation: Callable[..., nn.Module],
+        frames_per_clip,
+        num_blocks,
+        stem: Callable[..., nn.Module],
+        stem_planes,
+        stem_temporal_kernel,
+        stem_spatial_kernel,
+        stem_maxpool,
+        stage_planes,
+        stage_temporal_kernel_basis,
+        temporal_conv_1x1,
+        stage_temporal_stride,
+        stage_spatial_stride,
+        num_groups,
+        width_per_group,
+        zero_init_residual_transform,
+    ):
+        """
+        Args:
+            input_planes (int): the channel dimension of the input. Normally 3 is used
+                for rgb input.
+            clip_crop_size (int): spatial cropping size of video clip at train time.
+            skip_transformation (Callable[..., nn.Module]): the skip transformation.
+            residual_transformation (Callable[.., Module]): the residual transformation.
+            frames_per_clip (int): Number of frames in a video clip.
+            num_blocks (list): list of the number of blocks in stages.
+            stem (Callable[..., nn.Module]): stem block.
+            stem_planes (int): the output dimension of the convolution in the model
+                stem.
+            stem_temporal_kernel (int): the temporal kernel size of the convolution
+                in the model stem.
+            stem_spatial_kernel (int): the spatial kernel size of the convolution
+                in the model stem.
+            stem_maxpool (bool): If true, perform max pooling.
+            stage_planes (int): the output channel dimension of the 1st residual stage
+            stage_temporal_kernel_basis (list): Basis of temporal kernel sizes for
+                each of the stage.
+            temporal_conv_1x1 (bool): Only useful for BottleneckTransformation.
+                In a pathaway, if True, do temporal convolution in the first 1x1
+                Conv3d. Otherwise, do it in the second 3x3 Conv3d.
+            stage_temporal_stride (int): the temporal stride of the residual
+                transformation.
+            stage_spatial_stride (int): the spatial stride of the the residual
+                transformation.
+            num_groups (int): number of groups for the convolution.
+                num_groups = 1 is for standard ResNet like networks, and
+                num_groups > 1 is for ResNeXt like networks.
+            width_per_group (int): Number of channels per group in 2nd (group)
+                conv in the residual transformation in the first stage
+            zero_init_residual_transform (bool): if true, the weight of last
+                operation, which could be either BatchNorm3D in post-activated
+                transformation or Conv3D in pre-activated transformation, in the
+                residual transformation is initialized to zero
+        """
+        super().__init__()
+
+        self.input_planes = input_planes
+        self.clip_crop_size = clip_crop_size
+        self.frames_per_clip = frames_per_clip
+        self.num_blocks = num_blocks
+
+        self.stem = stem(
+            stem_temporal_kernel,
+            stem_spatial_kernel,
+            input_planes,
+            stem_planes,
+            stem_maxpool,
+        )
+
+        num_stages = len(num_blocks)
+        out_planes = [stage_planes * 2 ** i for i in range(num_stages)]
+        in_planes = [stem_planes] + out_planes[:-1]
+        inner_planes = [
+            num_groups * width_per_group * 2 ** i for i in range(num_stages)
+        ]
+
+        stages = []
+        for s in range(num_stages):
+            stage = ResStage(
+                s + 1,  # stem is viewed as stage 0, and following stages start from 1
+                [in_planes[s]],
+                [out_planes[s]],
+                [inner_planes[s]],
+                [stage_temporal_kernel_basis[s]],
+                [temporal_conv_1x1[s]],
+                [stage_temporal_stride[s]],
+                [stage_spatial_stride[s]],
+                [num_blocks[s]],
+                [num_groups],
+                skip_transformation,
+                residual_transformation,
+                disable_pre_activation=(s == 0),
+                final_stage=(s == (num_stages - 1)),
+            )
+            stages.append(stage)
+
+        self.stages = nn.Sequential(*stages)
+        self._init_parameter(zero_init_residual_transform)
+
+    def _init_parameter(self, zero_init_residual_transform):
+        for m in self.modules():
+            if isinstance(m, nn.Conv3d):
+                if (
+                    hasattr(m, "final_transform_op")
+                    and m.final_transform_op
+                    and zero_init_residual_transform
+                ):
+                    nn.init.constant_(m.weight, 0)
+                else:
+                    nn.init.kaiming_normal_(
+                        m.weight, mode="fan_out", nonlinearity="relu"
+                    )
+                if m.bias is not None:
+                    nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.BatchNorm3d) and m.affine:
+                if (
+                    hasattr(m, "final_transform_op")
+                    and m.final_transform_op
+                    and zero_init_residual_transform
+                ):
+                    batchnorm_weight = 0.0
+                else:
+                    batchnorm_weight = 1.0
+                nn.init.constant_(m.weight, batchnorm_weight)
+                nn.init.constant_(m.bias, 0)
+            elif isinstance(m, nn.Linear):
+                nn.init.normal_(m.weight, mean=0.0, std=0.01)
+                nn.init.constant_(m.bias, 0)
 
 
+    def forward(self, x: Tensor):
+        """
+        Args:
+            x (torch.Tensor): video input with shape N x C x T x H x W.
+        """
+        out = self.stem([x])
+        out = self.stages(out)
 
+        return out
