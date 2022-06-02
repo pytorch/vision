@@ -210,7 +210,7 @@ def draw_bounding_boxes(
         raise ValueError("Only grayscale and RGB images are supported")
     elif (boxes[:, 0] > boxes[:, 2]).any().item() or (boxes[:, 1] > boxes[:, 3]).any().item():
         raise ValueError(
-            "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to " "convert them"
+            "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
         )
 
     num_boxes = boxes.shape[0]
