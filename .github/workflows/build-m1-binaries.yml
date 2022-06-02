@@ -32,6 +32,7 @@ jobs:
           conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/nightly
           conda run -p ${ENV_NAME} python3 -mpip install delocate
           conda run -p ${ENV_NAME} python3 setup.py bdist_wheel
+          export PYTORCH_VERSION="$(conda run -p ${ENV_NAME} python3 -mpip show torch | grep ^Version: | sed 's/Version:  *//')"
           conda run -p ${ENV_NAME} DYLD_FALLBACK_LIBRARY_PATH="${ENV_NAME}/lib" delocate-wheel -v --ignore-missing-dependencies dist/${WHL_NAME}
           conda env remove -p ${ENV_NAME}
       - name: Test wheel
