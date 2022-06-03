@@ -441,6 +441,50 @@ class RandomShortestSize(nn.Module):
         return image, target
 
 
+def copy_paste(image, source_data, paste_image, paste_data):
+    number_of_masks = len(paste_data["masks"])
+    random_selection = torch.randint(0, number_of_masks, (number_of_masks,)).unique()
+
+    # Combine masks
+    paste_alpha_mask = paste_data["masks"][random_selection].sum(dim=0).greater(0)
+
+    paste_alpha_mask = F.gaussian_blur(paste_alpha_mask.unsqueeze(0), kernel_size=(5, 5), sigma=2.0)  # add blur
+
+    # Paste pixels from paste_image to image
+    image.mul_(torch.logical_not(paste_alpha_mask))  # Delete pixels from source image
+    paste_pixels = paste_image * paste_alpha_mask  # Copy pixels from paste image
+    image.add_(paste_pixels)  # paste it on source image
+
+    # update original masks
+    source_data["masks"] = source_data["masks"] ^ paste_alpha_mask & source_data["masks"]
+
+    # remove masks where no annotations are present (all values are 0)
+    mask_filter = source_data["masks"].sum((2, 1)).not_equal(0)
+    # TODO: update area
+
+    # Update other attributes
+    source_data["masks"] = source_data["masks"][mask_filter]
+    source_data["boxes"] = ops.masks_to_boxes(source_data["masks"])
+    source_data["labels"] = source_data["labels"][mask_filter]
+
+    # TODO: Fix IndexError: The shape of the mask [5] at index 0 does not match the shape of the indexed tensor [6] at index 0
+    # if "area" in source_data:
+    #     source_data["area"] = source_data["area"][mask_filter]
+    # if "iscrowd" in source_data:
+    #     source_data["iscrowd"] = source_data["iscrowd"][mask_filter]
+
+    source_data["masks"] = torch.cat((source_data["masks"], paste_data["masks"][random_selection]))
+    source_data["boxes"] = torch.cat((source_data["boxes"], paste_data["boxes"][random_selection]))
+    source_data["labels"] = torch.cat((source_data["labels"], paste_data["labels"][random_selection]))
+
+    if "area" in source_data:
+        source_data["area"] = torch.cat((source_data["area"], paste_data["area"][random_selection]))
+    if "iscrowd" in source_data:
+        source_data["iscrowd"] = torch.cat((source_data["iscrowd"], paste_data["iscrowd"][random_selection]))
+
+    return image, source_data
+
+
 class SimpleCopyPaste(torch.nn.Module):
     def __init__(self, inplace=True):
         super().__init__()
@@ -465,98 +509,25 @@ class SimpleCopyPaste(torch.nn.Module):
         # TODO: Validate that batch contains tensors
         # TODO: Validate that target contains dictionaries with tensor values
 
-        if not self.inplace:
-            batch = copy.deepcopy(batch)
-            target = copy.deepcopy(target)
-
         shift = 1
 
-        # create shifted copy of batch and target as the original will be modified
-        batch_rolled = copy.deepcopy(batch[-shift:] + batch[:-shift])
-        target_rolled = copy.deepcopy(target[-shift:] + target[:-shift])
+        if self.inplace:
+            # create shifted copy of batch and target as the original will be modified
+            batch_rolled = copy.deepcopy(batch[-shift:] + batch[:-shift])
+            target_rolled = copy.deepcopy(target[-shift:] + target[:-shift])
+        else:
+            # use the original batch as the shifted copy. Make a copy of original which will be modified
+            batch_copy = copy.deepcopy(batch)
+            target_copy = copy.deepcopy(target)
+            batch_rolled = batch[-shift:] + batch[:-shift]
+            target_rolled = target[-shift:] + target[:-shift]
+            batch = batch_copy
+            target = target_copy
 
         for image, source_data, paste_image, paste_data in zip(batch, target, batch_rolled, target_rolled):
-            self.copy_paste(image, source_data, paste_image, paste_data)
+            copy_paste(image, source_data, paste_image, paste_data)
 
         return batch, target
-
-    def copy_paste(self, image, source_data, paste_image, paste_data):
-        number_of_masks = len(paste_data["masks"])
-        random_selection = torch.randint(0, number_of_masks, (number_of_masks,)).unique()
-
-        # Update image
-        paste_alpha_mask = self.combine_masks(paste_data["masks"][random_selection])
-        self.update_source_image(image, paste_image, paste_alpha_mask)
-
-        # update original masks
-        source_data["masks"] = source_data["masks"] ^ paste_alpha_mask & source_data["masks"]
-
-        # remove masks where no annotations are present (all values are 0)
-        mask_filter = source_data["masks"].sum((2, 1)).not_equal(0)
-        # TODO: update area
-
-        self.filter_source_data(source_data, mask_filter)
-        self.concat_paste_data(source_data, paste_data, random_selection)
-
-    def combine_masks(self, masks):
-        """
-        Combines multiple masks into one alpha mask
-        Args:
-            masks: tensor of masks that need to be combined
-
-        Returns:
-            Tensor: Boolean tensor of combined alpha mask
-        """
-        return masks.sum(dim=0).greater(0)
-
-    def concat_paste_data(self, source_data, paste_data, random_selection):
-        """
-        Concatenates the masks, boxes, labels, area and iscrowd info
-        from the paste image data to the source image data.
-        Args:
-            source_data: masks, boxes, labels, area, iscrowd info related to source image
-            paste_data: masks, boxes, labels, area, iscrowd info related to paste image
-            random_selection: indices of random masks selected from paste data
-
-        Returns:
-        """
-        source_data["masks"] = torch.cat((source_data["masks"], paste_data["masks"][random_selection]))
-        source_data["boxes"] = torch.cat((source_data["boxes"], paste_data["boxes"][random_selection]))
-        source_data["labels"] = torch.cat((source_data["labels"], paste_data["labels"][random_selection]))
-        source_data["area"] = torch.cat((source_data["area"], paste_data["area"][random_selection]))
-        source_data["iscrowd"] = torch.cat((source_data["iscrowd"], paste_data["iscrowd"][random_selection]))
-
-    def filter_source_data(self, source_data, mask_filter):
-        """
-        Removes masks and related masks data which are no longer visible due to overwriting of paste image.
-        Args:
-            mask_filter: boolean tensor of visible and non-visible masks
-            source_data: masks, boxes, labels, area, iscrowd info related to source image
-
-        Returns:
-
-        """
-        source_data["masks"] = source_data["masks"][mask_filter]
-        source_data["boxes"] = ops.masks_to_boxes(source_data["masks"])
-        source_data["labels"] = source_data["labels"][mask_filter]
-        source_data["area"] = source_data["area"][mask_filter]
-        source_data["iscrowd"] = source_data["iscrowd"][mask_filter]
-
-    def update_source_image(self, image, paste_image, paste_alpha_mask):
-        """
-        Copies the pixels from the paste_image to image using the paste_alpha_mask
-        Args:
-            image: Source image which has to be updated
-            paste_image: Image from which pixels will be copied
-            paste_alpha_mask: Mask of pixels which need to be copied
-
-        Returns:
-
-        """
-        paste_alpha_mask = F.gaussian_blur(paste_alpha_mask.unsqueeze(0), kernel_size=(5, 5), sigma=2.0)  # add blur
-        image.mul_(torch.logical_not(paste_alpha_mask))  # Delete pixels from source image
-        paste_pixels = paste_image * paste_alpha_mask  # Copy pixels from paste image
-        image.add_(paste_pixels)  # paste it on source image
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(" f", p={self.p}" f", inplace={self.inplace}" f")"
