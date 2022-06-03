@@ -2,14 +2,19 @@ import collections.abc
 import math
 import numbers
 import warnings
-from typing import Any, Dict, List, Union, Sequence, Tuple, cast
+from typing import Any, Dict, List, Optional, Union, Sequence, Tuple, cast
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
 from torchvision.prototype.transforms import Transform, functional as F
 from torchvision.transforms.functional import pil_to_tensor, InterpolationMode
-from torchvision.transforms.transforms import _setup_size, _interpolation_modes_from_int
+from torchvision.transforms.transforms import (
+    _setup_size,
+    _interpolation_modes_from_int,
+    _setup_angle,
+    _check_sequence_input,
+)
 from typing_extensions import Literal
 
 from ._transform import _RandomApplyTransform
@@ -125,6 +130,9 @@ class RandomResizedCrop(Transform):
         if (scale[0] > scale[1]) or (ratio[0] > ratio[1]):
             warnings.warn("Scale and ratio should be of kind (min, max)")
 
+        # TODO: Let's remove this compatibility for the prototype
+        # Otherwise, apply the same logic for Resize and other ops with interpolate arg.
+        #
         # Backward compatibility with integer value
         if isinstance(interpolation, int):
             warnings.warn(
@@ -388,3 +396,107 @@ class RandomZoomOut(_RandomApplyTransform):
     def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
         transform = Pad(**params, padding_mode="constant")
         return transform(input)
+
+
+class RandomAffine(Transform):
+    def __init__(
+        self,
+        degrees: Union[float, Sequence[float]],
+        translate: Optional[Tuple[float, float]] = None,
+        scale: Optional[Tuple[float, float]] = None,
+        shear: Optional[Union[float, Sequence[float]]] = None,
+        interpolation: InterpolationMode = InterpolationMode.NEAREST,
+        fill: Union[float, List[float]] = 0.0,
+        center: Optional[List[int]] = None,
+    ) -> None:
+        super().__init__()
+
+        self.degrees = _setup_angle(degrees, name="degrees", req_sizes=(2,))
+
+        if translate is not None:
+            _check_sequence_input(translate, "translate", req_sizes=(2,))
+            for t in translate:
+                if not (0.0 <= t <= 1.0):
+                    raise ValueError("translation values should be between 0 and 1")
+        self.translate = translate
+
+        if scale is not None:
+            _check_sequence_input(scale, "scale", req_sizes=(2,))
+            for s in scale:
+                if s <= 0:
+                    raise ValueError("scale values should be positive")
+        self.scale = scale
+
+        if shear is not None:
+            self.shear = _setup_angle(shear, name="shear", req_sizes=(2, 4))
+        else:
+            self.shear = shear
+
+        self.interpolation = interpolation
+
+        if not isinstance(fill, (Sequence, numbers.Number)):
+            raise TypeError("Fill should be either a sequence or a number.")
+        self.fill = fill
+
+        if center is not None:
+            _check_sequence_input(center, "center", req_sizes=(2,))
+
+        self.center = center
+
+    def _get_params(self, sample: Any) -> Dict[str, Any]:
+        image = query_image(sample)
+        _, orig_h, orig_w = get_image_dimensions(image)
+
+        angle = float(torch.empty(1).uniform_(float(self.degrees[0]), float(self.degrees[1])).item())
+        if self.translate is not None:
+            max_dx = float(self.translate[0] * orig_w)
+            max_dy = float(self.translate[1] * orig_h)
+            tx = int(round(torch.empty(1).uniform_(-max_dx, max_dx).item()))
+            ty = int(round(torch.empty(1).uniform_(-max_dy, max_dy).item()))
+            translations = (tx, ty)
+        else:
+            translations = (0, 0)
+
+        if self.scale is not None:
+            scale = float(torch.empty(1).uniform_(self.scale[0], self.scale[1]).item())
+        else:
+            scale = 1.0
+
+        shear_x = shear_y = 0.0
+        if self.shear is not None:
+            shear_x = float(torch.empty(1).uniform_(self.shear[0], self.shear[1]).item())
+            if len(self.shear) == 4:
+                shear_y = float(torch.empty(1).uniform_(self.shear[2], self.shear[3]).item())
+
+        shear = (shear_x, shear_y)
+
+        return dict(angle=angle, translate=translations, scale=scale, shear=shear)
+
+    def _transform(self, input: Any, params: Dict[str, Any]) -> Any:
+        if isinstance(input, features.Image) or is_simple_tensor(input):
+            fill = self.fill
+            if isinstance(fill, (int, float)):
+                num_channels, _, _ = get_image_dimensions(input)
+                fill = [float(fill)] * num_channels
+            else:
+                fill = [float(f) for f in fill]
+
+            output = F.affine_image_tensor(
+                input, **params, interpolation=self.interpolation, fill=fill, center=self.center
+            )
+
+            if isinstance(input, features.Image):
+                return features.Image.new_like(input, output)
+            return output
+        elif isinstance(input, PIL.Image.Image):
+            return F.affine_image_pil(
+                input, **params, interpolation=self.interpolation, fill=self.fill, center=self.center
+            )
+        elif isinstance(input, features.BoundingBox):
+            output = F.affine_bounding_box(input, input.image_size, **params, center=self.center)
+            return features.BoundingBox.new_like(input, output)
+        elif isinstance(input, features.SegmentationMask):
+            output = F.affine_segmentation_mask(input, **params, center=self.center)
+            return features.SegmentationMask.new_like(input, output)
+        else:
+            return input

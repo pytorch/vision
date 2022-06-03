@@ -172,7 +172,10 @@ def affine_image_tensor(
     translate_f = [1.0 * t for t in translate]
     matrix = _get_inverse_affine_matrix(center_f, angle, translate_f, scale, shear)
 
-    return _FT.affine(img, matrix, interpolation=interpolation.value, fill=fill)
+    num_channels, height, width = get_dimensions_image_tensor(img)
+    batch_shape = img.shape[:-3]
+    output = _FT.affine(img.view(-1, num_channels, height, width), matrix, interpolation=interpolation.value, fill=fill)
+    return output.view(batch_shape + (num_channels, height, width))
 
 
 def affine_image_pil(

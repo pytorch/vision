@@ -230,7 +230,7 @@ def resize_bounding_box():
 @register_kernel_info_from_sample_inputs_fn
 def affine_image_tensor():
     for image, angle, translate, scale, shear in itertools.product(
-        make_images(extra_dims=((), (4,))),
+        make_images(),
         [-87, 15, 90],  # angle
         [5, -5],  # translate
         [0.77, 1.27],  # scale
