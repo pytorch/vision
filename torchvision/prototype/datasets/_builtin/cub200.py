@@ -130,12 +130,14 @@ class CUB200(Dataset):
     ) -> Dict[str, Any]:
         _, (bounding_box_data, segmentation_data) = data
         segmentation_path, segmentation_buffer = segmentation_data
+        segmentation = EncodedImage.from_file(segmentation_buffer)
+        segmentation_buffer.close()
         return dict(
             bounding_box=BoundingBox(
                 [float(part) for part in bounding_box_data[1:]], format="xywh", image_size=image_size
             ),
             segmentation_path=segmentation_path,
-            segmentation=EncodedImage.from_file(segmentation_buffer),
+            segmentation=segmentation,
         )
 
     def _2010_split_key(self, data: str) -> str:
@@ -148,6 +150,7 @@ class CUB200(Dataset):
     def _2010_prepare_ann(self, data: Tuple[str, Tuple[str, BinaryIO]], image_size: Tuple[int, int]) -> Dict[str, Any]:
         _, (path, buffer) = data
         content = read_mat(buffer)
+        buffer.close()
         return dict(
             ann_path=path,
             bounding_box=BoundingBox(
@@ -169,6 +172,7 @@ class CUB200(Dataset):
         path, buffer = image_data
 
         image = EncodedImage.from_file(buffer)
+        buffer.close()
 
         return dict(
             prepare_ann_fn(anns_data, image.image_size),

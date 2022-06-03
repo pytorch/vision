@@ -64,6 +64,7 @@ class SVHN(Dataset):
     def _read_images_and_labels(self, data: Tuple[str, BinaryIO]) -> List[Tuple[np.ndarray, np.ndarray]]:
         _, buffer = data
         content = read_mat(buffer)
+        buffer.close()
         return list(
             zip(
                 content["X"].transpose((3, 0, 1, 2)),

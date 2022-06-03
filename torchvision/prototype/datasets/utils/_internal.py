@@ -24,6 +24,7 @@ import torch.utils.data
 from torchdata.datapipes.iter import IoPathFileLister, IoPathFileOpener, IterDataPipe, ShardingFilter, Shuffler
 from torchdata.datapipes.utils import StreamWrapper
 from torchvision.prototype.utils._internal import fromfile
+from torchvision.prototype.features import EncodedImage
 
 
 __all__ = [
@@ -37,6 +38,7 @@ __all__ = [
     "read_flo",
     "hint_sharding",
     "hint_shuffling",
+    "close_buffer",
 ]
 
 K = TypeVar("K")
@@ -107,6 +109,12 @@ def _path_comparator_closure(data: Tuple[str, Any], *, accessor: Callable[[Tuple
 
 def path_comparator(getter: Union[str, Callable[[pathlib.Path], D]], value: D) -> Callable[[Tuple[str, Any]], bool]:
     return functools.partial(_path_comparator_closure, accessor=path_accessor(getter), value=value)
+
+
+def close_buffer(fn, buffer):
+    result = fn(buffer)
+    buffer.close()
+    return result
 
 
 class PicklerDataPipe(IterDataPipe):

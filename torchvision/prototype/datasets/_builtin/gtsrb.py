@@ -84,10 +84,12 @@ class GTSRB(Dataset):
             format="xyxy",
             image_size=(int(csv_info["Height"]), int(csv_info["Width"])),
         )
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
 
         return {
             "path": path,
-            "image": EncodedImage.from_file(buffer),
+            "image": image,
             "label": Label(label, categories=self._categories),
             "bounding_box": bounding_box,
         }

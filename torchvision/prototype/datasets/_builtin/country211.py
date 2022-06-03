@@ -51,11 +51,13 @@ class Country211(Dataset):
 
     def _prepare_sample(self, data: Tuple[str, Any]) -> Dict[str, Any]:
         path, buffer = data
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
         category = pathlib.Path(path).parent.name
         return dict(
             label=Label.from_category(category, categories=self._categories),
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
         )
 
     def _filter_split(self, data: Tuple[str, Any], *, split: str) -> bool:

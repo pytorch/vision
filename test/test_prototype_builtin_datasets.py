@@ -15,6 +15,17 @@ from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 from torchvision.prototype.features import Image, Label
+from torchdata.datapipes.utils import StreamWrapper
+
+
+from torchdata.datapipes.iter import (
+    IterDataPipe,
+    Mapper,
+    Demultiplexer,
+    Filter,
+    IterKeyZipper,
+    LineReader,
+)
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True
@@ -65,8 +76,13 @@ class TestCommon:
     def test_sample(self, dataset_mock, config):
         dataset, _ = dataset_mock.load(config)
 
+        # if dataset_mock.name in ['cub200']:
+        #     print(traverse(dataset, only_datapipe=True))
+        #     halt()
+
         try:
-            sample = next(iter(dataset))
+            iterator = iter(dataset)
+            sample = next(iterator)
         except StopIteration:
             raise AssertionError("Unable to draw any sample.") from None
         except Exception as error:
@@ -78,22 +94,40 @@ class TestCommon:
         if not sample:
             raise AssertionError("Sample dictionary is empty.")
 
+        list(iterator) # Cleanups and closing streams in buffers
+
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_num_samples(self, dataset_mock, config):
         dataset, mock_info = dataset_mock.load(config)
+
+        # if dataset_mock.name in ['cub200']:
+        #     print(traverse(dataset, only_datapipe=True))
+        #     halt()
 
         assert len(list(dataset)) == mock_info["num_samples"]
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_no_vanilla_tensors(self, dataset_mock, config):
+        StreamWrapper.session_streams = {}
         dataset, _ = dataset_mock.load(config)
 
-        vanilla_tensors = {key for key, value in next(iter(dataset)).items() if type(value) is torch.Tensor}
+        iterator = iter(dataset)
+        one_element = next(iterator)
+
+        vanilla_tensors = {key for key, value in one_element.items() if type(value) is torch.Tensor}
         if vanilla_tensors:
             raise AssertionError(
                 f"The values of key(s) "
                 f"{sequence_to_str(sorted(vanilla_tensors), separate_last='and ')} contained vanilla tensors."
             )
+
+        # raise Exception(one_element)
+        list(iterator) # Cleanups and closing streams in buffers
+
+        if (len(StreamWrapper.session_streams)>0):
+            print(traverse(dataset, only_datapipe=True))
+            Demultiplexer.buffers()
+            raise Exception(StreamWrapper.session_streams)
 
     @parametrize_dataset_mocks(DATASET_MOCKS)
     def test_transformable(self, dataset_mock, config):

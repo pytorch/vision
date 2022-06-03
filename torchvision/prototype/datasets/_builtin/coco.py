@@ -25,6 +25,7 @@ from torchvision.prototype.datasets.utils._internal import (
     INFINITE_BUFFER_SIZE,
     getitem,
     read_categories_file,
+    close_buffer,
     path_accessor,
     hint_sharding,
     hint_shuffling,
@@ -174,8 +175,7 @@ class Coco(Dataset):
 
     def _prepare_image(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         path, buffer = data
-        image = EncodedImage.from_file(buffer)
-        buffer.close()
+        image = close_buffer(EncodedImage.from_file, buffer)
         return dict(
             path=path,
             image=image,
@@ -193,7 +193,7 @@ class Coco(Dataset):
         # this method is only called if we have annotations
         annotations = cast(str, self._annotations)
         sample.update(self._ANN_DECODERS[annotations](self, anns, image_meta))
-        image_data[1].close()
+
         return sample
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

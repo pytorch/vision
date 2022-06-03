@@ -80,14 +80,18 @@ class OxfordIIITPet(Dataset):
         classification_data, segmentation_data = ann_data
         segmentation_path, segmentation_buffer = segmentation_data
         image_path, image_buffer = image_data
+        segmentation = EncodedImage.from_file(segmentation_buffer)
+        segmentation_buffer.close()
+        image = EncodedImage.from_file(image_buffer)
+        image_buffer.close()
 
         return dict(
             label=Label(int(classification_data["label"]) - 1, categories=self._categories),
             species="cat" if classification_data["species"] == "1" else "dog",
             segmentation_path=segmentation_path,
-            segmentation=EncodedImage.from_file(segmentation_buffer),
+            segmentation=segmentation,
             image_path=image_path,
-            image=EncodedImage.from_file(image_buffer),
+            image=image,
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

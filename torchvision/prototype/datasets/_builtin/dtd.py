@@ -88,6 +88,8 @@ class DTD(Dataset):
         (_, joint_categories_data), image_data = data
         _, *joint_categories = joint_categories_data
         path, buffer = image_data
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
 
         category = pathlib.Path(path).parent.name
 
@@ -95,7 +97,7 @@ class DTD(Dataset):
             joint_categories={category for category in joint_categories if category},
             label=Label.from_category(category, categories=self._categories),
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

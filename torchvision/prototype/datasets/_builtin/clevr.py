@@ -15,6 +15,8 @@ from torchvision.prototype.features import Label, EncodedImage
 
 from .._api import register_dataset, register_info
 
+from torchdata.datapipes.utils import StreamWrapper
+
 NAME = "clevr"
 
 
@@ -62,10 +64,12 @@ class CLEVR(Dataset):
     def _prepare_sample(self, data: Tuple[Tuple[str, BinaryIO], Optional[Dict[str, Any]]]) -> Dict[str, Any]:
         image_data, scenes_data = data
         path, buffer = image_data
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
 
         return dict(
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
             label=Label(len(scenes_data["objects"])) if scenes_data else None,
         )
 
@@ -97,6 +101,8 @@ class CLEVR(Dataset):
                 buffer_size=INFINITE_BUFFER_SIZE,
             )
         else:
+            for i in scenes_dp:
+                StreamWrapper.cleanup_structure(i)
             dp = Mapper(images_dp, self._add_empty_anns)
 
         return Mapper(dp, self._prepare_sample)

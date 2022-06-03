@@ -63,10 +63,12 @@ class Food101(Dataset):
 
     def _prepare_sample(self, data: Tuple[str, Tuple[str, BinaryIO]]) -> Dict[str, Any]:
         id, (path, buffer) = data
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
         return dict(
             label=Label.from_category(id.split("/", 1)[0], categories=self._categories),
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
         )
 
     def _image_key(self, data: Tuple[str, Any]) -> str:
