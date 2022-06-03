@@ -107,7 +107,9 @@ class Caltech101(Dataset):
         ann_path, ann_buffer = ann_data
 
         image = EncodedImage.from_file(image_buffer)
+        image_buffer.close()
         ann = read_mat(ann_buffer)
+        ann_buffer.close()
 
         return dict(
             label=Label.from_category(category, categories=self._categories),
@@ -186,10 +188,11 @@ class Caltech256(Dataset):
 
     def _prepare_sample(self, data: Tuple[str, BinaryIO]) -> Dict[str, Any]:
         path, buffer = data
-
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
         return dict(
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
             label=Label(int(pathlib.Path(path).parent.name.split(".", 1)[0]) - 1, categories=self._categories),
         )
 

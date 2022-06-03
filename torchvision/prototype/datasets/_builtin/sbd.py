@@ -28,6 +28,7 @@ from .._api import register_dataset, register_info
 
 NAME = "sbd"
 
+from torchdata.datapipes.utils import StreamWrapper
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
@@ -89,10 +90,12 @@ class SBD(Dataset):
         ann_path, ann_buffer = ann_data
 
         anns = read_mat(ann_buffer, squeeze_me=True)["GTcls"]
-
+        ann_buffer.close()
+        image = EncodedImage.from_file(image_buffer)
+        image_buffer.close()
         return dict(
             image_path=image_path,
-            image=EncodedImage.from_file(image_buffer),
+            image=image,
             ann_path=ann_path,
             # the boundaries are stored in sparse CSC format, which is not supported by PyTorch
             boundaries=_Feature(np.stack([raw_boundary.toarray() for raw_boundary in anns["Boundaries"].item()])),
@@ -111,6 +114,8 @@ class SBD(Dataset):
             drop_none=True,
         )
         if self._split == "train_noval":
+            for i in split_dp:
+                StreamWrapper.cleanup_structure(i)
             split_dp = extra_split_dp
 
         split_dp = Filter(split_dp, path_comparator("name", f"{self._split}.txt"))

@@ -109,10 +109,11 @@ class ImageNet(Dataset):
         return None, data
 
     def _classifiy_devkit(self, data: Tuple[str, BinaryIO]) -> Optional[int]:
+        name, binary_io = data
         return {
             "meta.mat": ImageNetDemux.META,
             "ILSVRC2012_validation_ground_truth.txt": ImageNetDemux.LABEL,
-        }.get(pathlib.Path(data[0]).name)
+        }.get(pathlib.Path(name).name)
 
     # Although the WordNet IDs (wnids) are unique, the corresponding categories are not. For example, both n02012849
     # and n03126707 are labeled 'crane' while the first means the bird and the latter means the construction equipment
@@ -123,12 +124,14 @@ class ImageNet(Dataset):
 
     def _extract_categories_and_wnids(self, data: Tuple[str, BinaryIO]) -> List[Tuple[str, str]]:
         synsets = read_mat(data[1], squeeze_me=True)["synsets"]
-        return [
+        results = [
             (self._WNID_MAP.get(wnid, category.split(",", 1)[0]), wnid)
             for _, wnid, category, _, num_children, *_ in synsets
             # if num_children > 0, we are looking at a superclass that has no direct instance
             if num_children == 0
         ]
+        data[1].close()
+        return results
 
     def _imagenet_label_to_wnid(self, imagenet_label: str, *, wnids: Tuple[str, ...]) -> str:
         return wnids[int(imagenet_label) - 1]
@@ -151,11 +154,13 @@ class ImageNet(Dataset):
         data: Tuple[Optional[Tuple[Label, str]], Tuple[str, BinaryIO]],
     ) -> Dict[str, Any]:
         label_data, (path, buffer) = data
+        image = EncodedImage.from_file(buffer)
+        buffer.close()
 
         return dict(
             dict(zip(("label", "wnid"), label_data if label_data else (None, None))),
             path=path,
-            image=EncodedImage.from_file(buffer),
+            image=image,
         )
 
     def _datapipe(self, resource_dps: List[IterDataPipe]) -> IterDataPipe[Dict[str, Any]]:

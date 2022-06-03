@@ -101,7 +101,9 @@ class VOC(Dataset):
             return None
 
     def _parse_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
-        return cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
+        result = cast(Dict[str, Any], VOCDetection.parse_voc_xml(ElementTree.parse(buffer).getroot())["annotation"])
+        buffer.close()
+        return result
 
     def _prepare_detection_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
         anns = self._parse_detection_ann(buffer)
@@ -121,7 +123,9 @@ class VOC(Dataset):
         )
 
     def _prepare_segmentation_ann(self, buffer: BinaryIO) -> Dict[str, Any]:
-        return dict(segmentation=EncodedImage.from_file(buffer))
+        result = dict(segmentation=EncodedImage.from_file(buffer))
+        buffer.close()
+        return result
 
     def _prepare_sample(
         self,
@@ -132,10 +136,13 @@ class VOC(Dataset):
         image_path, image_buffer = image_data
         ann_path, ann_buffer = ann_data
 
+        image = EncodedImage.from_file(image_buffer)
+        image_buffer.close()
+
         return dict(
             (self._prepare_detection_ann if self._task == "detection" else self._prepare_segmentation_ann)(ann_buffer),
             image_path=image_path,
-            image=EncodedImage.from_file(image_buffer),
+            image=image,
             ann_path=ann_path,
         )
 
