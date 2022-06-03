@@ -1,5 +1,5 @@
 import copy
-from typing import List, Tuple, Dict, Optional, Union
+from typing import List, Tuple, Dict, Optional, Union, cast
 
 import torch
 import torchvision
@@ -441,7 +441,11 @@ class RandomShortestSize(nn.Module):
         return image, target
 
 
-def copy_paste(image, source_data, paste_image, paste_data):
+def copy_paste(image, source_data, paste_image, paste_data, inplace=True):
+
+    image = image.clone() if not inplace else image
+    source_data = copy.deepcopy(source_data) if not inplace else source_data
+
     number_of_masks = len(paste_data["masks"])
     random_selection = torch.randint(0, number_of_masks, (number_of_masks,)).unique()
 
@@ -512,22 +516,21 @@ class SimpleCopyPaste(torch.nn.Module):
         shift = 1
 
         if self.inplace:
-            # create shifted copy of batch and target as the original will be modified
             batch_rolled = copy.deepcopy(batch[-shift:] + batch[:-shift])
             target_rolled = copy.deepcopy(target[-shift:] + target[:-shift])
         else:
-            # use the original batch as the shifted copy. Make a copy of original which will be modified
-            batch_copy = copy.deepcopy(batch)
-            target_copy = copy.deepcopy(target)
             batch_rolled = batch[-shift:] + batch[:-shift]
             target_rolled = target[-shift:] + target[:-shift]
-            batch = batch_copy
-            target = target_copy
+
+        output_batch = []
+        output_target = []
 
         for image, source_data, paste_image, paste_data in zip(batch, target, batch_rolled, target_rolled):
-            copy_paste(image, source_data, paste_image, paste_data)
+            output_image, output_data = copy_paste(image, source_data, paste_image, paste_data, self.inplace)
+            output_batch.append(output_image)
+            output_target.append(output_data)
 
-        return batch, target
+        return cast(Tuple[Tuple[torch.Tensor], Tuple[Dict[str, Tensor]]], (tuple(output_batch), tuple(output_target)))
 
     def __repr__(self) -> str:
         s = f"{self.__class__.__name__}(" f", p={self.p}" f", inplace={self.inplace}" f")"
