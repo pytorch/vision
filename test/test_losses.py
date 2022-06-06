@@ -18,10 +18,10 @@ def get_boxes(dtype, device):
 
 
 def assert_iou_loss(iou_fn, box1, box2, expected_loss, dtype, device, reduction="none"):
-    tol = 1e-3 if dtype is torch.half else 1e-5
+    # tol = 1e-3 if dtype is torch.half else 1e-5
     computed_loss = iou_fn(box1, box2, reduction=reduction)
     expected_loss = torch.tensor(expected_loss, device=device)
-    torch.testing.assert_close(computed_loss, expected_loss, rtol=tol, atol=tol)
+    torch.testing.assert_close(computed_loss, expected_loss)
 
 
 def assert_empty_loss(iou_fn, dtype, device):
@@ -29,8 +29,8 @@ def assert_empty_loss(iou_fn, dtype, device):
     box2 = torch.randn([0, 4], dtype=dtype, device=device).requires_grad_()
     loss = iou_fn(box1, box2, reduction="mean")
     loss.backward()
-    tol = 1e-3 if dtype is torch.half else 1e-5
-    torch.testing.assert_close(loss, torch.tensor(0.0, device=device), rtol=tol, atol=tol)
+    # tol = 1e-3 if dtype is torch.half else 1e-5
+    torch.testing.assert_close(loss, torch.tensor(0.0, device=device))
     assert box1.grad is not None, "box1.grad should not be None after backward is called"
     assert box2.grad is not None, "box2.grad should not be None after backward is called"
     loss = iou_fn(box1, box2, reduction="none")
@@ -171,8 +171,8 @@ class TestFocalLoss:
             alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
             correct_ratio = correct_ratio * alpha_t
 
-        tol = 1e-3 if dtype is torch.half else 1e-5
-        torch.testing.assert_close(correct_ratio, loss_ratio, rtol=tol, atol=tol)
+        # tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(correct_ratio, loss_ratio)
 
     @pytest.mark.parametrize("reduction", ["mean", "sum"])
     @pytest.mark.parametrize("device", cpu_and_gpu())
@@ -193,12 +193,12 @@ class TestFocalLoss:
         focal_loss = ops.sigmoid_focal_loss(inputs_fl, targets_fl, gamma=gamma, alpha=alpha, reduction=reduction)
         ce_loss = F.binary_cross_entropy_with_logits(inputs_ce, targets_ce, reduction=reduction)
 
-        tol = 1e-3 if dtype is torch.half else 1e-5
-        torch.testing.assert_close(focal_loss, ce_loss, rtol=tol, atol=tol)
+        # tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(focal_loss, ce_loss)
 
         focal_loss.backward()
         ce_loss.backward()
-        torch.testing.assert_close(inputs_fl.grad, inputs_ce.grad, rtol=tol, atol=tol)
+        torch.testing.assert_close(inputs_fl.grad, inputs_ce.grad)
 
     @pytest.mark.parametrize("alpha", [-1.0, 0.0, 0.58, 1.0])
     @pytest.mark.parametrize("gamma", [0, 2])
@@ -221,8 +221,8 @@ class TestFocalLoss:
                 # We may remove this condition once the bug is resolved
                 scripted_focal_loss = script_fn(inputs, targets, gamma=gamma, alpha=alpha, reduction=reduction)
 
-        tol = 1e-3 if dtype is torch.half else 1e-5
-        torch.testing.assert_close(focal_loss, scripted_focal_loss, rtol=tol, atol=tol)
+        # tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(focal_loss, scripted_focal_loss)
 
 
 if __name__ == "__main__":

@@ -1119,12 +1119,10 @@ def area_check(box, expected, tolerance=1e-4):
 class TestBoxArea:
     @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
     def test_int_boxes(self, dtype):
-        # Check for int boxes
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
         expected = torch.tensor([10000, 0])
         area_check(box_tensor, expected)
 
-    # Check for float32 and float64 boxes
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
     def test_float_boxes(self, dtype):
         box_tensor = torch.tensor(
@@ -1139,7 +1137,6 @@ class TestBoxArea:
         area_check(box_tensor, expected, tolerance=0.05)
 
     def test_float16_box(self):
-        # Check for float16 box
         box_tensor = torch.tensor(
             [[285.25, 185.625, 1194.0, 851.5], [285.25, 188.75, 1192.0, 851.0], [279.25, 198.0, 1189.0, 849.0]],
             dtype=torch.float16,
