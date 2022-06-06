@@ -169,7 +169,8 @@ class TestFocalLoss:
             alpha_t = alpha * targets + (1 - alpha) * (1 - targets)
             correct_ratio = correct_ratio * alpha_t
 
-        torch.testing.assert_close(correct_ratio, loss_ratio)
+        tol = 1e-3 if dtype is torch.half else 1e-5
+        torch.testing.assert_close(correct_ratio, loss_ratio, atol=tol, rtol=tol)
 
     @pytest.mark.parametrize("reduction", ["mean", "sum"])
     @pytest.mark.parametrize("device", cpu_and_gpu())
