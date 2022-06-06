@@ -1488,12 +1488,9 @@ def equalize(img: Tensor) -> Tensor:
 
 def elastic_transform(
     img: Tensor,
-    alpha: Optional[List[float]] = None,
-    sigma: Optional[List[float]] = None,
+    displacement: Tensor,
     interpolation: InterpolationMode = InterpolationMode.BILINEAR,
     fill: Optional[List[float]] = None,
-    displacement: Optional[Tensor] = None,
-    random_state: Optional[int] = None,
 ) -> Tensor:
     """Transform a tensor image with elastic transformations.
     Given alpha and sigma, it will generate displacement
@@ -1511,8 +1508,7 @@ def elastic_transform(
             If img is torch Tensor, it is expected to be in [..., 1 or 3, H, W] format,
             where ... means it can have an arbitrary number of leading dimensions.
             If img is PIL Image, it is expected to be in mode "P", "L" or "RGB".
-        alpha (float or sequence of floats): Magnitude of displacements.
-        sigma (float or sequence of floats): Smoothness of displacements.
+        displacement (Tensor): The displacement field.
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`.
             Default is ``InterpolationMode.BILINEAR``.
@@ -1522,9 +1518,6 @@ def elastic_transform(
             This value is only used when the padding_mode is constant.
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
-        displacement (Tensor): The displacement field. If provided then ``alpha`` and ``sigma` should be ``None``.
-            If not given, it will be generated based on ``alpha`` and ``sigma``.
-        random_state (int): If random_state is provided, it will be used as the random seed.
     """
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
@@ -1534,21 +1527,8 @@ def elastic_transform(
         )
         interpolation = _interpolation_modes_from_int(interpolation)
 
-    if isinstance(alpha, float):
-        alpha = [float(alpha), float(alpha)]
-    if isinstance(alpha, (list, tuple)) and len(alpha) == 1:
-        alpha = [alpha[0], alpha[0]]
-
-    if isinstance(sigma, float):
-        sigma = [float(sigma), float(sigma)]
-    if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
-        sigma = [sigma[0], sigma[0]]
-
-    if displacement is not None:
-        if alpha is not None or sigma is not None:
-            raise ValueError("alpha and sigma must be None if displacement is given and vice versa")
-        if not isinstance(displacement, torch.Tensor):
-            raise TypeError("displacement should be a Tensor")
+    if not isinstance(displacement, torch.Tensor):
+        raise TypeError("displacement should be a Tensor")
 
     t_img = img
     if not isinstance(img, torch.Tensor):
@@ -1558,12 +1538,9 @@ def elastic_transform(
 
     output = F_t.elastic_transform(
         t_img,
-        alpha,
-        sigma,
+        displacement,
         interpolation=interpolation.value,
         fill=fill,
-        displacement=displacement,
-        random_state=random_state,
     )
 
     if not isinstance(img, torch.Tensor):

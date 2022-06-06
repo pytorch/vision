@@ -53,6 +53,7 @@ __all__ = [
     "RandomAdjustSharpness",
     "RandomAutocontrast",
     "RandomEqualize",
+    "ElasticTransform",
 ]
 
 
@@ -2085,6 +2086,12 @@ class ElasticTransform(torch.nn.Module):
             for element in alpha:
                 if not isinstance(element, float):
                     raise TypeError(f"alpha should be a sequence of floats. Got {type(element)}")
+
+        if isinstance(alpha, float):
+            alpha = [float(alpha), float(alpha)]
+        if isinstance(alpha, (list, tuple)) and len(alpha) == 1:
+            alpha = [alpha[0], alpha[0]]
+
         self.alpha = alpha
 
         if not isinstance(sigma, (float, Sequence)):
@@ -2095,6 +2102,12 @@ class ElasticTransform(torch.nn.Module):
             for element in sigma:
                 if not isinstance(element, float):
                     raise TypeError(f"sigma should be a sequence of floats. Got {type(element)}")
+
+        if isinstance(sigma, float):
+            sigma = [float(sigma), float(sigma)]
+        if isinstance(sigma, (list, tuple)) and len(sigma) == 1:
+            sigma = [sigma[0], sigma[0]]
+
         self.sigma = sigma
 
         # Backward compatibility with integer value
@@ -2110,6 +2123,27 @@ class ElasticTransform(torch.nn.Module):
             raise TypeError(f"fill should be int or float. Got {type(fill)}")
         self.fill = fill
 
+    @staticmethod
+    def get_params(alpha: List[float], sigma: List[float], size: List[int]) -> Tensor:
+        dx = torch.rand([1, 1] + size) * 2 - 1
+        if sigma[0] > 0.0:
+            kx = int(8 * sigma[0] + 1)
+            # if kernel size is even we have to make it odd
+            if kx % 2 == 0:
+                kx += 1
+            dx = F.gaussian_blur(dx, [kx, kx], sigma)
+        dx = dx * alpha[0] / size[0]
+
+        dy = torch.rand([1, 1] + size) * 2 - 1
+        if sigma[1] > 0.0:
+            ky = int(8 * sigma[1] + 1)
+            # if kernel size is even we have to make it odd
+            if ky % 2 == 0:
+                ky += 1
+            dy = F.gaussian_blur(dy, [ky, ky], sigma)
+        dy = dy * alpha[1] / size[1]
+        return torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
+
     def forward(self, tensor: Tensor) -> Tensor:
         """
         Args:
@@ -2118,7 +2152,9 @@ class ElasticTransform(torch.nn.Module):
         Returns:
             PIL Image or Tensor: Transformed image.
         """
-        return F.elastic_transform(tensor, self.alpha, self.sigma, self.interpolation, self.fill)
+        size = F.get_image_size(tensor)[::-1]
+        displacement = self.get_params(self.alpha, self.sigma, size)
+        return F.elastic_transform(tensor, displacement, self.interpolation, self.fill)
 
     def __repr__(self):
         format_string = self.__class__.__name__ + "(alpha="

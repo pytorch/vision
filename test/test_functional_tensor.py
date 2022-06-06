@@ -1383,16 +1383,11 @@ def test_elastic_transform_consistency(device, interpolation, dt, fill):
     if dt is not None:
         img_tensor = img_tensor.to(dt)
 
+    displacement = T.ElasticTransform.get_params([1.5, 1.5], [2.0, 2.0], [32, 34])
     kwargs = dict(
-        alpha=[
-            1.5,
-        ],
-        sigma=[
-            2.0,
-        ],
+        displacement=displacement,
         interpolation=interpolation,
         fill=fill,
-        random_state=12,
     )
 
     out_tensor1 = F.elastic_transform(img_tensor, **kwargs)
@@ -1400,6 +1395,8 @@ def test_elastic_transform_consistency(device, interpolation, dt, fill):
     assert_equal(out_tensor1, out_tensor2)
 
     batch_tensors = _create_data_batch(16, 18, num_samples=4, device=device)
+    displacement = T.ElasticTransform.get_params([1.5, 1.5], [2.0, 2.0], [16, 18])
+    kwargs["displacement"] = displacement
     if dt is not None:
         batch_tensors = batch_tensors.to(dt)
     _test_fn_on_batch(batch_tensors, F.elastic_transform, **kwargs)

@@ -972,47 +972,16 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 
 def elastic_transform(
     img: Tensor,
-    alpha: Optional[List[float]] = None,
-    sigma: Optional[List[float]] = None,
+    displacement: Tensor,
     interpolation: str = "bilinear",
     fill: Optional[List[float]] = None,
-    displacement: Optional[Tensor] = None,
-    random_state: Optional[int] = None,
 ) -> Tensor:
 
     if not (isinstance(img, torch.Tensor)):
         raise TypeError(f"img should be Tensor. Got {type(img)}")
 
     size = list(img.shape[-2:])
-    if random_state is not None:
-        torch.manual_seed(random_state)
-
-    if displacement is not None:
-        if alpha is not None or sigma is not None:
-            raise ValueError("alpha and sigma must be None if displacement is given or vice versa")
-        displacement = displacement.to(img.device)
-    elif alpha is not None and sigma is not None:
-        dx = torch.rand([1, 1] + size, device=img.device) * 2 - 1
-        if sigma[0] > 0.0:
-            dx = gaussian_blur(
-                dx,
-                [int(8 * sigma[0] + 1), int(8 * sigma[0] + 1)],
-                sigma,
-            )
-        dx = dx * alpha[0] / size[0]
-        dy = torch.rand([1, 1] + size, device=img.device) * 2 - 1
-
-        if sigma[1] > 0.0:
-            dy = gaussian_blur(
-                dy,
-                [int(8 * sigma[1] + 1), int(8 * sigma[1] + 1)],
-                sigma,
-            )
-        dy = dy * alpha[1] / size[1]
-
-        displacement = torch.concat([dx, dy], 1).permute([0, 2, 3, 1])  # 1 x H x W x 2
-    else:
-        raise ValueError("elastic_transform requires either positional arguments 'alpha' and 'sigma' or 'displacement'")
+    displacement = displacement.to(img.device)
 
     hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
     grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
