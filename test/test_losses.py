@@ -67,7 +67,7 @@ class TestGeneralizedBoxIouLoss:
         assert_empty_loss(ops.generalized_box_iou_loss, dtype, device)
 
 
-class TestCIOULoss:
+class TestCompleteBoxIouLoss:
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     @pytest.mark.parametrize("device", cpu_and_gpu())
     def test_ciou_loss(self, dtype, device):
@@ -86,7 +86,7 @@ class TestCIOULoss:
         assert_empty_loss(ops.complete_box_iou_loss, dtype, device)
 
 
-class TestDIouLoss:
+class TestDistanceBoxIouLoss:
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
     def test_distance_iou_loss(self, dtype, device):

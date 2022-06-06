@@ -1120,7 +1120,7 @@ class TestBoxArea:
     @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
     def test_int_boxes(self, dtype):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
-        expected = torch.tensor([10000, 0])
+        expected = torch.tensor([10000, 0], dtype=torch.int32)
         area_check(box_tensor, expected)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
@@ -1157,7 +1157,7 @@ class TestMasksToBoxes:
         def masks_box_check(masks, expected, tolerance=1e-4):
             out = ops.masks_to_boxes(masks)
             assert out.dtype == torch.float
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=True, atol=tolerance)
 
         # Check for int type boxes.
         def _get_image():
