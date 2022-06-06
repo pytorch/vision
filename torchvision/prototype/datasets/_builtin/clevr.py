@@ -15,7 +15,7 @@ from torchvision.prototype.features import Label, EncodedImage
 
 from .._api import register_dataset, register_info
 
-from torchdata.datapipes.utils import StreamWrapper
+from torchdata import janitor
 
 NAME = "clevr"
 
@@ -102,7 +102,7 @@ class CLEVR(Dataset):
             )
         else:
             for i in scenes_dp:
-                StreamWrapper.cleanup_structure(i)
+                janitor(i)
             dp = Mapper(images_dp, self._add_empty_anns)
 
         return Mapper(dp, self._prepare_sample)

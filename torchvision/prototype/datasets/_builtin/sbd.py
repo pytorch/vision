@@ -28,7 +28,7 @@ from .._api import register_dataset, register_info
 
 NAME = "sbd"
 
-from torchdata.datapipes.utils import StreamWrapper
+from torchdata import janitor
 
 @register_info(NAME)
 def _info() -> Dict[str, Any]:
@@ -115,7 +115,7 @@ class SBD(Dataset):
         )
         if self._split == "train_noval":
             for i in split_dp:
-                StreamWrapper.cleanup_structure(i)
+                janitor(i)
             split_dp = extra_split_dp
 
         split_dp = Filter(split_dp, path_comparator("name", f"{self._split}.txt"))
