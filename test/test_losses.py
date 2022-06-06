@@ -191,8 +191,7 @@ class TestFocalLoss:
         focal_loss = ops.sigmoid_focal_loss(inputs_fl, targets_fl, gamma=gamma, alpha=alpha, reduction=reduction)
         ce_loss = F.binary_cross_entropy_with_logits(inputs_ce, targets_ce, reduction=reduction)
 
-        tol = 1e-3 if dtype is torch.half else 1e-5
-        torch.testing.assert_close(focal_loss, ce_loss, atol=tol, rtol=tol)
+        torch.testing.assert_close(focal_loss, ce_loss)
 
         focal_loss.backward()
         ce_loss.backward()
