@@ -2,22 +2,18 @@ from typing import List, Callable
 
 import pytest
 import torch
-import torch.fx
-from torch import Tensor
 from torchvision import ops
 
 
 class TestIouBase:
     @staticmethod
     def _run_test(target_fn: Callable, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List):
-        def assert_close(box: Tensor, expected: Tensor, tolerance):
-            out = target_fn(box, box)
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
-
         for dtype in dtypes:
             actual_box = torch.tensor(test_input, dtype=dtype)
             expected_box = torch.tensor(expected)
-            assert_close(actual_box, expected_box, tolerance)
+            out = target_fn(actual_box, actual_box)
+            torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=tolerance)
+            # assert_close(actual_box, expected_box, tolerance)
 
     @staticmethod
     def _run_jit_test(target_fn: Callable, test_input: List):
@@ -52,7 +48,7 @@ class TestBoxIou(TestIouBase):
         self._run_test(ops.box_iou, test_input, dtypes, tolerance, expected)
 
     def test_iou_jit(self):
-        self._run_jit_test(ops.box_iou, [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+        self._run_jit_test(ops.box_iou, IOU_INT_BOXES)
 
 
 class TestGeneralizedBoxIou(TestIouBase):
@@ -71,7 +67,7 @@ class TestGeneralizedBoxIou(TestIouBase):
         self._run_test(ops.generalized_box_iou, test_input, dtypes, tolerance, expected)
 
     def test_iou_jit(self):
-        self._run_jit_test(ops.generalized_box_iou, [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+        self._run_jit_test(ops.generalized_box_iou, IOU_INT_BOXES)
 
 
 class TestDistanceBoxIoU(TestIouBase):
@@ -90,7 +86,7 @@ class TestDistanceBoxIoU(TestIouBase):
         self._run_test(ops.distance_box_iou, test_input, dtypes, tolerance, expected)
 
     def test_iou_jit(self):
-        self._run_jit_test(ops.distance_box_iou, [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+        self._run_jit_test(ops.distance_box_iou, IOU_INT_BOXES)
 
 
 class TestCompleteBoxIou(TestIouBase):
@@ -109,7 +105,7 @@ class TestCompleteBoxIou(TestIouBase):
         self._run_test(ops.complete_box_iou, test_input, dtypes, tolerance, expected)
 
     def test_iou_jit(self):
-        self._run_jit_test(ops.complete_box_iou, [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]])
+        self._run_jit_test(ops.complete_box_iou, IOU_INT_BOXES)
 
 
 if __name__ == "__main__":
