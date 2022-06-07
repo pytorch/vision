@@ -1,5 +1,5 @@
 #include <ATen/ATen.h>
-#include <ATen/native/quantized/affine_quantizer.h>
+#include <ATen/native/quantized/AffineQuantizer.h>
 #include <torch/library.h>
 
 namespace vision {
