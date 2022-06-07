@@ -1111,17 +1111,16 @@ class TestBoxConvert:
         torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=TOLERANCE)
 
 
-def area_check(box, expected, tolerance=1e-4):
-    out = ops.box_area(box)
-    torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
-
-
 class TestBoxArea:
+    def area_check(self, box, expected, tolerance=1e-4):
+        out = ops.box_area(box)
+        torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+
     @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
     def test_int_boxes(self, dtype):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=dtype)
         expected = torch.tensor([10000, 0], dtype=torch.int32)
-        area_check(box_tensor, expected)
+        self.area_check(box_tensor, expected)
 
     @pytest.mark.parametrize("dtype", [torch.float32, torch.float64])
     def test_float_boxes(self, dtype):
@@ -1134,7 +1133,7 @@ class TestBoxArea:
             dtype=dtype,
         )
         expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=torch.float64)
-        area_check(box_tensor, expected, tolerance=0.05)
+        self.area_check(box_tensor, expected, tolerance=0.05)
 
     def test_float16_box(self):
         box_tensor = torch.tensor(
@@ -1142,7 +1141,7 @@ class TestBoxArea:
             dtype=torch.float16,
         )
         expected = torch.tensor([605113.875, 600495.1875, 592247.25])
-        area_check(box_tensor, expected)
+        self.area_check(box_tensor, expected)
 
     def test_box_area_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
