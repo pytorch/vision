@@ -87,6 +87,7 @@ def test_schema_meta_validation(model_fn):
         "license",
         "_metrics",
         "min_size",
+        "min_temporal_size",
         "num_params",
         "recipe",
         "unquantized",

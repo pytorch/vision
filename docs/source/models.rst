@@ -459,6 +459,7 @@ pre-trained weights:
 .. toctree::
    :maxdepth: 1
 
+   models/video_mvitv2
    models/video_resnet
 
 |
