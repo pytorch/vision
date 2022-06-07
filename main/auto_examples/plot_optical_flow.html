@@ -6,7 +6,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Optical Flow: Predicting movement with the RAFT model &mdash; Torchvision main documentation</title>
@@ -27,6 +28,8 @@
 
   <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="../_static/copybutton.css" type="text/css" />
   <link rel="stylesheet" href="../_static/sg_gallery.css" type="text/css" />
   <link rel="stylesheet" href="../_static/sg_gallery-binder.css" type="text/css" />
@@ -206,7 +209,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+d4e41c2 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+8ddb7b7 ) &#x25BC</a>
     </div>
     
 
@@ -230,7 +233,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Package Reference</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="../transforms.html">Transforming and augmenting images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../models.html">Models and pre-trained weights</a></li>
@@ -240,12 +243,12 @@
 <li class="toctree-l1"><a class="reference internal" href="../io.html">Reading/Writing images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples and training references</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
 <ul class="current">
 <li class="toctree-l1 current"><a class="reference internal" href="index.html">Example gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="../training_references.html">Training references</a></li>
 </ul>
-<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -333,8 +336,8 @@
 <p>Click <a class="reference internal" href="#sphx-glr-download-auto-examples-plot-optical-flow-py"><span class="std std-ref">here</span></a>
 to download the full example code</p>
 </div>
-<div class="sphx-glr-example-title section" id="optical-flow-predicting-movement-with-the-raft-model">
-<span id="sphx-glr-auto-examples-plot-optical-flow-py"></span><h1>Optical Flow: Predicting movement with the RAFT model<a class="headerlink" href="#optical-flow-predicting-movement-with-the-raft-model" title="Permalink to this headline">¶</a></h1>
+<section class="sphx-glr-example-title" id="optical-flow-predicting-movement-with-the-raft-model">
+<span id="sphx-glr-auto-examples-plot-optical-flow-py"></span><h1>Optical Flow: Predicting movement with the RAFT model<a class="headerlink" href="#optical-flow-predicting-movement-with-the-raft-model" title="Permalink to this heading">¶</a></h1>
 <p>Optical flow is the task of predicting movement between two images, usually two
 consecutive frames of a video. Optical flow models take two images as input, and
 predict a flow: the flow indicates the displacement of every single pixel in the
@@ -372,8 +375,8 @@ predicted flows to RGB images for visualization.</p>
     <a href="https://matplotlib.org/stable/api/_as_gen/matplotlib.pyplot.tight_layout.html#matplotlib.pyplot.tight_layout" title="matplotlib.pyplot.tight_layout" class="sphx-glr-backref-module-matplotlib-pyplot sphx-glr-backref-type-py-function"><span class="n">plt</span><span class="o">.</span><span class="n">tight_layout</span></a><span class="p">()</span>
 </pre></div>
 </div>
-<div class="section" id="reading-videos-using-torchvision">
-<h2>Reading Videos Using Torchvision<a class="headerlink" href="#reading-videos-using-torchvision" title="Permalink to this headline">¶</a></h2>
+<section id="reading-videos-using-torchvision">
+<h2>Reading Videos Using Torchvision<a class="headerlink" href="#reading-videos-using-torchvision" title="Permalink to this heading">¶</a></h2>
 <p>We will first read a video using <a class="reference internal" href="../generated/torchvision.io.read_video.html#torchvision.io.read_video" title="torchvision.io.read_video"><code class="xref py py-func docutils literal notranslate"><span class="pre">read_video()</span></code></a>.
 Alternatively one can use the new <a class="reference internal" href="../generated/torchvision.io.VideoReader.html#torchvision.io.VideoReader" title="torchvision.io.VideoReader"><code class="xref py py-class docutils literal notranslate"><span class="pre">VideoReader</span></code></a> API (if
 torchvision is built from source).
@@ -435,9 +438,9 @@ required <code class="docutils literal notranslate"><span class="pre">[-1,</span
 <div class="sphx-glr-script-out highlight-none notranslate"><div class="highlight"><pre><span></span>shape = torch.Size([2, 3, 520, 960]), dtype = torch.float32
 </pre></div>
 </div>
-</div>
-<div class="section" id="estimating-optical-flow-using-raft">
-<h2>Estimating Optical flow using RAFT<a class="headerlink" href="#estimating-optical-flow-using-raft" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="estimating-optical-flow-using-raft">
+<h2>Estimating Optical flow using RAFT<a class="headerlink" href="#estimating-optical-flow-using-raft" title="Permalink to this heading">¶</a></h2>
 <p>We will use our RAFT implementation from
 <a class="reference internal" href="../models/generated/torchvision.models.optical_flow.raft_large.html#torchvision.models.optical_flow.raft_large" title="torchvision.models.optical_flow.raft_large"><code class="xref py py-func docutils literal notranslate"><span class="pre">raft_large()</span></code></a>, which follows the same
 architecture as the one described in the <a class="reference external" href="https://arxiv.org/abs/2003.12039">original paper</a>.
@@ -484,9 +487,9 @@ shape = torch.Size([2, 2, 520, 960]) = (N, 2, H, W)
 min = -3.8997063636779785, max = 6.400404930114746
 </pre></div>
 </div>
-</div>
-<div class="section" id="visualizing-predicted-flows">
-<h2>Visualizing predicted flows<a class="headerlink" href="#visualizing-predicted-flows" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="visualizing-predicted-flows">
+<h2>Visualizing predicted flows<a class="headerlink" href="#visualizing-predicted-flows" title="Permalink to this heading">¶</a></h2>
 <p>Torchvision provides the <a class="reference internal" href="../generated/torchvision.utils.flow_to_image.html#torchvision.utils.flow_to_image" title="torchvision.utils.flow_to_image"><code class="xref py py-func docutils literal notranslate"><span class="pre">flow_to_image()</span></code></a> utlity to
 convert a flow into an RGB image. It also supports batches of flows.
 each “direction” in the flow will be mapped to a given RGB color. In the
@@ -506,9 +509,9 @@ of the ball in the first image (going to the left) and in the second image
 <span class="n">plot</span><span class="p">(</span><a href="https://docs.python.org/3/library/stdtypes.html#list" title="builtins.list" class="sphx-glr-backref-module-builtins sphx-glr-backref-type-py-class sphx-glr-backref-instance"><span class="n">grid</span></a><span class="p">)</span>
 </pre></div>
 </div>
-<img src="../_images/sphx_glr_plot_optical_flow_002.png" srcset="../_images/sphx_glr_plot_optical_flow_002.png" alt="plot optical flow" class = "sphx-glr-single-img"/></div>
-<div class="section" id="bonus-creating-gifs-of-predicted-flows">
-<h2>Bonus: Creating GIFs of predicted flows<a class="headerlink" href="#bonus-creating-gifs-of-predicted-flows" title="Permalink to this headline">¶</a></h2>
+<img src="../_images/sphx_glr_plot_optical_flow_002.png" srcset="../_images/sphx_glr_plot_optical_flow_002.png" alt="plot optical flow" class = "sphx-glr-single-img"/></section>
+<section id="bonus-creating-gifs-of-predicted-flows">
+<h2>Bonus: Creating GIFs of predicted flows<a class="headerlink" href="#bonus-creating-gifs-of-predicted-flows" title="Permalink to this heading">¶</a></h2>
 <p>In the example above we have only shown the predicted flows of 2 pairs of
 frames. A fun way to apply the Optical Flow models is to run the model on an
 entire video, and create a new video from all the predicted flows. Below is a
@@ -530,7 +533,7 @@ too long to run it.</p>
 <p>Once the .jpg flow images are saved, you can convert them into a video or a
 GIF using ffmpeg with e.g.:</p>
 <p>ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif</p>
-<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  6.598 seconds)</p>
+<p class="sphx-glr-timing"><strong>Total running time of the script:</strong> ( 0 minutes  9.208 seconds)</p>
 <div class="sphx-glr-footer class sphx-glr-footer-example docutils container" id="sphx-glr-download-auto-examples-plot-optical-flow-py">
 <div class="sphx-glr-download sphx-glr-download-python docutils container">
 <p><a class="reference download internal" download="" href="../_downloads/2a47b9ed711ba2e43d352e94c9f29630/plot_optical_flow.py"><code class="xref download docutils literal notranslate"><span class="pre">Download</span> <span class="pre">Python</span> <span class="pre">source</span> <span class="pre">code:</span> <span class="pre">plot_optical_flow.py</span></code></a></p>
@@ -540,8 +543,8 @@ GIF using ffmpeg with e.g.:</p>
 </div>
 </div>
 <p class="sphx-glr-signature"><a class="reference external" href="https://sphinx-gallery.github.io">Gallery generated by Sphinx-Gallery</a></p>
-</div>
-</div>
+</section>
+</section>
 
 
              </article>
@@ -608,8 +611,10 @@ GIF using ffmpeg with e.g.:</p>
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="../" src="../_static/documentation_options.js"></script>
+         <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
          <script src="../_static/jquery.js"></script>
          <script src="../_static/underscore.js"></script>
+         <script src="../_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="../_static/doctools.js"></script>
          <script src="../_static/clipboard.min.js"></script>
          <script src="../_static/copybutton.js"></script>

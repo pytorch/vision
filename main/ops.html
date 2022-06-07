@@ -6,7 +6,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Operators &mdash; Torchvision main documentation</title>
@@ -27,6 +28,8 @@
 
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
   <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
   <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
@@ -206,7 +209,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+d4e41c2 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+8ddb7b7 ) &#x25BC</a>
     </div>
     
 
@@ -230,7 +233,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Package Reference</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
 <li class="toctree-l1"><a class="reference internal" href="models.html">Models and pre-trained weights</a></li>
@@ -240,12 +243,12 @@
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading/Writing images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples and training references</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Example gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="training_references.html">Training references</a></li>
 </ul>
-<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -326,17 +329,17 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="operators">
-<span id="ops"></span><h1>Operators<a class="headerlink" href="#operators" title="Permalink to this headline">¶</a></h1>
+  <section id="operators">
+<span id="ops"></span><h1>Operators<a class="headerlink" href="#operators" title="Permalink to this heading">¶</a></h1>
 <p><code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.ops</span></code> implements operators, losses and layers that are specific for Computer Vision.</p>
 <div class="admonition note">
 <p class="admonition-title">Note</p>
 <p>All operators have native support for TorchScript.</p>
 </div>
-<div class="section" id="detection-and-segmentation-operators">
-<h2>Detection and Segmentation Operators<a class="headerlink" href="#detection-and-segmentation-operators" title="Permalink to this headline">¶</a></h2>
+<section id="detection-and-segmentation-operators">
+<h2>Detection and Segmentation Operators<a class="headerlink" href="#detection-and-segmentation-operators" title="Permalink to this heading">¶</a></h2>
 <p>The below operators perform pre-processing as well as post-processing required in object detection and segmentation models.</p>
-<table class="longtable docutils colwidths-auto align-default">
+<table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.batched_nms.html#torchvision.ops.batched_nms" title="torchvision.ops.batched_nms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">batched_nms</span></code></a>(boxes, scores, idxs, iou_threshold)</p></td>
 <td><p>Performs non-maximum suppression in a batched fashion.</p></td>
@@ -347,35 +350,35 @@
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.nms.html#torchvision.ops.nms" title="torchvision.ops.nms"><code class="xref py py-obj docutils literal notranslate"><span class="pre">nms</span></code></a>(boxes, scores, iou_threshold)</p></td>
 <td><p>Performs non-maximum suppression (NMS) on the boxes according to their intersection-over-union (IoU).</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.roi_align.html#torchvision.ops.roi_align" title="torchvision.ops.roi_align"><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_align</span></code></a>(input, boxes, output_size[, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.roi_align.html#torchvision.ops.roi_align" title="torchvision.ops.roi_align"><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_align</span></code></a>(input, boxes, output_size[, ...])</p></td>
 <td><p>Performs Region of Interest (RoI) Align operator with average pooling, as described in Mask R-CNN.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.roi_pool.html#torchvision.ops.roi_pool" title="torchvision.ops.roi_pool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_pool</span></code></a>(input, boxes, output_size[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.roi_pool.html#torchvision.ops.roi_pool" title="torchvision.ops.roi_pool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">roi_pool</span></code></a>(input, boxes, output_size[, ...])</p></td>
 <td><p>Performs Region of Interest (RoI) Pool operator described in Fast R-CNN</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.ps_roi_align.html#torchvision.ops.ps_roi_align" title="torchvision.ops.ps_roi_align"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ps_roi_align</span></code></a>(input, boxes, output_size[, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.ps_roi_align.html#torchvision.ops.ps_roi_align" title="torchvision.ops.ps_roi_align"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ps_roi_align</span></code></a>(input, boxes, output_size[, ...])</p></td>
 <td><p>Performs Position-Sensitive Region of Interest (RoI) Align operator mentioned in Light-Head R-CNN.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.ps_roi_pool.html#torchvision.ops.ps_roi_pool" title="torchvision.ops.ps_roi_pool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ps_roi_pool</span></code></a>(input, boxes, output_size[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.ps_roi_pool.html#torchvision.ops.ps_roi_pool" title="torchvision.ops.ps_roi_pool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">ps_roi_pool</span></code></a>(input, boxes, output_size[, ...])</p></td>
 <td><p>Performs Position-Sensitive Region of Interest (RoI) Pool operator described in R-FCN</p></td>
 </tr>
 </tbody>
 </table>
-<table class="longtable docutils colwidths-auto align-default">
+<table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.FeaturePyramidNetwork.html#torchvision.ops.FeaturePyramidNetwork" title="torchvision.ops.FeaturePyramidNetwork"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FeaturePyramidNetwork</span></code></a>(in_channels_list, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.FeaturePyramidNetwork.html#torchvision.ops.FeaturePyramidNetwork" title="torchvision.ops.FeaturePyramidNetwork"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FeaturePyramidNetwork</span></code></a>(in_channels_list, ...)</p></td>
 <td><p>Module that adds a FPN from on top of a set of feature maps.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.MultiScaleRoIAlign.html#torchvision.ops.MultiScaleRoIAlign" title="torchvision.ops.MultiScaleRoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiScaleRoIAlign</span></code></a>(featmap_names, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.MultiScaleRoIAlign.html#torchvision.ops.MultiScaleRoIAlign" title="torchvision.ops.MultiScaleRoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MultiScaleRoIAlign</span></code></a>(featmap_names, ...[, ...])</p></td>
 <td><p>Multi-scale RoIAlign pooling, which is useful for detection with or without FPN.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.RoIAlign.html#torchvision.ops.RoIAlign" title="torchvision.ops.RoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RoIAlign</span></code></a>(output_size, spatial_scale, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.RoIAlign.html#torchvision.ops.RoIAlign" title="torchvision.ops.RoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RoIAlign</span></code></a>(output_size, spatial_scale, ...[, ...])</p></td>
 <td><p>See <a class="reference internal" href="generated/torchvision.ops.roi_align.html#torchvision.ops.roi_align" title="torchvision.ops.roi_align"><code class="xref py py-func docutils literal notranslate"><span class="pre">roi_align()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.RoIPool.html#torchvision.ops.RoIPool" title="torchvision.ops.RoIPool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">RoIPool</span></code></a>(output_size, spatial_scale)</p></td>
 <td><p>See <a class="reference internal" href="generated/torchvision.ops.roi_pool.html#torchvision.ops.roi_pool" title="torchvision.ops.roi_pool"><code class="xref py py-func docutils literal notranslate"><span class="pre">roi_pool()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.PSRoIAlign.html#torchvision.ops.PSRoIAlign" title="torchvision.ops.PSRoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PSRoIAlign</span></code></a>(output_size, spatial_scale, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.PSRoIAlign.html#torchvision.ops.PSRoIAlign" title="torchvision.ops.PSRoIAlign"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PSRoIAlign</span></code></a>(output_size, spatial_scale, ...)</p></td>
 <td><p>See <a class="reference internal" href="generated/torchvision.ops.ps_roi_align.html#torchvision.ops.ps_roi_align" title="torchvision.ops.ps_roi_align"><code class="xref py py-func docutils literal notranslate"><span class="pre">ps_roi_align()</span></code></a>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.PSRoIPool.html#torchvision.ops.PSRoIPool" title="torchvision.ops.PSRoIPool"><code class="xref py py-obj docutils literal notranslate"><span class="pre">PSRoIPool</span></code></a>(output_size, spatial_scale)</p></td>
@@ -383,11 +386,11 @@
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="box-operators">
-<h2>Box Operators<a class="headerlink" href="#box-operators" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="box-operators">
+<h2>Box Operators<a class="headerlink" href="#box-operators" title="Permalink to this heading">¶</a></h2>
 <p>These utility functions perform various operations on bounding boxes.</p>
-<table class="longtable docutils colwidths-auto align-default">
+<table class="autosummary longtable docutils align-default">
 <tbody>
 <tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.box_area.html#torchvision.ops.box_area" title="torchvision.ops.box_area"><code class="xref py py-obj docutils literal notranslate"><span class="pre">box_area</span></code></a>(boxes)</p></td>
 <td><p>Computes the area of a set of bounding boxes, which are specified by their (x1, y1, x2, y2) coordinates.</p></td>
@@ -415,57 +418,57 @@
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="losses">
-<h2>Losses<a class="headerlink" href="#losses" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="losses">
+<h2>Losses<a class="headerlink" href="#losses" title="Permalink to this heading">¶</a></h2>
 <p>The following vision-specific loss functions are implemented:</p>
-<table class="longtable docutils colwidths-auto align-default">
+<table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.complete_box_iou_loss.html#torchvision.ops.complete_box_iou_loss" title="torchvision.ops.complete_box_iou_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">complete_box_iou_loss</span></code></a>(boxes1, boxes2[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.complete_box_iou_loss.html#torchvision.ops.complete_box_iou_loss" title="torchvision.ops.complete_box_iou_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">complete_box_iou_loss</span></code></a>(boxes1, boxes2[, ...])</p></td>
 <td><p>Gradient-friendly IoU loss with an additional penalty that is non-zero when the boxes do not overlap overlap area, This loss function considers important geometrical factors such as  overlap area, normalized central point distance and aspect ratio.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.distance_box_iou_loss.html#torchvision.ops.distance_box_iou_loss" title="torchvision.ops.distance_box_iou_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">distance_box_iou_loss</span></code></a>(boxes1, boxes2[, …])</p></td>
-<td><p>Gradient-friendly IoU loss with an additional penalty that is non-zero when the distance between boxes’ centers isn’t zero.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.distance_box_iou_loss.html#torchvision.ops.distance_box_iou_loss" title="torchvision.ops.distance_box_iou_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">distance_box_iou_loss</span></code></a>(boxes1, boxes2[, ...])</p></td>
+<td><p>Gradient-friendly IoU loss with an additional penalty that is non-zero when the distance between boxes' centers isn't zero.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.generalized_box_iou_loss.html#torchvision.ops.generalized_box_iou_loss" title="torchvision.ops.generalized_box_iou_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generalized_box_iou_loss</span></code></a>(boxes1, boxes2[, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.generalized_box_iou_loss.html#torchvision.ops.generalized_box_iou_loss" title="torchvision.ops.generalized_box_iou_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generalized_box_iou_loss</span></code></a>(boxes1, boxes2[, ...])</p></td>
 <td><p>Gradient-friendly IoU loss with an additional penalty that is non-zero when the boxes do not overlap and scales with the size of their smallest enclosing box.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.sigmoid_focal_loss.html#torchvision.ops.sigmoid_focal_loss" title="torchvision.ops.sigmoid_focal_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sigmoid_focal_loss</span></code></a>(inputs, targets[, alpha, …])</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.sigmoid_focal_loss.html#torchvision.ops.sigmoid_focal_loss" title="torchvision.ops.sigmoid_focal_loss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">sigmoid_focal_loss</span></code></a>(inputs, targets[, alpha, ...])</p></td>
 <td><p>Loss used in RetinaNet for dense detection: <a class="reference external" href="https://arxiv.org/abs/1708.02002">https://arxiv.org/abs/1708.02002</a>.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="layers">
-<h2>Layers<a class="headerlink" href="#layers" title="Permalink to this headline">¶</a></h2>
+</section>
+<section id="layers">
+<h2>Layers<a class="headerlink" href="#layers" title="Permalink to this heading">¶</a></h2>
 <p>TorchVision provides commonly used building blocks as layers:</p>
-<table class="longtable docutils colwidths-auto align-default">
+<table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.Conv2dNormActivation.html#torchvision.ops.Conv2dNormActivation" title="torchvision.ops.Conv2dNormActivation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv2dNormActivation</span></code></a>(in_channels, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.Conv2dNormActivation.html#torchvision.ops.Conv2dNormActivation" title="torchvision.ops.Conv2dNormActivation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv2dNormActivation</span></code></a>(in_channels, ...)</p></td>
 <td><p>Configurable block used for Convolution2d-Normalization-Activation blocks.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.Conv3dNormActivation.html#torchvision.ops.Conv3dNormActivation" title="torchvision.ops.Conv3dNormActivation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv3dNormActivation</span></code></a>(in_channels, …)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.Conv3dNormActivation.html#torchvision.ops.Conv3dNormActivation" title="torchvision.ops.Conv3dNormActivation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Conv3dNormActivation</span></code></a>(in_channels, ...)</p></td>
 <td><p>Configurable block used for Convolution3d-Normalization-Activation blocks.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.DeformConv2d.html#torchvision.ops.DeformConv2d" title="torchvision.ops.DeformConv2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeformConv2d</span></code></a>(in_channels, out_channels, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.DeformConv2d.html#torchvision.ops.DeformConv2d" title="torchvision.ops.DeformConv2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DeformConv2d</span></code></a>(in_channels, out_channels, ...)</p></td>
 <td><p>See <a class="reference internal" href="generated/torchvision.ops.deform_conv2d.html#torchvision.ops.deform_conv2d" title="torchvision.ops.deform_conv2d"><code class="xref py py-func docutils literal notranslate"><span class="pre">deform_conv2d()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.DropBlock2d.html#torchvision.ops.DropBlock2d" title="torchvision.ops.DropBlock2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DropBlock2d</span></code></a>(p, block_size, inplace, eps)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.DropBlock2d.html#torchvision.ops.DropBlock2d" title="torchvision.ops.DropBlock2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DropBlock2d</span></code></a>(p, block_size[, inplace, eps])</p></td>
 <td><p>See <a class="reference internal" href="generated/torchvision.ops.drop_block2d.html#torchvision.ops.drop_block2d" title="torchvision.ops.drop_block2d"><code class="xref py py-func docutils literal notranslate"><span class="pre">drop_block2d()</span></code></a>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.DropBlock3d.html#torchvision.ops.DropBlock3d" title="torchvision.ops.DropBlock3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DropBlock3d</span></code></a>(p, block_size, inplace, eps)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.DropBlock3d.html#torchvision.ops.DropBlock3d" title="torchvision.ops.DropBlock3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">DropBlock3d</span></code></a>(p, block_size[, inplace, eps])</p></td>
 <td><p>See <a class="reference internal" href="generated/torchvision.ops.drop_block3d.html#torchvision.ops.drop_block3d" title="torchvision.ops.drop_block3d"><code class="xref py py-func docutils literal notranslate"><span class="pre">drop_block3d()</span></code></a>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.FrozenBatchNorm2d.html#torchvision.ops.FrozenBatchNorm2d" title="torchvision.ops.FrozenBatchNorm2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FrozenBatchNorm2d</span></code></a>(num_features, eps)</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.FrozenBatchNorm2d.html#torchvision.ops.FrozenBatchNorm2d" title="torchvision.ops.FrozenBatchNorm2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">FrozenBatchNorm2d</span></code></a>(num_features[, eps])</p></td>
 <td><p>BatchNorm2d where the batch statistics and the affine parameters are fixed</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.MLP.html#torchvision.ops.MLP" title="torchvision.ops.MLP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MLP</span></code></a>(in_channels, hidden_channels, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.MLP.html#torchvision.ops.MLP" title="torchvision.ops.MLP"><code class="xref py py-obj docutils literal notranslate"><span class="pre">MLP</span></code></a>(in_channels, hidden_channels, ...)</p></td>
 <td><p>This block implements the multi-layer perceptron (MLP) module.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.Permute.html#torchvision.ops.Permute" title="torchvision.ops.Permute"><code class="xref py py-obj docutils literal notranslate"><span class="pre">Permute</span></code></a>(dims)</p></td>
 <td><p>This module returns a view of the tensor input with its dimensions permuted.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.SqueezeExcitation.html#torchvision.ops.SqueezeExcitation" title="torchvision.ops.SqueezeExcitation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SqueezeExcitation</span></code></a>(input_channels, …)</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.SqueezeExcitation.html#torchvision.ops.SqueezeExcitation" title="torchvision.ops.SqueezeExcitation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">SqueezeExcitation</span></code></a>(input_channels, ...)</p></td>
 <td><p>This block implements the Squeeze-and-Excitation block from <a class="reference external" href="https://arxiv.org/abs/1709.01507">https://arxiv.org/abs/1709.01507</a> (see Fig.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.StochasticDepth.html#torchvision.ops.StochasticDepth" title="torchvision.ops.StochasticDepth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">StochasticDepth</span></code></a>(p, mode)</p></td>
@@ -473,24 +476,24 @@
 </tr>
 </tbody>
 </table>
-<table class="longtable docutils colwidths-auto align-default">
+<table class="autosummary longtable docutils align-default">
 <tbody>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.deform_conv2d.html#torchvision.ops.deform_conv2d" title="torchvision.ops.deform_conv2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deform_conv2d</span></code></a>(input, offset, weight[, bias, …])</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.deform_conv2d.html#torchvision.ops.deform_conv2d" title="torchvision.ops.deform_conv2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">deform_conv2d</span></code></a>(input, offset, weight[, bias, ...])</p></td>
 <td><p>Performs Deformable Convolution v2, described in <a class="reference external" href="https://arxiv.org/abs/1811.11168">Deformable ConvNets v2: More Deformable, Better Results</a> if <code class="xref py py-attr docutils literal notranslate"><span class="pre">mask</span></code> is not <code class="docutils literal notranslate"><span class="pre">None</span></code> and Performs Deformable Convolution, described in <a class="reference external" href="https://arxiv.org/abs/1703.06211">Deformable Convolutional Networks</a> if <code class="xref py py-attr docutils literal notranslate"><span class="pre">mask</span></code> is <code class="docutils literal notranslate"><span class="pre">None</span></code>.</p></td>
 </tr>
-<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.drop_block2d.html#torchvision.ops.drop_block2d" title="torchvision.ops.drop_block2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_block2d</span></code></a>(input, p, block_size[, …])</p></td>
-<td><p>Implements DropBlock2d from <cite>“DropBlock: A regularization method for convolutional networks” &lt;https://arxiv.org/abs/1810.12890&gt;</cite>.</p></td>
+<tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.drop_block2d.html#torchvision.ops.drop_block2d" title="torchvision.ops.drop_block2d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_block2d</span></code></a>(input, p, block_size[, ...])</p></td>
+<td><p>Implements DropBlock2d from <cite>&quot;DropBlock: A regularization method for convolutional networks&quot; &lt;https://arxiv.org/abs/1810.12890&gt;</cite>.</p></td>
 </tr>
-<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.drop_block3d.html#torchvision.ops.drop_block3d" title="torchvision.ops.drop_block3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_block3d</span></code></a>(input, p, block_size[, …])</p></td>
-<td><p>Implements DropBlock3d from <cite>“DropBlock: A regularization method for convolutional networks” &lt;https://arxiv.org/abs/1810.12890&gt;</cite>.</p></td>
+<tr class="row-odd"><td><p><a class="reference internal" href="generated/torchvision.ops.drop_block3d.html#torchvision.ops.drop_block3d" title="torchvision.ops.drop_block3d"><code class="xref py py-obj docutils literal notranslate"><span class="pre">drop_block3d</span></code></a>(input, p, block_size[, ...])</p></td>
+<td><p>Implements DropBlock3d from <cite>&quot;DropBlock: A regularization method for convolutional networks&quot; &lt;https://arxiv.org/abs/1810.12890&gt;</cite>.</p></td>
 </tr>
 <tr class="row-even"><td><p><a class="reference internal" href="generated/torchvision.ops.stochastic_depth.html#torchvision.ops.stochastic_depth" title="torchvision.ops.stochastic_depth"><code class="xref py py-obj docutils literal notranslate"><span class="pre">stochastic_depth</span></code></a>(input, p, mode[, training])</p></td>
-<td><p>Implements the Stochastic Depth from <a class="reference external" href="https://arxiv.org/abs/1603.09382">“Deep Networks with Stochastic Depth”</a> used for randomly dropping residual branches of residual architectures.</p></td>
+<td><p>Implements the Stochastic Depth from <a class="reference external" href="https://arxiv.org/abs/1603.09382">&quot;Deep Networks with Stochastic Depth&quot;</a> used for randomly dropping residual branches of residual architectures.</p></td>
 </tr>
 </tbody>
 </table>
-</div>
-</div>
+</section>
+</section>
 
 
              </article>
@@ -561,8 +564,10 @@
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
          <script src="_static/jquery.js"></script>
          <script src="_static/underscore.js"></script>
+         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="_static/doctools.js"></script>
          <script src="_static/clipboard.min.js"></script>
          <script src="_static/copybutton.js"></script>

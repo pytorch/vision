@@ -6,7 +6,8 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
   <title>Models and pre-trained weights &mdash; Torchvision main documentation</title>
@@ -27,6 +28,8 @@
 
   <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <!-- <link rel="stylesheet" href="_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
   <link rel="stylesheet" href="_static/copybutton.css" type="text/css" />
   <link rel="stylesheet" href="_static/sg_gallery.css" type="text/css" />
   <link rel="stylesheet" href="_static/sg_gallery-binder.css" type="text/css" />
@@ -206,7 +209,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+d4e41c2 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+8ddb7b7 ) &#x25BC</a>
     </div>
     
 
@@ -230,7 +233,7 @@
               
             
             
-              <p class="caption"><span class="caption-text">Package Reference</span></p>
+              <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
 <ul class="current">
 <li class="toctree-l1"><a class="reference internal" href="transforms.html">Transforming and augmenting images</a></li>
 <li class="toctree-l1 current"><a class="current reference internal" href="#">Models and pre-trained weights</a></li>
@@ -240,12 +243,12 @@
 <li class="toctree-l1"><a class="reference internal" href="io.html">Reading/Writing images and videos</a></li>
 <li class="toctree-l1"><a class="reference internal" href="feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
-<p class="caption"><span class="caption-text">Examples and training references</span></p>
+<p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="auto_examples/index.html">Example gallery</a></li>
 <li class="toctree-l1"><a class="reference internal" href="training_references.html">Training references</a></li>
 </ul>
-<p class="caption"><span class="caption-text">PyTorch Libraries</span></p>
+<p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/docs">PyTorch</a></li>
 <li class="toctree-l1"><a class="reference external" href="https://pytorch.org/audio">torchaudio</a></li>
@@ -326,14 +329,14 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <div class="section" id="models-and-pre-trained-weights">
-<span id="models"></span><h1>Models and pre-trained weights<a class="headerlink" href="#models-and-pre-trained-weights" title="Permalink to this headline">¶</a></h1>
+  <section id="models-and-pre-trained-weights">
+<span id="models"></span><h1>Models and pre-trained weights<a class="headerlink" href="#models-and-pre-trained-weights" title="Permalink to this heading">¶</a></h1>
 <p>The <code class="docutils literal notranslate"><span class="pre">torchvision.models</span></code> subpackage contains definitions of models for addressing
 different tasks, including: image classification, pixelwise semantic
 segmentation, object detection, instance segmentation, person
 keypoint detection, video classification, and optical flow.</p>
-<div class="section" id="general-information-on-pre-trained-weights">
-<h2>General information on pre-trained weights<a class="headerlink" href="#general-information-on-pre-trained-weights" title="Permalink to this headline">¶</a></h2>
+<section id="general-information-on-pre-trained-weights">
+<h2>General information on pre-trained weights<a class="headerlink" href="#general-information-on-pre-trained-weights" title="Permalink to this heading">¶</a></h2>
 <p>TorchVision offers pre-trained weights for every provided architecture, using
 the PyTorch <a class="reference external" href="https://pytorch.org/docs/stable/hub.html#module-torch.hub" title="(in PyTorch v1.11.0)"><code class="xref py py-mod docutils literal notranslate"><span class="pre">torch.hub</span></code></a>. Instancing a pre-trained model will download its
 weights to a cache directory. This directory can be set using the <cite>TORCH_HOME</cite>
@@ -354,8 +357,8 @@ On the contrary, loading entire saved models or serialized
 may not preserve the historic behaviour. Refer to the following
 <a class="reference external" href="https://pytorch.org/docs/stable/notes/serialization.html#id6">documentation</a></p>
 </div>
-<div class="section" id="initializing-pre-trained-models">
-<h3>Initializing pre-trained models<a class="headerlink" href="#initializing-pre-trained-models" title="Permalink to this headline">¶</a></h3>
+<section id="initializing-pre-trained-models">
+<h3>Initializing pre-trained models<a class="headerlink" href="#initializing-pre-trained-models" title="Permalink to this heading">¶</a></h3>
 <p>As of v0.13, TorchVision offers a new <a class="reference external" href="https://pytorch.org/blog/introducing-torchvision-new-multi-weight-support-api/">Multi-weight support API</a>
 for loading different weights to the existing model builder methods:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">torchvision.models</span> <span class="kn">import</span> <span class="n">resnet50</span><span class="p">,</span> <span class="n">ResNet50_Weights</span>
@@ -394,9 +397,9 @@ for loading different weights to the existing model builder methods:</p>
 </pre></div>
 </div>
 <p>Note that the <code class="docutils literal notranslate"><span class="pre">pretrained</span></code> parameter is now deprecated, using it will emit warnings and will be removed on v0.15.</p>
-</div>
-<div class="section" id="using-the-pre-trained-models">
-<h3>Using the pre-trained models<a class="headerlink" href="#using-the-pre-trained-models" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="using-the-pre-trained-models">
+<h3>Using the pre-trained models<a class="headerlink" href="#using-the-pre-trained-models" title="Permalink to this heading">¶</a></h3>
 <p>Before using the pre-trained models, one must preprocess the image
 (resize with right resolution/interpolation, apply inference transforms,
 rescale the values etc). There is no standard way to do this as it depends on
@@ -427,9 +430,9 @@ behavior, such as batch normalization. To switch between these modes, use
 <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
 </pre></div>
 </div>
-</div>
-<div class="section" id="using-models-from-hub">
-<h3>Using models from Hub<a class="headerlink" href="#using-models-from-hub" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="using-models-from-hub">
+<h3>Using models from Hub<a class="headerlink" href="#using-models-from-hub" title="Permalink to this heading">¶</a></h3>
 <p>Most pre-trained models can be accessed directly via PyTorch Hub without having TorchVision installed:</p>
 <div class="highlight-python notranslate"><div class="highlight"><pre><span></span><span class="kn">import</span> <span class="nn">torch</span>
 
@@ -444,10 +447,10 @@ behavior, such as batch normalization. To switch between these modes, use
 <p>The only exception to the above are the detection models included on
 <code class="xref py py-mod docutils literal notranslate"><span class="pre">torchvision.models.detection</span></code>. These models require TorchVision
 to be installed because they depend on custom C++ operators.</p>
-</div>
-</div>
-<div class="section" id="classification">
-<h2>Classification<a class="headerlink" href="#classification" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="classification">
+<h2>Classification<a class="headerlink" href="#classification" title="Permalink to this heading">¶</a></h2>
 <p>The following classification models are available, with or without pre-trained
 weights:</p>
 <div class="toctree-wrapper compound">
@@ -502,10 +505,10 @@ weights:</p>
 </pre></div>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>
-<div class="section" id="table-of-all-available-classification-weights">
-<h3>Table of all available classification weights<a class="headerlink" href="#table-of-all-available-classification-weights" title="Permalink to this headline">¶</a></h3>
+<section id="table-of-all-available-classification-weights">
+<h3>Table of all available classification weights<a class="headerlink" href="#table-of-all-available-classification-weights" title="Permalink to this heading">¶</a></h3>
 <p>Accuracies are reported on ImageNet-1K using single crops:</p>
-<table class="colwidths-given table-weights docutils colwidths-auto align-default">
+<table class="table-weights docutils align-default">
 <colgroup>
 <col style="width: 59%" />
 <col style="width: 12%" />
@@ -1190,9 +1193,9 @@ weights:</p>
 </tr>
 </tbody>
 </table>
-</div>
-<div class="section" id="quantized-models">
-<h3>Quantized models<a class="headerlink" href="#quantized-models" title="Permalink to this headline">¶</a></h3>
+</section>
+<section id="quantized-models">
+<h3>Quantized models<a class="headerlink" href="#quantized-models" title="Permalink to this heading">¶</a></h3>
 <p>The following architectures provide support for INT8 quantized models, with or without
 pre-trained weights:</p>
 <div class="toctree-wrapper compound">
@@ -1235,10 +1238,10 @@ pre-trained weights:</p>
 </pre></div>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>
-<div class="section" id="table-of-all-available-quantized-classification-weights">
-<h4>Table of all available quantized classification weights<a class="headerlink" href="#table-of-all-available-quantized-classification-weights" title="Permalink to this headline">¶</a></h4>
+<section id="table-of-all-available-quantized-classification-weights">
+<h4>Table of all available quantized classification weights<a class="headerlink" href="#table-of-all-available-quantized-classification-weights" title="Permalink to this heading">¶</a></h4>
 <p>Accuracies are reported on ImageNet-1K using single crops:</p>
-<table class="colwidths-given table-weights docutils colwidths-auto align-default">
+<table class="table-weights docutils align-default">
 <colgroup>
 <col style="width: 59%" />
 <col style="width: 12%" />
@@ -1341,11 +1344,11 @@ pre-trained weights:</p>
 </tr>
 </tbody>
 </table>
-</div>
-</div>
-</div>
-<div class="section" id="semantic-segmentation">
-<h2>Semantic Segmentation<a class="headerlink" href="#semantic-segmentation" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+</section>
+<section id="semantic-segmentation">
+<h2>Semantic Segmentation<a class="headerlink" href="#semantic-segmentation" title="Permalink to this heading">¶</a></h2>
 <p>The following semantic segmentation models are available, with or without
 pre-trained weights:</p>
 <div class="toctree-wrapper compound">
@@ -1386,10 +1389,10 @@ pre-trained weights:</p>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.
 The output format of the models is illustrated in <a class="reference internal" href="auto_examples/plot_visualization_utils.html#semantic-seg-output"><span class="std std-ref">Semantic segmentation models</span></a>.</p>
-<div class="section" id="table-of-all-available-semantic-segmentation-weights">
-<h3>Table of all available semantic segmentation weights<a class="headerlink" href="#table-of-all-available-semantic-segmentation-weights" title="Permalink to this headline">¶</a></h3>
+<section id="table-of-all-available-semantic-segmentation-weights">
+<h3>Table of all available semantic segmentation weights<a class="headerlink" href="#table-of-all-available-semantic-segmentation-weights" title="Permalink to this heading">¶</a></h3>
 <p>All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:</p>
-<table class="colwidths-given table-weights docutils colwidths-auto align-default">
+<table class="table-weights docutils align-default">
 <colgroup>
 <col style="width: 59%" />
 <col style="width: 12%" />
@@ -1444,16 +1447,16 @@ The output format of the models is illustrated in <a class="reference internal" 
 </tr>
 </tbody>
 </table>
-</div>
-</div>
-<div class="section" id="object-detection-instance-segmentation-and-person-keypoint-detection">
-<span id="object-det-inst-seg-pers-keypoint-det"></span><h2>Object Detection, Instance Segmentation and Person Keypoint Detection<a class="headerlink" href="#object-detection-instance-segmentation-and-person-keypoint-detection" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="object-detection-instance-segmentation-and-person-keypoint-detection">
+<span id="object-det-inst-seg-pers-keypoint-det"></span><h2>Object Detection, Instance Segmentation and Person Keypoint Detection<a class="headerlink" href="#object-detection-instance-segmentation-and-person-keypoint-detection" title="Permalink to this heading">¶</a></h2>
 <p>The pre-trained models for detection, instance segmentation and
 keypoint detection are initialized with the classification models
 in torchvision. The models expect a list of <code class="docutils literal notranslate"><span class="pre">Tensor[C,</span> <span class="pre">H,</span> <span class="pre">W]</span></code>.
 Check the constructor of the models for more information.</p>
-<div class="section" id="object-detection">
-<h3>Object Detection<a class="headerlink" href="#object-detection" title="Permalink to this headline">¶</a></h3>
+<section id="object-detection">
+<h3>Object Detection<a class="headerlink" href="#object-detection" title="Permalink to this heading">¶</a></h3>
 <p>The following object detection models are available, with or without pre-trained
 weights:</p>
 <div class="toctree-wrapper compound">
@@ -1500,10 +1503,10 @@ weights:</p>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.
 For details on how to plot the bounding boxes of the models, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
-<div class="section" id="table-of-all-available-object-detection-weights">
-<h4>Table of all available Object detection weights<a class="headerlink" href="#table-of-all-available-object-detection-weights" title="Permalink to this headline">¶</a></h4>
+<section id="table-of-all-available-object-detection-weights">
+<h4>Table of all available Object detection weights<a class="headerlink" href="#table-of-all-available-object-detection-weights" title="Permalink to this heading">¶</a></h4>
 <p>Box MAPs are reported on COCO val2017:</p>
-<table class="colwidths-given table-weights docutils colwidths-auto align-default">
+<table class="table-weights docutils align-default">
 <colgroup>
 <col style="width: 67%" />
 <col style="width: 13%" />
@@ -1565,10 +1568,10 @@ For details on how to plot the bounding boxes of the models, you may refer to <a
 </tr>
 </tbody>
 </table>
-</div>
-</div>
-<div class="section" id="instance-segmentation">
-<h3>Instance Segmentation<a class="headerlink" href="#instance-segmentation" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="instance-segmentation">
+<h3>Instance Segmentation<a class="headerlink" href="#instance-segmentation" title="Permalink to this heading">¶</a></h3>
 <p>The following instance segmentation models are available, with or without pre-trained
 weights:</p>
 <div class="toctree-wrapper compound">
@@ -1580,10 +1583,10 @@ weights:</p>
 <div class="line"><br /></div>
 </div>
 <p>For details on how to plot the masks of the models, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#instance-seg-output"><span class="std std-ref">Instance segmentation models</span></a>.</p>
-<div class="section" id="table-of-all-available-instance-segmentation-weights">
-<h4>Table of all available Instance segmentation weights<a class="headerlink" href="#table-of-all-available-instance-segmentation-weights" title="Permalink to this headline">¶</a></h4>
+<section id="table-of-all-available-instance-segmentation-weights">
+<h4>Table of all available Instance segmentation weights<a class="headerlink" href="#table-of-all-available-instance-segmentation-weights" title="Permalink to this heading">¶</a></h4>
 <p>Box and Mask MAPs are reported on COCO val2017:</p>
-<table class="colwidths-given table-weights docutils colwidths-auto align-default">
+<table class="table-weights docutils align-default">
 <colgroup>
 <col style="width: 59%" />
 <col style="width: 12%" />
@@ -1614,10 +1617,10 @@ weights:</p>
 </tr>
 </tbody>
 </table>
-</div>
-</div>
-<div class="section" id="keypoint-detection">
-<h3>Keypoint Detection<a class="headerlink" href="#keypoint-detection" title="Permalink to this headline">¶</a></h3>
+</section>
+</section>
+<section id="keypoint-detection">
+<h3>Keypoint Detection<a class="headerlink" href="#keypoint-detection" title="Permalink to this heading">¶</a></h3>
 <p>The following person keypoint detection models are available, with or without
 pre-trained weights:</p>
 <div class="toctree-wrapper compound">
@@ -1630,10 +1633,10 @@ pre-trained weights:</p>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;keypoint_names&quot;]</span></code>.
 For details on how to plot the bounding boxes of the models, you may refer to <a class="reference internal" href="auto_examples/plot_visualization_utils.html#keypoint-output"><span class="std std-ref">Visualizing keypoints</span></a>.</p>
-<div class="section" id="table-of-all-available-keypoint-detection-weights">
-<h4>Table of all available Keypoint detection weights<a class="headerlink" href="#table-of-all-available-keypoint-detection-weights" title="Permalink to this headline">¶</a></h4>
+<section id="table-of-all-available-keypoint-detection-weights">
+<h4>Table of all available Keypoint detection weights<a class="headerlink" href="#table-of-all-available-keypoint-detection-weights" title="Permalink to this heading">¶</a></h4>
 <p>Box and Keypoint MAPs are reported on COCO val2017:</p>
-<table class="colwidths-given table-weights docutils colwidths-auto align-default">
+<table class="table-weights docutils align-default">
 <colgroup>
 <col style="width: 59%" />
 <col style="width: 12%" />
@@ -1664,11 +1667,11 @@ For details on how to plot the bounding boxes of the models, you may refer to <a
 </tr>
 </tbody>
 </table>
-</div>
-</div>
-</div>
-<div class="section" id="video-classification">
-<h2>Video Classification<a class="headerlink" href="#video-classification" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+</section>
+<section id="video-classification">
+<h2>Video Classification<a class="headerlink" href="#video-classification" title="Permalink to this heading">¶</a></h2>
 <p>The following video classification models are available, with or without
 pre-trained weights:</p>
 <div class="toctree-wrapper compound">
@@ -1706,10 +1709,10 @@ pre-trained weights:</p>
 </pre></div>
 </div>
 <p>The classes of the pre-trained model outputs can be found at <code class="docutils literal notranslate"><span class="pre">weights.meta[&quot;categories&quot;]</span></code>.</p>
-<div class="section" id="table-of-all-available-video-classification-weights">
-<h3>Table of all available video classification weights<a class="headerlink" href="#table-of-all-available-video-classification-weights" title="Permalink to this headline">¶</a></h3>
+<section id="table-of-all-available-video-classification-weights">
+<h3>Table of all available video classification weights<a class="headerlink" href="#table-of-all-available-video-classification-weights" title="Permalink to this heading">¶</a></h3>
 <p>Accuracies are reported on Kinetics-400 using single crops for clip length 16:</p>
-<table class="colwidths-given table-weights docutils colwidths-auto align-default">
+<table class="table-weights docutils align-default">
 <colgroup>
 <col style="width: 59%" />
 <col style="width: 12%" />
@@ -1746,18 +1749,18 @@ pre-trained weights:</p>
 </tr>
 </tbody>
 </table>
-</div>
-</div>
-<div class="section" id="optical-flow">
-<h2>Optical Flow<a class="headerlink" href="#optical-flow" title="Permalink to this headline">¶</a></h2>
+</section>
+</section>
+<section id="optical-flow">
+<h2>Optical Flow<a class="headerlink" href="#optical-flow" title="Permalink to this heading">¶</a></h2>
 <p>The following Optical Flow models are available, with or without pre-trained</p>
 <div class="toctree-wrapper compound">
 <ul>
 <li class="toctree-l1"><a class="reference internal" href="models/raft.html">RAFT</a></li>
 </ul>
 </div>
-</div>
-</div>
+</section>
+</section>
 
 
              </article>
@@ -1858,8 +1861,10 @@ pre-trained weights:</p>
 
      
        <script type="text/javascript" id="documentation_options" data-url_root="./" src="_static/documentation_options.js"></script>
+         <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
          <script src="_static/jquery.js"></script>
          <script src="_static/underscore.js"></script>
+         <script src="_static/_sphinx_javascript_frameworks_compat.js"></script>
          <script src="_static/doctools.js"></script>
          <script src="_static/clipboard.min.js"></script>
          <script src="_static/copybutton.js"></script>
