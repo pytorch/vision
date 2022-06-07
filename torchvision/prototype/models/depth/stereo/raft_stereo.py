@@ -7,12 +7,25 @@ from torch import Tensor
 from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.models._api import Weights, WeightsEnum
-from torchvision.models.optical_flow._utils import grid_sample, make_coords_grid, upsample_flow
+from torchvision.models.optical_flow._utils import make_coords_grid, upsample_flow
 from torchvision.ops import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
 
 
 # Write helper function here temporarily
+# MODIFIED from torchvision.models.optical_flow._utils.grid_sample
+def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", align_corners: Optional[bool] = None):
+    """Same as torch's grid_sample, with absolute pixel coordinates instead of normalized coordinates."""
+    h, w = img.shape[-2:]
+
+    xgrid, ygrid = absolute_grid.split([1, 1], dim=-1)
+    xgrid = 2 * xgrid / (w - 1) - 1
+    # We comment the ygrid normalization because we only consider correlation on same row
+    # ygrid = 2 * ygrid / (h - 1) - 1
+    normalized_grid = torch.cat([xgrid, ygrid], dim=-1)
+
+    return F.grid_sample(img, normalized_grid, mode=mode, align_corners=align_corners)
+
 
 # MODIFIED from torchvision.models.optical_flow._utils.upsample_flow
 # Make it more generic by adding factor as params and can handle different num_channels input
@@ -320,11 +333,11 @@ class MultiLevelUpdateBlock(nn.Module):
     def _upsample2x(self, x):
         _, _, h, w = x.shape
         new_h, new_w = h * 2, w * 2
-        return F.interpolate(x, size=(new_h, new_w), mode="bilinear", align_cornders=True)
+        return F.interpolate(x, size=(new_h, new_w), mode="bilinear", align_corners=True)
 
-    def forward(self, hidden_states, contexts, corr_features, depth, num_processed=[1, 1, 1]):
+    def forward(self, hidden_states, contexts, corr_features, depth, level_processed=[1, 1, 1]):
         for i in range(len(self.grus) - 1, -1, -1):
-            for it in num_processed:
+            if level_processed[i]:
                 # X is concatination of downsampled hidden_dim (or motion_features if no bigger dim) with
                 # upsampled hidden_dim (or nothing if not exist)
                 features = (
@@ -401,23 +414,24 @@ class CorrBlock(nn.Module):
         corr_volume = corr_volume.reshape(batch_size * h * w, num_channels, 1, w)
         self.corr_pyramid = [corr_volume]
         for _ in range(self.num_levels - 1):
-            corr_volume = F.avg_pool2d(corr_volume, kernel_size=2, stride=2)
+            corr_volume = F.avg_pool2d(corr_volume, kernel_size=(1, 2), stride=(1, 2))
             self.corr_pyramid.append(corr_volume)
 
     def index_pyramid(self, centroids_coords):
         """Return correlation features by indexing from the pyramid."""
         neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
         di = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
-        di = di.view(1, 1, neighborhood_side_len, 1).to(centroid_coords.device)
+        di = di.view(1, 1, neighborhood_side_len, 1).to(centroids_coords.device)
 
-        batch_size, _, h, w = centroids_coords.shape  # _ = 2
-        centroids_coords = centroids_coords.permute(0, 2, 3, 1).reshape(batch_size * h * w, 1, 1, 1)
+        batch_size, _, h, w = centroids_coords.shape  # _ = 2 but we only use the first one
+        # We only consider 1d and take the first dim only
+        centroids_coords = centroids_coords[:, :1].permute(0, 2, 3, 1).reshape(batch_size * h * w, 1, 1, 1)
 
         indexed_pyramid = []
         for corr_volume in self.corr_pyramid:
             x0 = centroids_coords + di  # end shape is (batch_size * h * w, 1, side_len, 1)
             y0 = torch.zeros_like(x0)
-            sampling_coords = torch.cat([x0, y0], dim=1)
+            sampling_coords = torch.cat([x0, y0], dim=-1)
             indexed_corr_volume = grid_sample(corr_volume, sampling_coords, align_corners=True, mode="bilinear").view(
                 batch_size, h, w, -1
             )
@@ -558,11 +572,11 @@ class RaftStereo(nn.Module):
             if self.slow_fast:
                 # We process lower resolution multiple times more often
                 for i in range(1, self.num_level):
-                    num_processed = [0] * (self.num_level - i) + [1] * i
+                    level_processed = [0] * (self.num_level - i) + [1] * i
                     hidden_states = self.update_block(
-                        hidden_states, contexts, corr_features, depth, num_processed=num_processed
+                        hidden_states, contexts, corr_features, depth, level_processed=level_processed
                     )
-            hidden_states = self.update_block(hidden_states, contexts, corr_features, depth, num_processed=[1, 1, 1])
+            hidden_states = self.update_block(hidden_states, contexts, corr_features, depth, level_processed=[1, 1, 1])
             # Take the largest hidden_state to get the depth
             hidden_state = hidden_states[0]
             delta_depth = self.depth_head(hidden_state)
@@ -574,7 +588,7 @@ class RaftStereo(nn.Module):
             upsampled_depth = upsample_with_mask_and_factor(
                 x=(coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio
             )
-            depth_predictions.append(upsampled_depth)
+            depth_predictions.append(upsampled_depth[:, :1])
 
         return depth_predictions
 
