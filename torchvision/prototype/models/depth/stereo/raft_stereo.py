@@ -7,9 +7,13 @@ from torch import Tensor
 from torch.nn.modules.batchnorm import BatchNorm2d
 from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.models._api import Weights, WeightsEnum
-from torchvision.models.optical_flow._utils import make_coords_grid, upsample_flow
 from torchvision.ops import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
+
+from torchvision.models.optical_flow._utils import make_coords_grid, upsample_flow
+from torchvision.models.optical_flow.raft import ResidualBlock, MotionEncoder
+
+import torchvision.models.optical_flow.raft as raft
 
 
 # Write helper function here temporarily
@@ -20,10 +24,11 @@ def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", alig
 
     xgrid, ygrid = absolute_grid.split([1, 1], dim=-1)
     xgrid = 2 * xgrid / (w - 1) - 1
-    # We comment the ygrid normalization because we only consider correlation on same row
-    # ygrid = 2 * ygrid / (h - 1) - 1
+    # Add condition h > 1 to prevent nan when h == 1 (the case on raft-stereo where we only correlate on the same row)
+    # See: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/utils/utils.py#L64
+    if h > 1:
+        ygrid = 2 * ygrid / (h - 1) - 1
     normalized_grid = torch.cat([xgrid, ygrid], dim=-1)
-
     return F.grid_sample(img, normalized_grid, mode=mode, align_corners=align_corners)
 
 
@@ -50,52 +55,8 @@ def upsample_with_mask_and_factor(x, up_mask: Optional[Tensor] = None, factor=8)
     return upsampled_x.permute(0, 1, 4, 2, 5, 3).reshape(batch_size, num_channels, new_h, new_w)
 
 
-# REUSING from torchvision.models.optical_flow.raft
-class ResidualBlock(nn.Module):
-    """Slightly modified Residual block with extra relu and biases."""
-
-    def __init__(self, in_channels, out_channels, *, norm_layer, stride=1):
-        super().__init__()
-
-        # Note regarding bias=True:
-        # Usually we can pass bias=False in conv layers followed by a norm layer.
-        # But in the RAFT training reference, the BatchNorm2d layers are only activated for the first dataset,
-        # and frozen for the rest of the training process (i.e. set as eval()). The bias term is thus still useful
-        # for the rest of the datasets. Technically, we could remove the bias for other norm layers like Instance norm
-        # because these aren't frozen, but we don't bother (also, we woudn't be able to load the original weights).
-        self.convnormrelu1 = Conv2dNormActivation(
-            in_channels, out_channels, norm_layer=norm_layer, kernel_size=3, stride=stride, bias=True
-        )
-        self.convnormrelu2 = Conv2dNormActivation(
-            out_channels, out_channels, norm_layer=norm_layer, kernel_size=3, bias=True
-        )
-
-        if stride == 1:
-            self.downsample = nn.Identity()
-        else:
-            self.downsample = Conv2dNormActivation(
-                in_channels,
-                out_channels,
-                norm_layer=norm_layer,
-                kernel_size=1,
-                stride=stride,
-                bias=True,
-                activation_layer=None,
-            )
-
-        self.relu = nn.ReLU(inplace=True)
-
-    def forward(self, x):
-        y = x
-        y = self.convnormrelu1(y)
-        y = self.convnormrelu2(y)
-
-        x = self.downsample(x)
-
-        return self.relu(x + y)
-
-
 # MODIFIED from torchvision.models.optical_flow.raft.FeatureEncoder by adding strides param
+# and remove the last conv layer
 class BaseEncoder(nn.Module):
     """The feature encoder, used both as the actual feature encoder, and as the context encoder.
 
@@ -216,60 +177,9 @@ class MultiLevelContextEncoder(nn.Module):
         return outs
 
 
-# REUSE FROM torchvision.models.optical_flow.raft.MotionEncoder
-class MotionEncoder(nn.Module):
-    """The motion encoder, part of the update block.
-
-    Takes the current predicted flow and the correlation features as input and returns an encoded version of these.
-    """
-
-    def __init__(self, *, in_channels_corr, corr_layers=(256, 192), flow_layers=(128, 64), out_channels=128):
-        super().__init__()
-
-        if len(flow_layers) != 2:
-            raise ValueError(f"The expected number of flow_layers is 2, instead got {len(flow_layers)}")
-        if len(corr_layers) not in (1, 2):
-            raise ValueError(f"The number of corr_layers should be 1 or 2, instead got {len(corr_layers)}")
-
-        self.convcorr1 = Conv2dNormActivation(in_channels_corr, corr_layers[0], norm_layer=None, kernel_size=1)
-        if len(corr_layers) == 2:
-            self.convcorr2 = Conv2dNormActivation(corr_layers[0], corr_layers[1], norm_layer=None, kernel_size=3)
-        else:
-            self.convcorr2 = nn.Identity()
-
-        self.convflow1 = Conv2dNormActivation(2, flow_layers[0], norm_layer=None, kernel_size=7)
-        self.convflow2 = Conv2dNormActivation(flow_layers[0], flow_layers[1], norm_layer=None, kernel_size=3)
-
-        # out_channels - 2 because we cat the flow (2 channels) at the end
-        self.conv = Conv2dNormActivation(
-            corr_layers[-1] + flow_layers[-1], out_channels - 2, norm_layer=None, kernel_size=3
-        )
-
-        self.out_channels = out_channels
-
-    def forward(self, flow, corr_features):
-        corr = self.convcorr1(corr_features)
-        corr = self.convcorr2(corr)
-
-        flow_orig = flow
-        flow = self.convflow1(flow)
-        flow = self.convflow2(flow)
-
-        corr_flow = torch.cat([corr, flow], dim=1)
-        corr_flow = self.conv(corr_flow)
-        return torch.cat([corr_flow, flow_orig], dim=1)
-
-
 # Modified torchvision.models.optical_flow.raft.ConvGRU
-class ConvGRU(nn.Module):
+class ConvGRU(raft.ConvGRU):
     """Convolutional Gru unit."""
-
-    def __init__(self, *, input_size, hidden_size, kernel_size, padding):
-        super().__init__()
-        self.convz = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
-        self.convr = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
-        self.convq = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
-
     # Modified to accept pre-convolved contexts, see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
     def forward(self, h, context, x):
         hx = torch.cat([h, x], dim=1)
@@ -282,20 +192,16 @@ class ConvGRU(nn.Module):
 
 
 # MODIFIED torchvision.models.optical_flow.raft.FlowHead
-class DepthHead(nn.Module):
+class DepthHead(raft.FlowHead):
     """Depth head, part of the update block.
-
     Takes the hidden state of the recurrent unit as input, and outputs the predicted "delta depth".
     """
-
+    # Adding out_channels
     def __init__(self, *, in_channels, hidden_size, out_channels):
-        super().__init__()
+        super(raft.FlowHead, self).__init__()
         self.conv1 = nn.Conv2d(in_channels, hidden_size, 3, padding=1)
         self.conv2 = nn.Conv2d(hidden_size, out_channels, 3, padding=1)
         self.relu = nn.ReLU(inplace=True)
-
-    def forward(self, x):
-        return self.conv2(self.relu(self.conv1(x)))
 
 
 class MultiLevelUpdateBlock(nn.Module):
@@ -357,11 +263,11 @@ class MultiLevelUpdateBlock(nn.Module):
 
 
 # MODIFIED from torchvision.models.optical_flow.raft.MaskPredictor
-class MaskPredictor(nn.Module):
+class MaskPredictor(raft.MaskPredictor):
     """Mask predictor to be used when upsampling the predicted depth."""
-
+    # Add out_channels params (more generic)
     def __init__(self, *, in_channels, hidden_size, out_channels, multiplier=0.25):
-        super().__init__()
+        super(raft.MaskPredictor, self).__init__()
         self.convrelu = Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
         self.conv = nn.Conv2d(hidden_size, out_channels, kernel_size=1, padding=0)
 
@@ -370,11 +276,6 @@ class MaskPredictor(nn.Module):
         # or https://github.com/princeton-vl/RAFT/issues/24.
         # It doesn't seem to affect epe significantly and can likely be set to 1.
         self.multiplier = multiplier
-
-    def forward(self, x):
-        x = self.convrelu(x)
-        x = self.conv(x)
-        return self.multiplier * x
 
 
 # MODIFIED from torchvision.models.optical_flow.raft.CorrBlock to only consider 1d neighbour instead of 2d
