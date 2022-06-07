@@ -1,11 +1,12 @@
 import pytest
 import torch
 import torchvision.models
-from common_utils import assert_equal
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor, TwoMLPHead
 from torchvision.models.detection.roi_heads import RoIHeads
 from torchvision.models.detection.rpn import AnchorGenerator, RPNHead, RegionProposalNetwork
 from torchvision.ops import MultiScaleRoIAlign
+
+from .common_utils import assert_equal
 
 
 class TestModelsDetectionNegativeSamples:

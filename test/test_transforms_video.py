@@ -4,8 +4,9 @@ import warnings
 import numpy as np
 import pytest
 import torch
-from common_utils import assert_equal
 from torchvision.transforms import Compose
+
+from .common_utils import assert_equal
 
 try:
     from scipy import stats

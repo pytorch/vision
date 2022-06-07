@@ -1,8 +1,9 @@
 import pytest
 import torch
-from common_utils import get_list_of_videos, assert_equal
 from torchvision import io
 from torchvision.datasets.video_utils import VideoClips, unfold
+
+from .common_utils import get_list_of_videos, assert_equal
 
 
 class TestVideo:

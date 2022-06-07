@@ -10,13 +10,14 @@ import pytest
 import torch
 import torch.fx
 import torch.nn.functional as F
-from common_utils import assert_equal, cpu_and_gpu, needs_cuda
 from PIL import Image
 from torch import nn, Tensor
 from torch.autograd import gradcheck
 from torch.nn.modules.utils import _pair
 from torchvision import models, ops
 from torchvision.models.feature_extraction import get_graph_node_names
+
+from ..common_utils import assert_equal, cpu_and_gpu, needs_cuda
 
 
 class RoIOpTesterModuleWrapper(nn.Module):
@@ -1395,7 +1396,7 @@ class TestMasksToBoxes:
 
         # Check for int type boxes.
         def _get_image():
-            assets_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "assets")
+            assets_directory = os.path.join(os.path.dirname(os.path.abspath(__file__)), "../assets")
             mask_path = os.path.join(assets_directory, "masks.tiff")
             image = Image.open(mask_path)
             return image

@@ -7,11 +7,12 @@ import numpy as np
 import pytest
 import torch
 import torchvision.io as io
-from common_utils import assert_equal
 from numpy.random import randint
 from pytest import approx
 from torchvision import set_video_backend
 from torchvision.io import _HAS_VIDEO_OPT
+
+from .common_utils import assert_equal
 
 
 try:
