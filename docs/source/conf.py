@@ -405,7 +405,7 @@ def generate_weights_table(module, table_name, metrics, include_patterns=None, e
         table_file.write(".. table::\n")
         table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
-        table_file.write(f"{table_name} Table \n{2*len(table_name)*'*'}\n")
+        table_file.write(f"{table_name} Weights Table \n{2*len(table_name)*'*'}\n")
 
 
 generate_weights_table(module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")])
