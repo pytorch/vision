@@ -51,7 +51,7 @@ jobs:
 
           WHL_NAME=torchvision-${BUILD_VERSION}-cp${PY_VERS/.}-cp${PY_VERS/.}-macosx_11_0_arm64.whl
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg wheel pkg-config
-          conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/${CHANNEL}
           conda run -p ${ENV_NAME} python3 -mpip install delocate
           conda run -p ${ENV_NAME} python3 setup.py bdist_wheel
           export PYTORCH_VERSION="$(conda run -p ${ENV_NAME} python3 -mpip show torch | grep ^Version: | sed 's/Version:  *//')"
@@ -79,7 +79,7 @@ jobs:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1
           path: dist/
       - name: Upload wheel to S3
-        if: ${{ github.event_name == 'push' && steps.extract_branch.outputs.branch == 'nightly' }}
+        if: ${{ github.event_name == 'push' && (steps.extract_branch.outputs.branch == 'nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
         shell: arch -arch arm64 bash {0}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
