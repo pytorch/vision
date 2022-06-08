@@ -4,13 +4,11 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as F
 from torch import Tensor
-from torch.nn.modules.batchnorm import BatchNorm2d
-from torch.nn.modules.instancenorm import InstanceNorm2d
 from torchvision.models._api import Weights, WeightsEnum
 from torchvision.ops import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
 
-from torchvision.models.optical_flow._utils import make_coords_grid, upsample_flow
+from torchvision.models.optical_flow._utils import make_coords_grid
 from torchvision.models.optical_flow.raft import ResidualBlock, MotionEncoder
 
 import torchvision.models.optical_flow.raft as raft
@@ -119,7 +117,9 @@ class FeatureEncoder(nn.Module):
         self.shared_base = shared_base
         if shared_base:
             self.residual_block = block(base_dim, base_dim, norm_layer=nn.InstanceNorm2d, stride=1)
-        self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
+            self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=3, padding=1)
+        else:
+            self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
 
     def forward(self, x):
         x = self.base_encoder(x)
@@ -371,6 +371,7 @@ class RaftStereo(nn.Module):
         depth_head,
         mask_predictor=None,
         slow_fast=False,
+        num_iters=12,
     ):
         """RAFT-Stereo model from
         `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
@@ -429,8 +430,11 @@ class RaftStereo(nn.Module):
             [nn.Conv2d(hidden_dims[i], hidden_dims[i] * 3, kernel_size=3, padding=1) for i in range(self.num_level)]
         )
         self.slow_fast = slow_fast
+        self.num_iters = num_iters
 
-    def forward(self, image1, image2, num_iter: int = 12):
+    def forward(self, image1, image2, num_iters=None):
+        if num_iters is None:
+            num_iters = self.num_iters
         batch_size, _, h, w = image1.shape
         if (h, w) != image2.shape[-2:]:
             raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")
@@ -458,14 +462,14 @@ class RaftStereo(nn.Module):
         for i in range(len(context_outs)):
             hidden_state, context = torch.split(context_outs[i], [hidden_dims[i], context_out_channels[i]], dim=1)
             hidden_states.append(torch.tanh(hidden_state))
-            contexts.append(self.context_convs[i](F.relu(context)).split(split_size=hidden_dims, dim=1))
+            contexts.append(self.context_convs[i](F.relu(context)).split(split_size=[hidden_dims[i]] * 3, dim=1))
 
         _, Cf, Hf, Wf = fmap1.shape
         coords0 = make_coords_grid(batch_size, Hf, Wf).to(fmap1.device)
         coords1 = make_coords_grid(batch_size, Hf, Wf).to(fmap1.device)
 
         depth_predictions = []
-        for _ in range(num_iter):
+        for _ in range(num_iters):
             coords1 = coords1.detach()  # Don't backpropagate gradients through this branch, see paper
             corr_features = self.corr_block.index_pyramid(centroids_coords=coords1)
 
@@ -522,6 +526,8 @@ def _raft_stereo(
     # Mask predictor
     mask_predictor_hidden_size,
     use_mask_predictor,
+    slow_fast,
+    num_iters,
     **kwargs,
 ):
 
@@ -595,6 +601,8 @@ def _raft_stereo(
         update_block=update_block,
         depth_head=depth_head,
         mask_predictor=mask_predictor,
+        slow_fast=slow_fast,
+        num_iters=num_iters,
         **kwargs,  # not really needed, all params should be consumed by now
     )
 
@@ -604,7 +612,7 @@ def _raft_stereo(
     return model
 
 
-class Raft_Stereo_Shared_Weights(WeightsEnum):
+class Raft_Stereo_Fast_Weights(WeightsEnum):
     pass
 
 
@@ -612,16 +620,16 @@ class Raft_Stereo_Weights(WeightsEnum):
     pass
 
 
-def raft_stereo_shared(*, weights: Optional[Raft_Stereo_Shared_Weights] = None, progress=True, **kwargs) -> RaftStereo:
+def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, progress=True, **kwargs) -> RaftStereo:
     """RAFT model from
     `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        weights(:class:`~torchvision.models.optical_flow.Raft_Stereo_Shared_Weights`, optional): The
+        weights(:class:`~torchvision.models.optical_flow.Raft_Stereo_Fast_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.models.optical_flow.Raft_Stereo_Shared_Weights`
+            :class:`~torchvision.models.optical_flow.Raft_Stereo_Fast_Weights`
             below for more details, and possible values. By default, no
             pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
@@ -630,11 +638,11 @@ def raft_stereo_shared(*, weights: Optional[Raft_Stereo_Shared_Weights] = None, 
             <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.optical_flow.Raft_Stereo_Shared_Weights
+    .. autoclass:: torchvision.models.optical_flow.Raft_Stereo_Fast_Weights
         :members:
     """
 
-    weights = Raft_Stereo_Shared_Weights.verify(weights)
+    weights = Raft_Stereo_Fast_Weights.verify(weights)
 
     return _raft_stereo(
         weights=weights,
@@ -647,7 +655,7 @@ def raft_stereo_shared(*, weights: Optional[Raft_Stereo_Shared_Weights] = None, 
         # Context encoder
         context_encoder_layers=(64, 64, 96, 128, 256),
         context_encoder_strides=(2, 1, 2, 2),
-        context_encoder_out_with_blocks=[1, 1, 0],
+        context_encoder_out_with_blocks=[1, 1],
         context_encoder_block=ResidualBlock,
         # Correlation block
         corr_block_num_levels=4,
@@ -657,12 +665,14 @@ def raft_stereo_shared(*, weights: Optional[Raft_Stereo_Shared_Weights] = None, 
         motion_encoder_flow_layers=(64, 64),
         motion_encoder_out_channels=128,
         # Update block
-        update_block_hidden_dims=[128, 128, 128],
+        update_block_hidden_dims=[128, 128],
         # Flow head
         flow_head_hidden_size=256,
         # Mask predictor
         mask_predictor_hidden_size=256,
         use_mask_predictor=True,
+        slow_fast=True,
+        num_iters=7,
         **kwargs,
     )
 
@@ -718,5 +728,7 @@ def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True,
         # Mask predictor
         mask_predictor_hidden_size=256,
         use_mask_predictor=True,
+        slow_fast=False,
+        num_iters=32,
         **kwargs,
     )
