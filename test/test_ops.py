@@ -995,7 +995,7 @@ class TestFrozenBNT:
         torch.testing.assert_close(fbn(x), bn(x), rtol=1e-5, atol=1e-6)
 
 
-class TestBoxConversion:
+class TestBoxConversionToRoi:
     def _get_box_sequences():
         # Define here the argument type of `boxes` supported by region pooling operations
         box_tensor = torch.tensor([[0, 0, 0, 100, 100], [1, 0, 0, 100, 100]], dtype=torch.float)
@@ -1101,21 +1101,21 @@ class TestBoxConvert:
         )
 
         scripted_fn = torch.jit.script(ops.box_convert)
-        TOLERANCE = 1e-3
+        atol = 1e-3
 
         box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
         scripted_xywh = scripted_fn(box_tensor, "xyxy", "xywh")
-        torch.testing.assert_close(scripted_xywh, box_xywh, rtol=0.0, atol=TOLERANCE)
+        torch.testing.assert_close(scripted_xywh, box_xywh, rtol=0.0, atol=atol)
 
         box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
         scripted_cxcywh = scripted_fn(box_tensor, "xyxy", "cxcywh")
-        torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=TOLERANCE)
+        torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=atol)
 
 
 class TestBoxArea:
-    def area_check(self, box, expected, tolerance=1e-4):
+    def area_check(self, box, expected, atol=1e-4):
         out = ops.box_area(box)
-        torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=tolerance)
+        torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=False, atol=atol)
 
     @pytest.mark.parametrize("dtype", [torch.int8, torch.int16, torch.int32, torch.int64])
     def test_int_boxes(self, dtype):
@@ -1133,8 +1133,8 @@ class TestBoxArea:
             ],
             dtype=dtype,
         )
-        expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=torch.float64)
-        self.area_check(box_tensor, expected, tolerance=0.05)
+        expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=dtype)
+        self.area_check(box_tensor, expected, atol=0.05)
 
     def test_float16_box(self):
         box_tensor = torch.tensor(
@@ -1154,13 +1154,12 @@ class TestBoxArea:
 
 class TestIouBase:
     @staticmethod
-    def _run_test(target_fn: Callable, test_input: List, dtypes: List[torch.dtype], tolerance: float, expected: List):
+    def _run_test(target_fn: Callable, test_input: List, dtypes: List[torch.dtype], atol: float, expected: List):
         for dtype in dtypes:
             actual_box = torch.tensor(test_input, dtype=dtype)
             expected_box = torch.tensor(expected)
             out = target_fn(actual_box, actual_box)
-            torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=tolerance)
-            # assert_close(actual_box, expected_box, tolerance)
+            torch.testing.assert_close(out, expected_box, rtol=0.0, check_dtype=False, atol=atol)
 
     @staticmethod
     def _run_jit_test(target_fn: Callable, test_input: List):
@@ -1180,19 +1179,19 @@ IOU_FLOAT_BOXES = [
 
 
 class TestBoxIou(TestIouBase):
-    generate_int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
+    int_expected = [[1.0, 0.25, 0.0], [0.25, 1.0, 0.0], [0.0, 0.0, 1.0]]
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, tolerance, expected",
+        "test_input, dtypes, atol, expected",
         [
-            pytest.param(IOU_INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, generate_int_expected),
+            pytest.param(IOU_INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
             pytest.param(IOU_FLOAT_BOXES, [torch.float16], 0.002, float_expected),
             pytest.param(IOU_FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, tolerance, expected):
-        self._run_test(ops.box_iou, test_input, dtypes, tolerance, expected)
+    def test_iou(self, test_input, dtypes, atol, expected):
+        self._run_test(ops.box_iou, test_input, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.box_iou, IOU_INT_BOXES)
@@ -1203,15 +1202,15 @@ class TestGeneralizedBoxIou(TestIouBase):
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, tolerance, expected",
+        "test_input, dtypes, atol, expected",
         [
             pytest.param(IOU_INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
             pytest.param(IOU_FLOAT_BOXES, [torch.float16], 0.002, float_expected),
             pytest.param(IOU_FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, tolerance, expected):
-        self._run_test(ops.generalized_box_iou, test_input, dtypes, tolerance, expected)
+    def test_iou(self, test_input, dtypes, atol, expected):
+        self._run_test(ops.generalized_box_iou, test_input, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.generalized_box_iou, IOU_INT_BOXES)
@@ -1222,15 +1221,15 @@ class TestDistanceBoxIoU(TestIouBase):
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, tolerance, expected",
+        "test_input, dtypes, atol, expected",
         [
             pytest.param(IOU_INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
             pytest.param(IOU_FLOAT_BOXES, [torch.float16], 0.002, float_expected),
             pytest.param(IOU_FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, tolerance, expected):
-        self._run_test(ops.distance_box_iou, test_input, dtypes, tolerance, expected)
+    def test_iou(self, test_input, dtypes, atol, expected):
+        self._run_test(ops.distance_box_iou, test_input, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.distance_box_iou, IOU_INT_BOXES)
@@ -1241,15 +1240,15 @@ class TestCompleteBoxIou(TestIouBase):
     float_expected = [[1.0, 0.9933, 0.9673], [0.9933, 1.0, 0.9737], [0.9673, 0.9737, 1.0]]
 
     @pytest.mark.parametrize(
-        "test_input, dtypes, tolerance, expected",
+        "test_input, dtypes, atol, expected",
         [
             pytest.param(IOU_INT_BOXES, [torch.int16, torch.int32, torch.int64], 1e-4, int_expected),
             pytest.param(IOU_FLOAT_BOXES, [torch.float16], 0.002, float_expected),
             pytest.param(IOU_FLOAT_BOXES, [torch.float32, torch.float64], 1e-3, float_expected),
         ],
     )
-    def test_iou(self, test_input, dtypes, tolerance, expected):
-        self._run_test(ops.complete_box_iou, test_input, dtypes, tolerance, expected)
+    def test_iou(self, test_input, dtypes, atol, expected):
+        self._run_test(ops.complete_box_iou, test_input, dtypes, atol, expected)
 
     def test_iou_jit(self):
         self._run_jit_test(ops.complete_box_iou, IOU_INT_BOXES)
@@ -1267,7 +1266,7 @@ def get_boxes(dtype, device):
     return box1, box2, box3, box4, box1s, box2s
 
 
-def assert_iou_loss(iou_fn, box1, box2, expected_loss, dtype, device, reduction="none"):
+def assert_iou_loss(iou_fn, box1, box2, expected_loss, device, reduction="none"):
     computed_loss = iou_fn(box1, box2, reduction=reduction)
     expected_loss = torch.tensor(expected_loss, device=device)
     torch.testing.assert_close(computed_loss, expected_loss)
@@ -1294,22 +1293,22 @@ class TestGeneralizedBoxIouLoss:
         box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
 
         # Identical boxes should have loss of 0
-        assert_iou_loss(ops.generalized_box_iou_loss, box1, box1, 0.0, dtype=dtype, device=device)
+        assert_iou_loss(ops.generalized_box_iou_loss, box1, box1, 0.0, device=device)
 
         # quarter size box inside other box = IoU of 0.25
-        assert_iou_loss(ops.generalized_box_iou_loss, box1, box2, 0.75, dtype=dtype, device=device)
+        assert_iou_loss(ops.generalized_box_iou_loss, box1, box2, 0.75, device=device)
 
         # Two side by side boxes, area=union
         # IoU=0 and GIoU=0 (loss 1.0)
-        assert_iou_loss(ops.generalized_box_iou_loss, box2, box3, 1.0, dtype=dtype, device=device)
+        assert_iou_loss(ops.generalized_box_iou_loss, box2, box3, 1.0, device=device)
 
         # Two diagonally adjacent boxes, area=2*union
         # IoU=0 and GIoU=-0.5 (loss 1.5)
-        assert_iou_loss(ops.generalized_box_iou_loss, box2, box4, 1.5, dtype=dtype, device=device)
+        assert_iou_loss(ops.generalized_box_iou_loss, box2, box4, 1.5, device=device)
 
         # Test batched loss and reductions
-        assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 2.5, dtype=dtype, device=device, reduction="sum")
-        assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 1.25, dtype=dtype, device=device, reduction="mean")
+        assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 2.5, device=device, reduction="sum")
+        assert_iou_loss(ops.generalized_box_iou_loss, box1s, box2s, 1.25, device=device, reduction="mean")
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
@@ -1323,12 +1322,12 @@ class TestCompleteBoxIouLoss:
     def test_ciou_loss(self, dtype, device):
         box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
 
-        assert_iou_loss(ops.complete_box_iou_loss, box1, box1, 0.0, dtype=dtype, device=device)
-        assert_iou_loss(ops.complete_box_iou_loss, box1, box2, 0.8125, dtype=dtype, device=device)
-        assert_iou_loss(ops.complete_box_iou_loss, box1, box3, 1.1923, dtype=dtype, device=device)
-        assert_iou_loss(ops.complete_box_iou_loss, box1, box4, 1.2500, dtype=dtype, device=device)
-        assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 1.2250, dtype=dtype, device=device, reduction="mean")
-        assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 2.4500, dtype=dtype, device=device, reduction="sum")
+        assert_iou_loss(ops.complete_box_iou_loss, box1, box1, 0.0, device=device)
+        assert_iou_loss(ops.complete_box_iou_loss, box1, box2, 0.8125, device=device)
+        assert_iou_loss(ops.complete_box_iou_loss, box1, box3, 1.1923, device=device)
+        assert_iou_loss(ops.complete_box_iou_loss, box1, box4, 1.2500, device=device)
+        assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 1.2250, device=device, reduction="mean")
+        assert_iou_loss(ops.complete_box_iou_loss, box1s, box2s, 2.4500, device=device, reduction="sum")
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
@@ -1342,12 +1341,12 @@ class TestDistanceBoxIouLoss:
     def test_distance_iou_loss(self, dtype, device):
         box1, box2, box3, box4, box1s, box2s = get_boxes(dtype, device)
 
-        assert_iou_loss(ops.distance_box_iou_loss, box1, box1, 0.0, dtype=dtype, device=device)
-        assert_iou_loss(ops.distance_box_iou_loss, box1, box2, 0.8125, dtype=dtype, device=device)
-        assert_iou_loss(ops.distance_box_iou_loss, box1, box3, 1.1923, dtype=dtype, device=device)
-        assert_iou_loss(ops.distance_box_iou_loss, box1, box4, 1.2500, dtype=dtype, device=device)
-        assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 1.2250, dtype=dtype, device=device, reduction="mean")
-        assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 2.4500, dtype=dtype, device=device, reduction="sum")
+        assert_iou_loss(ops.distance_box_iou_loss, box1, box1, 0.0, device=device)
+        assert_iou_loss(ops.distance_box_iou_loss, box1, box2, 0.8125, device=device)
+        assert_iou_loss(ops.distance_box_iou_loss, box1, box3, 1.1923, device=device)
+        assert_iou_loss(ops.distance_box_iou_loss, box1, box4, 1.2500, device=device)
+        assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 1.2250, device=device, reduction="mean")
+        assert_iou_loss(ops.distance_box_iou_loss, box1s, box2s, 2.4500, device=device, reduction="sum")
 
     @pytest.mark.parametrize("device", cpu_and_gpu())
     @pytest.mark.parametrize("dtype", [torch.float32, torch.half])
@@ -1474,10 +1473,10 @@ class TestFocalLoss:
 
 class TestMasksToBoxes:
     def test_masks_box(self):
-        def masks_box_check(masks, expected, tolerance=1e-4):
+        def masks_box_check(masks, expected, atol=1e-4):
             out = ops.masks_to_boxes(masks)
             assert out.dtype == torch.float
-            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=True, atol=tolerance)
+            torch.testing.assert_close(out, expected, rtol=0.0, check_dtype=True, atol=atol)
 
         # Check for int type boxes.
         def _get_image():
