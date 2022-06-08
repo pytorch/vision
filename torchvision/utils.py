@@ -208,8 +208,16 @@ def draw_bounding_boxes(
         raise ValueError("Pass individual images, not batches")
     elif image.size(0) not in {1, 3}:
         raise ValueError("Only grayscale and RGB images are supported")
+    elif (boxes[:, 0] > boxes[:, 2]).any() or (boxes[:, 1] > boxes[:, 3]).any():
+        raise ValueError(
+            "Boxes need to be in (xmin, ymin, xmax, ymax) format. Use torchvision.ops.box_convert to convert them"
+        )
 
     num_boxes = boxes.shape[0]
+
+    if num_boxes == 0:
+        warnings.warn("boxes doesn't contain any box. No box was drawn")
+        return image
 
     if labels is None:
         labels: Union[List[str], List[None]] = [None] * num_boxes  # type: ignore[no-redef]
@@ -310,6 +318,10 @@ def draw_segmentation_masks(
     num_masks = masks.size()[0]
     if colors is not None and num_masks > len(colors):
         raise ValueError(f"There are more masks ({num_masks}) than colors ({len(colors)})")
+
+    if num_masks == 0:
+        warnings.warn("masks doesn't contain any mask. No mask was drawn")
+        return image
 
     if colors is None:
         colors = _generate_color_palette(num_masks)

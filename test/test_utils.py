@@ -152,6 +152,7 @@ def test_draw_invalid_boxes():
     img_wrong2 = torch.full((1, 3, 5, 5), 255, dtype=torch.uint8)
     img_correct = torch.zeros((3, 10, 10), dtype=torch.uint8)
     boxes = torch.tensor([[0, 0, 20, 20], [0, 0, 0, 0], [10, 15, 30, 35], [23, 35, 93, 95]], dtype=torch.float)
+    boxes_wrong = torch.tensor([[10, 10, 4, 5], [30, 20, 10, 5]], dtype=torch.float)
     labels_wrong = ["one", "two"]
     colors_wrong = ["pink", "blue"]
 
@@ -167,6 +168,8 @@ def test_draw_invalid_boxes():
         utils.draw_bounding_boxes(img_correct, boxes, labels_wrong)
     with pytest.raises(ValueError, match="Number of colors"):
         utils.draw_bounding_boxes(img_correct, boxes, colors=colors_wrong)
+    with pytest.raises(ValueError, match="Boxes need to be in"):
+        utils.draw_bounding_boxes(img_correct, boxes_wrong)
 
 
 def test_draw_boxes_warning():
@@ -174,6 +177,15 @@ def test_draw_boxes_warning():
 
     with pytest.warns(UserWarning, match=re.escape("Argument 'font_size' will be ignored since 'font' is not set.")):
         utils.draw_bounding_boxes(img, boxes, font_size=11)
+
+
+def test_draw_no_boxes():
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    boxes = torch.full((0, 4), 0, dtype=torch.float)
+    with pytest.warns(UserWarning, match=re.escape("boxes doesn't contain any box. No box was drawn")):
+        res = utils.draw_bounding_boxes(img, boxes)
+        # Check that the function didnt change the image
+        assert res.eq(img).all()
 
 
 @pytest.mark.parametrize(
@@ -264,6 +276,15 @@ def test_draw_segmentation_masks_errors():
     with pytest.raises(ValueError, match="It seems that you passed a tuple of colors instead of"):
         bad_colors = ("red", "blue")  # should be a list
         utils.draw_segmentation_masks(image=img, masks=masks, colors=bad_colors)
+
+
+def test_draw_no_segmention_mask():
+    img = torch.full((3, 100, 100), 0, dtype=torch.uint8)
+    masks = torch.full((0, 100, 100), 0, dtype=torch.bool)
+    with pytest.warns(UserWarning, match=re.escape("masks doesn't contain any mask. No mask was drawn")):
+        res = utils.draw_segmentation_masks(img, masks)
+        # Check that the function didnt change the image
+        assert res.eq(img).all()
 
 
 def test_draw_keypoints_vanilla():

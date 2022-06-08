@@ -6,7 +6,7 @@ from typing import Any, Callable, List, NamedTuple, Optional, Dict
 import torch
 import torch.nn as nn
 
-from ..ops.misc import Conv2dNormActivation
+from ..ops.misc import Conv2dNormActivation, MLP
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
 from ._api import WeightsEnum, Weights
@@ -37,21 +37,50 @@ class ConvStemConfig(NamedTuple):
     activation_layer: Callable[..., nn.Module] = nn.ReLU
 
 
-class MLPBlock(nn.Sequential):
+class MLPBlock(MLP):
     """Transformer MLP block."""
 
-    def __init__(self, in_dim: int, mlp_dim: int, dropout: float):
-        super().__init__()
-        self.linear_1 = nn.Linear(in_dim, mlp_dim)
-        self.act = nn.GELU()
-        self.dropout_1 = nn.Dropout(dropout)
-        self.linear_2 = nn.Linear(mlp_dim, in_dim)
-        self.dropout_2 = nn.Dropout(dropout)
+    _version = 2
 
-        nn.init.xavier_uniform_(self.linear_1.weight)
-        nn.init.xavier_uniform_(self.linear_2.weight)
-        nn.init.normal_(self.linear_1.bias, std=1e-6)
-        nn.init.normal_(self.linear_2.bias, std=1e-6)
+    def __init__(self, in_dim: int, mlp_dim: int, dropout: float):
+        super().__init__(in_dim, [mlp_dim, in_dim], activation_layer=nn.GELU, inplace=None, dropout=dropout)
+
+        for m in self.modules():
+            if isinstance(m, nn.Linear):
+                nn.init.xavier_uniform_(m.weight)
+                if m.bias is not None:
+                    nn.init.normal_(m.bias, std=1e-6)
+
+    def _load_from_state_dict(
+        self,
+        state_dict,
+        prefix,
+        local_metadata,
+        strict,
+        missing_keys,
+        unexpected_keys,
+        error_msgs,
+    ):
+        version = local_metadata.get("version", None)
+
+        if version is None or version < 2:
+            # Replacing legacy MLPBlock with MLP. See https://github.com/pytorch/vision/pull/6053
+            for i in range(2):
+                for type in ["weight", "bias"]:
+                    old_key = f"{prefix}linear_{i+1}.{type}"
+                    new_key = f"{prefix}{3*i}.{type}"
+                    if old_key in state_dict:
+                        state_dict[new_key] = state_dict.pop(old_key)
+
+        super()._load_from_state_dict(
+            state_dict,
+            prefix,
+            local_metadata,
+            strict,
+            missing_keys,
+            unexpected_keys,
+            error_msgs,
+        )
 
 
 class EncoderBlock(nn.Module):
@@ -328,10 +357,16 @@ class ViT_B_16_Weights(WeightsEnum):
             "num_params": 86567656,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_16",
-            "metrics": {
-                "acc@1": 81.072,
-                "acc@5": 95.318,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 81.072,
+                    "acc@5": 95.318,
+                }
             },
+            "_docs": """
+                These weights were trained from scratch by using a modified version of `DeIT
+                <https://arxiv.org/abs/2012.12877>`_'s training recipe.
+            """,
         },
     )
     IMAGENET1K_SWAG_E2E_V1 = Weights(
@@ -346,10 +381,16 @@ class ViT_B_16_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "num_params": 86859496,
             "min_size": (384, 384),
-            "metrics": {
-                "acc@1": 85.304,
-                "acc@5": 97.650,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 85.304,
+                    "acc@5": 97.650,
+                }
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -365,10 +406,16 @@ class ViT_B_16_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 86567656,
             "min_size": (224, 224),
-            "metrics": {
-                "acc@1": 81.886,
-                "acc@5": 96.180,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 81.886,
+                    "acc@5": 96.180,
+                }
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -383,10 +430,16 @@ class ViT_B_32_Weights(WeightsEnum):
             "num_params": 88224232,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_b_32",
-            "metrics": {
-                "acc@1": 75.912,
-                "acc@5": 92.466,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 75.912,
+                    "acc@5": 92.466,
+                }
             },
+            "_docs": """
+                These weights were trained from scratch by using a modified version of `DeIT
+                <https://arxiv.org/abs/2012.12877>`_'s training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -401,10 +454,17 @@ class ViT_L_16_Weights(WeightsEnum):
             "num_params": 304326632,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_16",
-            "metrics": {
-                "acc@1": 79.662,
-                "acc@5": 94.638,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 79.662,
+                    "acc@5": 94.638,
+                }
             },
+            "_docs": """
+                These weights were trained from scratch by using a modified version of TorchVision's
+                `new training recipe
+                <https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/>`_.
+            """,
         },
     )
     IMAGENET1K_SWAG_E2E_V1 = Weights(
@@ -419,10 +479,16 @@ class ViT_L_16_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "num_params": 305174504,
             "min_size": (512, 512),
-            "metrics": {
-                "acc@1": 88.064,
-                "acc@5": 98.512,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 88.064,
+                    "acc@5": 98.512,
+                }
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -438,10 +504,16 @@ class ViT_L_16_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 304326632,
             "min_size": (224, 224),
-            "metrics": {
-                "acc@1": 85.146,
-                "acc@5": 97.422,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 85.146,
+                    "acc@5": 97.422,
+                }
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -456,10 +528,16 @@ class ViT_L_32_Weights(WeightsEnum):
             "num_params": 306535400,
             "min_size": (224, 224),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#vit_l_32",
-            "metrics": {
-                "acc@1": 76.972,
-                "acc@5": 93.07,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 76.972,
+                    "acc@5": 93.07,
+                }
             },
+            "_docs": """
+                These weights were trained from scratch by using a modified version of `DeIT
+                <https://arxiv.org/abs/2012.12877>`_'s training recipe.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_V1
@@ -478,10 +556,16 @@ class ViT_H_14_Weights(WeightsEnum):
             **_COMMON_SWAG_META,
             "num_params": 633470440,
             "min_size": (518, 518),
-            "metrics": {
-                "acc@1": 88.552,
-                "acc@5": 98.694,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 88.552,
+                    "acc@5": 98.694,
+                }
             },
+            "_docs": """
+                These weights are learnt via transfer learning by end-to-end fine-tuning the original
+                `SWAG <https://arxiv.org/abs/2201.08371>`_ weights on ImageNet-1K data.
+            """,
         },
     )
     IMAGENET1K_SWAG_LINEAR_V1 = Weights(
@@ -497,10 +581,16 @@ class ViT_H_14_Weights(WeightsEnum):
             "recipe": "https://github.com/pytorch/vision/pull/5793",
             "num_params": 632045800,
             "min_size": (224, 224),
-            "metrics": {
-                "acc@1": 85.708,
-                "acc@5": 97.730,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 85.708,
+                    "acc@5": 97.730,
+                }
             },
+            "_docs": """
+                These weights are composed of the original frozen `SWAG <https://arxiv.org/abs/2201.08371>`_ trunk
+                weights and a linear classifier learnt on top of them trained on ImageNet-1K data.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_SWAG_E2E_V1
