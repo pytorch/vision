@@ -13,7 +13,7 @@ on:
         - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 env:
-  UPLOAD_CHANNEL: "test"
+  CHANNEL: "test"
 jobs:
   build_wheels:
     name: "Build TorchVision M1 wheels"
@@ -24,12 +24,12 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Set UPLOAD_CHANNEL (only for tagged pushes)
+      - name: Set CHANNEL (only for tagged pushes)
         if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}
         run: |
           # reference ends with an RC suffix
           if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
-            echo "UPLOAD_CHANNEL=test" >> "$GITHUB_ENV"
+            echo "CHANNEL=test" >> "$GITHUB_ENV"
           fi
       - name: Build TorchVision M1 wheel
         shell: arch -arch arm64 bash {0}
@@ -42,9 +42,9 @@ jobs:
           export PATH=~/miniconda3/bin:$PATH
           set -ex
           . packaging/pkg_helpers.bash
-          # if we are uploading to test channell, our version consiste only of the base 0.x.x - no date string added
+          # if we are uploading to test channell, our version consist only of the base: 0.x.x - no date string or suffix added
           if [[ $UPLOAD_CHANNEL == "test" ]]; then
-            set_version_base
+            setup_base_build_version
           else
             setup_build_version
           fi
@@ -66,7 +66,7 @@ jobs:
           . ~/miniconda3/etc/profile.d/conda.sh
           set -ex
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy
-          conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 -mpip install torch --pre --extra-index-url=https://download.pytorch.org/whl/${CHANNEL}
           conda run -p ${ENV_NAME} python3 -mpip install dist/*.whl
           # Test torch is importable, by changing cwd and running import commands
           conda run --cwd /tmp -p ${ENV_NAME} python3 -c "import torchvision;print('torchvision version is ', torchvision.__version__)"
@@ -86,5 +86,5 @@ jobs:
           AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_PYTORCH_UPLOADER_SECRET_ACCESS_KEY }}
         run: |
           for pkg in dist/*; do
-            aws s3 cp "$pkg" "s3://pytorch/whl/${UPLOAD_CHANNEL}/cpu/" --acl public-read
+            aws s3 cp "$pkg" "s3://pytorch/whl/${CHANNEL}/cpu/" --acl public-read
           done
