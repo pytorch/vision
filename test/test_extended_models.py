@@ -180,7 +180,7 @@ def test_transforms_jit(model_fn):
             "input_shape": (1, 3, 520, 520),
         },
         "video": {
-            "input_shape": (1, 4, 112, 112, 3),
+            "input_shape": (1, 4, 3, 112, 112),
         },
         "optical_flow": {
             "input_shape": (1, 3, 128, 128),
