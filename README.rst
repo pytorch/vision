@@ -94,26 +94,6 @@ By default, GPU support is built if CUDA is found and ``torch.cuda.is_available(
 It's possible to force building GPU support by setting ``FORCE_CUDA=1`` environment variable,
 which is useful when building a docker image.
 
-Building custom wheels
-======================
-
-When running on custom hardware (eg. Jetson), you may want to build your own wheels.  If so,
-you should make sure that your torchvision wheel has a dependency on the correct custom torch
-version.  
-For eg. the `Poetry dependency resolver <https://python-poetry.org/>`_ this seems to be a 
-requirement to make torch installations work.  
-
-Proper version tagging can be achieved with the following procedure (example here for +cu113 tag)
-
-.. code:: bash
-    
-    pip install torch==1.11.0+cu113
-    export PYTORCH_VERSION=1.11.0+cu113 # Used to derive Pytorch dependency
-    export BUILD_VERSION==0.12.0+cu113 # Used to generate Torchvision tag
-    python setup.py bdist_wheel-
-
-The resulting wheel will have a dependency on torch==1.11.0+cu113
-
 Image Backend
 =============
 Torchvision currently supports the following image backends:
