@@ -3,15 +3,13 @@ from typing import List, Optional
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
 from torchvision.models._api import Weights, WeightsEnum
-from torchvision.ops import Conv2dNormActivation
-from torchvision.utils import _log_api_usage_once
-
 from torchvision.models.optical_flow._utils import make_coords_grid
 from torchvision.models.optical_flow.raft import ResidualBlock, MotionEncoder
-
-import torchvision.models.optical_flow.raft as raft
+from torchvision.ops import Conv2dNormActivation
+from torchvision.utils import _log_api_usage_once
 
 
 # Write helper function here temporarily
@@ -22,7 +20,7 @@ def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", alig
 
     xgrid, ygrid = absolute_grid.split([1, 1], dim=-1)
     xgrid = 2 * xgrid / (w - 1) - 1
-    # Add condition h > 1 to prevent nan when h == 1 (the case on raft-stereo where we only correlate on the same row)
+    # Add condition h > 1 to prevent nan when h == 1 (in raft-stereo we always have h == 1 because we only want to correlate on the same row)
     # See: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/utils/utils.py#L64
     if h > 1:
         ygrid = 2 * ygrid / (h - 1) - 1
@@ -180,6 +178,7 @@ class MultiLevelContextEncoder(nn.Module):
 # Modified torchvision.models.optical_flow.raft.ConvGRU
 class ConvGRU(raft.ConvGRU):
     """Convolutional Gru unit."""
+
     # Modified to accept pre-convolved contexts, see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
     def forward(self, h, context, x):
         hx = torch.cat([h, x], dim=1)
@@ -196,6 +195,7 @@ class DepthHead(raft.FlowHead):
     """Depth head, part of the update block.
     Takes the hidden state of the recurrent unit as input, and outputs the predicted "delta depth".
     """
+
     # Adding out_channels
     def __init__(self, *, in_channels, hidden_size, out_channels):
         super(raft.FlowHead, self).__init__()
@@ -265,6 +265,7 @@ class MultiLevelUpdateBlock(nn.Module):
 # MODIFIED from torchvision.models.optical_flow.raft.MaskPredictor
 class MaskPredictor(raft.MaskPredictor):
     """Mask predictor to be used when upsampling the predicted depth."""
+
     # Add out_channels params (more generic)
     def __init__(self, *, in_channels, hidden_size, out_channels, multiplier=0.25):
         super(raft.MaskPredictor, self).__init__()
@@ -374,21 +375,16 @@ class RaftStereo(nn.Module):
         num_iters=12,
     ):
         """RAFT-Stereo model from
-        `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
         `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 
         args:
-            feature_encoder (nn.Module): The feature encoder. It must downsample the input by 8.
-                Its input is the concatenation of ``image1`` and ``image2``.
-            context_encoder (nn.Module): The context encoder. It must downsample the input by 8.
-                Its input is ``image1``. As in the original implementation, its output will be split into 2 parts:
+            feature_encoder (nn.Module): The feature encoder. Its input is the concatenation of ``image1`` and ``image2``.
+            context_encoder (nn.Module): The context encoder. Its input is ``image1``.
+                It has multi-level output and each level will have 2 parts:
 
                 - one part will be used as the actual "context", passed to the recurrent unit of the ``update_block``
                 - one part will be used to initialize the hidden state of the of the recurrent unit of
                   the ``update_block``
-
-                These 2 parts are split according to the ``hidden_state_size`` of the ``update_block``, so the output
-                of the ``context_encoder`` must be strictly greater than ``hidden_state_size``.
 
             corr_block (nn.Module): The correlation block, which creates a correlation pyramid from the output of the
                 ``feature_encoder``, and then indexes from this pyramid to create correlation features. It must expose
@@ -397,16 +393,15 @@ class RaftStereo(nn.Module):
                 - a ``build_pyramid`` method that takes ``feature_map_1`` and ``feature_map_2`` as input (these are the
                   output of the ``feature_encoder``).
                 - a ``index_pyramid`` method that takes the coordinates of the centroid pixels as input, and returns
-                  the correlation features. See paper section 3.2.
+                  the correlation features.
 
                 It must expose an ``out_channels`` attribute.
 
-            update_block (nn.Module): The update block, which contains the motion encoder, the recurrent unit, and the
-                flow head. It takes as input the hidden state of its recurrent unit, the context, the correlation
-                features, and the current predicted flow. It outputs an updated hidden state, and the ``delta_flow``
-                prediction (see paper appendix A). It must expose a ``hidden_state_size`` attribute.
+            update_block (nn.Module): The update block, which contains the motion encoder, and the recurrent unit.
+                It takes as input the hidden state of its recurrent unit, the context, the correlation
+                features, and the current predicted depth. It outputs an updated hidden state
+            depth_head (nn.Module): The depth head block will convert from the hidden state into changes in depth.
             mask_predictor (nn.Module, optional): Predicts the mask that will be used to upsample the predicted flow.
-                The output channel must be 8 * 8 * 9 - see paper section 3.3, and Appendix B.
                 If ``None`` (default), the flow is upsampled using interpolation.
         """
         super().__init__()
@@ -481,7 +476,9 @@ class RaftStereo(nn.Module):
                     hidden_states = self.update_block(
                         hidden_states, contexts, corr_features, depth, level_processed=level_processed
                     )
-            hidden_states = self.update_block(hidden_states, contexts, corr_features, depth, level_processed=[1, 1, 1])
+            hidden_states = self.update_block(
+                hidden_states, contexts, corr_features, depth, level_processed=[1] * self.num_level
+            )
             # Take the largest hidden_state to get the depth
             hidden_state = hidden_states[0]
             delta_depth = self.depth_head(hidden_state)
@@ -621,24 +618,24 @@ class Raft_Stereo_Weights(WeightsEnum):
 
 
 def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, progress=True, **kwargs) -> RaftStereo:
-    """RAFT model from
-    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
+    """RAFT-Stereo model from
+    `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        weights(:class:`~torchvision.models.optical_flow.Raft_Stereo_Fast_Weights`, optional): The
+        weights(:class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Fast_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.models.optical_flow.Raft_Stereo_Fast_Weights`
+            :class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Fast_Weights`
             below for more details, and possible values. By default, no
             pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``
+        **kwargs: parameters passed to the ``torchvision.prototype.models.depth.stereo.raft_stereo.RaftStereo``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.optical_flow.Raft_Stereo_Fast_Weights
+    .. autoclass:: torchvision.prototype.models.depth.stereo.Raft_Stereo_Fast_Weights
         :members:
     """
 
@@ -678,24 +675,24 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
 
 
 def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True, **kwargs) -> RaftStereo:
-    """RAFT model from
-    `RAFT: Recurrent All Pairs Field Transforms for Optical Flow <https://arxiv.org/abs/2003.12039>`_.
+    """RAFT-Stereo model from
+    `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        weights(:class:`~torchvision.models.optical_flow.Raft_Stereo_Weights`, optional): The
+        weights(:class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.models.optical_flow.Raft_Stereo_Weights`
+            :class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Weights`
             below for more details, and possible values. By default, no
             pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.optical_flow.RAFT``
+        **kwargs: parameters passed to the ``torchvision.prototype.models.depth.stereo.raft_stereo.RaftStereo``
             base class. Please refer to the `source code
             <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.optical_flow.Raft_Stereo_Weights
+    .. autoclass:: torchvision.prototype.models.depth.stereo.Raft_Stereo_Weights
         :members:
     """
 
