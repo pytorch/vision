@@ -120,6 +120,14 @@ setup_build_version() {
   fi
 }
 
+set_version_base() {
+  SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+  # version.txt for some reason has `a` character after major.minor.rev
+  # command below yields 0.10.0 from version.txt containing 0.10.0a0
+  BUILD_VERSION=$( cut -f 1 -d a "$SCRIPT_DIR/../version.txt" )
+  export BUILD_VERSION
+}
+
 # Set some useful variables for OS X, if applicable
 setup_macos() {
   if [[ "$(uname)" == Darwin ]]; then
