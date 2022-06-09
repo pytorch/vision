@@ -1,4 +1,4 @@
-from typing import List, Optional
+from typing import List, Optional, Callable, Tuple
 
 import torch
 import torch.nn as nn
@@ -35,7 +35,7 @@ def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", alig
     return F.grid_sample(img, normalized_grid, mode=mode, align_corners=align_corners)
 
 
-def upsample_with_mask_and_factor(x, up_mask: Optional[Tensor] = None, factor=8):
+def upsample_with_mask_and_factor(x: Tensor, up_mask: Optional[Tensor] = None, factor: int = 8):
     """Upsample tensor x to have factor times the size
 
     If up_mask is None we just interpolate.
@@ -63,7 +63,12 @@ class BaseEncoder(nn.Module):
     """
 
     def __init__(
-        self, *, block=ResidualBlock, layers=(64, 64, 96, 128), strides=(2, 1, 2, 2), norm_layer=nn.BatchNorm2d
+        self,
+        *,
+        block: Callable[..., nn.Module] = ResidualBlock,
+        layers: List[int] = [64, 64, 96, 128],
+        strides: List[int] = [2, 1, 2, 2],
+        norm_layer: Callable[..., nn.Module] = nn.BatchNorm2d,
     ):
         super().__init__()
 
@@ -97,7 +102,7 @@ class BaseEncoder(nn.Module):
         block2 = block(out_channels, out_channels, norm_layer=norm_layer, stride=1)
         return nn.Sequential(block1, block2)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.convnormrelu(x)
 
         x = self.layer1(x)
@@ -107,7 +112,13 @@ class BaseEncoder(nn.Module):
 
 
 class FeatureEncoder(nn.Module):
-    def __init__(self, base_encoder, output_dim=256, shared_base=False, block=ResidualBlock):
+    def __init__(
+        self,
+        base_encoder: BaseEncoder,
+        output_dim: int = 256,
+        shared_base: bool = False,
+        block: Callable[..., nn.Module] = ResidualBlock,
+    ):
         super().__init__()
         self.base_encoder = base_encoder
         self.base_downsampling_ratio = base_encoder.downsampling_ratio
@@ -123,7 +134,7 @@ class FeatureEncoder(nn.Module):
         else:
             self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> Tensor:
         x = self.base_encoder(x)
         if self.shared_base:
             x = self.residual_block(x)
@@ -132,7 +143,13 @@ class FeatureEncoder(nn.Module):
 
 
 class MultiLevelContextEncoder(nn.Module):
-    def __init__(self, base_encoder, output_dim=256, out_with_blocks=[1, 1, 0], block=ResidualBlock):
+    def __init__(
+        self,
+        base_encoder: nn.Module,
+        output_dim: int = 256,
+        out_with_blocks: List[int] = [1, 1, 0],
+        block: Callable[..., nn.Module] = ResidualBlock,
+    ):
         super().__init__()
         self.num_level = len(out_with_blocks)
         self.base_encoder = base_encoder
@@ -170,7 +187,7 @@ class MultiLevelContextEncoder(nn.Module):
         block2 = block(out_channels, out_channels, norm_layer=nn.BatchNorm2d, stride=1)
         return nn.Sequential(block1, block2)
 
-    def forward(self, x):
+    def forward(self, x: Tensor) -> List[Tensor]:
         x = self.base_encoder(x)
         outs = [torch.cat([self.out_hidden_states[0](x), self.out_contexts[0](x)], dim=1)]
         for i in range(0, self.num_level - 1):
@@ -200,7 +217,7 @@ class MultiLevelUpdateBlock(nn.Module):
     It must expose a ``hidden_dims`` attribute which is the hidden dimension size of its gru blocks
     """
 
-    def __init__(self, *, motion_encoder, hidden_dims=[128, 128, 128]):
+    def __init__(self, *, motion_encoder: MotionEncoder, hidden_dims: List[int] = [128, 128, 128]):
         super().__init__()
         self.motion_encoder = motion_encoder
 
@@ -231,7 +248,14 @@ class MultiLevelUpdateBlock(nn.Module):
         new_h, new_w = h * 2, w * 2
         return F.interpolate(x, size=(new_h, new_w), mode="bilinear", align_corners=True)
 
-    def forward(self, hidden_states, contexts, corr_features, depth, level_processed=[1, 1, 1]):
+    def forward(
+        self,
+        hidden_states: List[Tensor],
+        contexts: List[Tuple[Tensor, Tensor, Tensor]],
+        corr_features: Tensor,
+        depth: Tensor,
+        level_processed: List[int] = [1, 1, 1],
+    ) -> List[Tensor]:
         for i in range(len(self.grus) - 1, -1, -1):
             if level_processed[i]:
                 # X is concatination of downsampled hidden_dim (or motion_features if no bigger dim) with
@@ -254,7 +278,7 @@ class MaskPredictor(raft.MaskPredictor):
     """Mask predictor to be used when upsampling the predicted depth."""
 
     # We add out_channels compared to raft.MaskPredictor
-    def __init__(self, *, in_channels, hidden_size, out_channels, multiplier=0.25):
+    def __init__(self, *, in_channels: int, hidden_size: int, out_channels: int, multiplier: float = 0.25):
         super(raft.MaskPredictor, self).__init__()
         self.convrelu = Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
         self.conv = nn.Conv2d(hidden_size, out_channels, kernel_size=1, padding=0)
@@ -279,7 +303,7 @@ class CorrBlock1d(nn.Module):
 
         self.out_channels = num_levels * (2 * radius + 1)
 
-    def build_pyramid(self, fmap1, fmap2):
+    def build_pyramid(self, fmap1: Tensor, fmap2: Tensor):
         """Build the correlation pyramid from two feature maps.
 
         The correlation volume is first computed as the dot product of each pair (pixel_in_fmap1, pixel_in_fmap2) on the same row.
@@ -300,7 +324,7 @@ class CorrBlock1d(nn.Module):
             corr_volume = F.avg_pool2d(corr_volume, kernel_size=(1, 2), stride=(1, 2))
             self.corr_pyramid.append(corr_volume)
 
-    def index_pyramid(self, centroids_coords):
+    def index_pyramid(self, centroids_coords: Tensor) -> Tensor:
         """Return correlation features by indexing from the pyramid."""
         neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
         di = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
@@ -331,7 +355,7 @@ class CorrBlock1d(nn.Module):
 
         return corr_features
 
-    def _compute_corr_volume(self, fmap1, fmap2):
+    def _compute_corr_volume(self, fmap1: Tensor, fmap2: Tensor) -> Tensor:
         batch_size, num_channels, h, w = fmap1.shape
         fmap1 = fmap1.view(batch_size, num_channels, h, w)
         fmap2 = fmap2.view(batch_size, num_channels, h, w)
@@ -345,14 +369,14 @@ class RaftStereo(nn.Module):
     def __init__(
         self,
         *,
-        feature_encoder,
-        context_encoder,
-        corr_block,
-        update_block,
-        depth_head,
-        mask_predictor=None,
-        slow_fast=False,
-        num_iters=12,
+        feature_encoder: FeatureEncoder,
+        context_encoder: MultiLevelContextEncoder,
+        corr_block: CorrBlock1d,
+        update_block: MultiLevelUpdateBlock,
+        depth_head: nn.Module,
+        mask_predictor: Optional[nn.Module] = None,
+        slow_fast: bool = False,
+        num_iters: int = 12,
     ):
         """RAFT-Stereo model from
         `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
@@ -383,7 +407,7 @@ class RaftStereo(nn.Module):
             depth_head (nn.Module): The depth head block will convert from the hidden state into changes in depth.
             mask_predictor (nn.Module, optional): Predicts the mask that will be used to upsample the predicted flow.
                 If ``None`` (default), the flow is upsampled using interpolation.
-            slow_fast (Boolean): A boolean that specify whether we should use slow-fast GRU or not. See RAFT-Stereo paper
+            slow_fast (bool): A boolean that specify whether we should use slow-fast GRU or not. See RAFT-Stereo paper
                 on section 3.4 for more detail.
             num_iters (int): The default number of iteration update during forward pass. Take note that this will only
                 be used if num_iters is not specified on the forward call.
@@ -411,7 +435,7 @@ class RaftStereo(nn.Module):
         self.slow_fast = slow_fast
         self.num_iters = num_iters
 
-    def forward(self, image1, image2, num_iters=None):
+    def forward(self, image1: Tensor, image2: Tensor, num_iters: int = None) -> List[Tensor]:
         if num_iters is None:
             num_iters = self.num_iters
         batch_size, _, h, w = image1.shape
@@ -481,38 +505,47 @@ class RaftStereo(nn.Module):
 
 def _raft_stereo(
     *,
-    weights=None,
-    progress=False,
-    shared_encoder_weight=False,
+    weights: Optional[WeightsEnum] = None,
+    progress: bool = False,
+    shared_encoder_weight: bool = False,
     # Feature encoder
-    feature_encoder_layers,
-    feature_encoder_strides,
-    feature_encoder_block,
+    feature_encoder_layers: List[int],
+    feature_encoder_strides: List[int],
+    feature_encoder_block: Callable[..., nn.Module],
     # Context encoder
-    context_encoder_layers,
-    context_encoder_strides,
-    context_encoder_out_with_blocks,
-    context_encoder_block,
+    context_encoder_layers: List[int],
+    context_encoder_strides: List[int],
+    context_encoder_out_with_blocks: List[int],
+    context_encoder_block: Callable[..., nn.Module],
     # Correlation block
-    corr_block_num_levels,
-    corr_block_radius,
+    corr_block_num_levels: int = 4,
+    corr_block_radius: int = 4,
     # Motion encoder
-    motion_encoder_corr_layers,
-    motion_encoder_flow_layers,
-    motion_encoder_out_channels,
+    motion_encoder_corr_layers: List[int],
+    motion_encoder_flow_layers: List[int],
+    motion_encoder_out_channels: int,
     # Update block
-    update_block_hidden_dims,
+    update_block_hidden_dims: List[int],
     # Flow Head
-    flow_head_hidden_size,
+    flow_head_hidden_size: int,
     # Mask predictor
-    mask_predictor_hidden_size,
-    use_mask_predictor,
-    slow_fast,
-    num_iters,
+    mask_predictor_hidden_size: int,
+    use_mask_predictor: bool,
+    slow_fast: bool,
+    num_iters: int,
     **kwargs,
 ):
 
     if shared_encoder_weight:
+        if (
+            feature_encoder_layers[:-1] != context_encoder_layers[:-1]
+            or feature_encoder_strides != context_encoder_strides
+        ):
+            raise ValueError(
+                "If shared_encoder_weight is True, then the feature_encoder_layers[:-1]"
+                + " and feature_encoder_strides must be the same with context_encoder_layers[:-1] and context_encoder_strides!"
+            )
+
         base_encoder = BaseEncoder(
             block=context_encoder_block,
             layers=context_encoder_layers[:-1],
@@ -628,20 +661,20 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
         progress=progress,
         shared_encoder_weight=True,
         # Feature encoder
-        feature_encoder_layers=(64, 64, 96, 128, 256),
-        feature_encoder_strides=(2, 1, 2, 2),
+        feature_encoder_layers=[64, 64, 96, 128, 256],
+        feature_encoder_strides=[2, 1, 2, 2],
         feature_encoder_block=ResidualBlock,
         # Context encoder
-        context_encoder_layers=(64, 64, 96, 128, 256),
-        context_encoder_strides=(2, 1, 2, 2),
+        context_encoder_layers=[64, 64, 96, 128, 256],
+        context_encoder_strides=[2, 1, 2, 2],
         context_encoder_out_with_blocks=[1, 1],
         context_encoder_block=ResidualBlock,
         # Correlation block
         corr_block_num_levels=4,
         corr_block_radius=4,
         # Motion encoder
-        motion_encoder_corr_layers=(64, 64),
-        motion_encoder_flow_layers=(64, 64),
+        motion_encoder_corr_layers=[64, 64],
+        motion_encoder_flow_layers=[64, 64],
         motion_encoder_out_channels=128,
         # Update block
         update_block_hidden_dims=[128, 128],
@@ -685,20 +718,20 @@ def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True,
         progress=progress,
         shared_encoder_weight=False,
         # Feature encoder
-        feature_encoder_layers=(64, 64, 96, 128, 256),
-        feature_encoder_strides=(1, 1, 2, 2),
+        feature_encoder_layers=[64, 64, 96, 128, 256],
+        feature_encoder_strides=[1, 1, 2, 2],
         feature_encoder_block=ResidualBlock,
         # Context encoder
-        context_encoder_layers=(64, 64, 96, 128, 256),
-        context_encoder_strides=(1, 1, 2, 2),
+        context_encoder_layers=[64, 64, 96, 128, 256],
+        context_encoder_strides=[1, 1, 2, 2],
         context_encoder_out_with_blocks=[1, 1, 0],
         context_encoder_block=ResidualBlock,
         # Correlation block
         corr_block_num_levels=4,
         corr_block_radius=4,
         # Motion encoder
-        motion_encoder_corr_layers=(64, 64),
-        motion_encoder_flow_layers=(64, 64),
+        motion_encoder_corr_layers=[64, 64],
+        motion_encoder_flow_layers=[64, 64],
         motion_encoder_out_channels=128,
         # Update block
         update_block_hidden_dims=[128, 128, 128],
