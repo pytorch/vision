@@ -12,6 +12,15 @@ from torchvision.ops import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
 
 
+__all__ = (
+    "RaftStereo",
+    "raft_stereo",
+    "raft_stereo_fast",
+    "Raft_Stereo_Weights",
+    "Raft_Stereo_Fast_Weights",
+)
+
+
 def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", align_corners: Optional[bool] = None):
     """Same as torch's grid_sample, with absolute pixel coordinates instead of normalized coordinates."""
     h, w = img.shape[-2:]
@@ -374,6 +383,10 @@ class RaftStereo(nn.Module):
             depth_head (nn.Module): The depth head block will convert from the hidden state into changes in depth.
             mask_predictor (nn.Module, optional): Predicts the mask that will be used to upsample the predicted flow.
                 If ``None`` (default), the flow is upsampled using interpolation.
+            slow_fast (Boolean): A boolean that specify whether we should use slow-fast GRU or not. See RAFT-Stereo paper
+                on section 3.4 for more detail.
+            num_iters (int): The default number of iteration update during forward pass. Take note that this will only
+                be used if num_iters is not specified on the forward call.
         """
         super().__init__()
         _log_api_usage_once(self)
