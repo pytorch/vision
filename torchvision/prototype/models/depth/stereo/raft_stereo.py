@@ -7,7 +7,7 @@ import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
 from torchvision.models._api import Weights, WeightsEnum
 from torchvision.models.optical_flow._utils import make_coords_grid
-from torchvision.models.optical_flow.raft import ResidualBlock, MotionEncoder
+from torchvision.models.optical_flow.raft import ResidualBlock, MotionEncoder, FlowHead
 from torchvision.ops import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
 
@@ -190,20 +190,6 @@ class ConvGRU(raft.ConvGRU):
         return h
 
 
-# MODIFIED torchvision.models.optical_flow.raft.FlowHead
-class DepthHead(raft.FlowHead):
-    """Depth head, part of the update block.
-    Takes the hidden state of the recurrent unit as input, and outputs the predicted "delta depth".
-    """
-
-    # Adding out_channels
-    def __init__(self, *, in_channels, hidden_size, out_channels):
-        super(raft.FlowHead, self).__init__()
-        self.conv1 = nn.Conv2d(in_channels, hidden_size, 3, padding=1)
-        self.conv2 = nn.Conv2d(hidden_size, out_channels, 3, padding=1)
-        self.relu = nn.ReLU(inplace=True)
-
-
 class MultiLevelUpdateBlock(nn.Module):
     """The update block which contains the motion encoder and grus
 
@@ -251,10 +237,8 @@ class MultiLevelUpdateBlock(nn.Module):
                 )
                 if i < len(self.grus) - 1:
                     features = torch.cat([features, self._upsample2x(hidden_states[i + 1])], dim=1)
-                # x = torch.cat([contexts[i], features], dim=1)
-                x = features
 
-                hidden_states[i] = self.grus[i](hidden_states[i], contexts[i], x)
+                hidden_states[i] = self.grus[i](hidden_states[i], contexts[i], features)
 
                 # NOTE: For slow-fast gru, we dont always want to calculate delta depth for every call on UpdateBlock
                 # Hence we move the delta depth calculation to the RAFT-Stereo main forward
@@ -279,7 +263,7 @@ class MaskPredictor(raft.MaskPredictor):
         self.multiplier = multiplier
 
 
-# MODIFIED from torchvision.models.optical_flow.raft.CorrBlock to only consider 1d neighbour instead of 2d
+# MODIFIED from torchvision.models.optical_flow.raft.CorrBlock to only consider row neighbour instead of 2d neighbour
 class CorrBlock(nn.Module):
     """The correlation block.
 
@@ -360,7 +344,6 @@ class CorrBlock(nn.Module):
         return corr / torch.sqrt(torch.tensor(num_channels))
 
 
-# MODIFIED from torchvision.models.optical_flow.raft.RAFT
 class RaftStereo(nn.Module):
     def __init__(
         self,
@@ -577,11 +560,10 @@ def _raft_stereo(
         )
         update_block = MultiLevelUpdateBlock(motion_encoder=motion_encoder, hidden_dims=update_block_hidden_dims)
 
-    # We use the largest scale hidden_dims of update_block
-    depth_head = DepthHead(
+    # We use the largest scale hidden_dims of update_block to get the predicted depth
+    depth_head = FlowHead(
         in_channels=update_block_hidden_dims[0],
         hidden_size=flow_head_hidden_size,
-        out_channels=2,
     )
     mask_predictor = kwargs.pop("mask_predictor", None)
     if mask_predictor is None and use_mask_predictor:
