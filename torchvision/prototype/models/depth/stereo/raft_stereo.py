@@ -179,11 +179,11 @@ class MultiLevelContextEncoder(nn.Module):
         return outs
 
 
-# Modified torchvision.models.optical_flow.raft.ConvGRU
 class ConvGRU(raft.ConvGRU):
     """Convolutional Gru unit."""
 
-    # Modified to accept pre-convolved contexts, see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
+    # Modified from raft.ConvGRU to accept pre-convolved contexts,
+    # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
     def forward(self, h, context, x):
         hx = torch.cat([h, x], dim=1)
         cz, cr, cq = context
