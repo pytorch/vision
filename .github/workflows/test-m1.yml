@@ -41,5 +41,5 @@ jobs:
         run: |
           . ~/miniconda3/etc/profile.d/conda.sh
           set -ex
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 -k test_m1_operator
           conda env remove -p ${ENV_NAME}
