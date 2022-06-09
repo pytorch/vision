@@ -55,7 +55,6 @@ jobs:
           conda run --cwd /tmp -p ${ENV_NAME} python3 -c "import torchvision;print(torchvision.io.read_image('${PWD}/gallery/assets/dog1.jpg').shape)"
           conda env remove -p ${ENV_NAME}
       - name: Upload wheel to GitHub
-        if: ${{ github.event_name == 'push' && steps.extract_branch.outputs.branch == 'nightly' }}
         uses: actions/upload-artifact@v3
         with:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1
@@ -71,3 +70,52 @@ jobs:
           for pkg in dist/*; do
             aws s3 cp "$pkg" "s3://pytorch/whl/${CHANNEL}/cpu/" --acl public-read
           done
+  build_conda:
+    name: "Build TorchVision M1 conda packages"
+    runs-on: macos-m1
+    strategy:
+      matrix:
+        py_vers: [ "3.8", "3.9", "3.10" ]
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install conda-build and purge previous artifacts
+        shell: arch -arch arm64 bash {0}
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          conda install -yq conda-build
+          conda build purge-all
+
+      - name: Build TorchVision M1 conda package
+        shell: arch -arch arm64 bash {0}
+        env:
+          ENV_NAME: conda-env-${{ github.run_id }}
+          PYTHON_VERSION: ${{ matrix.py_vers }}
+          CU_VERSION: cpu
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          set -ex
+          . packaging/pkg_helpers.bash
+          setup_build_version
+          setup_conda_pytorch_constraint
+          export SOURCE_ROOT_DIR=$(pwd)
+          conda build -c defaults $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
+          mkdir -p dist
+          cp ~/miniconda3/conda-bld/osx-arm64/*.tar.bz2 dist/
+      - name: Upload package to GitHub
+        uses: actions/upload-artifact@v3
+        with:
+          name: torchvision-py${{ matrix.py_vers }}-macos11-m1-conda
+          path: dist/
+      - name: Upload package to conda
+        if: ${{ github.event_name == 'push' && steps.extract_branch.outputs.branch == 'nightly' }}
+        shell: arch -arch arm64 bash {0}
+        env:
+          CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
+          UPLOAD_CHANNEL: nightly
+        run: |
+          . ~/miniconda3/etc/profile.d/conda.sh
+          conda install -yq anaconda-client
+          set -x
+          anaconda  -t "${CONDA_PYTORCHBOT_TOKEN}" upload ~/miniconda3/conda-bld/osx-arm64/*.tar.bz2 -u "pytorch-${UPLOAD_CHANNEL}" --label main --no-progress --force
