@@ -551,28 +551,27 @@ def _raft_stereo(
 
     corr_block = CorrBlock1d(num_levels=corr_block_num_levels, radius=corr_block_radius)
 
-    update_block = kwargs.pop("update_block", None)
-    if update_block is None:
-        motion_encoder = MotionEncoder(
-            in_channels_corr=corr_block.out_channels,
-            corr_layers=motion_encoder_corr_layers,
-            flow_layers=motion_encoder_flow_layers,
-            out_channels=motion_encoder_out_channels,
-        )
-        update_block = MultiLevelUpdateBlock(motion_encoder=motion_encoder, hidden_dims=update_block_hidden_dims)
+    motion_encoder = MotionEncoder(
+        in_channels_corr=corr_block.out_channels,
+        corr_layers=motion_encoder_corr_layers,
+        flow_layers=motion_encoder_flow_layers,
+        out_channels=motion_encoder_out_channels,
+    )
+    update_block = MultiLevelUpdateBlock(motion_encoder=motion_encoder, hidden_dims=update_block_hidden_dims)
 
     # We use the largest scale hidden_dims of update_block to get the predicted depth
     depth_head = FlowHead(
         in_channels=update_block_hidden_dims[0],
         hidden_size=flow_head_hidden_size,
     )
-    mask_predictor = kwargs.pop("mask_predictor", None)
-    if mask_predictor is None and use_mask_predictor:
+    if use_mask_predictor:
         mask_predictor = MaskPredictor(
             in_channels=update_block.hidden_dims[0],
             hidden_size=mask_predictor_hidden_size,
             out_channels=9 * feature_downsampling_ratio * feature_downsampling_ratio,
         )
+    else:
+        mask_predictor = None
 
     model = RaftStereo(
         feature_encoder=feature_encoder,
