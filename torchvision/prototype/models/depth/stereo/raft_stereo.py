@@ -12,8 +12,6 @@ from torchvision.ops import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
 
 
-# Write helper function here temporarily
-# MODIFIED from torchvision.models.optical_flow._utils.grid_sample
 def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", align_corners: Optional[bool] = None):
     """Same as torch's grid_sample, with absolute pixel coordinates instead of normalized coordinates."""
     h, w = img.shape[-2:]
@@ -28,8 +26,6 @@ def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", alig
     return F.grid_sample(img, normalized_grid, mode=mode, align_corners=align_corners)
 
 
-# MODIFIED from torchvision.models.optical_flow._utils.upsample_flow
-# Make it more generic by adding factor as params and can handle different num_channels input
 def upsample_with_mask_and_factor(x, up_mask: Optional[Tensor] = None, factor=8):
     """Upsample tensor x to have factor times the size
 
@@ -51,8 +47,6 @@ def upsample_with_mask_and_factor(x, up_mask: Optional[Tensor] = None, factor=8)
     return upsampled_x.permute(0, 1, 4, 2, 5, 3).reshape(batch_size, num_channels, new_h, new_w)
 
 
-# MODIFIED from torchvision.models.optical_flow.raft.FeatureEncoder by adding strides param
-# and remove the last conv layer
 class BaseEncoder(nn.Module):
     """The feature encoder, used both as the actual feature encoder, and as the context encoder.
 
@@ -111,7 +105,8 @@ class FeatureEncoder(nn.Module):
         base_dim = base_encoder.output_dim
 
         # If we share base encoder weight for Feature and Context Encoder
-        # we need to add residual block with InstanceNorm2d
+        # we need to add residual block with InstanceNorm2d and change the kernel size for conv layer
+        # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/raft_stereo.py#L35-L37
         self.shared_base = shared_base
         if shared_base:
             self.residual_block = block(base_dim, base_dim, norm_layer=nn.InstanceNorm2d, stride=1)
@@ -246,28 +241,20 @@ class MultiLevelUpdateBlock(nn.Module):
         return hidden_states
 
 
-# MODIFIED from torchvision.models.optical_flow.raft.MaskPredictor
 class MaskPredictor(raft.MaskPredictor):
     """Mask predictor to be used when upsampling the predicted depth."""
-
-    # Add out_channels params (more generic)
+    # We add out_channels compared to raft.MaskPredictor
     def __init__(self, *, in_channels, hidden_size, out_channels, multiplier=0.25):
         super(raft.MaskPredictor, self).__init__()
         self.convrelu = Conv2dNormActivation(in_channels, hidden_size, norm_layer=None, kernel_size=3)
         self.conv = nn.Conv2d(hidden_size, out_channels, kernel_size=1, padding=0)
-
-        # In the original code, they use a factor of 0.25 to "downweight the gradients" of that branch.
-        # See e.g. https://github.com/princeton-vl/RAFT/issues/119#issuecomment-953950419
-        # or https://github.com/princeton-vl/RAFT/issues/24.
-        # It doesn't seem to affect epe significantly and can likely be set to 1.
         self.multiplier = multiplier
 
 
-# MODIFIED from torchvision.models.optical_flow.raft.CorrBlock to only consider row neighbour instead of 2d neighbour
-class CorrBlock(nn.Module):
-    """The correlation block.
+class CorrBlock1d(nn.Module):
+    """The row-wise correlation block.
 
-    Creates a correlation pyramid with ``num_levels`` levels from the outputs of the feature encoder,
+    Creates a row-wise correlation pyramid with ``num_levels`` levels from the outputs of the feature encoder,
     and then indexes from this pyramid to create correlation features.
     The "indexing" of a given centroid pixel x' is done by concatenating its surrounding row neighbours
     within radius
@@ -285,7 +272,7 @@ class CorrBlock(nn.Module):
     def build_pyramid(self, fmap1, fmap2):
         """Build the correlation pyramid from two feature maps.
 
-        The correlation volume is first computed as the dot product of each pair (pixel_in_fmap1, pixel_in_fmap2)
+        The correlation volume is first computed as the dot product of each pair (pixel_in_fmap1, pixel_in_fmap2) on the same row.
         The last 2 dimensions of the correlation volume are then pooled num_levels times at different resolutions
         to build the correlation pyramid.
         """
@@ -431,13 +418,13 @@ class RaftStereo(nn.Module):
         # Multi level contexts
         context_outs = self.context_encoder(image1)
 
-        # As in the original paper, the actual output of the context encoder is split in 2 parts:
-        # - one part is used to initialize the hidden state of the recurent units of the update block
-        # - the rest is the "actual" context.
         hidden_dims = self.update_block.hidden_dims
         context_out_channels = [context_outs[i].shape[1] - hidden_dims[i] for i in range(len(context_outs))]
         hidden_states, contexts = [], []
         for i in range(len(context_outs)):
+            # As in the original paper, the actual output of the context encoder is split in 2 parts:
+            # - one part is used to initialize the hidden state of the recurent units of the update block
+            # - the rest is the "actual" context.
             hidden_state, context = torch.split(context_outs[i], [hidden_dims[i], context_out_channels[i]], dim=1)
             hidden_states.append(torch.tanh(hidden_state))
             contexts.append(self.context_convs[i](F.relu(context)).split(split_size=[hidden_dims[i]] * 3, dim=1))
@@ -548,7 +535,7 @@ def _raft_stereo(
 
     feature_downsampling_ratio = feature_encoder.base_downsampling_ratio
 
-    corr_block = kwargs.pop("corr_block", None) or CorrBlock(num_levels=corr_block_num_levels, radius=corr_block_radius)
+    corr_block = CorrBlock1d(num_levels=corr_block_num_levels, radius=corr_block_radius)
 
     update_block = kwargs.pop("update_block", None)
     if update_block is None:
