@@ -5,7 +5,7 @@ import torch.nn as nn
 import torch.nn.functional as F
 import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
-from torchvision.models._api import Weights, WeightsEnum
+from torchvision.models._api import WeightsEnum
 from torchvision.models.optical_flow._utils import make_coords_grid
 from torchvision.models.optical_flow.raft import ResidualBlock, MotionEncoder, FlowHead
 from torchvision.ops import Conv2dNormActivation
@@ -243,6 +243,7 @@ class MultiLevelUpdateBlock(nn.Module):
 
 class MaskPredictor(raft.MaskPredictor):
     """Mask predictor to be used when upsampling the predicted depth."""
+
     # We add out_channels compared to raft.MaskPredictor
     def __init__(self, *, in_channels, hidden_size, out_channels, multiplier=0.25):
         super(raft.MaskPredictor, self).__init__()
