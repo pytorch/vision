@@ -19,7 +19,7 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Install TorchVision
+      - name: Install TorchVision and run a single test
         shell: arch -arch arm64 bash {0}
         env:
           ENV_NAME: conda-env-${{ github.run_id }}
@@ -29,17 +29,36 @@ jobs:
           # Needed for JPEG library detection as setup.py detects conda presence by running `shlex.which('conda')`
           export PATH=~/miniconda3/bin:$PATH
           set -ex
-          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy
-          conda run -p ${ENV_NAME} python3 -mpip install --pre torch --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy          
           conda run -p ${ENV_NAME} python3 -mpip install pytest pytest-mock av
-      - name: Run tests
-        shell: arch -arch arm64 bash {0}
-        env:
-          ENV_NAME: conda-env-${{ github.run_id }}
-          PY_VERS: ${{ matrix.py_vers }}
-        run: |
-          . ~/miniconda3/etc/profile.d/conda.sh
-          set -ex
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20
-          conda env remove -p ${ENV_NAME}
+
+          # Try "torch==1.12.0.dev20220501"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220501" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
+          # Try "torch==1.12.0.dev20220510"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220510" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
+          # Try "torch==1.12.0.dev20220520"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220520" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
+          # Try "torch==1.13.0.dev20220522"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220522" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
+          # Try "torch==1.13.0.dev20220601"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220601" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
+          # Try "torch==1.13.0.dev20220605"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220605" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
