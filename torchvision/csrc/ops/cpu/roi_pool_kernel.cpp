@@ -240,9 +240,9 @@ TORCH_LIBRARY_IMPL(torchvision, CPU, m) {
   m.impl(
       TORCH_SELECTIVE_NAME("torchvision::roi_pool"),
       TORCH_FN(roi_pool_forward_kernel));
-  m.impl(
-      TORCH_SELECTIVE_NAME("torchvision::_roi_pool_backward"),
-      TORCH_FN(roi_pool_backward_kernel));
+  // m.impl(
+  //     TORCH_SELECTIVE_NAME("torchvision::_roi_pool_backward"),
+  //     TORCH_FN(roi_pool_backward_kernel));
 }
 
 } // namespace ops

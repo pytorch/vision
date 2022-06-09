@@ -29,82 +29,90 @@ jobs:
           # Needed for JPEG library detection as setup.py detects conda presence by running `shlex.which('conda')`
           export PATH=~/miniconda3/bin:$PATH
 
-          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy          
+          conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy
           conda run -p ${ENV_NAME} python3 -mpip install pytest pytest-mock av
 
-          # Track when passing test becomes failing: 
-          # Try "torch==1.12.0.dev20220510"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220510" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # Track when passing test becomes failing:
+          conda run -p ${ENV_NAME} python3 -mpip install --pre torch --extra-index-url=https://download.pytorch.org/whl/nightly
           conda run -p ${ENV_NAME} python3 setup.py clean
           rm -rf build && rm -rf torchvision/*.so
           conda run -p ${ENV_NAME} python3 setup.py develop
           conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
           conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
-          # Try "torch==1.12.0.dev20220511"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220511" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py clean
-          rm -rf build && rm -rf torchvision/*.so
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
+          # # Track when passing test becomes failing:
+          # # Try "torch==1.12.0.dev20220510"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220510" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
-          # Try "torch==1.12.0.dev20220512"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220512" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py clean
-          rm -rf build && rm -rf torchvision/*.so
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
+          # # Try "torch==1.12.0.dev20220511"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220511" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
-          # Try "torch==1.12.0.dev20220513"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220513" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py clean
-          rm -rf build && rm -rf torchvision/*.so
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
+          # # Try "torch==1.12.0.dev20220512"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220512" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
-          # Try "torch==1.12.0.dev20220514"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220514" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py clean
-          rm -rf build && rm -rf torchvision/*.so
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
+          # # Try "torch==1.12.0.dev20220513"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220513" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
-          # Try "torch==1.12.0.dev20220515"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220515" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py clean
-          rm -rf build && rm -rf torchvision/*.so
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
+          # # Try "torch==1.12.0.dev20220514"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220514" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
-          # Track when the error changed to "Named tensor"
-          # Try "torch==1.13.0.dev20220525"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220525" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py clean
-          rm -rf build && rm -rf torchvision/*.so
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
+          # # Try "torch==1.12.0.dev20220515"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220515" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
-          # No 20220526
+          # # Track when the error changed to "Named tensor"
+          # # Try "torch==1.13.0.dev20220525"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220525" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
-          # Try "torch==1.13.0.dev20220527"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220527" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py clean
-          rm -rf build && rm -rf torchvision/*.so
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
+          # # No 20220526
+
+          # # Try "torch==1.13.0.dev20220527"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220527" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
 
 
-          # Try "torch==1.13.0.dev20220528"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220528" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py clean
-          rm -rf build && rm -rf torchvision/*.so
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
+          # # Try "torch==1.13.0.dev20220528"
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220528" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py clean
+          # rm -rf build && rm -rf torchvision/*.so
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -v --tb=long --durations 20 test/test_ops.py::TestRoiPool::test_forward[True-cpu]
