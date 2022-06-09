@@ -32,33 +32,52 @@ jobs:
           conda create -yp ${ENV_NAME} python=${PY_VERS} numpy libpng jpeg scipy          
           conda run -p ${ENV_NAME} python3 -mpip install pytest pytest-mock av
 
-          # Try "torch==1.12.0.dev20220501"
+          # Try "torch==1.12.0.dev20220410"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220410" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
+          # Try "torch==1.12.0.dev20220420"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220420" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
+          # Try "torch==1.12.0.dev20220428"
+          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220428" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
+          conda run -p ${ENV_NAME} python3 setup.py develop
+          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+
+          # Try "torch==1.12.0.dev20220501" -> FAILED
           conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220501" --extra-index-url=https://download.pytorch.org/whl/nightly
+          conda run -p ${ENV_NAME} python3 -c "import torch; print('torch version:', torch.__version__)"
           conda run -p ${ENV_NAME} python3 setup.py develop
           conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
 
-          # Try "torch==1.12.0.dev20220510"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220510" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+          # Try "torch==1.12.0.dev20220510" -> FAILED
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220510" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
 
-          # Try "torch==1.12.0.dev20220520"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220520" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+          # Try "torch==1.12.0.dev20220520" -> FAILED
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.12.0.dev20220520" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
 
-          # Try "torch==1.13.0.dev20220522"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220522" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+          # Try "torch==1.13.0.dev20220522" -> FAILED
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220522" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
 
-          # Try "torch==1.13.0.dev20220601"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220601" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+          # Try "torch==1.13.0.dev20220601" -> FAILED
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220601" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
 
-          # Try "torch==1.13.0.dev20220605"
-          conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220605" --extra-index-url=https://download.pytorch.org/whl/nightly
-          conda run -p ${ENV_NAME} python3 setup.py develop
-          conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
+          # Try "torch==1.13.0.dev20220605" -> FAILED
+          # conda run -p ${ENV_NAME} python3 -mpip install --pre "torch==1.13.0.dev20220605" --extra-index-url=https://download.pytorch.org/whl/nightly
+          # conda run -p ${ENV_NAME} python3 setup.py develop
+          # conda run -p ${ENV_NAME} --no-capture-output python3 -u -mpytest -vvv test/test_ops.py::TestRoiPool::test_forward[True-cpu] | true
 
