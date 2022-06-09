@@ -209,12 +209,14 @@ def get_extensions():
     if debug_mode:
         print("Compile in debug mode")
         extra_compile_args["cxx"].append("-g")
-        extra_compile_args["cxx"].append("-O0")
+        # extra_compile_args["cxx"].append("-O0")
+        extra_compile_args["cxx"].append("-O2")
         if "nvcc" in extra_compile_args:
             # we have to remove "-OX" and "-g" flag if exists and append
             nvcc_flags = extra_compile_args["nvcc"]
             extra_compile_args["nvcc"] = [f for f in nvcc_flags if not ("-O" in f or "-g" in f)]
-            extra_compile_args["nvcc"].append("-O0")
+            # extra_compile_args["nvcc"].append("-O0")
+            extra_compile_args["nvcc"].append("-O2")
             extra_compile_args["nvcc"].append("-g")
 
     sources = [os.path.join(extensions_dir, s) for s in sources]
