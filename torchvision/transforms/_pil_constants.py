@@ -1,4 +1,3 @@
-import PIL
 from PIL import Image
 
 # See https://pillow.readthedocs.io/en/stable/releasenotes/9.1.0.html#deprecations
