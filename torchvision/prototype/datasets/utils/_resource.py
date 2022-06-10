@@ -216,9 +216,9 @@ class ManualDownloadResource(OnlineResource):
 
     def _download(self, root: pathlib.Path) -> NoReturn:
         raise RuntimeError(
-            f"The file {self.file_name} was not found, and cannot be downloaded automatically.\n\n"
-            f"{self.instructions.strip()}\n\n"
-            f"Once it is downloaded, please place the file in {root}."
+            f"The file {self.file_name} cannot be downloaded automatically. "
+            f"Please follow the instructions below and place it in {root}\n\n"
+            f"{self.instructions}"
         )
 
 
