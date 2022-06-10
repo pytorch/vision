@@ -1101,15 +1101,14 @@ class TestBoxConvert:
         )
 
         scripted_fn = torch.jit.script(ops.box_convert)
-        atol = 1e-3
 
         box_xywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="xywh")
         scripted_xywh = scripted_fn(box_tensor, "xyxy", "xywh")
-        torch.testing.assert_close(scripted_xywh, box_xywh, rtol=0.0, atol=atol)
+        torch.testing.assert_close(scripted_xywh, box_xywh)
 
         box_cxcywh = ops.box_convert(box_tensor, in_fmt="xyxy", out_fmt="cxcywh")
         scripted_cxcywh = scripted_fn(box_tensor, "xyxy", "cxcywh")
-        torch.testing.assert_close(scripted_cxcywh, box_cxcywh, rtol=0.0, atol=atol)
+        torch.testing.assert_close(scripted_cxcywh, box_cxcywh)
 
 
 class TestBoxArea:
@@ -1134,22 +1133,22 @@ class TestBoxArea:
             dtype=dtype,
         )
         expected = torch.tensor([604723.0806, 600965.4666, 592761.0085], dtype=dtype)
-        self.area_check(box_tensor, expected, atol=0.05)
+        self.area_check(box_tensor, expected)
 
     def test_float16_box(self):
         box_tensor = torch.tensor(
-            [[285.25, 185.625, 1194.0, 851.5], [285.25, 188.75, 1192.0, 851.0], [279.25, 198.0, 1189.0, 849.0]],
+            [[28.25, 18.625, 39.0, 48.5], [28.25, 48.75, 192.0, 51.0], [29.25, 18.0, 89.0, 49.0]],
             dtype=torch.float16,
         )
-        expected = torch.tensor([605113.875, 600495.1875, 592247.25], dtype=torch.float32)
-        self.area_check(box_tensor, expected)
+        expected = torch.tensor([321.1562, 368.4375, 1852.2500], dtype=torch.float16)
+        self.area_check(box_tensor, expected, atol=0.3)
 
     def test_box_area_jit(self):
         box_tensor = torch.tensor([[0, 0, 100, 100], [0, 0, 0, 0]], dtype=torch.float)
         expected = ops.box_area(box_tensor)
         scripted_fn = torch.jit.script(ops.box_area)
         scripted_area = scripted_fn(box_tensor)
-        torch.testing.assert_close(scripted_area, expected, rtol=0.0, atol=1e-3)
+        torch.testing.assert_close(scripted_area, expected)
 
 
 class TestIouBase:
@@ -1167,7 +1166,7 @@ class TestIouBase:
         expected = target_fn(box_tensor, box_tensor)
         scripted_fn = torch.jit.script(target_fn)
         scripted_out = scripted_fn(box_tensor, box_tensor)
-        torch.testing.assert_close(scripted_out, expected, rtol=0.0, atol=1e-3)
+        torch.testing.assert_close(scripted_out, expected)
 
 
 IOU_INT_BOXES = [[0, 0, 100, 100], [0, 0, 50, 50], [200, 200, 300, 300]]
