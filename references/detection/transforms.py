@@ -1,5 +1,5 @@
 import copy
-from typing import List, Tuple, Dict, Optional, Union, cast
+from typing import List, Tuple, Dict, Optional, Union
 
 import torch
 import torchvision
@@ -452,9 +452,7 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
     paste_labels = paste_target["labels"][random_selection]
 
     paste_alpha_mask = paste_masks.sum(dim=0) > 0
-    paste_alpha_mask = F.gaussian_blur(
-        paste_alpha_mask.unsqueeze(0), kernel_size=(5, 5), sigma=2.0
-    )
+    paste_alpha_mask = F.gaussian_blur(paste_alpha_mask.unsqueeze(0), kernel_size=(5, 5), sigma=2.0)
 
     masks = target["masks"]
     # Align images keeping top-left corner if source and paste data
@@ -539,8 +537,12 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
         if "iscrowd" in out_target:
             out_target["iscrowd"] = out_target["iscrowd"][valid_targets]
 
-    assert len(out_target["boxes"]) == len(out_target["masks"]), f"{len(out_target['boxes'])}, {len(out_target['masks'])}"
-    assert len(out_target["labels"]) == len(out_target["masks"]), f"{len(out_target['labels'])}, {len(out_target['masks'])}"
+    assert len(out_target["boxes"]) == len(
+        out_target["masks"]
+    ), f"{len(out_target['boxes'])}, {len(out_target['masks'])}"
+    assert len(out_target["labels"]) == len(
+        out_target["masks"]
+    ), f"{len(out_target['labels'])}, {len(out_target['masks'])}"
 
     return image, out_target
 
