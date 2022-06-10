@@ -441,52 +441,108 @@ class RandomShortestSize(nn.Module):
         return image, target
 
 
-def copy_paste(image, source_data, paste_image, paste_data, inplace=True):
+def _copy_paste(image, target, paste_image, paste_target, inplace=True):
 
-    image = image.clone() if not inplace else image
-    source_data = copy.deepcopy(source_data) if not inplace else source_data
+    # Random paste targets selection:
+    num_masks = len(paste_target["masks"])
+    random_selection = torch.randint(0, num_masks, (num_masks,)).unique()
 
-    number_of_masks = len(paste_data["masks"])
-    random_selection = torch.randint(0, number_of_masks, (number_of_masks,)).unique()
+    paste_masks = paste_target["masks"][random_selection]
+    paste_boxes = paste_target["boxes"][random_selection]
+    paste_labels = paste_target["labels"][random_selection]
 
-    # Combine masks
-    paste_alpha_mask = paste_data["masks"][random_selection].sum(dim=0).greater(0)
+    paste_alpha_mask = paste_masks.sum(dim=0) > 0
+    paste_alpha_mask = F.gaussian_blur(
+        paste_alpha_mask.unsqueeze(0), kernel_size=(5, 5), sigma=2.0
+    )
 
-    paste_alpha_mask = F.gaussian_blur(paste_alpha_mask.unsqueeze(0), kernel_size=(5, 5), sigma=2.0)  # add blur
+    masks = target["masks"]
+    # Align images keeping top-left corner if source and paste data
+    # of different sizes
+    shape1 = image.shape[-2:]
+    shape2 = paste_image.shape[-2:]
+    reduced_paste_mask = False
+    if shape1 != shape2:
 
-    # Paste pixels from paste_image to image
-    image.mul_(torch.logical_not(paste_alpha_mask))  # Delete pixels from source image
-    paste_pixels = paste_image * paste_alpha_mask  # Copy pixels from paste image
-    image.add_(paste_pixels)  # paste it on source image
+        h1 = None if shape1[0] < shape2[0] else shape2[0]
+        w1 = None if shape1[1] < shape2[1] else shape2[1]
+        h2 = shape1[0] if shape1[0] < shape2[0] else None
+        w2 = shape1[1] if shape1[1] < shape2[1] else None
 
-    # update original masks
-    source_data["masks"] = source_data["masks"] ^ paste_alpha_mask & source_data["masks"]
+        image = image[..., :h1, :w1]
+        masks = masks[..., :h1, :w1]
+        paste_image = paste_image[..., :h2, :w2]
+        paste_masks = paste_masks[..., :h2, :w2]
+        paste_alpha_mask = paste_alpha_mask[..., :h2, :w2]
 
-    # remove masks where no annotations are present (all values are 0)
-    mask_filter = source_data["masks"].sum((2, 1)).not_equal(0)
-    # TODO: update area
+        if h2 is not None or w2 is not None:
+            reduced_paste_mask = True
 
-    # Update other attributes
-    source_data["masks"] = source_data["masks"][mask_filter]
-    source_data["boxes"] = ops.masks_to_boxes(source_data["masks"])
-    source_data["labels"] = source_data["labels"][mask_filter]
+    # Copy-paste images:
+    image = (image * (~paste_alpha_mask)) + (paste_image * paste_alpha_mask)
 
-    # TODO: Fix IndexError: The shape of the mask [5] at index 0 does not match the shape of the indexed tensor [6] at index 0
-    # if "area" in source_data:
-    #     source_data["area"] = source_data["area"][mask_filter]
-    # if "iscrowd" in source_data:
-    #     source_data["iscrowd"] = source_data["iscrowd"][mask_filter]
+    # Copy-paste masks:
+    masks = masks * (~paste_alpha_mask)
+    # to avoid degenerated bboxes (with width or height of 1)
+    # let's use a threshold of 10 to filter out small masks
+    non_all_zero_masks = masks.sum((-1, -2)) > 10
+    masks = masks[non_all_zero_masks]
 
-    source_data["masks"] = torch.cat((source_data["masks"], paste_data["masks"][random_selection]))
-    source_data["boxes"] = torch.cat((source_data["boxes"], paste_data["boxes"][random_selection]))
-    source_data["labels"] = torch.cat((source_data["labels"], paste_data["labels"][random_selection]))
+    # As paste_masks was aligned with masks, we can remove small masks
+    # thus we need to keep only non-zero masks
+    non_all_zero_pmasks = None
+    if reduced_paste_mask:
+        # let's use a threshold of 4 to filter out small masks
+        non_all_zero_pmasks = paste_masks.sum((-1, -2)) > 10
+        paste_masks = paste_masks[non_all_zero_pmasks]
+        paste_boxes = paste_boxes[non_all_zero_pmasks]
+        paste_labels = paste_labels[non_all_zero_pmasks]
 
-    if "area" in source_data:
-        source_data["area"] = torch.cat((source_data["area"], paste_data["area"][random_selection]))
-    if "iscrowd" in source_data:
-        source_data["iscrowd"] = torch.cat((source_data["iscrowd"], paste_data["iscrowd"][random_selection]))
+    if inplace:
+        out_target = target
+    else:
+        # Do a shallow copy of the target dict
+        out_target = copy.copy(target)
 
-    return image, source_data
+    out_target["masks"] = torch.cat([masks, paste_masks])
+
+    # Copy-paste boxes and labels
+    boxes = ops.masks_to_boxes(masks)
+    out_target["boxes"] = torch.cat([boxes, paste_boxes])
+
+    labels = target["labels"][non_all_zero_masks]
+    out_target["labels"] = torch.cat([labels, paste_labels])
+
+    # Update additional optional keys: area and iscrowd if exist
+    if "area" in target:
+        out_target["area"] = out_target["masks"].sum((-1, -2)).to(torch.float32)
+
+    if "iscrowd" in target and "iscrowd" in paste_target:
+        iscrowd = target["iscrowd"][non_all_zero_masks]
+        paste_iscrowd = paste_target["iscrowd"][random_selection]
+        if reduced_paste_mask:
+            paste_iscrowd = paste_iscrowd[non_all_zero_pmasks]
+        out_target["iscrowd"] = torch.cat([iscrowd, paste_iscrowd])
+
+    # Check for degenerated boxes and remove them
+    boxes = out_target["boxes"]
+    degenerate_boxes = boxes[:, 2:] <= boxes[:, :2]
+    if degenerate_boxes.any():
+        valid_targets = ~degenerate_boxes.any(dim=1)
+
+        out_target["boxes"] = boxes[valid_targets]
+        out_target["masks"] = out_target["masks"][valid_targets]
+        out_target["labels"] = out_target["labels"][valid_targets]
+
+        if "area" in out_target:
+            out_target["area"] = out_target["area"][valid_targets]
+        if "iscrowd" in out_target:
+            out_target["iscrowd"] = out_target["iscrowd"][valid_targets]
+
+    assert len(out_target["boxes"]) == len(out_target["masks"]), f"{len(out_target['boxes'])}, {len(out_target['masks'])}"
+    assert len(out_target["labels"]) == len(out_target["masks"]), f"{len(out_target['labels'])}, {len(out_target['masks'])}"
+
+    return image, out_target
 
 
 class SimpleCopyPaste(torch.nn.Module):
@@ -494,44 +550,39 @@ class SimpleCopyPaste(torch.nn.Module):
         super().__init__()
         self.inplace = inplace
 
-    def forward(
-        self, batch: Tuple[torch.Tensor], target: Tuple[Dict[str, Tensor]]
-    ) -> Tuple[Tuple[torch.Tensor], Tuple[Dict[str, Tensor]]]:
+    def forward(self, images, targets=None):
+        assert targets is not None
+        assert isinstance(images, tuple) and all([isinstance(v, torch.Tensor) for v in images])
+        assert isinstance(targets, tuple) and len(images) == len(targets)
+        for target in targets:
+            assert isinstance(target, dict)
+            for k in ["masks", "boxes", "labels"]:
+                assert k in target, f"Key {k} should be present in targets"
+                assert isinstance(target[k], torch.Tensor)
 
-        # validate inputs
-        if not isinstance(batch, tuple):
-            raise TypeError(f"Batch type should be a tuple of tensors. Got {type(target)}.")
-        if not isinstance(target, tuple):
-            raise TypeError(f"Target type should be a tuple of dictionaries. Got {type(target)}.")
-        if len(batch) == 0:
-            raise ValueError("'batch' tuple cannot be empty.")
-        if len(target) == 0:
-            raise ValueError("'target' tuple cannot be empty.")
-        if not len(target) == len(batch):
-            raise ValueError(f"'batch' and 'target' lengths do not match. Got {len(batch)} and {len(target)}.")
-
-        # TODO: Validate that batch contains tensors
-        # TODO: Validate that target contains dictionaries with tensor values
-
+        # images = [t1, t2, ..., tN]
+        # Let's define paste_images as shifted list of input images
+        # paste_images = [t2, t3, ..., tN, t1]
+        # FYI: in TF they mix data on the dataset level
         shift = 1
+        images_rolled = images[-shift:] + images[:-shift]
+        targets_rolled = targets[-shift:] + targets[:-shift]
 
         if self.inplace:
-            batch_rolled = copy.deepcopy(batch[-shift:] + batch[:-shift])
-            target_rolled = copy.deepcopy(target[-shift:] + target[:-shift])
-        else:
-            batch_rolled = batch[-shift:] + batch[:-shift]
-            target_rolled = target[-shift:] + target[:-shift]
+            images_rolled = copy.deepcopy(images_rolled)
+            targets_rolled = copy.deepcopy(targets_rolled)
 
-        output_batch = []
-        output_target = []
+        output_images = []
+        output_targets = []
 
-        for image, source_data, paste_image, paste_data in zip(batch, target, batch_rolled, target_rolled):
-            output_image, output_data = copy_paste(image, source_data, paste_image, paste_data, self.inplace)
-            output_batch.append(output_image)
-            output_target.append(output_data)
+        data = [images, targets, images_rolled, targets_rolled]
+        for image, target, paste_image, paste_target in zip(*data):
+            output_image, output_data = _copy_paste(image, target, paste_image, paste_target, self.inplace)
+            output_images.append(output_image)
+            output_targets.append(output_data)
 
-        return cast(Tuple[Tuple[torch.Tensor], Tuple[Dict[str, Tensor]]], (tuple(output_batch), tuple(output_target)))
+        return tuple(output_images), tuple(output_targets)
 
     def __repr__(self) -> str:
-        s = f"{self.__class__.__name__}(" f", p={self.p}" f", inplace={self.inplace}" f")"
+        s = f"{self.__class__.__name__}(inplace={self.inplace})"
         return s
