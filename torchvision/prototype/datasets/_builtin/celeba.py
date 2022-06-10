@@ -11,7 +11,7 @@ from torchdata.datapipes.iter import (
 )
 from torchvision.prototype.datasets.utils import (
     Dataset,
-    ManualDownloadResource,
+    GDriveResource,
     OnlineResource,
 )
 from torchvision.prototype.datasets.utils._internal import (
@@ -85,34 +85,33 @@ class CelebA(Dataset):
         super().__init__(root, skip_integrity_check=skip_integrity_check)
 
     def _resources(self) -> List[OnlineResource]:
-        instructions = "Please download the file from https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html."
-        splits = ManualDownloadResource(
-            instructions=instructions,
+        splits = GDriveResource(
+            "0B7EVK8r0v71pY0NSMzRuSXJEVkk",
             sha256="fc955bcb3ef8fbdf7d5640d9a8693a8431b5f2ee291a5c1449a1549e7e073fe7",
             file_name="list_eval_partition.txt",
         )
-        images = ManualDownloadResource(
-            instructions=instructions,
+        images = GDriveResource(
+            "0B7EVK8r0v71pZjFTYXZWM3FlRnM",
             sha256="46fb89443c578308acf364d7d379fe1b9efb793042c0af734b6112e4fd3a8c74",
             file_name="img_align_celeba.zip",
         )
-        identities = ManualDownloadResource(
-            instructions=instructions,
+        identities = GDriveResource(
+            "1_ee_0u7vcNLOfNLegJRHmolfH5ICW-XS",
             sha256="c6143857c3e2630ac2da9f782e9c1232e5e59be993a9d44e8a7916c78a6158c0",
             file_name="identity_CelebA.txt",
         )
-        attributes = ManualDownloadResource(
-            instructions=instructions,
+        attributes = GDriveResource(
+            "0B7EVK8r0v71pblRyaVFSWGxPY0U",
             sha256="f0e5da289d5ccf75ffe8811132694922b60f2af59256ed362afa03fefba324d0",
             file_name="list_attr_celeba.txt",
         )
-        bounding_boxes = ManualDownloadResource(
-            instructions=instructions,
+        bounding_boxes = GDriveResource(
+            "0B7EVK8r0v71pbThiMVRxWXZ4dU0",
             sha256="7487a82e57c4bb956c5445ae2df4a91ffa717e903c5fa22874ede0820c8ec41b",
             file_name="list_bbox_celeba.txt",
         )
-        landmarks = ManualDownloadResource(
-            instructions=instructions,
+        landmarks = GDriveResource(
+            "0B7EVK8r0v71pd0FJY3Blby1HUTQ",
             sha256="6c02a87569907f6db2ba99019085697596730e8129f67a3d61659f198c48d43b",
             file_name="list_landmarks_align_celeba.txt",
         )
