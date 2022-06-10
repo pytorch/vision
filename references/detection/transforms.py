@@ -451,30 +451,20 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
     paste_boxes = paste_target["boxes"][random_selection]
     paste_labels = paste_target["labels"][random_selection]
 
+    masks = target["masks"]
+    # If source and paste data have different sizes
+    # Let's resize paste data
+    size1 = image.shape[-2:]
+    size2 = paste_image.shape[-2:]
+    if size1 != size2:
+        paste_image = F.resize(paste_image, size1, interpolation=F.InterpolationMode.BICUBIC)
+        paste_masks = F.resize(paste_masks, size1, interpolation=F.InterpolationMode.NEAREST)
+        # resize bboxes:
+        ratios = torch.tensor((size1[1] / size2[1], size1[0] / size2[0]), device=paste_boxes.device)
+        paste_boxes = paste_boxes.view(-1, 2, 2).mul(ratios).view(paste_boxes.shape)
+
     paste_alpha_mask = paste_masks.sum(dim=0) > 0
     paste_alpha_mask = F.gaussian_blur(paste_alpha_mask.unsqueeze(0), kernel_size=(5, 5), sigma=2.0)
-
-    masks = target["masks"]
-    # Align images keeping top-left corner if source and paste data
-    # of different sizes
-    shape1 = image.shape[-2:]
-    shape2 = paste_image.shape[-2:]
-    reduced_paste_mask = False
-    if shape1 != shape2:
-
-        h1 = None if shape1[0] < shape2[0] else shape2[0]
-        w1 = None if shape1[1] < shape2[1] else shape2[1]
-        h2 = shape1[0] if shape1[0] < shape2[0] else None
-        w2 = shape1[1] if shape1[1] < shape2[1] else None
-
-        image = image[..., :h1, :w1]
-        masks = masks[..., :h1, :w1]
-        paste_image = paste_image[..., :h2, :w2]
-        paste_masks = paste_masks[..., :h2, :w2]
-        paste_alpha_mask = paste_alpha_mask[..., :h2, :w2]
-
-        if h2 is not None or w2 is not None:
-            reduced_paste_mask = True
 
     # Copy-paste images:
     image = (image * (~paste_alpha_mask)) + (paste_image * paste_alpha_mask)
@@ -484,22 +474,11 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
     non_all_zero_masks = masks.sum((-1, -2)) > 0
     masks = masks[non_all_zero_masks]
 
-    # As paste_masks was aligned with masks, we can remove small masks
-    # thus we need to keep only non-zero masks
-    non_all_zero_pmasks = None
-    if reduced_paste_mask:
-        non_all_zero_pmasks = paste_masks.sum((-1, -2)) > 0
-        paste_masks = paste_masks[non_all_zero_pmasks]
-        paste_boxes = paste_boxes[non_all_zero_pmasks]
-        paste_labels = paste_labels[non_all_zero_pmasks]
-
     if inplace:
         out_target = target
     else:
         # Do a shallow copy of the target dict
         out_target = copy.copy(target)
-
-    # TODO: what if paste_masks, paste_boxes and paste_labels are empty now ?
 
     out_target["masks"] = torch.cat([masks, paste_masks])
 
@@ -517,8 +496,6 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
     if "iscrowd" in target and "iscrowd" in paste_target:
         iscrowd = target["iscrowd"][non_all_zero_masks]
         paste_iscrowd = paste_target["iscrowd"][random_selection]
-        if reduced_paste_mask:
-            paste_iscrowd = paste_iscrowd[non_all_zero_pmasks]
         out_target["iscrowd"] = torch.cat([iscrowd, paste_iscrowd])
 
     # Check for degenerated boxes and remove them
@@ -535,13 +512,6 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
             out_target["area"] = out_target["area"][valid_targets]
         if "iscrowd" in out_target:
             out_target["iscrowd"] = out_target["iscrowd"][valid_targets]
-
-    assert len(out_target["boxes"]) == len(
-        out_target["masks"]
-    ), f"{len(out_target['boxes'])}, {len(out_target['masks'])}"
-    assert len(out_target["labels"]) == len(
-        out_target["masks"]
-    ), f"{len(out_target['labels'])}, {len(out_target['masks'])}"
 
     return image, out_target
 
