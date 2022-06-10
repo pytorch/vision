@@ -206,7 +206,7 @@
           <div class="pytorch-left-menu-search">
             
     <div class="version">
-      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+1445483 ) &#x25BC</a>
+      <a href='https://pytorch.org/vision/versions.html'>main (0.14.0a0+3e37fee ) &#x25BC</a>
     </div>
     
 
@@ -329,14 +329,13 @@
   <h1>Source code for torchvision.datasets.celeba</h1><div class="highlight"><pre>
 <span></span><span class="kn">import</span> <span class="nn">csv</span>
 <span class="kn">import</span> <span class="nn">os</span>
-<span class="kn">import</span> <span class="nn">warnings</span>
 <span class="kn">from</span> <span class="nn">collections</span> <span class="kn">import</span> <span class="n">namedtuple</span>
 <span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">List</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Union</span><span class="p">,</span> <span class="n">Tuple</span>
 
 <span class="kn">import</span> <span class="nn">PIL</span>
 <span class="kn">import</span> <span class="nn">torch</span>
 
-<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">check_integrity</span><span class="p">,</span> <span class="n">verify_str_arg</span>
+<span class="kn">from</span> <span class="nn">.utils</span> <span class="kn">import</span> <span class="n">download_file_from_google_drive</span><span class="p">,</span> <span class="n">check_integrity</span><span class="p">,</span> <span class="n">verify_str_arg</span><span class="p">,</span> <span class="n">extract_archive</span>
 <span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
 
 <span class="n">CSV</span> <span class="o">=</span> <span class="n">namedtuple</span><span class="p">(</span><span class="s2">&quot;CSV&quot;</span><span class="p">,</span> <span class="p">[</span><span class="s2">&quot;header&quot;</span><span class="p">,</span> <span class="s2">&quot;index&quot;</span><span class="p">,</span> <span class="s2">&quot;data&quot;</span><span class="p">])</span>
@@ -365,17 +364,9 @@
 <span class="sd">            and returns a transformed version. E.g, ``transforms.PILToTensor``</span>
 <span class="sd">        target_transform (callable, optional): A function/transform that takes in the</span>
 <span class="sd">            target and transforms it.</span>
-<span class="sd">        download (bool, optional): Deprecated.</span>
-
-<span class="sd">            .. warning::</span>
-
-<span class="sd">                Downloading CelebA is not supported anymore as of 0.13 and this</span>
-<span class="sd">                parameter will be removed in 0.15. See</span>
-<span class="sd">                `this issue &lt;https://github.com/pytorch/vision/issues/5705&gt;`__</span>
-<span class="sd">                for more details.</span>
-<span class="sd">                Please download the files from</span>
-<span class="sd">                https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract</span>
-<span class="sd">                them in ``root/celeba``.</span>
+<span class="sd">        download (bool, optional): If true, downloads the dataset from the internet and</span>
+<span class="sd">            puts it in root directory. If dataset is already downloaded, it is not</span>
+<span class="sd">            downloaded again.</span>
 <span class="sd">    &quot;&quot;&quot;</span>
 
     <span class="n">base_folder</span> <span class="o">=</span> <span class="s2">&quot;celeba&quot;</span>
@@ -402,7 +393,7 @@
         <span class="n">target_type</span><span class="p">:</span> <span class="n">Union</span><span class="p">[</span><span class="n">List</span><span class="p">[</span><span class="nb">str</span><span class="p">],</span> <span class="nb">str</span><span class="p">]</span> <span class="o">=</span> <span class="s2">&quot;attr&quot;</span><span class="p">,</span>
         <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
         <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">download</span><span class="p">:</span> <span class="nb">bool</span> <span class="o">=</span> <span class="kc">False</span><span class="p">,</span>
     <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
         <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>
         <span class="bp">self</span><span class="o">.</span><span class="n">split</span> <span class="o">=</span> <span class="n">split</span>
@@ -414,15 +405,6 @@
         <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_type</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
             <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s2">&quot;target_transform is specified but target_type is empty&quot;</span><span class="p">)</span>
 
-        <span class="k">if</span> <span class="n">download</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">warnings</span><span class="o">.</span><span class="n">warn</span><span class="p">(</span>
-                <span class="s2">&quot;Downloading CelebA is not supported anymore as of 0.13, and the &quot;</span>
-                <span class="s2">&quot;download parameter will be removed in 0.15. See &quot;</span>
-                <span class="s2">&quot;https://github.com/pytorch/vision/issues/5705 for more details. &quot;</span>
-                <span class="s2">&quot;Please download the files from &quot;</span>
-                <span class="s2">&quot;https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them &quot;</span>
-                <span class="s2">&quot;in ``root/celeba``.&quot;</span>
-            <span class="p">)</span>
         <span class="k">if</span> <span class="n">download</span><span class="p">:</span>
             <span class="bp">self</span><span class="o">.</span><span class="n">download</span><span class="p">()</span>
 
@@ -493,14 +475,10 @@
             <span class="nb">print</span><span class="p">(</span><span class="s2">&quot;Files already downloaded and verified&quot;</span><span class="p">)</span>
             <span class="k">return</span>
 
-        <span class="k">raise</span> <span class="ne">ValueError</span><span class="p">(</span>
-            <span class="s2">&quot;Downloading CelebA is not supported anymore as of 0.13, and the &quot;</span>
-            <span class="s2">&quot;download parameter will be removed in 0.15. See &quot;</span>
-            <span class="s2">&quot;https://github.com/pytorch/vision/issues/5705 for more details. &quot;</span>
-            <span class="s2">&quot;Please download the files from &quot;</span>
-            <span class="s2">&quot;https://mmlab.ie.cuhk.edu.hk/projects/CelebA.html and extract them &quot;</span>
-            <span class="s2">&quot;in ``root/celeba``.&quot;</span>
-        <span class="p">)</span>
+        <span class="k">for</span> <span class="p">(</span><span class="n">file_id</span><span class="p">,</span> <span class="n">md5</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">file_list</span><span class="p">:</span>
+            <span class="n">download_file_from_google_drive</span><span class="p">(</span><span class="n">file_id</span><span class="p">,</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">),</span> <span class="n">filename</span><span class="p">,</span> <span class="n">md5</span><span class="p">)</span>
+
+        <span class="n">extract_archive</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="s2">&quot;img_align_celeba.zip&quot;</span><span class="p">))</span>
 
 <div class="viewcode-block" id="CelebA.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.CelebA.html#torchvision.datasets.CelebA.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
         <span class="n">X</span> <span class="o">=</span> <span class="n">PIL</span><span class="o">.</span><span class="n">Image</span><span class="o">.</span><span class="n">open</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">root</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">base_folder</span><span class="p">,</span> <span class="s2">&quot;img_align_celeba&quot;</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">filename</span><span class="p">[</span><span class="n">index</span><span class="p">]))</span>

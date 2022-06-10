@@ -6,10 +6,11 @@
 <!--[if gt IE 8]><!--> <html class="no-js" lang="en" > <!--<![endif]-->
 <head>
   <meta charset="utf-8">
-  
+  <meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   
-  <title>torchvision.datasets.fakedata &mdash; Torchvision main documentation</title>
+  <title>resnext101_64x4d &mdash; Torchvision main documentation</title>
   
 
   
@@ -25,18 +26,20 @@
 
   
 
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <!-- <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" /> -->
-  <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/copybutton.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/sg_gallery.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/sg_gallery-binder.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/sg_gallery-dataframe.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/sg_gallery-rendered-html.css" type="text/css" />
-  <link rel="stylesheet" href="../../../_static/css/custom_torchvision.css" type="text/css" />
-    <link rel="index" title="Index" href="../../../genindex.html" />
-    <link rel="search" title="Search" href="../../../search.html" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <!-- <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" /> -->
+  <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/copybutton.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/sg_gallery.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/sg_gallery-binder.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/sg_gallery-dataframe.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/sg_gallery-rendered-html.css" type="text/css" />
+  <link rel="stylesheet" href="../../_static/css/custom_torchvision.css" type="text/css" />
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="ShuffleNet V2" href="../shufflenetv2.html" />
+    <link rel="prev" title="resnext101_32x8d" href="torchvision.models.resnext101_32x8d.html" />
   <!-- Google Analytics -->
   
     <script async src="https://www.googletagmanager.com/gtag/js?id=UA-117752657-2"></script>
@@ -52,16 +55,16 @@
   
 
   
-  <script src="../../../_static/js/modernizr.min.js"></script>
+  <script src="../../_static/js/modernizr.min.js"></script>
 
   <!-- Preload the theme fonts -->
 
-<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
-<link rel="preload" href="../../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../_static/fonts/FreightSans/freight-sans-book.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../_static/fonts/FreightSans/freight-sans-medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../_static/fonts/IBMPlexMono/IBMPlexMono-Medium.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../_static/fonts/FreightSans/freight-sans-bold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../_static/fonts/FreightSans/freight-sans-medium-italic.woff2" as="font" type="font/woff2" crossorigin="anonymous">
+<link rel="preload" href="../../_static/fonts/IBMPlexMono/IBMPlexMono-SemiBold.woff2" as="font" type="font/woff2" crossorigin="anonymous">
 
 <!-- Preload the katex fonts -->
 
@@ -215,7 +218,7 @@
 
 
 <div role="search">
-  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
     <input type="text" name="q" placeholder="Search Docs" />
     <input type="hidden" name="check_keywords" value="yes" />
     <input type="hidden" name="area" value="default" />
@@ -231,19 +234,19 @@
             
             
               <p class="caption" role="heading"><span class="caption-text">Package Reference</span></p>
-<ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../transforms.html">Transforming and augmenting images</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../models.html">Models and pre-trained weights</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../datasets.html">Datasets</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../utils.html">Utils</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../ops.html">Operators</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../io.html">Reading/Writing images and videos</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../feature_extraction.html">Feature extraction for model inspection</a></li>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="../../transforms.html">Transforming and augmenting images</a></li>
+<li class="toctree-l1 current"><a class="reference internal" href="../../models.html">Models and pre-trained weights</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../datasets.html">Datasets</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../utils.html">Utils</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../ops.html">Operators</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../io.html">Reading/Writing images and videos</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../feature_extraction.html">Feature extraction for model inspection</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">Examples and training references</span></p>
 <ul>
-<li class="toctree-l1"><a class="reference internal" href="../../../auto_examples/index.html">Example gallery</a></li>
-<li class="toctree-l1"><a class="reference internal" href="../../../training_references.html">Training references</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../auto_examples/index.html">Example gallery</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../training_references.html">Training references</a></li>
 </ul>
 <p class="caption" role="heading"><span class="caption-text">PyTorch Libraries</span></p>
 <ul>
@@ -286,7 +289,7 @@
   <ul class="pytorch-breadcrumbs">
     
       <li>
-        <a href="../../../index.html">
+        <a href="../../index.html">
           
             Docs
           
@@ -294,14 +297,18 @@
       </li>
 
         
-          <li><a href="../../index.html">Module code</a> &gt;</li>
+          <li><a href="../../models.html">Models and pre-trained weights</a> &gt;</li>
         
-          <li><a href="../../torchvision.html">torchvision</a> &gt;</li>
+          <li><a href="../resnext.html">ResNeXt</a> &gt;</li>
         
-      <li>torchvision.datasets.fakedata</li>
+      <li>resnext101_64x4d</li>
     
     
       <li class="pytorch-breadcrumbs-aside">
+        
+            
+            <a href="../../_sources/models/generated/torchvision.models.resnext101_64x4d.rst.txt" rel="nofollow"><img src="../../_static/images/view-page-source-icon.svg"></a>
+          
         
       </li>
     
@@ -326,80 +333,82 @@
             <div role="main" class="main-content" itemscope="itemscope" itemtype="http://schema.org/Article">
              <article itemprop="articleBody" id="pytorch-article" class="pytorch-article">
               
-  <h1>Source code for torchvision.datasets.fakedata</h1><div class="highlight"><pre>
-<span></span><span class="kn">from</span> <span class="nn">typing</span> <span class="kn">import</span> <span class="n">Any</span><span class="p">,</span> <span class="n">Callable</span><span class="p">,</span> <span class="n">Optional</span><span class="p">,</span> <span class="n">Tuple</span>
+  <section id="resnext101-64x4d">
+<h1>resnext101_64x4d<a class="headerlink" href="#resnext101-64x4d" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="torchvision.models.resnext101_64x4d">
+<span class="sig-prename descclassname"><span class="pre">torchvision.models.</span></span><span class="sig-name descname"><span class="pre">resnext101_64x4d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="o"><span class="pre">*</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">weights</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Optional" title="(in Python v3.10)"><span class="pre">Optional</span></a><span class="p"><span class="pre">[</span></span><a class="reference internal" href="#torchvision.models.ResNeXt101_64X4D_Weights" title="torchvision.models.resnet.ResNeXt101_64X4D_Weights"><span class="pre">ResNeXt101_64X4D_Weights</span></a><span class="p"><span class="pre">]</span></span></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">progress</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><span class="pre">bool</span></a></span><span class="w"> </span><span class="o"><span class="pre">=</span></span><span class="w"> </span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="o"><span class="pre">**</span></span><span class="n"><span class="pre">kwargs</span></span><span class="p"><span class="pre">:</span></span><span class="w"> </span><span class="n"><a class="reference external" href="https://docs.python.org/3/library/typing.html#typing.Any" title="(in Python v3.10)"><span class="pre">Any</span></a></span></em><span class="sig-paren">)</span> <span class="sig-return"><span class="sig-return-icon">&#x2192;</span> <span class="sig-return-typehint"><span class="pre">ResNet</span></span></span><a class="reference internal" href="../../_modules/torchvision/models/resnet.html#resnext101_64x4d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.resnext101_64x4d" title="Permalink to this definition">¶</a></dt>
+<dd><p>ResNeXt-101 64x4d model from
+<a class="reference external" href="https://arxiv.org/abs/1611.05431">Aggregated Residual Transformation for Deep Neural Networks</a>.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>weights</strong> (<a class="reference internal" href="#torchvision.models.ResNeXt101_64X4D_Weights" title="torchvision.models.ResNeXt101_64X4D_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_Weights</span></code></a>, optional) – The
+pretrained weights to use. See
+<a class="reference internal" href="#torchvision.models.ResNeXt101_64X4D_Weights" title="torchvision.models.ResNeXt101_64X4D_Weights"><code class="xref py py-class docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_Weights</span></code></a> below for
+more details, and possible values. By default, no pre-trained
+weights are used.</p></li>
+<li><p><strong>progress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.10)"><em>bool</em></a><em>, </em><em>optional</em>) – If True, displays a progress bar of the
+download to stderr. Default is True.</p></li>
+<li><p><strong>**kwargs</strong> – parameters passed to the <code class="docutils literal notranslate"><span class="pre">torchvision.models.resnet.ResNet</span></code>
+base class. Please refer to the <a class="reference external" href="https://github.com/pytorch/vision/blob/main/torchvision/models/resnet.py">source code</a>
+for more details about this class.</p></li>
+</ul>
+</dd>
+</dl>
+<dl class="py class">
+<dt class="sig sig-object py" id="torchvision.models.ResNeXt101_64X4D_Weights">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-prename descclassname"><span class="pre">torchvision.models.</span></span><span class="sig-name descname"><span class="pre">ResNeXt101_64X4D_Weights</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">value</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../../_modules/torchvision/models/resnet.html#ResNeXt101_64X4D_Weights"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#torchvision.models.ResNeXt101_64X4D_Weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>The model builder above accepts the following values as the <code class="docutils literal notranslate"><span class="pre">weights</span></code> parameter.
+<code class="docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_Weights.DEFAULT</span></code> is equivalent to <code class="docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_Weights.IMAGENET1K_V1</span></code>.</p>
+<p><strong>ResNeXt101_64X4D_Weights.IMAGENET1K_V1</strong>:</p>
+<p>
+                These weights were trained from scratch by using TorchVision’s <a class="reference external" href="https://pytorch.org/blog/how-to-train-state-of-the-art-models-using-torchvision-latest-primitives/">new training recipe</a>.
+            
+Also available as <code class="docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_Weights.DEFAULT</span></code>.</p>
+<table class="table-weights docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p>acc&#64;1 (on ImageNet-1K)</p></td>
+<td><p>83.246</p></td>
+</tr>
+<tr class="row-even"><td><p>acc&#64;5 (on ImageNet-1K)</p></td>
+<td><p>96.454</p></td>
+</tr>
+<tr class="row-odd"><td><p>min_size</p></td>
+<td><p>height=1, width=1</p></td>
+</tr>
+<tr class="row-even"><td><p>categories</p></td>
+<td><p>tench, goldfish, great white shark, … (997 omitted)</p></td>
+</tr>
+<tr class="row-odd"><td><p>num_params</p></td>
+<td><p>83455272</p></td>
+</tr>
+<tr class="row-even"><td><p>recipe</p></td>
+<td><p><a class="reference external" href="https://github.com/pytorch/vision/pull/5935">link</a></p></td>
+</tr>
+</tbody>
+</table>
+<p>The inference transforms are available at <code class="docutils literal notranslate"><span class="pre">ResNeXt101_64X4D_Weights.IMAGENET1K_V1.transforms</span></code> and perform the following preprocessing operations: Accepts <code class="docutils literal notranslate"><span class="pre">PIL.Image</span></code>, batched <code class="docutils literal notranslate"><span class="pre">(B,</span> <span class="pre">C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> and single <code class="docutils literal notranslate"><span class="pre">(C,</span> <span class="pre">H,</span> <span class="pre">W)</span></code> image <code class="docutils literal notranslate"><span class="pre">torch.Tensor</span></code> objects. The images are resized to <code class="docutils literal notranslate"><span class="pre">resize_size=[232]</span></code> using <code class="docutils literal notranslate"><span class="pre">interpolation=InterpolationMode.BILINEAR</span></code>, followed by a central crop of <code class="docutils literal notranslate"><span class="pre">crop_size=[224]</span></code>. Finally the values are first rescaled to <code class="docutils literal notranslate"><span class="pre">[0.0,</span> <span class="pre">1.0]</span></code> and then normalized using <code class="docutils literal notranslate"><span class="pre">mean=[0.485,</span> <span class="pre">0.456,</span> <span class="pre">0.406]</span></code> and <code class="docutils literal notranslate"><span class="pre">std=[0.229,</span> <span class="pre">0.224,</span> <span class="pre">0.225]</span></code>.</p>
+</dd></dl>
 
-<span class="kn">import</span> <span class="nn">torch</span>
+</dd></dl>
 
-<span class="kn">from</span> <span class="nn">..</span> <span class="kn">import</span> <span class="n">transforms</span>
-<span class="kn">from</span> <span class="nn">.vision</span> <span class="kn">import</span> <span class="n">VisionDataset</span>
+</section>
 
-
-<div class="viewcode-block" id="FakeData"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FakeData.html#torchvision.datasets.FakeData">[docs]</a><span class="k">class</span> <span class="nc">FakeData</span><span class="p">(</span><span class="n">VisionDataset</span><span class="p">):</span>
-    <span class="sd">&quot;&quot;&quot;A fake dataset that returns randomly generated images and returns them as PIL images</span>
-
-<span class="sd">    Args:</span>
-<span class="sd">        size (int, optional): Size of the dataset. Default: 1000 images</span>
-<span class="sd">        image_size(tuple, optional): Size if the returned images. Default: (3, 224, 224)</span>
-<span class="sd">        num_classes(int, optional): Number of classes in the dataset. Default: 10</span>
-<span class="sd">        transform (callable, optional): A function/transform that  takes in an PIL image</span>
-<span class="sd">            and returns a transformed version. E.g, ``transforms.RandomCrop``</span>
-<span class="sd">        target_transform (callable, optional): A function/transform that takes in the</span>
-<span class="sd">            target and transforms it.</span>
-<span class="sd">        random_offset (int): Offsets the index-based random seed used to</span>
-<span class="sd">            generate each image. Default: 0</span>
-
-<span class="sd">    &quot;&quot;&quot;</span>
-
-    <span class="k">def</span> <span class="fm">__init__</span><span class="p">(</span>
-        <span class="bp">self</span><span class="p">,</span>
-        <span class="n">size</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">1000</span><span class="p">,</span>
-        <span class="n">image_size</span><span class="p">:</span> <span class="n">Tuple</span><span class="p">[</span><span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">,</span> <span class="nb">int</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">224</span><span class="p">,</span> <span class="mi">224</span><span class="p">),</span>
-        <span class="n">num_classes</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">10</span><span class="p">,</span>
-        <span class="n">transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">target_transform</span><span class="p">:</span> <span class="n">Optional</span><span class="p">[</span><span class="n">Callable</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span><span class="p">,</span>
-        <span class="n">random_offset</span><span class="p">:</span> <span class="nb">int</span> <span class="o">=</span> <span class="mi">0</span><span class="p">,</span>
-    <span class="p">)</span> <span class="o">-&gt;</span> <span class="kc">None</span><span class="p">:</span>
-        <span class="nb">super</span><span class="p">()</span><span class="o">.</span><span class="fm">__init__</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="n">transform</span><span class="o">=</span><span class="n">transform</span><span class="p">,</span> <span class="n">target_transform</span><span class="o">=</span><span class="n">target_transform</span><span class="p">)</span>  <span class="c1"># type: ignore[arg-type]</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">size</span> <span class="o">=</span> <span class="n">size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span> <span class="o">=</span> <span class="n">num_classes</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">image_size</span> <span class="o">=</span> <span class="n">image_size</span>
-        <span class="bp">self</span><span class="o">.</span><span class="n">random_offset</span> <span class="o">=</span> <span class="n">random_offset</span>
-
-<div class="viewcode-block" id="FakeData.__getitem__"><a class="viewcode-back" href="../../../generated/torchvision.datasets.FakeData.html#torchvision.datasets.FakeData.__getitem__">[docs]</a>    <span class="k">def</span> <span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">:</span> <span class="nb">int</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="n">Tuple</span><span class="p">[</span><span class="n">Any</span><span class="p">,</span> <span class="n">Any</span><span class="p">]:</span>
-        <span class="sd">&quot;&quot;&quot;</span>
-<span class="sd">        Args:</span>
-<span class="sd">            index (int): Index</span>
-
-<span class="sd">        Returns:</span>
-<span class="sd">            tuple: (image, target) where target is class_index of the target class.</span>
-<span class="sd">        &quot;&quot;&quot;</span>
-        <span class="c1"># create random image that is consistent with the index id</span>
-        <span class="k">if</span> <span class="n">index</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
-            <span class="k">raise</span> <span class="ne">IndexError</span><span class="p">(</span><span class="sa">f</span><span class="s2">&quot;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="vm">__class__</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s2"> index out of range&quot;</span><span class="p">)</span>
-        <span class="n">rng_state</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">get_rng_state</span><span class="p">()</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">index</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">random_offset</span><span class="p">)</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randn</span><span class="p">(</span><span class="o">*</span><span class="bp">self</span><span class="o">.</span><span class="n">image_size</span><span class="p">)</span>
-        <span class="n">target</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">num_classes</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mi">1</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">long</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
-        <span class="n">torch</span><span class="o">.</span><span class="n">set_rng_state</span><span class="p">(</span><span class="n">rng_state</span><span class="p">)</span>
-
-        <span class="c1"># convert to PIL Image</span>
-        <span class="n">img</span> <span class="o">=</span> <span class="n">transforms</span><span class="o">.</span><span class="n">ToPILImage</span><span class="p">()(</span><span class="n">img</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">img</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">transform</span><span class="p">(</span><span class="n">img</span><span class="p">)</span>
-        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
-            <span class="n">target</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">target_transform</span><span class="p">(</span><span class="n">target</span><span class="p">)</span>
-
-        <span class="k">return</span> <span class="n">img</span><span class="p">,</span> <span class="n">target</span><span class="o">.</span><span class="n">item</span><span class="p">()</span></div>
-
-    <span class="k">def</span> <span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span> <span class="o">-&gt;</span> <span class="nb">int</span><span class="p">:</span>
-        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">size</span></div>
-</pre></div>
 
              </article>
              
             </div>
             <footer>
+  
+    <div class="rst-footer-buttons" role="navigation" aria-label="footer navigation">
+      
+        <a href="../shufflenetv2.html" class="btn btn-neutral float-right" title="ShuffleNet V2" accesskey="n" rel="next">Next <img src="../../_static/images/chevron-right-orange.svg" class="next-page"></a>
+      
+      
+        <a href="torchvision.models.resnext101_32x8d.html" class="btn btn-neutral" title="resnext101_32x8d" accesskey="p" rel="prev"><img src="../../_static/images/chevron-right-orange.svg" class="previous-page"> Previous</a>
+      
+    </div>
   
 
   
@@ -428,7 +437,10 @@
         <div class="pytorch-content-right" id="pytorch-content-right">
           <div class="pytorch-right-menu" id="pytorch-right-menu">
             <div class="pytorch-side-scroll" id="pytorch-side-scroll-right">
-              
+              <ul>
+<li><a class="reference internal" href="#">resnext101_64x4d</a></li>
+</ul>
+
             </div>
           </div>
         </div>
@@ -441,22 +453,22 @@
   
 
      
-       <script type="text/javascript" id="documentation_options" data-url_root="../../../" src="../../../_static/documentation_options.js"></script>
-         <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
-         <script src="../../../_static/jquery.js"></script>
-         <script src="../../../_static/underscore.js"></script>
-         <script src="../../../_static/_sphinx_javascript_frameworks_compat.js"></script>
-         <script src="../../../_static/doctools.js"></script>
-         <script src="../../../_static/clipboard.min.js"></script>
-         <script src="../../../_static/copybutton.js"></script>
+       <script type="text/javascript" id="documentation_options" data-url_root="../../" src="../../_static/documentation_options.js"></script>
+         <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+         <script src="../../_static/jquery.js"></script>
+         <script src="../../_static/underscore.js"></script>
+         <script src="../../_static/_sphinx_javascript_frameworks_compat.js"></script>
+         <script src="../../_static/doctools.js"></script>
+         <script src="../../_static/clipboard.min.js"></script>
+         <script src="../../_static/copybutton.js"></script>
      
 
   
 
-  <script type="text/javascript" src="../../../_static/js/vendor/popper.min.js"></script>
-  <script type="text/javascript" src="../../../_static/js/vendor/bootstrap.min.js"></script>
+  <script type="text/javascript" src="../../_static/js/vendor/popper.min.js"></script>
+  <script type="text/javascript" src="../../_static/js/vendor/bootstrap.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/list.js/1.5.0/list.min.js"></script>
-  <script type="text/javascript" src="../../../_static/js/theme.js"></script>
+  <script type="text/javascript" src="../../_static/js/theme.js"></script>
 
   <script type="text/javascript">
       jQuery(function () {
@@ -537,7 +549,7 @@
   <div class="cookie-banner-wrapper">
   <div class="container">
     <p class="gdpr-notice">To analyze traffic and optimize your experience, we serve cookies on this site. By clicking or navigating, you agree to allow our usage of cookies. As the current maintainers of this site, Facebook’s Cookies Policy applies. Learn more, including about available controls: <a href="https://www.facebook.com/policies/cookies/">Cookies Policy</a>.</p>
-    <img class="close-button" src="../../../_static/images/pytorch-x.svg">
+    <img class="close-button" src="../../_static/images/pytorch-x.svg">
   </div>
 </div>
 
@@ -652,7 +664,7 @@
 
   <!-- End Mobile Menu -->
 
-  <script type="text/javascript" src="../../../_static/js/vendor/anchor.min.js"></script>
+  <script type="text/javascript" src="../../_static/js/vendor/anchor.min.js"></script>
 
   <script type="text/javascript">
     $(document).ready(function() {
