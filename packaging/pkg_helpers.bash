@@ -101,23 +101,30 @@ setup_cuda() {
 setup_build_version() {
   if [[ -z "$BUILD_VERSION" ]]; then
     if [[ -z "$1" ]]; then
-      SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
-      # version.txt for some reason has `a` character after major.minor.rev
-      # command below yields 0.10.0 from version.txt containing 0.10.0a0
-      _VERSION_BASE=$( cut -f 1 -d a "$SCRIPT_DIR/../version.txt" )
+      setup_base_build_version
     else
-      _VERSION_BASE="$1"
+      BUILD_VERSION="$1"
     fi
-    export BUILD_VERSION="$_VERSION_BASE.dev$(date "+%Y%m%d")$VERSION_SUFFIX"
+    BUILD_VERSION="$BUILD_VERSION.dev$(date "+%Y%m%d")$VERSION_SUFFIX"
   else
-    export BUILD_VERSION="$BUILD_VERSION$VERSION_SUFFIX"
+    BUILD_VERSION="$BUILD_VERSION$VERSION_SUFFIX"
   fi
 
   # Set build version based on tag if on tag
   if [[ -n "${CIRCLE_TAG}" ]]; then
     # Strip tag
-    export BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')${VERSION_SUFFIX}"
+    BUILD_VERSION="$(echo "${CIRCLE_TAG}" | sed -e 's/^v//' -e 's/-.*$//')${VERSION_SUFFIX}"
   fi
+
+  export BUILD_VERSION
+}
+
+setup_base_build_version() {
+  SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" >/dev/null 2>&1 && pwd )"
+  # version.txt for some reason has `a` character after major.minor.rev
+  # command below yields 0.10.0 from version.txt containing 0.10.0a0
+  BUILD_VERSION=$( cut -f 1 -d a "$SCRIPT_DIR/../version.txt" )
+  export BUILD_VERSION
 }
 
 # Set some useful variables for OS X, if applicable
