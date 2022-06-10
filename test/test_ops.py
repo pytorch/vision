@@ -1141,7 +1141,7 @@ class TestBoxArea:
             [[285.25, 185.625, 1194.0, 851.5], [285.25, 188.75, 1192.0, 851.0], [279.25, 198.0, 1189.0, 849.0]],
             dtype=torch.float16,
         )
-        expected = torch.tensor([605113.875, 600495.1875, 592247.25])
+        expected = torch.tensor([605113.875, 600495.1875, 592247.25], dtype=torch.float32)
         self.area_check(box_tensor, expected)
 
     def test_box_area_jit(self):
