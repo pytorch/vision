@@ -481,17 +481,14 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
 
     # Copy-paste masks:
     masks = masks * (~paste_alpha_mask)
-    # to avoid degenerated bboxes (with width or height of 1)
-    # let's use a threshold of 10 to filter out small masks
-    non_all_zero_masks = masks.sum((-1, -2)) > 10
+    non_all_zero_masks = masks.sum((-1, -2)) > 0
     masks = masks[non_all_zero_masks]
 
     # As paste_masks was aligned with masks, we can remove small masks
     # thus we need to keep only non-zero masks
     non_all_zero_pmasks = None
     if reduced_paste_mask:
-        # let's use a threshold of 4 to filter out small masks
-        non_all_zero_pmasks = paste_masks.sum((-1, -2)) > 10
+        non_all_zero_pmasks = paste_masks.sum((-1, -2)) > 0
         paste_masks = paste_masks[non_all_zero_pmasks]
         paste_boxes = paste_boxes[non_all_zero_pmasks]
         paste_labels = paste_labels[non_all_zero_pmasks]
@@ -501,6 +498,8 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
     else:
         # Do a shallow copy of the target dict
         out_target = copy.copy(target)
+
+    # TODO: what if paste_masks, paste_boxes and paste_labels are empty now ?
 
     out_target["masks"] = torch.cat([masks, paste_masks])
 
