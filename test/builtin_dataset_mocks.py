@@ -19,7 +19,7 @@ from collections import defaultdict, Counter
 import numpy as np
 import pytest
 import torch
-from datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, combinations_grid
+from test.datasets_utils import make_zip, make_tar, create_image_folder, create_image_file, combinations_grid
 from torch.nn.functional import one_hot
 from torch.testing import make_tensor as _make_tensor
 from torchvision.prototype import datasets

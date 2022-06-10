@@ -5,7 +5,6 @@ from pathlib import Path
 
 import pytest
 import torch
-from builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 from torch.testing._comparison import assert_equal, TensorLikePair, ObjectPair
 from torch.utils.data import DataLoader
 from torch.utils.data.graph import traverse
@@ -15,6 +14,8 @@ from torchvision._utils import sequence_to_str
 from torchvision.prototype import transforms, datasets
 from torchvision.prototype.datasets.utils._internal import INFINITE_BUFFER_SIZE
 from torchvision.prototype.features import Image, Label
+
+from .builtin_dataset_mocks import parametrize_dataset_mocks, DATASET_MOCKS
 
 assert_samples_equal = functools.partial(
     assert_equal, pair_types=(TensorLikePair, ObjectPair), rtol=0, atol=0, equal_nan=True

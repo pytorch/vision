@@ -1,6 +1,6 @@
 import unittest
 
-import test_io
+from test import test_io
 from torchvision import set_video_backend  # noqa: 401
 
 

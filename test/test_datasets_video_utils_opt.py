@@ -1,6 +1,6 @@
 import unittest
 
-import test_datasets_video_utils
+from test import test_datasets_video_utils
 from torchvision import set_video_backend  # noqa: 401
 
 # Disabling the video backend switching temporarily
