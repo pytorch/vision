@@ -23,3 +23,4 @@ more details about this class.
 
     resnext50_32x4d
     resnext101_32x8d
+    resnext101_64x4d
