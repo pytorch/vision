@@ -403,7 +403,7 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
         table_file.write(".. table::\n")
         table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
-        table_file.write(f"{table_name}\n{len(table_name)*'^'}\n")
+        table_file.write(f"{table_name} Weights Table\n{(15 + len(table_name))*'^'}\n")
 
 
 generate_weights_table(
