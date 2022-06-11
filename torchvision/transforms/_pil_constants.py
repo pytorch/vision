@@ -3,7 +3,7 @@ from PIL import Image
 # See https://pillow.readthedocs.io/en/stable/releasenotes/9.1.0.html#deprecations
 # TODO: Remove this file once PIL minimal version is >= 9.1
 
-if "Resampling" in dir(Image):
+if hasattr(Image, "Resampling"):
     BICUBIC = Image.Resampling.BICUBIC
     BILINEAR = Image.Resampling.BILINEAR
     LINEAR = Image.Resampling.BILINEAR
