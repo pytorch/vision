@@ -1522,10 +1522,10 @@ def test_ten_crop(should_vflip, single_dim):
     five_crop.__repr__()
 
     if should_vflip:
-        vflipped_img = img.transpose(Image.FLIP_TOP_BOTTOM)
+        vflipped_img = img.transpose(_pil_constants.FLIP_TOP_BOTTOM)
         expected_output += five_crop(vflipped_img)
     else:
-        hflipped_img = img.transpose(Image.FLIP_LEFT_RIGHT)
+        hflipped_img = img.transpose(_pil_constants.FLIP_LEFT_RIGHT)
         expected_output += five_crop(hflipped_img)
 
     assert len(results) == 10
