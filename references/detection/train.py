@@ -187,7 +187,7 @@ def main(args):
     train_collate_fn = utils.collate_fn
     if args.use_copypaste:
         print("Use SimpleCopyPaste data aug")
-        copypaste = SimpleCopyPaste(inplace=False)
+        copypaste = SimpleCopyPaste()
 
         def copypaste_collate_fn(batch):
             return copypaste(*utils.collate_fn(batch))

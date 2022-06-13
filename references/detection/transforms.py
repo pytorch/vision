@@ -474,11 +474,8 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
     non_all_zero_masks = masks.sum((-1, -2)) > 0
     masks = masks[non_all_zero_masks]
 
-    if inplace:
-        out_target = target
-    else:
-        # Do a shallow copy of the target dict
-        out_target = copy.copy(target)
+    # Do a shallow copy of the target dict
+    out_target = copy.copy(target)
 
     out_target["masks"] = torch.cat([masks, paste_masks])
 
@@ -494,9 +491,13 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
         out_target["area"] = out_target["masks"].sum((-1, -2)).to(torch.float32)
 
     if "iscrowd" in target and "iscrowd" in paste_target:
-        iscrowd = target["iscrowd"][non_all_zero_masks]
-        paste_iscrowd = paste_target["iscrowd"][random_selection]
-        out_target["iscrowd"] = torch.cat([iscrowd, paste_iscrowd])
+        # target['iscrowd'] size can be differ from mask size (non_all_zero_masks)
+        if len(target["iscrowd"]) == len(non_all_zero_masks):
+            iscrowd = target["iscrowd"][non_all_zero_masks]
+            paste_iscrowd = paste_target["iscrowd"][random_selection]
+            out_target["iscrowd"] = torch.cat([iscrowd, paste_iscrowd])
+        else:
+            out_target["iscrowd"] = target["iscrowd"]
 
     # Check for degenerated boxes and remove them
     boxes = out_target["boxes"]
@@ -517,9 +518,6 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
 
 
 class SimpleCopyPaste(torch.nn.Module):
-    def __init__(self, inplace=True):
-        super().__init__()
-        self.inplace = inplace
 
     def forward(self, images, targets=None):
         assert targets is not None
@@ -539,21 +537,17 @@ class SimpleCopyPaste(torch.nn.Module):
         images_rolled = images[-shift:] + images[:-shift]
         targets_rolled = targets[-shift:] + targets[:-shift]
 
-        if self.inplace:
-            images_rolled = copy.deepcopy(images_rolled)
-            targets_rolled = copy.deepcopy(targets_rolled)
-
         output_images = []
         output_targets = []
 
         data = [images, targets, images_rolled, targets_rolled]
         for image, target, paste_image, paste_target in zip(*data):
-            output_image, output_data = _copy_paste(image, target, paste_image, paste_target, self.inplace)
+            output_image, output_data = _copy_paste(image, target, paste_image, paste_target)
             output_images.append(output_image)
             output_targets.append(output_data)
 
         return tuple(output_images), tuple(output_targets)
 
     def __repr__(self) -> str:
-        s = f"{self.__class__.__name__}(inplace={self.inplace})"
+        s = f"{self.__class__.__name__}()"
         return s
