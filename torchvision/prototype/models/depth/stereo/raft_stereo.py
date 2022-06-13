@@ -98,13 +98,12 @@ class MultiLevelContextEncoder(nn.Module):
             }) for i in range(self.num_level)
         ])
 
-    def _make_out_layer(self, in_channels, out_channels, with_block=1, block=ResidualBlock):
+    def _make_out_layer(self, in_channels, out_channels, with_block=True, block=ResidualBlock):
+        block_layer = nn.Identity()
         conv_layer = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
         if with_block:
             block_layer = block(in_channels, in_channels, norm_layer=nn.BatchNorm2d, stride=1)
-            return nn.Sequential(block_layer, conv_layer)
-        else:
-            return conv_layer
+        return nn.Sequential(block_layer, conv_layer)
 
     def _make_downsampler(self, block, in_channels, out_channels):
         block1 = block(in_channels, out_channels, norm_layer=nn.BatchNorm2d, stride=2)
