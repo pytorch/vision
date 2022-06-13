@@ -265,7 +265,7 @@ Table of all available quantized classification weights
 
 Accuracies are reported on ImageNet-1K using single crops:
 
-.. include:: generated/classification_quant_table.rst
+.. include:: generated/quantized_classification_table.rst
 
 Semantic Segmentation
 =====================
@@ -500,7 +500,7 @@ Table of all available video classification weights
 
 Accuracies are reported on Kinetics-400 using single crops for clip length 16:
 
-.. include:: generated/video_table.rst
+.. include:: generated/video_classification_table.rst
 
 Optical Flow
 ============

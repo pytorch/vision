@@ -399,11 +399,11 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     generated_dir = Path("generated")
     generated_dir.mkdir(exist_ok=True)
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
+        table_file.write(f"{' '.join(table_name.split('_')).title()} Weights Table\n{(15 + len(table_name))*'^'}\n")
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
         table_file.write(".. table::\n")
         table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
         table_file.write(f"{textwrap.indent(table, ' ' * 4)}\n\n")
-        table_file.write(f"{table_name} Weights Table\n{(15 + len(table_name))*'^'}\n")
 
 
 generate_weights_table(
@@ -411,7 +411,7 @@ generate_weights_table(
 )
 generate_weights_table(
     module=M.quantization,
-    table_name="classification_quant",
+    table_name="quantized_classification",
     metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
     dataset="ImageNet-1K",
 )
@@ -443,7 +443,10 @@ generate_weights_table(
     dataset="COCO-val2017-VOC-labels",
 )
 generate_weights_table(
-    module=M.video, table_name="video", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="Kinetics-400"
+    module=M.video,
+    table_name="video_classification",
+    metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
+    dataset="Kinetics-400",
 )
 
 
