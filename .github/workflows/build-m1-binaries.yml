@@ -13,7 +13,7 @@ on:
         - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 env:
-  CHANNEL: "nightly"
+  CHANNEL: "test"
 jobs:
   build_wheels:
     name: "Build TorchVision M1 wheels"
@@ -27,7 +27,10 @@ jobs:
       - name: Set CHANNEL (only for tagged pushes)
         if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}
         run: |
-          echo "CHANNEL=test" >> "$GITHUB_ENV"
+          # reference ends with an RC suffix
+          if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
+            echo "CHANNEL=test" >> "$GITHUB_ENV"
+          fi
       - name: Build TorchVision M1 wheel
         shell: arch -arch arm64 bash {0}
         env:
@@ -97,7 +100,10 @@ jobs:
       - name: Set CHANNEL (only for tagged pushes)
         if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}
         run: |
-          echo "CHANNEL=test" >> "$GITHUB_ENV"
+          # reference ends with an RC suffix
+          if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
+            echo "CHANNEL=test" >> "$GITHUB_ENV"
+          fi
       - name: Install conda-build and purge previous artifacts
         shell: arch -arch arm64 bash {0}
         run: |
