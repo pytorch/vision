@@ -202,10 +202,6 @@ Here is an example of how to use the pre-trained image classification models:
 
 The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
 
-Table of all available classification weights
----------------------------------------------
-
-Accuracies are reported on ImageNet-1K using single crops:
 
 .. include:: generated/classification_table.rst
 
@@ -260,10 +256,6 @@ Here is an example of how to use the pre-trained quantized image classification 
 The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
 
 
-Table of all available quantized classification weights
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Accuracies are reported on ImageNet-1K using single crops:
 
 .. include:: generated/quantized_classification_table.rst
 
@@ -316,12 +308,8 @@ The classes of the pre-trained model outputs can be found at ``weights.meta["cat
 The output format of the models is illustrated in :ref:`semantic_seg_output`.
 
 
-Table of all available semantic segmentation weights
-----------------------------------------------------
 
-All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:
-
-.. include:: generated/segmentation_table.rst
+.. include:: generated/semantic_segmentation_table.rst
 
 
 .. _object_det_inst_seg_pers_keypoint_det:
@@ -389,12 +377,8 @@ Here is an example of how to use the pre-trained object detection models:
 The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
 For details on how to plot the bounding boxes of the models, you may refer to :ref:`instance_seg_output`.
 
-Table of all available Object detection weights
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Box MAPs are reported on COCO val2017:
-
-.. include:: generated/detection_table.rst
+.. include:: generated/object_detection_table.rst
 
 
 Instance Segmentation
@@ -415,10 +399,6 @@ weights:
 
 For details on how to plot the masks of the models, you may refer to :ref:`instance_seg_output`.
 
-Table of all available Instance segmentation weights
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-Box and Mask MAPs are reported on COCO val2017:
 
 .. include:: generated/instance_segmentation_table.rst
 
@@ -440,12 +420,8 @@ pre-trained weights:
 The classes of the pre-trained model outputs can be found at ``weights.meta["keypoint_names"]``.
 For details on how to plot the bounding boxes of the models, you may refer to :ref:`keypoint_output`.
 
-Table of all available Keypoint detection weights
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 
-Box and Keypoint MAPs are reported on COCO val2017:
-
-.. include:: generated/detection_keypoint_table.rst
+.. include:: generated/keypoint_detection_table.rst
 
 
 Video Classification
@@ -495,10 +471,6 @@ Here is an example of how to use the pre-trained video classification models:
 The classes of the pre-trained model outputs can be found at ``weights.meta["categories"]``.
 
 
-Table of all available video classification weights
----------------------------------------------------
-
-Accuracies are reported on Kinetics-400 using single crops for clip length 16:
 
 .. include:: generated/video_classification_table.rst
 

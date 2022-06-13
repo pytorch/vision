@@ -371,7 +371,15 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
             lines.append("")
 
 
-def generate_weights_table(module, table_name, metrics, dataset, include_patterns=None, exclude_patterns=None):
+def generate_weights_table(
+    module,
+    table_name,
+    metrics,
+    dataset,
+    include_patterns=None,
+    exclude_patterns=None,
+    table_desciption="",
+):
     weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
     weights = [w for weight_enum in weight_enums for w in weight_enum]
@@ -399,7 +407,10 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
     generated_dir = Path("generated")
     generated_dir.mkdir(exist_ok=True)
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
-        table_file.write(f"{' '.join(table_name.split('_')).title()} Weights Table\n{(15 + len(table_name))*'^'}\n")
+        table_file.write(
+            f"Table of all available {table_name.replace('_',' ').title()} Weights \n{(32 + len(table_name))*'-'}\n"
+        )
+        table_file.write(f"{table_desciption}\n\n")
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
         table_file.write(".. table::\n")
         table_file.write(f"    :widths: 100 {'20 ' * len(metrics_names)} 20 10\n\n")
@@ -407,20 +418,26 @@ def generate_weights_table(module, table_name, metrics, dataset, include_pattern
 
 
 generate_weights_table(
-    module=M, table_name="classification", metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")], dataset="ImageNet-1K"
+    module=M,
+    table_name="classification",
+    metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
+    dataset="ImageNet-1K",
+    table_desciption="Accuracies are reported on ImageNet-1K using single crops:",
 )
 generate_weights_table(
     module=M.quantization,
     table_name="quantized_classification",
     metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
     dataset="ImageNet-1K",
+    table_desciption="Accuracies are reported on ImageNet-1K using single crops:",
 )
 generate_weights_table(
     module=M.detection,
-    table_name="detection",
+    table_name="object_detection",
     metrics=[("box_map", "Box MAP")],
     exclude_patterns=["Mask", "Keypoint"],
     dataset="COCO-val2017",
+    table_desciption="Box MAPs are reported on COCO val2017:",
 )
 generate_weights_table(
     module=M.detection,
@@ -428,25 +445,29 @@ generate_weights_table(
     metrics=[("box_map", "Box MAP"), ("mask_map", "Mask MAP")],
     dataset="COCO-val2017",
     include_patterns=["Mask"],
+    table_desciption="Box and Mask MAPs are reported on COCO val2017:",
 )
 generate_weights_table(
     module=M.detection,
-    table_name="detection_keypoint",
+    table_name="keypoint_detection",
     metrics=[("box_map", "Box MAP"), ("kp_map", "Keypoint MAP")],
     dataset="COCO-val2017",
     include_patterns=["Keypoint"],
+    table_desciption="Box and Keypoint MAPs are reported on COCO val2017:",
 )
 generate_weights_table(
     module=M.segmentation,
-    table_name="segmentation",
+    table_name="semantic_segmentation",
     metrics=[("miou", "Mean IoU"), ("pixel_acc", "pixelwise Acc")],
     dataset="COCO-val2017-VOC-labels",
+    table_desciption="All models are evaluated a subset of COCO val2017, on the 20 categories that are present in the Pascal VOC dataset:",
 )
 generate_weights_table(
     module=M.video,
     table_name="video_classification",
     metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
     dataset="Kinetics-400",
+    table_desciption="Accuracies are reported on Kinetics-400 using single crops for clip length 16:",
 )
 
 
