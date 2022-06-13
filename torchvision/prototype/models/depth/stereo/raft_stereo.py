@@ -22,10 +22,11 @@ __all__ = (
 
 
 class BaseEncoder(raft.FeatureEncoder):
-    """ Base encoder for FeatureEncoder and ContextEncoder in which weight may be shared.
+    """Base encoder for FeatureEncoder and ContextEncoder in which weight may be shared.
 
     See the Raft-Stereo paper section 4.6 on backbone part.
     """
+
     def __init__(
         self,
         *,
@@ -63,7 +64,7 @@ class FeatureEncoder(nn.Module):
         # we need to add residual block with InstanceNorm2d and change the kernel size for conv layer
         # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/raft_stereo.py#L35-L37
         self.shared_base = shared_base
-        self.residual_block = nn.Identity()
+        self.residual_block: nn.Module = nn.Identity()
         self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
         if shared_base:
             self.residual_block = block(base_dim, base_dim, norm_layer=nn.InstanceNorm2d, stride=1)
@@ -90,13 +91,22 @@ class MultiLevelContextEncoder(nn.Module):
         self.base_downsampling_ratio = base_encoder.downsampling_ratio
         base_dim = base_encoder.output_dim
 
-        self.downsample_and_out_layers = nn.ModuleList([
-            nn.ModuleDict({
-                "downsampler": self._make_downsampler(block, base_dim, base_dim) if i > 0 else nn.Identity(),
-                "out_hidden_state": self._make_out_layer(base_dim, output_dim // 2, with_block=out_with_blocks[i], block=block),
-                "out_context": self._make_out_layer(base_dim, output_dim // 2, with_block=out_with_blocks[i], block=block),
-            }) for i in range(self.num_level)
-        ])
+        self.downsample_and_out_layers = nn.ModuleList(
+            [
+                nn.ModuleDict(
+                    {
+                        "downsampler": self._make_downsampler(block, base_dim, base_dim) if i > 0 else nn.Identity(),
+                        "out_hidden_state": self._make_out_layer(
+                            base_dim, output_dim // 2, with_block=out_with_blocks[i], block=block
+                        ),
+                        "out_context": self._make_out_layer(
+                            base_dim, output_dim // 2, with_block=out_with_blocks[i], block=block
+                        ),
+                    }
+                )
+                for i in range(self.num_level)
+            ]
+        )
 
     def _make_out_layer(self, in_channels, out_channels, with_block=True, block=ResidualBlock):
         block_layer = nn.Identity()
@@ -119,12 +129,18 @@ class MultiLevelContextEncoder(nn.Module):
         return outs
 
 
-class ConvGRU(raft.ConvGRU):
+class ConvGRU(nn.Module):
     """Convolutional Gru unit."""
+
+    def __init__(self, *, input_size, hidden_size, kernel_size, padding):
+        super().__init__()
+        self.convz = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
+        self.convr = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
+        self.convq = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
 
     # Modified from raft.ConvGRU to accept pre-convolved contexts,
     # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
-    def forward(self, h, context: List[Tensor], x):
+    def forward(self, h: Tensor, context: List[Tensor], x: Tensor):
         hx = torch.cat([h, x], dim=1)
         z = torch.sigmoid(self.convz(hx) + context[0])
         r = torch.sigmoid(self.convr(hx) + context[1])
@@ -216,7 +232,7 @@ class MaskPredictor(raft.MaskPredictor):
 
 class CorrPyramid1d(nn.Module):
     """Row-wise correlation pyramid.
-    
+
     Create a row-wise correlation pyramid with ``num_levels`` level from the outputs of the feature encoder,
     this correlation pyramid will later be used as index to create correlation features using CorrBlock1d.
     """
@@ -397,7 +413,9 @@ class RaftStereo(nn.Module):
             # - the rest is the "actual" context.
             hidden_state, context = torch.split(context_outs[i], [hidden_dims[i], context_out_channels[i]], dim=1)
             hidden_states.append(torch.tanh(hidden_state))
-            contexts.append(torch.split(context_conv(F.relu(context)), [hidden_dims[i], hidden_dims[i], hidden_dims[i]], dim=1))
+            contexts.append(
+                torch.split(context_conv(F.relu(context)), [hidden_dims[i], hidden_dims[i], hidden_dims[i]], dim=1)
+            )
 
         _, Cf, Hf, Wf = fmap1.shape
         coords0 = make_coords_grid(batch_size, Hf, Wf).to(fmap1.device)
@@ -428,9 +446,7 @@ class RaftStereo(nn.Module):
 
             coords1 = coords1 + delta_depth
             up_mask = None if self.mask_predictor is None else self.mask_predictor(hidden_state)
-            upsampled_depth = upsample_flow(
-                (coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio
-            )
+            upsampled_depth = upsample_flow((coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio)
             depth_predictions.append(upsampled_depth[:, :1])
 
         return depth_predictions
