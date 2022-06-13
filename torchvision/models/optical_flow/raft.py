@@ -116,7 +116,9 @@ class FeatureEncoder(nn.Module):
     It must downsample its input by 8.
     """
 
-    def __init__(self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), strides=(2, 1, 2, 2), norm_layer=nn.BatchNorm2d):
+    def __init__(
+        self, *, block=ResidualBlock, layers=(64, 64, 96, 128, 256), strides=(2, 1, 2, 2), norm_layer=nn.BatchNorm2d
+    ):
         super().__init__()
 
         if len(layers) != 5:
