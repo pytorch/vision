@@ -79,7 +79,7 @@ jobs:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1
           path: dist/
       - name: Upload wheel to S3
-        if: ${{ github.event_name == 'push' && (github.event.ref == 'ref/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
+        if: ${{ github.event_name == 'push' && (github.event.ref == 'refs/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
         shell: arch -arch arm64 bash {0}
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.AWS_PYTORCH_UPLOADER_ACCESS_KEY_ID }}
@@ -139,7 +139,7 @@ jobs:
           name: torchvision-py${{ matrix.py_vers }}-macos11-m1-conda
           path: dist/
       - name: Upload package to conda
-        if: ${{ github.event_name == 'push' && (github.event.ref == 'ref/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
+        if: ${{ github.event_name == 'push' && (github.event.ref == 'refs/heads/nightly' || startsWith(github.event.ref, 'refs/tags/')) }}
         shell: arch -arch arm64 bash {0}
         env:
           CONDA_PYTORCHBOT_TOKEN: ${{ secrets.CONDA_PYTORCHBOT_TOKEN }}
