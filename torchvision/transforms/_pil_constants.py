@@ -1,10 +1,9 @@
-import PIL
 from PIL import Image
 
 # See https://pillow.readthedocs.io/en/stable/releasenotes/9.1.0.html#deprecations
 # TODO: Remove this file once PIL minimal version is >= 9.1
 
-if tuple(int(part) for part in PIL.__version__.split(".")) >= (9, 1):
+if hasattr(Image, "Resampling"):
     BICUBIC = Image.Resampling.BICUBIC
     BILINEAR = Image.Resampling.BILINEAR
     LINEAR = Image.Resampling.BILINEAR
