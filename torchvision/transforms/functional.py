@@ -1519,6 +1519,8 @@ def elastic_transform(
             Only number is supported for torch Tensor.
             Only int or str or tuple value is supported for PIL Image.
     """
+    if not torch.jit.is_scripting() and not torch.jit.is_tracing():
+        _log_api_usage_once(elastic_transform)
     # Backward compatibility with integer value
     if isinstance(interpolation, int):
         warnings.warn(
@@ -1534,7 +1536,7 @@ def elastic_transform(
     if not isinstance(img, torch.Tensor):
         if not F_pil._is_pil_image(img):
             raise TypeError(f"img should be PIL Image or Tensor. Got {type(img)}")
-        t_img = to_tensor(img)
+        t_img = pil_to_tensor(img)
 
     output = F_t.elastic_transform(
         t_img,
@@ -1544,5 +1546,5 @@ def elastic_transform(
     )
 
     if not isinstance(img, torch.Tensor):
-        output = to_pil_image(output)
+        output = to_pil_image(output, mode=img.mode)
     return output
