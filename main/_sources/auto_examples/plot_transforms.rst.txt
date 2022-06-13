@@ -359,21 +359,22 @@ performs random affine transform on an image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 153-158
+.. GENERATED FROM PYTHON SOURCE LINES 153-159
 
-RandomCrop
-~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomCrop` transform
-(see also :func:`~torchvision.transforms.functional.crop`)
-crops an image at a random location.
+ElasticTransform
+~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.ElasticTransform` transform
+(see also :func:`~torchvision.transforms.functional.elastic_transform`)
+Randomly transforms the morphology of objects in images and produces a
+see-through-water-like effect.
 
-.. GENERATED FROM PYTHON SOURCE LINES 158-162
+.. GENERATED FROM PYTHON SOURCE LINES 159-163
 
 .. code-block:: default
 
-    cropper = T.RandomCrop(size=(128, 128))
-    crops = [cropper(orig_img) for _ in range(4)]
-    plot(crops)
+    elastic_transformer = T.ElasticTransform(alpha=250.0)
+    transformed_imgs = [elastic_transformer(orig_img) for _ in range(2)]
+    plot(transformed_imgs)
 
 
 
@@ -387,22 +388,21 @@ crops an image at a random location.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 163-169
+.. GENERATED FROM PYTHON SOURCE LINES 164-169
 
-RandomResizedCrop
-~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomResizedCrop` transform
-(see also :func:`~torchvision.transforms.functional.resized_crop`)
-crops an image at a random location, and then resizes the crop to a given
-size.
+RandomCrop
+~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomCrop` transform
+(see also :func:`~torchvision.transforms.functional.crop`)
+crops an image at a random location.
 
 .. GENERATED FROM PYTHON SOURCE LINES 169-173
 
 .. code-block:: default
 
-    resize_cropper = T.RandomResizedCrop(size=(32, 32))
-    resized_crops = [resize_cropper(orig_img) for _ in range(4)]
-    plot(resized_crops)
+    cropper = T.RandomCrop(size=(128, 128))
+    crops = [cropper(orig_img) for _ in range(4)]
+    plot(crops)
 
 
 
@@ -416,21 +416,22 @@ size.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 174-179
+.. GENERATED FROM PYTHON SOURCE LINES 174-180
 
-RandomInvert
-~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomInvert` transform
-(see also :func:`~torchvision.transforms.functional.invert`)
-randomly inverts the colors of the given image.
+RandomResizedCrop
+~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomResizedCrop` transform
+(see also :func:`~torchvision.transforms.functional.resized_crop`)
+crops an image at a random location, and then resizes the crop to a given
+size.
 
-.. GENERATED FROM PYTHON SOURCE LINES 179-183
+.. GENERATED FROM PYTHON SOURCE LINES 180-184
 
 .. code-block:: default
 
-    inverter = T.RandomInvert()
-    invertered_imgs = [inverter(orig_img) for _ in range(4)]
-    plot(invertered_imgs)
+    resize_cropper = T.RandomResizedCrop(size=(32, 32))
+    resized_crops = [resize_cropper(orig_img) for _ in range(4)]
+    plot(resized_crops)
 
 
 
@@ -444,22 +445,21 @@ randomly inverts the colors of the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 184-190
+.. GENERATED FROM PYTHON SOURCE LINES 185-190
 
-RandomPosterize
-~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomPosterize` transform
-(see also :func:`~torchvision.transforms.functional.posterize`)
-randomly posterizes the image by reducing the number of bits
-of each color channel.
+RandomInvert
+~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomInvert` transform
+(see also :func:`~torchvision.transforms.functional.invert`)
+randomly inverts the colors of the given image.
 
 .. GENERATED FROM PYTHON SOURCE LINES 190-194
 
 .. code-block:: default
 
-    posterizer = T.RandomPosterize(bits=2)
-    posterized_imgs = [posterizer(orig_img) for _ in range(4)]
-    plot(posterized_imgs)
+    inverter = T.RandomInvert()
+    invertered_imgs = [inverter(orig_img) for _ in range(4)]
+    plot(invertered_imgs)
 
 
 
@@ -475,20 +475,20 @@ of each color channel.
 
 .. GENERATED FROM PYTHON SOURCE LINES 195-201
 
-RandomSolarize
-~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomSolarize` transform
-(see also :func:`~torchvision.transforms.functional.solarize`)
-randomly solarizes the image by inverting all pixel values above
-the threshold.
+RandomPosterize
+~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomPosterize` transform
+(see also :func:`~torchvision.transforms.functional.posterize`)
+randomly posterizes the image by reducing the number of bits
+of each color channel.
 
 .. GENERATED FROM PYTHON SOURCE LINES 201-205
 
 .. code-block:: default
 
-    solarizer = T.RandomSolarize(threshold=192.0)
-    solarized_imgs = [solarizer(orig_img) for _ in range(4)]
-    plot(solarized_imgs)
+    posterizer = T.RandomPosterize(bits=2)
+    posterized_imgs = [posterizer(orig_img) for _ in range(4)]
+    plot(posterized_imgs)
 
 
 
@@ -502,21 +502,22 @@ the threshold.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 206-211
+.. GENERATED FROM PYTHON SOURCE LINES 206-212
 
-RandomAdjustSharpness
-~~~~~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomAdjustSharpness` transform
-(see also :func:`~torchvision.transforms.functional.adjust_sharpness`)
-randomly adjusts the sharpness of the given image.
+RandomSolarize
+~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomSolarize` transform
+(see also :func:`~torchvision.transforms.functional.solarize`)
+randomly solarizes the image by inverting all pixel values above
+the threshold.
 
-.. GENERATED FROM PYTHON SOURCE LINES 211-215
+.. GENERATED FROM PYTHON SOURCE LINES 212-216
 
 .. code-block:: default
 
-    sharpness_adjuster = T.RandomAdjustSharpness(sharpness_factor=2)
-    sharpened_imgs = [sharpness_adjuster(orig_img) for _ in range(4)]
-    plot(sharpened_imgs)
+    solarizer = T.RandomSolarize(threshold=192.0)
+    solarized_imgs = [solarizer(orig_img) for _ in range(4)]
+    plot(solarized_imgs)
 
 
 
@@ -530,21 +531,21 @@ randomly adjusts the sharpness of the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 216-221
+.. GENERATED FROM PYTHON SOURCE LINES 217-222
 
-RandomAutocontrast
-~~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomAutocontrast` transform
-(see also :func:`~torchvision.transforms.functional.autocontrast`)
-randomly applies autocontrast to the given image.
+RandomAdjustSharpness
+~~~~~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomAdjustSharpness` transform
+(see also :func:`~torchvision.transforms.functional.adjust_sharpness`)
+randomly adjusts the sharpness of the given image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 221-225
+.. GENERATED FROM PYTHON SOURCE LINES 222-226
 
 .. code-block:: default
 
-    autocontraster = T.RandomAutocontrast()
-    autocontrasted_imgs = [autocontraster(orig_img) for _ in range(4)]
-    plot(autocontrasted_imgs)
+    sharpness_adjuster = T.RandomAdjustSharpness(sharpness_factor=2)
+    sharpened_imgs = [sharpness_adjuster(orig_img) for _ in range(4)]
+    plot(sharpened_imgs)
 
 
 
@@ -558,21 +559,21 @@ randomly applies autocontrast to the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 226-231
+.. GENERATED FROM PYTHON SOURCE LINES 227-232
 
-RandomEqualize
-~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomEqualize` transform
-(see also :func:`~torchvision.transforms.functional.equalize`)
-randomly equalizes the histogram of the given image.
+RandomAutocontrast
+~~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomAutocontrast` transform
+(see also :func:`~torchvision.transforms.functional.autocontrast`)
+randomly applies autocontrast to the given image.
 
-.. GENERATED FROM PYTHON SOURCE LINES 231-235
+.. GENERATED FROM PYTHON SOURCE LINES 232-236
 
 .. code-block:: default
 
-    equalizer = T.RandomEqualize()
-    equalized_imgs = [equalizer(orig_img) for _ in range(4)]
-    plot(equalized_imgs)
+    autocontraster = T.RandomAutocontrast()
+    autocontrasted_imgs = [autocontraster(orig_img) for _ in range(4)]
+    plot(autocontrasted_imgs)
 
 
 
@@ -586,7 +587,35 @@ randomly equalizes the histogram of the given image.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 236-241
+.. GENERATED FROM PYTHON SOURCE LINES 237-242
+
+RandomEqualize
+~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomEqualize` transform
+(see also :func:`~torchvision.transforms.functional.equalize`)
+randomly equalizes the histogram of the given image.
+
+.. GENERATED FROM PYTHON SOURCE LINES 242-246
+
+.. code-block:: default
+
+    equalizer = T.RandomEqualize()
+    equalized_imgs = [equalizer(orig_img) for _ in range(4)]
+    plot(equalized_imgs)
+
+
+
+
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_019.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_019.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 247-252
 
 AutoAugment
 ~~~~~~~~~~~
@@ -594,7 +623,7 @@ The :class:`~torchvision.transforms.AutoAugment` transform
 automatically augments data based on a given auto-augmentation policy.
 See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policies.
 
-.. GENERATED FROM PYTHON SOURCE LINES 241-250
+.. GENERATED FROM PYTHON SOURCE LINES 252-261
 
 .. code-block:: default
 
@@ -610,32 +639,6 @@ See :class:`~torchvision.transforms.AutoAugmentPolicy` for the available policie
 
 
 
-.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_019.png
-   :alt: Original image
-   :srcset: /auto_examples/images/sphx_glr_plot_transforms_019.png
-   :class: sphx-glr-single-img
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 251-254
-
-RandAugment
-~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandAugment` transform automatically augments the data.
-
-.. GENERATED FROM PYTHON SOURCE LINES 254-258
-
-.. code-block:: default
-
-    augmenter = T.RandAugment()
-    imgs = [augmenter(orig_img) for _ in range(4)]
-    plot(imgs)
-
-
-
-
 .. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_020.png
    :alt: Original image
    :srcset: /auto_examples/images/sphx_glr_plot_transforms_020.png
@@ -645,17 +648,17 @@ The :class:`~torchvision.transforms.RandAugment` transform automatically augment
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 259-262
+.. GENERATED FROM PYTHON SOURCE LINES 262-265
 
-TrivialAugmentWide
-~~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically augments the data.
+RandAugment
+~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandAugment` transform automatically augments the data.
 
-.. GENERATED FROM PYTHON SOURCE LINES 262-266
+.. GENERATED FROM PYTHON SOURCE LINES 265-269
 
 .. code-block:: default
 
-    augmenter = T.TrivialAugmentWide()
+    augmenter = T.RandAugment()
     imgs = [augmenter(orig_img) for _ in range(4)]
     plot(imgs)
 
@@ -671,17 +674,17 @@ The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically 
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 267-270
+.. GENERATED FROM PYTHON SOURCE LINES 270-273
 
-AugMix
-~~~~~~
-The :class:`~torchvision.transforms.AugMix` transform automatically augments the data.
+TrivialAugmentWide
+~~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.TrivialAugmentWide` transform automatically augments the data.
 
-.. GENERATED FROM PYTHON SOURCE LINES 270-274
+.. GENERATED FROM PYTHON SOURCE LINES 273-277
 
 .. code-block:: default
 
-    augmenter = T.AugMix()
+    augmenter = T.TrivialAugmentWide()
     imgs = [augmenter(orig_img) for _ in range(4)]
     plot(imgs)
 
@@ -697,7 +700,33 @@ The :class:`~torchvision.transforms.AugMix` transform automatically augments the
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 275-287
+.. GENERATED FROM PYTHON SOURCE LINES 278-281
+
+AugMix
+~~~~~~
+The :class:`~torchvision.transforms.AugMix` transform automatically augments the data.
+
+.. GENERATED FROM PYTHON SOURCE LINES 281-285
+
+.. code-block:: default
+
+    augmenter = T.AugMix()
+    imgs = [augmenter(orig_img) for _ in range(4)]
+    plot(imgs)
+
+
+
+
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_023.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_023.png
+   :class: sphx-glr-single-img
+
+
+
+
+
+.. GENERATED FROM PYTHON SOURCE LINES 286-298
 
 Randomly-applied transforms
 ---------------------------
@@ -712,40 +741,12 @@ The :class:`~torchvision.transforms.RandomHorizontalFlip` transform
 (see also :func:`~torchvision.transforms.functional.hflip`)
 performs horizontal flip of an image, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 287-291
+.. GENERATED FROM PYTHON SOURCE LINES 298-302
 
 .. code-block:: default
 
     hflipper = T.RandomHorizontalFlip(p=0.5)
     transformed_imgs = [hflipper(orig_img) for _ in range(4)]
-    plot(transformed_imgs)
-
-
-
-
-.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_023.png
-   :alt: Original image
-   :srcset: /auto_examples/images/sphx_glr_plot_transforms_023.png
-   :class: sphx-glr-single-img
-
-
-
-
-
-.. GENERATED FROM PYTHON SOURCE LINES 292-297
-
-RandomVerticalFlip
-~~~~~~~~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomVerticalFlip` transform
-(see also :func:`~torchvision.transforms.functional.vflip`)
-performs vertical flip of an image, with a given probability.
-
-.. GENERATED FROM PYTHON SOURCE LINES 297-301
-
-.. code-block:: default
-
-    vflipper = T.RandomVerticalFlip(p=0.5)
-    transformed_imgs = [vflipper(orig_img) for _ in range(4)]
     plot(transformed_imgs)
 
 
@@ -760,20 +761,22 @@ performs vertical flip of an image, with a given probability.
 
 
 
-.. GENERATED FROM PYTHON SOURCE LINES 302-306
+.. GENERATED FROM PYTHON SOURCE LINES 303-308
 
-RandomApply
-~~~~~~~~~~~
-The :class:`~torchvision.transforms.RandomApply` transform
-randomly applies a list of transforms, with a given probability.
+RandomVerticalFlip
+~~~~~~~~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomVerticalFlip` transform
+(see also :func:`~torchvision.transforms.functional.vflip`)
+performs vertical flip of an image, with a given probability.
 
-.. GENERATED FROM PYTHON SOURCE LINES 306-309
+.. GENERATED FROM PYTHON SOURCE LINES 308-312
 
 .. code-block:: default
 
-    applier = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)
-    transformed_imgs = [applier(orig_img) for _ in range(4)]
+    vflipper = T.RandomVerticalFlip(p=0.5)
+    transformed_imgs = [vflipper(orig_img) for _ in range(4)]
     plot(transformed_imgs)
+
 
 
 
@@ -786,10 +789,36 @@ randomly applies a list of transforms, with a given probability.
 
 
 
+.. GENERATED FROM PYTHON SOURCE LINES 313-317
+
+RandomApply
+~~~~~~~~~~~
+The :class:`~torchvision.transforms.RandomApply` transform
+randomly applies a list of transforms, with a given probability.
+
+.. GENERATED FROM PYTHON SOURCE LINES 317-320
+
+.. code-block:: default
+
+    applier = T.RandomApply(transforms=[T.RandomCrop(size=(64, 64))], p=0.5)
+    transformed_imgs = [applier(orig_img) for _ in range(4)]
+    plot(transformed_imgs)
+
+
+
+.. image-sg:: /auto_examples/images/sphx_glr_plot_transforms_026.png
+   :alt: Original image
+   :srcset: /auto_examples/images/sphx_glr_plot_transforms_026.png
+   :class: sphx-glr-single-img
+
+
+
+
+
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  7.787 seconds)
+   **Total running time of the script:** ( 0 minutes  8.640 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_transforms.py:
