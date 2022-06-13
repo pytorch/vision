@@ -372,13 +372,7 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
 
 def generate_weights_table(
-    module,
-    table_name,
-    metrics,
-    dataset,
-    include_patterns=None,
-    exclude_patterns=None,
-    table_desciption="",
+    module, table_name, metrics, dataset, include_patterns=None, exclude_patterns=None, table_desciption=""
 ):
     weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
