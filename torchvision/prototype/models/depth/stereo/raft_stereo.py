@@ -187,8 +187,7 @@ class MultiLevelUpdateBlock(nn.Module):
 
     def _upsample2x(self, x):
         _, _, h, w = x.shape
-        new_h, new_w = h * 2, w * 2
-        return F.interpolate(x, size=(new_h, new_w), mode="bilinear", align_corners=True)
+        return F.interpolate(x, size=(2 * h, 2 * w), mode="bilinear", align_corners=True)
 
     def forward(
         self,
@@ -334,21 +333,21 @@ class RaftStereo(nn.Module):
         `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 
         args:
-            feature_encoder (nn.Module): The feature encoder. Its input is the concatenation of ``image1`` and ``image2``.
-            context_encoder (nn.Module): The context encoder. Its input is ``image1``.
+            feature_encoder (FeatureEncoder): The feature encoder. Its input is the concatenation of ``image1`` and ``image2``.
+            context_encoder (MultiLevelContextEncoder): The context encoder. Its input is ``image1``.
                 It has multi-level output and each level will have 2 parts:
 
                 - one part will be used as the actual "context", passed to the recurrent unit of the ``update_block``
                 - one part will be used to initialize the hidden state of the of the recurrent unit of
                   the ``update_block``
 
-            corr_pyramid (nn.Module): Module to buid the correlation pyramid from feature encoder output
-            corr_block (nn.Module): The correlation block, which uses the correlation pyramid indexes
+            corr_pyramid (CorrPyramid1d): Module to buid the correlation pyramid from feature encoder output
+            corr_block (CorrBlock1d): The correlation block, which uses the correlation pyramid indexes
                 to create correlation features. It takes the coordinate of the centroid pixel and correlation pyramid
                 as input and returns the correlation features.
                 It must expose an ``out_channels`` attribute.
 
-            update_block (nn.Module): The update block, which contains the motion encoder, and the recurrent unit.
+            update_block (MultiLevelUpdateBlock): The update block, which contains the motion encoder, and the recurrent unit.
                 It takes as input the hidden state of its recurrent unit, the context, the correlation
                 features, and the current predicted depth. It outputs an updated hidden state
             depth_head (nn.Module): The depth head block will convert from the hidden state into changes in depth.
