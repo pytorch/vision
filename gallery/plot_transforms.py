@@ -156,8 +156,11 @@ plot(affine_imgs)
 # (see also :func:`~torchvision.transforms.functional.elastic_transform`)
 # Randomly transforms the morphology of objects in images and produces a
 # see-through-water-like effect.
-elastic_transformer = T.ElasticTransform()
-transformed_imgs = [elastic_transformer(orig_img) for _ in range(4)]
+elastic_transformer = T.ElasticTransform(alpha=250.0, sigma=5.0)
+orig_img_w_grid = T.PILToTensor()(orig_img)
+orig_img_w_grid[:,::100,:] = 255
+orig_img_w_grid[:,:,::100] = 255
+transformed_imgs = [elastic_transformer(orig_img_w_grid).permute(1, 2, 0) for _ in range(2)]
 plot(transformed_imgs)
 
 ####################################

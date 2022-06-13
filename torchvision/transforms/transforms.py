@@ -2078,6 +2078,7 @@ class ElasticTransform(torch.nn.Module):
 
     def __init__(self, alpha=50.0, sigma=5.0, interpolation=InterpolationMode.BILINEAR, fill=0):
         super().__init__()
+        _log_api_usage_once(self)
         if not isinstance(alpha, (float, Sequence)):
             raise TypeError(f"alpha should be float or a sequence of floats. Got {type(alpha)}")
         if isinstance(alpha, Sequence) and len(alpha) != 2:
