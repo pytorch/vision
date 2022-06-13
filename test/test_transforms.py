@@ -2250,5 +2250,42 @@ def test_random_affine():
         assert t.interpolation == transforms.InterpolationMode.BILINEAR
 
 
+def test_elastic_transformation():
+    with pytest.raises(TypeError, match=r"alpha should be float or a sequence of floats"):
+        transforms.ElasticTransform(alpha=True, sigma=2.0)
+    with pytest.raises(TypeError, match=r"alpha should be a sequence of floats"):
+        transforms.ElasticTransform(alpha=[1.0, True], sigma=2.0)
+    with pytest.raises(ValueError, match=r"alpha is a sequence its length should be 2"):
+        transforms.ElasticTransform(alpha=[1.0, 0.0, 1.0], sigma=2.0)
+
+    with pytest.raises(TypeError, match=r"sigma should be float or a sequence of floats"):
+        transforms.ElasticTransform(alpha=2.0, sigma=True)
+    with pytest.raises(TypeError, match=r"sigma should be a sequence of floats"):
+        transforms.ElasticTransform(alpha=2.0, sigma=[1.0, True])
+    with pytest.raises(ValueError, match=r"sigma is a sequence its length should be 2"):
+        transforms.ElasticTransform(alpha=2.0, sigma=[1.0, 0.0, 1.0])
+
+    with pytest.warns(UserWarning, match=r"Argument interpolation should be of type InterpolationMode"):
+        t = transforms.transforms.ElasticTransform(alpha=2.0, sigma=2.0, interpolation=2)
+        assert t.interpolation == transforms.InterpolationMode.BILINEAR
+
+    with pytest.raises(TypeError, match=r"fill should be int or float"):
+        transforms.ElasticTransform(alpha=1.0, sigma=1.0, fill={})
+
+    x = torch.randint(0, 256, (3, 32, 32), dtype=torch.uint8)
+    img = F.to_pil_image(x)
+    t = transforms.ElasticTransform(alpha=0.0, sigma=0.0)
+    transformed_img = t(img)
+    assert transformed_img == img
+
+    # Smoke test on PIL images
+    t = transforms.ElasticTransform(alpha=0.5, sigma=0.23)
+    transformed_img = t(img)
+    assert isinstance(transformed_img, Image.Image)
+
+    # Checking if ElasticTransform can be printed as string
+    t.__repr__()
+
+
 if __name__ == "__main__":
     pytest.main([__file__])
