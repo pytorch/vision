@@ -139,7 +139,7 @@ class MultiLevelUpdateBlock(nn.Module):
     It must expose a ``hidden_dims`` attribute which is the hidden dimension size of its gru blocks
     """
 
-    def __init__(self, *, motion_encoder: MotionEncoder, hidden_dims: List[int] = [128, 128, 128]):
+    def __init__(self, *, motion_encoder: MotionEncoder, hidden_dims: List[int]):
         super().__init__()
         self.motion_encoder = motion_encoder
 
@@ -410,8 +410,9 @@ class RaftStereo(nn.Module):
 
             depth = coords1 - coords0
             if self.slow_fast:
-                # We process lower resolution multiple times more often
+                # Using slow_fast GRU (see paper section 3.4). The lower resolution are processed more often
                 for i in range(1, self.num_level):
+                    # We only processed the smallest i levels
                     level_processed = [False] * (self.num_level - i) + [True] * i
                     hidden_states = self.update_block(
                         hidden_states, contexts, corr_features, depth, level_processed=level_processed
@@ -453,8 +454,8 @@ def _raft_stereo(
     corr_num_levels: int = 4,
     corr_radius: int = 4,
     # Motion encoder
-    motion_encoder_corr_layers: List[int],
-    motion_encoder_flow_layers: List[int],
+    motion_encoder_corr_layers: Tuple[int, int],
+    motion_encoder_flow_layers: Tuple[int, int],
     motion_encoder_out_channels: int,
     # Update block
     update_block_hidden_dims: List[int],
@@ -607,8 +608,8 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
         corr_num_levels=4,
         corr_radius=4,
         # Motion encoder
-        motion_encoder_corr_layers=[64, 64],
-        motion_encoder_flow_layers=[64, 64],
+        motion_encoder_corr_layers=(64, 64),
+        motion_encoder_flow_layers=(64, 64),
         motion_encoder_out_channels=128,
         # Update block
         update_block_hidden_dims=[128, 128],
@@ -664,8 +665,8 @@ def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True,
         corr_num_levels=4,
         corr_radius=4,
         # Motion encoder
-        motion_encoder_corr_layers=[64, 64],
-        motion_encoder_flow_layers=[64, 64],
+        motion_encoder_corr_layers=(64, 64),
+        motion_encoder_flow_layers=(64, 64),
         motion_encoder_out_channels=128,
         # Update block
         update_block_hidden_dims=[128, 128, 128],
