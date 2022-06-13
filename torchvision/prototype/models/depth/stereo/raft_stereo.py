@@ -6,7 +6,7 @@ import torch.nn.functional as F
 import torchvision.models.optical_flow.raft as raft
 from torch import Tensor
 from torchvision.models._api import WeightsEnum
-from torchvision.models.optical_flow._utils import make_coords_grid
+from torchvision.models.optical_flow._utils import make_coords_grid, grid_sample, upsample_flow
 from torchvision.models.optical_flow.raft import ResidualBlock, MotionEncoder, FlowHead
 from torchvision.ops import Conv2dNormActivation
 from torchvision.utils import _log_api_usage_once
@@ -21,94 +21,29 @@ __all__ = (
 )
 
 
-def grid_sample(img: Tensor, absolute_grid: Tensor, mode: str = "bilinear", align_corners: Optional[bool] = None):
-    """Same as torch's grid_sample, with absolute pixel coordinates instead of normalized coordinates."""
-    h, w = img.shape[-2:]
+class BaseEncoder(raft.FeatureEncoder):
+    """ Base encoder for FeatureEncoder and ContextEncoder in which weight may be shared.
 
-    xgrid, ygrid = absolute_grid.split([1, 1], dim=-1)
-    xgrid = 2 * xgrid / (w - 1) - 1
-    # Add condition h > 1 to prevent nan when h == 1 (in raft-stereo we always have h == 1 because we only want to correlate on the same row)
-    # See: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/utils/utils.py#L64
-    if h > 1:
-        ygrid = 2 * ygrid / (h - 1) - 1
-    normalized_grid = torch.cat([xgrid, ygrid], dim=-1)
-    return F.grid_sample(img, normalized_grid, mode=mode, align_corners=align_corners)
-
-
-def upsample_with_mask_and_factor(x: Tensor, up_mask: Optional[Tensor] = None, factor: int = 8):
-    """Upsample tensor x to have factor times the size
-
-    If up_mask is None we just interpolate.
-    If up_mask is specified, we upsample using a convex combination of its weights.
+    See the Raft-Stereo paper section 4.6 on backbone part.
     """
-    batch_size, num_channels, h, w = x.shape
-    new_h, new_w = h * factor, w * factor
-
-    if up_mask is None:
-        return factor * F.interpolate(x, size=(new_h, new_w), mode="bilinear", align_corners=True)
-
-    up_mask = up_mask.view(batch_size, 1, 9, factor, factor, h, w)
-    up_mask = torch.softmax(up_mask, dim=2)  # "convex" == weights sum to 1
-
-    upsampled_x = F.unfold(factor * x, kernel_size=3, padding=1).view(batch_size, num_channels, 9, 1, 1, h, w)
-    upsampled_x = torch.sum(up_mask * upsampled_x, dim=2)
-
-    return upsampled_x.permute(0, 1, 4, 2, 5, 3).reshape(batch_size, num_channels, new_h, new_w)
-
-
-class BaseEncoder(nn.Module):
-    """The feature encoder, used both as the actual feature encoder, and as the context encoder.
-
-    It must downsample its input by 8.
-    """
-
     def __init__(
         self,
         *,
         block: Callable[..., nn.Module] = ResidualBlock,
-        layers: List[int] = [64, 64, 96, 128],
-        strides: List[int] = [2, 1, 2, 2],
+        layers: Tuple[int, int, int, int] = (64, 64, 96, 128),
+        strides: Tuple[int, int, int, int] = (2, 1, 2, 2),
         norm_layer: Callable[..., nn.Module] = nn.BatchNorm2d,
     ):
-        super().__init__()
+        # We use layers + (256,) because raft.FeatureEncoder require 5 layers
+        # but here we will set the last conv layer to identity
+        super().__init__(block=block, layers=layers + (256,), strides=strides, norm_layer=norm_layer)
 
-        if len(layers) != 4:
-            raise ValueError(f"The expected number of layers is 4, instead got {len(layers)}")
+        # Base encoder don't have the last conv layer of feature encoder
+        self.conv = nn.Identity()
 
-        # See note in ResidualBlock for the reason behind bias=True
-        self.convnormrelu = Conv2dNormActivation(
-            3, layers[0], norm_layer=norm_layer, kernel_size=7, stride=strides[0], bias=True
-        )
-
-        self.layer1 = self._make_2_blocks(block, layers[0], layers[1], norm_layer=norm_layer, first_stride=strides[1])
-        self.layer2 = self._make_2_blocks(block, layers[1], layers[2], norm_layer=norm_layer, first_stride=strides[2])
-        self.layer3 = self._make_2_blocks(block, layers[2], layers[3], norm_layer=norm_layer, first_stride=strides[3])
         self.output_dim = layers[3]
-
-        for m in self.modules():
-            if isinstance(m, nn.Conv2d):
-                nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
-            elif isinstance(m, (nn.BatchNorm2d, nn.InstanceNorm2d)):
-                if m.weight is not None:
-                    nn.init.constant_(m.weight, 1)
-                if m.bias is not None:
-                    nn.init.constant_(m.bias, 0)
-
         num_downsampling = sum([x - 1 for x in strides])
         self.downsampling_ratio = 2 ** (num_downsampling)
-
-    def _make_2_blocks(self, block, in_channels, out_channels, norm_layer, first_stride):
-        block1 = block(in_channels, out_channels, norm_layer=norm_layer, stride=first_stride)
-        block2 = block(out_channels, out_channels, norm_layer=norm_layer, stride=1)
-        return nn.Sequential(block1, block2)
-
-    def forward(self, x: Tensor) -> Tensor:
-        x = self.convnormrelu(x)
-
-        x = self.layer1(x)
-        x = self.layer2(x)
-        x = self.layer3(x)
-        return x
 
 
 class FeatureEncoder(nn.Module):
@@ -495,8 +430,8 @@ class RaftStereo(nn.Module):
 
             coords1 = coords1 + delta_depth
             up_mask = None if self.mask_predictor is None else self.mask_predictor(hidden_state)
-            upsampled_depth = upsample_with_mask_and_factor(
-                x=(coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio
+            upsampled_depth = upsample_flow(
+                (coords1 - coords0), up_mask=up_mask, factor=self.base_downsampling_ratio
             )
             depth_predictions.append(upsampled_depth[:, :1])
 
@@ -509,12 +444,12 @@ def _raft_stereo(
     progress: bool = False,
     shared_encoder_weight: bool = False,
     # Feature encoder
-    feature_encoder_layers: List[int],
-    feature_encoder_strides: List[int],
+    feature_encoder_layers: Tuple[int, int, int, int, int],
+    feature_encoder_strides: Tuple[int, int, int, int],
     feature_encoder_block: Callable[..., nn.Module],
     # Context encoder
-    context_encoder_layers: List[int],
-    context_encoder_strides: List[int],
+    context_encoder_layers: Tuple[int, int, int, int, int],
+    context_encoder_strides: Tuple[int, int, int, int],
     context_encoder_out_with_blocks: List[int],
     context_encoder_block: Callable[..., nn.Module],
     # Correlation block
@@ -661,12 +596,12 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
         progress=progress,
         shared_encoder_weight=True,
         # Feature encoder
-        feature_encoder_layers=[64, 64, 96, 128, 256],
-        feature_encoder_strides=[2, 1, 2, 2],
+        feature_encoder_layers=(64, 64, 96, 128, 256),
+        feature_encoder_strides=(2, 1, 2, 2),
         feature_encoder_block=ResidualBlock,
         # Context encoder
-        context_encoder_layers=[64, 64, 96, 128, 256],
-        context_encoder_strides=[2, 1, 2, 2],
+        context_encoder_layers=(64, 64, 96, 128, 256),
+        context_encoder_strides=(2, 1, 2, 2),
         context_encoder_out_with_blocks=[1, 1],
         context_encoder_block=ResidualBlock,
         # Correlation block
@@ -718,12 +653,12 @@ def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True,
         progress=progress,
         shared_encoder_weight=False,
         # Feature encoder
-        feature_encoder_layers=[64, 64, 96, 128, 256],
-        feature_encoder_strides=[1, 1, 2, 2],
+        feature_encoder_layers=(64, 64, 96, 128, 256),
+        feature_encoder_strides=(1, 1, 2, 2),
         feature_encoder_block=ResidualBlock,
         # Context encoder
-        context_encoder_layers=[64, 64, 96, 128, 256],
-        context_encoder_strides=[1, 1, 2, 2],
+        context_encoder_layers=(64, 64, 96, 128, 256),
+        context_encoder_strides=(1, 1, 2, 2),
         context_encoder_out_with_blocks=[1, 1, 0],
         context_encoder_block=ResidualBlock,
         # Correlation block
