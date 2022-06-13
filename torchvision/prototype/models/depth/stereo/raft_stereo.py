@@ -81,8 +81,8 @@ class MultiLevelContextEncoder(nn.Module):
     def __init__(
         self,
         base_encoder: nn.Module,
+        out_with_blocks: List[bool],
         output_dim: int = 256,
-        out_with_blocks: List[int] = [1, 1, 0],
         block: Callable[..., nn.Module] = ResidualBlock,
     ):
         super().__init__()
@@ -189,7 +189,7 @@ class MultiLevelUpdateBlock(nn.Module):
         contexts: List[Tuple[Tensor, Tensor, Tensor]],
         corr_features: Tensor,
         depth: Tensor,
-        level_processed: List[int] = [1, 1, 1],
+        level_processed: List[bool],
     ) -> List[Tensor]:
         for i in range(len(self.grus) - 1, -1, -1):
             if level_processed[i]:
@@ -415,12 +415,12 @@ class RaftStereo(nn.Module):
             if self.slow_fast:
                 # We process lower resolution multiple times more often
                 for i in range(1, self.num_level):
-                    level_processed = [0] * (self.num_level - i) + [1] * i
+                    level_processed = [False] * (self.num_level - i) + [True] * i
                     hidden_states = self.update_block(
                         hidden_states, contexts, corr_features, depth, level_processed=level_processed
                     )
             hidden_states = self.update_block(
-                hidden_states, contexts, corr_features, depth, level_processed=[1] * self.num_level
+                hidden_states, contexts, corr_features, depth, level_processed=[True] * self.num_level
             )
             # Take the largest hidden_state to get the depth
             hidden_state = hidden_states[0]
@@ -450,7 +450,7 @@ def _raft_stereo(
     # Context encoder
     context_encoder_layers: Tuple[int, int, int, int, int],
     context_encoder_strides: Tuple[int, int, int, int],
-    context_encoder_out_with_blocks: List[int],
+    context_encoder_out_with_blocks: List[bool],
     context_encoder_block: Callable[..., nn.Module],
     # Correlation block
     corr_block_num_levels: int = 4,
@@ -510,8 +510,8 @@ def _raft_stereo(
     )
     context_encoder = MultiLevelContextEncoder(
         context_base_encoder,
-        output_dim=context_encoder_layers[-1],
         out_with_blocks=context_encoder_out_with_blocks,
+        output_dim=context_encoder_layers[-1],
         block=context_encoder_block,
     )
 
@@ -602,7 +602,7 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
         # Context encoder
         context_encoder_layers=(64, 64, 96, 128, 256),
         context_encoder_strides=(2, 1, 2, 2),
-        context_encoder_out_with_blocks=[1, 1],
+        context_encoder_out_with_blocks=[True, True],
         context_encoder_block=ResidualBlock,
         # Correlation block
         corr_block_num_levels=4,
@@ -659,7 +659,7 @@ def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True,
         # Context encoder
         context_encoder_layers=(64, 64, 96, 128, 256),
         context_encoder_strides=(1, 1, 2, 2),
-        context_encoder_out_with_blocks=[1, 1, 0],
+        context_encoder_out_with_blocks=[True, True, False],
         context_encoder_block=ResidualBlock,
         # Correlation block
         corr_block_num_levels=4,
