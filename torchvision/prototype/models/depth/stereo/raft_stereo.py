@@ -63,16 +63,15 @@ class FeatureEncoder(nn.Module):
         # we need to add residual block with InstanceNorm2d and change the kernel size for conv layer
         # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/raft_stereo.py#L35-L37
         self.shared_base = shared_base
+        self.residual_block = nn.Identity()
+        self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
         if shared_base:
             self.residual_block = block(base_dim, base_dim, norm_layer=nn.InstanceNorm2d, stride=1)
             self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=3, padding=1)
-        else:
-            self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
 
     def forward(self, x: Tensor) -> Tensor:
         x = self.base_encoder(x)
-        if self.shared_base:
-            x = self.residual_block(x)
+        x = self.residual_block(x)
         x = self.conv(x)
         return x
 
@@ -91,23 +90,13 @@ class MultiLevelContextEncoder(nn.Module):
         self.base_downsampling_ratio = base_encoder.downsampling_ratio
         base_dim = base_encoder.output_dim
 
-        # Layer to output hidden_state and context separately (each produce output_dim//2 dims)
-        self.out_hidden_states = nn.ModuleList(
-            [
-                self._make_out_layer(base_dim, output_dim // 2, with_block=with_block, block=block)
-                for with_block in out_with_blocks
-            ]
-        )
-        self.out_contexts = nn.ModuleList(
-            [
-                self._make_out_layer(base_dim, output_dim // 2, with_block=with_block, block=block)
-                for with_block in out_with_blocks
-            ]
-        )
-
-        self.downsamplers = nn.ModuleList(
-            [self._make_downsampler(block, base_dim, base_dim) for i in range(1, self.num_level)]
-        )
+        self.downsample_and_out_layers = nn.ModuleList([
+            nn.ModuleDict({
+                "downsampler": self._make_downsampler(block, base_dim, base_dim) if i > 0 else nn.Identity(),
+                "out_hidden_state": self._make_out_layer(base_dim, output_dim // 2, with_block=out_with_blocks[i], block=block),
+                "out_context": self._make_out_layer(base_dim, output_dim // 2, with_block=out_with_blocks[i], block=block),
+            }) for i in range(self.num_level)
+        ])
 
     def _make_out_layer(self, in_channels, out_channels, with_block=1, block=ResidualBlock):
         conv_layer = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
@@ -124,10 +113,10 @@ class MultiLevelContextEncoder(nn.Module):
 
     def forward(self, x: Tensor) -> List[Tensor]:
         x = self.base_encoder(x)
-        outs = [torch.cat([self.out_hidden_states[0](x), self.out_contexts[0](x)], dim=1)]
-        for i in range(0, self.num_level - 1):
-            x = self.downsamplers[i](x)
-            outs.append(torch.cat([self.out_hidden_states[i + 1](x), self.out_contexts[i + 1](x)], dim=1))
+        outs = []
+        for layer_dict in self.downsample_and_out_layers:
+            x = layer_dict["downsampler"](x)
+            outs.append(torch.cat([layer_dict["out_hidden_state"](x), layer_dict["out_context"](x)], dim=1))
         return outs
 
 
@@ -136,12 +125,11 @@ class ConvGRU(raft.ConvGRU):
 
     # Modified from raft.ConvGRU to accept pre-convolved contexts,
     # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
-    def forward(self, h, context, x):
+    def forward(self, h, context: List[Tensor], x):
         hx = torch.cat([h, x], dim=1)
-        cz, cr, cq = context
-        z = torch.sigmoid(self.convz(hx) + cz)
-        r = torch.sigmoid(self.convr(hx) + cr)
-        q = torch.tanh(self.convq(torch.cat([r * h, x], dim=1)) + cq)
+        z = torch.sigmoid(self.convz(hx) + context[0])
+        r = torch.sigmoid(self.convr(hx) + context[1])
+        q = torch.tanh(self.convq(torch.cat([r * h, x], dim=1)) + context[2])
         h = (1 - z) * h + z * q
         return h
 
@@ -169,7 +157,11 @@ class MultiLevelUpdateBlock(nn.Module):
         self.grus = nn.ModuleList(
             [
                 ConvGRU(input_size=gru_input_dims[i], hidden_size=hidden_dims[i], kernel_size=3, padding=1)
-                for i in range(len(hidden_dims))
+                # Ideally we should reverse the direction during forward to use the gru with smallest resolution first
+                # however currently there is no way to reverse a ModuleList that is jit script compatible
+                # hence we reverse the ordering of self.grus on the constructor instead
+                # see: https://github.com/pytorch/pytorch/issues/31772
+                for i in reversed(list(range(len(hidden_dims))))
             ]
         )
 
@@ -186,12 +178,15 @@ class MultiLevelUpdateBlock(nn.Module):
     def forward(
         self,
         hidden_states: List[Tensor],
-        contexts: List[Tuple[Tensor, Tensor, Tensor]],
+        contexts: List[List[Tensor]],
         corr_features: Tensor,
         depth: Tensor,
         level_processed: List[bool],
     ) -> List[Tensor]:
-        for i in range(len(self.grus) - 1, -1, -1):
+        # We call it reverse_i because it has a reversed ordering compared to hidden_states
+        # see self.grus on the constructor for more detail
+        for reverse_i, gru in enumerate(self.grus):
+            i = len(self.grus) - 1 - reverse_i
             if level_processed[i]:
                 # X is concatination of downsampled hidden_dim (or motion_features if no bigger dim) with
                 # upsampled hidden_dim (or nothing if not exist)
@@ -201,7 +196,7 @@ class MultiLevelUpdateBlock(nn.Module):
                 if i < len(self.grus) - 1:
                     features = torch.cat([features, self._upsample2x(hidden_states[i + 1])], dim=1)
 
-                hidden_states[i] = self.grus[i](hidden_states[i], contexts[i], features)
+                hidden_states[i] = gru(hidden_states[i], contexts[i], features)
 
                 # NOTE: For slow-fast gru, we dont always want to calculate delta depth for every call on UpdateBlock
                 # Hence we move the delta depth calculation to the RAFT-Stereo main forward
@@ -370,7 +365,7 @@ class RaftStereo(nn.Module):
         self.slow_fast = slow_fast
         self.num_iters = num_iters
 
-    def forward(self, image1: Tensor, image2: Tensor, num_iters: int = None) -> List[Tensor]:
+    def forward(self, image1: Tensor, image2: Tensor, num_iters: Optional[int] = None) -> List[Tensor]:
         if num_iters is None:
             num_iters = self.num_iters
         batch_size, _, h, w = image1.shape
@@ -393,14 +388,15 @@ class RaftStereo(nn.Module):
 
         hidden_dims = self.update_block.hidden_dims
         context_out_channels = [context_outs[i].shape[1] - hidden_dims[i] for i in range(len(context_outs))]
-        hidden_states, contexts = [], []
-        for i in range(len(context_outs)):
+        hidden_states: List[Tensor] = []
+        contexts: List[List[Tensor]] = []
+        for i, context_conv in enumerate(self.context_convs):
             # As in the original paper, the actual output of the context encoder is split in 2 parts:
             # - one part is used to initialize the hidden state of the recurent units of the update block
             # - the rest is the "actual" context.
             hidden_state, context = torch.split(context_outs[i], [hidden_dims[i], context_out_channels[i]], dim=1)
             hidden_states.append(torch.tanh(hidden_state))
-            contexts.append(self.context_convs[i](F.relu(context)).split(split_size=[hidden_dims[i]] * 3, dim=1))
+            contexts.append(torch.split(context_conv(F.relu(context)), [hidden_dims[i], hidden_dims[i], hidden_dims[i]], dim=1))
 
         _, Cf, Hf, Wf = fmap1.shape
         coords0 = make_coords_grid(batch_size, Hf, Wf).to(fmap1.device)
