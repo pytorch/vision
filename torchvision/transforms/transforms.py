@@ -2065,8 +2065,8 @@ class ElasticTransform(torch.nn.Module):
         see-through-water-like effect.
 
     Args:
-        alpha (float or sequence of floats): Magnitude of displacements.
-        sigma (float or sequence of floats): Smoothness of displacements.
+        alpha (float or sequence of floats): Magnitude of displacements. Default, 50
+        sigma (float or sequence of floats): Smoothness of displacements. Default, 5.0
         interpolation (InterpolationMode): Desired interpolation enum defined by
             :class:`torchvision.transforms.InterpolationMode`. Default is ``InterpolationMode.BILINEAR``.
             If input is Tensor, only ``InterpolationMode.NEAREST``, ``InterpolationMode.BILINEAR`` are supported.
@@ -2076,7 +2076,7 @@ class ElasticTransform(torch.nn.Module):
 
     """
 
-    def __init__(self, alpha, sigma, interpolation=InterpolationMode.BILINEAR, fill=0):
+    def __init__(self, alpha=50.0, sigma=5.0, interpolation=InterpolationMode.BILINEAR, fill=0):
         super().__init__()
         if not isinstance(alpha, (float, Sequence)):
             raise TypeError(f"alpha should be float or a sequence of floats. Got {type(alpha)}")
