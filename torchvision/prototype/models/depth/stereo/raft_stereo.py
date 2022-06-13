@@ -214,25 +214,18 @@ class MaskPredictor(raft.MaskPredictor):
         self.multiplier = multiplier
 
 
-class CorrBlock1d(nn.Module):
-    """The row-wise correlation block.
-
-    Creates a row-wise correlation pyramid with ``num_levels`` levels from the outputs of the feature encoder,
-    and then indexes from this pyramid to create correlation features.
-    The "indexing" of a given centroid pixel x' is done by concatenating its surrounding row neighbours
-    within radius
+class CorrPyramid1d(nn.Module):
+    """Row-wise correlation pyramid.
+    
+    Create a row-wise correlation pyramid with ``num_levels`` level from the outputs of the feature encoder,
+    this correlation pyramid will later be used as index to create correlation features using CorrBlock1d.
     """
 
-    def __init__(self, *, num_levels: int = 4, radius: int = 4):
+    def __init__(self, num_levels: int = 4):
         super().__init__()
         self.num_levels = num_levels
-        self.radius = radius
 
-        self.corr_pyramid: List[Tensor] = [torch.tensor(0)]  # useless, but torchscript is otherwise confused :')
-
-        self.out_channels = num_levels * (2 * radius + 1)
-
-    def build_pyramid(self, fmap1: Tensor, fmap2: Tensor):
+    def forward(self, fmap1: Tensor, fmap2: Tensor) -> List[Tensor]:
         """Build the correlation pyramid from two feature maps.
 
         The correlation volume is first computed as the dot product of each pair (pixel_in_fmap1, pixel_in_fmap2) on the same row.
@@ -244,16 +237,39 @@ class CorrBlock1d(nn.Module):
             raise ValueError(
                 f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)"
             )
-        corr_volume = self._compute_corr_volume(fmap1, fmap2)
 
-        batch_size, h, w, num_channels, _ = corr_volume.shape
-        corr_volume = corr_volume.reshape(batch_size * h * w, num_channels, 1, w)
-        self.corr_pyramid = [corr_volume]
+        # corr_volume = self._compute_corr_volume(fmap1, fmap2)
+        batch_size, num_channels, h, w = fmap1.shape
+        fmap1 = fmap1.view(batch_size, num_channels, h, w)
+        fmap2 = fmap2.view(batch_size, num_channels, h, w)
+
+        corr = torch.einsum("aijk,aijh->ajkh", fmap1, fmap2)
+        corr = corr.view(batch_size, h, w, 1, w)
+        corr_volume = corr / torch.sqrt(torch.tensor(num_channels))
+
+        corr_volume = corr_volume.reshape(batch_size * h * w, 1, 1, w)
+        corr_pyramid = [corr_volume]
         for _ in range(self.num_levels - 1):
             corr_volume = F.avg_pool2d(corr_volume, kernel_size=(1, 2), stride=(1, 2))
-            self.corr_pyramid.append(corr_volume)
+            corr_pyramid.append(corr_volume)
 
-    def index_pyramid(self, centroids_coords: Tensor) -> Tensor:
+        return corr_pyramid
+
+
+class CorrBlock1d(nn.Module):
+    """The row-wise correlation block.
+
+    Use indexes from correlation pyramid to create correlation features.
+    The "indexing" of a given centroid pixel x' is done by concatenating its surrounding row neighbours
+    within radius
+    """
+
+    def __init__(self, *, num_levels: int = 4, radius: int = 4):
+        super().__init__()
+        self.radius = radius
+        self.out_channels = num_levels * (2 * radius + 1)
+
+    def forward(self, centroids_coords: Tensor, corr_pyramid: List[Tensor]) -> Tensor:
         """Return correlation features by indexing from the pyramid."""
         neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
         di = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
@@ -264,7 +280,7 @@ class CorrBlock1d(nn.Module):
         centroids_coords = centroids_coords[:, :1].permute(0, 2, 3, 1).reshape(batch_size * h * w, 1, 1, 1)
 
         indexed_pyramid = []
-        for corr_volume in self.corr_pyramid:
+        for corr_volume in corr_pyramid:
             x0 = centroids_coords + di  # end shape is (batch_size * h * w, 1, side_len, 1)
             y0 = torch.zeros_like(x0)
             sampling_coords = torch.cat([x0, y0], dim=-1)
@@ -281,17 +297,7 @@ class CorrBlock1d(nn.Module):
             raise ValueError(
                 f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}"
             )
-
         return corr_features
-
-    def _compute_corr_volume(self, fmap1: Tensor, fmap2: Tensor) -> Tensor:
-        batch_size, num_channels, h, w = fmap1.shape
-        fmap1 = fmap1.view(batch_size, num_channels, h, w)
-        fmap2 = fmap2.view(batch_size, num_channels, h, w)
-
-        corr = torch.einsum("aijk,aijh->ajkh", fmap1, fmap2)
-        corr = corr.view(batch_size, h, w, 1, w)
-        return corr / torch.sqrt(torch.tensor(num_channels))
 
 
 class RaftStereo(nn.Module):
@@ -300,6 +306,7 @@ class RaftStereo(nn.Module):
         *,
         feature_encoder: FeatureEncoder,
         context_encoder: MultiLevelContextEncoder,
+        corr_pyramid: CorrPyramid1d,
         corr_block: CorrBlock1d,
         update_block: MultiLevelUpdateBlock,
         depth_head: nn.Module,
@@ -319,15 +326,10 @@ class RaftStereo(nn.Module):
                 - one part will be used to initialize the hidden state of the of the recurrent unit of
                   the ``update_block``
 
-            corr_block (nn.Module): The correlation block, which creates a correlation pyramid from the output of the
-                ``feature_encoder``, and then indexes from this pyramid to create correlation features. It must expose
-                2 methods:
-
-                - a ``build_pyramid`` method that takes ``feature_map_1`` and ``feature_map_2`` as input (these are the
-                  output of the ``feature_encoder``).
-                - a ``index_pyramid`` method that takes the coordinates of the centroid pixels as input, and returns
-                  the correlation features.
-
+            corr_pyramid (nn.Module): Module to buid the correlation pyramid from feature encoder output
+            corr_block (nn.Module): The correlation block, which uses the correlation pyramid indexes
+                to create correlation features. It takes the coordinate of the centroid pixel and correlation pyramid
+                as input and returns the correlation features.
                 It must expose an ``out_channels`` attribute.
 
             update_block (nn.Module): The update block, which contains the motion encoder, and the recurrent unit.
@@ -349,7 +351,7 @@ class RaftStereo(nn.Module):
 
         self.base_downsampling_ratio = feature_encoder.base_downsampling_ratio
         self.num_level = self.context_encoder.num_level
-
+        self.corr_pyramid = corr_pyramid
         self.corr_block = corr_block
         self.update_block = update_block
         self.depth_head = depth_head
@@ -380,7 +382,7 @@ class RaftStereo(nn.Module):
         if fmap1.shape[-2:] != (h // self.base_downsampling_ratio, w // self.base_downsampling_ratio):
             raise ValueError(f"The feature encoder should downsample H and W by {self.base_downsampling_ratio}")
 
-        self.corr_block.build_pyramid(fmap1, fmap2)
+        corr_pyramid = self.corr_pyramid(fmap1, fmap2)
 
         # Multi level contexts
         context_outs = self.context_encoder(image1)
@@ -404,7 +406,7 @@ class RaftStereo(nn.Module):
         depth_predictions = []
         for _ in range(num_iters):
             coords1 = coords1.detach()  # Don't backpropagate gradients through this branch, see paper
-            corr_features = self.corr_block.index_pyramid(centroids_coords=coords1)
+            corr_features = self.corr_block(centroids_coords=coords1, corr_pyramid=corr_pyramid)
 
             depth = coords1 - coords0
             if self.slow_fast:
@@ -448,8 +450,8 @@ def _raft_stereo(
     context_encoder_out_with_blocks: List[bool],
     context_encoder_block: Callable[..., nn.Module],
     # Correlation block
-    corr_block_num_levels: int = 4,
-    corr_block_radius: int = 4,
+    corr_num_levels: int = 4,
+    corr_radius: int = 4,
     # Motion encoder
     motion_encoder_corr_layers: List[int],
     motion_encoder_flow_layers: List[int],
@@ -512,7 +514,8 @@ def _raft_stereo(
 
     feature_downsampling_ratio = feature_encoder.base_downsampling_ratio
 
-    corr_block = CorrBlock1d(num_levels=corr_block_num_levels, radius=corr_block_radius)
+    corr_pyramid = CorrPyramid1d(num_levels=corr_num_levels)
+    corr_block = CorrBlock1d(num_levels=corr_num_levels, radius=corr_radius)
 
     motion_encoder = MotionEncoder(
         in_channels_corr=corr_block.out_channels,
@@ -539,6 +542,7 @@ def _raft_stereo(
     model = RaftStereo(
         feature_encoder=feature_encoder,
         context_encoder=context_encoder,
+        corr_pyramid=corr_pyramid,
         corr_block=corr_block,
         update_block=update_block,
         depth_head=depth_head,
@@ -600,8 +604,8 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
         context_encoder_out_with_blocks=[True, True],
         context_encoder_block=ResidualBlock,
         # Correlation block
-        corr_block_num_levels=4,
-        corr_block_radius=4,
+        corr_num_levels=4,
+        corr_radius=4,
         # Motion encoder
         motion_encoder_corr_layers=[64, 64],
         motion_encoder_flow_layers=[64, 64],
@@ -657,8 +661,8 @@ def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True,
         context_encoder_out_with_blocks=[True, True, False],
         context_encoder_block=ResidualBlock,
         # Correlation block
-        corr_block_num_levels=4,
-        corr_block_radius=4,
+        corr_num_levels=4,
+        corr_radius=4,
         # Motion encoder
         motion_encoder_corr_layers=[64, 64],
         motion_encoder_flow_layers=[64, 64],
