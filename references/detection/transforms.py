@@ -518,7 +518,6 @@ def _copy_paste(image, target, paste_image, paste_target, inplace=True):
 
 
 class SimpleCopyPaste(torch.nn.Module):
-
     def forward(self, images, targets=None):
         assert targets is not None
         assert isinstance(images, tuple) and all([isinstance(v, torch.Tensor) for v in images])
