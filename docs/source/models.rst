@@ -334,6 +334,8 @@ keypoint detection are initialized with the classification models
 in torchvision. The models expect a list of ``Tensor[C, H, W]``.
 Check the constructor of the models for more information.
 
+.. betastatus:: detection module
+
 Object Detection
 ----------------
 
