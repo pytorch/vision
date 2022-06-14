@@ -7,6 +7,7 @@ on:
     branches:
       - nightly
       - main
+      - release/*
     tags:
         # NOTE: Binary build pipelines should only get triggered on release candidate builds
         # Release candidate tags look like: v1.11.0-rc1
