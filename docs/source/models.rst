@@ -272,6 +272,8 @@ Semantic Segmentation
 
 .. currentmodule:: torchvision.models.segmentation
 
+.. betastatus:: segmentation module
+
 The following semantic segmentation models are available, with or without
 pre-trained weights:
 
@@ -454,6 +456,8 @@ Video Classification
 ====================
 
 .. currentmodule:: torchvision.models.video
+
+.. betastatus:: video module
 
 The following video classification models are available, with or without
 pre-trained weights:
