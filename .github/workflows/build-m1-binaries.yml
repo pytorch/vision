@@ -7,6 +7,7 @@ on:
     branches:
       - nightly
       - main
+      - release/*
     tags:
         # NOTE: Binary build pipelines should only get triggered on release candidate builds
         # Release candidate tags look like: v1.11.0-rc1
@@ -32,7 +33,7 @@ jobs:
             echo "CHANNEL=test" >> "$GITHUB_ENV"
           fi
       - name: Set Release CHANNEL (for release)
-        if: ${{ github.event_name == 'pull_request' && startsWith(github.base_ref, 'release') }}
+        if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
       - name: Build TorchVision M1 wheel
@@ -109,7 +110,7 @@ jobs:
             echo "CHANNEL=test" >> "$GITHUB_ENV"
           fi
       - name: Set CHANNEL Release (for release)
-        if: ${{ github.event_name == 'pull_request' && startsWith(github.base_ref, 'release') }}
+        if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
       - name: Install conda-build and purge previous artifacts
