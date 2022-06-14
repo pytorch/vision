@@ -258,7 +258,7 @@ class CorrPyramid1d(nn.Module):
 
         torch._assert(
             fmap1.shape == fmap2.shape,
-            f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)"
+            f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)",
         )
 
         batch_size, num_channels, h, w = fmap1.shape
@@ -317,7 +317,7 @@ class CorrBlock1d(nn.Module):
         expected_output_shape = (batch_size, self.out_channels, h, w)
         torch._assert(
             corr_features.shape == expected_output_shape,
-            f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}"
+            f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}",
         )
         return corr_features
 
@@ -395,20 +395,20 @@ class RaftStereo(nn.Module):
         batch_size, _, h, w = image1.shape
         torch._assert(
             (h, w) == image2.shape[-2:],
-            f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}"
+            f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}",
         )
 
         torch._assert(
             # We use addition, "+", instead of "and" operator so it can pass fx symbolic trace
             (h % self.base_downsampling_ratio + w % self.base_downsampling_ratio == 0),
-            f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got {h} (h) and {w} (w)"
+            f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got {h} (h) and {w} (w)",
         )
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
         torch._assert(
             fmap1.shape[-2:] == (h // self.base_downsampling_ratio, w // self.base_downsampling_ratio),
-            f"The feature encoder should downsample H and W by {self.base_downsampling_ratio}"
+            f"The feature encoder should downsample H and W by {self.base_downsampling_ratio}",
         )
 
         corr_pyramid = self.corr_pyramid(fmap1, fmap2)
