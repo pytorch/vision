@@ -21,6 +21,20 @@ __all__ = (
 )
 
 
+def _corr_channel_normalize(corr: Tensor, num_channels: int):
+    return corr / torch.sqrt(torch.tensor(num_channels))
+
+
+def _zeroes_second_channel(delta_depth: Tensor):
+    delta_depth[:, 1] = 0.0
+
+
+torch.fx.wrap("_corr_channel_normalize")
+torch.fx.wrap("_zeroes_second_channel")
+torch.fx.wrap("make_coords_grid")
+torch.fx.wrap("grid_sample")
+
+
 class BaseEncoder(raft.FeatureEncoder):
     """Base encoder for FeatureEncoder and ContextEncoder in which weight may be shared.
 
@@ -129,14 +143,8 @@ class MultiLevelContextEncoder(nn.Module):
         return outs
 
 
-class ConvGRU(nn.Module):
+class ConvGRU(raft.ConvGRU):
     """Convolutional Gru unit."""
-
-    def __init__(self, *, input_size, hidden_size, kernel_size, padding):
-        super().__init__()
-        self.convz = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
-        self.convr = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
-        self.convq = nn.Conv2d(hidden_size + input_size, hidden_size, kernel_size=kernel_size, padding=padding)
 
     # Modified from raft.ConvGRU to accept pre-convolved contexts,
     # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
@@ -248,19 +256,18 @@ class CorrPyramid1d(nn.Module):
         to build the correlation pyramid.
         """
 
-        if fmap1.shape != fmap2.shape:
-            raise ValueError(
-                f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)"
-            )
+        torch._assert(
+            fmap1.shape == fmap2.shape,
+            f"Input feature maps should have the same shape, instead got {fmap1.shape} (fmap1.shape) != {fmap2.shape} (fmap2.shape)"
+        )
 
-        # corr_volume = self._compute_corr_volume(fmap1, fmap2)
         batch_size, num_channels, h, w = fmap1.shape
         fmap1 = fmap1.view(batch_size, num_channels, h, w)
         fmap2 = fmap2.view(batch_size, num_channels, h, w)
 
         corr = torch.einsum("aijk,aijh->ajkh", fmap1, fmap2)
         corr = corr.view(batch_size, h, w, 1, w)
-        corr_volume = corr / torch.sqrt(torch.tensor(num_channels))
+        corr_volume = _corr_channel_normalize(corr, num_channels)
 
         corr_volume = corr_volume.reshape(batch_size * h * w, 1, 1, w)
         corr_pyramid = [corr_volume]
@@ -308,10 +315,10 @@ class CorrBlock1d(nn.Module):
         corr_features = torch.cat(indexed_pyramid, dim=-1).permute(0, 3, 1, 2).contiguous()
 
         expected_output_shape = (batch_size, self.out_channels, h, w)
-        if corr_features.shape != expected_output_shape:
-            raise ValueError(
-                f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}"
-            )
+        torch._assert(
+            corr_features.shape == expected_output_shape,
+            f"Output shape of index pyramid is incorrect. Should be {expected_output_shape}, got {corr_features.shape}"
+        )
         return corr_features
 
 
@@ -381,21 +388,28 @@ class RaftStereo(nn.Module):
         self.slow_fast = slow_fast
         self.num_iters = num_iters
 
-    def forward(self, image1: Tensor, image2: Tensor, num_iters: Optional[int] = None) -> List[Tensor]:
-        if num_iters is None:
-            num_iters = self.num_iters
+    def forward(self, image1: Tensor, image2: Tensor) -> List[Tensor]:
+        # We dont put num_iters as input to forward (like the original implementation) in order to make this class fx traceable.
+        # User can still change the number of iteration by updating the class variable self.num_iters during inference
+        num_iters = self.num_iters
         batch_size, _, h, w = image1.shape
-        if (h, w) != image2.shape[-2:]:
-            raise ValueError(f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}")
-        if not (h % self.base_downsampling_ratio == 0) and (w % self.base_downsampling_ratio == 0):
-            raise ValueError(
-                f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got {h} (h) and {w} (w)"
-            )
+        torch._assert(
+            (h, w) == image2.shape[-2:],
+            f"input images should have the same shape, instead got ({h}, {w}) != {image2.shape[-2:]}"
+        )
+
+        torch._assert(
+            # We use addition, "+", instead of "and" operator so it can pass fx symbolic trace
+            (h % self.base_downsampling_ratio + w % self.base_downsampling_ratio == 0),
+            f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got {h} (h) and {w} (w)"
+        )
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
         fmap1, fmap2 = torch.chunk(fmaps, chunks=2, dim=0)
-        if fmap1.shape[-2:] != (h // self.base_downsampling_ratio, w // self.base_downsampling_ratio):
-            raise ValueError(f"The feature encoder should downsample H and W by {self.base_downsampling_ratio}")
+        torch._assert(
+            fmap1.shape[-2:] == (h // self.base_downsampling_ratio, w // self.base_downsampling_ratio),
+            f"The feature encoder should downsample H and W by {self.base_downsampling_ratio}"
+        )
 
         corr_pyramid = self.corr_pyramid(fmap1, fmap2)
 
@@ -441,7 +455,7 @@ class RaftStereo(nn.Module):
             hidden_state = hidden_states[0]
             delta_depth = self.depth_head(hidden_state)
             # in stereo mode, project depth onto epipolar
-            delta_depth[:, 1] = 0.0
+            _zeroes_second_channel(delta_depth)
 
             coords1 = coords1 + delta_depth
             up_mask = None if self.mask_predictor is None else self.mask_predictor(hidden_state)
@@ -634,7 +648,7 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
         mask_predictor_hidden_size=256,
         use_mask_predictor=True,
         slow_fast=True,
-        num_iters=7,
+        num_iters=10,
         **kwargs,
     )
 
