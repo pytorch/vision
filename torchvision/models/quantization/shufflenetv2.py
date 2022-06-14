@@ -52,8 +52,6 @@ class QuantizableInvertedResidual(shufflenetv2.InvertedResidual):
 class QuantizableShuffleNetV2(shufflenetv2.ShuffleNetV2):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        if "init_weights" not in kwargs:
-            kwargs["init_weights"] = True
         super().__init__(*args, inverted_residual=QuantizableInvertedResidual, **kwargs)  # type: ignore[misc]
         self.quant = torch.ao.quantization.QuantStub()
         self.dequant = torch.ao.quantization.DeQuantStub()

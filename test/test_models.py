@@ -870,7 +870,6 @@ def test_quantized_classification_model(model_fn):
         "num_classes": 5,
         "input_shape": (1, 3, 224, 224),
         "quantize": True,
-        "init_weights": True,
     }
     model_name = model_fn.__name__
     kwargs = {**defaults, **_model_params.get(model_name, {})}
