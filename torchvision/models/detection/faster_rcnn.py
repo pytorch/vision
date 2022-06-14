@@ -469,6 +469,8 @@ def fasterrcnn_resnet50_fpn(
     Detection with Region Proposal Networks <https://arxiv.org/abs/1506.01497>`__
     paper.
 
+    .. betastatus:: detection module
+
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
 
@@ -579,6 +581,8 @@ def fasterrcnn_resnet50_fpn_v2(
     """
     Constructs an improved Faster R-CNN model with a ResNet-50-FPN backbone from `Benchmarking Detection
     Transfer Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`__ paper.
+
+    .. betastatus:: detection module
 
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
@@ -697,6 +701,8 @@ def fasterrcnn_mobilenet_v3_large_320_fpn(
     """
     Low resolution Faster R-CNN model with a MobileNetV3-Large backbone tunned for mobile use cases.
 
+    .. betastatus:: detection module
+
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
     details.
@@ -767,6 +773,9 @@ def fasterrcnn_mobilenet_v3_large_fpn(
 ) -> FasterRCNN:
     """
     Constructs a high resolution Faster R-CNN model with a MobileNetV3-Large FPN backbone.
+
+    .. betastatus:: detection module
+
     It works similarly to Faster R-CNN with ResNet-50 FPN backbone. See
     :func:`~torchvision.models.detection.fasterrcnn_resnet50_fpn` for more
     details.
