@@ -25,7 +25,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v2
       - name: Set CHANNEL (only for tagged pushes)
-        if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}
+        if: ${{ github.event_name == 'push' &&  (startsWith(github.event.ref, 'refs/tags/') || startsWith(github.event.ref, 'refs/heads/release')) }}
         run: |
           # reference ends with an RC suffix
           if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
