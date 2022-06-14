@@ -31,6 +31,7 @@ import utils
 from coco_utils import get_coco, get_coco_kp
 from engine import train_one_epoch, evaluate
 from group_by_aspect_ratio import GroupedBatchSampler, create_aspect_ratio_groups
+from torchvision.transforms import InterpolationMode
 from transforms import SimpleCopyPaste
 
 
@@ -147,7 +148,11 @@ def get_args_parser(add_help=True):
     parser.add_argument("--amp", action="store_true", help="Use torch.cuda.amp for mixed precision training")
 
     # Use CopyPaste augmentation training parameter
-    parser.add_argument("--use-copypaste", action="store_true", help="Use CopyPaste data augmentation")
+    parser.add_argument(
+        "--use-copypaste",
+        action="store_true",
+        help="Use CopyPaste data augmentation. It is intended to work together with data-augmentation='lsj'.",
+    )
 
     return parser
 
@@ -186,8 +191,17 @@ def main(args):
 
     train_collate_fn = utils.collate_fn
     if args.use_copypaste:
+        if args.data_augmentation in ["ssd", "ssdlite"]:
+            raise RuntimeError("SimpleCopyPaste algorithm does support 'ssd', 'ssdlite' data augmentation policies")
+
         print("Use SimpleCopyPaste data aug")
-        copypaste = SimpleCopyPaste()
+        if args.data_augmentation not in ["lsj"]:
+            print(
+                "INFO: SimpleCopyPaste is intended to work together with data-augmentation='lsj'. "
+                "Currently, the algorithm can work with any data-augmentation policy "
+                "but an additional resize is applied to the pasted data"
+            )
+        copypaste = SimpleCopyPaste(resize_interpolation=InterpolationMode.BILINEAR, blending=True)
 
         def copypaste_collate_fn(batch):
             return copypaste(*utils.collate_fn(batch))
