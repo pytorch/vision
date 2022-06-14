@@ -46,6 +46,8 @@ class QuantizableMobileNetV2(MobileNetV2):
         Args:
            Inherits args from floating point MobileNetV2
         """
+        if "init_weights" not in kwargs:
+            kwargs["init_weights"] = True
         super().__init__(*args, **kwargs)
         self.quant = QuantStub()
         self.dequant = DeQuantStub()

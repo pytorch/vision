@@ -74,6 +74,8 @@ class QuantizableInceptionAux(InceptionAux):
 class QuantizableGoogLeNet(GoogLeNet):
     # TODO https://github.com/pytorch/vision/pull/4232#pullrequestreview-730461659
     def __init__(self, *args: Any, **kwargs: Any) -> None:
+        if "init_weights" not in kwargs:
+            kwargs["init_weights"] = True
         super().__init__(  # type: ignore[misc]
             blocks=[QuantizableBasicConv2d, QuantizableInception, QuantizableInceptionAux], *args, **kwargs
         )
