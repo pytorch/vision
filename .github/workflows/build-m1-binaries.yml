@@ -131,9 +131,7 @@ jobs:
           . packaging/pkg_helpers.bash
 
           if [[ $CHANNEL == "test" ]]; then
-            setup_cuda
             setup_base_build_version
-            setup_macos
           else
             setup_build_version
           fi
