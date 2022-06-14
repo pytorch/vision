@@ -180,7 +180,7 @@ plot(grid)
 #     # Note: it would be faster to predict batches of flows instead of individual flows
 #     img1, img2 = preprocess(img1, img2)
 
-#     list_of_flows = model(img1.to(device), img1.to(device))
+#     list_of_flows = model(img1.to(device), img2.to(device))
 #     predicted_flow = list_of_flows[-1][0]
 #     flow_img = flow_to_image(predicted_flow).to("cpu")
 #     output_folder = "/tmp/"  # Update this to the folder of your choice
