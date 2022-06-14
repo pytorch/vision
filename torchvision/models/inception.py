@@ -32,7 +32,7 @@ class Inception3(nn.Module):
         aux_logits: bool = True,
         transform_input: bool = False,
         inception_blocks: Optional[List[Callable[..., nn.Module]]] = None,
-        init_weights: Optional[bool] = None,
+        init_weights: bool = True,
         dropout: float = 0.5,
     ) -> None:
         super().__init__()
