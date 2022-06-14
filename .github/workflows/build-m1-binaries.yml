@@ -14,8 +14,6 @@ on:
   workflow_dispatch:
 env:
   CHANNEL: "nightly"
-  BASE_REF: ${{ github.base_ref }}
-  EVENT_NAME: ${{ github.event_name }}
 jobs:
   build_wheels:
     name: "Build TorchVision M1 wheels"
@@ -137,15 +135,10 @@ jobs:
             setup_base_build_version
             setup_macos
           else
-            setup_cuda
             setup_build_version
-            setup_macos
           fi
 
           setup_conda_pytorch_constraint
-          setup_conda_cudatoolkit_constraint
-          setup_visual_studio_constraint
-          setup_junit_results_folder
           export SOURCE_ROOT_DIR=$(pwd)
           conda build -c defaults $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
           mkdir -p dist
