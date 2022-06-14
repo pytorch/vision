@@ -22,7 +22,7 @@ __all__ = (
 
 
 def _corr_channel_normalize(corr: Tensor, num_channels: int):
-    return corr / torch.sqrt(torch.tensor(num_channels))
+    return corr / torch.sqrt(torch.tensor(num_channels).to(corr.device))
 
 
 def _zeroes_second_channel(delta_depth: Tensor):
@@ -74,13 +74,14 @@ class FeatureEncoder(nn.Module):
         self.base_downsampling_ratio = base_encoder.downsampling_ratio
         base_dim = base_encoder.output_dim
 
-        # If we share base encoder weight for Feature and Context Encoder
-        # we need to add residual block with InstanceNorm2d and change the kernel size for conv layer
-        # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/raft_stereo.py#L35-L37
         self.shared_base = shared_base
-        self.residual_block: nn.Module = nn.Identity()
-        self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
-        if shared_base:
+        if not shared_base:
+            self.residual_block: nn.Module = nn.Identity()
+            self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
+        else:
+            # If we share base encoder weight for Feature and Context Encoder
+            # we need to add residual block with InstanceNorm2d and change the kernel size for conv layer
+            # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/raft_stereo.py#L35-L37
             self.residual_block = block(base_dim, base_dim, norm_layer=nn.InstanceNorm2d, stride=1)
             self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=3, padding=1)
 
@@ -123,10 +124,11 @@ class MultiLevelContextEncoder(nn.Module):
         )
 
     def _make_out_layer(self, in_channels, out_channels, with_block=True, block=ResidualBlock):
-        block_layer = nn.Identity()
-        conv_layer = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
         if with_block:
             block_layer = block(in_channels, in_channels, norm_layer=nn.BatchNorm2d, stride=1)
+        else:
+            block_layer = nn.Identity()
+        conv_layer = nn.Conv2d(in_channels, out_channels, kernel_size=3, padding=1)
         return nn.Sequential(block_layer, conv_layer)
 
     def _make_downsampler(self, block, in_channels, out_channels):
@@ -294,7 +296,7 @@ class CorrBlock1d(nn.Module):
     def forward(self, centroids_coords: Tensor, corr_pyramid: List[Tensor]) -> Tensor:
         """Return correlation features by indexing from the pyramid."""
         neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
-        di = torch.linspace(-self.radius, self.radius, neighborhood_side_len)
+        di = torch.linspace(-self.radius, self.radius, neighborhood_side_len).to(centroids_coords.device)
         di = di.view(1, 1, neighborhood_side_len, 1).to(centroids_coords.device)
 
         batch_size, _, h, w = centroids_coords.shape  # _ = 2 but we only use the first one
