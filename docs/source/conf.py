@@ -372,7 +372,14 @@ def inject_weight_metadata(app, what, name, obj, options, lines):
 
 
 def generate_weights_table(
-    module, table_name, metrics, dataset, include_patterns=None, exclude_patterns=None, table_desciption=""
+    module,
+    table_name,
+    metrics,
+    dataset,
+    include_patterns=None,
+    exclude_patterns=None,
+    table_desciption="",
+    title_character="-",
 ):
     weights_endswith = "_QuantizedWeights" if module.__name__.split(".")[-1] == "quantization" else "_Weights"
     weight_enums = [getattr(module, name) for name in dir(module) if name.endswith(weights_endswith)]
@@ -402,7 +409,7 @@ def generate_weights_table(
     generated_dir.mkdir(exist_ok=True)
     with open(generated_dir / f"{table_name}_table.rst", "w+") as table_file:
         table_file.write(
-            f"Table of all available {table_name.replace('_',' ').title()} Weights \n{(32 + len(table_name))*'-'}\n"
+            f"Table of all available {table_name.replace('_',' ').title()} Weights \n{(32 + len(table_name))*title_character}\n"
         )
         table_file.write(f"{table_desciption}\n\n")
         table_file.write(".. rst-class:: table-weights\n")  # Custom CSS class, see custom_torchvision.css
@@ -424,6 +431,7 @@ generate_weights_table(
     metrics=[("acc@1", "Acc@1"), ("acc@5", "Acc@5")],
     dataset="ImageNet-1K",
     table_desciption="Accuracies are reported on ImageNet-1K using single crops:",
+    title_character="^",
 )
 generate_weights_table(
     module=M.detection,
@@ -432,6 +440,7 @@ generate_weights_table(
     exclude_patterns=["Mask", "Keypoint"],
     dataset="COCO-val2017",
     table_desciption="Box MAPs are reported on COCO val2017:",
+    title_character="^",
 )
 generate_weights_table(
     module=M.detection,
@@ -440,6 +449,7 @@ generate_weights_table(
     dataset="COCO-val2017",
     include_patterns=["Mask"],
     table_desciption="Box and Mask MAPs are reported on COCO val2017:",
+    title_character="^",
 )
 generate_weights_table(
     module=M.detection,
@@ -448,6 +458,7 @@ generate_weights_table(
     dataset="COCO-val2017",
     include_patterns=["Keypoint"],
     table_desciption="Box and Keypoint MAPs are reported on COCO val2017:",
+    title_character="^",
 )
 generate_weights_table(
     module=M.segmentation,
