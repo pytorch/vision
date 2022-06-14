@@ -47,10 +47,10 @@ def _check_cuda_version():
     """
     if not _HAS_OPS:
         return -1
-    import torch
+    from torch.version import cuda
 
     _version = torch.ops.torchvision._cuda_version()
-    if _version != -1 and torch.version.cuda is not None:
+    if _version != -1 and cuda is not None:
         tv_version = str(_version)
         if int(tv_version) < 10000:
             tv_major = int(tv_version[0])
@@ -58,7 +58,7 @@ def _check_cuda_version():
         else:
             tv_major = int(tv_version[0:2])
             tv_minor = int(tv_version[3])
-        t_version = torch.version.cuda
+        t_version = cuda
         t_version = t_version.split(".")
         t_major = int(t_version[0])
         t_minor = int(t_version[1])
