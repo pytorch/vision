@@ -34,7 +34,7 @@ class GoogLeNet(nn.Module):
         num_classes: int = 1000,
         aux_logits: bool = True,
         transform_input: bool = False,
-        init_weights: bool = True,
+        init_weights: Optional[bool] = None,
         blocks: Optional[List[Callable[..., nn.Module]]] = None,
         dropout: float = 0.2,
         dropout_aux: float = 0.7,
