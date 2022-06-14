@@ -132,6 +132,8 @@ def lraspp_mobilenet_v3_large(
     """Constructs a Lite R-ASPP Network model with a MobileNetV3-Large backbone from
     `Searching for MobileNetV3 <https://arxiv.org/abs/1905.02244>`_ paper.
 
+    .. betastatus:: segmentation module
+
     Args:
         weights (:class:`~torchvision.models.segmentation.LRASPP_MobileNet_V3_Large_Weights`, optional): The
             pretrained weights to use. See
