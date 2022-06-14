@@ -97,8 +97,6 @@ class QuantizableBottleneck(Bottleneck):
 
 class QuantizableResNet(ResNet):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
-        if "init_weights" not in kwargs:
-            kwargs["init_weights"] = True
         super().__init__(*args, **kwargs)
 
         self.quant = torch.ao.quantization.QuantStub()
