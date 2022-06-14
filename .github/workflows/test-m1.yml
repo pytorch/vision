@@ -8,10 +8,6 @@ on:
       - nightly
       - main
       - release/*
-    tags:
-        # NOTE: Binary build pipelines should only get triggered on release candidate builds
-        # Release candidate tags look like: v1.11.0-rc1
-        - v[0-9]+.[0-9]+.[0-9]+-rc[0-9]+
   workflow_dispatch:
 env:
   CHANNEL: "nightly"
@@ -26,15 +22,8 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
-      - name: Set CHANNEL (only for tagged pushes)
-        if: ${{ github.event_name == 'push' && startsWith(github.event.ref, 'refs/tags/') }}
-        run: |
-          # reference ends with an RC suffix
-          if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
-            echo "CHANNEL=test" >> "$GITHUB_ENV"
-          fi
       - name: Set Release CHANNEL (for release)
-        if: ${{ github.event_name == 'pull_request' && startsWith(github.base_ref, 'release') }}
+        if: ${{ (github.event_name == 'pull_request' && startsWith(github.base_ref, 'release')) || startsWith(github.ref, 'release') }}
         run: |
           echo "CHANNEL=test" >> "$GITHUB_ENV"
       - name: Install TorchVision
