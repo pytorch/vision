@@ -609,7 +609,7 @@ def test_classification_model(model_fn, dev):
     num_classes = kwargs.get("num_classes")
     input_shape = kwargs.pop("input_shape")
 
-    if model_name in ['inception_v3', 'googlenet']:
+    if model_name in ["inception_v3", "googlenet"]:
         if "init_weights" not in kwargs:
             kwargs["init_weights"] = True
 
