@@ -14,6 +14,8 @@ on:
   workflow_dispatch:
 env:
   CHANNEL: "nightly"
+  BASE_REF: ${{ github.base_ref }}
+  EVENT_NAME: ${{ github.event_name }}
 jobs:
   build_wheels:
     name: "Build TorchVision M1 wheels"
@@ -31,6 +33,10 @@ jobs:
           if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
             echo "CHANNEL=test" >> "$GITHUB_ENV"
           fi
+      - name: Set Release CHANNEL (for release)
+        if: ${{ github.event_name == 'pull_request' && startsWith(github.base_ref, 'release') }}
+        run: |
+          echo "CHANNEL=test" >> "$GITHUB_ENV"
       - name: Build TorchVision M1 wheel
         shell: arch -arch arm64 bash {0}
         env:
@@ -104,6 +110,10 @@ jobs:
           if [[ ${GITHUB_REF_NAME} = *-rc[0-9]* ]]; then
             echo "CHANNEL=test" >> "$GITHUB_ENV"
           fi
+      - name: Set CHANNEL Release (for release)
+        if: ${{ github.event_name == 'pull_request' && startsWith(github.base_ref, 'release') }}
+        run: |
+          echo "CHANNEL=test" >> "$GITHUB_ENV"
       - name: Install conda-build and purge previous artifacts
         shell: arch -arch arm64 bash {0}
         run: |
@@ -123,12 +133,19 @@ jobs:
           . packaging/pkg_helpers.bash
 
           if [[ $CHANNEL == "test" ]]; then
+            setup_cuda
             setup_base_build_version
+            setup_macos
           else
+            setup_cuda
             setup_build_version
+            setup_macos
           fi
 
           setup_conda_pytorch_constraint
+          setup_conda_cudatoolkit_constraint
+          setup_visual_studio_constraint
+          setup_junit_results_folder
           export SOURCE_ROOT_DIR=$(pwd)
           conda build -c defaults $CONDA_CHANNEL_FLAGS --no-anaconda-upload --python "$PYTHON_VERSION" packaging/torchvision
           mkdir -p dist
