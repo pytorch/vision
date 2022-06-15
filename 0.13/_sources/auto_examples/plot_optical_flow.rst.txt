@@ -340,7 +340,7 @@ too long to run it.
     #     # Note: it would be faster to predict batches of flows instead of individual flows
     #     img1, img2 = preprocess(img1, img2)
 
-    #     list_of_flows = model(img1.to(device), img1.to(device))
+    #     list_of_flows = model(img1.to(device), img2.to(device))
     #     predicted_flow = list_of_flows[-1][0]
     #     flow_img = flow_to_image(predicted_flow).to("cpu")
     #     output_folder = "/tmp/"  # Update this to the folder of your choice
@@ -363,7 +363,7 @@ ffmpeg -f image2 -framerate 30 -i predicted_flow_%d.jpg -loop -1 flow.gif
 
 .. rst-class:: sphx-glr-timing
 
-   **Total running time of the script:** ( 0 minutes  12.296 seconds)
+   **Total running time of the script:** ( 0 minutes  10.461 seconds)
 
 
 .. _sphx_glr_download_auto_examples_plot_optical_flow.py:
