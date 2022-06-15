@@ -458,7 +458,8 @@ def _copy_paste(
         return image, target
 
     # We have to please torch script by explicitly specifying dtype as torch.long
-    random_selection = torch.unique(torch.randint(0, num_masks, (num_masks,))).to(torch.long)
+    random_selection = torch.randint(0, num_masks, (num_masks,), device=paste_image.device)
+    random_selection = torch.unique(random_selection).to(torch.long)
 
     paste_masks = paste_target["masks"][random_selection]
     paste_boxes = paste_target["boxes"][random_selection]
@@ -589,5 +590,5 @@ class SimpleCopyPaste(torch.nn.Module):
         return output_images, output_targets
 
     def __repr__(self) -> str:
-        s = f"{self.__class__.__name__}()"
+        s = f"{self.__class__.__name__}(blending={self.blending}, resize_interpolation={self.resize_interpolation})"
         return s

@@ -151,7 +151,7 @@ def get_args_parser(add_help=True):
     parser.add_argument(
         "--use-copypaste",
         action="store_true",
-        help="Use CopyPaste data augmentation. It is intended to work together with data-augmentation='lsj'.",
+        help="Use CopyPaste data augmentation. Works only with data-augmentation='lsj'.",
     )
 
     return parser
@@ -191,16 +191,9 @@ def main(args):
 
     train_collate_fn = utils.collate_fn
     if args.use_copypaste:
-        if args.data_augmentation in ["ssd", "ssdlite"]:
-            raise RuntimeError("SimpleCopyPaste algorithm does support 'ssd', 'ssdlite' data augmentation policies")
+        if args.data_augmentation != "lsj":
+            raise RuntimeError("SimpleCopyPaste algorithm currently only supports the 'lsj' data augmentation policies")
 
-        print("Use SimpleCopyPaste data aug")
-        if args.data_augmentation not in ["lsj"]:
-            print(
-                "INFO: SimpleCopyPaste is intended to work together with data-augmentation='lsj'. "
-                "Currently, the algorithm can work with any data-augmentation policy "
-                "but an additional resize is applied to the pasted data"
-            )
         copypaste = SimpleCopyPaste(resize_interpolation=InterpolationMode.BILINEAR, blending=True)
 
         def copypaste_collate_fn(batch):
