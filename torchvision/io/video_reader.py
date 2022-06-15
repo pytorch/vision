@@ -1,3 +1,4 @@
+import warnings
 from typing import Any, Dict, Iterator
 
 import torch
@@ -92,6 +93,16 @@ class VideoReader:
 
     def __init__(self, path: str, stream: str = "video", num_threads: int = 0, device: str = "cpu") -> None:
         _log_api_usage_once(self)
+        from . import _BETA_VIDEO_API_IS_ENABLED  # import here to avoid circular import
+
+        if not _BETA_VIDEO_API_IS_ENABLED:
+            warnings.warn(
+                "The VideoReader class is still in Beta stage, which means "
+                "that backward compatibility isn't fully guaranteed. "
+                "Please visit <SOME_URL> to learn more about what we are planning to change in future versions. "
+                "To silence this warning, please call torchvision.io.enable_beta_video_api."
+            )
+
         self.is_cuda = False
         device = torch.device(device)
         if device.type == "cuda":

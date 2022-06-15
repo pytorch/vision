@@ -40,6 +40,14 @@ from .video import (
 from .video_reader import VideoReader
 
 
+_BETA_VIDEO_API_IS_ENABLED = False
+
+
+def enable_beta_video_api():
+    global _BETA_VIDEO_API_IS_ENABLED
+    _BETA_VIDEO_API_IS_ENABLED = True
+
+
 __all__ = [
     "write_video",
     "read_video",
