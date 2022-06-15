@@ -142,7 +142,6 @@ class QuantizableInception3(inception_module.Inception3):
                 QuantizableInceptionE,
                 QuantizableInceptionAux,
             ],
-            init_weights=True,
         )
         self.quant = torch.ao.quantization.QuantStub()
         self.dequant = torch.ao.quantization.DeQuantStub()
