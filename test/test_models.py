@@ -248,7 +248,7 @@ _model_params = {
         "input_shape": (1, 3, 299, 299),
         "init_weights": True,
     },
-    "googlenet":{
+    "googlenet": {
         "init_weights": True,
     },
     "retinanet_resnet50_fpn": {
