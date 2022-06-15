@@ -150,7 +150,7 @@ class ConvGRU(raft.ConvGRU):
 
     # Modified from raft.ConvGRU to accept pre-convolved contexts,
     # see: https://github.com/princeton-vl/RAFT-Stereo/blob/main/core/update.py#L23
-    def forward(self, h: Tensor, context: List[Tensor], x: Tensor):
+    def forward(self, h: Tensor, x: Tensor, context: List[Tensor]) -> Tensor:  # type: ignore[override]
         hx = torch.cat([h, x], dim=1)
         z = torch.sigmoid(self.convz(hx) + context[0])
         r = torch.sigmoid(self.convr(hx) + context[1])
@@ -220,7 +220,7 @@ class MultiLevelUpdateBlock(nn.Module):
                 if i < len(self.grus) - 1:
                     features = torch.cat([features, self._upsample2x(hidden_states[i + 1])], dim=1)
 
-                hidden_states[i] = gru(hidden_states[i], contexts[i], features)
+                hidden_states[i] = gru(hidden_states[i], features, contexts[i])
 
                 # NOTE: For slow-fast gru, we dont always want to calculate delta depth for every call on UpdateBlock
                 # Hence we move the delta depth calculation to the RAFT-Stereo main forward
@@ -390,10 +390,9 @@ class RaftStereo(nn.Module):
         self.slow_fast = slow_fast
         self.num_iters = num_iters
 
-    def forward(self, image1: Tensor, image2: Tensor) -> List[Tensor]:
-        # We dont put num_iters as input to forward (like the original implementation) in order to make this class fx traceable.
-        # User can still change the number of iteration by updating the class variable self.num_iters during inference
-        num_iters = self.num_iters
+    def forward(self, image1: Tensor, image2: Tensor, num_iters: Optional[int] = None) -> List[Tensor]:
+        if num_iters is None:
+            num_iters = self.num_iters
         batch_size, _, h, w = image1.shape
         torch._assert(
             (h, w) == image2.shape[-2:],
