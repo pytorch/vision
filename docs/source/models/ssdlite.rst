@@ -8,6 +8,7 @@ The SSDLite model is based on the `SSD: Single Shot MultiBox Detector
 <https://arxiv.org/abs/1905.02244>`__ and `MobileNetV2: Inverted Residuals and Linear
 Bottlenecks <https://arxiv.org/abs/1801.04381>__` papers.
 
+.. betastatus:: detection module
 
 Model builders
 --------------
