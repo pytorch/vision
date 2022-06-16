@@ -21,20 +21,6 @@ __all__ = (
 )
 
 
-def _corr_channel_normalize(corr: Tensor, num_channels: int):
-    return corr / torch.sqrt(torch.tensor(num_channels).to(corr.device))
-
-
-def _zeroes_second_channel(delta_depth: Tensor):
-    delta_depth[:, 1] = 0.0
-
-
-torch.fx.wrap("_corr_channel_normalize")
-torch.fx.wrap("_zeroes_second_channel")
-torch.fx.wrap("make_coords_grid")
-torch.fx.wrap("grid_sample")
-
-
 class BaseEncoder(raft.FeatureEncoder):
     """Base encoder for FeatureEncoder and ContextEncoder in which weight may be shared.
 
@@ -269,7 +255,7 @@ class CorrPyramid1d(nn.Module):
 
         corr = torch.einsum("aijk,aijh->ajkh", fmap1, fmap2)
         corr = corr.view(batch_size, h, w, 1, w)
-        corr_volume = _corr_channel_normalize(corr, num_channels)
+        corr_volume = corr / torch.sqrt(torch.tensor(num_channels).to(corr.device))
 
         corr_volume = corr_volume.reshape(batch_size * h * w, 1, 1, w)
         corr_pyramid = [corr_volume]
@@ -456,7 +442,7 @@ class RaftStereo(nn.Module):
             hidden_state = hidden_states[0]
             delta_depth = self.depth_head(hidden_state)
             # in stereo mode, project depth onto epipolar
-            _zeroes_second_channel(delta_depth)
+            delta_depth[:, 1] = 0.0
 
             coords1 = coords1 + delta_depth
             up_mask = None if self.mask_predictor is None else self.mask_predictor(hidden_state)
