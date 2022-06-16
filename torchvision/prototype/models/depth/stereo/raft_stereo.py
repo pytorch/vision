@@ -589,6 +589,7 @@ class Raft_Stereo_Weights(WeightsEnum):
 def raft_stereo_realtime(*, weights: Optional[Raft_Stereo_Realtime_Weights] = None, progress=True, **kwargs) -> RaftStereo:
     """RAFT-Stereo model from
     `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
+    This is the realtime variant of the Raft-Stereo model that is described on the paper section 4.7.
 
     Please see the example below for a tutorial on how to use this model.
 
