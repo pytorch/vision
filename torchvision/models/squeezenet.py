@@ -117,6 +117,7 @@ def _squeezenet(
 _COMMON_META = {
     "categories": _IMAGENET_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/pull/49#issuecomment-277560717",
+    "_docs": """These weights reproduce closely the results of the paper using a simple training recipe.""",
 }
 
 
@@ -128,9 +129,11 @@ class SqueezeNet1_0_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (21, 21),
             "num_params": 1248424,
-            "metrics": {
-                "acc@1": 58.092,
-                "acc@5": 80.420,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 58.092,
+                    "acc@5": 80.420,
+                }
             },
         },
     )
@@ -145,9 +148,11 @@ class SqueezeNet1_1_Weights(WeightsEnum):
             **_COMMON_META,
             "min_size": (17, 17),
             "num_params": 1235496,
-            "metrics": {
-                "acc@1": 58.178,
-                "acc@5": 80.624,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 58.178,
+                    "acc@5": 80.624,
+                }
             },
         },
     )

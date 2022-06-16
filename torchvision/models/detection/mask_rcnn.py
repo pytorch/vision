@@ -364,10 +364,13 @@ class MaskRCNN_ResNet50_FPN_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 44401393,
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#mask-r-cnn",
-            "metrics": {
-                "box_map": 37.9,
-                "mask_map": 34.6,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 37.9,
+                    "mask_map": 34.6,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -381,10 +384,13 @@ class MaskRCNN_ResNet50_FPN_V2_Weights(WeightsEnum):
             **_COMMON_META,
             "num_params": 46359409,
             "recipe": "https://github.com/pytorch/vision/pull/5773",
-            "metrics": {
-                "box_map": 47.4,
-                "mask_map": 41.8,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 47.4,
+                    "mask_map": 41.8,
+                }
             },
+            "_docs": """These weights were produced using an enhanced training recipe to boost the model accuracy.""",
         },
     )
     DEFAULT = COCO_V1
@@ -405,6 +411,8 @@ def maskrcnn_resnet50_fpn(
 ) -> MaskRCNN:
     """Mask R-CNN model with a ResNet-50-FPN backbone from the `Mask R-CNN
     <https://arxiv.org/abs/1703.06870>`_ paper.
+
+    .. betastatus:: detection module
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
     image, and should be in ``0-1`` range. Different images can have different sizes.
@@ -506,6 +514,8 @@ def maskrcnn_resnet50_fpn_v2(
 ) -> MaskRCNN:
     """Improved Mask R-CNN model with a ResNet-50-FPN backbone from the `Benchmarking Detection Transfer
     Learning with Vision Transformers <https://arxiv.org/abs/2111.11429>`_ paper.
+
+    .. betastatus:: detection module
 
     :func:`~torchvision.models.detection.maskrcnn_resnet50_fpn` for more details.
 

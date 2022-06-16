@@ -34,9 +34,12 @@ class SSD300_VGG16_Weights(WeightsEnum):
             "categories": _COCO_CATEGORIES,
             "min_size": (1, 1),
             "recipe": "https://github.com/pytorch/vision/tree/main/references/detection#ssd300-vgg16",
-            "metrics": {
-                "box_map": 25.1,
+            "_metrics": {
+                "COCO-val2017": {
+                    "box_map": 25.1,
+                }
             },
+            "_docs": """These weights were produced by following a similar training recipe as on the paper.""",
         },
     )
     DEFAULT = COCO_V1
@@ -580,6 +583,8 @@ def ssd300_vgg16(
 ) -> SSD:
     """The SSD300 model is based on the `SSD: Single Shot MultiBox Detector
     <https://arxiv.org/abs/1512.02325>`_ paper.
+
+    .. betastatus:: detection module
 
     The input to the model is expected to be a list of tensors, each of shape [C, H, W], one for each
     image, and should be in 0-1 range. Different images can have different sizes but they will be resized

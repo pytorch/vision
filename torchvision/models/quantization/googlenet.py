@@ -117,10 +117,16 @@ class GoogLeNet_QuantizedWeights(WeightsEnum):
             "backend": "fbgemm",
             "recipe": "https://github.com/pytorch/vision/tree/main/references/classification#post-training-quantized-models",
             "unquantized": GoogLeNet_Weights.IMAGENET1K_V1,
-            "metrics": {
-                "acc@1": 69.826,
-                "acc@5": 89.404,
+            "_metrics": {
+                "ImageNet-1K": {
+                    "acc@1": 69.826,
+                    "acc@5": 89.404,
+                }
             },
+            "_docs": """
+                These weights were produced by doing Post Training Quantization (eager mode) on top of the unquantized
+                weights listed below.
+            """,
         },
     )
     DEFAULT = IMAGENET1K_FBGEMM_V1
@@ -159,7 +165,7 @@ def googlenet(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableGoogLeNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.googlenet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/googlenet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.GoogLeNet_QuantizedWeights

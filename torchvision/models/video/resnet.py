@@ -312,6 +312,7 @@ _COMMON_META = {
     "min_size": (1, 1),
     "categories": _KINETICS400_CATEGORIES,
     "recipe": "https://github.com/pytorch/vision/tree/main/references/video_classification",
+    "_docs": """These weights reproduce closely the accuracy of the paper for 16-frame clip inputs.""",
 }
 
 
@@ -322,9 +323,11 @@ class R3D_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 33371472,
-            "metrics": {
-                "acc@1": 52.75,
-                "acc@5": 75.45,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 52.75,
+                    "acc@5": 75.45,
+                }
             },
         },
     )
@@ -338,9 +341,11 @@ class MC3_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 11695440,
-            "metrics": {
-                "acc@1": 53.90,
-                "acc@5": 76.29,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 53.90,
+                    "acc@5": 76.29,
+                }
             },
         },
     )
@@ -354,9 +359,11 @@ class R2Plus1D_18_Weights(WeightsEnum):
         meta={
             **_COMMON_META,
             "num_params": 31505325,
-            "metrics": {
-                "acc@1": 57.50,
-                "acc@5": 78.81,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 57.50,
+                    "acc@5": 78.81,
+                }
             },
         },
     )
@@ -366,6 +373,8 @@ class R2Plus1D_18_Weights(WeightsEnum):
 @handle_legacy_interface(weights=("pretrained", R3D_18_Weights.KINETICS400_V1))
 def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer Resnet3D model.
+
+    .. betastatus:: video module
 
     Reference: `A Closer Look at Spatiotemporal Convolutions for Action Recognition <https://arxiv.org/abs/1711.11248>`__.
 
@@ -401,6 +410,8 @@ def r3d_18(*, weights: Optional[R3D_18_Weights] = None, progress: bool = True, *
 def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer Mixed Convolution network as in
 
+    .. betastatus:: video module
+
     Reference: `A Closer Look at Spatiotemporal Convolutions for Action Recognition <https://arxiv.org/abs/1711.11248>`__.
 
     Args:
@@ -434,6 +445,8 @@ def mc3_18(*, weights: Optional[MC3_18_Weights] = None, progress: bool = True, *
 @handle_legacy_interface(weights=("pretrained", R2Plus1D_18_Weights.KINETICS400_V1))
 def r2plus1d_18(*, weights: Optional[R2Plus1D_18_Weights] = None, progress: bool = True, **kwargs: Any) -> VideoResNet:
     """Construct 18 layer deep R(2+1)D network as in
+
+    .. betastatus:: video module
 
     Reference: `A Closer Look at Spatiotemporal Convolutions for Action Recognition <https://arxiv.org/abs/1711.11248>`__.
 
