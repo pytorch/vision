@@ -21,7 +21,7 @@ def _dl_wrap(tarpath: str, videopath: str, line: str) -> None:
 
 
 class Kinetics(VisionDataset):
-    """`Generic Kinetics <https://deepmind.com/research/open-source/open-source-datasets/kinetics/>`_
+    """`Generic Kinetics <https://www.deepmind.com/open-source/kinetics>`_
     dataset.
 
     Kinetics-400/600/700 are action recognition video datasets.
