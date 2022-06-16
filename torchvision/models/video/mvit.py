@@ -305,6 +305,7 @@ class MViT(nn.Module):
             pool_kv_stride (list of ints): The initiale pooling stride of the first block.
             pool_q_stride (list of ints): The pooling stride which reduces q in each block group.
             pool_kvq_kernel (list of ints): The pooling kernel for the attention.
+            residual_pool (bool): If True, use MViTv2 pooling residual connection.
             dropout (float): Dropout rate. Default: 0.0.
             attention_dropout (float): Attention dropout rate. Default: 0.0.
             stochastic_depth_prob: (float): Stochastic depth rate. Default: 0.0.
@@ -471,7 +472,7 @@ class MViT_V1_B_Weights(WeightsEnum):
 
 def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
     """
-    Constructs a base MViT-B architecture from
+    Constructs a base MViT-V1-B architecture from
     `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
