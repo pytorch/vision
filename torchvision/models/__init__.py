@@ -1,3 +1,5 @@
+import importlib
+
 from .alexnet import *
 from .convnext import *
 from .densenet import *
@@ -18,6 +20,14 @@ from . import quantization
 from . import segmentation
 from . import video
 from ._api import get_weight
+
+
+def __getattr__(name):
+    if name == "detection":
+        return importlib.import_module("." + name, __name__)
+    else:
+        raise AttributeError(f"module {__name__!r} has no attribute {name!r}")
+
 
 _BETA_DETECTION_IS_ENABLED = False
 
