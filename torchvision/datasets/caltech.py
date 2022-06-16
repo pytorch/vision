@@ -9,7 +9,7 @@ from .vision import VisionDataset
 
 
 class Caltech101(VisionDataset):
-    """`Caltech 101 <http://www.vision.caltech.edu/Image_Datasets/Caltech101/>`_ Dataset.
+    """`Caltech 101 <https://data.caltech.edu/records/20086>`_ Dataset.
 
     .. warning::
 
@@ -146,7 +146,7 @@ class Caltech101(VisionDataset):
 
 
 class Caltech256(VisionDataset):
-    """`Caltech 256 <http://www.vision.caltech.edu/Image_Datasets/Caltech256/>`_ Dataset.
+    """`Caltech 256 <https://data.caltech.edu/records/20087>`_ Dataset.
 
     Args:
         root (string): Root directory of dataset where directory
