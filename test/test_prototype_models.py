@@ -12,7 +12,7 @@ def test_raft_stereo(model_builder, model_mode, dev):
     set_rng_seed(0)
 
     model = model_builder().eval().to(dev)
-    if model_mode == "standard":
+    if model_mode == "scripted":
         model = torch.jit.script(model)
 
     img1 = torch.rand(1, 3, 64, 64).to(dev)
