@@ -968,3 +968,23 @@ def erase(img: Tensor, i: int, j: int, h: int, w: int, v: Tensor, inplace: bool 
 
     img[..., i : i + h, j : j + w] = v
     return img
+
+
+def elastic_transform(
+    img: Tensor,
+    displacement: Tensor,
+    interpolation: str = "bilinear",
+    fill: Optional[List[float]] = None,
+) -> Tensor:
+
+    if not (isinstance(img, torch.Tensor)):
+        raise TypeError(f"img should be Tensor. Got {type(img)}")
+
+    size = list(img.shape[-2:])
+    displacement = displacement.to(img.device)
+
+    hw_space = [torch.linspace((-s + 1) / s, (s - 1) / s, s) for s in size]
+    grid_y, grid_x = torch.meshgrid(hw_space, indexing="ij")
+    identity_grid = torch.stack([grid_x, grid_y], -1).unsqueeze(0)  # 1 x H x W x 2
+    grid = identity_grid.to(img.device) + displacement
+    return _apply_grid_transform(img, grid, interpolation, fill)
