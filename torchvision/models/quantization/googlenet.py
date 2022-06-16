@@ -165,7 +165,7 @@ def googlenet(
         quantize (bool, optional): If True, return a quantized version of the model. Default is False.
         **kwargs: parameters passed to the ``torchvision.models.quantization.QuantizableGoogLeNet``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization.googlenet.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/quantization/googlenet.py>`_
             for more details about this class.
 
     .. autoclass:: torchvision.models.quantization.GoogLeNet_QuantizedWeights
