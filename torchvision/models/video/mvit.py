@@ -13,18 +13,12 @@ from .._utils import _ovewrite_named_param
 
 
 __all__ = [
-    "MViTV2",
-    "MViT_V2_T_Weights",
-    "MViT_V2_S_Weights",
-    "MViT_V2_B_Weights",
-    "mvit_v2_t",
-    "mvit_v2_s",
-    "mvit_v2_b",
+    "MViT",
+    "MViT_V1_B_Weights",
+    "mvit_v1_b",
 ]
 
 
-# TODO: check if we should implement relative pos embedding (Section 4.1 in the paper). Ref:
-# https://github.com/facebookresearch/mvit/blob/main/mvit/models/attention.py#L45
 # TODO: add weights
 # TODO: test on references
 
@@ -108,6 +102,7 @@ class MultiscaleAttention(nn.Module):
         kernel_kv: List[int],
         stride_q: List[int],
         stride_kv: List[int],
+        residual_pool: bool,
         dropout: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
     ) -> None:
@@ -116,6 +111,7 @@ class MultiscaleAttention(nn.Module):
         self.num_heads = num_heads
         self.head_dim = embed_dim // num_heads
         self.scaler = 1.0 / math.sqrt(self.head_dim)
+        self.residual_pool = residual_pool
 
         self.qkv = nn.Linear(embed_dim, 3 * embed_dim)
         layers: List[nn.Module] = [nn.Linear(embed_dim, embed_dim)]
@@ -182,7 +178,9 @@ class MultiscaleAttention(nn.Module):
         attn = torch.matmul(self.scaler * q, k.transpose(2, 3))
         attn = attn.softmax(dim=-1)
 
-        x = torch.matmul(attn, v).add_(q)
+        x = torch.matmul(attn, v)
+        if self.residual_pool:
+            x.add_(q)
         x = x.transpose(1, 2).reshape(B, -1, C)
         x = self.project(x)
 
@@ -199,6 +197,7 @@ class MultiscaleBlock(nn.Module):
         kernel_kv: List[int],
         stride_q: List[int],
         stride_kv: List[int],
+        residual_pool: bool,
         dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
         norm_layer: Callable[..., nn.Module] = nn.LayerNorm,
@@ -224,6 +223,7 @@ class MultiscaleBlock(nn.Module):
             kernel_kv=kernel_kv,
             stride_q=stride_q,
             stride_kv=stride_kv,
+            residual_pool=residual_pool,
             dropout=dropout,
             norm_layer=norm_layer,
         )
@@ -274,7 +274,7 @@ class PositionalEncoding(nn.Module):
         return torch.cat((class_token, x), dim=1).add_(pos_embedding)
 
 
-class MViTV2(nn.Module):
+class MViT(nn.Module):
     def __init__(
         self,
         spatial_size: Tuple[int, int],
@@ -285,6 +285,7 @@ class MViTV2(nn.Module):
         pool_kv_stride: List[int],
         pool_q_stride: List[int],
         pool_kvq_kernel: List[int],
+        residual_pool: bool,
         dropout: float = 0.0,
         attention_dropout: float = 0.0,
         stochastic_depth_prob: float = 0.0,
@@ -293,7 +294,7 @@ class MViTV2(nn.Module):
         norm_layer: Optional[Callable[..., nn.Module]] = None,
     ) -> None:
         """
-        MViT V2 main class.
+        MViT main class.
 
         Args:
             spatial_size (tuple of ints): The spacial size of the input as ``(H, W)``.
@@ -374,6 +375,7 @@ class MViTV2(nn.Module):
                         kernel_kv=pool_kvq_kernel,
                         stride_q=stride_q,
                         stride_kv=stride_kv,
+                        residual_pool=residual_pool,
                         dropout=attention_dropout,
                         stochastic_depth_prob=sd_prob,
                         norm_layer=norm_layer,
@@ -426,7 +428,7 @@ class MViTV2(nn.Module):
         return x
 
 
-def _mvitv2(
+def _mvit(
     embed_channels: List[int],
     blocks: List[int],
     heads: List[int],
@@ -434,7 +436,7 @@ def _mvitv2(
     weights: Optional[WeightsEnum],
     progress: bool,
     **kwargs: Any,
-) -> MViTV2:
+) -> MViT:
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
@@ -443,7 +445,7 @@ def _mvitv2(
     spatial_size = kwargs.pop("spatial_size", (224, 224))
     temporal_size = kwargs.pop("temporal_size", 16)
 
-    model = MViTV2(
+    model = MViT(
         spatial_size=spatial_size,
         temporal_size=temporal_size,
         embed_channels=embed_channels,
@@ -452,6 +454,7 @@ def _mvitv2(
         pool_kv_stride=kwargs.pop("pool_kv_stride", [1, 8, 8]),
         pool_q_stride=kwargs.pop("pool_q_stride", [1, 2, 2]),
         pool_kvq_kernel=kwargs.pop("pool_kvq_kernel", [3, 3, 3]),
+        residual_pool=kwargs.pop("residual_pool", False),
         stochastic_depth_prob=stochastic_depth_prob,
         **kwargs,
     )
@@ -462,126 +465,40 @@ def _mvitv2(
     return model
 
 
-class MViT_V2_T_Weights(WeightsEnum):
+class MViT_V1_B_Weights(WeightsEnum):
     pass
 
 
-class MViT_V2_S_Weights(WeightsEnum):
-    pass
-
-
-class MViT_V2_B_Weights(WeightsEnum):
-    pass
-
-
-def mvit_v2_t(*, weights: Optional[MViT_V2_T_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTV2:
+def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
     """
-    Constructs a tiny MViTV2 architecture from
-    `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
-    <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
-    <https://arxiv.org/abs/2104.11227>`__.
+    Constructs a base MViT-B architecture from
+    `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
-        weights (:class:`~torchvision.models.video.MViT_V2_T_Weights`, optional): The
+        weights (:class:`~torchvision.models.video.MViT_V1_B_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.models.video.MViT_V2_T_Weights` below for
+            :class:`~torchvision.models.video.MViT_V1_B_Weights` below for
             more details, and possible values. By default, no pre-trained
             weights are used.
         progress (bool, optional): If True, displays a progress bar of the
             download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.video.MViTV2``
+        **kwargs: parameters passed to the ``torchvision.models.video.MViT``
             base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvit.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.models.video.MViT_V2_T_Weights
+    .. autoclass:: torchvision.models.video.MViT_V1_B_Weights
         :members:
     """
-    weights = MViT_V2_T_Weights.verify(weights)
+    weights = MViT_V1_B_Weights.verify(weights)
 
-    return _mvitv2(
-        spatial_size=(224, 224),
-        temporal_size=16,
-        embed_channels=[96, 192, 384, 768],
-        blocks=[1, 2, 5, 2],
-        heads=[1, 2, 4, 8],
-        stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.1),
-        weights=weights,
-        progress=progress,
-        **kwargs,
-    )
-
-
-def mvit_v2_s(*, weights: Optional[MViT_V2_S_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTV2:
-    """
-    Constructs a small MViTV2 architecture from
-    `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
-    <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
-    <https://arxiv.org/abs/2104.11227>`__.
-
-    Args:
-        weights (:class:`~torchvision.models.video.MViT_V2_S_Weights`, optional): The
-            pretrained weights to use. See
-            :class:`~torchvision.models.video.MViT_V2_S_Weights` below for
-            more details, and possible values. By default, no pre-trained
-            weights are used.
-        progress (bool, optional): If True, displays a progress bar of the
-            download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.video.MViTV2``
-            base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
-            for more details about this class.
-
-    .. autoclass:: torchvision.models.video.MViT_V2_S_Weights
-        :members:
-    """
-    weights = MViT_V2_S_Weights.verify(weights)
-
-    return _mvitv2(
+    return _mvit(
         spatial_size=(224, 224),
         temporal_size=16,
         embed_channels=[96, 192, 384, 768],
         blocks=[1, 2, 11, 2],
         heads=[1, 2, 4, 8],
         stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.1),
-        weights=weights,
-        progress=progress,
-        **kwargs,
-    )
-
-
-def mvit_v2_b(*, weights: Optional[MViT_V2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViTV2:
-    """
-    Constructs a base MViTV2 architecture from
-    `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
-    <https://arxiv.org/abs/2112.01526>`__ and `Multiscale Vision Transformers
-    <https://arxiv.org/abs/2104.11227>`__.
-
-    Args:
-        weights (:class:`~torchvision.models.video.MViT_V2_B_Weights`, optional): The
-            pretrained weights to use. See
-            :class:`~torchvision.models.video.MViT_V2_B_Weights` below for
-            more details, and possible values. By default, no pre-trained
-            weights are used.
-        progress (bool, optional): If True, displays a progress bar of the
-            download to stderr. Default is True.
-        **kwargs: parameters passed to the ``torchvision.models.video.MViTV2``
-            base class. Please refer to the `source code
-            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
-            for more details about this class.
-
-    .. autoclass:: torchvision.models.video.MViT_V2_B_Weights
-        :members:
-    """
-    weights = MViT_V2_B_Weights.verify(weights)
-
-    return _mvitv2(
-        spatial_size=(224, 224),
-        temporal_size=32,
-        embed_channels=[96, 192, 384, 768],
-        blocks=[2, 3, 16, 3],
-        heads=[1, 2, 4, 8],
-        stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.3),
         weights=weights,
         progress=progress,
         **kwargs,
