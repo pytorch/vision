@@ -15,9 +15,9 @@ from torchvision.utils import _log_api_usage_once
 __all__ = (
     "RaftStereo",
     "raft_stereo",
-    "raft_stereo_fast",
+    "raft_stereo_realtime",
     "Raft_Stereo_Weights",
-    "Raft_Stereo_Fast_Weights",
+    "Raft_Stereo_Realtime_Weights",
 )
 
 
@@ -260,7 +260,7 @@ class CorrPyramid1d(nn.Module):
 
         corr = torch.einsum("aijk,aijh->ajkh", fmap1, fmap2)
         corr = corr.view(batch_size, h, w, 1, w)
-        corr_volume = corr / torch.sqrt(torch.tensor(num_channels).to(corr.device))
+        corr_volume = corr / torch.sqrt(torch.tensor(num_channels, device=corr.device))
 
         corr_volume = corr_volume.reshape(batch_size * h * w, 1, 1, w)
         corr_pyramid = [corr_volume]
@@ -287,7 +287,7 @@ class CorrBlock1d(nn.Module):
     def forward(self, centroids_coords: Tensor, corr_pyramid: List[Tensor]) -> Tensor:
         """Return correlation features by indexing from the pyramid."""
         neighborhood_side_len = 2 * self.radius + 1  # see note in __init__ about out_channels
-        di = torch.linspace(-self.radius, self.radius, neighborhood_side_len).to(centroids_coords.device)
+        di = torch.linspace(-self.radius, self.radius, neighborhood_side_len, device=centroids_coords.device)
         di = di.view(1, 1, neighborhood_side_len, 1).to(centroids_coords.device)
 
         batch_size, _, h, w = centroids_coords.shape  # _ = 2 but we only use the first one
@@ -578,7 +578,7 @@ def _raft_stereo(
     return model
 
 
-class Raft_Stereo_Fast_Weights(WeightsEnum):
+class Raft_Stereo_Realtime_Weights(WeightsEnum):
     pass
 
 
@@ -586,16 +586,16 @@ class Raft_Stereo_Weights(WeightsEnum):
     pass
 
 
-def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, progress=True, **kwargs) -> RaftStereo:
+def raft_stereo_realtime(*, weights: Optional[Raft_Stereo_Realtime_Weights] = None, progress=True, **kwargs) -> RaftStereo:
     """RAFT-Stereo model from
     `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
 
     Please see the example below for a tutorial on how to use this model.
 
     Args:
-        weights(:class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Fast_Weights`, optional): The
+        weights(:class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Realtime_Weights`, optional): The
             pretrained weights to use. See
-            :class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Fast_Weights`
+            :class:`~torchvision.prototype.models.depth.stereo.Raft_Stereo_Realtime_Weights`
             below for more details, and possible values. By default, no
             pre-trained weights are used.
         progress (bool): If True, displays a progress bar of the download to stderr. Default is True.
@@ -604,11 +604,11 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
             <https://github.com/pytorch/vision/blob/main/torchvision/models/optical_flow/raft.py>`_
             for more details about this class.
 
-    .. autoclass:: torchvision.prototype.models.depth.stereo.Raft_Stereo_Fast_Weights
+    .. autoclass:: torchvision.prototype.models.depth.stereo.Raft_Stereo_Realtime_Weights
         :members:
     """
 
-    weights = Raft_Stereo_Fast_Weights.verify(weights)
+    weights = Raft_Stereo_Realtime_Weights.verify(weights)
 
     return _raft_stereo(
         weights=weights,
