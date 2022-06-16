@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from typing import Any, Tuple, Union, Optional
+from typing import Any, Optional, Tuple, Union
 
 import torch
 from torchvision._utils import StrEnum
@@ -61,7 +61,9 @@ class BoundingBox(_Feature):
         #  promote this out of the prototype state
 
         # import at runtime to avoid cyclic imports
-        from torchvision.prototype.transforms.functional import convert_bounding_box_format
+        from torchvision.prototype.transforms.functional import (
+            convert_bounding_box_format,
+        )
 
         if isinstance(format, str):
             format = BoundingBoxFormat.from_str(format.upper())

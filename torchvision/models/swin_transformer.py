@@ -1,5 +1,5 @@
 from functools import partial
-from typing import Optional, Callable, List, Any
+from typing import Any, Callable, List, Optional
 
 import torch
 import torch.nn.functional as F
@@ -9,7 +9,7 @@ from ..ops.misc import MLP, Permute
 from ..ops.stochastic_depth import StochasticDepth
 from ..transforms._presets import ImageClassification, InterpolationMode
 from ..utils import _log_api_usage_once
-from ._api import WeightsEnum, Weights
+from ._api import Weights, WeightsEnum
 from ._meta import _IMAGENET_CATEGORIES
 from ._utils import _ovewrite_named_param
 
@@ -357,7 +357,7 @@ class SwinTransformer(nn.Module):
         # build SwinTransformer blocks
         for i_stage in range(len(depths)):
             stage: List[nn.Module] = []
-            dim = embed_dim * 2 ** i_stage
+            dim = embed_dim * 2**i_stage
             for i_layer in range(depths[i_stage]):
                 # adjust stochastic depth probability based on the depth of the stage block
                 sd_prob = stochastic_depth_prob * float(stage_block_id) / (total_stage_blocks - 1)

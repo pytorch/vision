@@ -1,15 +1,15 @@
 import collections.abc
 import functools
-from typing import Any, Dict, Union, Tuple, Optional, Sequence, Callable, TypeVar
+from typing import Any, Callable, Dict, Optional, Sequence, Tuple, TypeVar, Union
 
 import PIL.Image
 import torch
 from torchvision.prototype import features
-from torchvision.prototype.transforms import Transform, functional as F
+from torchvision.prototype.transforms import functional as F, Transform
 from torchvision.transforms import functional as _F
 
 from ._transform import _RandomApplyTransform
-from ._utils import is_simple_tensor, get_image_dimensions, query_image
+from ._utils import get_image_dimensions, is_simple_tensor, query_image
 
 T = TypeVar("T", features.Image, torch.Tensor, PIL.Image.Image)
 

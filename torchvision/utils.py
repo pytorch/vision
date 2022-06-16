@@ -447,7 +447,7 @@ def flow_to_image(flow: torch.Tensor) -> torch.Tensor:
     if flow.ndim != 4 or flow.shape[1] != 2:
         raise ValueError(f"Input flow should have shape (2, H, W) or (N, 2, H, W), got {orig_shape}.")
 
-    max_norm = torch.sum(flow ** 2, dim=1).sqrt().max()
+    max_norm = torch.sum(flow**2, dim=1).sqrt().max()
     epsilon = torch.finfo((flow).dtype).eps
     normalized_flow = flow / (max_norm + epsilon)
     img = _normalized_flow_to_image(normalized_flow)
@@ -474,7 +474,7 @@ def _normalized_flow_to_image(normalized_flow: torch.Tensor) -> torch.Tensor:
     flow_image = torch.zeros((N, 3, H, W), dtype=torch.uint8, device=device)
     colorwheel = _make_colorwheel().to(device)  # shape [55x3]
     num_cols = colorwheel.shape[0]
-    norm = torch.sum(normalized_flow ** 2, dim=1).sqrt()
+    norm = torch.sum(normalized_flow**2, dim=1).sqrt()
     a = torch.atan2(-normalized_flow[:, 1, :, :], -normalized_flow[:, 0, :, :]) / torch.pi
     fk = (a + 1) / 2 * (num_cols - 1)
     k0 = torch.floor(fk).to(torch.long)
@@ -540,7 +540,7 @@ def _make_colorwheel() -> torch.Tensor:
 
 
 def _generate_color_palette(num_objects: int):
-    palette = torch.tensor([2 ** 25 - 1, 2 ** 15 - 1, 2 ** 21 - 1])
+    palette = torch.tensor([2**25 - 1, 2**15 - 1, 2**21 - 1])
     return [tuple((i * palette) % 255) for i in range(num_objects)]
 
 
