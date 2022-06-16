@@ -34,6 +34,7 @@ class PatchMerging(nn.Module):
 
     def __init__(self, dim: int, norm_layer: Callable[..., nn.Module] = nn.LayerNorm):
         super().__init__()
+        _log_api_usage_once(self)
         self.dim = dim
         self.reduction = nn.Linear(4 * dim, 2 * dim, bias=False)
         self.norm = norm_layer(4 * dim)
@@ -268,6 +269,7 @@ class SwinTransformerBlock(nn.Module):
         attn_layer: Callable[..., nn.Module] = ShiftedWindowAttention,
     ):
         super().__init__()
+        _log_api_usage_once(self)
 
         self.norm1 = norm_layer(dim)
         self.attn = attn_layer(
