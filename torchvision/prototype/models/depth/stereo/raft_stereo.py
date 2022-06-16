@@ -60,7 +60,6 @@ class FeatureEncoder(nn.Module):
         self.base_downsampling_ratio = base_encoder.downsampling_ratio
         base_dim = base_encoder.output_dim
 
-        self.shared_base = shared_base
         if not shared_base:
             self.residual_block: nn.Module = nn.Identity()
             self.conv = nn.Conv2d(base_dim, output_dim, kernel_size=1)
@@ -178,13 +177,6 @@ class MultiLevelUpdateBlock(nn.Module):
 
         self.hidden_dims = hidden_dims
 
-    def _downsample2x(self, x):
-        return F.avg_pool2d(x, 3, stride=2, padding=1)
-
-    def _upsample2x(self, x):
-        _, _, h, w = x.shape
-        return F.interpolate(x, size=(2 * h, 2 * w), mode="bilinear", align_corners=True)
-
     def forward(
         self,
         hidden_states: List[Tensor],
@@ -198,13 +190,26 @@ class MultiLevelUpdateBlock(nn.Module):
         for reverse_i, gru in enumerate(self.grus):
             i = len(self.grus) - 1 - reverse_i
             if level_processed[i]:
-                # X is concatination of downsampled hidden_dim (or motion_features if no bigger dim) with
-                # upsampled hidden_dim (or nothing if not exist)
-                features = (
-                    self._downsample2x(hidden_states[i - 1]) if i > 0 else self.motion_encoder(depth, corr_features)
-                )
+                # X is concatination of 2x downsampled hidden_dim (or motion_features if no bigger dim) with
+                # upsampled hidden_dim (or nothing if not exist).
+                if i == 0:
+                    features = self.motion_encoder(depth, corr_features)
+                else:
+                    # 2x downsampled features from larger hidden states
+                    features = F.avg_pool2d(hidden_states[i - 1], kernel_size=3, stride=2, padding=1)
+
                 if i < len(self.grus) - 1:
-                    features = torch.cat([features, self._upsample2x(hidden_states[i + 1])], dim=1)
+                    # Concat with 2x upsampled features from smaller hidden states
+                    _, _, h, w = hidden_states[i + 1].shape
+                    features = torch.cat(
+                        [
+                            features,
+                            F.interpolate(
+                                hidden_states[i + 1], size=(2 * h, 2 * w), mode="bilinear", align_corners=True
+                            ),
+                        ],
+                        dim=1,
+                    )
 
                 hidden_states[i] = gru(hidden_states[i], features, contexts[i])
 
@@ -322,7 +327,6 @@ class RaftStereo(nn.Module):
         depth_head: nn.Module,
         mask_predictor: Optional[nn.Module] = None,
         slow_fast: bool = False,
-        num_iters: int = 12,
     ):
         """RAFT-Stereo model from
         `RAFT-Stereo: Multilevel Recurrent Field Transforms for Stereo Matching <https://arxiv.org/abs/2109.07547>`_.
@@ -350,8 +354,6 @@ class RaftStereo(nn.Module):
                 If ``None`` (default), the flow is upsampled using interpolation.
             slow_fast (bool): A boolean that specify whether we should use slow-fast GRU or not. See RAFT-Stereo paper
                 on section 3.4 for more detail.
-            num_iters (int): The default number of iteration update during forward pass. Take note that this will only
-                be used if num_iters is not specified on the forward call.
         """
         super().__init__()
         _log_api_usage_once(self)
@@ -374,11 +376,15 @@ class RaftStereo(nn.Module):
             [nn.Conv2d(hidden_dims[i], hidden_dims[i] * 3, kernel_size=3, padding=1) for i in range(self.num_level)]
         )
         self.slow_fast = slow_fast
-        self.num_iters = num_iters
 
-    def forward(self, image1: Tensor, image2: Tensor, num_iters: Optional[int] = None) -> List[Tensor]:
-        if num_iters is None:
-            num_iters = self.num_iters
+    def forward(self, image1: Tensor, image2: Tensor, num_iters: int = 12) -> List[Tensor]:
+        """
+        Return dept predictions on every iterations as a list of Tensor.
+        args:
+            image1 (Tensor): The input left image with layout B, C, H, W
+            image2 (Tensor): The input right image with layout B, C, H, W
+            num_iters (int): Number of update block iteration on the largest resolution. Default: 12
+        """
         batch_size, _, h, w = image1.shape
         torch._assert(
             (h, w) == image2.shape[-2:],
@@ -386,9 +392,8 @@ class RaftStereo(nn.Module):
         )
 
         torch._assert(
-            # We use addition, "+", instead of "and" operator so it can pass fx symbolic trace
-            (h % self.base_downsampling_ratio + w % self.base_downsampling_ratio == 0),
-            f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got {h} (h) and {w} (w)",
+            (h % self.base_downsampling_ratio == 0 and w % self.base_downsampling_ratio == 0),
+            f"input image H and W should be divisible by {self.base_downsampling_ratio}, insted got H={h} and W={w}",
         )
 
         fmaps = self.feature_encoder(torch.cat([image1, image2], dim=0))
@@ -481,7 +486,6 @@ def _raft_stereo(
     mask_predictor_hidden_size: int,
     use_mask_predictor: bool,
     slow_fast: bool,
-    num_iters: int,
     **kwargs,
 ):
 
@@ -565,7 +569,6 @@ def _raft_stereo(
         depth_head=depth_head,
         mask_predictor=mask_predictor,
         slow_fast=slow_fast,
-        num_iters=num_iters,
         **kwargs,  # not really needed, all params should be consumed by now
     )
 
@@ -635,7 +638,6 @@ def raft_stereo_fast(*, weights: Optional[Raft_Stereo_Fast_Weights] = None, prog
         mask_predictor_hidden_size=256,
         use_mask_predictor=True,
         slow_fast=True,
-        num_iters=10,
         **kwargs,
     )
 
@@ -692,6 +694,5 @@ def raft_stereo(*, weights: Optional[Raft_Stereo_Weights] = None, progress=True,
         mask_predictor_hidden_size=256,
         use_mask_predictor=True,
         slow_fast=False,
-        num_iters=32,
         **kwargs,
     )
