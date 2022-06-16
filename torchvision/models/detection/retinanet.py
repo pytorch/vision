@@ -733,6 +733,8 @@ def retinanet_resnet50_fpn(
     """
     Constructs a RetinaNet model with a ResNet-50-FPN backbone.
 
+    .. betastatus:: detection module
+
     Reference: `Focal Loss for Dense Object Detection <https://arxiv.org/abs/1708.02002>`_.
 
     The input to the model is expected to be a list of tensors, each of shape ``[C, H, W]``, one for each
@@ -828,6 +830,8 @@ def retinanet_resnet50_fpn_v2(
 ) -> RetinaNet:
     """
     Constructs an improved RetinaNet model with a ResNet-50-FPN backbone.
+
+    .. betastatus:: detection module
 
     Reference: `Bridging the Gap Between Anchor-based and Anchor-free Detection via Adaptive Training Sample Selection
     <https://arxiv.org/abs/1912.02424>`_.
