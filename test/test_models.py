@@ -312,6 +312,9 @@ _model_params = {
     "mvit_v1_b": {
         "input_shape": (1, 3, 16, 224, 224),
     },
+    "mvit_v2_b": {
+        "input_shape": (1, 3, 32, 224, 224),
+    },
 }
 # speeding up slow models:
 slow_models = [
@@ -341,6 +344,7 @@ for m in slow_models:
 skipped_big_models = {
     "vit_h_14",
     "regnet_y_128gf",
+    "mvit_v2_b",
 }
 
 # The following contains configuration and expected values to be used tests that are model specific

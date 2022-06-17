@@ -15,7 +15,9 @@ from .._utils import _ovewrite_named_param
 __all__ = [
     "MViT",
     "MViT_V1_B_Weights",
+    "MViT_V2_B_Weights",
     "mvit_v1_b",
+    "mvit_v2_b",
 ]
 
 
@@ -470,9 +472,13 @@ class MViT_V1_B_Weights(WeightsEnum):
     pass
 
 
+class MViT_V2_B_Weights(WeightsEnum):
+    pass
+
+
 def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
     """
-    Constructs a base MViT-V1-B architecture from
+    Constructs a base MViTV1 architecture from
     `Multiscale Vision Transformers <https://arxiv.org/abs/2104.11227>`__.
 
     Args:
@@ -499,7 +505,48 @@ def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = T
         embed_channels=[96, 192, 384, 768],
         blocks=[1, 2, 11, 2],
         heads=[1, 2, 4, 8],
-        stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.1),
+        residual_pool=False,
+        stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.2),
+        weights=weights,
+        progress=progress,
+        **kwargs,
+    )
+
+
+def mvit_v2_b(*, weights: Optional[MViT_V2_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
+    """
+    Constructs a base MViTV2 architecture from
+    `MViTv2: Improved Multiscale Vision Transformers for Classification and Detection
+    <https://arxiv.org/abs/2112.01526>`__.
+
+    Args:
+        weights (:class:`~torchvision.models.video.MViT_V2_B_Weights`, optional): The
+            pretrained weights to use. See
+            :class:`~torchvision.models.video.MViT_V2_B_Weights` below for
+            more details, and possible values. By default, no pre-trained
+            weights are used.
+        progress (bool, optional): If True, displays a progress bar of the
+            download to stderr. Default is True.
+        **kwargs: parameters passed to the ``torchvision.models.video.MViTV2``
+            base class. Please refer to the `source code
+            <https://github.com/pytorch/vision/blob/main/torchvision/models/video/mvitv2.py>`_
+            for more details about this class.
+
+    .. autoclass:: torchvision.models.video.MViT_V2_B_Weights
+        :members:
+    """
+    weights = MViT_V2_B_Weights.verify(weights)
+
+    # TODO: check if we should implement relative pos embedding (Section 4.1 in the paper). Ref:
+    # https://github.com/facebookresearch/mvit/blob/main/mvit/models/attention.py#L45
+    return _mvit(
+        spatial_size=(224, 224),
+        temporal_size=32,
+        embed_channels=[96, 192, 384, 768],
+        blocks=[2, 3, 16, 3],
+        heads=[1, 2, 4, 8],
+        residual_pool=True,
+        stochastic_depth_prob=kwargs.pop("stochastic_depth_prob", 0.3),
         weights=weights,
         progress=progress,
         **kwargs,
