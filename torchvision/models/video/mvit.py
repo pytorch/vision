@@ -22,6 +22,7 @@ __all__ = [
 ]
 
 
+# TODO: Consider handle 2d input if Temporal is 1
 # TODO: test on references
 
 
@@ -43,18 +44,18 @@ def _prod(s: Sequence[int]) -> int:
     return product
 
 
-def _unsqueeze(x: torch.Tensor) -> Tuple[torch.Tensor, int]:
+def _unsqueeze(x: torch.Tensor, target_dim: int, expand_dim: int) -> Tuple[torch.Tensor, int]:
     tensor_dim = x.dim()
-    if tensor_dim == 3:
-        x = x.unsqueeze(1)
-    elif tensor_dim != 4:
+    if tensor_dim == target_dim - 1:
+        x = x.unsqueeze(expand_dim)
+    elif tensor_dim != target_dim:
         raise ValueError(f"Unsupported input dimension {x.shape}")
     return x, tensor_dim
 
 
-def _squeeze(x: torch.Tensor, tensor_dim: int) -> torch.Tensor:
-    if tensor_dim == 3:
-        x = x.squeeze(1)
+def _squeeze(x: torch.Tensor, target_dim: int, expand_dim: int, tensor_dim: int) -> torch.Tensor:
+    if tensor_dim == target_dim - 1:
+        x = x.squeeze(expand_dim)
     return x
 
 
@@ -81,7 +82,7 @@ class Pool(nn.Module):
         self.norm_before_pool = norm_before_pool
 
     def forward(self, x: torch.Tensor, thw: Tuple[int, int, int]) -> Tuple[torch.Tensor, Tuple[int, int, int]]:
-        x, tensor_dim = _unsqueeze(x)
+        x, tensor_dim = _unsqueeze(x, 4, 1)
 
         # Separate the class token and reshape the input
         class_token, x = torch.tensor_split(x, indices=(1,), dim=2)
@@ -102,7 +103,7 @@ class Pool(nn.Module):
         if not self.norm_before_pool and self.norm_act is not None:
             x = self.norm_act(x)
 
-        x = _squeeze(x, tensor_dim)
+        x = _squeeze(x, 4, 1, tensor_dim)
         return x, (T, H, W)
 
 
@@ -381,8 +382,6 @@ class MViT(nn.Module):
                     nn.init.trunc_normal_(weights, std=0.02)
 
     def forward(self, x: torch.Tensor) -> torch.Tensor:
-        # TODO: Consider handle 2d input if Temporal is 1
-
         # patchify and reshape: (B, C, T, H, W) -> (B, embed_channels[0], T', H', W') -> (B, THW', embed_channels[0])
         x = self.conv_proj(x)
         x = x.flatten(2).transpose(1, 2)
