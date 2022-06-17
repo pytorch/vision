@@ -24,4 +24,3 @@ more details about this class.
     :template: function.rst
 
     mvit_v1_b
-    mvit_v2_b

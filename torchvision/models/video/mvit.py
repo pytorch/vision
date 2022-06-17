@@ -434,7 +434,7 @@ def _mvit(
 class MViT_V1_B_Weights(WeightsEnum):
     KINETICS400_V1 = Weights(
         url="https://download.pytorch.org/models/mvit_v1_b-a3d8bcb8.pth",
-        transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
+        transforms=partial(VideoClassification, crop_size=(224, 224), resize_size=(224, 224)),
         meta={
             "min_size": (224, 224),
             "min_temporal_size": 16,
