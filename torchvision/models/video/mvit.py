@@ -8,8 +8,10 @@ import torch.fx
 import torch.nn as nn
 
 from ...ops import StochasticDepth, MLP
+from ...transforms._presets import VideoClassification
 from ...utils import _log_api_usage_once
-from .._api import WeightsEnum
+from .._api import WeightsEnum, Weights
+from .._meta import _KINETICS400_CATEGORIES
 from .._utils import _ovewrite_named_param
 
 
@@ -20,7 +22,6 @@ __all__ = [
 ]
 
 
-# TODO: add weights
 # TODO: test on references
 
 
@@ -412,7 +413,7 @@ def _mvit(
     if weights is not None:
         _ovewrite_named_param(kwargs, "num_classes", len(weights.meta["categories"]))
         assert weights.meta["min_size"][0] == weights.meta["min_size"][1]
-        _ovewrite_named_param(kwargs, "spatial_size", weights.meta["min_size"][0])
+        _ovewrite_named_param(kwargs, "spatial_size", weights.meta["min_size"])
         _ovewrite_named_param(kwargs, "temporal_size", weights.meta["min_temporal_size"])
     spatial_size = kwargs.pop("spatial_size", (224, 224))
     temporal_size = kwargs.pop("temporal_size", 16)
@@ -433,7 +434,25 @@ def _mvit(
 
 
 class MViT_V1_B_Weights(WeightsEnum):
-    pass
+    KINETICS400_V1 = Weights(
+        url="https://download.pytorch.org/models/mvit_v1_b-a3d8bcb8.pth",
+        transforms=partial(VideoClassification, crop_size=(112, 112), resize_size=(128, 171)),
+        meta={
+            "min_size": (224, 224),
+            "min_temporal_size": 16,
+            "categories": _KINETICS400_CATEGORIES,
+            "recipe": "https://github.com/facebookresearch/pytorchvideo/blob/main/docs/source/model_zoo.md",
+            "_docs": """These weights support 16-frame clip inputs and were ported from the paper.""",
+            "num_params": 36610672,
+            "_metrics": {
+                "Kinetics-400": {
+                    "acc@1": 78.85,
+                    "acc@5": 93.85,
+                }
+            },
+        },
+    )
+    DEFAULT = KINETICS400_V1
 
 
 def mvit_v1_b(*, weights: Optional[MViT_V1_B_Weights] = None, progress: bool = True, **kwargs: Any) -> MViT:
